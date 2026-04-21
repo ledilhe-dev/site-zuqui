@@ -2805,6 +2805,45 @@ function iniciarAtualizacaoAutomatica() {
   }, intervaloAtual);
 }
 
+function lancamentoPodeGerarAlertaTempoReal(lancamento = null) {
+  if (!lancamento) return false;
+  if (String(lancamento.status || '').toLowerCase() !== 'pendente') return false;
+  if (!tarefaDisponivelHoje(lancamento.dias_semana)) return false;
+  if (!checklistFoiLancadoHoje(lancamento.lancado_em, lancamento.created_at)) {
+    // Compatibilidade para bases antigas sem datas preenchidas no lançamento.
+    if (lancamento.lancado_em || lancamento.created_at) return false;
+  }
+  return true;
+}
+
+function injetarAlertaChecklistTempoReal(lancamento = null) {
+  if (!usuarioPodeVerNotificacaoChecklist()) return;
+  if (!lancamentoPodeGerarAlertaTempoReal(lancamento)) return;
+
+  const chave = criarChaveAlerta('checklist_pendente', lancamento.id);
+  if (notificacoesAtuais.some(item => item?.chave === chave)) return;
+
+  const nomeChecklist = String(lancamento.nome || 'Checklist');
+  const horarioProgramado = horaCurta(lancamento.horario_limite) || 'não informado';
+
+  notificacoesAtuais.unshift({
+    chave,
+    tipo: 'checklist_pendente',
+    page: 'checklists',
+    titulo: 'Checklist pendente aguardando início',
+    descricao: `${nomeChecklist} · Horário previsto: ${horarioProgramado}.`,
+    meta: {
+      nomeTarefa: nomeChecklist,
+      nomeFuncionario: 'Responsável',
+      horarioProgramado,
+    },
+  });
+
+  avisoCentralTarefasFechado = false;
+  renderizarListaNotificacoes();
+  sincronizarAvisoNotificacoes();
+}
+
 function reiniciarAssinaturaRealtimeNotificacoes() {
   try {
     if (canalNotificacoesRealtime) {
@@ -2825,7 +2864,12 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
 
   canalNotificacoesRealtime = sb
     .channel(canalNome)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checklist_lancamentos' }, (payload) => {
+      injetarAlertaChecklistTempoReal(payload?.new || null);
+      atualizarNotificacoes();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
