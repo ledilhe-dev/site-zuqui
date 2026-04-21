@@ -2333,6 +2333,8 @@ let dashboardHorasPeriodo = 'dia';
 let relatorioPontoPeriodo = 'dia';
 let relatorioPontoFuncionarioCache = {};
 let timeoutAvisoPontoRegistrado = null;
+let timeoutLimpezaPinPonto = null;
+let segurancaPinPontoConfigurada = false;
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
@@ -2766,6 +2768,41 @@ function exibirAvisoPontoRegistrado(nomeFuncionario = '') {
     overlay.classList.remove('show');
     overlay.hidden = true;
   }, 3000);
+}
+
+function limparCampoPinPonto() {
+  const campoPin = document.getElementById('pontoPinInput');
+  if (!campoPin) return;
+  campoPin.value = '';
+}
+
+function agendarLimpezaCampoPinPonto() {
+  if (timeoutLimpezaPinPonto) {
+    clearTimeout(timeoutLimpezaPinPonto);
+  }
+  timeoutLimpezaPinPonto = setTimeout(() => {
+    limparCampoPinPonto();
+  }, 10000);
+}
+
+function configurarSegurancaCampoPinPonto() {
+  if (segurancaPinPontoConfigurada) return;
+  const campoPin = document.getElementById('pontoPinInput');
+  if (!campoPin) return;
+
+  segurancaPinPontoConfigurada = true;
+  campoPin.setAttribute('autocomplete', 'new-password');
+  campoPin.setAttribute('autocapitalize', 'off');
+  campoPin.setAttribute('autocorrect', 'off');
+  campoPin.setAttribute('spellcheck', 'false');
+
+  ['input', 'keydown', 'focus'].forEach(evt => {
+    campoPin.addEventListener(evt, agendarLimpezaCampoPinPonto);
+  });
+
+  campoPin.addEventListener('blur', () => {
+    limparCampoPinPonto();
+  });
 }
 
 function nomePareceCompleto(nome) {
@@ -6859,6 +6896,8 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
 }
 
 async function carregarBaterPonto() {
+  configurarSegurancaCampoPinPonto();
+  limparCampoPinPonto();
   await carregarSelectFuncionariosPonto();
   await carregarResumoPontoHoje('');
   await carregarHorasDashboard();
@@ -7010,6 +7049,10 @@ async function registrarPontoFuncionario() {
   }
 
   document.getElementById('pontoPinInput').value = '';
+  if (timeoutLimpezaPinPonto) {
+    clearTimeout(timeoutLimpezaPinPonto);
+    timeoutLimpezaPinPonto = null;
+  }
   await carregarResumoPontoHoje();
   await carregarHorasDashboard();
   if (obterPaginaAtivaAtual() === 'relatorio_ponto') {
