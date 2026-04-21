@@ -5000,17 +5000,31 @@ function limparFormularioFuncionario() {
   document.getElementById('perfilFuncionario').value = '';
   const btnSalvar = document.getElementById('btnSalvarFuncionario');
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
-  if (btnSalvar) btnSalvar.textContent = 'Salvar';
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
 async function editarFuncionario(id) {
-  const { data: funcionario, error } = await sb.from('funcionarios').select('*').eq('id', id).single();
+  let funcionario = null;
+  let error = null;
+
+  const respostaSingle = await sb.from('funcionarios').select('*').eq('id', id).single();
+  funcionario = respostaSingle.data;
+  error = respostaSingle.error;
+
+  // Fallback para evitar quebra quando o .single() falha por ambiguidade/ausência.
+  if (error || !funcionario) {
+    const respostaFallback = await sb.from('funcionarios').select('*').eq('id', id).limit(1);
+    funcionario = (respostaFallback.data || [])[0] || null;
+    error = funcionario ? null : (respostaFallback.error || error);
+  }
+
   if (error || !funcionario) {
     console.error('Erro ao carregar funcionário para edição:', error);
-    setMsg('msgFuncionarios', 'Não foi possível carregar o funcionário.', 'err');
+    setMsg('msgFuncionarios', `Não foi possível carregar o funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}.`, 'err');
     return;
   }
+
   funcionarioEmEdicaoId = id;
   funcionarioNomeOriginalEdicao = funcionario.nome || '';
   funcionarioEmailOriginalEdicao = funcionario.email || '';
@@ -5023,6 +5037,10 @@ async function editarFuncionario(id) {
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
   setMsg('msgFuncionarios', `Editando funcionário: ${funcionario.nome}.`, 'ok');
+
+  window.setTimeout(() => {
+    document.getElementById('pinFuncionario')?.focus();
+  }, 0);
 }
 
 function cancelarEdicaoFuncionario() {
