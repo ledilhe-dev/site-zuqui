@@ -1,8 +1,10 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="app-version" content="1.0">
   <title>CHECK DIARIO</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxOCIgZmlsbD0iIzBBMEYwRCIvPgogIDxyZWN0IHg9IjciIHk9IjciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcng9IjE1IiBmaWxsPSIjMTYzNjI2Ii8+CiAgPHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iMjQiIGhlaWdodD0iMzIiIHJ4PSI1IiBmaWxsPSIjRjRGRkY3Ii8+CiAgPGNpcmNsZSBjeD0iNDQiIGN5PSI0MSIgcj0iMTAiIGZpbGw9IiMyMkM1NUUiLz4KICA8cGF0aCBkPSJNMzkuNSA0MUw0MyA0NC41TDQ5IDM4LjUiIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -621,6 +623,42 @@
       z-index: 2;
       pointer-events: auto;
     }
+    .ponto-feedback-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(8, 12, 10, 0.5);
+      backdrop-filter: blur(3px);
+      z-index: 130;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+    .ponto-feedback-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .ponto-feedback-overlay[hidden] {
+      display: none !important;
+    }
+    .ponto-feedback-card {
+      width: min(760px, calc(100vw - 32px));
+      border-radius: 20px;
+      border: 1px solid rgba(34, 197, 94, 0.55);
+      background: linear-gradient(180deg, rgba(9, 56, 31, 0.97), rgba(6, 36, 20, 0.97));
+      box-shadow: 0 26px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(34, 197, 94, 0.22);
+      padding: 34px 30px;
+      text-align: center;
+      color: #f0fdf4;
+      font-size: clamp(34px, 5.2vw, 64px);
+      line-height: 1.05;
+      font-weight: 900;
+      letter-spacing: -0.9px;
+      text-transform: uppercase;
+    }
 
     .content { flex: 1; padding: 28px; overflow-y: auto; }
     .mobile-nav-overlay {
@@ -691,6 +729,163 @@
     .form-row textarea::placeholder { color: var(--text-dim); }
     .form-row select option { background: #111; }
     .campo-curto { max-width: 100px; flex: 0 0 100px !important; }
+    .form-row input[type="checkbox"] {
+      flex: 0 0 auto !important;
+      min-width: 16px;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      margin: 0;
+    }
+    #horarioTarefa {
+      max-width: 130px;
+      flex: 0 0 130px !important;
+    }
+    .tarefa-form-row {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 8px;
+    }
+    .tarefa-form-row input,
+    .tarefa-form-row select {
+      width: 100%;
+      min-width: 0;
+      height: 42px;
+      min-height: 42px;
+      font-size: 15px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+    }
+    #nomeTarefa {
+      flex: 1 1 190px;
+      min-width: 170px;
+    }
+    #descTarefa {
+      flex: 1.1 1 220px;
+      min-width: 190px;
+    }
+    #horarioTarefa {
+      flex: 0 0 118px !important;
+      min-width: 118px;
+      max-width: 118px;
+    }
+    .tarefa-form-row input:focus,
+    .tarefa-form-row select:focus {
+      border-color: var(--green);
+    }
+    .tarefa-form-acoes {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-end;
+      align-self: end;
+      flex: 0 0 auto;
+      margin-left: 0;
+    }
+    .campo-com-label {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding-top: 16px;
+      min-width: 0;
+      flex: 0 0 220px;
+      max-width: 220px;
+    }
+    .campo-com-label .campo-label {
+      position: absolute;
+      top: 0;
+      left: 2px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      pointer-events: none;
+    }
+    .campo-com-label select {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    #btnSalvarTarefa,
+    #btnCancelarEdicaoTarefa {
+      height: 42px;
+      padding: 0 12px;
+      min-width: 96px;
+      font-size: 16px;
+    }
+    #tarefas .card {
+      margin-bottom: 10px;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+    #msgTarefas {
+      min-height: 0;
+      margin-top: 6px;
+    }
+    .dias-semana-header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .dias-semana-acoes {
+      display: flex;
+      gap: 8px;
+      margin-left: 0;
+      margin-bottom: 0;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+    .dias-semana-linha {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .dias-semana-checks {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      flex: 0 1 auto;
+      min-width: auto;
+    }
+    .dias-semana-linha .dias-semana-acoes {
+      margin-left: 6px;
+      flex-shrink: 0;
+    }
+    .dias-semana-acoes .btn:first-child {
+      border: 1px solid rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.18);
+      color: #ddffe9;
+    }
+    .dias-semana-acoes .btn:first-child:hover {
+      background: rgba(34, 197, 94, 0.28);
+      border-color: rgba(34, 197, 94, 0.55);
+    }
+    .dias-semana-acoes .btn:last-child {
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.18);
+      color: #ffe7b8;
+    }
+    .dias-semana-acoes .btn:last-child:hover {
+      background: rgba(245, 158, 11, 0.28);
+      border-color: rgba(245, 158, 11, 0.55);
+    }
 
     /* ---- BUTTONS ---- */
     .btn {
@@ -730,8 +925,21 @@
     .item:hover { border-color: var(--text-dim); }
     .item-info { flex: 1; min-width: 0; }
     .item-nome { font-size: 14px; font-weight: 500; }
-    .item-detalhe { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-    .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .item-detalhe {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    .item-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
     .checklist-item .item-nome { font-size: 13px; }
     .checklist-item .item-detalhe { font-size: 11px; line-height: 1.25; }
     .checklist-meta { margin: 4px 0 0; padding-left: 18px; color: var(--text-muted); }
@@ -1024,13 +1232,19 @@
 
     /* ---- RESPONSIVE ---- */
     @media (max-width: 900px) {
+      html, body {
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        touch-action: manipulation;
+      }
       .mobile-menu-btn { display: inline-flex; }
       .sidebar {
         position: fixed;
         top: 0;
         left: 0;
         bottom: 0;
-        width: min(320px, 86vw);
+        width: min(340px, 90vw);
         z-index: 90;
         overflow-y: auto;
         transform: translateX(-100%);
@@ -1057,7 +1271,9 @@
         align-items: flex-start;
       }
       .topbar-actions { gap: 8px; }
-      .content { padding: 18px; }
+      .content {
+        padding: max(14px, env(safe-area-inset-top)) 14px max(22px, env(safe-area-inset-bottom));
+      }
       .stats-grid { grid-template-columns: repeat(2,1fr); }
       .form-row { flex-direction: column; }
       .form-row input,
@@ -1067,6 +1283,37 @@
         min-width: 100%;
         max-width: 100%;
         flex: 1 1 100% !important;
+        min-height: 46px;
+        font-size: 16px;
+      }
+      .btn { min-height: 46px; }
+      .btn-sm { min-height: 40px; }
+      .tarefa-form-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tarefa-form-row > * {
+        width: 100%;
+      }
+      .tarefa-form-acoes {
+        justify-content: flex-start;
+      }
+      .dias-semana-linha {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .dias-semana-checks {
+        width: 100%;
+        gap: 10px 14px;
+      }
+      .dias-semana-checks label {
+        min-height: 38px;
+        padding: 4px 2px;
+      }
+      .dias-semana-checks input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
       }
       .item {
         align-items: flex-start;
@@ -1089,11 +1336,14 @@
 
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: 1fr; }
-      .content { padding: 16px; }
+      .content {
+        padding: max(12px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom));
+      }
       .prod-stats { grid-template-columns: 1fr; }
       .topbar {
         flex-direction: column;
         align-items: stretch;
+        gap: 8px;
       }
       .topbar-main { align-items: flex-start; }
       .topbar-actions {
@@ -1101,6 +1351,11 @@
         justify-content: space-between;
         align-items: flex-start;
         flex-wrap: wrap;
+        row-gap: 8px;
+      }
+      .topbar-actions .btn-sm {
+        font-size: 12px;
+        padding: 8px 10px;
       }
       .topbar-user {
         order: -1;
@@ -1118,7 +1373,7 @@
       .notification-panel {
         position: fixed;
         top: auto;
-        bottom: 16px;
+        bottom: max(12px, env(safe-area-inset-bottom));
         left: 16px;
         right: 16px;
         width: auto;
@@ -1164,6 +1419,126 @@
       }
     }
 
+    @media (max-width: 420px) {
+      .content {
+        padding: max(10px, env(safe-area-inset-top)) 10px max(16px, env(safe-area-inset-bottom));
+      }
+      .topbar {
+        padding: 10px 10px;
+        gap: 6px;
+      }
+      .topbar h1 {
+        font-size: 16px;
+      }
+      .topbar .sub {
+        font-size: 12px;
+      }
+      .topbar-actions {
+        gap: 6px;
+      }
+      .topbar-actions .btn-sm,
+      .topbar-actions .notification-btn {
+        min-height: 38px;
+        height: 38px;
+        padding: 7px 9px;
+        font-size: 11px;
+      }
+      .card {
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+      .page-title {
+        font-size: 18px;
+      }
+      .page-sub {
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+      .form-row input,
+      .form-row select,
+      .form-row textarea,
+      .tarefa-form-row input,
+      .tarefa-form-row select {
+        min-height: 44px;
+        font-size: 16px;
+        padding: 10px 12px;
+      }
+      .btn {
+        min-height: 44px;
+        padding: 9px 12px;
+        font-size: 13px;
+      }
+      .btn-sm {
+        min-height: 38px;
+        padding: 7px 10px;
+        font-size: 12px;
+      }
+      .item {
+        padding: 10px 12px;
+      }
+      .item-nome {
+        font-size: 13px;
+      }
+      .item-detalhe {
+        font-size: 12px;
+      }
+      .dias-semana-checks {
+        gap: 8px 10px;
+      }
+      .dias-semana-checks label {
+        font-size: 12px;
+        min-height: 34px;
+      }
+      .dias-semana-checks input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+      }
+      .dias-semana-acoes {
+        width: 100%;
+        gap: 8px;
+      }
+      .dias-semana-acoes .btn {
+        flex: 1 1 auto;
+        width: auto;
+      }
+      .prod-pie {
+        width: 150px;
+        height: 150px;
+      }
+      .prod-pie-center {
+        width: 96px;
+        height: 96px;
+      }
+      .prod-pie-value {
+        font-size: 24px;
+      }
+      .notification-panel {
+        left: 10px;
+        right: 10px;
+        bottom: max(10px, env(safe-area-inset-bottom));
+      }
+      .overdue-alert-card {
+        padding: 14px;
+        border-radius: 16px;
+      }
+      .overdue-alert-title {
+        font-size: 20px;
+      }
+      .overdue-alert-task {
+        font-size: 24px;
+      }
+      .overdue-alert-funcionario {
+        font-size: 22px;
+      }
+      .overdue-alert-horario {
+        font-size: 16px;
+      }
+    }
+
     /* SCROLLBAR */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -1199,11 +1574,11 @@
     </div>
     <div class="nav-group featured">
       <div class="nav-label">Hoje</div>
-      <button class="nav-btn ativo" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
-        <span class="icon">DB</span>
+      <button class="nav-btn" data-page="bater_ponto" onclick="abrirPagina('bater_ponto', this)">
+        <span class="icon">PT</span>
         <span class="nav-copy">
-          <span class="nav-title">Dashboard</span>
-          <span class="nav-hint">Resumo rapido da operacao</span>
+          <span class="nav-title">Bater ponto</span>
+          <span class="nav-hint">Registro de jornada</span>
         </span>
       </button>
       <button class="nav-btn" data-page="checklists" onclick="abrirPagina('checklists', this)">
@@ -1213,18 +1588,25 @@
           <span class="nav-hint">Fila pronta para iniciar</span>
         </span>
       </button>
-      <button class="nav-btn" data-page="tarefas" onclick="abrirPagina('tarefas', this)">
-        <span class="icon">TF</span>
-        <span class="nav-copy">
-          <span class="nav-title">Tarefas</span>
-          <span class="nav-hint">Rotina e lancamentos</span>
-        </span>
-      </button>
       <button class="nav-btn" data-page="execucoes" onclick="abrirPagina('execucoes', this)">
         <span class="icon">EX</span>
         <span class="nav-copy">
           <span class="nav-title">Em andamento</span>
           <span class="nav-hint">Acompanhar e finalizar</span>
+        </span>
+      </button>
+      <button class="nav-btn ativo" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
+        <span class="icon">DB</span>
+        <span class="nav-copy">
+          <span class="nav-title">Dashboard</span>
+          <span class="nav-hint">Resumo rapido da operacao</span>
+        </span>
+      </button>
+      <button class="nav-btn" data-page="tarefas" onclick="abrirPagina('tarefas', this)">
+        <span class="icon">TF</span>
+        <span class="nav-copy">
+          <span class="nav-title">Cadastro de Checklist</span>
+          <span class="nav-hint">Rotina e lancamentos</span>
         </span>
       </button>
     </div>
@@ -1270,6 +1652,13 @@
         <span class="nav-copy">
           <span class="nav-title">Perfis</span>
           <span class="nav-hint">Permissoes por funcao</span>
+        </span>
+      </button>
+      <button class="nav-btn" data-page="relatorio_ponto" onclick="abrirPagina('relatorio_ponto', this)">
+        <span class="icon">RP</span>
+        <span class="nav-copy">
+          <span class="nav-title">Relatório ponto</span>
+          <span class="nav-hint">Histórico de jornada</span>
         </span>
       </button>
     </div>
@@ -1572,36 +1961,45 @@
 
       <!--  TAREFAS  -->
       <section id="tarefas" class="pagina">
-        <div class="page-title">Tarefas</div>
-        <div class="page-sub">Tarefas disponíveis do café</div>
+        <div class="page-title">Cadastro de Checklist</div>
+        <div class="page-sub">Cadastre modelos e lance checklists manualmente</div>
 
         <div class="card">
           <div class="card-title">Nova tarefa</div>
-          <div class="form-row" style="margin-bottom:10px">
+          <div class="tarefa-form-row">
             <input id="nomeTarefa" type="text" placeholder="Nome da tarefa">
-            <input id="descTarefa" type="text" placeholder="Descrição da tarefa">
+            <input id="descTarefa" type="text" placeholder="Descrição da tarefa" autocomplete="off" autocorrect="off" spellcheck="false">
             <input id="horarioTarefa" class="campo-curto" type="time" placeholder="Horário">
-            <select id="funcionarioTarefa">
-              <option value="">- Selecione o funcionário -</option>
-            </select>
-            <button class="btn btn-green" id="btnSalvarTarefa" onclick="criarTarefa()">Cadastrar</button>
-            <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
+            <div class="campo-com-label">
+              <label class="campo-label" for="funcionarioTarefa">Funcionário</label>
+              <select id="funcionarioTarefa">
+                <option value=""></option>
+              </select>
+            </div>
+            <div class="tarefa-form-acoes">
+              <button class="btn btn-green" id="btnSalvarTarefa" onclick="criarTarefa()">Salvar</button>
+              <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
+            </div>
           </div>
 
           <div style="margin-top:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)">
-            <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Dias da semana</div>
-            <div class="form-row" style="gap:12px;margin-bottom:10px">
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSeg" onchange="atualizarDiasSelecionados()"> Seg</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasTer" onchange="atualizarDiasSelecionados()"> Ter</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasQua" onchange="atualizarDiasSelecionados()"> Qua</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasQui" onchange="atualizarDiasSelecionados()"> Qui</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSex" onchange="atualizarDiasSelecionados()"> Sex</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSab" onchange="atualizarDiasSelecionados()"> Sab</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasDom" onchange="atualizarDiasSelecionados()"> Dom</label>
+            <div class="dias-semana-header">
+              <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Dias da semana</div>
             </div>
-            <div class="form-row" style="margin-bottom:8px">
-              <button class="btn btn-ghost btn-sm" type="button" onclick="marcarTodosDias()">Marcar todos</button>
-              <button class="btn btn-ghost btn-sm" type="button" onclick="limparDias()">Limpar dias</button>
+            <div class="dias-semana-linha">
+              <div class="dias-semana-checks">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSeg" onchange="atualizarDiasSelecionados()"> Seg</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasTer" onchange="atualizarDiasSelecionados()"> Ter</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasQua" onchange="atualizarDiasSelecionados()"> Qua</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasQui" onchange="atualizarDiasSelecionados()"> Qui</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSex" onchange="atualizarDiasSelecionados()"> Sex</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSab" onchange="atualizarDiasSelecionados()"> Sab</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasDom" onchange="atualizarDiasSelecionados()"> Dom</label>
+              </div>
+              <div class="dias-semana-acoes">
+                <button class="btn btn-ghost btn-sm" type="button" onclick="marcarTodosDias()">Marcar todos</button>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="limparDias()">Limpar dias</button>
+              </div>
             </div>
             <div id="diasSelecionados" style="font-size:12px;color:var(--text-muted)">Dias selecionados: Nenhum dia selecionado</div>
           </div>
@@ -1659,6 +2057,128 @@
         </div>
       </section>
 
+      <!--  BATER PONTO  -->
+      <section id="bater_ponto" class="pagina">
+        <div class="page-title">Bater ponto</div>
+        <div class="page-sub">Registre entrada, intervalo, retorno e saída com PIN do funcionário</div>
+
+        <div class="card">
+          <div class="card-title">Registrar ponto</div>
+          <div class="form-row">
+            <input id="pontoPinInput" class="campo-curto" type="password" placeholder="PIN" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }">
+            <button class="btn btn-green" type="button" onclick="registrarPontoFuncionario()">Registrar ponto</button>
+          </div>
+          <div class="msg" id="msgPonto"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Horas trabalhadas por colaborador</div>
+          <div class="dashboard-period-tabs">
+            <button class="dashboard-period-btn active" data-horas-periodo="dia" onclick="trocarPeriodoHorasDashboard('dia', this)">24h</button>
+            <button class="dashboard-period-btn" data-horas-periodo="semana" onclick="trocarPeriodoHorasDashboard('semana', this)">Semana</button>
+            <button class="dashboard-period-btn" data-horas-periodo="mes" onclick="trocarPeriodoHorasDashboard('mes', this)">Mês</button>
+            <button class="dashboard-period-btn" data-horas-periodo="ano" onclick="trocarPeriodoHorasDashboard('ano', this)">Ano</button>
+          </div>
+          <div id="dash-horas-msg" class="msg" style="margin-top:0"></div>
+          <div class="dashboard-prod-grid">
+            <div class="prod-pie" id="horasPieDashboard">
+              <div class="prod-pie-center">
+                <div class="prod-pie-value" id="horasPieValorDashboard">0h</div>
+                <div class="prod-pie-label" id="horasPieLabelDashboard">Total</div>
+              </div>
+            </div>
+            <div>
+              <div class="prod-stats">
+                <div class="prod-stat">
+                  <div class="prod-stat-label">Horas no período</div>
+                  <div class="prod-stat-value" id="horasTotalDashboard">00:00</div>
+                </div>
+                <div class="prod-stat">
+                  <div class="prod-stat-label">Colaboradores com horas</div>
+                  <div class="prod-stat-value" id="horasColaboradoresDashboard">0</div>
+                </div>
+              </div>
+              <div class="prod-period-info" id="horasInfoDashboard">Período: hoje.</div>
+              <div class="prod-func-list">
+                <div class="prod-func-title">Participação das horas por colaborador</div>
+                <div id="horasFuncionariosListaDashboard"><div class="empty">Sem dados para o período.</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Histórico de hoje</div>
+          <div id="pontoResumoHoje"><div class="empty">Carregando histórico de pontos...</div></div>
+        </div>
+      </section>
+
+      <!--  RELATÓRIO PONTO  -->
+      <section id="relatorio_ponto" class="pagina">
+        <div class="page-title">Relatório ponto</div>
+        <div class="page-sub">Acompanhe a jornada por funcionário, data e horário</div>
+
+        <div class="card">
+          <div class="card-title">Dashboard de horas</div>
+          <div class="dashboard-period-tabs">
+            <button class="dashboard-period-btn active" data-rel-ponto-periodo="dia" onclick="trocarPeriodoRelatorioPonto('dia', this)">Dia</button>
+            <button class="dashboard-period-btn" data-rel-ponto-periodo="semana" onclick="trocarPeriodoRelatorioPonto('semana', this)">Semana</button>
+            <button class="dashboard-period-btn" data-rel-ponto-periodo="mes" onclick="trocarPeriodoRelatorioPonto('mes', this)">Mês</button>
+            <button class="dashboard-period-btn" data-rel-ponto-periodo="ano" onclick="trocarPeriodoRelatorioPonto('ano', this)">Ano</button>
+          </div>
+          <div class="dashboard-prod-grid">
+            <div class="prod-pie" id="horasPieRelatorio">
+              <div class="prod-pie-center">
+                <div class="prod-pie-value" id="horasPieValorRelatorio">0h</div>
+                <div class="prod-pie-label" id="horasPieLabelRelatorio">Total</div>
+              </div>
+            </div>
+            <div>
+              <div class="prod-stats">
+                <div class="prod-stat">
+                  <div class="prod-stat-label">Total horas filtradas</div>
+                  <div class="prod-stat-value" id="horasTotalRelatorio">00:00</div>
+                </div>
+                <div class="prod-stat">
+                  <div class="prod-stat-label">Média por colaborador</div>
+                  <div class="prod-stat-value" id="horasMediaRelatorio">00:00</div>
+                </div>
+                <div class="prod-stat">
+                  <div class="prod-stat-label">Colaboradores no filtro</div>
+                  <div class="prod-stat-value" id="horasColaboradoresRelatorio">0</div>
+                </div>
+              </div>
+              <div class="prod-period-info" id="horasInfoRelatorio">Período: hoje.</div>
+              <div class="prod-func-list">
+                <div class="prod-func-title">Participação das horas no filtro</div>
+                <div id="horasFuncionariosListaRelatorio"><div class="empty">Sem dados para o período.</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Filtros de ponto</div>
+          <div class="form-row">
+            <select id="filtroPontoFuncionario">
+              <option value="">- Todos os funcionários -</option>
+            </select>
+            <input id="filtroPontoDataInicio" type="date">
+            <input id="filtroPontoDataFim" type="date">
+            <input id="filtroPontoHoraInicio" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora inicial">
+            <input id="filtroPontoHoraFim" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora final">
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioPonto()">Filtrar</button>
+            <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioPonto()">Hoje</button>
+          </div>
+          <div class="msg" id="msgRelatorioPonto"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Registros de ponto</div>
+          <div id="listaRelatorioPonto"><div class="empty">Carregando⬦</div></div>
+        </div>
+      </section>
+
       <!--  PORTAL DO FUNCIONÁRIO  -->
       <section id="portal" class="pagina">
         <div class="page-title">Portal do Funcionário</div>
@@ -1713,6 +2233,10 @@
     </div>
   </div>
 
+  <div class="ponto-feedback-overlay" id="pontoFeedbackOverlay" hidden>
+    <div class="ponto-feedback-card" id="pontoFeedbackText">PONTO REGISTRADO FUNCIONÁRIO</div>
+  </div>
+
 <!--  MODAL EXECU-!ÒO  -->
 <div class="overlay" id="modalOverlay">
   <div class="modal">
@@ -1757,6 +2281,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
+const APP_VERSION = '1.0';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -1804,11 +2329,15 @@ let ultimosLembretesExecucaoEm = {};
 let ultimosLembretesChecklistEm = {};
 let execucoesPaginaAtual = 1;
 let dashboardProdutividadePeriodo = 'dia';
+let dashboardHorasPeriodo = 'dia';
+let relatorioPontoPeriodo = 'dia';
+let relatorioPontoFuncionarioCache = {};
+let timeoutAvisoPontoRegistrado = null;
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
 const INTERVALO_LEMBRETE_EXECUCAO_MS = 15 * 60 * 1000;
-const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = false;
+const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
 
 function redefinirEstadoAvisoCentralTarefas() {
   avisoCentralTarefasFechado = false;
@@ -1926,13 +2455,15 @@ function usuarioPodeVerNotificacaoExecucao() {
 const PERFIL_PERMISSOES = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'checklists', label: 'Checklists' },
+  { key: 'bater_ponto', label: 'Bater ponto' },
+  { key: 'relatorio_ponto', label: 'Relatório de ponto' },
   { key: 'itens', label: 'Itens' },
   { key: 'funcionarios', label: 'Funcionarios' },
   { key: 'solicitacoes', label: 'Solicitacoes de acesso' },
   { key: 'emails', label: 'Envio de e-mail' },
   { key: 'configuracoes', label: 'Informacoes da loja' },
   { key: 'perfis', label: 'Perfis' },
-  { key: 'tarefas', label: 'Tarefas' },
+  { key: 'tarefas', label: 'Cadastro de Checklist' },
   { key: 'execucoes', label: 'Em andamento' },
   { key: 'portal', label: 'Portal do funcionario' },
   { key: 'nova_execucao_manual', label: 'Nova execucao manual' },
@@ -1948,6 +2479,8 @@ function obterPermissoesBase(codigo) {
   return {
     dashboard: false,
     checklists: true,
+    bater_ponto: true,
+    relatorio_ponto: false,
     itens: false,
     funcionarios: false,
     solicitacoes: false,
@@ -2008,13 +2541,15 @@ function restaurarSessaoPortal() {
 const topTitles = {
   dashboard: ['Dashboard', 'Visao geral do sistema'],
   checklists: ['Checklists', 'Modelos de checklist'],
+  bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
+  relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   itens: ['Itens do Checklist', 'Itens por modelo'],
   funcionarios: ['Funcionarios', 'Gestao de equipe'],
   solicitacoes: ['Solicitacoes de acesso', 'Aprove ou rejeite pedidos de entrada'],
   emails: ['Cadastro de envio de e-mail', 'Destinatarios para notificacoes'],
   configuracoes: ['Informacoes da Loja', 'Dados basicos e lembretes da operacao'],
   perfis: ['Perfis', 'Permissoes de acesso do sistema'],
-  tarefas: ['Tarefas', 'Gerenciamento (Admin)'],
+  tarefas: ['Cadastro de Checklist', 'Gerenciamento (Admin)'],
   execucoes: ['Em Andamento', 'Pause, retome e finalize tarefas'],
   portal: ['Portal do Funcionario', 'Suas tarefas do dia'],
 };
@@ -2031,6 +2566,14 @@ function toggleMobileMenu() {
   document.body.classList.toggle('mobile-nav-open', aberto);
 }
 
+function forcarCampoObservacaoTarefaEmBranco() {
+  const campo = document.getElementById('descTarefa');
+  if (!campo) return;
+  if (!tarefaEmEdicaoId) {
+    campo.value = '';
+  }
+}
+
 function abrirPagina(id, botao) {
   if (usuarioSistemaLogado && !usuarioPodeAcessar(id)) return;
   closeMobileMenu();
@@ -2044,13 +2587,20 @@ function abrirPagina(id, botao) {
   document.getElementById('topbar-sub').textContent = s;
   if (id === 'dashboard') carregarDashboard();
   if (id === 'checklists') { carregarChecklists(); }
+  if (id === 'bater_ponto') { carregarBaterPonto(); }
+  if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
   if (id === 'itens') { carregarSelectChecklists(); document.getElementById('listaItens').innerHTML = '<div class="empty">Selecione um checklist acima</div>'; }
   if (id === 'funcionarios') { carregarFuncionarios(); carregarSelectPerfisFuncionario(); }
   if (id === 'solicitacoes') { carregarSolicitacoesAcesso(); }
   if (id === 'emails') { carregarDestinatariosEmail(); }
   if (id === 'configuracoes') { carregarConfiguracoesLoja(); }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
-  if (id === 'tarefas') { carregarSelectFuncionariosTarefa(); carregarTarefas(); carregarChecklistsTarefas(); }
+  if (id === 'tarefas') {
+    carregarSelectFuncionariosTarefa();
+    carregarTarefas();
+    carregarChecklistsTarefas();
+    forcarCampoObservacaoTarefaEmBranco();
+  }
   if (id === 'execucoes') { resetFiltroData(false); carregarSelectExecucao(); carregarExecucoes(); }
   if (id === 'portal') { carregarSelectFuncionariosPortal(); restaurarSessaoPortal(); }
   carregarNotificacoes();
@@ -2132,6 +2682,8 @@ async function atualizarPaginaAtivaAutomaticamente() {
     const paginaAtiva = obterPaginaAtivaAtual();
     if (paginaAtiva === 'dashboard') await carregarDashboard();
     if (paginaAtiva === 'checklists') await carregarChecklists();
+    if (paginaAtiva === 'bater_ponto') await carregarBaterPonto();
+    if (paginaAtiva === 'relatorio_ponto') await carregarRelatorioPonto();
     if (paginaAtiva === 'itens' && document.getElementById('checklistSelect')?.value) {
       await carregarItens();
     }
@@ -2194,6 +2746,26 @@ function setMsg(id, txt, tipo) {
   if (!el) return;
   el.textContent = txt;
   el.className = 'msg' + (tipo ? ' ' + tipo : '');
+}
+
+function exibirAvisoPontoRegistrado(nomeFuncionario = '') {
+  const overlay = document.getElementById('pontoFeedbackOverlay');
+  const texto = document.getElementById('pontoFeedbackText');
+  if (!overlay || !texto) return;
+
+  const nome = String(nomeFuncionario || 'FUNCIONÁRIO').trim().toUpperCase();
+  texto.textContent = `PONTO REGISTRADO ${nome}`;
+  overlay.hidden = false;
+  overlay.classList.add('show');
+
+  if (timeoutAvisoPontoRegistrado) {
+    clearTimeout(timeoutAvisoPontoRegistrado);
+  }
+
+  timeoutAvisoPontoRegistrado = setTimeout(() => {
+    overlay.classList.remove('show');
+    overlay.hidden = true;
+  }, 3000);
 }
 
 function nomePareceCompleto(nome) {
@@ -2457,6 +3029,14 @@ function isMissingStoreSettingsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.configuracoes_loja"'));
 }
 
+function isMissingTimeClockTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.ponto_registros"'));
+}
+
+function isMissingTimeClockIntervalsTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.ponto_intervalos"'));
+}
+
 function obterPermissoesUsuario() {
   if (!usuarioSistemaLogado) return {};
   if (usuarioSistemaLogado.tipo === 'admin') {
@@ -2474,6 +3054,12 @@ function obterPermissoesUsuario() {
   if (codigo === 'FUNCIONARIO' || codigo === 'GESTOR') {
     permissoes.execucoes = true;
     permissoes.ver_todas_execucoes = true;
+    permissoes.bater_ponto = true;
+    permissoes.relatorio_ponto = false;
+  }
+  if (codigo === 'MASTER' || codigo === 'ADM') {
+    permissoes.bater_ponto = true;
+    permissoes.relatorio_ponto = true;
   }
   return permissoes;
 }
@@ -2548,7 +3134,7 @@ async function countTable(tableName) {
 }
 
 function hoje() {
-  return new Date().toISOString().split('T')[0];
+  return dataLocalISO();
 }
 
 function dataLocalISO(valor = new Date()) {
@@ -2560,9 +3146,10 @@ function dataLocalISO(valor = new Date()) {
   return `${ano}-${mes}-${dia}`;
 }
 
-function checklistFoiLancadoHoje(lancadoEm) {
-  if (!lancadoEm) return true;
-  return dataLocalISO(lancadoEm) === dataLocalISO();
+function checklistFoiLancadoHoje(lancadoEm, criadoEm = null) {
+  const referencia = lancadoEm || criadoEm;
+  if (!referencia) return false;
+  return dataLocalISO(referencia) === dataLocalISO();
 }
 
 function agoraHoraMinuto() {
@@ -2656,15 +3243,21 @@ async function validarPinFuncionario(funcionarioId, pin) {
 async function obterFuncionarioAtivoPorPin(pin) {
   if (!pin) return null;
 
-  const { data: funcionario, error } = await sb
+  const pinNormalizado = String(pin).trim();
+
+  const { data, error } = await sb
     .from('funcionarios')
     .select('id, nome, pin, ativo')
-    .eq('ativo', true)
-    .eq('pin', pin)
-    .maybeSingle();
+    .eq('ativo', true);
 
-  if (error || !funcionario) return null;
+  if (error) return null;
+  const funcionario = (data || []).find(item => String(item.pin || '').trim() === pinNormalizado) || null;
   return funcionario;
+}
+
+function mensagemErroSupabase(error, fallback = 'Erro inesperado.') {
+  if (!error) return fallback;
+  return error.message || error.details || fallback;
 }
 
 async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao }) {
@@ -2771,10 +3364,9 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
   if (lancamentoAutomaticoEmAndamento) return;
 
   const horarioLancamento = String(configuracaoLoja?.horario_lancamento_checklist || '').trim();
-  // Sem horário configurado, não gera lançamentos automáticos.
-  // Nesse cenário, o lançamento deve acontecer apenas pelo botão "Lançar tarefa".
-  if (!horarioLancamento) return;
-  if (!horaJaPassou(horarioLancamento)) return;
+  // Se houver horário configurado, respeita o horário.
+  // Se não houver, permite gerar automaticamente ao acessar o sistema no dia.
+  if (horarioLancamento && !horaJaPassou(horarioLancamento)) return;
 
   lancamentoAutomaticoEmAndamento = true;
   try {
@@ -2786,7 +3378,7 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
         .eq('ativo', true),
       sb
         .from('checklist_lancamentos')
-        .select('id, tarefa_id, funcionario_id, lancado_em, status'),
+        .select('id, tarefa_id, funcionario_id, lancado_em, created_at, status'),
       sb
         .from('checklist_execucoes')
         .select('id, tarefa_id, funcionario_id, data_execucao')
@@ -2808,7 +3400,7 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
     const chavesExistentes = new Set();
 
     (lancamentosResultado.data || []).forEach(item => {
-      if (!checklistFoiLancadoHoje(item.lancado_em)) return;
+      if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return;
       chavesExistentes.add(criarChaveAgendaDiaria(item.tarefa_id, item.funcionario_id, dataReferencia));
     });
 
@@ -2827,6 +3419,7 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
         descricao: item.descricao || null,
         horario_limite: item.horario_limite || null,
         dias_semana: item.dias_semana || 'todos',
+        lancado_em: new Date().toISOString(),
         status: 'pendente',
       }));
 
@@ -3607,7 +4200,7 @@ async function carregarNotificacoes() {
 
     let lancamentosQuery = sb
       .from('checklist_lancamentos')
-      .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em')
+      .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at')
       .eq('status', 'pendente');
 
     let execucoesPendentesQuery = sb
@@ -3650,7 +4243,7 @@ async function carregarNotificacoes() {
     }
 
     const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
-      return checklistFoiLancadoHoje(item.lancado_em)
+      return checklistFoiLancadoHoje(item.lancado_em, item.created_at)
         && tarefaDisponivelHoje(item.dias_semana)
         && obterContextoPrazo(item.horario_limite).ativo;
     });
@@ -3756,10 +4349,10 @@ async function carregarNotificacoes() {
     if (horarioLembrete && horaJaPassou(horarioLembrete)) {
       const { data: pendentesChecklist } = await sb
         .from('checklist_lancamentos')
-        .select('id, nome, dias_semana, status, lancado_em')
+        .select('id, nome, dias_semana, status, lancado_em, created_at')
         .eq('status', 'pendente');
 
-      const pendentesHoje = (pendentesChecklist || []).filter(c => checklistFoiLancadoHoje(c.lancado_em) && tarefaDisponivelHoje(c.dias_semana));
+      const pendentesHoje = (pendentesChecklist || []).filter(c => checklistFoiLancadoHoje(c.lancado_em, c.created_at) && tarefaDisponivelHoje(c.dias_semana));
       if (pendentesHoje.length && usuarioPodeVerNotificacaoChecklist()) {
         itens.push({
           chave: criarChaveAlerta('lembrete_checklist', `pendentes-${pendentesHoje.length}`),
@@ -3817,6 +4410,7 @@ async function carregarDashboard() {
   document.getElementById('stat-execucoes-hoje').textContent = cExec ?? '-';
   document.getElementById('stat-tarefas').textContent = cTar ?? '-';
   await carregarProdutividadeDashboard();
+  await carregarHorasDashboard();
 
   // Execuções recentes
   const { data, error } = await sb
@@ -4115,7 +4709,7 @@ async function carregarChecklists() {
   }
 
   let rows = data || [];
-  rows = rows.filter(t => checklistFoiLancadoHoje(t.lancado_em) && tarefaDisponivelHoje(t.dias_semana));
+  rows = rows.filter(t => checklistFoiLancadoHoje(t.lancado_em, t.created_at) && tarefaDisponivelHoje(t.dias_semana));
 
   const funcionarioIds = [...new Set(rows.map(t => t.funcionario_id).filter(Boolean))];
   let funcionariosMap = {};
@@ -4406,7 +5000,7 @@ function limparFormularioFuncionario() {
   document.getElementById('perfilFuncionario').value = '';
   const btnSalvar = document.getElementById('btnSalvarFuncionario');
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
-  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -4778,7 +5372,7 @@ function limparFormularioDestinatarioEmail() {
   document.getElementById('emailDestinatarioEmail').value = '';
   const btnSalvar = document.getElementById('btnSalvarDestinatarioEmail');
   const btnCancelar = document.getElementById('btnCancelarEdicaoDestinatarioEmail');
-  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -5080,7 +5674,7 @@ function preencherDiasSelecionados(diasStr) {
 // 
 async function carregarSelectFuncionariosTarefa() {
   const sel = document.getElementById('funcionarioTarefa');
-  sel.innerHTML = '<option value="">- Selecione o funcionário -</option>';
+  sel.innerHTML = '<option value=""></option>';
   const { data } = await sb.from('funcionarios').select('*').eq('ativo', true).order('nome');
   (data || []).forEach(f => {
     const o = document.createElement('option');
@@ -5236,7 +5830,7 @@ function limparFormularioTarefa() {
   limparDias();
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
-  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -5298,6 +5892,7 @@ async function lancarTarefa(id) {
     descricao: tarefa.descricao || null,
     horario_limite: tarefa.horario_limite || null,
     dias_semana: tarefa.dias_semana || 'todos',
+    lancado_em: new Date().toISOString(),
     status: 'pendente'
   }]);
 
@@ -5587,7 +6182,7 @@ async function carregarTarefasPortal() {
     .order('horario_limite', { ascending: true })
     .order('nome', { ascending: true });
 
-  const tarefasHoje = (tarefas || []).filter(t => checklistFoiLancadoHoje(t.lancado_em) && tarefaDisponivelHoje(t.dias_semana));
+  const tarefasHoje = (tarefas || []).filter(t => checklistFoiLancadoHoje(t.lancado_em, t.created_at) && tarefaDisponivelHoje(t.dias_semana));
 
   const funcionarioIds = [...new Set(tarefasHoje.map(t => t.funcionario_id).filter(Boolean).map(item => String(item)))];
   let funcionariosMap = {};
@@ -5731,6 +6326,848 @@ async function iniciarTarefaPortal(lancamentoId, tarefaNome) {
   alert(`Tarefa "${tarefaNome}" iniciada por ${confirmacao.nomeFuncionario}!`);
   await carregarTarefasPortal();
   abrirModal(exec.id);
+}
+
+//
+// PONTO ELETRÔNICO
+//
+async function carregarFuncionariosAtivosPonto() {
+  const { data, error } = await sb
+    .from('funcionarios')
+    .select('id, nome')
+    .eq('ativo', true)
+    .order('nome');
+
+  if (error) throw error;
+  const funcionarios = data || [];
+  relatorioPontoFuncionarioCache = Object.fromEntries(funcionarios.map(item => [String(item.id), item.nome]));
+  return funcionarios;
+}
+
+function preencherSelectFuncionariosPonto(selectEl, funcionarios = [], {
+  placeholder = '- Selecione o funcionário -',
+  incluirTodos = false,
+} = {}) {
+  if (!selectEl) return;
+  const valorAtual = String(selectEl.value || '');
+  selectEl.innerHTML = '';
+
+  const opcaoInicial = document.createElement('option');
+  opcaoInicial.value = '';
+  opcaoInicial.textContent = incluirTodos ? '- Todos os funcionários -' : placeholder;
+  selectEl.appendChild(opcaoInicial);
+
+  funcionarios.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item.id;
+    opt.textContent = item.nome;
+    selectEl.appendChild(opt);
+  });
+
+  const existeValor = funcionarios.some(item => String(item.id) === valorAtual);
+  selectEl.value = existeValor ? valorAtual : '';
+}
+
+async function carregarSelectFuncionariosPonto() {
+  const [selPonto, selRelatorio] = [
+    document.getElementById('pontoFuncionarioSelect'),
+    document.getElementById('filtroPontoFuncionario'),
+  ];
+
+  try {
+    const funcionarios = await carregarFuncionariosAtivosPonto();
+    preencherSelectFuncionariosPonto(selPonto, funcionarios, { placeholder: '- Selecione o funcionário -' });
+    preencherSelectFuncionariosPonto(selRelatorio, funcionarios, { incluirTodos: true });
+
+    if (selPonto && !selPonto.value && usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id) {
+      selPonto.value = String(usuarioSistemaLogado.id);
+    }
+  } catch (error) {
+    console.warn('Não foi possível carregar os funcionários do ponto:', error);
+  }
+}
+
+function obterIntervaloDatasPorPeriodo(periodo = 'dia', referencia = new Date()) {
+  const base = referencia instanceof Date ? referencia : new Date(referencia);
+  const hojeLocal = dataLocalISO(base);
+
+  if (periodo === 'ano') {
+    const inicio = dataLocalISO(new Date(base.getFullYear(), 0, 1));
+    const fim = dataLocalISO(new Date(base.getFullYear(), 11, 31));
+    return { inicio, fim, info: `Período: ${inicio} até ${fim}.` };
+  }
+  if (periodo === 'mes') {
+    const inicio = dataLocalISO(new Date(base.getFullYear(), base.getMonth(), 1));
+    const fim = dataLocalISO(new Date(base.getFullYear(), base.getMonth() + 1, 0));
+    return { inicio, fim, info: `Período: ${inicio} até ${fim}.` };
+  }
+  if (periodo === 'semana') {
+    const diaSemana = base.getDay();
+    const deslocamentoSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
+    const inicioData = new Date(base);
+    inicioData.setDate(base.getDate() + deslocamentoSegunda);
+    const fimData = new Date(inicioData);
+    fimData.setDate(inicioData.getDate() + 6);
+    const inicio = dataLocalISO(inicioData);
+    const fim = dataLocalISO(fimData);
+    return { inicio, fim, info: `Período: ${inicio} até ${fim}.` };
+  }
+  return { inicio: hojeLocal, fim: hojeLocal, info: `Período: ${hojeLocal}.` };
+}
+
+async function carregarRegistrosPontoComIntervalos({ inicio = '', fim = '', funcionarioId = '' } = {}) {
+  let query = sb
+    .from('ponto_registros')
+    .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, funcionarios(nome)')
+    .order('data_ponto', { ascending: false })
+    .order('entrada_em', { ascending: false });
+
+  if (inicio) query = query.gte('data_ponto', inicio);
+  if (fim) query = query.lte('data_ponto', fim);
+  if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  let rows = data || [];
+  const ids = rows.map(item => item.id).filter(Boolean);
+  const intervalosPorRegistro = {};
+
+  if (ids.length) {
+    const { data: intervalosData, error: intervalosError } = await sb
+      .from('ponto_intervalos')
+      .select('id, ponto_registro_id, ordem, inicio_em, retorno_em')
+      .in('ponto_registro_id', ids)
+      .order('ordem', { ascending: true });
+
+    if (intervalosError && !isMissingTimeClockIntervalsTableError(intervalosError)) throw intervalosError;
+
+    (intervalosData || []).forEach(item => {
+      const chave = String(item.ponto_registro_id);
+      if (!intervalosPorRegistro[chave]) intervalosPorRegistro[chave] = [];
+      intervalosPorRegistro[chave].push(item);
+    });
+  }
+
+  return rows.map(item => ({
+    ...item,
+    intervalos_ponto: intervalosPorRegistro[String(item.id)] || [],
+  }));
+}
+
+function calcularResumoHorasPorFuncionario(rows = []) {
+  const mapa = {};
+  rows.forEach(item => {
+    const resumo = obterResumoJornadaPonto(item, item.intervalos_ponto || []);
+    const chave = String(item.funcionario_id || 'sem-funcionario');
+    if (!mapa[chave]) {
+      mapa[chave] = {
+        funcionarioId: chave,
+        nome: item.funcionarios?.nome || relatorioPontoFuncionarioCache[chave] || (chave === 'sem-funcionario' ? 'Não identificado' : 'Funcionário'),
+        minutos: 0,
+      };
+    }
+    mapa[chave].minutos += resumo.totalMinutos || 0;
+  });
+
+  const lista = Object.values(mapa)
+    .filter(item => item.minutos > 0)
+    .sort((a, b) => b.minutos - a.minutos);
+  const totalMinutos = lista.reduce((acc, item) => acc + item.minutos, 0);
+
+  const participacao = distribuirPercentuaisFuncionarios(
+    lista.map(item => ({ nome: item.nome, quantidade: item.minutos })),
+    totalMinutos,
+  ).map((item, idx) => ({
+    ...item,
+    minutos: lista[idx]?.minutos || 0,
+  }));
+
+  return { totalMinutos, participacao, colaboradores: lista.length };
+}
+
+function renderizarParticipacaoHoras({ listId, pieId, valueId, labelId, infoId, participacao = [], totalMinutos = 0, info = 'Período atual.' }) {
+  const pie = document.getElementById(pieId);
+  const value = document.getElementById(valueId);
+  const label = document.getElementById(labelId);
+  const infoEl = document.getElementById(infoId);
+  const listaEl = document.getElementById(listId);
+
+  if (infoEl) infoEl.textContent = info;
+
+  if (!participacao.length || totalMinutos <= 0) {
+    if (pie) pie.style.background = 'conic-gradient(rgba(107,143,112,0.25) 0deg 360deg)';
+    if (value) value.textContent = '0h';
+    if (label) label.textContent = 'Sem horas';
+    if (listaEl) listaEl.innerHTML = '<div class="empty">Sem dados para o período.</div>';
+    return;
+  }
+
+  let acumulado = 0;
+  const faixas = participacao.map((item, idx) => {
+    const inicio = acumulado;
+    acumulado += item.percentualPizza;
+    const fim = idx === participacao.length - 1 ? 100 : acumulado;
+    return `${item.cor} ${inicio}% ${fim}%`;
+  });
+
+  if (pie) pie.style.background = `conic-gradient(${faixas.join(', ')})`;
+  if (value) value.textContent = `${Math.floor(totalMinutos / 60)}h`;
+  if (label) label.textContent = 'Total';
+
+  if (listaEl) {
+    listaEl.innerHTML = participacao.map(item => `
+      <div class="prod-func-row">
+        <div class="prod-func-left">
+          <span class="prod-func-dot" style="background:${item.cor || 'var(--green)'}"></span>
+          <div class="prod-func-name">${item.nome}</div>
+        </div>
+        <div class="prod-func-pct">${formatarDuracaoMinutos(item.minutos)} · ${item.percentual}%</div>
+      </div>
+    `).join('');
+  }
+}
+
+function trocarPeriodoHorasDashboard(periodo, botao = null) {
+  dashboardHorasPeriodo = periodo;
+  document.querySelectorAll('.dashboard-period-btn[data-horas-periodo]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.horasPeriodo === periodo);
+  });
+  if (botao) botao.classList.add('active');
+  carregarHorasDashboard();
+}
+
+async function carregarHorasDashboard() {
+  const msgId = 'dash-horas-msg';
+  setMsg(msgId, '', '');
+  try {
+    const { inicio, fim, info } = obterIntervaloDatasPorPeriodo(dashboardHorasPeriodo || 'dia');
+    const rows = await carregarRegistrosPontoComIntervalos({ inicio, fim });
+    const resumo = calcularResumoHorasPorFuncionario(rows);
+
+    renderizarParticipacaoHoras({
+      listId: 'horasFuncionariosListaDashboard',
+      pieId: 'horasPieDashboard',
+      valueId: 'horasPieValorDashboard',
+      labelId: 'horasPieLabelDashboard',
+      infoId: 'horasInfoDashboard',
+      participacao: resumo.participacao,
+      totalMinutos: resumo.totalMinutos,
+      info,
+    });
+
+    const totalEl = document.getElementById('horasTotalDashboard');
+    const colEl = document.getElementById('horasColaboradoresDashboard');
+    if (totalEl) totalEl.textContent = formatarDuracaoMinutos(resumo.totalMinutos);
+    if (colEl) colEl.textContent = String(resumo.colaboradores);
+  } catch (error) {
+    console.error('Erro ao carregar horas do dashboard:', error);
+    renderizarParticipacaoHoras({
+      listId: 'horasFuncionariosListaDashboard',
+      pieId: 'horasPieDashboard',
+      valueId: 'horasPieValorDashboard',
+      labelId: 'horasPieLabelDashboard',
+      infoId: 'horasInfoDashboard',
+      participacao: [],
+      totalMinutos: 0,
+      info: 'Período indisponível.',
+    });
+    setMsg(msgId, 'Não foi possível carregar as horas trabalhadas.', 'err');
+  }
+}
+
+function trocarPeriodoRelatorioPonto(periodo, botao = null) {
+  relatorioPontoPeriodo = periodo;
+  document.querySelectorAll('.dashboard-period-btn[data-rel-ponto-periodo]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.relPontoPeriodo === periodo);
+  });
+  if (botao) botao.classList.add('active');
+
+  const { inicio, fim } = obterIntervaloDatasPorPeriodo(periodo || 'dia');
+  const dataInicio = document.getElementById('filtroPontoDataInicio');
+  const dataFim = document.getElementById('filtroPontoDataFim');
+  if (dataInicio) dataInicio.value = inicio;
+  if (dataFim) dataFim.value = fim;
+  carregarRelatorioPonto();
+}
+
+function formatarHoraPonto(valor) {
+  if (!valor) return '-';
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return '-';
+  return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function formatarDataPonto(valor) {
+  if (!valor) return '-';
+  const data = new Date(`${valor}T00:00:00`);
+  if (Number.isNaN(data.getTime())) return '-';
+  return data.toLocaleDateString('pt-BR');
+}
+
+function obterStatusRegistroPonto(registro) {
+  if (!registro) return 'Sem registro no dia';
+  if (registro.entrada_em) return 'Em jornada';
+  return 'Sem registro no dia';
+}
+
+async function obterIntervalosPontoDoRegistro(registroId) {
+  if (!registroId) return [];
+  const { data, error } = await sb
+    .from('ponto_intervalos')
+    .select('id, ponto_registro_id, ordem, inicio_em, retorno_em')
+    .eq('ponto_registro_id', registroId)
+    .order('ordem', { ascending: true })
+    .order('inicio_em', { ascending: true });
+
+  if (error) {
+    if (isMissingTimeClockIntervalsTableError(error)) return [];
+    throw error;
+  }
+  return data || [];
+}
+
+function obterIntervaloAberto(intervalos = []) {
+  return [...intervalos].reverse().find(item => item.inicio_em && !item.retorno_em) || null;
+}
+
+function proximaOrdemIntervalo(intervalos = []) {
+  const maior = intervalos.reduce((max, item) => Math.max(max, Number(item.ordem || 0)), 0);
+  return maior + 1;
+}
+
+function montarResumoIntervalos(intervalos = []) {
+  if (!intervalos.length) return 'Intervalos: nenhum registrado';
+  const texto = intervalos.map(item => {
+    const n = item.ordem || '-';
+    return `#${n} ${formatarHoraPonto(item.inicio_em)} - ${formatarHoraPonto(item.retorno_em)}`;
+  }).join(' · ');
+  return `Intervalos: ${texto}`;
+}
+
+function formatarDuracaoMinutos(totalMinutos = 0) {
+  const minutos = Math.max(0, Number(totalMinutos || 0));
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+  return `${String(horas).padStart(2, '0')}:${String(resto).padStart(2, '0')}`;
+}
+
+function obterResumoJornadaPonto(registro, intervalos = []) {
+  if (!registro?.entrada_em) {
+    return {
+      status: 'Sem registro no dia',
+      proximaAcao: 'Entrada',
+      totalMinutos: 0,
+      totalTexto: '00:00',
+      ultimaSaidaEm: null,
+    };
+  }
+
+  const lista = [...intervalos].sort((a, b) => {
+    const aTime = new Date(a.inicio_em || 0).getTime();
+    const bTime = new Date(b.inicio_em || 0).getTime();
+    return aTime - bTime;
+  });
+
+  const intervaloAberto = obterIntervaloAberto(lista);
+  const ultimoRetorno = [...lista].reverse().find(item => item.retorno_em)?.retorno_em || null;
+  const fimJornada = intervaloAberto?.inicio_em || registro.saida_em || ultimoRetorno || null;
+
+  let totalMinutos = 0;
+  if (fimJornada) {
+    const entradaMs = new Date(registro.entrada_em).getTime();
+    const fimMs = new Date(fimJornada).getTime();
+    if (!Number.isNaN(entradaMs) && !Number.isNaN(fimMs) && fimMs > entradaMs) {
+      const duracaoBrutaMin = Math.floor((fimMs - entradaMs) / 60000);
+      const intervaloMin = lista.reduce((acc, item) => {
+        if (!item.inicio_em || !item.retorno_em) return acc;
+        const inicioMs = new Date(item.inicio_em).getTime();
+        const retornoMs = new Date(item.retorno_em).getTime();
+        if (Number.isNaN(inicioMs) || Number.isNaN(retornoMs) || retornoMs <= inicioMs) return acc;
+        return acc + Math.floor((retornoMs - inicioMs) / 60000);
+      }, 0);
+      totalMinutos = Math.max(0, duracaoBrutaMin - intervaloMin);
+    }
+  }
+
+  const status = intervaloAberto ? 'Fora (última batida: saída)' : 'Em jornada';
+  const proximaAcao = intervaloAberto ? 'Retorno' : 'Saída';
+  const ultimaSaidaEm = intervaloAberto?.inicio_em || registro.saida_em || null;
+
+  return {
+    status,
+    proximaAcao,
+    totalMinutos,
+    totalTexto: formatarDuracaoMinutos(totalMinutos),
+    ultimaSaidaEm,
+  };
+}
+
+async function carregarResumoPontoHoje(funcionarioId = '') {
+  const container = document.getElementById('pontoResumoHoje');
+  if (!container) return;
+
+  const hojeLocal = dataLocalISO();
+  let query = sb
+    .from('ponto_registros')
+    .select('id, funcionario_id, entrada_em, saida_em, created_at, funcionarios(nome)')
+    .eq('data_ponto', hojeLocal)
+    .order('created_at', { ascending: false });
+
+  const id = String(funcionarioId || '');
+  if (id) {
+    query = query.eq('funcionario_id', id);
+  }
+
+  const { data: registros, error } = await query;
+
+  if (error) {
+    if (isMissingTimeClockTableError(error)) {
+      container.innerHTML = '<div class="empty">Rode o SQL da tabela ponto_registros para usar o registro de ponto.</div>';
+      return;
+    }
+    container.innerHTML = `<div class="empty">Erro ao carregar histórico de ponto: ${mensagemErroSupabase(error, 'erro desconhecido')}.</div>`;
+    return;
+  }
+
+  const rows = registros || [];
+  if (!rows.length) {
+    container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
+    return;
+  }
+
+  const ids = rows.map(item => item.id).filter(Boolean);
+  let intervalosData = [];
+  const intervalosPorRegistro = {};
+  if (ids.length) {
+    const { data: dataInt, error: errInt } = await sb
+      .from('ponto_intervalos')
+      .select('ponto_registro_id, inicio_em, retorno_em')
+      .in('ponto_registro_id', ids);
+
+    if (errInt && !isMissingTimeClockIntervalsTableError(errInt)) {
+      container.innerHTML = `<div class="empty">Erro ao carregar intervalos de ponto: ${mensagemErroSupabase(errInt, 'erro desconhecido')}.</div>`;
+      return;
+    }
+    intervalosData = dataInt || [];
+    intervalosData.forEach(item => {
+      const chave = String(item.ponto_registro_id || '');
+      if (!chave) return;
+      if (!intervalosPorRegistro[chave]) intervalosPorRegistro[chave] = [];
+      intervalosPorRegistro[chave].push(item);
+    });
+  }
+
+  const eventos = [];
+  const nomePadrao = 'Funcionário';
+
+  const obterStatusRegistro = (registro) => {
+    const intervalos = intervalosPorRegistro[String(registro.id)] || [];
+    const intervaloAberto = intervalos.some(item => item.inicio_em && !item.retorno_em);
+    const aberto = intervaloAberto || !registro.saida_em;
+    return {
+      texto: aberto ? 'Aberto' : 'Fechado',
+      classe: aberto ? 'tag tag-amber' : 'tag tag-green',
+    };
+  };
+
+  const statusPorFuncionario = {};
+  rows.forEach(item => {
+    const funcionarioId = String(item.funcionario_id || '');
+    if (!funcionarioId) return;
+    if (!statusPorFuncionario[funcionarioId]) {
+      const nome = item.funcionarios?.nome || relatorioPontoFuncionarioCache[funcionarioId] || nomePadrao;
+      statusPorFuncionario[funcionarioId] = {
+        nome,
+        ...obterStatusRegistro(item),
+      };
+    }
+  });
+
+  rows.forEach(item => {
+    const nome = item.funcionarios?.nome || relatorioPontoFuncionarioCache[String(item.funcionario_id)] || nomePadrao;
+    const status = obterStatusRegistro(item);
+    if (item.entrada_em) {
+      eventos.push({ ts: item.entrada_em, nome, statusTexto: status.texto, statusClasse: status.classe });
+    }
+    if (item.saida_em) {
+      eventos.push({ ts: item.saida_em, nome, statusTexto: status.texto, statusClasse: status.classe });
+    }
+  });
+
+  intervalosData.forEach(intervalo => {
+    const registro = rows.find(r => String(r.id) === String(intervalo.ponto_registro_id));
+    const nome = registro?.funcionarios?.nome || relatorioPontoFuncionarioCache[String(registro?.funcionario_id)] || nomePadrao;
+    const status = registro ? obterStatusRegistro(registro) : { texto: 'Aberto', classe: 'tag tag-amber' };
+    if (intervalo.inicio_em) eventos.push({ ts: intervalo.inicio_em, nome, statusTexto: status.texto, statusClasse: status.classe });
+    if (intervalo.retorno_em) eventos.push({ ts: intervalo.retorno_em, nome, statusTexto: status.texto, statusClasse: status.classe });
+  });
+
+  const eventosOrdenados = eventos
+    .filter(item => !!item.ts)
+    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
+
+  if (!eventosOrdenados.length) {
+    container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
+    return;
+  }
+
+  const listaStatus = Object.values(statusPorFuncionario);
+  const blocoStatus = listaStatus.length
+    ? '<div class="lista">' + listaStatus.map(item => `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-detalhe"><strong>${item.nome}</strong> · Ponto ${item.texto.toLowerCase()}</div>
+        </div>
+        <div class="item-actions">
+          <span class="${item.classe}">${item.texto}</span>
+        </div>
+      </div>
+    `).join('') + '</div>'
+    : '';
+
+  container.innerHTML = '<div class="lista">' + eventosOrdenados.map(item => `
+    <div class="item">
+      <div class="item-info">
+        <div class="item-detalhe">PONTO REGISTRADO • ${item.nome} • ${fmtDate(item.ts)}</div>
+      </div>
+      <div class="item-actions">
+        <span class="${item.statusClasse}">${item.statusTexto}</span>
+      </div>
+    </div>
+  `).join('') + '</div>' + blocoStatus + '<div style="font-size:12px;color:var(--text-dim);margin-top:8px">Status do ponto: Aberto = jornada em andamento ou fora para intervalo. Fechado = último registro com saída concluída.</div>';
+}
+
+async function carregarBaterPonto() {
+  await carregarSelectFuncionariosPonto();
+  await carregarResumoPontoHoje('');
+}
+
+async function registrarPontoFuncionario() {
+  const pin = String(document.getElementById('pontoPinInput')?.value || '').trim();
+
+  if (!pin) {
+    setMsg('msgPonto', 'Digite o PIN do funcionário.', 'err');
+    return;
+  }
+
+  const funcionario = await obterFuncionarioAtivoPorPin(pin);
+  if (!funcionario?.id) {
+    setMsg('msgPonto', 'PIN inválido.', 'err');
+    return;
+  }
+
+  const funcionarioId = String(funcionario.id);
+  relatorioPontoFuncionarioCache[funcionarioId] = funcionario.nome || 'Funcionário';
+  const dataHoje = dataLocalISO();
+  const agora = new Date().toISOString();
+
+  const { data: registrosHoje, error: erroBusca } = await sb
+    .from('ponto_registros')
+    .select('*')
+    .eq('funcionario_id', funcionarioId)
+    .eq('data_ponto', dataHoje)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (erroBusca) {
+    if (isMissingTimeClockTableError(erroBusca)) {
+      setMsg('msgPonto', 'Rode o SQL da tabela ponto_registros antes de usar o ponto.', 'err');
+      return;
+    }
+    setMsg('msgPonto', `Não foi possível carregar o ponto do funcionário: ${mensagemErroSupabase(erroBusca, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  let registroAtual = (registrosHoje || [])[0] || null;
+
+  if (!registroAtual) {
+    const { data: registroInserido, error: erroInsert } = await sb.from('ponto_registros').insert([{
+      funcionario_id: funcionarioId,
+      data_ponto: dataHoje,
+      entrada_em: agora,
+    }]).select().maybeSingle();
+
+    if (erroInsert) {
+      if (isMissingTimeClockTableError(erroInsert)) {
+        setMsg('msgPonto', 'Rode o SQL da tabela ponto_registros antes de usar o ponto.', 'err');
+        return;
+      }
+      if (String(erroInsert.code || '') === '23505') {
+        const { data: registrosCorrida, error: erroCorrida } = await sb
+          .from('ponto_registros')
+          .select('*')
+          .eq('funcionario_id', funcionarioId)
+          .eq('data_ponto', dataHoje)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (erroCorrida) {
+          setMsg('msgPonto', `Não foi possível registrar o ponto: ${mensagemErroSupabase(erroCorrida, 'erro desconhecido')}`, 'err');
+          return;
+        }
+        registroAtual = (registrosCorrida || [])[0] || null;
+      } else {
+        setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}`, 'err');
+        return;
+      }
+    } else {
+      registroAtual = registroInserido || registroAtual;
+    }
+
+    if (!registroAtual) {
+      setMsg('msgPonto', 'Não foi possível identificar o registro do dia para este funcionário.', 'err');
+      return;
+    }
+    setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
+    exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
+  } else {
+    let intervalos = [];
+    try {
+      intervalos = await obterIntervalosPontoDoRegistro(registroAtual.id);
+    } catch (error) {
+      setMsg('msgPonto', 'Não foi possível carregar os intervalos do dia.', 'err');
+      return;
+    }
+
+    const aberto = obterIntervaloAberto(intervalos);
+    if (aberto) {
+      const { error: erroRetorno } = await sb
+        .from('ponto_intervalos')
+        .update({ retorno_em: agora })
+        .eq('id', aberto.id);
+
+      if (erroRetorno) {
+        if (isMissingTimeClockIntervalsTableError(erroRetorno)) {
+          setMsg('msgPonto', 'Rode o SQL da tabela ponto_intervalos para registrar múltiplos intervalos.', 'err');
+          return;
+        }
+        setMsg('msgPonto', 'Não foi possível registrar o retorno do intervalo.', 'err');
+        return;
+      }
+
+      if (!registroAtual.retorno_intervalo_em) {
+        await sb
+          .from('ponto_registros')
+          .update({ retorno_intervalo_em: agora, saida_em: null })
+          .eq('id', registroAtual.id);
+      }
+
+      setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
+      exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
+    } else {
+      const payloadIntervalo = {
+        ponto_registro_id: registroAtual.id,
+        ordem: proximaOrdemIntervalo(intervalos),
+        inicio_em: agora,
+      };
+      const { error: erroInicioIntervalo } = await sb.from('ponto_intervalos').insert([payloadIntervalo]);
+      if (erroInicioIntervalo) {
+        if (isMissingTimeClockIntervalsTableError(erroInicioIntervalo)) {
+          setMsg('msgPonto', 'Rode o SQL da tabela ponto_intervalos para registrar múltiplos intervalos.', 'err');
+          return;
+        }
+        setMsg('msgPonto', 'Não foi possível registrar o início do intervalo.', 'err');
+        return;
+      }
+
+      if (!registroAtual.inicio_intervalo_em) {
+        await sb
+          .from('ponto_registros')
+          .update({ inicio_intervalo_em: agora, saida_em: agora })
+          .eq('id', registroAtual.id);
+      } else {
+        await sb
+          .from('ponto_registros')
+          .update({ saida_em: agora })
+          .eq('id', registroAtual.id);
+      }
+
+      setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
+      exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
+    }
+  }
+
+  document.getElementById('pontoPinInput').value = '';
+  await carregarResumoPontoHoje();
+  if (obterPaginaAtivaAtual() === 'relatorio_ponto') {
+    await carregarRelatorioPonto();
+  }
+}
+
+function registroAtendeFiltroHorario(registro, horaInicio = '', horaFim = '') {
+  if (!horaInicio && !horaFim) return true;
+
+  const toMinutes = (hora) => {
+    const valor = String(hora || '').slice(0, 5);
+    if (!/^\d{2}:\d{2}$/.test(valor)) return null;
+    const [h, m] = valor.split(':').map(Number);
+    return (h * 60) + m;
+  };
+
+  const inicioMin = toMinutes(horaInicio);
+  const fimMin = toMinutes(horaFim);
+  const horarios = [
+    registro.entrada_em,
+    ...(registro.intervalos_ponto || []).flatMap(item => [item.inicio_em, item.retorno_em]),
+    registro.saida_em,
+  ]
+    .filter(Boolean)
+    .map(valor => {
+      const d = new Date(valor);
+      return (d.getHours() * 60) + d.getMinutes();
+    });
+
+  if (!horarios.length) return false;
+
+  if (inicioMin !== null && fimMin !== null) {
+    if (inicioMin <= fimMin) return horarios.some(min => min >= inicioMin && min <= fimMin);
+    return horarios.some(min => min >= inicioMin || min <= fimMin);
+  }
+  if (inicioMin !== null) return horarios.some(min => min >= inicioMin);
+  if (fimMin !== null) return horarios.some(min => min <= fimMin);
+  return true;
+}
+
+function atualizarPainelRelatorioPonto(rows = [], infoPeriodo = 'Período atual.') {
+  const resumo = calcularResumoHorasPorFuncionario(rows);
+  renderizarParticipacaoHoras({
+    listId: 'horasFuncionariosListaRelatorio',
+    pieId: 'horasPieRelatorio',
+    valueId: 'horasPieValorRelatorio',
+    labelId: 'horasPieLabelRelatorio',
+    infoId: 'horasInfoRelatorio',
+    participacao: resumo.participacao,
+    totalMinutos: resumo.totalMinutos,
+    info: infoPeriodo,
+  });
+
+  const totalEl = document.getElementById('horasTotalRelatorio');
+  const mediaEl = document.getElementById('horasMediaRelatorio');
+  const colEl = document.getElementById('horasColaboradoresRelatorio');
+  const mediaMin = resumo.colaboradores ? Math.floor(resumo.totalMinutos / resumo.colaboradores) : 0;
+
+  if (totalEl) totalEl.textContent = formatarDuracaoMinutos(resumo.totalMinutos);
+  if (mediaEl) mediaEl.textContent = formatarDuracaoMinutos(mediaMin);
+  if (colEl) colEl.textContent = String(resumo.colaboradores);
+}
+
+function resetFiltroRelatorioPonto() {
+  relatorioPontoPeriodo = 'dia';
+  document.querySelectorAll('.dashboard-period-btn[data-rel-ponto-periodo]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.relPontoPeriodo === 'dia');
+  });
+  const dataHoje = dataLocalISO();
+  const dataInicio = document.getElementById('filtroPontoDataInicio');
+  const dataFim = document.getElementById('filtroPontoDataFim');
+  const horaInicio = document.getElementById('filtroPontoHoraInicio');
+  const horaFim = document.getElementById('filtroPontoHoraFim');
+  const funcionario = document.getElementById('filtroPontoFuncionario');
+
+  if (dataInicio) dataInicio.value = dataHoje;
+  if (dataFim) dataFim.value = dataHoje;
+  if (horaInicio) horaInicio.value = '';
+  if (horaFim) horaFim.value = '';
+  if (funcionario) funcionario.value = '';
+  carregarRelatorioPonto();
+}
+
+async function carregarRelatorioPonto() {
+  const lista = document.getElementById('listaRelatorioPonto');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+
+  await carregarSelectFuncionariosPonto();
+
+  const funcionarioId = String(document.getElementById('filtroPontoFuncionario')?.value || '');
+  const dataInicioEl = document.getElementById('filtroPontoDataInicio');
+  const dataFimEl = document.getElementById('filtroPontoDataFim');
+  if (dataInicioEl && dataFimEl && !dataInicioEl.value && !dataFimEl.value) {
+    const hojeLocal = dataLocalISO();
+    dataInicioEl.value = hojeLocal;
+    dataFimEl.value = hojeLocal;
+  }
+  const dataInicio = dataInicioEl?.value || '';
+  const dataFim = dataFimEl?.value || '';
+  const horaInicio = document.getElementById('filtroPontoHoraInicio')?.value || '';
+  const horaFim = document.getElementById('filtroPontoHoraFim')?.value || '';
+  const infoPeriodo = `Período: ${dataInicio || '-'} até ${dataFim || '-'}.`;
+
+  let query = sb
+    .from('ponto_registros')
+    .select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at, funcionarios(nome)')
+    .order('data_ponto', { ascending: false })
+    .order('entrada_em', { ascending: false });
+
+  if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+  if (dataInicio) query = query.gte('data_ponto', dataInicio);
+  if (dataFim) query = query.lte('data_ponto', dataFim);
+
+  const { data, error } = await query;
+  if (error) {
+    if (isMissingTimeClockTableError(error)) {
+      lista.innerHTML = '<div class="empty">Rode o SQL da tabela ponto_registros para habilitar o relatório de ponto.</div>';
+      setMsg('msgRelatorioPonto', 'Tabela ponto_registros não encontrada no banco.', 'err');
+      return;
+    }
+    lista.innerHTML = '<div class="empty">Erro ao carregar relatório de ponto.</div>';
+    setMsg('msgRelatorioPonto', 'Não foi possível carregar o relatório de ponto.', 'err');
+    return;
+  }
+
+  let rows = data || [];
+  const registrosIds = rows.map(item => item.id).filter(Boolean);
+  let intervalosPorRegistro = {};
+  if (registrosIds.length) {
+    const { data: intervalosData, error: intervalosError } = await sb
+      .from('ponto_intervalos')
+      .select('id, ponto_registro_id, ordem, inicio_em, retorno_em')
+      .in('ponto_registro_id', registrosIds)
+      .order('ordem', { ascending: true });
+
+    if (intervalosError && !isMissingTimeClockIntervalsTableError(intervalosError)) {
+      setMsg('msgRelatorioPonto', 'Não foi possível carregar os intervalos de ponto.', 'err');
+      return;
+    }
+    (intervalosData || []).forEach(item => {
+      const chave = String(item.ponto_registro_id);
+      if (!intervalosPorRegistro[chave]) intervalosPorRegistro[chave] = [];
+      intervalosPorRegistro[chave].push(item);
+    });
+  }
+
+  rows = rows.map(item => ({
+    ...item,
+    intervalos_ponto: intervalosPorRegistro[String(item.id)] || [],
+  }));
+  rows = rows.filter(item => registroAtendeFiltroHorario(item, horaInicio, horaFim));
+  atualizarPainelRelatorioPonto(rows, infoPeriodo);
+
+  if (!rows.length) {
+    lista.innerHTML = '<div class="empty">Nenhum registro de ponto encontrado com os filtros informados.</div>';
+    setMsg('msgRelatorioPonto', '', '');
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + rows.map(item => {
+    const nomeFuncionario = item.funcionarios?.nome || relatorioPontoFuncionarioCache[String(item.funcionario_id)] || 'Funcionário';
+    const resumoJornada = obterResumoJornadaPonto(item, item.intervalos_ponto || []);
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${nomeFuncionario} · ${formatarDataPonto(item.data_ponto)}</div>
+          <div class="item-detalhe">Entrada: ${formatarHoraPonto(item.entrada_em)} · ${montarResumoIntervalos(item.intervalos_ponto || [])} · Saída: ${formatarHoraPonto(item.saida_em)}</div>
+          <div class="item-detalhe">Status: ${resumoJornada.status}</div>
+          <div class="item-detalhe">Total trabalhado no dia: ${resumoJornada.totalTexto}</div>
+        </div>
+        <div class="item-actions">
+          ${resumoJornada.proximaAcao === 'Retorno' ? '<span class="tag tag-amber">Fora</span>' : '<span class="tag tag-green">Em jornada</span>'}
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+
+  setMsg('msgRelatorioPonto', `${rows.length} registro(s) encontrado(s).`, 'ok');
 }
 
 // 
@@ -6359,6 +7796,9 @@ carregarDashboard();
 carregarSelectFuncionariosPortal().then(() => restaurarSessaoPortal());
 carregarNotificacoes();
 iniciarAtualizacaoAutomatica();
+window.setTimeout(() => {
+  forcarCampoObservacaoTarefaEmBranco();
+}, 250);
 </script>
 
 <!-- LOGIN INICIAL -->
@@ -6400,6 +7840,10 @@ iniciarAtualizacaoAutomatica();
       <button type="button" class="btn btn-green" onclick="salvarNovaSenhaComToken()">Salvar nova senha</button>
       <div id="msgAuthToken" class="msg" style="margin-top:0"></div>
     </div>
+  </div>
+  <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
+    <div>Desenvolvido por Patrick Dilhe - Versão 1.0</div>
+    <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
 
@@ -6844,6 +8288,9 @@ function salvarSessaoSistema(usuario) {
   restaurarSessaoSistema();
   processarFluxoAutenticacaoPorToken();
   iniciarAtualizacaoAutomatica();
+  window.setTimeout(() => {
+    forcarCampoObservacaoTarefaEmBranco();
+  }, 250);
 </script>
 </body>
 </html>
