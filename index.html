@@ -2387,8 +2387,11 @@ let ultimoToquePinPontoEm = 0;
 let intervaloVigilanciaPinPonto = null;
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
+const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
-const INTERVALO_LEMBRETE_EXECUCAO_MS = 15 * 60 * 1000;
+const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
+const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 2 * 60 * 1000;
+const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
 
 function redefinirEstadoAvisoCentralTarefas() {
@@ -2802,7 +2805,7 @@ function iniciarAtualizacaoAutomatica() {
     carregarNotificacoes().catch(error => {
       console.warn('Falha na atualização automática das notificações:', error);
     });
-  }, intervaloAtual);
+  }, INTERVALO_ATUALIZACAO_NOTIFICACOES_MS);
 }
 
 function lancamentoPodeGerarAlertaTempoReal(lancamento = null) {
@@ -2813,6 +2816,7 @@ function lancamentoPodeGerarAlertaTempoReal(lancamento = null) {
     // Compatibilidade para bases antigas sem datas preenchidas no lançamento.
     if (lancamento.lancado_em || lancamento.created_at) return false;
   }
+  if (!checklistDentroJanelaAlerta(lancamento.horario_limite)) return false;
   return true;
 }
 
@@ -4226,7 +4230,7 @@ function obterInicioExecucaoParaLembrete(item) {
 function execucaoPrecisaLembreteFinalizacao(item) {
   const inicio = obterInicioExecucaoParaLembrete(item);
   if (!inicio) return false;
-  return (Date.now() - new Date(inicio).getTime()) >= INTERVALO_LEMBRETE_EXECUCAO_MS;
+  return (Date.now() - new Date(inicio).getTime()) >= TEMPO_INICIO_ALERTA_EXECUCAO_MS;
 }
 
 function formatarDuracaoDecorrida(dataIso) {
@@ -4324,7 +4328,7 @@ function sincronizarAvisoNotificacoes() {
 
   const lembretesExecucaoDevidos = execucoesAtrasadas.filter(item => {
     const ultimoLembrete = ultimosLembretesExecucaoEm[item.chave] || 0;
-    return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_LEMBRETE_EXECUCAO_MS;
+    return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS;
   });
 
   if (lembretesExecucaoDevidos.length) {
@@ -4471,18 +4475,20 @@ async function carregarNotificacoes() {
       return !item?.lancado_em && !item?.created_at;
     };
 
-    const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
-      return lancamentoEhDoDiaOuSemData(item)
-        && tarefaDisponivelHoje(item.dias_semana)
-        && obterContextoPrazo(item.horario_limite).ativo;
-    });
-
     const lancamentosPendentesHoje = (lancamentosPendentes || []).filter(item => {
       if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
         return false;
       }
-      // Evita duplicar com alerta crítico (próximo do prazo/atrasado).
-      return !obterContextoPrazo(item.horario_limite).ativo;
+      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+      return prazo.ativo && !prazo.vencido;
+    });
+
+    const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
+      if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
+        return false;
+      }
+      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+      return prazo.ativo && prazo.vencido;
     });
 
     lancamentosPendentesHoje.forEach(item => {
@@ -4509,7 +4515,7 @@ async function carregarNotificacoes() {
     lancamentosAtrasados.forEach(item => {
       if (!usuarioPodeVerNotificacaoChecklist()) return;
 
-      const prazo = obterContextoPrazo(item.horario_limite);
+      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
       const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
@@ -6996,6 +7002,11 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
     totalTexto: formatarDuracaoMinutos(totalMinutos),
     ultimaSaidaEm,
   };
+}
+
+function checklistDentroJanelaAlerta(horario) {
+  const contexto = obterContextoPrazo(horario, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+  return contexto.ativo;
 }
 
 async function carregarResumoPontoHoje(funcionarioId = '') {
