@@ -3352,13 +3352,37 @@ function hoje() {
   return dataLocalISO();
 }
 
-function dataLocalISO(valor = new Date()) {
+function obterPartesDataHoraBrasil(valor = new Date()) {
   const data = valor instanceof Date ? valor : new Date(valor);
-  if (Number.isNaN(data.getTime())) return '';
-  const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, '0');
-  const dia = String(data.getDate()).padStart(2, '0');
-  return `${ano}-${mes}-${dia}`;
+  if (Number.isNaN(data.getTime())) return null;
+
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  const partes = fmt.formatToParts(data);
+  const obter = (tipo) => partes.find(p => p.type === tipo)?.value || '';
+
+  const year = obter('year');
+  const month = obter('month');
+  const day = obter('day');
+  const hour = obter('hour');
+  const minute = obter('minute');
+  if (!year || !month || !day || !hour || !minute) return null;
+
+  return { year, month, day, hour, minute };
+}
+
+function dataLocalISO(valor = new Date()) {
+  const partes = obterPartesDataHoraBrasil(valor);
+  if (!partes) return '';
+  return `${partes.year}-${partes.month}-${partes.day}`;
 }
 
 function checklistFoiLancadoHoje(lancadoEm, criadoEm = null) {
@@ -3368,7 +3392,9 @@ function checklistFoiLancadoHoje(lancadoEm, criadoEm = null) {
 }
 
 function agoraHoraMinuto() {
-  return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const partes = obterPartesDataHoraBrasil(new Date());
+  if (!partes) return '';
+  return `${partes.hour}:${partes.minute}`;
 }
 
 function fmtDate(str) {
@@ -3554,8 +3580,10 @@ function obterContextoPrazo(horario, antecedenciaMinutos = 60) {
     return { ativo: false, vencido: false };
   }
 
-  const agora = new Date();
-  const agoraMinutos = (agora.getHours() * 60) + agora.getMinutes();
+  const agoraMinutos = horarioParaMinutos(agoraHoraMinuto());
+  if (agoraMinutos === null) {
+    return { ativo: false, vencido: false };
+  }
   return {
     ativo: agoraMinutos >= Math.max(0, limiteMinutos - antecedenciaMinutos),
     vencido: agoraMinutos >= limiteMinutos,
