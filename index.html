@@ -2371,6 +2371,7 @@ let resolverModalPinPendente = null;
 let intervaloAtualizacaoPaginaAtiva = null;
 let intervaloAtualizacaoNotificacoes = null;
 let intervaloStatusSincronizacao = null;
+let canalNotificacoesRealtime = null;
 let ultimoSucessoSincronizacaoEm = null;
 let ultimosLembretesExecucaoEm = {};
 let ultimosLembretesChecklistEm = {};
@@ -2492,16 +2493,28 @@ function obterNotificacoesCriticas() {
   return notificacoesAtuais.filter(item => tipoNotificacaoTarefaAtrasada(item.tipo));
 }
 
+function usuarioRecebeAlertaOperacional() {
+  if (portalFuncionarioLogado?.id) return true;
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return false;
+
+  const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
+  const codigo = String(perfil?.codigo || '').toUpperCase();
+  if (codigo === 'ADM') return false;
+
+  return true;
+}
+
 function usuarioPodeVerNotificacaoSolicitacao() {
   return !usuarioSistemaLogado || usuarioSistemaLogado.tipo === 'admin' || usuarioPodeAcessar('solicitacoes');
 }
 
 function usuarioPodeVerNotificacaoChecklist() {
-  return true;
+  return usuarioRecebeAlertaOperacional();
 }
 
 function usuarioPodeVerNotificacaoExecucao() {
-  return true;
+  return usuarioRecebeAlertaOperacional();
 }
 
 const PERFIL_PERMISSOES = [
@@ -2790,6 +2803,35 @@ function iniciarAtualizacaoAutomatica() {
       console.warn('Falha na atualização automática das notificações:', error);
     });
   }, intervaloAtual);
+}
+
+function reiniciarAssinaturaRealtimeNotificacoes() {
+  try {
+    if (canalNotificacoesRealtime) {
+      sb.removeChannel(canalNotificacoesRealtime);
+      canalNotificacoesRealtime = null;
+    }
+  } catch (e) {}
+
+  if (!existeSessaoAtivaParaAtualizacao()) return;
+
+  const canalNome = `zuqui-notificacoes-${obterChaveUsuarioNotificacoes()}`;
+  const atualizarNotificacoes = () => {
+    if (!existeSessaoAtivaParaAtualizacao()) return;
+    carregarNotificacoes().catch(error => {
+      console.warn('Falha ao atualizar notificações via Realtime:', error);
+    });
+  };
+
+  canalNotificacoesRealtime = sb
+    .channel(canalNome)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        atualizarNotificacoes();
+      }
+    });
 }
 
 // ---- HELPERS ----
@@ -6321,6 +6363,7 @@ async function loginPortalFuncionario() {
 
   portalFuncionarioLogado = funcionario;
   salvarSessaoPortal();
+  reiniciarAssinaturaRealtimeNotificacoes();
   document.getElementById('portalPin').value = '';
   setMsg('msgPortal', `Login realizado para ${funcionario.nome}.`, 'ok');
   await carregarTarefasPortal();
@@ -6344,6 +6387,7 @@ function logoutPortalFuncionario(clearMsg = true) {
   if (chk) chk.checked = false;
 
   if (clearMsg) setMsg('msgPortal', '', '');
+  reiniciarAssinaturaRealtimeNotificacoes();
 }
 
 function diaSemanaAtual() {
@@ -8109,6 +8153,7 @@ function salvarSessaoSistema(usuario) {
   sessionStorage.removeItem('zuqui_auth');
   const chk = document.getElementById('keepLoggedIn');
   if (chk) chk.checked = true;
+  reiniciarAssinaturaRealtimeNotificacoes();
 }
 
   function restaurarSessaoSistema() {
@@ -8137,6 +8182,7 @@ function salvarSessaoSistema(usuario) {
       setSistemaLogado(true);
       aplicarPermissoesSistema();
       carregarNotificacoes();
+      reiniciarAssinaturaRealtimeNotificacoes();
       return !!usuario;
     } catch (e) {
       localStorage.removeItem('zuqui_auth');
@@ -8166,6 +8212,7 @@ function salvarSessaoSistema(usuario) {
     if (chk) chk.checked = false;
     document.querySelectorAll('.nav-btn[data-page]').forEach(btn => { btn.style.display = ''; });
     setSistemaLogado(false);
+    reiniciarAssinaturaRealtimeNotificacoes();
   }
 
   function toggleSolicitacaoAcesso() {
