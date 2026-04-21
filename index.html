@@ -4316,10 +4316,30 @@ async function carregarNotificacoes() {
       await garantirLancamentosAutomaticosDoDia(cfg.data || null);
     }
 
-    let lancamentosQuery = sb
-      .from('checklist_lancamentos')
-      .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at')
-      .eq('status', 'pendente');
+    const carregarLancamentosPendentes = async () => {
+      const consultaCompleta = await sb
+        .from('checklist_lancamentos')
+        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at')
+        .eq('status', 'pendente')
+        .order('lancado_em', { ascending: false });
+
+      if (!consultaCompleta.error) return consultaCompleta.data || [];
+
+      const mensagemErro = String(consultaCompleta.error?.message || '').toLowerCase();
+      if (!mensagemErro.includes('created_at')) {
+        throw consultaCompleta.error;
+      }
+
+      // Compatibilidade para bancos sem coluna created_at em checklist_lancamentos.
+      const consultaFallback = await sb
+        .from('checklist_lancamentos')
+        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em')
+        .eq('status', 'pendente')
+        .order('lancado_em', { ascending: false });
+
+      if (consultaFallback.error) throw consultaFallback.error;
+      return (consultaFallback.data || []).map(item => ({ ...item, created_at: null }));
+    };
 
     let execucoesPendentesQuery = sb
       .from('checklist_execucoes')
@@ -4327,8 +4347,8 @@ async function carregarNotificacoes() {
       .in('status', ['aberto', 'pausado'])
       .eq('data_execucao', hoje());
 
-    const [{ data: lancamentosPendentes }, { data: execucoesPendentes }] = await Promise.all([
-      lancamentosQuery.order('lancado_em', { ascending: false }),
+    const [lancamentosPendentes, { data: execucoesPendentes }] = await Promise.all([
+      carregarLancamentosPendentes(),
       execucoesPendentesQuery.order('iniciado_em', { ascending: false }),
     ]);
 
@@ -4360,14 +4380,19 @@ async function carregarNotificacoes() {
       checklistsMap = Object.fromEntries((checklistsData || []).map(item => [String(item.id), item.nome]));
     }
 
+    const lancamentoEhDoDiaOuSemData = (item) => {
+      if (checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return true;
+      return !item?.lancado_em && !item?.created_at;
+    };
+
     const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
-      return checklistFoiLancadoHoje(item.lancado_em, item.created_at)
+      return lancamentoEhDoDiaOuSemData(item)
         && tarefaDisponivelHoje(item.dias_semana)
         && obterContextoPrazo(item.horario_limite).ativo;
     });
 
     const lancamentosPendentesHoje = (lancamentosPendentes || []).filter(item => {
-      if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at) || !tarefaDisponivelHoje(item.dias_semana)) {
+      if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
         return false;
       }
       // Evita duplicar com alerta crítico (próximo do prazo/atrasado).
@@ -4494,12 +4519,27 @@ async function carregarNotificacoes() {
 
     const horarioLembrete = cfg?.data?.horario_lembrete_checklist || '';
     if (horarioLembrete && horaJaPassou(horarioLembrete)) {
-      const { data: pendentesChecklist } = await sb
+      let pendentesChecklist = [];
+      const consultaPendentesCompleta = await sb
         .from('checklist_lancamentos')
         .select('id, nome, dias_semana, status, lancado_em, created_at')
         .eq('status', 'pendente');
 
-      const pendentesHoje = (pendentesChecklist || []).filter(c => checklistFoiLancadoHoje(c.lancado_em, c.created_at) && tarefaDisponivelHoje(c.dias_semana));
+      if (!consultaPendentesCompleta.error) {
+        pendentesChecklist = consultaPendentesCompleta.data || [];
+      } else {
+        const mensagemErro = String(consultaPendentesCompleta.error?.message || '').toLowerCase();
+        if (!mensagemErro.includes('created_at')) throw consultaPendentesCompleta.error;
+
+        const consultaPendentesFallback = await sb
+          .from('checklist_lancamentos')
+          .select('id, nome, dias_semana, status, lancado_em')
+          .eq('status', 'pendente');
+        if (consultaPendentesFallback.error) throw consultaPendentesFallback.error;
+        pendentesChecklist = (consultaPendentesFallback.data || []).map(item => ({ ...item, created_at: null }));
+      }
+
+      const pendentesHoje = (pendentesChecklist || []).filter(c => lancamentoEhDoDiaOuSemData(c) && tarefaDisponivelHoje(c.dias_semana));
       if (pendentesHoje.length && usuarioPodeVerNotificacaoChecklist()) {
         itens.push({
           chave: criarChaveAlerta('lembrete_checklist', `pendentes-${pendentesHoje.length}`),
