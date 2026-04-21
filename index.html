@@ -1292,9 +1292,48 @@
         display: flex;
         flex-direction: column;
         align-items: stretch;
+        gap: 8px;
       }
       .tarefa-form-row > * {
         width: 100%;
+      }
+      #tarefas .tarefa-form-row input,
+      #tarefas .tarefa-form-row select {
+        min-height: 42px;
+        height: 42px;
+        font-size: 15px;
+      }
+      #tarefas #nomeTarefa,
+      #tarefas #descTarefa,
+      #tarefas #horarioTarefa,
+      #tarefas .campo-com-label {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+      }
+      #tarefas #horarioTarefa {
+        max-width: 100% !important;
+      }
+      #tarefas .campo-com-label {
+        padding-top: 0;
+      }
+      #tarefas .campo-com-label .campo-label {
+        position: static;
+        display: block;
+        margin-bottom: 6px;
+        left: auto;
+        top: auto;
+      }
+      #tarefas .tarefa-form-acoes {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      #tarefas #btnSalvarTarefa,
+      #tarefas #btnCancelarEdicaoTarefa {
+        min-width: 0;
+        width: 100%;
+        height: 42px;
+        font-size: 15px;
       }
       .tarefa-form-acoes {
         justify-content: flex-start;
@@ -1466,6 +1505,14 @@
         min-height: 44px;
         font-size: 16px;
         padding: 10px 12px;
+      }
+      #tarefas .tarefa-form-row input,
+      #tarefas .tarefa-form-row select,
+      #tarefas #btnSalvarTarefa,
+      #tarefas #btnCancelarEdicaoTarefa {
+        min-height: 40px;
+        height: 40px;
+        font-size: 14px;
       }
       .btn {
         min-height: 44px;
@@ -2437,7 +2484,7 @@ function notificacaoDeveSempreAparecer(item) {
 }
 
 function tipoNotificacaoTarefaAtrasada(tipo) {
-  return ['tarefa_atrasada', 'lancamento_atrasado', 'execucao_atrasada'].includes(tipo);
+  return ['tarefa_atrasada', 'lancamento_atrasado', 'execucao_atrasada', 'checklist_pendente'].includes(tipo);
 }
 
 function obterNotificacoesCriticas() {
@@ -4135,7 +4182,7 @@ function sincronizarAvisoNotificacoes() {
   const notificacoesCriticas = alertasCriticosSilenciados ? [] : obterNotificacoesCriticas();
   const totalCriticoAtual = notificacoesCriticas.length;
   const assinaturaCriticaAtual = notificacoesCriticas.map(item => item.chave).sort().join('|');
-  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado');
+  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente');
   const execucoesAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'execucao_atrasada');
   const agora = Date.now();
   let somTocadoNesteCiclo = false;
@@ -4323,6 +4370,35 @@ async function carregarNotificacoes() {
       return checklistFoiLancadoHoje(item.lancado_em, item.created_at)
         && tarefaDisponivelHoje(item.dias_semana)
         && obterContextoPrazo(item.horario_limite).ativo;
+    });
+
+    const lancamentosPendentesHoje = (lancamentosPendentes || []).filter(item => {
+      if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at) || !tarefaDisponivelHoje(item.dias_semana)) {
+        return false;
+      }
+      // Evita duplicar com alerta crítico (próximo do prazo/atrasado).
+      return !obterContextoPrazo(item.horario_limite).ativo;
+    });
+
+    lancamentosPendentesHoje.forEach(item => {
+      if (!usuarioPodeVerNotificacaoChecklist()) return;
+
+      const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
+      const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
+      const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+
+      itens.push({
+        chave: criarChaveAlerta('checklist_pendente', item.id),
+        tipo: 'checklist_pendente',
+        page: 'checklists',
+        titulo: 'Checklist pendente aguardando início',
+        descricao: `${nomeChecklist}${nomeFuncionario ? ' · Responsável: ' + nomeFuncionario : ''} · Horário previsto: ${horarioProgramado}.`,
+        meta: {
+          nomeTarefa: nomeChecklist,
+          nomeFuncionario: nomeFuncionario || 'Sem responsável',
+          horarioProgramado,
+        },
+      });
     });
 
     lancamentosAtrasados.forEach(item => {
@@ -7993,6 +8069,7 @@ function salvarSessaoSistema(usuario) {
   usuarioSistemaLogado = usuarioNormalizado;
   redefinirEstadoAvisoCentralTarefas();
   atualizarUsuarioTopbar();
+  habilitarSomNotificacao();
   const payload = JSON.stringify(usuarioNormalizado);
   localStorage.setItem('zuqui_auth', payload);
   sessionStorage.removeItem('zuqui_auth');
@@ -8020,6 +8097,7 @@ function salvarSessaoSistema(usuario) {
       };
       redefinirEstadoAvisoCentralTarefas();
       atualizarUsuarioTopbar();
+      habilitarSomNotificacao();
       const chk = document.getElementById('keepLoggedIn');
       if (chk) chk.checked = !!salvoLocal;
       setSistemaLogado(true);
