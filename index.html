@@ -2335,6 +2335,8 @@ let relatorioPontoFuncionarioCache = {};
 let timeoutAvisoPontoRegistrado = null;
 let timeoutLimpezaPinPonto = null;
 let segurancaPinPontoConfigurada = false;
+let ultimoToquePinPontoEm = 0;
+let intervaloVigilanciaPinPonto = null;
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
@@ -2774,6 +2776,7 @@ function limparCampoPinPonto() {
   const campoPin = document.getElementById('pontoPinInput');
   if (!campoPin) return;
   campoPin.value = '';
+  ultimoToquePinPontoEm = 0;
 }
 
 function agendarLimpezaCampoPinPonto() {
@@ -2783,6 +2786,11 @@ function agendarLimpezaCampoPinPonto() {
   timeoutLimpezaPinPonto = setTimeout(() => {
     limparCampoPinPonto();
   }, 10000);
+}
+
+function registrarInteracaoCampoPinPonto() {
+  ultimoToquePinPontoEm = Date.now();
+  agendarLimpezaCampoPinPonto();
 }
 
 function configurarSegurancaCampoPinPonto() {
@@ -2795,14 +2803,46 @@ function configurarSegurancaCampoPinPonto() {
   campoPin.setAttribute('autocapitalize', 'off');
   campoPin.setAttribute('autocorrect', 'off');
   campoPin.setAttribute('spellcheck', 'false');
+  campoPin.setAttribute('name', 'ponto_pin_seguro');
+  campoPin.readOnly = true;
+  campoPin.addEventListener('focus', () => {
+    campoPin.readOnly = false;
+    registrarInteracaoCampoPinPonto();
+  });
 
-  ['input', 'keydown', 'focus'].forEach(evt => {
-    campoPin.addEventListener(evt, agendarLimpezaCampoPinPonto);
+  ['input', 'keydown', 'paste', 'change'].forEach(evt => {
+    campoPin.addEventListener(evt, registrarInteracaoCampoPinPonto);
   });
 
   campoPin.addEventListener('blur', () => {
     limparCampoPinPonto();
   });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') {
+      limparCampoPinPonto();
+    }
+  });
+
+  window.addEventListener('pageshow', () => {
+    limparCampoPinPonto();
+  });
+
+  // Limpa imediatamente caso o navegador/autofill injete valor.
+  limparCampoPinPonto();
+  window.setTimeout(() => limparCampoPinPonto(), 60);
+  window.setTimeout(() => limparCampoPinPonto(), 300);
+
+  intervaloVigilanciaPinPonto = window.setInterval(() => {
+    const valor = String(campoPin.value || '').trim();
+    if (!valor) return;
+    if (!ultimoToquePinPontoEm) {
+      ultimoToquePinPontoEm = Date.now();
+    }
+    if ((Date.now() - ultimoToquePinPontoEm) >= 10000) {
+      limparCampoPinPonto();
+    }
+  }, 1000);
 }
 
 function nomePareceCompleto(nome) {
