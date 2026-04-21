@@ -6934,7 +6934,8 @@ function formatarDataPonto(valor) {
 
 function obterStatusRegistroPonto(registro) {
   if (!registro) return 'Sem registro no dia';
-  if (registro.entrada_em) return 'Em jornada';
+  if (registro.entrada_em && !registro.saida_em) return 'Em jornada';
+  if (registro.entrada_em && registro.saida_em) return 'Fechado';
   return 'Sem registro no dia';
 }
 
@@ -7019,8 +7020,13 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
     }
   }
 
-  const status = intervaloAberto ? 'Fora (última batida: saída)' : 'Em jornada';
-  const proximaAcao = intervaloAberto ? 'Retorno' : 'Saída';
+  const jornadaFechada = !!registro.saida_em && !intervaloAberto;
+  const status = jornadaFechada
+    ? 'Jornada fechada'
+    : (intervaloAberto ? 'Fora (última batida: saída)' : 'Em jornada');
+  const proximaAcao = jornadaFechada
+    ? 'Entrada'
+    : (intervaloAberto ? 'Retorno' : 'Saída');
   const ultimaSaidaEm = intervaloAberto?.inicio_em || registro.saida_em || null;
 
   return {
@@ -7204,8 +7210,7 @@ async function registrarPontoFuncionario() {
     .select('*')
     .eq('funcionario_id', funcionarioId)
     .eq('data_ponto', dataHoje)
-    .order('created_at', { ascending: false })
-    .limit(1);
+    .order('created_at', { ascending: false });
 
   if (erroBusca) {
     if (isMissingTimeClockTableError(erroBusca)) {
@@ -7216,114 +7221,49 @@ async function registrarPontoFuncionario() {
     return;
   }
 
-  let registroAtual = (registrosHoje || [])[0] || null;
+  const registros = registrosHoje || [];
+  const registrosAbertos = registros.filter(item => item.entrada_em && !item.saida_em);
+  const registroAberto = registrosAbertos[0] || null;
 
-  if (!registroAtual) {
-    const { data: registroInserido, error: erroInsert } = await sb.from('ponto_registros').insert([{
-      funcionario_id: funcionarioId,
-      data_ponto: dataHoje,
-      entrada_em: agora,
-    }]).select().maybeSingle();
+  if (registroAberto) {
+    let queryFecha = sb
+      .from('ponto_registros')
+      .update({ saida_em: agora });
 
-    if (erroInsert) {
-      if (isMissingTimeClockTableError(erroInsert)) {
+    if (registrosAbertos.length > 1) {
+      queryFecha = queryFecha.in('id', registrosAbertos.map(item => item.id));
+    } else {
+      queryFecha = queryFecha.eq('id', registroAberto.id);
+    }
+
+    const { error: erroFecha } = await queryFecha;
+
+    if (erroFecha) {
+      setMsg('msgPonto', `Não foi possível registrar a saída: ${mensagemErroSupabase(erroFecha, 'erro desconhecido')}`, 'err');
+      return;
+    }
+  } else {
+    const { error: erroAbre } = await sb
+      .from('ponto_registros')
+      .insert([{
+        funcionario_id: funcionarioId,
+        data_ponto: dataHoje,
+        entrada_em: agora,
+        saida_em: null,
+      }]);
+
+    if (erroAbre) {
+      if (isMissingTimeClockTableError(erroAbre)) {
         setMsg('msgPonto', 'Rode o SQL da tabela ponto_registros antes de usar o ponto.', 'err');
         return;
       }
-      if (String(erroInsert.code || '') === '23505') {
-        const { data: registrosCorrida, error: erroCorrida } = await sb
-          .from('ponto_registros')
-          .select('*')
-          .eq('funcionario_id', funcionarioId)
-          .eq('data_ponto', dataHoje)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (erroCorrida) {
-          setMsg('msgPonto', `Não foi possível registrar o ponto: ${mensagemErroSupabase(erroCorrida, 'erro desconhecido')}`, 'err');
-          return;
-        }
-        registroAtual = (registrosCorrida || [])[0] || null;
-      } else {
-        setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}`, 'err');
-        return;
-      }
-    } else {
-      registroAtual = registroInserido || registroAtual;
-    }
-
-    if (!registroAtual) {
-      setMsg('msgPonto', 'Não foi possível identificar o registro do dia para este funcionário.', 'err');
+      setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroAbre, 'erro desconhecido')}`, 'err');
       return;
-    }
-    setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
-    exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
-  } else {
-    let intervalos = [];
-    try {
-      intervalos = await obterIntervalosPontoDoRegistro(registroAtual.id);
-    } catch (error) {
-      setMsg('msgPonto', 'Não foi possível carregar os intervalos do dia.', 'err');
-      return;
-    }
-
-    const aberto = obterIntervaloAberto(intervalos);
-    if (aberto) {
-      const { error: erroRetorno } = await sb
-        .from('ponto_intervalos')
-        .update({ retorno_em: agora })
-        .eq('id', aberto.id);
-
-      if (erroRetorno) {
-        if (isMissingTimeClockIntervalsTableError(erroRetorno)) {
-          setMsg('msgPonto', 'Rode o SQL da tabela ponto_intervalos para registrar múltiplos intervalos.', 'err');
-          return;
-        }
-        setMsg('msgPonto', 'Não foi possível registrar o retorno do intervalo.', 'err');
-        return;
-      }
-
-      if (!registroAtual.retorno_intervalo_em) {
-        await sb
-          .from('ponto_registros')
-          .update({ retorno_intervalo_em: agora, saida_em: null })
-          .eq('id', registroAtual.id);
-      }
-
-      setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
-      exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
-    } else {
-      const payloadIntervalo = {
-        ponto_registro_id: registroAtual.id,
-        ordem: proximaOrdemIntervalo(intervalos),
-        inicio_em: agora,
-      };
-      const { error: erroInicioIntervalo } = await sb.from('ponto_intervalos').insert([payloadIntervalo]);
-      if (erroInicioIntervalo) {
-        if (isMissingTimeClockIntervalsTableError(erroInicioIntervalo)) {
-          setMsg('msgPonto', 'Rode o SQL da tabela ponto_intervalos para registrar múltiplos intervalos.', 'err');
-          return;
-        }
-        setMsg('msgPonto', 'Não foi possível registrar o início do intervalo.', 'err');
-        return;
-      }
-
-      if (!registroAtual.inicio_intervalo_em) {
-        await sb
-          .from('ponto_registros')
-          .update({ inicio_intervalo_em: agora, saida_em: agora })
-          .eq('id', registroAtual.id);
-      } else {
-        await sb
-          .from('ponto_registros')
-          .update({ saida_em: agora })
-          .eq('id', registroAtual.id);
-      }
-
-      setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
-      exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
     }
   }
+
+  setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
+  exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
 
   document.getElementById('pontoPinInput').value = '';
   if (timeoutLimpezaPinPonto) {
