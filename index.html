@@ -2480,7 +2480,8 @@ function notificacaoJaFoiLida(chave) {
 }
 
 function notificacaoDeveSempreAparecer(item) {
-  return tipoNotificacaoTarefaAtrasada(item?.tipo) && !obterSilenciamentoAlertasCriticosDaSessao();
+  // Alertas críticos devem permanecer visíveis enquanto existirem.
+  return tipoNotificacaoTarefaAtrasada(item?.tipo);
 }
 
 function tipoNotificacaoTarefaAtrasada(tipo) {
@@ -4066,12 +4067,6 @@ function renderizarAvisoCentralTarefas() {
   const title = document.getElementById('overdueAlertTitle');
   if (!banner || !list) return;
 
-  if (obterSilenciamentoAlertasCriticosDaSessao()) {
-    banner.hidden = true;
-    list.innerHTML = '';
-    return;
-  }
-
   const criticas = obterNotificacoesCriticas();
   if (title) {
     title.textContent = `"${obterNomeResponsavelAvisoTarefa(criticas)}" NOVA TAREFA`;
@@ -4178,8 +4173,7 @@ function limparControleLembretesChecklist(chavesAtivas = []) {
 
 function sincronizarAvisoNotificacoes() {
   const totalAtual = notificacoesAtuais.length;
-  const alertasCriticosSilenciados = obterSilenciamentoAlertasCriticosDaSessao();
-  const notificacoesCriticas = alertasCriticosSilenciados ? [] : obterNotificacoesCriticas();
+  const notificacoesCriticas = obterNotificacoesCriticas();
   const totalCriticoAtual = notificacoesCriticas.length;
   const assinaturaCriticaAtual = notificacoesCriticas.map(item => item.chave).sort().join('|');
   const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente');
