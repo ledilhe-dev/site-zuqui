@@ -1159,9 +1159,40 @@
     .btn-ghost { background: var(--surface2); color: var(--text); }
     .btn-ghost:hover { background: var(--border); }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-icon {
+      min-width: 36px;
+      width: 36px;
+      height: 32px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .btn-icon-danger {
+      color: #ffb4b4;
+      border-color: rgba(239,68,68,0.45);
+    }
+    .btn-icon-danger:hover {
+      background: rgba(239,68,68,0.12);
+    }
+    .btn-icon-success {
+      color: #ddffe9;
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.18);
+    }
+    .btn-icon-success:hover {
+      background: rgba(34, 197, 94, 0.28);
+    }
 
     /* ---- LIST ITEMS ---- */
     .lista { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    #listaTarefas .lista {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+      gap: 10px;
+    }
     .item {
       display: flex;
       align-items: center;
@@ -1206,14 +1237,38 @@
       line-height: 1.35;
     }
     .tarefa-funcionarios-inline {
-      margin-top: 8px;
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+    }
+    .tarefa-lancamento-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 112px;
+      grid-template-areas:
+        "dias horario"
+        "func horario";
+      gap: 8px 10px;
+      align-items: start;
+    }
+    .tarefa-lancamento-bloco {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .tarefa-lancamento-bloco-dias { grid-area: dias; }
+    .tarefa-lancamento-bloco-horario { grid-area: horario; }
+    .tarefa-lancamento-bloco-funcionarios { grid-area: func; }
+    .tarefa-lancamento-topo {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px 8px;
       flex-wrap: wrap;
     }
     .tarefa-funcionarios-label {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.4px;
@@ -1224,20 +1279,26 @@
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 6px 10px;
+      gap: 5px 6px;
+    }
+    .tarefa-lancamento-grid .tarefa-funcionarios-grid {
+      width: 100%;
     }
     .tarefa-lancamento-horario {
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
-      gap: 6px;
-      margin-left: 2px;
+      justify-content: center;
+      gap: 4px;
+      margin-left: 0;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 4px 8px;
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 112px;
     }
     .tarefa-lancamento-horario span {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.35px;
@@ -1245,31 +1306,37 @@
       white-space: nowrap;
     }
     .tarefa-lancamento-horario input[type="time"] {
-      width: 92px;
-      min-width: 92px;
-      height: 28px;
-      padding: 4px 8px;
+      width: 84px;
+      min-width: 84px;
+      height: 26px;
+      padding: 3px 6px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      font-size: 12px;
+      font-size: 11px;
       font-family: inherit;
       outline: none;
     }
     .tarefa-lancamento-horario input[type="time"]:focus {
       border-color: var(--green);
     }
-    .tarefa-funcionario-option {
+    .tarefa-dias-acoes {
+      margin-left: 0;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+    }
+    .tarefa-funcionario-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       color: var(--text);
-      font-size: 12px;
+      font-size: 11px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 999px;
-      padding: 4px 8px;
+      padding: 3px 7px;
       cursor: pointer;
       user-select: none;
     }
@@ -1285,6 +1352,39 @@
       flex-shrink: 0;
       flex-wrap: wrap;
       justify-content: flex-end;
+    }
+    .tarefa-cadastrada-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+    .tarefa-cadastrada-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 36px);
+      gap: 6px;
+      align-self: start;
+      justify-content: end;
+      align-content: start;
+      min-width: 78px;
+    }
+    .tarefa-cadastrada-actions .tag-status-mini {
+      grid-column: 1 / -1;
+      justify-content: center;
+      min-height: 28px;
+    }
+    .tarefa-cadastrada-info-topo {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tarefa-cadastrada-resumo {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 3px;
     }
     .checklist-item .item-nome { font-size: 13px; }
     .checklist-item .item-detalhe { font-size: 11px; line-height: 1.25; }
@@ -7303,6 +7403,55 @@ function definirHorarioLancamentoTarefa(tarefaId, valor) {
   horarioLancamentoPorTarefa[idTarefa] = hora;
 }
 
+function obterDiasLancamentoSelecionados(tarefaId, diasPadrao = 'todos') {
+  const idTarefa = String(tarefaId || '');
+  const ordem = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+  const sobrescrito = diasLancamentoPorTarefa[idTarefa];
+  if (Array.isArray(sobrescrito)) {
+    return ordem.filter(dia => sobrescrito.includes(dia));
+  }
+  return [];
+}
+
+function obterDiasLancamentoSelecionadosTexto(tarefaId, diasPadrao = 'todos') {
+  const dias = obterDiasLancamentoSelecionados(tarefaId, diasPadrao);
+  if (!dias.length) return '';
+  if (dias.length === 7) return 'todos';
+  return dias.join(',');
+}
+
+function definirDiaLancamentoTarefa(tarefaId, dia, marcado) {
+  const idTarefa = String(tarefaId || '');
+  const diaNormalizado = String(dia || '').trim().toLowerCase();
+  const ordem = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+  if (!idTarefa || !ordem.includes(diaNormalizado)) return;
+
+  const atuais = new Set(obterDiasLancamentoSelecionados(idTarefa, 'todos'));
+  if (marcado) atuais.add(diaNormalizado);
+  else atuais.delete(diaNormalizado);
+
+  diasLancamentoPorTarefa[idTarefa] = ordem.filter(item => atuais.has(item));
+}
+
+function marcarTodosDiasLancamentoTarefa(tarefaId) {
+  const idTarefa = String(tarefaId || '');
+  if (!idTarefa) return;
+  const todos = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+  diasLancamentoPorTarefa[idTarefa] = [...todos];
+  document.querySelectorAll(`.dias-lancamento-checkbox[data-tarefa-id="${idTarefa}"]`).forEach(input => {
+    input.checked = true;
+  });
+}
+
+function limparDiasLancamentoTarefa(tarefaId) {
+  const idTarefa = String(tarefaId || '');
+  if (!idTarefa) return;
+  diasLancamentoPorTarefa[idTarefa] = [];
+  document.querySelectorAll(`.dias-lancamento-checkbox[data-tarefa-id="${idTarefa}"]`).forEach(input => {
+    input.checked = false;
+  });
+}
+
 function selecionarFuncionarioLancamento(tarefaId, funcionarioId, marcado) {
   const idTarefa = String(tarefaId || '');
   const idFuncionario = String(funcionarioId || '');
@@ -7372,25 +7521,32 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
   const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
   return `
     <div class="tarefa-funcionarios-inline">
-      <div class="tarefa-lancamento-row">
-        <span class="tarefa-funcionarios-label">Dias no lançamento:</span>
-        <div class="tarefa-funcionarios-grid">${diasHtml}</div>
-        <div class="dias-semana-acoes tarefa-dias-acoes">
-          <button class="btn btn-ghost btn-sm" type="button" onclick="marcarTodosDiasLancamentoTarefa('${tarefaIdEscapado}')">Marcar todos</button>
-          <button class="btn btn-ghost btn-sm" type="button" onclick="limparDiasLancamentoTarefa('${tarefaIdEscapado}')">Limpar dias</button>
+      <div class="tarefa-lancamento-grid">
+        <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-dias">
+          <div class="tarefa-lancamento-topo">
+            <span class="tarefa-funcionarios-label">Dias</span>
+            <div class="dias-semana-acoes tarefa-dias-acoes">
+              <button class="btn btn-sm btn-icon btn-icon-success" type="button" title="Marcar todos os dias" onclick="marcarTodosDiasLancamentoTarefa('${tarefaIdEscapado}')">✓</button>
+              <button class="btn btn-sm btn-icon btn-icon-danger" type="button" title="Limpar todos os dias" onclick="limparDiasLancamentoTarefa('${tarefaIdEscapado}')">●</button>
+            </div>
+          </div>
+          <div class="tarefa-funcionarios-grid">${diasHtml}</div>
         </div>
-      </div>
-      <div class="tarefa-lancamento-row">
-        <span class="tarefa-funcionarios-label">Funcionário no lançamento:</span>
-        <div class="tarefa-funcionarios-grid">${opcoes}</div>
-        <label class="tarefa-lancamento-horario">
-          <span>Horário</span>
-          <input
-            type="time"
-            value="${escaparHtmlBasico(horarioSelecionado)}"
-            onchange="definirHorarioLancamentoTarefa('${tarefaIdEscapado}', this.value)"
-          >
-        </label>
+        <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-horario">
+          <span class="tarefa-funcionarios-label">Hora</span>
+          <label class="tarefa-lancamento-horario">
+            <span>Hora</span>
+            <input
+              type="time"
+              value="${escaparHtmlBasico(horarioSelecionado)}"
+              onchange="definirHorarioLancamentoTarefa('${tarefaIdEscapado}', this.value)"
+            >
+          </label>
+        </div>
+        <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-funcionarios">
+          <span class="tarefa-funcionarios-label">Funcionário</span>
+          <div class="tarefa-funcionarios-grid">${opcoes}</div>
+        </div>
       </div>
       <div class="msg" id="${gerarIdMsgLancamentoTarefa(tarefa.id)}"></div>
     </div>
@@ -7423,19 +7579,22 @@ async function carregarTarefas() {
     }
 
     lista.innerHTML = '<div class="lista">' + data.map(t => `
-      <div class="item">
+      <div class="item tarefa-cadastrada-item">
         <div class="item-info">
-          <div class="item-nome">${t.nome}</div>
-          <div class="item-detalhe">Funcionario: ${t.funcionarios?.nome ?? '-'}${t.checklists?.nome ? ' · Checklist: ' + t.checklists.nome : ''}${t.descricao ? ' · ' + t.descricao : ''}</div>
-          ${t.horario_limite ? `<div class="item-detalhe" style="color:var(--amber);font-size:11px;margin-top:4px">Prazo máximo: ${t.horario_limite}</div>` : ''}
-          ${t.dias_semana ? `<div class="item-detalhe" style="color:var(--text-dim);font-size:11px;margin-top:4px">Dias: ${formatarDias(t.dias_semana)}</div>` : ''}
+          <div class="tarefa-cadastrada-info-topo">
+            <div class="item-nome">${t.nome}</div>
+            ${t.horario_limite ? `<div class="tarefa-cadastrada-resumo" style="color:var(--amber)">Prazo ${t.horario_limite}</div>` : ''}
+          </div>
+          <div class="item-detalhe">Resp.: ${t.funcionarios?.nome ?? '-'}${t.checklists?.nome ? ' · Check: ' + t.checklists.nome : ''}</div>
+          ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
+          ${t.dias_semana ? `<div class="tarefa-cadastrada-resumo">Base: ${formatarDias(t.dias_semana)}</div>` : ''}
           ${renderizarSelecaoFuncionariosLancamento(t)}
         </div>
-        <div class="item-actions">
-          ${t.ativo ? `<span class="tag tag-green">Ativa</span>` : `<span class="tag tag-gray">Inativa</span>`}
-          <button class="btn btn-ghost btn-sm" onclick="editarTarefa('${t.id}')">Editar</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">${t.lancada_checklist === true ? 'Lançar novamente' : 'Lançar tarefa'}</button>` : ''}
-          <button class="btn btn-red" onclick="excluirTarefa('${t.id}')">Excluir</button>
+        <div class="item-actions tarefa-cadastrada-actions">
+          ${t.ativo ? `<span class="tag tag-green tag-status-mini" title="Tarefa ativa">Ativa</span>` : `<span class="tag tag-gray tag-status-mini" title="Tarefa inativa">Inativa</span>`}
+          <button class="btn btn-ghost btn-sm btn-icon" title="Editar tarefa" onclick="editarTarefa('${t.id}')">✎</button>
+          ${t.ativo ? `<button class="btn btn-amber btn-sm btn-icon" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">▶</button>` : ''}
+          <button class="btn btn-red btn-sm btn-icon" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">✕</button>
         </div>
       </div>`).join('') + '</div>';
   } catch (err) {
@@ -7656,7 +7815,11 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     setMsg('msgTarefas', 'Informe o horário no card da tarefa antes de lançar.', 'err');
     return;
   }
-  const diasSelecionados = String(diasOverride || '').trim() || String(tarefa.dias_semana || 'todos').trim() || 'todos';
+  const diasSelecionados = String(diasOverride || '').trim();
+  if (!diasSelecionados) {
+    setMsg('msgTarefas', 'Selecione ao menos um dia no card da tarefa antes de lançar.', 'err');
+    return;
+  }
 
   const { error } = await sb.from('checklist_lancamentos').insert([{
     tarefa_id: tarefa.id,
