@@ -1241,7 +1241,7 @@
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 6px;
+      gap: 4px;
     }
     .tarefa-lancamento-grid {
       display: grid;
@@ -1253,7 +1253,7 @@
     .tarefa-lancamento-bloco {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
       min-width: 0;
     }
     .tarefa-lancamento-bloco-dias { grid-area: dias; }
@@ -1272,6 +1272,7 @@
       letter-spacing: 0.4px;
       font-weight: 600;
       white-space: nowrap;
+      line-height: 1;
     }
     .tarefa-funcionarios-grid {
       display: flex;
@@ -1287,12 +1288,12 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 3px;
       margin-left: 0;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 8px;
+      padding: 6px;
       min-width: 112px;
     }
     .tarefa-lancamento-horario span {
@@ -1323,7 +1324,7 @@
       margin-left: 0;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
     .tarefa-funcionario-option {
       display: inline-flex;
@@ -1355,22 +1356,20 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: start;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 8px 10px;
     }
     .tarefa-cadastrada-actions {
-      display: grid;
-      grid-template-columns: repeat(2, 36px);
-      gap: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
       align-self: start;
-      justify-content: end;
-      align-content: start;
-      min-width: 78px;
+      align-items: flex-end;
+      min-width: 94px;
     }
     .tarefa-cadastrada-actions .tag-status-mini {
-      grid-column: 1 / -1;
       justify-content: center;
-      min-height: 28px;
+      min-height: 24px;
     }
     .tarefa-cadastrada-info-topo {
       display: flex;
@@ -1380,9 +1379,14 @@
       flex-wrap: wrap;
     }
     .tarefa-cadastrada-resumo {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-dim);
-      margin-top: 3px;
+      margin-top: 2px;
+    }
+    .tarefa-funcionarios-inline .msg {
+      min-height: 0;
+      margin-top: 0;
+      line-height: 1.2;
     }
     .checklist-item .item-nome { font-size: 13px; }
     .checklist-item .item-detalhe { font-size: 11px; line-height: 1.25; }
@@ -7524,8 +7528,8 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
           <div class="tarefa-lancamento-topo">
             <span class="tarefa-funcionarios-label">Dias</span>
             <div class="dias-semana-acoes tarefa-dias-acoes">
-              <button class="btn btn-sm btn-icon btn-icon-success" type="button" title="Marcar todos os dias" onclick="marcarTodosDiasLancamentoTarefa('${tarefaIdEscapado}')">✓</button>
-              <button class="btn btn-sm btn-icon btn-icon-danger" type="button" title="Limpar todos os dias" onclick="limparDiasLancamentoTarefa('${tarefaIdEscapado}')">●</button>
+              <button class="btn btn-ghost btn-sm" type="button" title="Marcar todos os dias" onclick="marcarTodosDiasLancamentoTarefa('${tarefaIdEscapado}')">Todos</button>
+              <button class="btn btn-red btn-sm" type="button" title="Limpar todos os dias" onclick="limparDiasLancamentoTarefa('${tarefaIdEscapado}')">Limpar</button>
             </div>
           </div>
           <div class="tarefa-funcionarios-grid">${diasHtml}</div>
@@ -7533,7 +7537,6 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-horario">
           <span class="tarefa-funcionarios-label">Hora</span>
           <label class="tarefa-lancamento-horario">
-            <span>Hora</span>
             <input
               type="time"
               value="${escaparHtmlBasico(horarioSelecionado)}"
@@ -7590,9 +7593,9 @@ async function carregarTarefas() {
         </div>
         <div class="item-actions tarefa-cadastrada-actions">
           ${t.ativo ? `<span class="tag tag-green tag-status-mini" title="Tarefa ativa">Ativa</span>` : `<span class="tag tag-gray tag-status-mini" title="Tarefa inativa">Inativa</span>`}
-          <button class="btn btn-ghost btn-sm btn-icon" title="Editar tarefa" onclick="editarTarefa('${t.id}')">✎</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm btn-icon" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">▶</button>` : ''}
-          <button class="btn btn-red btn-sm btn-icon" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">✕</button>
+          <button class="btn btn-ghost btn-sm" title="Editar tarefa" onclick="editarTarefa('${t.id}')">Editar</button>
+          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          <button class="btn btn-red btn-sm" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">Excluir</button>
         </div>
       </div>`).join('') + '</div>';
   } catch (err) {
