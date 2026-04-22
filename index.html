@@ -7326,6 +7326,30 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
     return '<div class="item-detalhe">Funcionários: nenhum ativo para seleção.</div>';
   }
 
+  const tarefaIdEscapado = escaparHtmlBasico(tarefa.id);
+  const diasSelecionados = new Set(obterDiasLancamentoSelecionados(tarefa.id, tarefa.dias_semana || 'todos'));
+  const diasOpcao = [
+    { key: 'seg', label: 'Seg' },
+    { key: 'ter', label: 'Ter' },
+    { key: 'qua', label: 'Qua' },
+    { key: 'qui', label: 'Qui' },
+    { key: 'sex', label: 'Sex' },
+    { key: 'sab', label: 'Sab' },
+    { key: 'dom', label: 'Dom' },
+  ];
+  const diasHtml = diasOpcao.map(item => `
+      <label class="tarefa-funcionario-option" style="padding:4px 8px">
+        <input
+          class="dias-lancamento-checkbox"
+          type="checkbox"
+          data-tarefa-id="${tarefaIdEscapado}"
+          onchange="definirDiaLancamentoTarefa('${tarefaIdEscapado}','${item.key}', this.checked)"
+          ${diasSelecionados.has(item.key) ? 'checked' : ''}
+        >
+        <span>${item.label}</span>
+      </label>
+    `).join('');
+
   const selecionado = obterFuncionarioLancamentoSelecionado(tarefa.id, tarefa.funcionario_id || '');
   const opcoes = funcionariosAtivosTarefa.map(funcionario => {
     const idFuncionario = String(funcionario.id || '');
@@ -7335,9 +7359,9 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
         <input
           class="funcionario-lancamento-checkbox"
           type="checkbox"
-          data-tarefa-id="${escaparHtmlBasico(tarefa.id)}"
+          data-tarefa-id="${tarefaIdEscapado}"
           data-funcionario-id="${escaparHtmlBasico(idFuncionario)}"
-          onchange="selecionarFuncionarioLancamento('${escaparHtmlBasico(tarefa.id)}','${escaparHtmlBasico(idFuncionario)}', this.checked)"
+          onchange="selecionarFuncionarioLancamento('${tarefaIdEscapado}','${escaparHtmlBasico(idFuncionario)}', this.checked)"
           ${checked}
         >
         <span>${escaparHtmlBasico(funcionario.nome || 'Funcionário')}</span>
@@ -7348,16 +7372,27 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
   const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
   return `
     <div class="tarefa-funcionarios-inline">
-      <span class="tarefa-funcionarios-label">Funcionário no lançamento:</span>
-      <div class="tarefa-funcionarios-grid">${opcoes}</div>
-      <label class="tarefa-lancamento-horario">
-        <span>Horário</span>
-        <input
-          type="time"
-          value="${escaparHtmlBasico(horarioSelecionado)}"
-          onchange="definirHorarioLancamentoTarefa('${escaparHtmlBasico(tarefa.id)}', this.value)"
-        >
-      </label>
+      <div class="tarefa-lancamento-row">
+        <span class="tarefa-funcionarios-label">Dias no lançamento:</span>
+        <div class="tarefa-funcionarios-grid">${diasHtml}</div>
+        <div class="dias-semana-acoes tarefa-dias-acoes">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="marcarTodosDiasLancamentoTarefa('${tarefaIdEscapado}')">Marcar todos</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="limparDiasLancamentoTarefa('${tarefaIdEscapado}')">Limpar dias</button>
+        </div>
+      </div>
+      <div class="tarefa-lancamento-row">
+        <span class="tarefa-funcionarios-label">Funcionário no lançamento:</span>
+        <div class="tarefa-funcionarios-grid">${opcoes}</div>
+        <label class="tarefa-lancamento-horario">
+          <span>Horário</span>
+          <input
+            type="time"
+            value="${escaparHtmlBasico(horarioSelecionado)}"
+            onchange="definirHorarioLancamentoTarefa('${tarefaIdEscapado}', this.value)"
+          >
+        </label>
+      </div>
+      <div class="msg" id="${gerarIdMsgLancamentoTarefa(tarefa.id)}"></div>
     </div>
   `;
 }
@@ -7399,7 +7434,7 @@ async function carregarTarefas() {
         <div class="item-actions">
           ${t.ativo ? `<span class="tag tag-green">Ativa</span>` : `<span class="tag tag-gray">Inativa</span>`}
           <button class="btn btn-ghost btn-sm" onclick="editarTarefa('${t.id}')">Editar</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'))">${t.lancada_checklist === true ? 'Lançar novamente' : 'Lançar tarefa'}</button>` : ''}
+          ${t.ativo ? `<button class="btn btn-amber btn-sm" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">${t.lancada_checklist === true ? 'Lançar novamente' : 'Lançar tarefa'}</button>` : ''}
           <button class="btn btn-red" onclick="excluirTarefa('${t.id}')">Excluir</button>
         </div>
       </div>`).join('') + '</div>';
@@ -7593,7 +7628,7 @@ function cancelarEdicaoTarefa() {
   setMsg('msgTarefas', 'Edição cancelada.', 'ok');
 }
 
-async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '') {
+async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '', diasOverride = '') {
   if (!tarefasDisponiveis) {
     setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
     return;
@@ -7621,6 +7656,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     setMsg('msgTarefas', 'Informe o horário no card da tarefa antes de lançar.', 'err');
     return;
   }
+  const diasSelecionados = String(diasOverride || '').trim() || String(tarefa.dias_semana || 'todos').trim() || 'todos';
 
   const { error } = await sb.from('checklist_lancamentos').insert([{
     tarefa_id: tarefa.id,
@@ -7629,7 +7665,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     nome: tarefa.nome,
     descricao: tarefa.descricao || null,
     horario_limite: horarioSelecionado || null,
-    dias_semana: tarefa.dias_semana || 'todos',
+    dias_semana: diasSelecionados,
     lancado_em: new Date().toISOString(),
     status: 'pendente'
   }]);
