@@ -7352,33 +7352,79 @@ async function carregarChecklistsTarefas() {
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   try {
-    const { data, error } = await sb.from('checklists').select('*').order('nome');
+    const { data, error } = await sb
+      .from('checklist_lancamentos')
+      .select('id, nome, descricao, horario_limite, funcionario_id, status, lancado_em')
+      .order('lancado_em', { ascending: false })
+      .limit(300);
 
     if (error) {
+      if (isMissingLancamentosTableError(error)) {
+        lista.innerHTML = '<div class="empty">Rode o SQL da tabela checklist_lancamentos para habilitar esta lista.</div>';
+        return;
+      }
       console.error('Erro ao carregar checklists cadastrados:', error);
-      lista.innerHTML = '<div class="empty">Erro ao carregar checklists.</div>';
+      lista.innerHTML = '<div class="empty">Erro ao carregar checklists lançados.</div>';
       return;
     }
 
     if (!data?.length) {
-      lista.innerHTML = '<div class="empty">Nenhum checklist cadastrado.</div>';
+      lista.innerHTML = '<div class="empty">Nenhum checklist lançado.</div>';
       return;
+    }
+
+    const funcionarioIds = [...new Set((data || []).map(item => item.funcionario_id).filter(Boolean).map(item => String(item)))];
+    let funcionariosMap = {};
+
+    if (funcionarioIds.length) {
+      const { data: funcionariosData } = await sb
+        .from('funcionarios')
+        .select('id, nome')
+        .in('id', funcionarioIds);
+      funcionariosMap = Object.fromEntries((funcionariosData || []).map(item => [String(item.id), item.nome]));
     }
 
     lista.innerHTML = '<div class="lista">' + data.map(c => `
       <div class="item">
         <div class="item-info">
           <div class="item-nome">${c.nome}</div>
-          <div class="item-detalhe">${c.descricao || 'Checklist cadastrado no sistema.'}</div>
+          <div class="item-detalhe">Funcionário: ${funcionariosMap[String(c.funcionario_id)] || '-'}</div>
+          <div class="item-detalhe">Horário: ${c.horario_limite || '-'}</div>
+          <div class="item-detalhe">${c.descricao || 'Checklist lançado no sistema.'}</div>
+          <div class="item-detalhe">Lançado em: ${fmtDate(c.lancado_em)}</div>
         </div>
         <div class="item-actions">
-          ${c.ativo ? '<span class="tag tag-green">Ativo</span>' : '<span class="tag tag-gray">Inativo</span>'}
+          ${c.status === 'finalizado'
+            ? '<span class="tag tag-green">Finalizado</span>'
+            : c.status === 'iniciado'
+            ? '<span class="tag tag-amber">Iniciado</span>'
+            : '<span class="tag tag-gray">Pendente</span>'}
+          <button class="btn btn-red btn-sm" onclick="excluirChecklistCadastradoTarefa('${c.id}')">Excluir</button>
         </div>
       </div>`).join('') + '</div>';
   } catch (err) {
     console.error('Erro inesperado ao carregar checklists cadastrados:', err);
-    lista.innerHTML = '<div class="empty">Erro inesperado ao carregar checklists.</div>';
+    lista.innerHTML = '<div class="empty">Erro inesperado ao carregar checklists lançados.</div>';
   }
+}
+
+async function excluirChecklistCadastradoTarefa(id) {
+  if (!confirm('Excluir este checklist lançado?')) return;
+
+  const { error } = await sb.from('checklist_lancamentos').delete().eq('id', id);
+  if (error) {
+    if (isMissingLancamentosTableError(error)) {
+      setMsg('msgTarefas', 'Falta criar a tabela checklist_lancamentos.', 'err');
+      return;
+    }
+    setMsg('msgTarefas', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgTarefas', 'Checklist lançado excluído.', 'ok');
+  carregarChecklistsTarefas();
+  carregarChecklists();
+  carregarNotificacoes();
 }
 
 async function criarTarefa() {
