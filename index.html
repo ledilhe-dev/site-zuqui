@@ -7511,6 +7511,13 @@ function gerarIdMsgLancamentoTarefa(tarefaId) {
   return `msgLancamentoTarefa_${base}`;
 }
 
+function setMsgLancamentoTarefa(tarefaId, mensagem = '', tipo = '') {
+  const el = document.getElementById(gerarIdMsgLancamentoTarefa(tarefaId));
+  if (!el) return;
+  el.textContent = mensagem || '';
+  el.className = 'msg' + (tipo ? ` ${tipo}` : '');
+}
+
 function renderizarSelecaoFuncionariosLancamento(tarefa) {
   if (!funcionariosAtivosTarefa.length) {
     return '<div class="item-detalhe">Funcionários: nenhum ativo para seleção.</div>';
