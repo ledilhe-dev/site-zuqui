@@ -1353,19 +1353,31 @@
       justify-content: flex-end;
     }
     .tarefa-cadastrada-item {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
       gap: 8px;
       padding: 8px 10px;
     }
+    .tarefa-cadastrada-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .tarefa-cadastrada-header-main {
+      min-width: 0;
+      flex: 1 1 320px;
+    }
     .tarefa-cadastrada-actions {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-self: start;
-      align-items: flex-end;
-      min-width: 94px;
+      flex-direction: row;
+      gap: 6px;
+      align-self: flex-start;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .tarefa-cadastrada-actions .tag-status-mini {
       justify-content: center;
@@ -1382,6 +1394,24 @@
       font-size: 10px;
       color: var(--text-dim);
       margin-top: 2px;
+    }
+    .tarefa-cadastrada-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .tarefa-cadastrada-meta strong {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .tarefa-cadastrada-launch {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 10px;
     }
     .tarefa-funcionarios-inline .msg {
       min-height: 0;
@@ -7527,7 +7557,7 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
 
   const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
   return `
-    <div class="tarefa-funcionarios-inline">
+    <div class="tarefa-funcionarios-inline tarefa-cadastrada-launch">
       <div class="tarefa-lancamento-grid">
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-dias">
           <div class="tarefa-lancamento-topo">
@@ -7586,22 +7616,27 @@ async function carregarTarefas() {
 
     lista.innerHTML = '<div class="lista">' + data.map(t => `
       <div class="item tarefa-cadastrada-item">
-        <div class="item-info">
-          <div class="tarefa-cadastrada-info-topo">
-            <div class="item-nome">${t.nome}</div>
-            ${t.horario_limite ? `<div class="tarefa-cadastrada-resumo" style="color:var(--amber)">Prazo ${t.horario_limite}</div>` : ''}
+        <div class="tarefa-cadastrada-header">
+          <div class="tarefa-cadastrada-header-main">
+            <div class="tarefa-cadastrada-info-topo">
+              <div class="item-nome">${t.nome}</div>
+            </div>
+            <div class="tarefa-cadastrada-meta">
+              <span><strong>Resp.</strong> ${t.funcionarios?.nome ?? '-'}</span>
+              ${t.checklists?.nome ? `<span><strong>Check</strong> ${t.checklists.nome}</span>` : ''}
+              ${t.horario_limite ? `<span style="color:var(--amber)"><strong>Prazo</strong> ${t.horario_limite}</span>` : ''}
+              ${t.dias_semana ? `<span><strong>Base</strong> ${formatarDias(t.dias_semana)}</span>` : ''}
+            </div>
+            ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
           </div>
-          <div class="item-detalhe">Resp.: ${t.funcionarios?.nome ?? '-'}${t.checklists?.nome ? ' · Check: ' + t.checklists.nome : ''}</div>
-          ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
-          ${t.dias_semana ? `<div class="tarefa-cadastrada-resumo">Base: ${formatarDias(t.dias_semana)}</div>` : ''}
-          ${renderizarSelecaoFuncionariosLancamento(t)}
+          <div class="item-actions tarefa-cadastrada-actions">
+            ${t.ativo ? `<span class="tag tag-green tag-status-mini" title="Tarefa ativa">Ativa</span>` : `<span class="tag tag-gray tag-status-mini" title="Tarefa inativa">Inativa</span>`}
+            <button class="btn btn-ghost btn-sm" title="Editar tarefa" onclick="editarTarefa('${t.id}')">Editar</button>
+            ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+            <button class="btn btn-red btn-sm" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">Excluir</button>
+          </div>
         </div>
-        <div class="item-actions tarefa-cadastrada-actions">
-          ${t.ativo ? `<span class="tag tag-green tag-status-mini" title="Tarefa ativa">Ativa</span>` : `<span class="tag tag-gray tag-status-mini" title="Tarefa inativa">Inativa</span>`}
-          <button class="btn btn-ghost btn-sm" title="Editar tarefa" onclick="editarTarefa('${t.id}')">Editar</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
-          <button class="btn btn-red btn-sm" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">Excluir</button>
-        </div>
+        ${renderizarSelecaoFuncionariosLancamento(t)}
       </div>`).join('') + '</div>';
   } catch (err) {
     console.error('Erro inesperado ao carregar tarefas:', err);
