@@ -2416,7 +2416,7 @@
           <div class="card-title">Nova tarefa</div>
           <div class="tarefa-form-row">
             <input id="nomeTarefa" type="text" placeholder="Nome da tarefa">
-            <input id="descTarefa" type="text" placeholder="Descrição da tarefa" autocomplete="off" autocorrect="off" spellcheck="false">
+            <input id="descTarefa" name="descricao_tarefa_manual_no_autofill" type="text" placeholder="Descrição da tarefa" autocomplete="new-password" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="desbloquearCampoDescricaoTarefa(this)">
             <input id="horarioTarefa" class="campo-curto" type="time" placeholder="Horário" style="display:none">
             <select id="funcionarioTarefa" style="display:none">
               <option value=""></option>
@@ -2427,28 +2427,6 @@
             </div>
           </div>
           <div class="item-detalhe" style="margin-top:8px">Funcionário: selecione por checkbox ao lado de cada tarefa cadastrada.</div>
-
-          <div style="margin-top:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)">
-            <div class="dias-semana-header">
-              <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Dias da semana</div>
-            </div>
-            <div class="dias-semana-linha">
-              <div class="dias-semana-checks">
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSeg" onchange="atualizarDiasSelecionados()"> Seg</label>
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasTer" onchange="atualizarDiasSelecionados()"> Ter</label>
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasQua" onchange="atualizarDiasSelecionados()"> Qua</label>
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasQui" onchange="atualizarDiasSelecionados()"> Qui</label>
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSex" onchange="atualizarDiasSelecionados()"> Sex</label>
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasSab" onchange="atualizarDiasSelecionados()"> Sab</label>
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><input type="checkbox" id="diasDom" onchange="atualizarDiasSelecionados()"> Dom</label>
-              </div>
-              <div class="dias-semana-acoes">
-                <button class="btn btn-ghost btn-sm" type="button" onclick="marcarTodosDias()">Marcar todos</button>
-                <button class="btn btn-ghost btn-sm" type="button" onclick="limparDias()">Limpar dias</button>
-              </div>
-            </div>
-            <div id="diasSelecionados" style="font-size:12px;color:var(--text-muted)">Dias selecionados: Nenhum dia selecionado</div>
-          </div>
 
           <div class="msg" id="msgTarefas"></div>
         </div>
@@ -3378,6 +3356,14 @@ function toggleMobileMenu() {
 function forcarCampoObservacaoTarefaEmBranco() {
   const campo = document.getElementById('descTarefa');
   if (!campo) return;
+  if (!tarefaEmEdicaoId) {
+    campo.value = '';
+  }
+}
+
+function desbloquearCampoDescricaoTarefa(campo) {
+  if (!campo) return;
+  campo.removeAttribute('readonly');
   if (!tarefaEmEdicaoId) {
     campo.value = '';
   }
@@ -7564,6 +7550,7 @@ function limparFormularioTarefa() {
   tarefaEmEdicaoId = null;
   document.getElementById('nomeTarefa').value = '';
   document.getElementById('descTarefa').value = '';
+  document.getElementById('descTarefa').setAttribute('readonly', 'readonly');
   document.getElementById('horarioTarefa').value = '';
   document.getElementById('funcionarioTarefa').value = '';
   limparDias();
@@ -7589,6 +7576,7 @@ async function editarTarefa(id) {
   tarefaEmEdicaoId = id;
   document.getElementById('nomeTarefa').value = tarefa.nome || '';
   document.getElementById('descTarefa').value = tarefa.descricao || '';
+  document.getElementById('descTarefa').removeAttribute('readonly');
   document.getElementById('horarioTarefa').value = tarefa.horario_limite || '';
   document.getElementById('funcionarioTarefa').value = tarefa.funcionario_id || '';
   preencherDiasSelecionados(tarefa.dias_semana);
