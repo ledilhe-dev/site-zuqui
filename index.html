@@ -5430,7 +5430,7 @@ function sincronizarAvisoNotificacoes() {
   };
 
   const tocarSomCriticoExecucao = () => {
-    tocarSomExecucaoAtrasadaNotificacao();
+    tocarBipCurtoTarefaAtrasada();
     somTocadoNesteCiclo = true;
   };
 
@@ -5562,9 +5562,19 @@ async function carregarNotificacoes() {
       .order('created_at', { ascending: false });
 
     if (usuarioPodeVerNotificacaoSolicitacao() && !errSolicitacoes && solicitacoes?.length) {
-      solicitacoes.forEach(s => {
+      const solicitacoesVisiveis = [];
+      const emailsVistos = new Set();
+      (solicitacoes || []).forEach(s => {
+        const chaveEmail = String(s.email || '').trim().toLowerCase() || `id:${s.id}`;
+        if (emailsVistos.has(chaveEmail)) return;
+        emailsVistos.add(chaveEmail);
+        solicitacoesVisiveis.push(s);
+      });
+
+      solicitacoesVisiveis.forEach(s => {
+        const emailNormalizado = String(s.email || '').trim().toLowerCase();
         itens.push({
-          chave: `solicitacao::${s.id}::${s.created_at}`,
+          chave: emailNormalizado ? `solicitacao_email::${emailNormalizado}` : `solicitacao::${s.id}`,
           tipo: 'solicitacao',
           page: 'solicitacoes',
           titulo: 'Novo usuário aguardando aprovação',
@@ -5638,7 +5648,7 @@ async function carregarNotificacoes() {
 
     let execucoesPendentesQuery = sb
       .from('checklist_execucoes')
-      .select('id, tarefa_id, checklist_id, status, data_execucao, iniciado_em, inicio_confirmado_em, funcionario_id, tarefas(nome, horario_limite)')
+      .select('id, tarefa_id, lancamento_id, checklist_id, status, data_execucao, iniciado_em, inicio_confirmado_em, funcionario_id, tarefas(nome, horario_limite)')
       .in('status', ['aberto', 'pausado'])
       .eq('data_execucao', hoje());
 
@@ -5673,6 +5683,17 @@ async function carregarNotificacoes() {
         .select('id, nome')
         .in('id', checklistIds);
       checklistsMap = Object.fromEntries((checklistsData || []).map(item => [String(item.id), item.nome]));
+    }
+
+    const lancamentoIdsExecucao = [...new Set((execucoesPendentes || []).map(item => item.lancamento_id).filter(Boolean).map(item => String(item)))];
+    let lancamentosExecucaoMap = {};
+
+    if (lancamentoIdsExecucao.length) {
+      const { data: lancamentosExecucaoData } = await sb
+        .from('checklist_lancamentos')
+        .select('id, horario_limite')
+        .in('id', lancamentoIdsExecucao);
+      lancamentosExecucaoMap = Object.fromEntries((lancamentosExecucaoData || []).map(item => [String(item.id), item]));
     }
 
     const lancamentoEhDoDiaOuSemData = (item) => {
@@ -5803,7 +5824,7 @@ async function carregarNotificacoes() {
       const tempoDecorrido = formatarDuracaoDecorrida(inicioReferencia);
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.tarefas?.nome || 'Checklist';
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
-      const horarioProgramado = horaCurta(item.tarefas?.horario_limite) || 'não informado';
+      const horarioProgramado = horaCurta(item.tarefas?.horario_limite || lancamentosExecucaoMap[String(item.lancamento_id)]?.horario_limite) || 'não informado';
       const pausada = item.status === 'pausado';
       const titulo = pausada ? 'Checklist pausado sem finalização' : 'Checklist aberto sem finalização';
       const descricao = pausada
@@ -9722,7 +9743,7 @@ async function carregarTarefasAtrasoMaster() {
       carregarLancamentosPendentesAtraso(),
       sb
         .from('checklist_execucoes')
-        .select('id, status, iniciado_em, inicio_confirmado_em, data_execucao, funcionario_id, checklist_id, tarefa_id')
+        .select('id, status, iniciado_em, inicio_confirmado_em, data_execucao, funcionario_id, checklist_id, tarefa_id, lancamento_id')
         .in('status', ['aberto', 'pausado'])
         .eq('data_execucao', hoje())
         .order('iniciado_em', { ascending: false }),
@@ -9748,6 +9769,18 @@ async function carregarTarefasAtrasoMaster() {
       tarefasMap = Object.fromEntries((tarefasRes.data || []).map(item => [String(item.id), item]));
     }
 
+    const lancamentosIdsExecucao = [...new Set((execucoesRes.data || []).map(item => item.lancamento_id).filter(Boolean).map(item => String(item)))];
+    let lancamentosMap = {};
+
+    if (lancamentosIdsExecucao.length) {
+      const lancamentosRes = await sb
+        .from('checklist_lancamentos')
+        .select('id, horario_limite')
+        .in('id', lancamentosIdsExecucao);
+      if (lancamentosRes.error && !isMissingLancamentosTableError(lancamentosRes.error)) throw lancamentosRes.error;
+      lancamentosMap = Object.fromEntries((lancamentosRes.data || []).map(item => [String(item.id), item]));
+    }
+
     const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
       if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return false;
       if (!tarefaDisponivelHoje(item.dias_semana)) return false;
@@ -9769,7 +9802,7 @@ async function carregarTarefasAtrasoMaster() {
       id: item.id,
       nome: tarefasMap[String(item.tarefa_id)]?.nome || checklistsMap[String(item.checklist_id)] || 'Checklist',
       responsavel: funcionariosMap[String(item.funcionario_id)] || 'Sem responsável',
-      horario: horaCurta(tarefasMap[String(item.tarefa_id)]?.horario_limite) || '-',
+      horario: horaCurta(tarefasMap[String(item.tarefa_id)]?.horario_limite || lancamentosMap[String(item.lancamento_id)]?.horario_limite) || '-',
       detalhe: item.status === 'pausado' ? 'Pausado sem finalização' : 'Aberto sem finalização',
       page: 'execucoes',
     }));
