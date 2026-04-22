@@ -7472,6 +7472,11 @@ function selecionarFuncionarioLancamento(tarefaId, funcionarioId, marcado) {
   }
 }
 
+function gerarIdMsgLancamentoTarefa(tarefaId) {
+  const base = String(tarefaId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return `msgLancamentoTarefa_${base}`;
+}
+
 function renderizarSelecaoFuncionariosLancamento(tarefa) {
   if (!funcionariosAtivosTarefa.length) {
     return '<div class="item-detalhe">Funcionários: nenhum ativo para seleção.</div>';
