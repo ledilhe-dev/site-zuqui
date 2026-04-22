@@ -2459,7 +2459,7 @@
         </div>
 
         <div class="card">
-          <div class="card-title">Checklists cadastrados</div>
+          <div class="card-title">Checklists lançados</div>
           <div id="listaChecklistsTarefas"><div class="empty">Carregando⬦</div></div>
         </div>
       </section>
@@ -2884,6 +2884,10 @@ function obterStorageHistoricoNotificacoesMaster() {
   return `zuqui_notificacoes_master_historico:${obterChaveUsuarioNotificacoes()}`;
 }
 
+function obterStorageNotificacoesMasterDispensadas() {
+  return `zuqui_notificacoes_master_dispensadas:${obterChaveUsuarioNotificacoes()}`;
+}
+
 function usuarioEhMasterNotificacoes() {
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
@@ -2916,11 +2920,62 @@ function salvarHistoricoNotificacoesMaster(itens = []) {
   }
 }
 
+function carregarNotificacoesMasterDispensadas() {
+  if (!usuarioEhMasterNotificacoes()) return [];
+  try {
+    const bruto = localStorage.getItem(obterStorageNotificacoesMasterDispensadas());
+    if (!bruto) return [];
+    const salvo = JSON.parse(bruto);
+    if (!salvo || salvo.data !== hoje() || !Array.isArray(salvo.chaves)) return [];
+    return salvo.chaves.filter(Boolean);
+  } catch (e) {
+    return [];
+  }
+}
+
+function salvarNotificacoesMasterDispensadas(chaves = []) {
+  if (!usuarioEhMasterNotificacoes()) return;
+  try {
+    localStorage.setItem(obterStorageNotificacoesMasterDispensadas(), JSON.stringify({
+      data: hoje(),
+      chaves: [...new Set((chaves || []).filter(Boolean))],
+    }));
+  } catch (e) {}
+}
+
+function dispensarNotificacoesMaster(chaves = []) {
+  if (!usuarioEhMasterNotificacoes() || !chaves.length) return;
+  const atuais = carregarNotificacoesMasterDispensadas();
+  salvarNotificacoesMasterDispensadas([...atuais, ...chaves]);
+}
+
+function notificacaoMasterFoiDispensada(item) {
+  if (!usuarioEhMasterNotificacoes()) return false;
+  if (tipoNotificacaoCritica(item?.tipo)) return false;
+  const chave = String(item?.chave || '');
+  if (!chave) return false;
+  return carregarNotificacoesMasterDispensadas().includes(chave);
+}
+
+function filtrarNotificacoesMasterDispensadas(itens = []) {
+  if (!usuarioEhMasterNotificacoes()) return itens || [];
+  const chavesDispensadas = new Set(carregarNotificacoesMasterDispensadas());
+  return (itens || []).filter(item => {
+    if (tipoNotificacaoCritica(item?.tipo)) return true;
+    return !chavesDispensadas.has(String(item?.chave || ''));
+  });
+}
+
 function limparAvisosNotificacaoMaster() {
   if (!usuarioEhMasterNotificacoes()) return;
-  notificacoesHistoricoMaster = [];
-  notificacoesAtuais = [];
-  salvarHistoricoNotificacoesMaster([]);
+  const chavesDispensar = notificacoesAtuais
+    .filter(item => !tipoNotificacaoCritica(item?.tipo))
+    .map(item => item?.chave)
+    .filter(Boolean);
+  dispensarNotificacoesMaster(chavesDispensar);
+  notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(notificacoesHistoricoMaster);
+  notificacoesAtuais = filtrarNotificacoesMasterDispensadas(notificacoesAtuais);
+  salvarHistoricoNotificacoesMaster(notificacoesHistoricoMaster);
   atualizarBadgeTarefasAtraso(0);
   renderizarListaNotificacoes();
 }
@@ -5351,6 +5406,8 @@ function sincronizarAvisoNotificacoes() {
   const notificacoesCriticas = obterNotificacoesCriticas();
   const totalCriticoAtual = notificacoesCriticas.length;
   const assinaturaCriticaAtual = notificacoesCriticas.map(item => item.chave).sort().join('|');
+  const criticasOperacionais = notificacoesCriticas.filter(item => tipoNotificacaoTarefaAtrasada(item?.tipo));
+  const alertasRapidos = notificacoesCriticas.filter(item => item?.tipo === 'alerta_rapido');
   const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente' || item.tipo === 'alerta_rapido');
   const tarefasAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'tarefa_atrasada');
   const execucoesAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'execucao_atrasada');
@@ -5854,7 +5911,7 @@ async function carregarNotificacoes() {
     itens.forEach(item => {
       if (item?.chave) mapa.set(item.chave, item);
     });
-    notificacoesHistoricoMaster = Array.from(mapa.values());
+    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(Array.from(mapa.values()));
     salvarHistoricoNotificacoesMaster(notificacoesHistoricoMaster);
     notificacoesAtuais = notificacoesHistoricoMaster;
   } else {
@@ -7391,7 +7448,7 @@ async function carregarChecklistsTarefas() {
           <div class="item-detalhe">Funcionário: ${funcionariosMap[String(c.funcionario_id)] || '-'}</div>
           <div class="item-detalhe">Horário: ${c.horario_limite || '-'}</div>
           <div class="item-detalhe">${c.descricao || 'Checklist lançado no sistema.'}</div>
-          <div class="item-detalhe">Lançado em: ${fmtDate(c.lancado_em)}</div>
+          <div class="item-detalhe">Lançado em: ${c.lancado_em ? fmtDate(c.lancado_em) : '-'}</div>
         </div>
         <div class="item-actions">
           ${c.status === 'finalizado'
@@ -10101,8 +10158,8 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 1.2</div>
-    <div>Notas da versão 1.2: melhorias em alertas rápidos, confirmação por PIN e avisos visuais/sonoros.</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 1.3</div>
+    <div>Notas da versão 1.3: som do banner corrigido, abertura de checklist ajustada e limpeza dos avisos do sino.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
