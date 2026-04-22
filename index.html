@@ -252,6 +252,123 @@
     .nav-btn:hover .nav-hint {
       color: var(--text-muted);
     }
+    .nav-btn.nav-btn-alerta {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.28);
+      color: #fecaca;
+    }
+    .nav-btn.nav-btn-alerta .icon {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: rgba(239, 68, 68, 0.36);
+      color: #fca5a5;
+    }
+    .nav-btn.nav-btn-alerta .nav-title {
+      color: #fecaca;
+    }
+    .nav-btn.nav-btn-alerta .nav-hint {
+      color: #fca5a5;
+    }
+    .nav-btn.nav-btn-alerta:hover {
+      background: rgba(239, 68, 68, 0.16);
+      color: #fee2e2;
+    }
+    .nav-btn.nav-btn-alerta.ativo {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #fee2e2;
+      box-shadow: 0 10px 24px rgba(239, 68, 68, 0.2);
+    }
+    .nav-btn.nav-btn-atraso-piscando {
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.42);
+      color: #fde68a;
+      animation: overdueNavPulse 1.35s ease-in-out infinite;
+      box-shadow: 0 10px 24px rgba(245, 158, 11, 0.2);
+    }
+    .nav-btn.nav-btn-atraso-piscando .icon {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.42);
+      color: #fbbf24;
+    }
+    .nav-btn.nav-btn-atraso-piscando .nav-title {
+      color: #fde68a;
+    }
+    .nav-btn.nav-btn-atraso-piscando .nav-hint {
+      color: #fcd34d;
+    }
+    .nav-btn.nav-btn-atraso-piscando:hover,
+    .nav-btn.nav-btn-atraso-piscando.ativo {
+      color: #fff7ed;
+    }
+    .alerta-rapido-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 74px;
+    }
+    .alerta-rapido-input:focus {
+      outline: none;
+      border-color: rgba(34,197,94,0.45);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.16);
+    }
+    .alerta-rapido-check-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      min-height: 48px;
+      align-items: center;
+    }
+    .alerta-rapido-check-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text);
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(24, 34, 24, 0.7);
+    }
+    .nav-badge {
+      margin-left: auto;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #0b0f0d;
+      background: var(--amber);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.22);
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    @keyframes overdueNavPulse {
+      0%, 100% {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.32);
+        box-shadow: 0 8px 18px rgba(245, 158, 11, 0.14);
+      }
+      50% {
+        background: rgba(249, 115, 22, 0.25);
+        border-color: rgba(249, 115, 22, 0.6);
+        box-shadow: 0 12px 26px rgba(249, 115, 22, 0.24);
+      }
+    }
 
     /* ---- MAIN ---- */
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -405,6 +522,18 @@
     }
     .notification-btn.ringing {
       animation: notificationRing 0.9s ease;
+    }
+    .notification-btn .notification-icon {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .notification-btn .notification-icon svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      fill: currentColor;
     }
     @keyframes notificationRing {
       0%, 100% { transform: rotate(0deg) scale(1); }
@@ -623,6 +752,69 @@
       z-index: 2;
       pointer-events: auto;
     }
+    .ponto-pendente-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(8, 12, 10, 0.56);
+      backdrop-filter: blur(4px);
+      z-index: 135;
+    }
+    .ponto-pendente-overlay[hidden] {
+      display: none !important;
+    }
+    .ponto-pendente-card {
+      width: min(560px, calc(100vw - 32px));
+      background: linear-gradient(180deg, rgba(86, 12, 12, 0.98), rgba(46, 8, 8, 0.98));
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(239, 68, 68, 0.2);
+      border-radius: 20px;
+      padding: 22px;
+      pointer-events: auto;
+    }
+    .ponto-pendente-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #fecaca;
+      margin-bottom: 10px;
+    }
+    .ponto-pendente-title {
+      font-size: 34px;
+      line-height: 1.02;
+      font-weight: 900;
+      color: #fff1f2;
+      letter-spacing: -1px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .ponto-pendente-texto {
+      font-size: 16px;
+      line-height: 1.5;
+      color: #ffe4e6;
+      margin-bottom: 12px;
+    }
+    .ponto-pendente-lista {
+      border: 1px solid rgba(254, 202, 202, 0.16);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #ffe4e6;
+      font-size: 14px;
+      line-height: 1.45;
+      margin-bottom: 14px;
+      white-space: pre-line;
+    }
+    .ponto-pendente-acoes {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
     .ponto-feedback-overlay {
       position: fixed;
       inset: 0;
@@ -658,6 +850,12 @@
       font-weight: 900;
       letter-spacing: -0.9px;
       text-transform: uppercase;
+    }
+    .ponto-feedback-card.parado {
+      border-color: rgba(239, 68, 68, 0.55);
+      background: linear-gradient(180deg, rgba(86, 12, 12, 0.97), rgba(46, 8, 8, 0.97));
+      box-shadow: 0 26px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(239, 68, 68, 0.22);
+      color: #fff1f2;
     }
 
     .content { flex: 1; padding: 28px; overflow-y: auto; }
@@ -816,6 +1014,59 @@
       text-overflow: ellipsis;
       cursor: pointer;
     }
+    .funcionario-form-row {
+      display: grid;
+      grid-template-columns:
+        minmax(180px, 2fr)
+        minmax(180px, 2fr)
+        minmax(92px, 0.7fr)
+        minmax(102px, 0.75fr)
+        minmax(102px, 0.75fr)
+        minmax(180px, 1.6fr)
+        auto
+        auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .funcionario-form-row .campo-com-label {
+      position: static;
+      padding-top: 0;
+      min-width: 0;
+      max-width: none;
+      width: 100%;
+      flex: 0 0 auto;
+    }
+    .funcionario-form-row .campo-com-label .campo-label {
+      position: static;
+      display: block;
+      margin: 0 0 6px 2px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      pointer-events: auto;
+    }
+    .funcionario-form-row .campo-com-label input,
+    .funcionario-form-row .campo-com-label select {
+      width: 100%;
+      height: 42px;
+      min-height: 42px;
+      font-size: 14px;
+      padding: 10px 12px;
+    }
+    .funcionario-form-row .campo-com-label .campo-curto {
+      max-width: none !important;
+      flex: 0 0 auto !important;
+    }
+    .funcionario-form-row #btnSalvarFuncionario,
+    .funcionario-form-row #btnCancelarEdicaoFuncionario {
+      height: 42px;
+      min-height: 42px;
+      padding: 0 14px;
+      align-self: end;
+      white-space: nowrap;
+    }
     #btnSalvarTarefa,
     #btnCancelarEdicaoTarefa {
       height: 42px;
@@ -925,6 +1176,27 @@
     .item:hover { border-color: var(--text-dim); }
     .item-info { flex: 1; min-width: 0; }
     .item-nome { font-size: 14px; font-weight: 500; }
+    .alerta-rapido-card {
+      align-items: stretch;
+      border-color: rgba(245, 158, 11, 0.24);
+      background: linear-gradient(135deg, rgba(52, 36, 12, 0.88), rgba(20, 20, 18, 0.96));
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+    .alerta-rapido-funcionario-grande {
+      font-size: clamp(22px, 3vw, 34px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fde68a;
+      margin-bottom: 8px;
+    }
+    .alerta-rapido-mensagem-grande {
+      font-size: clamp(18px, 2.4vw, 26px);
+      font-weight: 700;
+      line-height: 1.2;
+      color: #fff7ed;
+    }
     .item-detalhe {
       font-size: 12px;
       color: var(--text-muted);
@@ -932,6 +1204,80 @@
       overflow-wrap: anywhere;
       word-break: break-word;
       line-height: 1.35;
+    }
+    .tarefa-funcionarios-inline {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .tarefa-funcionarios-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .tarefa-funcionarios-grid {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+    }
+    .tarefa-lancamento-horario {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 2px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 8px;
+    }
+    .tarefa-lancamento-horario span {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.35px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .tarefa-lancamento-horario input[type="time"] {
+      width: 92px;
+      min-width: 92px;
+      height: 28px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+    .tarefa-lancamento-horario input[type="time"]:focus {
+      border-color: var(--green);
+    }
+    .tarefa-funcionario-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-size: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tarefa-funcionario-option input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      cursor: pointer;
     }
     .item-actions {
       display: flex;
@@ -979,7 +1325,7 @@
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.75);
       backdrop-filter: blur(4px);
-      z-index: 100;
+      z-index: 160;
       display: none;
       align-items: center;
       justify-content: center;
@@ -1346,6 +1692,19 @@
         width: 100%;
         gap: 10px 14px;
       }
+      .funcionario-form-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .funcionario-form-row > * {
+        width: 100%;
+      }
+      .funcionario-form-row #btnSalvarFuncionario,
+      .funcionario-form-row #btnCancelarEdicaoFuncionario {
+        width: 100%;
+      }
       .dias-semana-checks label {
         min-height: 38px;
         padding: 4px 2px;
@@ -1642,18 +2001,33 @@
           <span class="nav-hint">Acompanhar e finalizar</span>
         </span>
       </button>
-      <button class="nav-btn ativo" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
-        <span class="icon">DB</span>
+      <button class="nav-btn" data-page="tarefas_atraso" onclick="abrirPagina('tarefas_atraso', this)">
+        <span class="icon">AT</span>
         <span class="nav-copy">
-          <span class="nav-title">Dashboard</span>
-          <span class="nav-hint">Resumo rapido da operacao</span>
+          <span class="nav-title">Tarefas em atraso</span>
+          <span class="nav-hint">Nao iniciadas ou sem finalizacao</span>
         </span>
+        <span class="nav-badge" id="navBadgeTarefasAtraso" style="display:none">0</span>
       </button>
       <button class="nav-btn" data-page="tarefas" onclick="abrirPagina('tarefas', this)">
         <span class="icon">TF</span>
         <span class="nav-copy">
           <span class="nav-title">Cadastro de Checklist</span>
           <span class="nav-hint">Rotina e lancamentos</span>
+        </span>
+      </button>
+      <button class="nav-btn nav-btn-alerta" data-page="tarefas_rapidas" onclick="abrirPagina('tarefas_rapidas', this)">
+        <span class="icon">AR</span>
+        <span class="nav-copy">
+          <span class="nav-title">Alertas rápidas</span>
+          <span class="nav-hint">Avisos pontuais para equipe</span>
+        </span>
+      </button>
+      <button class="nav-btn ativo" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
+        <span class="icon">DB</span>
+        <span class="nav-copy">
+          <span class="nav-title">Dashboard</span>
+          <span class="nav-hint">Resumo rapido da operacao</span>
         </span>
       </button>
     </div>
@@ -1746,14 +2120,21 @@
         <div class="notification-panel" id="notificationPanel">
           <div class="notification-header">
             <div class="notification-title">Notificacoes</div>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="carregarNotificacoes()">Atualizar</button>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-ghost btn-sm" type="button" id="btnLimparAvisosMaster" onclick="limparAvisosNotificacaoMaster()" style="display:none">Limpar avisos</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="carregarNotificacoes()">Atualizar</button>
+            </div>
           </div>
           <div id="notificationList"><div class="empty">Carregando...</div></div>
         </div>
         <button class="btn btn-ghost btn-sm" type="button" onclick="testarSomNotificacao()" title="Testar som de notificacao">Testar som</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="testarSomNotificacaoAndamento()" title="Testar som de em andamento">Testar som andamento</button>
         <button class="btn notification-btn" type="button" onclick="togglePainelNotificacoes()" title="Notificacoes">
-          AL
+          <span class="notification-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path d="M12 22a2.6 2.6 0 0 0 2.45-1.75h-4.9A2.6 2.6 0 0 0 12 22Zm7-5.25h-1v-5.2a6 6 0 1 0-12 0v5.2H5a1 1 0 0 0 0 2h14a1 1 0 1 0 0-2Z"/>
+            </svg>
+          </span>
           <span class="notification-count" id="notificationCount">0</span>
         </button>
         <button class="btn btn-red" onclick="logout()">Logout</button>
@@ -1899,13 +2280,33 @@
 
         <div class="card">
           <div class="card-title">Novo funcionário</div>
-          <div class="form-row">
-            <input id="nomeFuncionario" type="text" placeholder="Nome do funcionário">
-            <input id="emailFuncionario" type="email" placeholder="E-mail (opcional)">
-            <input id="pinFuncionario" class="campo-curto" type="text" placeholder="PIN" maxlength="6">
-            <select id="perfilFuncionario">
-              <option value="">- Selecione o perfil -</option>
-            </select>
+          <div class="form-row funcionario-form-row">
+            <div class="campo-com-label">
+              <label class="campo-label" for="nomeFuncionario">Nome</label>
+              <input id="nomeFuncionario" type="text" placeholder="Nome do funcionário">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="emailFuncionario">E-mail</label>
+              <input id="emailFuncionario" type="email" placeholder="E-mail (opcional)">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="pinFuncionario">Senha</label>
+              <input id="pinFuncionario" class="campo-curto" type="text" placeholder="PIN" maxlength="6">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="horarioInicioFuncionario">Hora inicial</label>
+              <input id="horarioInicioFuncionario" class="campo-curto" type="time" placeholder="Início turno">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="horarioFimFuncionario">Hora final</label>
+              <input id="horarioFimFuncionario" class="campo-curto" type="time" placeholder="Fim turno">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="perfilFuncionario">Perfil</label>
+              <select id="perfilFuncionario">
+                <option value="">- Selecione o perfil -</option>
+              </select>
+            </div>
             <button class="btn btn-green" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
             <button class="btn btn-ghost" id="btnCancelarEdicaoFuncionario" onclick="cancelarEdicaoFuncionario()" style="display:none">Cancelar</button>
           </div>
@@ -2016,18 +2417,16 @@
           <div class="tarefa-form-row">
             <input id="nomeTarefa" type="text" placeholder="Nome da tarefa">
             <input id="descTarefa" type="text" placeholder="Descrição da tarefa" autocomplete="off" autocorrect="off" spellcheck="false">
-            <input id="horarioTarefa" class="campo-curto" type="time" placeholder="Horário">
-            <div class="campo-com-label">
-              <label class="campo-label" for="funcionarioTarefa">Funcionário</label>
-              <select id="funcionarioTarefa">
-                <option value=""></option>
-              </select>
-            </div>
+            <input id="horarioTarefa" class="campo-curto" type="time" placeholder="Horário" style="display:none">
+            <select id="funcionarioTarefa" style="display:none">
+              <option value=""></option>
+            </select>
             <div class="tarefa-form-acoes">
               <button class="btn btn-green" id="btnSalvarTarefa" onclick="criarTarefa()">Salvar</button>
               <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
             </div>
           </div>
+          <div class="item-detalhe" style="margin-top:8px">Funcionário: selecione por checkbox ao lado de cada tarefa cadastrada.</div>
 
           <div style="margin-top:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)">
             <div class="dias-semana-header">
@@ -2062,6 +2461,36 @@
         <div class="card">
           <div class="card-title">Checklists cadastrados</div>
           <div id="listaChecklistsTarefas"><div class="empty">Carregando⬦</div></div>
+        </div>
+      </section>
+
+      <section id="tarefas_rapidas" class="pagina">
+        <div class="page-title">Alertas rápidas</div>
+        <div class="page-sub">Avisos esporádicos com confirmação por PIN do funcionário</div>
+
+        <div class="card" id="cardAlertaRapidoEnvio">
+          <div class="card-title">Enviar alerta rápido</div>
+          <textarea id="mensagemAlertaRapido" class="alerta-rapido-input" rows="3" maxlength="220" placeholder='Exemplo: Porta da geladeira aberta'></textarea>
+          <div class="card-title" style="margin-top:14px">Funcionários</div>
+          <div id="alertaRapidoFuncionarios" class="alerta-rapido-check-grid"><div class="empty">Carregando⬦</div></div>
+          <div id="alertaRapidoDestinatariosResumo" class="msg" style="margin-top:8px"></div>
+          <div class="form-row" style="margin-top:12px">
+            <button class="btn btn-green" type="button" onclick="enviarAlertaRapido()">Enviar alerta</button>
+          </div>
+          <div class="msg" id="msgAlertasRapidos"></div>
+        </div>
+
+        <div class="card" id="cardAlertaRapidoLista">
+          <div class="card-title" id="tituloListaAlertaRapido">Alertas enviados</div>
+          <div class="form-row" id="alertasRapidosAdminControles" style="margin-top:0;margin-bottom:8px">
+            <select id="filtroStatusAlertaRapido" class="campo-curto" style="max-width:170px;flex:0 0 170px !important" onchange="carregarAlertasRapidos()">
+              <option value="">Todos</option>
+              <option value="pendente">Pendente</option>
+              <option value="confirmado">Confirmado</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="limparAlertasRapidosConfirmados()">Limpar confirmados</button>
+          </div>
+          <div id="listaAlertasRapidos"><div class="empty">Carregando⬦</div></div>
         </div>
       </section>
 
@@ -2101,6 +2530,17 @@
           <div class="card-title">Execuções / andamento</div>
           <div id="listaExecucoes"><div class="empty">Carregando⬦</div></div>
           <div class="form-row" id="execucoesPaginacao" style="margin-top:12px;justify-content:flex-end"></div>
+        </div>
+      </section>
+
+      <section id="tarefas_atraso" class="pagina">
+        <div class="page-title">Tarefas em atraso</div>
+        <div class="page-sub">Não iniciadas no prazo e execuções sem finalização</div>
+
+        <div class="card">
+          <div class="card-title">Pendências críticas de hoje</div>
+          <div class="msg" id="msgTarefasAtraso"></div>
+          <div id="listaTarefasAtraso"><div class="empty">Carregando⬦</div></div>
         </div>
       </section>
 
@@ -2271,7 +2711,7 @@
     <div class="overdue-alert-card">
       <div class="overdue-alert-eyebrow">Atenção imediata</div>
       <div class="overdue-alert-title" id="overdueAlertTitle">"USUÁRIO" NOVA TAREFA</div>
-      <div class="overdue-alert-text">Existem checklists próximos do prazo ou em atraso aguardando início. Resolva agora para evitar falhas na rotina.</div>
+      <div class="overdue-alert-text" id="overdueAlertText">Existem checklists próximos do prazo ou em atraso aguardando início. Resolva agora para evitar falhas na rotina.</div>
       <div class="overdue-alert-list" id="overdueAlertList"></div>
       <div class="overdue-alert-actions">
         <button class="btn btn-red" id="btnOverdueAlertAction" type="button" onclick="abrirPainelTarefasAtrasadas(event)">Ver checklists</button>
@@ -2282,6 +2722,20 @@
 
   <div class="ponto-feedback-overlay" id="pontoFeedbackOverlay" hidden>
     <div class="ponto-feedback-card" id="pontoFeedbackText">PONTO REGISTRADO FUNCIONÁRIO</div>
+  </div>
+
+  <div class="ponto-pendente-overlay" id="pontoPendenteOverlay" hidden>
+    <div class="ponto-pendente-card">
+      <div class="ponto-pendente-eyebrow">Atenção no encerramento do turno</div>
+      <div class="ponto-pendente-title">Tarefa pendente. Você confirma?</div>
+      <div class="ponto-pendente-texto" id="pontoPendenteTexto">Há checklists sem iniciar ou sem finalizar para este funcionário.</div>
+      <div class="ponto-pendente-lista" id="pontoPendenteLista"></div>
+      <div class="ponto-pendente-acoes">
+        <button class="btn btn-ghost" type="button" id="btnPontoPendenteTarefas" onclick="fecharModalPendenciaPonto('ver_tarefas')">Ver tarefas</button>
+        <button class="btn btn-red" type="button" id="btnPontoPendenteChecklists" onclick="fecharModalPendenciaPonto('ver_checklists')">Ver checklists</button>
+        <button class="btn btn-green" type="button" id="btnPontoPendenteConfirmar" onclick="fecharModalPendenciaPonto('confirmar')">Finalizar turno e bater ponto</button>
+      </div>
+    </div>
   </div>
 
 <!--  MODAL EXECU-!ÒO  -->
@@ -2343,6 +2797,9 @@ let itensExecucao = [];
 let tarefasDisponiveis = true;
 let portalFuncionarioLogado = null;
 let tarefaEmEdicaoId = null;
+let funcionariosAtivosTarefa = [];
+let selecaoFuncionarioLancamentoPorTarefa = {};
+let horarioLancamentoPorTarefa = {};
 let usuarioSistemaLogado = null;
 let funcionarioEmEdicaoId = null;
 let funcionarioNomeOriginalEdicao = '';
@@ -2366,8 +2823,10 @@ let quantidadeAlertasCriticosAnterior = null;
 let assinaturaAlertasCriticosAnterior = '';
 let avisoCentralTarefasFechado = false;
 let assinaturaAvisoCentralTarefas = '';
+let assinaturaSomAlertaRapidoLista = '';
 let alertasCriticosSilenciadosNaSessao = false;
 let resolverModalPinPendente = null;
+let resolverModalPontoPendente = null;
 let intervaloAtualizacaoPaginaAtiva = null;
 let intervaloAtualizacaoNotificacoes = null;
 let intervaloStatusSincronizacao = null;
@@ -2375,6 +2834,7 @@ let canalNotificacoesRealtime = null;
 let ultimoSucessoSincronizacaoEm = null;
 let ultimosLembretesExecucaoEm = {};
 let ultimosLembretesChecklistEm = {};
+let ultimosLembretesTarefaAtrasadaEm = {};
 let execucoesPaginaAtual = 1;
 let dashboardProdutividadePeriodo = 'dia';
 let dashboardHorasPeriodo = 'dia';
@@ -2385,13 +2845,16 @@ let timeoutLimpezaPinPonto = null;
 let segurancaPinPontoConfigurada = false;
 let ultimoToquePinPontoEm = 0;
 let intervaloVigilanciaPinPonto = null;
+let notificacoesHistoricoMaster = [];
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
+const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
 const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
 const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 2 * 60 * 1000;
 const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
+const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 15 * 60 * 1000;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
 
 function redefinirEstadoAvisoCentralTarefas() {
@@ -2415,6 +2878,88 @@ function obterChaveUsuarioNotificacoes() {
 
 function obterStorageNotificacoesLidas() {
   return `zuqui_notificacoes_lidas:${obterChaveUsuarioNotificacoes()}`;
+}
+
+function obterStorageHistoricoNotificacoesMaster() {
+  return `zuqui_notificacoes_master_historico:${obterChaveUsuarioNotificacoes()}`;
+}
+
+function usuarioEhMasterNotificacoes() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
+  return codigo === 'MASTER' || codigo === 'ADM';
+}
+
+function carregarHistoricoNotificacoesMaster() {
+  if (!usuarioEhMasterNotificacoes()) return [];
+  try {
+    const bruto = localStorage.getItem(obterStorageHistoricoNotificacoesMaster());
+    if (!bruto) return [];
+    const salvo = JSON.parse(bruto);
+    if (!salvo || salvo.data !== hoje() || !Array.isArray(salvo.itens)) return [];
+    return salvo.itens;
+  } catch (e) {
+    return [];
+  }
+}
+
+function salvarHistoricoNotificacoesMaster(itens = []) {
+  if (!usuarioEhMasterNotificacoes()) return;
+  try {
+    localStorage.setItem(obterStorageHistoricoNotificacoesMaster(), JSON.stringify({
+      data: hoje(),
+      itens: itens || [],
+    }));
+  } catch (e) {
+    console.warn('Falha ao carregar notificações operacionais:', e);
+  }
+}
+
+function limparAvisosNotificacaoMaster() {
+  if (!usuarioEhMasterNotificacoes()) return;
+  notificacoesHistoricoMaster = [];
+  notificacoesAtuais = [];
+  salvarHistoricoNotificacoesMaster([]);
+  atualizarBadgeTarefasAtraso(0);
+  renderizarListaNotificacoes();
+}
+
+function obterStoragePaginaAtiva() {
+  return `zuqui_pagina_ativa:${obterChaveUsuarioNotificacoes()}`;
+}
+
+function salvarPaginaAtiva(id) {
+  if (!id) return;
+  try {
+    localStorage.setItem(obterStoragePaginaAtiva(), id);
+  } catch (e) {}
+}
+
+function obterPaginaAtivaSalva() {
+  try {
+    return localStorage.getItem(obterStoragePaginaAtiva()) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function restaurarPaginaAtivaSalvaOuPadrao() {
+  const paginaSalva = obterPaginaAtivaSalva();
+  if (paginaSalva && document.getElementById(paginaSalva) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaSalva))) {
+    const botaoSalvo = document.querySelector(`.nav-btn[data-page="${paginaSalva}"]`);
+    abrirPagina(paginaSalva, botaoSalvo);
+    return true;
+  }
+
+  const primeiroDisponivel = Array.from(document.querySelectorAll('.nav-btn[data-page]'))
+    .find(btn => btn.style.display !== 'none' && (!usuarioSistemaLogado || usuarioPodeAcessar(btn.dataset.page)));
+  if (primeiroDisponivel?.dataset?.page) {
+    abrirPagina(primeiroDisponivel.dataset.page, primeiroDisponivel);
+    return true;
+  }
+
+  return false;
 }
 
 function obterStorageAlertasCriticosSilenciados() {
@@ -2485,15 +3030,127 @@ function notificacaoJaFoiLida(chave) {
 
 function notificacaoDeveSempreAparecer(item) {
   // Alertas críticos devem permanecer visíveis enquanto existirem.
-  return tipoNotificacaoTarefaAtrasada(item?.tipo);
+  return tipoNotificacaoCritica(item?.tipo);
 }
 
 function tipoNotificacaoTarefaAtrasada(tipo) {
   return ['tarefa_atrasada', 'lancamento_atrasado', 'execucao_atrasada', 'checklist_pendente'].includes(tipo);
 }
 
+function tipoNotificacaoCritica(tipo) {
+  return tipoNotificacaoTarefaAtrasada(tipo) || tipo === 'alerta_rapido';
+}
+
+function obterQuantidadeAtrasosNotificacao() {
+  return (notificacoesAtuais || []).filter(item => ['lancamento_atrasado', 'execucao_atrasada'].includes(item?.tipo)).length;
+}
+
+function atualizarBadgeTarefasAtraso(quantidade = 0) {
+  const badge = document.getElementById('navBadgeTarefasAtraso');
+  const botao = document.querySelector('.nav-btn[data-page="tarefas_atraso"]');
+  if (!badge || !botao) return;
+
+  const exibirBadge = usuarioEhMasterNotificacoes() && usuarioPodeAcessar('tarefas_atraso');
+  if (!exibirBadge) {
+    badge.style.display = 'none';
+    botao.classList.remove('nav-btn-atraso-piscando');
+    return;
+  }
+
+  const total = Math.max(0, Number(quantidade) || 0);
+  badge.textContent = total > 99 ? '99+' : String(total);
+  badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  botao.classList.toggle('nav-btn-atraso-piscando', total > 0);
+}
+
 function obterNotificacoesCriticas() {
-  return notificacoesAtuais.filter(item => tipoNotificacaoTarefaAtrasada(item.tipo));
+  return notificacoesAtuais.filter(item => tipoNotificacaoCritica(item?.tipo));
+}
+
+function obterFuncionarioDestinoAlertaRapidoAtual() {
+  if (usuarioSistemaLogado?.id) {
+    const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
+    const codigo = String(perfil?.codigo || '').toUpperCase();
+    const ehAdminSistema = usuarioSistemaLogado?.tipo === 'admin' || codigo === 'ADM';
+    if (!ehAdminSistema) {
+      return { id: String(usuarioSistemaLogado.id), nome: usuarioSistemaLogado.nome || '' };
+    }
+  }
+  if (portalFuncionarioLogado?.id) {
+    return { id: String(portalFuncionarioLogado.id), nome: portalFuncionarioLogado.nome || '' };
+  }
+  return { id: '', nome: '' };
+}
+
+async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome: '' }) {
+  const agruparAlertas = (itens = []) => {
+    const grupos = new Map();
+
+    (itens || []).forEach(item => {
+      const chaveGrupo = String(item.grupo_id || item.id || '');
+      const atual = grupos.get(chaveGrupo);
+      const nomeDestinoItem = String(item.funcionario_destino_nome || '').trim();
+
+      if (!atual) {
+        grupos.set(chaveGrupo, {
+          ...item,
+          grupo_id: chaveGrupo,
+          funcionario_destino_nome: nomeDestinoItem || 'Funcionário',
+          destinatarios: nomeDestinoItem ? [nomeDestinoItem] : [],
+          quantidadeDestinos: nomeDestinoItem ? 1 : 0,
+        });
+        return;
+      }
+
+      if (nomeDestinoItem) {
+        if (!atual.destinatarios.includes(nomeDestinoItem)) {
+          atual.destinatarios.push(nomeDestinoItem);
+        }
+        atual.quantidadeDestinos = atual.destinatarios.length;
+        if (!atual.funcionario_destino_nome) {
+          atual.funcionario_destino_nome = nomeDestinoItem;
+        }
+      }
+    });
+
+    return Array.from(grupos.values()).map(item => ({
+      ...item,
+      funcionario_destino_nome: item.destinatarios.length > 1
+        ? item.destinatarios.join(', ')
+        : (item.destinatarios[0] || item.funcionario_destino_nome || 'Funcionário'),
+    }));
+  };
+
+  const consultarPendentes = async (campoData = 'criado_em') => {
+    const { data, error } = await sb
+      .from('alertas_rapidos')
+      .select(`id, grupo_id, mensagem, funcionario_destino_id, funcionario_destino_nome, ${campoData}, status`)
+      .eq('status', 'pendente')
+      .order(campoData, { ascending: false })
+      .limit(100);
+
+    if (error) return { data: null, error };
+    return {
+      data: (data || []).map(item => ({
+        ...item,
+        criado_em: item.criado_em || item.created_at || null,
+        created_at: item.created_at || item.criado_em || null,
+      })),
+      error: null,
+    };
+  };
+
+  let consulta = await consultarPendentes('criado_em');
+  if (consulta.error && String(consulta.error?.message || '').toLowerCase().includes('criado_em')) {
+    consulta = await consultarPendentes('created_at');
+  }
+
+  if (consulta.error) {
+    if (isMissingQuickAlertsTableError(consulta.error)) return [];
+    throw consulta.error;
+  }
+
+  return agruparAlertas(consulta.data || []);
 }
 
 function usuarioRecebeAlertaOperacional() {
@@ -2520,6 +3177,25 @@ function usuarioPodeVerNotificacaoExecucao() {
   return usuarioRecebeAlertaOperacional();
 }
 
+function usuarioPodeReceberAlertaRapido() {
+  if (!usuarioRecebeAlertaOperacional()) return false;
+  const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
+  const codigo = String(perfil?.codigo || '').toUpperCase();
+  if (codigo === 'FUNCIONARIO' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
+  return !!obterPermissoesUsuario().receber_alertas_rapidas;
+}
+
+function usuarioPodeConfirmarAlertaRapido() {
+  const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
+  const codigo = String(perfil?.codigo || '').toUpperCase();
+  if (codigo === 'FUNCIONARIO' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
+  return !!obterPermissoesUsuario().confirmar_alertas_rapidas;
+}
+
+function usuarioPodeGerenciarAlertasRapidos() {
+  return usuarioEhMasterNotificacoes();
+}
+
 const PERFIL_PERMISSOES = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'checklists', label: 'Checklists' },
@@ -2532,7 +3208,11 @@ const PERFIL_PERMISSOES = [
   { key: 'configuracoes', label: 'Informacoes da loja' },
   { key: 'perfis', label: 'Perfis' },
   { key: 'tarefas', label: 'Cadastro de Checklist' },
+  { key: 'tarefas_rapidas', label: 'Alertas rápidas' },
+  { key: 'receber_alertas_rapidas', label: 'Receber alertas rápidos' },
+  { key: 'confirmar_alertas_rapidas', label: 'Confirmar alertas rápidos' },
   { key: 'execucoes', label: 'Em andamento' },
+  { key: 'tarefas_atraso', label: 'Tarefas em atraso' },
   { key: 'portal', label: 'Portal do funcionario' },
   { key: 'nova_execucao_manual', label: 'Nova execucao manual' },
   { key: 'ver_todos_checklists', label: 'Ver checklists de todos' },
@@ -2556,7 +3236,11 @@ function obterPermissoesBase(codigo) {
     configuracoes: false,
     perfis: false,
     tarefas: false,
+    tarefas_rapidas: false,
+    receber_alertas_rapidas: true,
+    confirmar_alertas_rapidas: true,
     execucoes: true,
+    tarefas_atraso: false,
     portal: false,
     nova_execucao_manual: false,
     ver_todos_checklists: false,
@@ -2618,7 +3302,9 @@ const topTitles = {
   configuracoes: ['Informacoes da Loja', 'Dados basicos e lembretes da operacao'],
   perfis: ['Perfis', 'Permissoes de acesso do sistema'],
   tarefas: ['Cadastro de Checklist', 'Gerenciamento (Admin)'],
+  tarefas_rapidas: ['Alertas rápidas', 'Avisos pontuais para a equipe'],
   execucoes: ['Em Andamento', 'Pause, retome e finalize tarefas'],
+  tarefas_atraso: ['Tarefas em atraso', 'Pendências fora do prazo'],
   portal: ['Portal do Funcionario', 'Suas tarefas do dia'],
 };
 
@@ -2653,6 +3339,7 @@ function abrirPagina(id, botao) {
   const [t, s] = topTitles[id] || ['', ''];
   document.getElementById('topbar-title').textContent = t;
   document.getElementById('topbar-sub').textContent = s;
+  salvarPaginaAtiva(id);
   if (id === 'dashboard') carregarDashboard();
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
@@ -2669,7 +3356,9 @@ function abrirPagina(id, botao) {
     carregarChecklistsTarefas();
     forcarCampoObservacaoTarefaEmBranco();
   }
+  if (id === 'tarefas_rapidas') { carregarTarefasRapidas(); }
   if (id === 'execucoes') { resetFiltroData(false); carregarSelectExecucao(); carregarExecucoes(); }
+  if (id === 'tarefas_atraso') { carregarTarefasAtrasoMaster(); }
   if (id === 'portal') { carregarSelectFuncionariosPortal(); restaurarSessaoPortal(); }
   carregarNotificacoes();
   iniciarAtualizacaoAutomatica();
@@ -2763,7 +3452,9 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'tarefas') {
       await Promise.all([carregarTarefas(), carregarChecklistsTarefas()]);
     }
+    if (paginaAtiva === 'tarefas_rapidas') await carregarTarefasRapidas();
     if (paginaAtiva === 'execucoes') await carregarExecucoes();
+    if (paginaAtiva === 'tarefas_atraso') await carregarTarefasAtrasoMaster();
     if (paginaAtiva === 'portal' && portalFuncionarioLogado?.id) await carregarTarefasPortal();
 
     await carregarNotificacoes();
@@ -2816,7 +3507,8 @@ function lancamentoPodeGerarAlertaTempoReal(lancamento = null) {
     // Compatibilidade para bases antigas sem datas preenchidas no lançamento.
     if (lancamento.lancado_em || lancamento.created_at) return false;
   }
-  if (!checklistDentroJanelaAlerta(lancamento.horario_limite)) return false;
+  if (!checklistDentroJanelaAlerta(lancamento.horario_limite) && !lancamentoRecemCriadoParaAlerta(lancamento)) return false;
+  if (lancamentoFoiCriadoAposHorarioNoMesmoDia(lancamento)) return false;
   return true;
 }
 
@@ -2864,6 +3556,11 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
     carregarNotificacoes().catch(error => {
       console.warn('Falha ao atualizar notificações via Realtime:', error);
     });
+    if (obterPaginaAtivaAtual() === 'tarefas_rapidas') {
+      carregarTarefasRapidas().catch(error => {
+        console.warn('Falha ao atualizar alertas rápidos via Realtime:', error);
+      });
+    }
   };
 
   canalNotificacoesRealtime = sb
@@ -2875,6 +3572,7 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_rapidos' }, atualizarNotificacoes)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         atualizarNotificacoes();
@@ -2890,13 +3588,16 @@ function setMsg(id, txt, tipo) {
   el.className = 'msg' + (tipo ? ' ' + tipo : '');
 }
 
-function exibirAvisoPontoRegistrado(nomeFuncionario = '') {
+function exibirAvisoPontoRegistrado(nomeFuncionario = '', tipoPonto = 'iniciado') {
   const overlay = document.getElementById('pontoFeedbackOverlay');
   const texto = document.getElementById('pontoFeedbackText');
   if (!overlay || !texto) return;
 
   const nome = String(nomeFuncionario || 'FUNCIONÁRIO').trim().toUpperCase();
-  texto.textContent = `PONTO REGISTRADO ${nome}`;
+  const tipoNormalizado = String(tipoPonto || '').toLowerCase();
+  const pontoParado = tipoNormalizado === 'parado';
+  texto.classList.toggle('parado', pontoParado);
+  texto.textContent = `${pontoParado ? 'PONTO PARADO' : 'PONTO INICIADO'} ${nome}`;
   overlay.hidden = false;
   overlay.classList.add('show');
 
@@ -2908,6 +3609,86 @@ function exibirAvisoPontoRegistrado(nomeFuncionario = '') {
     overlay.classList.remove('show');
     overlay.hidden = true;
   }, 3000);
+}
+
+function falarConfirmacaoPendenciaPonto() {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const vozes = synth.getVoices ? synth.getVoices() : [];
+    const vozPtBr = vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt-br'))
+      || vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt'))
+      || null;
+    const utter = new SpeechSynthesisUtterance('TAREFA PENDENTE, VOCÊ CONFIRMA?');
+    utter.lang = 'pt-BR';
+    utter.volume = 1;
+    utter.rate = 1.03;
+    utter.pitch = 1.05;
+    if (vozPtBr) utter.voice = vozPtBr;
+    synth.speak(utter);
+  } catch (e) {}
+}
+
+function abrirModalPendenciaPonto({
+  nomeFuncionario = '',
+  textoPendencias = '',
+  quantidadePendentesInicio = 0,
+  quantidadePendentesFinalizacao = 0,
+} = {}) {
+  const overlay = document.getElementById('pontoPendenteOverlay');
+  const texto = document.getElementById('pontoPendenteTexto');
+  const lista = document.getElementById('pontoPendenteLista');
+  const btnTarefas = document.getElementById('btnPontoPendenteTarefas');
+  const btnChecklists = document.getElementById('btnPontoPendenteChecklists');
+  const btnConfirmar = document.getElementById('btnPontoPendenteConfirmar');
+  if (!overlay || !texto || !lista || !btnTarefas || !btnChecklists || !btnConfirmar) {
+    return Promise.resolve('cancelar');
+  }
+
+  texto.textContent = `${nomeFuncionario || 'Funcionário'}, existem tarefas pendentes no seu nome.`;
+  lista.textContent = textoPendencias || 'Há tarefas sem iniciar ou sem finalizar.';
+
+  const temChecklistPendente = Number(quantidadePendentesInicio || 0) > 0;
+  const temTarefaPendenteFinalizar = Number(quantidadePendentesFinalizacao || 0) > 0;
+
+  // Mantém como está quando existem os dois tipos de pendência.
+  if (temChecklistPendente && temTarefaPendenteFinalizar) {
+    btnTarefas.style.display = '';
+    btnChecklists.style.display = '';
+    btnTarefas.textContent = 'Ver tarefas';
+    btnChecklists.textContent = 'Ver checklists';
+  } else if (temChecklistPendente) {
+    btnTarefas.style.display = 'none';
+    btnChecklists.style.display = '';
+    btnChecklists.textContent = 'Abrir checklists';
+  } else if (temTarefaPendenteFinalizar) {
+    btnTarefas.style.display = '';
+    btnChecklists.style.display = 'none';
+    btnTarefas.textContent = 'Abrir tarefa';
+  } else {
+    btnTarefas.style.display = 'none';
+    btnChecklists.style.display = 'none';
+  }
+
+  overlay.hidden = false;
+
+  if (somNotificacaoHabilitado) {
+    tocarSomExecucaoAtrasadaNotificacao(false);
+  }
+  setTimeout(() => falarConfirmacaoPendenciaPonto(), 250);
+
+  return new Promise(resolve => {
+    resolverModalPontoPendente = resolve;
+  });
+}
+
+function fecharModalPendenciaPonto(acao = 'cancelar') {
+  const overlay = document.getElementById('pontoPendenteOverlay');
+  if (overlay) overlay.hidden = true;
+  const resolver = resolverModalPontoPendente;
+  resolverModalPontoPendente = null;
+  if (resolver) resolver(acao);
 }
 
 function limparCampoPinPonto() {
@@ -3252,6 +4033,15 @@ function isMissingTimeClockIntervalsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.ponto_intervalos"'));
 }
 
+function isMissingQuickAlertsTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.alertas_rapidos"'));
+}
+
+function isMissingWorkShiftColumnsError(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  return msg.includes('horario_trabalho_inicio') || msg.includes('horario_trabalho_fim');
+}
+
 function obterPermissoesUsuario() {
   if (!usuarioSistemaLogado) return {};
   if (usuarioSistemaLogado.tipo === 'admin') {
@@ -3271,10 +4061,17 @@ function obterPermissoesUsuario() {
     permissoes.ver_todas_execucoes = true;
     permissoes.bater_ponto = true;
     permissoes.relatorio_ponto = false;
+    permissoes.tarefas_rapidas = true;
+    permissoes.receber_alertas_rapidas = true;
+    permissoes.confirmar_alertas_rapidas = true;
   }
   if (codigo === 'MASTER' || codigo === 'ADM') {
     permissoes.bater_ponto = true;
     permissoes.relatorio_ponto = true;
+    permissoes.tarefas_atraso = true;
+    permissoes.tarefas_rapidas = true;
+    permissoes.receber_alertas_rapidas = true;
+    permissoes.confirmar_alertas_rapidas = true;
   }
   return permissoes;
 }
@@ -3391,6 +4188,36 @@ function checklistFoiLancadoHoje(lancadoEm, criadoEm = null) {
   return dataLocalISO(referencia) === dataLocalISO();
 }
 
+function extrairMinutosReferenciaBrasil(dataIso) {
+  if (!dataIso) return null;
+  const partes = obterPartesDataHoraBrasil(new Date(dataIso));
+  if (!partes) return null;
+  const horas = Number(partes.hour);
+  const minutos = Number(partes.minute);
+  if (Number.isNaN(horas) || Number.isNaN(minutos)) return null;
+  return (horas * 60) + minutos;
+}
+
+function lancamentoRecemCriadoParaAlerta(item = {}, janelaMs = JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS) {
+  const referencia = item?.lancado_em || item?.created_at || null;
+  if (!referencia || !checklistFoiLancadoHoje(item?.lancado_em, item?.created_at)) return false;
+
+  const diffMs = Date.now() - new Date(referencia).getTime();
+  if (Number.isNaN(diffMs) || diffMs < 0) return false;
+  return diffMs <= janelaMs;
+}
+
+function lancamentoFoiCriadoAposHorarioNoMesmoDia(item = {}) {
+  const horarioLimite = horaCurta(item.horario_limite || '');
+  if (!horarioLimite) return false;
+  if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return false;
+
+  const limiteMin = horarioParaMinutos(horarioLimite);
+  const criadoMin = extrairMinutosReferenciaBrasil(item.lancado_em || item.created_at);
+  if (limiteMin === null || criadoMin === null) return false;
+  return criadoMin > limiteMin;
+}
+
 function agoraHoraMinuto() {
   const partes = obterPartesDataHoraBrasil(new Date());
   if (!partes) return '';
@@ -3488,12 +4315,118 @@ async function obterFuncionarioAtivoPorPin(pin) {
 
   const { data, error } = await sb
     .from('funcionarios')
-    .select('id, nome, pin, ativo')
+    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim')
     .eq('ativo', true);
 
   if (error) return null;
   const funcionario = (data || []).find(item => String(item.pin || '').trim() === pinNormalizado) || null;
   return funcionario;
+}
+
+function resumoNomesPendencias(pendencias = [], limite = 3) {
+  const nomes = (pendencias || []).map(item => item.nome || 'Tarefa').filter(Boolean);
+  if (!nomes.length) return '';
+  const lista = nomes.slice(0, limite).join(', ');
+  if (nomes.length <= limite) return lista;
+  return `${lista} e mais ${nomes.length - limite}`;
+}
+
+async function obterPendenciasChecklistDoFuncionario(funcionarioId) {
+  if (!funcionarioId) return { pendentesInicio: [], pendentesFinalizacao: [] };
+
+  const hojeLocal = dataLocalISO();
+  const [lancamentosRes, execucoesRes] = await Promise.all([
+    sb
+      .from('checklist_lancamentos')
+      .select('id, nome, status, lancado_em')
+      .eq('funcionario_id', funcionarioId)
+      .eq('status', 'pendente')
+      .order('lancado_em', { ascending: false })
+      .limit(30),
+    sb
+      .from('checklist_execucoes')
+      .select('id, status, data_execucao, tarefas(nome), checklists(nome)')
+      .eq('funcionario_id', funcionarioId)
+      .in('status', ['aberto', 'pausado'])
+      .order('iniciado_em', { ascending: false })
+      .limit(30),
+  ]);
+
+  if (lancamentosRes.error && !isMissingLancamentosTableError(lancamentosRes.error)) throw lancamentosRes.error;
+  if (execucoesRes.error && !isMissingTableError(execucoesRes.error)) throw execucoesRes.error;
+
+  const pendentesInicio = (lancamentosRes.data || []).filter(item => checklistFoiLancadoHoje(item.lancado_em));
+  const pendentesFinalizacao = (execucoesRes.data || [])
+    .filter(item => item.data_execucao === hojeLocal)
+    .map(item => ({
+      id: item.id,
+      nome: item.tarefas?.nome || item.checklists?.nome || 'Checklist em andamento',
+      status: item.status,
+    }));
+
+  return { pendentesInicio, pendentesFinalizacao };
+}
+
+async function validarPendenciasAntesFecharPonto({ funcionario, proximaAcao }) {
+  if (!funcionario?.id) return true;
+  if (proximaAcao !== 'Saída') return true;
+
+  const contextoTurno = obterContextoPrazo(funcionario.horario_trabalho_fim, 15);
+  if (!contextoTurno.ativo) return true;
+  let pendentesInicio = [];
+  let pendentesFinalizacao = [];
+  try {
+    const pendencias = await obterPendenciasChecklistDoFuncionario(funcionario.id);
+    pendentesInicio = pendencias.pendentesInicio || [];
+    pendentesFinalizacao = pendencias.pendentesFinalizacao || [];
+  } catch (error) {
+    console.warn('Não foi possível validar pendências de checklist no ponto:', error);
+    return true;
+  }
+  if (!pendentesInicio.length && !pendentesFinalizacao.length) return true;
+
+  const partes = [];
+  if (pendentesInicio.length) {
+    partes.push(`${pendentesInicio.length} checklist(s) sem iniciar (${resumoNomesPendencias(pendentesInicio)})`);
+  }
+  if (pendentesFinalizacao.length) {
+    partes.push(`${pendentesFinalizacao.length} checklist(s) em andamento/pausado (${resumoNomesPendencias(pendentesFinalizacao)})`);
+  }
+
+  const mensagem = [
+    `Funcionário: ${funcionario.nome || 'Funcionário'}`,
+    `Pendências encontradas:`,
+    `- ${partes.join('\n- ')}`,
+  ].join('\n');
+
+  const acao = await abrirModalPendenciaPonto({
+    nomeFuncionario: funcionario.nome || 'Funcionário',
+    textoPendencias: mensagem,
+    quantidadePendentesInicio: pendentesInicio.length,
+    quantidadePendentesFinalizacao: pendentesFinalizacao.length,
+  });
+
+  if (acao === 'ver_tarefas') {
+    const botao = document.querySelector('.nav-btn[data-page="execucoes"]');
+    abrirPagina('execucoes', botao);
+    setMsg('msgPonto', 'Batida cancelada. Confira as tarefas em andamento.', 'err');
+    return false;
+  }
+
+  if (acao === 'ver_checklists') {
+    const botao = document.querySelector('.nav-btn[data-page="checklists"]');
+    abrirPagina('checklists', botao);
+    setMsg('msgPonto', 'Batida cancelada. Confira os checklists pendentes.', 'err');
+    return false;
+  }
+
+  if (acao !== 'confirmar') {
+    setMsg('msgPonto', 'Batida cancelada. Resolva os checklists pendentes antes de finalizar o turno.', 'err');
+    return false;
+  }
+
+  setMsg('msgPonto', 'Atenção: ponto confirmado com pendências de checklist.', 'ok');
+  return true;
 }
 
 function mensagemErroSupabase(error, fallback = 'Erro inesperado.') {
@@ -3594,6 +4527,14 @@ function horaCurta(horario) {
   return (horario || '').slice(0, 5);
 }
 
+function horarioJaPassouHoje(horario) {
+  const limite = horarioParaMinutos(horaCurta(horario));
+  const agora = horarioParaMinutos(agoraHoraMinuto());
+  if (limite === null || agora === null) return false;
+  // "Após o horário" = estritamente maior; no minuto exato ainda pode lançar.
+  return agora > limite;
+}
+
 function criarChaveAgendaDiaria(tarefaId, funcionarioId, dataRef = dataLocalISO()) {
   return [dataRef || dataLocalISO(), tarefaId || 'sem-tarefa', funcionarioId || 'sem-funcionario'].join('::');
 }
@@ -3653,6 +4594,8 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
 
     const lancamentosParaCriar = (tarefasResultado.data || [])
       .filter(item => item.funcionario_id && tarefaDisponivelHoje(item.dias_semana))
+      // Se o horário da tarefa já passou no dia atual, ignora hoje e agenda apenas os próximos dias.
+      .filter(item => !item.horario_limite || !horarioJaPassouHoje(item.horario_limite))
       .filter(item => !chavesExistentes.has(criarChaveAgendaDiaria(item.id, item.funcionario_id, dataReferencia)))
       .map(item => ({
         tarefa_id: item.id,
@@ -3839,7 +4782,12 @@ function renderizarListaNotificacoes() {
   const count = document.getElementById('notificationCount');
   const list = document.getElementById('notificationList');
   const button = document.querySelector('.notification-btn');
+  const btnLimpar = document.getElementById('btnLimparAvisosMaster');
   if (!count || !list) return;
+
+  if (btnLimpar) {
+    btnLimpar.style.display = usuarioEhMasterNotificacoes() ? '' : 'none';
+  }
 
   count.textContent = String(notificacoesAtuais.length);
   count.classList.toggle('show', notificacoesAtuais.length > 0);
@@ -3871,7 +4819,7 @@ function togglePainelNotificacoes(force = null) {
   const abrindo = typeof force === 'boolean' ? force : !painelNotificacoesAberto;
   painelNotificacoesAberto = typeof force === 'boolean' ? force : !painelNotificacoesAberto;
   panel.classList.toggle('show', painelNotificacoesAberto);
-  if (abrindo && notificacoesAtuais.length) {
+  if (abrindo && notificacoesAtuais.length && !usuarioEhMasterNotificacoes()) {
     marcarNotificacoesComoLidas(notificacoesAtuais.map(item => item.chave));
     quantidadeNotificacoesAnterior = 0;
     const count = document.getElementById('notificationCount');
@@ -3958,6 +4906,38 @@ function falarNovaTarefaNotificacao() {
       synth.speak(utter);
     }
   } catch (e) {}
+}
+
+function falarAlertaRapidoNotificacao() {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const vozes = synth.getVoices ? synth.getVoices() : [];
+    const vozPtBr = vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt-br'))
+      || vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt'))
+      || null;
+
+    for (let i = 0; i < 3; i += 1) {
+      const utter = new SpeechSynthesisUtterance('ALERTA RÁPIDO!');
+      utter.lang = 'pt-BR';
+      utter.volume = 1;
+      utter.rate = 1.18;
+      utter.pitch = 1.24;
+      if (vozPtBr) utter.voice = vozPtBr;
+      synth.speak(utter);
+    }
+  } catch (e) {}
+}
+
+function tocarSomAlertaRapidoNotificacao(forcar = false) {
+  if (forcar) {
+    somNotificacaoBloqueadoAte = 0;
+  }
+  tocarSomNotificacaoFallback(true, false);
+  window.setTimeout(() => {
+    falarAlertaRapidoNotificacao();
+  }, 260);
 }
 
 function falarVerificarTarefaNotificacao() {
@@ -4112,6 +5092,38 @@ function tocarSomNotificacaoFallback(critico = false, incluirFala = true) {
   }
 }
 
+function tocarBipCurtoTarefaAtrasada() {
+  if (!somNotificacaoHabilitado) {
+    habilitarSomNotificacao();
+  }
+  if (!somNotificacaoHabilitado) return;
+  if (!somNotificacaoPodeDisparar()) return;
+
+  const disparar = () => {
+    const inicio = audioContextNotificacao.currentTime + 0.02;
+    const duracao = 0.16;
+    const fim = inicio + duracao;
+    const oscillator = audioContextNotificacao.createOscillator();
+    const gainNode = audioContextNotificacao.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, inicio);
+    oscillator.frequency.linearRampToValueAtTime(1100, fim);
+
+    gainNode.gain.setValueAtTime(0.0001, inicio);
+    gainNode.gain.exponentialRampToValueAtTime(0.11, inicio + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, fim);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContextNotificacao.destination);
+    oscillator.start(inicio);
+    oscillator.stop(fim + 0.02);
+  };
+
+  garantirContextoAudioAtivo(disparar);
+  bloquearDisparoSomPor(900);
+}
+
 function tocarSomExecucaoAtrasadaNotificacao(incluirFala = true) {
   if (!somNotificacaoHabilitado) {
     habilitarSomNotificacao();
@@ -4183,36 +5195,65 @@ function renderizarAvisoCentralTarefas() {
   const banner = document.getElementById('overdueAlertBanner');
   const list = document.getElementById('overdueAlertList');
   const title = document.getElementById('overdueAlertTitle');
+  const text = document.getElementById('overdueAlertText');
+  const btnPrincipal = document.getElementById('btnOverdueAlertAction');
+  const btnSecundario = document.getElementById('btnOverdueAlertExecucoes');
   if (!banner || !list) return;
 
   const criticas = obterNotificacoesCriticas();
+  const criticasOperacionais = criticas.filter(item => tipoNotificacaoTarefaAtrasada(item?.tipo));
+  const alertasRapidos = criticas.filter(item => item?.tipo === 'alerta_rapido');
+  const itensBanner = criticasOperacionais.length ? criticasOperacionais : alertasRapidos;
+  const temAlertaRapido = !criticasOperacionais.length && alertasRapidos.length > 0;
   if (title) {
-    title.textContent = `"${obterNomeResponsavelAvisoTarefa(criticas)}" NOVA TAREFA`;
+    title.textContent = temAlertaRapido
+      ? 'ALERTA RÁPIDO'
+      : `"${obterNomeResponsavelAvisoTarefa(itensBanner)}" NOVA TAREFA`;
   }
-  const assinaturaAtual = criticas.map(item => item.chave).sort().join('|');
+  if (text) {
+    text.textContent = temAlertaRapido
+      ? 'Existe um aviso imediato aguardando confirmação por PIN. Finalize agora para registrar quem confirmou.'
+      : 'Existem checklists próximos do prazo ou em atraso aguardando início. Resolva agora para evitar falhas na rotina.';
+  }
+  const assinaturaAtual = itensBanner.map(item => item.chave).sort().join('|');
   if (assinaturaAtual !== assinaturaAvisoCentralTarefas) {
     assinaturaAvisoCentralTarefas = assinaturaAtual;
     avisoCentralTarefasFechado = false;
   }
 
-  if (!criticas.length || avisoCentralTarefasFechado) {
+  if (!itensBanner.length || avisoCentralTarefasFechado) {
     banner.hidden = true;
     list.innerHTML = '';
+    if (btnPrincipal) btnPrincipal.textContent = 'Ver checklists';
+    if (btnSecundario) {
+      btnSecundario.textContent = 'Acompanhar tarefa';
+      btnSecundario.style.display = '';
+    }
     return;
   }
 
-  list.innerHTML = criticas.slice(0, 3).map(item => {
+  if (btnPrincipal) btnPrincipal.textContent = temAlertaRapido ? 'Finalizar aviso' : 'Ver checklists';
+  if (btnSecundario) {
+    btnSecundario.textContent = 'Acompanhar tarefa';
+    btnSecundario.style.display = temAlertaRapido ? 'none' : '';
+  }
+
+  list.innerHTML = itensBanner.slice(0, 3).map(item => {
     const nomeTarefa = item?.meta?.nomeTarefa || item?.meta?.nomeChecklist || item?.meta?.nome_checklist || item?.titulo || 'Checklist pendente';
     const nomeFuncionario = item?.meta?.nomeFuncionario || item?.meta?.nome_funcionario || 'Responsável não definido';
-    const horario = item?.meta?.horarioProgramado || item?.meta?.horario_programado || 'Não informado';
-    const rodape = item?.tipo === 'execucao_atrasada'
+    const horario = item?.tipo === 'alerta_rapido'
+      ? 'Aviso imediato'
+      : (item?.meta?.horarioProgramado || item?.meta?.horario_programado || 'Não informado');
+    const rodape = item?.tipo === 'alerta_rapido'
+      ? 'Aviso rápido. Confirme com seu PIN para finalizar o aviso.'
+      : item?.tipo === 'execucao_atrasada'
       ? 'Aviso de tarefa em andamento/pausada. Selecione uma opção.'
       : 'Aviso de nova tarefa. Selecione uma opção.';
     return `
     <div class="overdue-alert-item">
       <div class="overdue-alert-task">${nomeTarefa}</div>
       <div class="overdue-alert-funcionario">${nomeFuncionario}</div>
-      <div class="overdue-alert-horario">Hora para executar tarefa: ${horario}</div>
+      <div class="overdue-alert-horario">${item?.tipo === 'alerta_rapido' ? 'Aviso para: ' : 'Hora para executar tarefa: '}${horario}</div>
       <div class="overdue-alert-rodape">${rodape}</div>
     </div>
   `;
@@ -4227,9 +5268,16 @@ function fecharAvisoCentralTarefas() {
   if (banner) banner.hidden = true;
 }
 
-function abrirPainelTarefasAtrasadas(event) {
+async function abrirPainelTarefasAtrasadas(event) {
   if (event?.preventDefault) event.preventDefault();
   if (event?.stopPropagation) event.stopPropagation();
+
+  const alertaRapido = notificacoesAtuais.find(item => item?.tipo === 'alerta_rapido');
+  if (alertaRapido) {
+    const index = notificacoesAtuais.findIndex(item => item?.chave === alertaRapido?.chave);
+    await confirmarAlertaRapidoNotificacao(alertaRapido, index);
+    return;
+  }
 
   const destino = 'checklists';
   const botao = document.querySelector('.nav-btn[data-page="checklists"]');
@@ -4289,12 +5337,22 @@ function limparControleLembretesChecklist(chavesAtivas = []) {
   });
 }
 
+function limparControleLembretesTarefaAtrasada(chavesAtivas = []) {
+  const ativos = new Set(chavesAtivas);
+  Object.keys(ultimosLembretesTarefaAtrasadaEm).forEach(chave => {
+    if (!ativos.has(chave)) {
+      delete ultimosLembretesTarefaAtrasadaEm[chave];
+    }
+  });
+}
+
 function sincronizarAvisoNotificacoes() {
   const totalAtual = notificacoesAtuais.length;
   const notificacoesCriticas = obterNotificacoesCriticas();
   const totalCriticoAtual = notificacoesCriticas.length;
   const assinaturaCriticaAtual = notificacoesCriticas.map(item => item.chave).sort().join('|');
-  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente');
+  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente' || item.tipo === 'alerta_rapido');
+  const tarefasAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'tarefa_atrasada');
   const execucoesAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'execucao_atrasada');
   const agora = Date.now();
   let somTocadoNesteCiclo = false;
@@ -4303,9 +5361,14 @@ function sincronizarAvisoNotificacoes() {
 
   limparControleLembretesExecucao(execucoesAtrasadas.map(item => item.chave).filter(Boolean));
   limparControleLembretesChecklist(lancamentosPendentes.map(item => item.chave).filter(Boolean));
+  limparControleLembretesTarefaAtrasada(tarefasAtrasadas.map(item => item.chave).filter(Boolean));
 
   const tocarSomCriticoChecklist = () => {
-    tocarSomNotificacao(true);
+    if (!criticasOperacionais.length && alertasRapidos.length) {
+      tocarSomAlertaRapidoNotificacao(true);
+    } else {
+      tocarSomNotificacao(true);
+    }
     somTocadoNesteCiclo = true;
   };
 
@@ -4348,7 +5411,11 @@ function sincronizarAvisoNotificacoes() {
     }
   } else if (totalAtual > quantidadeNotificacoesAnterior) {
     destacarNovasNotificacoes();
-    tocarSomNotificacao(false);
+    const notificacaoMaisRecente = notificacoesAtuais[0] || null;
+    const notificacaoSilenciosa = notificacaoMaisRecente?.tipo === 'checklist_agendado';
+    if (!notificacaoSilenciosa) {
+      tocarSomNotificacao(false);
+    }
     if (!painelNotificacoesAberto) {
       togglePainelNotificacoes(true);
     }
@@ -4386,17 +5453,39 @@ function sincronizarAvisoNotificacoes() {
     }
   }
 
+  const lembretesTarefaAtrasadaDevidos = tarefasAtrasadas.filter(item => {
+    const ultimoLembrete = ultimosLembretesTarefaAtrasadaEm[item.chave] || 0;
+    return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS;
+  });
+
+  if (lembretesTarefaAtrasadaDevidos.length) {
+    lembretesTarefaAtrasadaDevidos.forEach(item => {
+      if (item?.chave) {
+        ultimosLembretesTarefaAtrasadaEm[item.chave] = agora;
+      }
+    });
+    if (!somTocadoNesteCiclo) {
+      tocarBipCurtoTarefaAtrasada();
+    }
+  }
+
   quantidadeNotificacoesAnterior = totalAtual;
   quantidadeAlertasCriticosAnterior = totalCriticoAtual;
   assinaturaAlertasCriticosAnterior = assinaturaCriticaAtual;
 }
 
-function abrirNotificacao(index) {
+async function abrirNotificacao(index) {
   const item = notificacoesAtuais[index];
   if (!item) return;
-  marcarNotificacoesComoLidas([item.chave]);
-  notificacoesAtuais = notificacoesAtuais.filter((_, itemIndex) => itemIndex !== index);
-  renderizarListaNotificacoes();
+  if (item.tipo === 'alerta_rapido') {
+    await confirmarAlertaRapidoNotificacao(item, index);
+    return;
+  }
+  if (!usuarioEhMasterNotificacoes()) {
+    marcarNotificacoesComoLidas([item.chave]);
+    notificacoesAtuais = notificacoesAtuais.filter((_, itemIndex) => itemIndex !== index);
+    renderizarListaNotificacoes();
+  }
   togglePainelNotificacoes(false);
   if (item.page) {
     const botao = document.querySelector(`.nav-btn[data-page="${item.page}"]`);
@@ -4427,6 +5516,37 @@ async function carregarNotificacoes() {
       });
     }
   } catch (e) {}
+
+  try {
+    const destino = obterFuncionarioDestinoAlertaRapidoAtual();
+    if (usuarioPodeReceberAlertaRapido() && (destino.id || destino.nome)) {
+      const data = await buscarAlertasRapidosPendentesParaDestino(destino);
+      (data || []).forEach(item => {
+        const mensagem = String(item.mensagem || '').trim();
+        if (!mensagem) return;
+        itens.push({
+          chave: criarChaveAlerta('alerta_rapido', item.grupo_id || item.id),
+          tipo: 'alerta_rapido',
+          page: 'tarefas_rapidas',
+          titulo: 'Alerta rápido',
+          descricao: `ALERTA "${mensagem}"`,
+          meta: {
+            alertaRapidoId: item.id,
+            alertaRapidoGrupoId: item.grupo_id || '',
+            mensagem,
+            nomeTarefa: `ALERTA: ${mensagem}`,
+            nomeFuncionario: item.funcionario_destino_nome || destino.nome || 'Funcionário',
+            funcionarioDestinoId: String(item.funcionario_destino_id || destino.id || ''),
+            horarioProgramado: 'Aviso imediato',
+          },
+        });
+      });
+    }
+  } catch (e) {
+    if (!isMissingQuickAlertsTableError(e)) {
+      console.warn('Falha ao carregar alertas rápidos para o funcionário:', e);
+    }
+  }
 
   try {
     const cfg = await obterConfiguracoesLoja();
@@ -4507,16 +5627,25 @@ async function carregarNotificacoes() {
       if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
         return false;
       }
+      if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
       const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
-      return prazo.ativo && !prazo.vencido;
+      return (prazo.ativo && !prazo.vencido) || lancamentoRecemCriadoParaAlerta(item);
     });
 
     const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
       if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
         return false;
       }
+      if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
       const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       return prazo.ativo && prazo.vencido;
+    });
+
+    const lancamentosAgendadosParaProximoCiclo = (lancamentosPendentes || []).filter(item => {
+      if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
+        return false;
+      }
+      return lancamentoFoiCriadoAposHorarioNoMesmoDia(item);
     });
 
     lancamentosPendentesHoje.forEach(item => {
@@ -4585,6 +5714,27 @@ async function carregarNotificacoes() {
           },
         });
       }
+    });
+
+    lancamentosAgendadosParaProximoCiclo.forEach(item => {
+      if (!usuarioPodeVerNotificacaoChecklist()) return;
+
+      const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
+      const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
+      const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+
+      itens.push({
+        chave: criarChaveAlerta('checklist_agendado', item.id),
+        tipo: 'checklist_agendado',
+        page: 'checklists',
+        titulo: 'Nova tarefa agendada para o próximo ciclo',
+        descricao: `${nomeChecklist}${nomeFuncionario ? ' · Responsável: ' + nomeFuncionario : ''} · Horário previsto: ${horarioProgramado}. Hoje não gera alerta crítico.`,
+        meta: {
+          nomeTarefa: nomeChecklist,
+          nomeFuncionario: nomeFuncionario || 'Sem responsável',
+          horarioProgramado,
+        },
+      });
     });
 
     const execucoesAtrasadas = (execucoesPendentes || []).filter(item => execucaoPrecisaLembreteFinalizacao(item));
@@ -4695,7 +5845,22 @@ async function carregarNotificacoes() {
     }
   } catch (e) {}
 
-  notificacoesAtuais = itens.filter(item => notificacaoDeveSempreAparecer(item) || !notificacaoJaFoiLida(item.chave));
+  if (usuarioEhMasterNotificacoes()) {
+    const historicoAtual = carregarHistoricoNotificacoesMaster();
+    const mapa = new Map();
+    historicoAtual.forEach(item => {
+      if (item?.chave) mapa.set(item.chave, item);
+    });
+    itens.forEach(item => {
+      if (item?.chave) mapa.set(item.chave, item);
+    });
+    notificacoesHistoricoMaster = Array.from(mapa.values());
+    salvarHistoricoNotificacoesMaster(notificacoesHistoricoMaster);
+    notificacoesAtuais = notificacoesHistoricoMaster;
+  } else {
+    notificacoesAtuais = itens.filter(item => notificacaoDeveSempreAparecer(item) || !notificacaoJaFoiLida(item.chave));
+  }
+  atualizarBadgeTarefasAtraso(obterQuantidadeAtrasosNotificacao());
   renderizarListaNotificacoes();
   sincronizarAvisoNotificacoes();
 }
@@ -5241,6 +6406,7 @@ async function carregarFuncionarios() {
         <div class="item-info">
           <div class="item-nome">${f.nome}</div>
           <div class="item-detalhe">E-mail: ${f.email || '-'} · PIN: ${f.pin ? f.pin : '-'}${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
+          <div class="item-detalhe">Turno: ${f.horario_trabalho_inicio || '--:--'} às ${f.horario_trabalho_fim || '--:--'}</div>
         </div>
         <div class="item-actions">
           ${f.ativo ? '<span class="tag tag-green">Ativo</span>' : '<span class="tag tag-gray">Inativo</span>'}
@@ -5260,6 +6426,8 @@ async function criarFuncionario() {
   const nome = document.getElementById('nomeFuncionario').value.trim();
   const email = document.getElementById('emailFuncionario').value.trim().toLowerCase();
   const pin = document.getElementById('pinFuncionario').value.trim();
+  const horarioInicio = document.getElementById('horarioInicioFuncionario').value || null;
+  const horarioFim = document.getElementById('horarioFimFuncionario').value || null;
   const perfilId = document.getElementById('perfilFuncionario').value;
   const emailInformado = !!email;
   const editandoAgora = !!funcionarioEmEdicaoId;
@@ -5284,14 +6452,31 @@ async function criarFuncionario() {
         email: emailInformado ? email : null,
         pin: pin || null,
         perfil_id: perfilId,
+        horario_trabalho_inicio: horarioInicio,
+        horario_trabalho_fim: horarioFim,
         ...(emailAlterado ? { email_verificado: false } : {}),
       }
-    : { nome, email: emailInformado ? email : null, pin: pin || null, perfil_id: perfilId, email_verificado: false };
+    : {
+        nome,
+        email: emailInformado ? email : null,
+        pin: pin || null,
+        perfil_id: perfilId,
+        horario_trabalho_inicio: horarioInicio,
+        horario_trabalho_fim: horarioFim,
+        email_verificado: false,
+      };
   const query = editandoAgora
     ? sb.from('funcionarios').update(payload).eq('id', funcionarioEmEdicaoId)
     : sb.from('funcionarios').insert([{ ...payload, ativo: true }]);
   const { error } = await query;
-  if (error) { setMsg('msgFuncionarios', editandoAgora ? 'Erro ao salvar alterações.' : 'Erro ao cadastrar.', 'err'); return; }
+  if (error) {
+    if (isMissingWorkShiftColumnsError(error)) {
+      setMsg('msgFuncionarios', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
+      return;
+    }
+    setMsg('msgFuncionarios', editandoAgora ? 'Erro ao salvar alterações.' : 'Erro ao cadastrar.', 'err');
+    return;
+  }
   limparFormularioFuncionario();
   carregarFuncionarios();
   setMsg('msgFuncionarios', editandoAgora ? 'Funcionário atualizado.' : 'Funcionário cadastrado.', 'ok');
@@ -5304,6 +6489,8 @@ function limparFormularioFuncionario() {
   document.getElementById('nomeFuncionario').value = '';
   document.getElementById('emailFuncionario').value = '';
   document.getElementById('pinFuncionario').value = '';
+  document.getElementById('horarioInicioFuncionario').value = '';
+  document.getElementById('horarioFimFuncionario').value = '';
   document.getElementById('perfilFuncionario').value = '';
   const btnSalvar = document.getElementById('btnSalvarFuncionario');
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
@@ -5338,6 +6525,8 @@ async function editarFuncionario(id) {
   document.getElementById('nomeFuncionario').value = funcionario.nome || '';
   document.getElementById('emailFuncionario').value = funcionario.email || '';
   document.getElementById('pinFuncionario').value = funcionario.pin || '';
+  document.getElementById('horarioInicioFuncionario').value = String(funcionario.horario_trabalho_inicio || '').slice(0, 5);
+  document.getElementById('horarioFimFuncionario').value = String(funcionario.horario_trabalho_fim || '').slice(0, 5);
   document.getElementById('perfilFuncionario').value = funcionario.perfil_id || '';
   const btnSalvar = document.getElementById('btnSalvarFuncionario');
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
@@ -5999,8 +7188,10 @@ function preencherDiasSelecionados(diasStr) {
 // 
 async function carregarSelectFuncionariosTarefa() {
   const sel = document.getElementById('funcionarioTarefa');
+  if (!sel) return;
   sel.innerHTML = '<option value=""></option>';
-  const { data } = await sb.from('funcionarios').select('*').eq('ativo', true).order('nome');
+  const { data } = await sb.from('funcionarios').select('id, nome').eq('ativo', true).order('nome');
+  funcionariosAtivosTarefa = data || [];
   (data || []).forEach(f => {
     const o = document.createElement('option');
     o.value = f.id; o.textContent = f.nome;
@@ -6014,11 +7205,111 @@ function formatarDias(diasStr) {
   return diasStr.split(',').map(d => diasNomes[d.trim()] || d).join(', ');
 }
 
+function escaparHtmlBasico(valor) {
+  return String(valor || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function obterFuncionarioLancamentoSelecionado(tarefaId, funcionarioPadrao = '') {
+  const idTarefa = String(tarefaId || '');
+  const selecionado = selecaoFuncionarioLancamentoPorTarefa[idTarefa];
+  if (selecionado) return String(selecionado);
+  return String(funcionarioPadrao || '');
+}
+
+function obterHorarioLancamentoSelecionado(tarefaId, horarioPadrao = '') {
+  const idTarefa = String(tarefaId || '');
+  const sobrescrito = horarioLancamentoPorTarefa[idTarefa];
+  if (sobrescrito) return String(sobrescrito);
+  return horaCurta(horarioPadrao || '');
+}
+
+function definirHorarioLancamentoTarefa(tarefaId, valor) {
+  const idTarefa = String(tarefaId || '');
+  if (!idTarefa) return;
+  const hora = horaCurta(valor || '');
+  if (!hora) {
+    delete horarioLancamentoPorTarefa[idTarefa];
+    return;
+  }
+  horarioLancamentoPorTarefa[idTarefa] = hora;
+}
+
+function selecionarFuncionarioLancamento(tarefaId, funcionarioId, marcado) {
+  const idTarefa = String(tarefaId || '');
+  const idFuncionario = String(funcionarioId || '');
+  if (!idTarefa || !idFuncionario) return;
+
+  if (marcado) {
+    selecaoFuncionarioLancamentoPorTarefa[idTarefa] = idFuncionario;
+    document.querySelectorAll(`.funcionario-lancamento-checkbox[data-tarefa-id="${idTarefa}"]`).forEach(input => {
+      input.checked = String(input.dataset.funcionarioId || '') === idFuncionario;
+    });
+    return;
+  }
+
+  if (selecaoFuncionarioLancamentoPorTarefa[idTarefa] === idFuncionario) {
+    delete selecaoFuncionarioLancamentoPorTarefa[idTarefa];
+  }
+}
+
+function renderizarSelecaoFuncionariosLancamento(tarefa) {
+  if (!funcionariosAtivosTarefa.length) {
+    return '<div class="item-detalhe">Funcionários: nenhum ativo para seleção.</div>';
+  }
+
+  const selecionado = obterFuncionarioLancamentoSelecionado(tarefa.id, tarefa.funcionario_id || '');
+  const opcoes = funcionariosAtivosTarefa.map(funcionario => {
+    const idFuncionario = String(funcionario.id || '');
+    const checked = selecionado && idFuncionario === String(selecionado) ? 'checked' : '';
+    return `
+      <label class="tarefa-funcionario-option">
+        <input
+          class="funcionario-lancamento-checkbox"
+          type="checkbox"
+          data-tarefa-id="${escaparHtmlBasico(tarefa.id)}"
+          data-funcionario-id="${escaparHtmlBasico(idFuncionario)}"
+          onchange="selecionarFuncionarioLancamento('${escaparHtmlBasico(tarefa.id)}','${escaparHtmlBasico(idFuncionario)}', this.checked)"
+          ${checked}
+        >
+        <span>${escaparHtmlBasico(funcionario.nome || 'Funcionário')}</span>
+      </label>
+    `;
+  }).join('');
+
+  const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
+  return `
+    <div class="tarefa-funcionarios-inline">
+      <span class="tarefa-funcionarios-label">Funcionário no lançamento:</span>
+      <div class="tarefa-funcionarios-grid">${opcoes}</div>
+      <label class="tarefa-lancamento-horario">
+        <span>Horário</span>
+        <input
+          type="time"
+          value="${escaparHtmlBasico(horarioSelecionado)}"
+          onchange="definirHorarioLancamentoTarefa('${escaparHtmlBasico(tarefa.id)}', this.value)"
+        >
+      </label>
+    </div>
+  `;
+}
+
 async function carregarTarefas() {
   const lista = document.getElementById('listaTarefas');
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   try {
+    const { data: funcionariosAtivos } = await sb
+      .from('funcionarios')
+      .select('id, nome')
+      .eq('ativo', true)
+      .order('nome');
+    funcionariosAtivosTarefa = funcionariosAtivos || [];
+
     const { data, error } = await sb.from('tarefas').select('*, funcionarios(nome), checklists(nome)').order('nome');
 
     if (error) {
@@ -6039,11 +7330,12 @@ async function carregarTarefas() {
           <div class="item-detalhe">Funcionario: ${t.funcionarios?.nome ?? '-'}${t.checklists?.nome ? ' · Checklist: ' + t.checklists.nome : ''}${t.descricao ? ' · ' + t.descricao : ''}</div>
           ${t.horario_limite ? `<div class="item-detalhe" style="color:var(--amber);font-size:11px;margin-top:4px">Prazo máximo: ${t.horario_limite}</div>` : ''}
           ${t.dias_semana ? `<div class="item-detalhe" style="color:var(--text-dim);font-size:11px;margin-top:4px">Dias: ${formatarDias(t.dias_semana)}</div>` : ''}
+          ${renderizarSelecaoFuncionariosLancamento(t)}
         </div>
         <div class="item-actions">
           ${t.ativo ? `<span class="tag tag-green">Ativa</span>` : `<span class="tag tag-gray">Inativa</span>`}
           <button class="btn btn-ghost btn-sm" onclick="editarTarefa('${t.id}')">Editar</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm" onclick="lancarTarefa('${t.id}')">${t.lancada_checklist === true ? 'Lançar novamente' : 'Lançar tarefa'}</button>` : ''}
+          ${t.ativo ? `<button class="btn btn-amber btn-sm" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'))">${t.lancada_checklist === true ? 'Lançar novamente' : 'Lançar tarefa'}</button>` : ''}
           <button class="btn btn-red" onclick="excluirTarefa('${t.id}')">Excluir</button>
         </div>
       </div>`).join('') + '</div>';
@@ -6097,14 +7389,12 @@ async function criarTarefa() {
   const nome = document.getElementById('nomeTarefa').value.trim();
   const descricao = document.getElementById('descTarefa').value.trim();
   const horarioLimite = document.getElementById('horarioTarefa').value;
-  const funcionarioId = document.getElementById('funcionarioTarefa').value;
+  const funcionarioId = document.getElementById('funcionarioTarefa').value || null;
   if (!nome) { setMsg('msgTarefas', 'Digite o nome da tarefa.', 'err'); return; }
-  if (!horarioLimite) { setMsg('msgTarefas', 'Informe o horário limite da tarefa.', 'err'); return; }
-  if (!funcionarioId) { setMsg('msgTarefas', 'Selecione um funcionário.', 'err'); return; }
 
   const diasSelecionados = obterDiasSelecionados();
   const diasStr = diasSelecionados.length > 0 ? diasSelecionados.join(',') : 'todos';
-  const payload = { nome, descricao: descricao || null, checklist_id: null, horario_limite: horarioLimite, dias_semana: diasStr, funcionario_id: funcionarioId };
+  const payload = { nome, descricao: descricao || null, checklist_id: null, horario_limite: horarioLimite || null, dias_semana: diasStr, funcionario_id: funcionarioId };
   const editandoAgora = !!tarefaEmEdicaoId;
   const query = editandoAgora
     ? sb.from('tarefas').update(payload).eq('id', tarefaEmEdicaoId).select()
@@ -6191,7 +7481,7 @@ function cancelarEdicaoTarefa() {
   setMsg('msgTarefas', 'Edição cancelada.', 'ok');
 }
 
-async function lancarTarefa(id) {
+async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '') {
   if (!tarefasDisponiveis) {
     setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
     return;
@@ -6209,13 +7499,24 @@ async function lancarTarefa(id) {
     return;
   }
 
+  const funcionarioSelecionado = String(funcionarioIdOverride || '').trim() || String(tarefa.funcionario_id || '').trim();
+  if (!funcionarioSelecionado) {
+    setMsg('msgTarefas', 'Marque um funcionário no checkbox da tarefa antes de lançar.', 'err');
+    return;
+  }
+  const horarioSelecionado = horaCurta(horarioOverride || '') || horaCurta(tarefa.horario_limite || '');
+  if (!horarioSelecionado) {
+    setMsg('msgTarefas', 'Informe o horário no card da tarefa antes de lançar.', 'err');
+    return;
+  }
+
   const { error } = await sb.from('checklist_lancamentos').insert([{
     tarefa_id: tarefa.id,
     checklist_id: tarefa.checklist_id || null,
-    funcionario_id: tarefa.funcionario_id || null,
+    funcionario_id: funcionarioSelecionado || null,
     nome: tarefa.nome,
     descricao: tarefa.descricao || null,
-    horario_limite: tarefa.horario_limite || null,
+    horario_limite: horarioSelecionado || null,
     dias_semana: tarefa.dias_semana || 'todos',
     lancado_em: new Date().toISOString(),
     status: 'pendente'
@@ -6233,7 +7534,6 @@ async function lancarTarefa(id) {
 
   setMsg('msgTarefas', 'Novo lançamento enviado para a aba Checklists.', 'ok');
   carregarTarefas();
-  abrirPagina('checklists', document.querySelector(".nav-btn[onclick*='checklists']"));
 }
 
 async function excluirTarefa(id) {
@@ -6280,6 +7580,427 @@ async function toggleTarefa(id, ativo) {
   }
   await sb.from('tarefas').update({ ativo: !ativo }).eq('id', id);
   carregarTarefas();
+}
+
+// 
+// TAREFAS RÁPIDAS
+// 
+async function carregarFuncionariosAlertaRapido() {
+  const container = document.getElementById('alertaRapidoFuncionarios');
+  if (!container) return;
+  container.innerHTML = '<div class="empty">Carregando⬦</div>';
+
+  try {
+    const { data, error } = await sb
+      .from('funcionarios')
+      .select('id, nome')
+      .eq('ativo', true)
+      .order('nome');
+
+    if (error) throw error;
+
+    if (!data?.length) {
+      container.innerHTML = '<div class="empty">Nenhum funcionário ativo para seleção.</div>';
+      return;
+    }
+
+    container.innerHTML = data.map(item => `
+      <label class="alerta-rapido-check-item">
+        <input type="checkbox" checked data-alerta-funcionario-id="${item.id}" data-alerta-funcionario-nome="${String(item.nome || '').replace(/"/g, '&quot;')}" onchange="atualizarResumoDestinatariosAlertaRapido()">
+        <span>${item.nome}</span>
+      </label>
+    `).join('');
+    atualizarResumoDestinatariosAlertaRapido();
+  } catch (error) {
+    console.error('Erro ao carregar funcionários para alerta rápido:', error);
+    container.innerHTML = '<div class="empty">Erro ao carregar funcionários.</div>';
+  }
+}
+
+function coletarFuncionariosSelecionadosAlertaRapido() {
+  return Array.from(document.querySelectorAll('[data-alerta-funcionario-id]:checked')).map(input => ({
+    id: String(input.getAttribute('data-alerta-funcionario-id') || ''),
+    nome: String(input.getAttribute('data-alerta-funcionario-nome') || ''),
+  })).filter(item => item.id);
+}
+
+function atualizarResumoDestinatariosAlertaRapido() {
+  const resumo = document.getElementById('alertaRapidoDestinatariosResumo');
+  if (!resumo) return;
+
+  const selecionados = coletarFuncionariosSelecionadosAlertaRapido();
+  const totalFuncionarios = document.querySelectorAll('[data-alerta-funcionario-id]').length;
+  if (!selecionados.length) {
+    resumo.textContent = 'Nenhum funcionário selecionado.';
+    resumo.className = 'msg';
+    return;
+  }
+
+  const descricoes = selecionados.map(item => `${item.nome || 'Sem nome'} (${String(item.id || '').slice(0, 8)})`);
+  resumo.textContent = selecionados.length === totalFuncionarios
+    ? `Destino atual: todos os funcionários ativos (${selecionados.length}) - ${descricoes.join(', ')}`
+    : `Destino atual: ${selecionados.length} funcionário(s) selecionado(s) - ${descricoes.join(', ')}`;
+  resumo.className = 'msg ok';
+}
+
+async function enviarAlertaRapido() {
+  const mensagem = String(document.getElementById('mensagemAlertaRapido')?.value || '').trim();
+  const selecionados = coletarFuncionariosSelecionadosAlertaRapido();
+
+  if (!mensagem) {
+    setMsg('msgAlertasRapidos', 'Digite a mensagem do alerta rápido.', 'err');
+    return;
+  }
+  if (mensagem.length < 4) {
+    setMsg('msgAlertasRapidos', 'Digite uma mensagem com pelo menos 4 caracteres.', 'err');
+    return;
+  }
+  if (!selecionados.length) {
+    setMsg('msgAlertasRapidos', 'Selecione ao menos um funcionário para receber o alerta.', 'err');
+    return;
+  }
+
+  const criadoPorNome = usuarioSistemaLogado?.tipo === 'admin'
+    ? (usuarioSistemaLogado?.username || 'Administrador')
+    : (usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Administrador');
+  const criadoPorId = usuarioSistemaLogado?.tipo === 'funcionario' ? usuarioSistemaLogado?.id : null;
+  const grupoId = (window.crypto?.randomUUID?.() || `grupo-${Date.now()}`);
+
+  const registros = selecionados.map(item => ({
+    grupo_id: grupoId,
+    mensagem,
+    funcionario_destino_id: item.id,
+    funcionario_destino_nome: item.nome || null,
+    criado_por_nome: criadoPorNome || 'Administrador',
+    criado_por_id: criadoPorId || null,
+    status: 'pendente',
+  }));
+
+  const { error } = await sb.from('alertas_rapidos').insert(registros);
+  if (error) {
+    if (isMissingQuickAlertsTableError(error)) {
+      setMsg('msgAlertasRapidos', 'Rode o SQL da tabela alertas_rapidos antes de usar esta tela.', 'err');
+      return;
+    }
+    setMsg('msgAlertasRapidos', `Não foi possível enviar o alerta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  const campoMensagem = document.getElementById('mensagemAlertaRapido');
+  if (campoMensagem) campoMensagem.value = '';
+  document.querySelectorAll('[data-alerta-funcionario-id]').forEach(input => { input.checked = true; });
+  atualizarResumoDestinatariosAlertaRapido();
+
+  setMsg('msgAlertasRapidos', selecionados.length === document.querySelectorAll('[data-alerta-funcionario-id]').length
+    ? `Alerta enviado para todos os funcionários ativos (${selecionados.length}).`
+    : `Alerta enviado para ${selecionados.length} funcionário(s).`, 'ok');
+  await carregarAlertasRapidos();
+  await carregarNotificacoes();
+}
+
+async function carregarAlertasRapidos(apenasFuncionario = false) {
+  const lista = document.getElementById('listaAlertasRapidos');
+  const tituloLista = document.getElementById('tituloListaAlertaRapido');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+
+  try {
+    if (apenasFuncionario) {
+      const destino = obterFuncionarioDestinoAlertaRapidoAtual();
+      if (tituloLista) {
+        tituloLista.textContent = 'Alertas rápidos pendentes';
+      }
+      const data = await buscarAlertasRapidosPendentesParaDestino(destino);
+      if (!data?.length) {
+        assinaturaSomAlertaRapidoLista = '';
+        lista.innerHTML = '<div class="empty">Nenhum alerta rápido pendente.</div>';
+        return;
+      }
+
+      const assinaturaAtual = (data || [])
+        .map(item => String(item.grupo_id || item.id || ''))
+        .sort()
+        .join('|');
+
+      if (assinaturaAtual && assinaturaAtual !== assinaturaSomAlertaRapidoLista) {
+        tocarSomAlertaRapidoNotificacao(true);
+        assinaturaSomAlertaRapidoLista = assinaturaAtual;
+      }
+
+      lista.innerHTML = '<div class="lista">' + data.map(item => {
+        const mensagem = String(item.mensagem || '').trim();
+        const destinoId = String(item.funcionario_destino_id || destino.id || '');
+        const nomeDestino = String(item.funcionario_destino_nome || 'Funcionário');
+        const grupoId = String(item.grupo_id || '');
+        const mensagemAttr = mensagem.replace(/"/g, '&quot;');
+        const nomeDestinoAttr = nomeDestino.replace(/"/g, '&quot;');
+        return `
+          <div class="item alerta-rapido-card">
+            <div class="item-info">
+              <div class="alerta-rapido-funcionario-grande">${nomeDestino}</div>
+              <div class="alerta-rapido-mensagem-grande">${mensagem || '-'}</div>
+              <div class="item-detalhe">Enviado em: ${fmtDate(item.criado_em)} · Destino: ${nomeDestino}</div>
+              <div class="item-detalhe">Qualquer funcionário pode finalizar este aviso com o próprio PIN.</div>
+            </div>
+            <div class="item-actions">
+              <button
+                class="btn btn-red btn-sm"
+                type="button"
+                onclick="confirmarAlertaRapidoDaLista(this)"
+                data-alerta-id="${item.id}"
+                data-alerta-grupo-id="${grupoId}"
+                data-alerta-mensagem="${mensagemAttr}"
+                data-alerta-destino-id="${destinoId}"
+                data-alerta-destino-nome="${nomeDestinoAttr}"
+              >Finalizar com PIN</button>
+            </div>
+          </div>
+        `;
+      }).join('') + '</div>';
+      return;
+    }
+
+    if (tituloLista) {
+      tituloLista.textContent = 'Alertas enviados';
+    }
+
+    const filtroStatus = String(document.getElementById('filtroStatusAlertaRapido')?.value || '').trim().toLowerCase();
+    const consultarListaAdmin = async (campoData = 'criado_em') => {
+      let query = sb
+        .from('alertas_rapidos')
+        .select(`id, grupo_id, mensagem, funcionario_destino_nome, status, ${campoData}, criado_por_nome, confirmado_em, confirmado_por_nome`)
+        .order(campoData, { ascending: false })
+        .limit(200);
+
+      if (filtroStatus === 'pendente' || filtroStatus === 'confirmado') {
+        query = query.eq('status', filtroStatus);
+      }
+
+      const { data, error } = await query;
+      if (error) return { data: null, error };
+      return {
+        data: (data || []).map(item => ({
+          ...item,
+          criado_em: item.criado_em || item.created_at || null,
+          created_at: item.created_at || item.criado_em || null,
+        })),
+        error: null,
+      };
+    };
+
+    let { data, error } = await consultarListaAdmin('criado_em');
+    if (error && String(error?.message || '').toLowerCase().includes('criado_em')) {
+      ({ data, error } = await consultarListaAdmin('created_at'));
+    }
+
+    if (error) {
+      if (isMissingQuickAlertsTableError(error)) {
+        lista.innerHTML = '<div class="empty">Rode o SQL da tabela alertas_rapidos para habilitar esta tela.</div>';
+        return;
+      }
+      throw error;
+    }
+
+    if (!data?.length) {
+      lista.innerHTML = '<div class="empty">Nenhum alerta rápido enviado.</div>';
+      return;
+    }
+
+    const grupos = new Map();
+    (data || []).forEach(item => {
+      const chaveGrupo = String(item.grupo_id || item.id || '');
+      const atual = grupos.get(chaveGrupo);
+      if (!atual) {
+        grupos.set(chaveGrupo, {
+          ...item,
+          destinos: [item.funcionario_destino_nome || '-'],
+          quantidadeDestinos: 1,
+        });
+        return;
+      }
+
+      atual.quantidadeDestinos += 1;
+      if (item.funcionario_destino_nome) {
+        atual.destinos.push(item.funcionario_destino_nome);
+      }
+      if (item.status === 'confirmado') {
+        atual.status = 'confirmado';
+        atual.confirmado_em = item.confirmado_em || atual.confirmado_em;
+        atual.confirmado_por_nome = item.confirmado_por_nome || atual.confirmado_por_nome;
+      }
+    });
+
+    const dataAgrupada = Array.from(grupos.values());
+
+    lista.innerHTML = '<div class="lista">' + dataAgrupada.map(item => `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">ALERTA: ${item.mensagem}</div>
+          <div class="item-detalhe">Destino: todos os funcionários ativos (${item.quantidadeDestinos}) · Enviado por: ${item.criado_por_nome || '-'} · ${fmtDate(item.criado_em)}</div>
+          <div class="item-detalhe">${item.status === 'confirmado'
+            ? `Aceito por ${item.confirmado_por_nome || '-'} às ${fmtDate(item.confirmado_em)}`
+            : 'Aguardando confirmação por PIN'
+          }</div>
+        </div>
+        <div class="item-actions">
+          ${item.status === 'confirmado'
+            ? '<span class="tag tag-green">Confirmado</span>'
+            : '<span class="tag tag-amber">Pendente</span>'
+          }
+          <button class="btn btn-red btn-sm" type="button" onclick="excluirAlertaRapido('${item.id}')">Excluir</button>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  } catch (error) {
+    console.error('Erro ao carregar alertas rápidos:', error);
+    lista.innerHTML = '<div class="empty">Erro ao carregar alertas rápidos.</div>';
+  }
+}
+
+async function confirmarAlertaRapidoDaLista(botao) {
+  const alertaId = String(botao?.getAttribute('data-alerta-id') || '').trim();
+  const grupoId = String(botao?.getAttribute('data-alerta-grupo-id') || '').trim();
+  const mensagem = String(botao?.getAttribute('data-alerta-mensagem') || '').trim();
+  const funcionarioDestinoId = String(botao?.getAttribute('data-alerta-destino-id') || '').trim();
+  const funcionarioDestinoNome = String(botao?.getAttribute('data-alerta-destino-nome') || '').trim();
+  if (!alertaId) return;
+
+  const chave = criarChaveAlerta('alerta_rapido', grupoId || alertaId);
+  const index = notificacoesAtuais.findIndex(item => item?.chave === chave);
+  const item = {
+    chave,
+    tipo: 'alerta_rapido',
+    meta: {
+      alertaRapidoId: alertaId,
+      alertaRapidoGrupoId: grupoId,
+      mensagem: mensagem || 'Alerta rápido',
+      funcionarioDestinoId: String(funcionarioDestinoId || ''),
+      nomeFuncionario: funcionarioDestinoNome || '',
+    },
+    descricao: mensagem || 'Alerta rápido',
+  };
+  await confirmarAlertaRapidoNotificacao(item, index);
+  await carregarAlertasRapidos(true);
+}
+
+async function limparAlertasRapidosConfirmados() {
+  if (!usuarioPodeGerenciarAlertasRapidos()) {
+    setMsg('msgAlertasRapidos', 'Somente usuários ADM podem limpar alertas rápidos.', 'err');
+    return;
+  }
+  if (!confirm('Limpar alertas rápidos já confirmados?')) return;
+  const { error } = await sb
+    .from('alertas_rapidos')
+    .delete()
+    .eq('status', 'confirmado');
+
+  if (error) {
+    if (isMissingQuickAlertsTableError(error)) {
+      setMsg('msgAlertasRapidos', 'Rode o SQL da tabela alertas_rapidos antes de usar esta tela.', 'err');
+      return;
+    }
+    setMsg('msgAlertasRapidos', `Não foi possível limpar os confirmados: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgAlertasRapidos', 'Alertas confirmados removidos.', 'ok');
+  await carregarAlertasRapidos();
+}
+
+async function excluirAlertaRapido(id) {
+  if (!id) return;
+  if (!usuarioPodeGerenciarAlertasRapidos()) {
+    setMsg('msgAlertasRapidos', 'Somente usuários ADM podem excluir alertas rápidos.', 'err');
+    return;
+  }
+  if (!confirm('Excluir este alerta rápido?')) return;
+
+  const { error } = await sb
+    .from('alertas_rapidos')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    if (isMissingQuickAlertsTableError(error)) {
+      setMsg('msgAlertasRapidos', 'Rode o SQL da tabela alertas_rapidos antes de usar esta tela.', 'err');
+      return;
+    }
+    setMsg('msgAlertasRapidos', `Não foi possível excluir o alerta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgAlertasRapidos', 'Alerta excluído.', 'ok');
+  await carregarAlertasRapidos();
+  await carregarNotificacoes();
+}
+
+async function carregarTarefasRapidas() {
+  if (!usuarioSistemaLogado || !usuarioPodeAcessar('tarefas_rapidas')) return;
+  const cardEnvio = document.getElementById('cardAlertaRapidoEnvio');
+  const controlesAdmin = document.getElementById('alertasRapidosAdminControles');
+  const tituloLista = document.getElementById('tituloListaAlertaRapido');
+  const modoGestao = usuarioPodeGerenciarAlertasRapidos();
+
+  if (cardEnvio) cardEnvio.style.display = modoGestao ? '' : 'none';
+  if (controlesAdmin) controlesAdmin.style.display = modoGestao ? '' : 'none';
+  if (tituloLista) tituloLista.textContent = modoGestao ? 'Alertas enviados' : 'Meus alertas rápidos pendentes';
+
+  if (modoGestao) {
+    await Promise.all([
+      carregarFuncionariosAlertaRapido(),
+      carregarAlertasRapidos(false),
+    ]);
+  } else {
+    await carregarAlertasRapidos(true);
+  }
+}
+
+async function confirmarAlertaRapidoNotificacao(item, index) {
+  if (!usuarioPodeConfirmarAlertaRapido()) {
+    alert('Seu perfil não possui permissão para confirmar alertas rápidos.');
+    return;
+  }
+  const alertaId = item?.meta?.alertaRapidoId || item?.meta?.alertaId || null;
+  const grupoId = String(item?.meta?.alertaRapidoGrupoId || '');
+  const mensagem = String(item?.meta?.mensagem || item?.descricao || 'Alerta rápido');
+  if (!alertaId) return;
+
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: null,
+    titulo: 'Confirmar alerta rápido',
+    subtitulo: `ALERTA: ${mensagem}. Qualquer funcionário ativo pode confirmar com o próprio PIN.`,
+    textoAcao: 'Finalizar alerta',
+  });
+
+  if (!confirmacao) return;
+
+  let query = sb
+    .from('alertas_rapidos')
+    .update({
+      status: 'confirmado',
+      confirmado_por_id: confirmacao.funcionarioId,
+      confirmado_por_nome: confirmacao.nomeFuncionario,
+      confirmado_em: confirmacao.confirmadoEm,
+    })
+    .eq('status', 'pendente');
+
+  query = grupoId ? query.eq('grupo_id', grupoId) : query.eq('id', alertaId);
+
+  const { error } = await query;
+
+  if (error) {
+    alert(`Não foi possível confirmar o alerta: ${mensagemErroSupabase(error, 'erro desconhecido')}`);
+    return;
+  }
+
+  marcarNotificacoesComoLidas([item.chave]);
+  notificacoesAtuais = notificacoesAtuais.filter((_, itemIndex) => itemIndex !== index);
+  renderizarListaNotificacoes();
+  sincronizarAvisoNotificacoes();
+  togglePainelNotificacoes(false);
+  if (obterPaginaAtivaAtual() === 'tarefas_rapidas') {
+    await carregarAlertasRapidos();
+  }
 }
 
 
@@ -7204,6 +8925,7 @@ async function registrarPontoFuncionario() {
   relatorioPontoFuncionarioCache[funcionarioId] = funcionario.nome || 'Funcionário';
   const dataHoje = dataLocalISO();
   const agora = new Date().toISOString();
+  let tipoAvisoPonto = 'iniciado';
 
   const { data: registrosHoje, error: erroBusca } = await sb
     .from('ponto_registros')
@@ -7222,28 +8944,10 @@ async function registrarPontoFuncionario() {
   }
 
   const registros = registrosHoje || [];
-  const registrosAbertos = registros.filter(item => item.entrada_em && !item.saida_em);
-  const registroAberto = registrosAbertos[0] || null;
+  const registroHoje = registros[0] || null;
 
-  if (registroAberto) {
-    let queryFecha = sb
-      .from('ponto_registros')
-      .update({ saida_em: agora });
-
-    if (registrosAbertos.length > 1) {
-      queryFecha = queryFecha.in('id', registrosAbertos.map(item => item.id));
-    } else {
-      queryFecha = queryFecha.eq('id', registroAberto.id);
-    }
-
-    const { error: erroFecha } = await queryFecha;
-
-    if (erroFecha) {
-      setMsg('msgPonto', `Não foi possível registrar a saída: ${mensagemErroSupabase(erroFecha, 'erro desconhecido')}`, 'err');
-      return;
-    }
-  } else {
-    const { error: erroAbre } = await sb
+  if (!registroHoje) {
+    const { error: erroEntrada } = await sb
       .from('ponto_registros')
       .insert([{
         funcionario_id: funcionarioId,
@@ -7252,18 +8956,117 @@ async function registrarPontoFuncionario() {
         saida_em: null,
       }]);
 
-    if (erroAbre) {
-      if (isMissingTimeClockTableError(erroAbre)) {
+    if (erroEntrada) {
+      if (isMissingTimeClockTableError(erroEntrada)) {
         setMsg('msgPonto', 'Rode o SQL da tabela ponto_registros antes de usar o ponto.', 'err');
         return;
       }
-      setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroAbre, 'erro desconhecido')}`, 'err');
+      // Se outro terminal inseriu no mesmo instante, reaproveita o registro existente do dia.
+      if (String(erroEntrada.code || '') === '23505') {
+        await carregarResumoPontoHoje();
+        setMsg('msgPonto', 'Ponto já aberto para este funcionário hoje. Tente novamente para continuar o fluxo.', 'ok');
+        return;
+      }
+      setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroEntrada, 'erro desconhecido')}`, 'err');
       return;
+    }
+  } else {
+    const { data: intervalos, error: erroIntervalos } = await sb
+      .from('ponto_intervalos')
+      .select('id, ordem, inicio_em, retorno_em')
+      .eq('ponto_registro_id', registroHoje.id)
+      .order('ordem', { ascending: true });
+
+    if (erroIntervalos && !isMissingTimeClockIntervalsTableError(erroIntervalos)) {
+      setMsg('msgPonto', `Não foi possível carregar os intervalos: ${mensagemErroSupabase(erroIntervalos, 'erro desconhecido')}`, 'err');
+      return;
+    }
+
+    const listaIntervalos = intervalos || [];
+    const ultimoIntervaloAberto = [...listaIntervalos].reverse().find(item => item.inicio_em && !item.retorno_em) || null;
+    const resumoJornadaAtual = obterResumoJornadaPonto(registroHoje, listaIntervalos);
+    tipoAvisoPonto = resumoJornadaAtual.proximaAcao === 'Saída' ? 'parado' : 'iniciado';
+    const podeContinuarComPendencias = await validarPendenciasAntesFecharPonto({
+      funcionario,
+      proximaAcao: resumoJornadaAtual.proximaAcao,
+    });
+    if (!podeContinuarComPendencias) return;
+
+    if (!registroHoje.entrada_em) {
+      const { error: erroEntradaInicial } = await sb
+        .from('ponto_registros')
+        .update({ entrada_em: agora, saida_em: null })
+        .eq('id', registroHoje.id);
+
+      if (erroEntradaInicial) {
+        setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroEntradaInicial, 'erro desconhecido')}`, 'err');
+        return;
+      }
+    } else if (ultimoIntervaloAberto) {
+      const { error: erroRetorno } = await sb
+        .from('ponto_intervalos')
+        .update({ retorno_em: agora })
+        .eq('id', ultimoIntervaloAberto.id);
+
+      if (erroRetorno) {
+        setMsg('msgPonto', `Não foi possível registrar o retorno: ${mensagemErroSupabase(erroRetorno, 'erro desconhecido')}`, 'err');
+        return;
+      }
+
+      const { error: erroReabre } = await sb
+        .from('ponto_registros')
+        .update({ saida_em: null })
+        .eq('id', registroHoje.id);
+
+      if (erroReabre) {
+        setMsg('msgPonto', `Não foi possível atualizar o status do ponto: ${mensagemErroSupabase(erroReabre, 'erro desconhecido')}`, 'err');
+        return;
+      }
+    } else if (!registroHoje.saida_em) {
+      const { error: erroSaida } = await sb
+        .from('ponto_registros')
+        .update({ saida_em: agora })
+        .eq('id', registroHoje.id);
+
+      if (erroSaida) {
+        setMsg('msgPonto', `Não foi possível registrar a saída: ${mensagemErroSupabase(erroSaida, 'erro desconhecido')}`, 'err');
+        return;
+      }
+    } else {
+      if (isMissingTimeClockIntervalsTableError(erroIntervalos)) {
+        setMsg('msgPonto', 'Rode o SQL da tabela ponto_intervalos para registrar múltiplos intervalos no mesmo dia.', 'err');
+        return;
+      }
+
+      const proximaOrdem = (listaIntervalos || []).reduce((max, item) => Math.max(max, Number(item.ordem || 0)), 0) + 1;
+      const { error: erroCriaIntervalo } = await sb
+        .from('ponto_intervalos')
+        .insert([{
+          ponto_registro_id: registroHoje.id,
+          ordem: proximaOrdem,
+          inicio_em: registroHoje.saida_em,
+          retorno_em: agora,
+        }]);
+
+      if (erroCriaIntervalo) {
+        setMsg('msgPonto', `Não foi possível registrar o retorno: ${mensagemErroSupabase(erroCriaIntervalo, 'erro desconhecido')}`, 'err');
+        return;
+      }
+
+      const { error: erroLimpaSaida } = await sb
+        .from('ponto_registros')
+        .update({ saida_em: null })
+        .eq('id', registroHoje.id);
+
+      if (erroLimpaSaida) {
+        setMsg('msgPonto', `Não foi possível atualizar o status do ponto: ${mensagemErroSupabase(erroLimpaSaida, 'erro desconhecido')}`, 'err');
+        return;
+      }
     }
   }
 
   setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
-  exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO');
+  exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO', tipoAvisoPonto);
 
   document.getElementById('pontoPinInput').value = '';
   if (timeoutLimpezaPinPonto) {
@@ -7776,6 +9579,130 @@ async function carregarExecucoes() {
   }
 }
 
+async function carregarTarefasAtrasoMaster() {
+  const lista = document.getElementById('listaTarefasAtraso');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+
+  if (!usuarioEhMasterNotificacoes()) {
+    lista.innerHTML = '<div class="empty">Acesso permitido apenas para usuário master.</div>';
+    setMsg('msgTarefasAtraso', 'Sem permissão para visualizar esta aba.', 'err');
+    return;
+  }
+
+  try {
+    const carregarLancamentosPendentesAtraso = async () => {
+      const consultaCompleta = await sb
+        .from('checklist_lancamentos')
+        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, created_at')
+        .eq('status', 'pendente')
+        .order('lancado_em', { ascending: false });
+
+      if (!consultaCompleta.error) return consultaCompleta.data || [];
+
+      const mensagemErro = String(consultaCompleta.error?.message || '').toLowerCase();
+      if (!mensagemErro.includes('created_at')) {
+        throw consultaCompleta.error;
+      }
+
+      const consultaFallback = await sb
+        .from('checklist_lancamentos')
+        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em')
+        .eq('status', 'pendente')
+        .order('lancado_em', { ascending: false });
+
+      if (consultaFallback.error) throw consultaFallback.error;
+      return (consultaFallback.data || []).map(item => ({ ...item, created_at: null }));
+    };
+
+    const [lancamentosPendentes, execucoesRes, funcionariosRes, checklistsRes] = await Promise.all([
+      carregarLancamentosPendentesAtraso(),
+      sb
+        .from('checklist_execucoes')
+        .select('id, status, iniciado_em, inicio_confirmado_em, data_execucao, funcionario_id, checklist_id, tarefa_id')
+        .in('status', ['aberto', 'pausado'])
+        .eq('data_execucao', hoje())
+        .order('iniciado_em', { ascending: false }),
+      sb.from('funcionarios').select('id, nome'),
+      sb.from('checklists').select('id, nome'),
+    ]);
+
+    if (execucoesRes.error) throw execucoesRes.error;
+    if (funcionariosRes.error) throw funcionariosRes.error;
+    if (checklistsRes.error) throw checklistsRes.error;
+
+    const funcionariosMap = Object.fromEntries((funcionariosRes.data || []).map(item => [String(item.id), item.nome]));
+    const checklistsMap = Object.fromEntries((checklistsRes.data || []).map(item => [String(item.id), item.nome]));
+    const tarefasIds = [...new Set((execucoesRes.data || []).map(item => item.tarefa_id).filter(Boolean).map(item => String(item)))];
+    let tarefasMap = {};
+
+    if (tarefasIds.length) {
+      const tarefasRes = await sb
+        .from('tarefas')
+        .select('id, nome, horario_limite')
+        .in('id', tarefasIds);
+      if (tarefasRes.error && !isMissingTableError(tarefasRes.error)) throw tarefasRes.error;
+      tarefasMap = Object.fromEntries((tarefasRes.data || []).map(item => [String(item.id), item]));
+    }
+
+    const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
+      if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return false;
+      if (!tarefaDisponivelHoje(item.dias_semana)) return false;
+      if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
+      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+      return prazo.vencido;
+    }).map(item => ({
+      tipo: 'nao_iniciado',
+      id: item.id,
+      nome: checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist',
+      responsavel: funcionariosMap[String(item.funcionario_id)] || 'Sem responsável',
+      horario: horaCurta(item.horario_limite) || '-',
+      detalhe: 'Não iniciado no prazo',
+      page: 'checklists',
+    }));
+
+    const execucoesAtrasadas = (execucoesRes.data || []).filter(item => execucaoPrecisaLembreteFinalizacao(item)).map(item => ({
+      tipo: 'nao_finalizado',
+      id: item.id,
+      nome: tarefasMap[String(item.tarefa_id)]?.nome || checklistsMap[String(item.checklist_id)] || 'Checklist',
+      responsavel: funcionariosMap[String(item.funcionario_id)] || 'Sem responsável',
+      horario: horaCurta(tarefasMap[String(item.tarefa_id)]?.horario_limite) || '-',
+      detalhe: item.status === 'pausado' ? 'Pausado sem finalização' : 'Aberto sem finalização',
+      page: 'execucoes',
+    }));
+
+    const atrasos = [...lancamentosAtrasados, ...execucoesAtrasadas];
+    atualizarBadgeTarefasAtraso(atrasos.length);
+
+    if (!atrasos.length) {
+      lista.innerHTML = '<div class="empty">Nenhuma tarefa em atraso no momento.</div>';
+      setMsg('msgTarefasAtraso', 'Sem pendências críticas agora.', 'ok');
+      return;
+    }
+
+    lista.innerHTML = '<div class="lista">' + atrasos.map(item => `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${item.nome}</div>
+          <div class="item-detalhe">Responsável: ${item.responsavel} · Horário: ${item.horario}</div>
+          <div class="item-detalhe">${item.detalhe}</div>
+        </div>
+        <div class="item-actions">
+          ${item.tipo === 'nao_finalizado' ? '<span class="tag tag-amber">Sem finalização</span>' : '<span class="tag tag-red">Não iniciada</span>'}
+          <button class="btn btn-ghost btn-sm" onclick="abrirPagina('${item.page}', document.querySelector('.nav-btn[data-page=\\'${item.page}\\']'))">Abrir</button>
+        </div>
+      </div>
+    `).join('') + '</div>';
+
+    setMsg('msgTarefasAtraso', `${atrasos.length} pendência(s) crítica(s) encontrada(s).`, 'err');
+  } catch (error) {
+    console.error('Erro ao carregar tarefas em atraso:', error);
+    lista.innerHTML = '<div class="empty">Erro ao carregar tarefas em atraso.</div>';
+    const msgErro = error?.message ? `Não foi possível carregar os atrasos: ${error.message}` : 'Não foi possível carregar os atrasos.';
+    setMsg('msgTarefasAtraso', msgErro, 'err');
+  }
+}
+
 async function pausarExecucao(id) {
   await sb.from('checklist_execucoes').update({ status: 'pausado' }).eq('id', id);
   carregarExecucoes();
@@ -8054,6 +9981,10 @@ document.getElementById('pinActionOverlay').addEventListener('click', function(e
   if (e.target === this) fecharModalPin();
 });
 
+document.getElementById('pontoPendenteOverlay').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalPendenciaPonto('cancelar');
+});
+
 document.addEventListener('click', function(e) {
   const panel = document.getElementById('notificationPanel');
   const button = document.querySelector('.notification-btn');
@@ -8205,6 +10136,9 @@ function salvarSessaoSistema(usuario) {
       setSistemaLogado(true);
       aplicarPermissoesSistema();
       carregarNotificacoes();
+      window.setTimeout(() => {
+        restaurarPaginaAtivaSalvaOuPadrao();
+      }, 0);
       reiniciarAssinaturaRealtimeNotificacoes();
       return !!usuario;
     } catch (e) {
@@ -8501,6 +10435,7 @@ function salvarSessaoSistema(usuario) {
       setSistemaLogado(true);
       aplicarPermissoesSistema();
       carregarNotificacoes();
+      window.setTimeout(() => restaurarPaginaAtivaSalvaOuPadrao(), 0);
       return;
     }
 
@@ -8563,6 +10498,7 @@ function salvarSessaoSistema(usuario) {
     setSistemaLogado(true);
     aplicarPermissoesSistema();
     carregarNotificacoes();
+    window.setTimeout(() => restaurarPaginaAtivaSalvaOuPadrao(), 0);
   }
 
   renderizarPermissoesPerfil(obterPermissoesBase('FUNCIONARIO'));
