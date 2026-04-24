@@ -52,36 +52,36 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 28px 16px;
+      padding: 16px 12px;
       gap: 4px;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       font-size: 20px;
       font-weight: 700;
       color: var(--green);
       letter-spacing: -0.5px;
-      padding: 0 8px 24px;
+      padding: 0 6px 14px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .logo img {
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
       flex-shrink: 0;
-      border-radius: 14px;
+      border-radius: 12px;
       box-shadow: 0 12px 24px rgba(0,0,0,0.25);
     }
     .logo strong {
       display: block;
-      font-size: 18px;
+      font-size: 15px;
       color: var(--text);
       letter-spacing: -0.4px;
     }
-    .logo span { color: var(--text-muted); font-weight: 400; font-size: 12px; display: block; margin-top: 2px; }
+    .logo span { color: var(--text-muted); font-weight: 400; font-size: 11px; display: block; margin-top: 1px; }
     .login-brand {
       display: flex;
       flex-direction: column;
@@ -130,7 +130,7 @@
       width: min(320px, 100%);
     }
     .login-input {
-      padding: 10px 12px;
+      padding: 7px 9px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: #fff;
@@ -177,10 +177,10 @@
     }
 
     .nav-group {
-      margin-bottom: 12px;
-      padding: 8px;
+      margin-bottom: 8px;
+      padding: 6px;
       border: 1px solid transparent;
-      border-radius: 14px;
+      border-radius: 12px;
       background: rgba(8, 15, 11, 0.45);
     }
     .nav-group.featured {
@@ -189,47 +189,47 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
     }
     .nav-label {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 600;
       letter-spacing: 1.2px;
       color: var(--text-dim);
       text-transform: uppercase;
-      padding: 0 8px;
-      margin-bottom: 4px;
+      padding: 0 6px;
+      margin-bottom: 3px;
     }
 
     .nav-btn {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       width: 100%;
       border: none;
       background: transparent;
       color: var(--text-muted);
       text-align: left;
-      padding: 10px 12px;
+      padding: 7px 9px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       font-family: inherit;
       font-weight: 500;
       transition: all 0.15s;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
     }
     .nav-btn:hover { background: var(--surface2); color: var(--text); }
     .nav-btn.ativo { background: var(--green-glow); color: var(--green); }
     .nav-btn .icon {
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 9px;
+      border-radius: 8px;
       background: rgba(34,197,94,0.08);
       border: 1px solid rgba(34,197,94,0.12);
       color: var(--green);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.4px;
       text-transform: uppercase;
@@ -240,19 +240,67 @@
       min-width: 0;
     }
     .nav-title {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 600;
       color: inherit;
       line-height: 1.2;
     }
     .nav-hint {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-dim);
-      margin-top: 2px;
+      margin-top: 1px;
       line-height: 1.2;
     }
     .nav-btn.ativo .nav-hint,
     .nav-btn:hover .nav-hint {
+      color: var(--text-muted);
+    }
+    .nav-group-checklist .nav-submenu,
+    .nav-group-relatorios .nav-submenu,
+    .nav-group-funcionarios .nav-submenu,
+    .nav-group-configuracao .nav-submenu {
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      margin: 4px 0 2px;
+      padding-left: 8px;
+    }
+    .nav-group-checklist.open .nav-submenu,
+    .nav-group-relatorios.open .nav-submenu,
+    .nav-group-funcionarios.open .nav-submenu,
+    .nav-group-configuracao.open .nav-submenu {
+      display: flex;
+    }
+    .nav-btn-parent {
+      justify-content: space-between;
+    }
+    .nav-caret {
+      font-size: 10px;
+      color: var(--text-dim);
+      transition: transform 0.15s ease;
+      margin-left: 6px;
+    }
+    .nav-group-checklist.open .nav-caret,
+    .nav-group-relatorios.open .nav-caret,
+    .nav-group-funcionarios.open .nav-caret,
+    .nav-group-configuracao.open .nav-caret {
+      transform: rotate(180deg);
+    }
+    .nav-sub-btn {
+      margin-bottom: 0;
+      padding: 6px 8px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .nav-sub-btn.ativo {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.22);
+      color: var(--text);
+    }
+    .nav-sub-btn.ativo .nav-title {
+      color: var(--text);
+    }
+    .nav-sub-btn.ativo .nav-hint {
       color: var(--text-muted);
     }
     .nav-btn.nav-btn-alerta {
@@ -309,7 +357,7 @@
       border-radius: var(--radius-sm);
       background: var(--bg);
       color: var(--text);
-      padding: 10px 12px;
+      padding: 7px 9px;
       font-family: inherit;
       font-size: 14px;
       resize: vertical;
@@ -324,7 +372,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      padding: 10px 12px;
+      padding: 7px 9px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: var(--bg);
@@ -379,11 +427,11 @@
     .topbar {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 16px 28px;
+      padding: 8px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 10px;
     }
     .topbar-main {
       display: flex;
@@ -392,57 +440,81 @@
       min-width: 0;
       flex: 1;
     }
-    .topbar h1 { font-size: 18px; font-weight: 600; }
-    .topbar .sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .topbar h1 { font-size: 16px; font-weight: 600; }
+    .topbar .sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .topbar-main > div {
+      display: none;
+    }
     .topbar-user {
-      display: flex;
+      display: inline-flex;
       flex-direction: column;
-      align-items: flex-end;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 1px;
       min-width: 0;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(107,143,112,0.18);
+      background: rgba(17,26,20,0.92);
     }
     .topbar-user-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 0.9px;
       text-transform: uppercase;
       color: var(--text-muted);
     }
     .topbar-user-name {
-      font-size: 22px;
-      line-height: 1.1;
+      font-size: 16px;
+      line-height: 1;
       font-weight: 700;
       color: var(--text);
-      text-align: right;
+      text-align: left;
       word-break: break-word;
+    }
+    #topbarUserInfo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 130px;
+      max-width: 220px;
     }
     .mobile-menu-btn {
       display: none;
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
       padding: 0;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 15px;
       flex-shrink: 0;
     }
     .topbar-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       position: relative;
       flex-shrink: 0;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+    }
+    .topbar-actions .btn-sm {
+      min-height: 30px;
+      padding: 6px 10px;
+      font-size: 12px;
     }
     .sync-status {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      min-height: 42px;
-      padding: 8px 12px;
+      min-height: 30px;
+      padding: 5px 9px;
       border-radius: 999px;
       border: 1px solid rgba(34,197,94,0.16);
       background: rgba(34,197,94,0.08);
       color: var(--text);
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1.2;
     }
     .sync-status.is-idle {
@@ -507,13 +579,13 @@
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
     .notification-btn {
       position: relative;
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
       padding: 0;
       border-radius: 50%;
       background: var(--surface2);
       color: var(--text);
-      font-size: 18px;
+      font-size: 15px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -679,12 +751,12 @@
     .overdue-alert-item {
       border: 1px solid rgba(254, 202, 202, 0.16);
       background: rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
+      border-radius: 12px;
       padding: 12px 14px;
     }
     .overdue-alert-item strong {
       display: block;
-      font-size: 18px;
+      font-size: 15px;
       line-height: 1.3;
       font-weight: 800;
       color: #fff;
@@ -725,7 +797,7 @@
     }
     .overdue-alert-item span {
       display: block;
-      font-size: 18px;
+      font-size: 15px;
       line-height: 1.55;
       font-weight: 600;
       color: #ffe4e6;
@@ -738,7 +810,7 @@
       gap: 12px;
     }
     .overdue-alert-item li {
-      font-size: 18px;
+      font-size: 15px;
       line-height: 1.55;
       font-weight: 600;
       color: #ffe4e6;
@@ -861,7 +933,7 @@
       color: #fff1f2;
     }
 
-    .content { flex: 1; padding: 28px; overflow-y: auto; }
+    .content { flex: 1; padding: 16px 18px; overflow-y: auto; }
     .mobile-nav-overlay {
       position: fixed;
       inset: 0;
@@ -878,22 +950,22 @@
     .pagina.ativa { display: block; }
 
     .page-title {
-      font-size: 22px;
+      font-size: 15px;
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 1px;
     }
-    .page-sub { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+    .page-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 8px; }
 
     /* ---- CARDS / GRID ---- */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
     .stat-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 14px;
     }
-    .stat-card .s-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
-    .stat-card .s-value { font-size: 32px; font-weight: 700; color: var(--green); font-family: 'DM Mono', monospace; }
+    .stat-card .s-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+    .stat-card .s-value { font-size: 24px; font-weight: 700; color: var(--green); font-family: 'DM Mono', monospace; }
     .stat-card .s-desc { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
 
     /* ---- FORM ---- */
@@ -901,24 +973,24 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
       overflow: hidden;
     }
-    .card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
 
-    .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 0; }
+    .form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
     .form-row input,
     .form-row select,
     .form-row textarea {
       flex: 1;
-      min-width: 160px;
-      padding: 10px 14px;
+      min-width: 120px;
+      padding: 8px 12px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       color: var(--text);
-      font-size: 14px;
+      font-size: 13px;
       font-family: inherit;
       outline: none;
       transition: border-color 0.15s;
@@ -945,18 +1017,18 @@
     .tarefa-form-row {
       display: flex;
       flex-wrap: nowrap;
-      gap: 10px;
+      gap: 8px;
       align-items: flex-end;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .tarefa-form-row input,
     .tarefa-form-row select {
       width: 100%;
       min-width: 0;
-      height: 42px;
-      min-height: 42px;
-      font-size: 15px;
-      padding: 10px 12px;
+      height: 38px;
+      min-height: 38px;
+      font-size: 14px;
+      padding: 7px 10px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -1018,18 +1090,26 @@
       cursor: pointer;
     }
     .funcionario-form-row {
-      display: grid;
-      grid-template-columns:
-        minmax(180px, 2fr)
-        minmax(180px, 2fr)
-        minmax(92px, 0.7fr)
-        minmax(102px, 0.75fr)
-        minmax(102px, 0.75fr)
-        minmax(180px, 1.6fr)
-        auto
-        auto;
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       align-items: end;
+    }
+    .funcionario-form-row > :nth-child(1),
+    .funcionario-form-row > :nth-child(2) {
+      flex: 1.6 1 220px;
+    }
+    .funcionario-form-row > :nth-child(3),
+    .funcionario-form-row > :nth-child(4),
+    .funcionario-form-row > :nth-child(5) {
+      flex: 1 1 120px;
+    }
+    .funcionario-form-row > :nth-child(6) {
+      flex: 1.3 1 220px;
+    }
+    .funcionario-form-row > :nth-child(7),
+    .funcionario-form-row > :nth-child(8) {
+      flex: 0 0 auto;
     }
     .funcionario-form-row .campo-com-label {
       position: static;
@@ -1056,7 +1136,7 @@
       height: 42px;
       min-height: 42px;
       font-size: 14px;
-      padding: 10px 12px;
+      padding: 7px 9px;
     }
     .funcionario-form-row .campo-com-label .campo-curto {
       max-width: none !important;
@@ -1072,10 +1152,10 @@
     }
     #btnSalvarTarefa,
     #btnCancelarEdicaoTarefa {
-      height: 42px;
-      padding: 0 12px;
+      height: 38px;
+      padding: 0 10px;
       min-width: 96px;
-      font-size: 16px;
+      font-size: 14px;
     }
     #tarefas .card {
       margin-bottom: 10px;
@@ -1144,14 +1224,15 @@
     /* ---- BUTTONS ---- */
     .btn {
       border: none;
-      padding: 10px 18px;
+      padding: 8px 14px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       transition: all 0.15s;
       white-space: nowrap;
+      min-height: 34px;
     }
     .btn-green { background: var(--green); color: #000; }
     .btn-green:hover { background: var(--green-dim); }
@@ -1161,7 +1242,7 @@
     .btn-amber:hover { background: rgba(245,158,11,0.1); }
     .btn-ghost { background: var(--surface2); color: var(--text); }
     .btn-ghost:hover { background: var(--border); }
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-sm { padding: 5px 10px; font-size: 11px; min-height: 30px; }
     .btn-icon {
       min-width: 36px;
       width: 36px;
@@ -1190,18 +1271,59 @@
     }
 
     /* ---- LIST ITEMS ---- */
-    .lista { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .lista { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
     #listaTarefas .lista {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+      gap: 8px;
+    }
+    .tarefas-filtros-row {
+      margin: 0 0 8px;
+      gap: 8px;
+    }
+    .tarefas-filtros-row input {
+      min-width: 240px;
+    }
+    .tarefas-filtros-row .btn {
+      padding: 8px 12px;
+      min-height: 36px;
+      font-size: 13px;
+    }
+    .tarefa-itens-builder {
+      margin-top: 8px;
+      padding: 10px;
+      border: 1px dashed rgba(34, 197, 94, 0.28);
+      border-radius: var(--radius-sm);
+      background: rgba(10, 22, 18, 0.45);
+    }
+    .tarefa-itens-builder-topo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tarefa-itens-builder-topo .item-detalhe {
+      margin-top: 0;
+    }
+    .tarefa-itens-builder .form-row {
+      margin-bottom: 8px;
+    }
+    .tarefa-itens-builder-lista .item {
+      padding: 7px 10px;
+    }
+    .tarefa-itens-builder-lista .item-nome {
+      font-size: 12px;
+    }
+    .tarefa-itens-builder-lista .item-detalhe {
+      font-size: 10px;
     }
     .item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 12px 16px;
+      gap: 8px;
+      padding: 9px 12px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -1209,7 +1331,7 @@
     }
     .item:hover { border-color: var(--text-dim); }
     .item-info { flex: 1; min-width: 0; }
-    .item-nome { font-size: 14px; font-weight: 500; }
+    .item-nome { font-size: 13px; font-weight: 600; }
     .alerta-rapido-card {
       align-items: stretch;
       border-color: rgba(245, 158, 11, 0.24);
@@ -1232,19 +1354,40 @@
       color: #fff7ed;
     }
     .item-detalhe {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-muted);
-      margin-top: 2px;
+      margin-top: 1px;
       overflow-wrap: anywhere;
       word-break: break-word;
       line-height: 1.35;
     }
     .tarefa-funcionarios-inline {
-      margin-top: 6px;
+      margin-top: 4px;
       display: flex;
       flex-direction: column;
       align-items: stretch;
       gap: 4px;
+    }
+    .tarefa-launch-details {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .tarefa-launch-details summary {
+      list-style: none;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 8px 10px;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+    }
+    .tarefa-launch-details summary::-webkit-details-marker {
+      display: none;
+    }
+    .tarefa-launch-details[open] summary {
+      border-bottom-color: var(--border);
     }
     .tarefa-lancamento-grid {
       display: grid;
@@ -1252,6 +1395,7 @@
       grid-template-areas: "dias func horario";
       gap: 8px 10px;
       align-items: start;
+      padding: 8px;
     }
     .tarefa-lancamento-bloco {
       display: flex;
@@ -1329,6 +1473,11 @@
       align-items: center;
       gap: 4px;
     }
+    .tarefa-dias-acoes .btn {
+      padding: 4px 8px;
+      min-height: 26px;
+      font-size: 11px;
+    }
     .tarefa-funcionario-option {
       display: inline-flex;
       align-items: center;
@@ -1338,7 +1487,7 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 999px;
-      padding: 3px 7px;
+      padding: 2px 6px;
       cursor: pointer;
       user-select: none;
     }
@@ -1360,7 +1509,7 @@
       flex-direction: column;
       align-items: stretch;
       gap: 8px;
-      padding: 8px 10px;
+      padding: 7px 9px;
     }
     .tarefa-cadastrada-header {
       display: flex;
@@ -1382,6 +1531,11 @@
       flex-wrap: wrap;
       justify-content: flex-end;
     }
+    .tarefa-cadastrada-actions .btn {
+      padding: 5px 10px;
+      min-height: 30px;
+      font-size: 12px;
+    }
     .tarefa-cadastrada-actions .tag-status-mini {
       justify-content: center;
       min-height: 24px;
@@ -1396,7 +1550,7 @@
     .tarefa-cadastrada-resumo {
       font-size: 10px;
       color: var(--text-dim);
-      margin-top: 2px;
+      margin-top: 1px;
     }
     .tarefa-cadastrada-meta {
       display: flex;
@@ -1413,7 +1567,7 @@
     .tarefa-cadastrada-launch {
       border: 1px solid var(--border);
       background: var(--surface);
-      border-radius: 14px;
+      border-radius: 12px;
       padding: 10px;
     }
     .tarefa-funcionarios-inline .msg {
@@ -1426,7 +1580,7 @@
     .checklist-meta { margin: 4px 0 0; padding-left: 18px; color: var(--text-muted); }
     .checklist-meta li { margin: 2px 0; }
     .permissoes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
-    .perm-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); font-size: 13px; color: var(--text); }
+    .perm-item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); font-size: 13px; color: var(--text); }
     .perm-item input { width: 16px; height: 16px; }
 
     .tag {
@@ -1559,7 +1713,7 @@
       border-bottom: 1px solid var(--border);
     }
     .recent-table td {
-      padding: 10px 12px;
+      padding: 7px 9px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
@@ -1640,7 +1794,7 @@
       gap: 10px;
     }
     .prod-stat {
-      padding: 10px 12px;
+      padding: 7px 9px;
       border-radius: var(--radius-sm);
       background: var(--bg);
       border: 1px solid var(--border);
@@ -1653,7 +1807,7 @@
     }
     .prod-stat-value {
       margin-top: 4px;
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text);
       font-family: 'DM Mono', monospace;
@@ -1891,13 +2045,15 @@
         padding: 8px 10px;
       }
       .topbar-user {
-        order: -1;
-        width: 100%;
+        order: 0;
+        width: auto;
         align-items: flex-start;
+        min-height: 28px;
+        padding: 4px 8px;
       }
       .topbar-user-name {
         text-align: left;
-        font-size: 20px;
+        font-size: 14px;
       }
       .badge-status,
       .sync-status {
@@ -1985,7 +2141,7 @@
         margin-bottom: 10px;
       }
       .page-title {
-        font-size: 18px;
+        font-size: 15px;
       }
       .page-sub {
         font-size: 13px;
@@ -1998,7 +2154,7 @@
       .tarefa-form-row select {
         min-height: 44px;
         font-size: 16px;
-        padding: 10px 12px;
+        padding: 7px 9px;
       }
       #tarefas .tarefa-form-row input,
       #tarefas .tarefa-form-row select,
@@ -2019,7 +2175,7 @@
         font-size: 12px;
       }
       .item {
-        padding: 10px 12px;
+        padding: 7px 9px;
       }
       .item-nome {
         font-size: 13px;
@@ -2044,6 +2200,40 @@
       }
       .dias-semana-acoes .btn {
         flex: 1 1 auto;
+        width: auto;
+      }
+      .tarefa-lancamento-row {
+        align-items: center;
+        gap: 6px;
+      }
+      .tarefa-lancamento-row .tarefa-funcionarios-label {
+        min-width: 0;
+      }
+      .tarefa-lancamento-row .tarefa-dias-acoes {
+        justify-content: flex-start;
+      }
+      .tarefa-lancamento-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "dias"
+          "horario"
+          "func";
+      }
+      .tarefa-lancamento-horario {
+        align-items: flex-start;
+        min-width: 0;
+      }
+      .tarefa-cadastrada-item {
+        gap: 8px;
+      }
+      .tarefa-cadastrada-header {
+        flex-direction: column;
+      }
+      .tarefa-cadastrada-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        align-items: center;
         width: auto;
       }
       .prod-pie {
@@ -2122,35 +2312,41 @@
           <span class="nav-hint">Registro de jornada</span>
         </span>
       </button>
-      <button class="nav-btn" data-page="checklists" onclick="abrirPagina('checklists', this)">
-        <span class="icon">CL</span>
-        <span class="nav-copy">
-          <span class="nav-title">Checklists</span>
-          <span class="nav-hint">Fila pronta para iniciar</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="execucoes" onclick="abrirPagina('execucoes', this)">
-        <span class="icon">EX</span>
-        <span class="nav-copy">
-          <span class="nav-title">Em andamento</span>
-          <span class="nav-hint">Acompanhar e finalizar</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="tarefas_atraso" onclick="abrirPagina('tarefas_atraso', this)">
-        <span class="icon">AT</span>
-        <span class="nav-copy">
-          <span class="nav-title">Tarefas em atraso</span>
-          <span class="nav-hint">Nao iniciadas ou sem finalizacao</span>
-        </span>
-        <span class="nav-badge" id="navBadgeTarefasAtraso" style="display:none">0</span>
-      </button>
-      <button class="nav-btn" data-page="tarefas" onclick="abrirPagina('tarefas', this)">
-        <span class="icon">TF</span>
-        <span class="nav-copy">
-          <span class="nav-title">Cadastro de Checklist</span>
-          <span class="nav-hint">Rotina e lancamentos</span>
-        </span>
-      </button>
+      <div class="nav-group-checklist" id="menuChecklistGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuChecklist" type="button" onclick="toggleMenuChecklistSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="icon">CK</span>
+            <span class="nav-copy">
+              <span class="nav-title">Checklist</span>
+              <span class="nav-hint">Funções de checklist</span>
+            </span>
+          </span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="checklists" onclick="abrirPagina('checklists', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Iniciar checklist</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="execucoes" onclick="abrirPagina('execucoes', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Checklist em andamento</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="tarefas_atraso" onclick="abrirPagina('tarefas_atraso', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Checklist em atraso</span>
+            </span>
+            <span class="nav-badge" id="navBadgeTarefasAtraso" style="display:none">0</span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="tarefas" onclick="abrirPagina('tarefas', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Cadastro de checklist</span>
+            </span>
+          </button>
+        </div>
+      </div>
       <button class="nav-btn nav-btn-alerta" data-page="tarefas_rapidas" onclick="abrirPagina('tarefas_rapidas', this)">
         <span class="icon">AR</span>
         <span class="nav-copy">
@@ -2167,56 +2363,87 @@
       </button>
     </div>
     <div class="nav-group">
+      <div class="nav-label">Consultas</div>
+      <div class="nav-group-relatorios" id="menuRelatoriosGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuRelatorios" type="button" onclick="toggleMenuRelatoriosSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="icon">RL</span>
+            <span class="nav-copy">
+              <span class="nav-title">Relatórios</span>
+              <span class="nav-hint">Funções de relatório</span>
+            </span>
+          </span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="relatorio_ponto" onclick="abrirPagina('relatorio_ponto', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Relatório ponto</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="relatorio_lancamentos" onclick="abrirPagina('relatorio_lancamentos', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Relatório tarefas</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-group">
       <div class="nav-label">Configuracao</div>
-      <button class="nav-btn" data-page="itens" onclick="abrirPagina('itens', this)">
-        <span class="icon">IT</span>
-        <span class="nav-copy">
-          <span class="nav-title">Itens</span>
-          <span class="nav-hint">Estrutura do checklist</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="funcionarios" onclick="abrirPagina('funcionarios', this)">
-        <span class="icon">FN</span>
-        <span class="nav-copy">
-          <span class="nav-title">Funcionarios</span>
-          <span class="nav-hint">Equipe e acessos</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="solicitacoes" onclick="abrirPagina('solicitacoes', this)">
-        <span class="icon">AC</span>
-        <span class="nav-copy">
-          <span class="nav-title">Solicitacoes</span>
-          <span class="nav-hint">Pedidos pendentes</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="emails" onclick="abrirPagina('emails', this)">
-        <span class="icon">EM</span>
-        <span class="nav-copy">
-          <span class="nav-title">Envio de e-mail</span>
-          <span class="nav-hint">Destinatarios e alertas</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="configuracoes" onclick="abrirPagina('configuracoes', this)">
-        <span class="icon">LJ</span>
-        <span class="nav-copy">
-          <span class="nav-title">Loja</span>
-          <span class="nav-hint">Horario e lembretes</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="perfis" onclick="abrirPagina('perfis', this)">
-        <span class="icon">PF</span>
-        <span class="nav-copy">
-          <span class="nav-title">Perfis</span>
-          <span class="nav-hint">Permissoes por funcao</span>
-        </span>
-      </button>
-      <button class="nav-btn" data-page="relatorio_ponto" onclick="abrirPagina('relatorio_ponto', this)">
-        <span class="icon">RP</span>
-        <span class="nav-copy">
-          <span class="nav-title">Relatório ponto</span>
-          <span class="nav-hint">Histórico de jornada</span>
-        </span>
-      </button>
+      <div class="nav-group-funcionarios" id="menuFuncionariosGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuFuncionarios" type="button" onclick="toggleMenuFuncionariosSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="icon">CF</span>
+            <span class="nav-copy">
+              <span class="nav-title">Configuração de funcionários</span>
+              <span class="nav-hint">Equipe e perfis</span>
+            </span>
+          </span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="funcionarios" onclick="abrirPagina('funcionarios', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Funcionários</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="perfis" onclick="abrirPagina('perfis', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Perfis</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="nav-group-configuracao" id="menuConfiguracoesGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuConfiguracoes" type="button" onclick="toggleMenuConfiguracoesSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="icon">CG</span>
+            <span class="nav-copy">
+              <span class="nav-title">Configuração</span>
+              <span class="nav-hint">Ajustes do sistema</span>
+            </span>
+          </span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="solicitacoes" onclick="abrirPagina('solicitacoes', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Solicitações</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="emails" onclick="abrirPagina('emails', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Envio de e-mail</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="configuracoes" onclick="abrirPagina('configuracoes', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Loja</span>
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
     <div class="nav-group" style="margin-top:auto;border-top:1px solid var(--border);padding-top:12px">
       <div class="nav-label">Portal</div>
@@ -2224,7 +2451,7 @@
         <span class="icon">PO</span>
         <span class="nav-copy">
           <span class="nav-title">Portal do funcionario</span>
-          <span class="nav-hint">Acesso diario do colaborador</span>
+          <span class="nav-hint">Acesso do colaborador</span>
         </span>
       </button>
     </div>
@@ -2235,7 +2462,7 @@
     <div class="topbar">
       <div class="topbar-main">
         <button class="btn btn-ghost mobile-menu-btn" type="button" onclick="toggleMobileMenu()" aria-label="Abrir menu">☰</button>
-        <div>
+        <div id="topbarTitleWrap" style="display:none">
           <h1 id="topbar-title">Dashboard</h1>
           <div class="sub" id="topbar-sub">Visao geral do sistema</div>
         </div>
@@ -2262,8 +2489,8 @@
           </div>
           <div id="notificationList"><div class="empty">Carregando...</div></div>
         </div>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="testarSomNotificacao()" title="Testar som de notificacao">Testar som</button>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="testarSomNotificacaoAndamento()" title="Testar som de em andamento">Testar som andamento</button>
+        <button class="btn btn-ghost btn-sm" id="btnTestarSomTopo" type="button" onclick="testarSomNotificacao()" title="Testar som de notificacao" style="display:none">Testar som</button>
+        <button class="btn btn-ghost btn-sm" id="btnTestarSomAndamentoTopo" type="button" onclick="testarSomNotificacaoAndamento()" title="Testar som de em andamento" style="display:none">Testar som andamento</button>
         <button class="btn notification-btn" type="button" onclick="togglePainelNotificacoes()" title="Notificacoes">
           <span class="notification-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
@@ -2561,6 +2788,21 @@
               <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
             </div>
           </div>
+          <div class="tarefa-itens-builder">
+            <div class="tarefa-itens-builder-topo">
+              <div class="card-title" style="margin:0">Itens do checklist</div>
+              <div class="item-detalhe" id="resumoItensTarefa">Nenhum item adicionado.</div>
+            </div>
+            <div class="form-row">
+              <input id="nomeItemTarefaCadastro" type="text" placeholder="Nome do item">
+              <select id="obrigatorioItemTarefaCadastro" class="campo-curto">
+                <option value="true">Obrigatório</option>
+                <option value="false">Opcional</option>
+              </select>
+              <button class="btn btn-green" type="button" onclick="adicionarItemTarefaNoCadastro()">Adicionar item</button>
+            </div>
+            <div id="listaItensTarefaCadastro" class="tarefa-itens-builder-lista"><div class="empty">Adicione os itens que o funcionário deve marcar durante a execução.</div></div>
+          </div>
           <div class="item-detalhe" style="margin-top:8px">Funcionário: selecione por checkbox ao lado de cada tarefa cadastrada.</div>
 
           <div class="msg" id="msgTarefas"></div>
@@ -2568,13 +2810,13 @@
 
         <div class="card">
           <div class="card-title">Tarefas cadastradas</div>
+          <div class="form-row tarefas-filtros-row">
+            <input id="filtroTarefasNome" type="text" placeholder="Buscar por nome da tarefa" oninput="filtrarTarefasCadastradas()">
+            <button class="btn btn-ghost" type="button" onclick="limparFiltroTarefasCadastradas()">Limpar</button>
+          </div>
           <div id="listaTarefas"><div class="empty">Carregando⬦</div></div>
         </div>
 
-        <div class="card">
-          <div class="card-title">Checklists lançados</div>
-          <div id="listaChecklistsTarefas"><div class="empty">Carregando⬦</div></div>
-        </div>
       </section>
 
       <section id="tarefas_rapidas" class="pagina">
@@ -2609,7 +2851,7 @@
 
       <!--  EXECU-!-"ES  -->
       <section id="execucoes" class="pagina">
-        <div class="page-title">Em Andamento</div>
+        <div class="page-title">Checklist em andamento</div>
         <div class="page-sub">Acompanhe tarefas em andamento, pausadas e finalizadas</div>
 
         <div class="card" id="cardFiltrosExecucao">
@@ -2647,7 +2889,7 @@
       </section>
 
       <section id="tarefas_atraso" class="pagina">
-        <div class="page-title">Tarefas em atraso</div>
+        <div class="page-title">Checklist em atraso</div>
         <div class="page-sub">Não iniciadas no prazo e execuções sem finalização</div>
 
         <div class="card">
@@ -2659,9 +2901,6 @@
 
       <!--  BATER PONTO  -->
       <section id="bater_ponto" class="pagina">
-        <div class="page-title">Bater ponto</div>
-        <div class="page-sub">Registre entrada, intervalo, retorno e saída com PIN do funcionário</div>
-
         <div class="card">
           <div class="card-title">Registrar ponto</div>
           <div class="form-row">
@@ -2776,6 +3015,39 @@
         <div class="card">
           <div class="card-title">Registros de ponto</div>
           <div id="listaRelatorioPonto"><div class="empty">Carregando⬦</div></div>
+        </div>
+      </section>
+
+      <section id="relatorio_lancamentos" class="pagina">
+        <div class="page-title">Relatório de tarefas</div>
+        <div class="page-sub">Auditoria de lançamentos, ignorados, inícios e finalizações</div>
+
+        <div class="card">
+          <div class="card-title">Filtros do relatório</div>
+          <div class="form-row">
+            <input id="filtroLancamentoDataInicio" type="date">
+            <input id="filtroLancamentoDataFim" type="date">
+            <select id="filtroLancamentoEvento" class="campo-curto" style="max-width:210px;flex:0 0 210px !important">
+              <option value="">- Todos os eventos -</option>
+              <option value="lancado">Lançado</option>
+              <option value="agendamento_ignorado">Ignorado</option>
+              <option value="iniciado">Iniciado</option>
+              <option value="finalizado">Finalizado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+            <select id="filtroLancamentoFuncionario">
+              <option value="">- Todos os responsáveis -</option>
+            </select>
+            <input id="filtroLancamentoBusca" type="text" placeholder="Buscar por tarefa, checklist, observação ou ator">
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioLancamentos()">Filtrar</button>
+            <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioLancamentos()">Hoje</button>
+          </div>
+          <div class="msg" id="msgRelatorioLancamentos"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Eventos registrados</div>
+          <div id="listaRelatorioLancamentos"><div class="empty">Carregando...</div></div>
         </div>
       </section>
 
@@ -2910,6 +3182,8 @@ let itensExecucao = [];
 let tarefasDisponiveis = true;
 let portalFuncionarioLogado = null;
 let tarefaEmEdicaoId = null;
+let checklistReferenciaEmEdicaoId = null;
+let itensRascunhoTarefaCadastro = [];
 let funcionariosAtivosTarefa = [];
 let selecaoFuncionarioLancamentoPorTarefa = {};
 let horarioLancamentoPorTarefa = {};
@@ -2960,6 +3234,12 @@ let segurancaPinPontoConfigurada = false;
 let ultimoToquePinPontoEm = 0;
 let intervaloVigilanciaPinPonto = null;
 let notificacoesHistoricoMaster = [];
+let filtroChecklistLancadoBuscaEditado = false;
+let checklistsLancadosCache = [];
+let checklistsLancadosFuncionariosMap = {};
+let checklistsLancadosUltimaListaFiltrada = [];
+let relatorioLancamentosCache = [];
+let tarefasCadastradasCache = [];
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
@@ -2970,6 +3250,8 @@ const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 2 * 60 * 1000;
 const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
 const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 15 * 60 * 1000;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
+// Horizonte de agendamento ao clicar em "Lançar tarefa" (ex.: 7, 14, 30).
+const HORIZONTE_AGENDAMENTO_MANUAL_DIAS = 7;
 
 function redefinirEstadoAvisoCentralTarefas() {
   avisoCentralTarefasFechado = false;
@@ -3114,7 +3396,12 @@ function obterPaginaAtivaSalva() {
 }
 
 function restaurarPaginaAtivaSalvaOuPadrao() {
-  const paginaSalva = obterPaginaAtivaSalva();
+  fecharMenusLaterais();
+  let paginaSalva = obterPaginaAtivaSalva();
+  if (paginaSalva === 'itens') {
+    paginaSalva = 'tarefas';
+    salvarPaginaAtiva('tarefas');
+  }
   if (paginaSalva && document.getElementById(paginaSalva) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaSalva))) {
     const botaoSalvo = document.querySelector(`.nav-btn[data-page="${paginaSalva}"]`);
     abrirPagina(paginaSalva, botaoSalvo);
@@ -3367,10 +3654,10 @@ function usuarioPodeGerenciarAlertasRapidos() {
 
 const PERFIL_PERMISSOES = [
   { key: 'dashboard', label: 'Dashboard' },
-  { key: 'checklists', label: 'Checklists' },
+  { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'relatorio_ponto', label: 'Relatório de ponto' },
-  { key: 'itens', label: 'Itens' },
+  { key: 'relatorio_lancamentos', label: 'Relatório de tarefas' },
   { key: 'funcionarios', label: 'Funcionarios' },
   { key: 'solicitacoes', label: 'Solicitacoes de acesso' },
   { key: 'emails', label: 'Envio de e-mail' },
@@ -3398,7 +3685,7 @@ function obterPermissoesBase(codigo) {
     checklists: true,
     bater_ponto: true,
     relatorio_ponto: false,
-    itens: false,
+    relatorio_lancamentos: false,
     funcionarios: false,
     solicitacoes: false,
     emails: false,
@@ -3461,9 +3748,10 @@ function restaurarSessaoPortal() {
 // ---- NAVIGATION ----
 const topTitles = {
   dashboard: ['Dashboard', 'Visao geral do sistema'],
-  checklists: ['Checklists', 'Modelos de checklist'],
+  checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
+  relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
   itens: ['Itens do Checklist', 'Itens por modelo'],
   funcionarios: ['Funcionarios', 'Gestao de equipe'],
   solicitacoes: ['Solicitacoes de acesso', 'Aprove ou rejeite pedidos de entrada'],
@@ -3472,10 +3760,81 @@ const topTitles = {
   perfis: ['Perfis', 'Permissoes de acesso do sistema'],
   tarefas: ['Cadastro de Checklist', 'Gerenciamento (Admin)'],
   tarefas_rapidas: ['Alertas rápidas', 'Avisos pontuais para a equipe'],
-  execucoes: ['Em Andamento', 'Pause, retome e finalize tarefas'],
-  tarefas_atraso: ['Tarefas em atraso', 'Pendências fora do prazo'],
+  execucoes: ['Checklist em andamento', 'Pause, retome e finalize tarefas'],
+  tarefas_atraso: ['Checklist em atraso', 'Pendências fora do prazo'],
   portal: ['Portal do Funcionario', 'Suas tarefas do dia'],
 };
+
+function paginaPertenceMenuChecklist(pageId = '') {
+  return ['checklists', 'execucoes', 'tarefas_atraso', 'tarefas'].includes(String(pageId || ''));
+}
+
+function paginaPertenceMenuRelatorios(pageId = '') {
+  return ['relatorio_ponto', 'relatorio_lancamentos'].includes(String(pageId || ''));
+}
+
+function paginaPertenceMenuFuncionarios(pageId = '') {
+  return ['funcionarios', 'perfis'].includes(String(pageId || ''));
+}
+
+function paginaPertenceMenuConfiguracoes(pageId = '') {
+  return ['solicitacoes', 'emails', 'configuracoes'].includes(String(pageId || ''));
+}
+
+function atualizarEstadoMenuChecklist(expandido = false) {
+  const grupo = document.getElementById('menuChecklistGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function atualizarEstadoMenuRelatorios(expandido = false) {
+  const grupo = document.getElementById('menuRelatoriosGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function atualizarEstadoMenuFuncionarios(expandido = false) {
+  const grupo = document.getElementById('menuFuncionariosGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function atualizarEstadoMenuConfiguracoes(expandido = false) {
+  const grupo = document.getElementById('menuConfiguracoesGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function toggleMenuChecklistSubmenu() {
+  const grupo = document.getElementById('menuChecklistGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open');
+}
+
+function toggleMenuRelatoriosSubmenu() {
+  const grupo = document.getElementById('menuRelatoriosGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open');
+}
+
+function toggleMenuFuncionariosSubmenu() {
+  const grupo = document.getElementById('menuFuncionariosGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open');
+}
+
+function toggleMenuConfiguracoesSubmenu() {
+  const grupo = document.getElementById('menuConfiguracoesGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open');
+}
+
+function fecharMenusLaterais() {
+  atualizarEstadoMenuChecklist(false);
+  atualizarEstadoMenuRelatorios(false);
+  atualizarEstadoMenuFuncionarios(false);
+  atualizarEstadoMenuConfiguracoes(false);
+}
 
 function closeMobileMenu() {
   document.body.classList.remove('mobile-nav-open');
@@ -3507,6 +3866,10 @@ function desbloquearCampoDescricaoTarefa(campo) {
 
 function abrirPagina(id, botao) {
   if (usuarioSistemaLogado && !usuarioPodeAcessar(id)) return;
+  if (id === 'itens') {
+    id = 'tarefas';
+    botao = document.querySelector('.nav-btn[data-page="tarefas"]');
+  }
   closeMobileMenu();
   console.log('abrirPagina called with', id);
   document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
@@ -3521,7 +3884,7 @@ function abrirPagina(id, botao) {
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
-  if (id === 'itens') { carregarSelectChecklists(); document.getElementById('listaItens').innerHTML = '<div class="empty">Selecione um checklist acima</div>'; }
+  if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
   if (id === 'funcionarios') { carregarFuncionarios(); carregarSelectPerfisFuncionario(); }
   if (id === 'solicitacoes') { carregarSolicitacoesAcesso(); }
   if (id === 'emails') { carregarDestinatariosEmail(); }
@@ -3530,7 +3893,6 @@ function abrirPagina(id, botao) {
   if (id === 'tarefas') {
     carregarSelectFuncionariosTarefa();
     carregarTarefas();
-    carregarChecklistsTarefas();
     forcarCampoObservacaoTarefaEmBranco();
   }
   if (id === 'tarefas_rapidas') { carregarTarefasRapidas(); }
@@ -3549,8 +3911,13 @@ function existeSessaoAtivaParaAtualizacao() {
   return !!usuarioSistemaLogado || !!portalFuncionarioLogado;
 }
 
+function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
+  return ['checklists', 'execucoes', 'tarefas_rapidas', 'relatorio_lancamentos'].includes(pageId);
+}
+
 function obterIntervaloAtualizacaoMs(pageId = obterPaginaAtivaAtual()) {
-  return pageId === 'checklists' ? INTERVALO_ATUALIZACAO_CHECKLIST_MS : INTERVALO_ATUALIZACAO_PADRAO_MS;
+  if (pageId === 'checklists') return INTERVALO_ATUALIZACAO_CHECKLIST_MS;
+  return INTERVALO_ATUALIZACAO_PADRAO_MS;
 }
 
 function obterDescricaoCicloAtualizacao(pageId = obterPaginaAtivaAtual()) {
@@ -3618,6 +3985,7 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'checklists') await carregarChecklists();
     if (paginaAtiva === 'bater_ponto') await carregarBaterPonto();
     if (paginaAtiva === 'relatorio_ponto') await carregarRelatorioPonto();
+    if (paginaAtiva === 'relatorio_lancamentos') await carregarRelatorioLancamentos();
     if (paginaAtiva === 'itens' && document.getElementById('checklistSelect')?.value) {
       await carregarItens();
     }
@@ -3627,7 +3995,7 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'configuracoes') await carregarConfiguracoesLoja();
     if (paginaAtiva === 'perfis') await carregarPerfis();
     if (paginaAtiva === 'tarefas') {
-      await Promise.all([carregarTarefas(), carregarChecklistsTarefas()]);
+      await carregarTarefas();
     }
     if (paginaAtiva === 'tarefas_rapidas') await carregarTarefasRapidas();
     if (paginaAtiva === 'execucoes') await carregarExecucoes();
@@ -3662,11 +4030,15 @@ function iniciarAtualizacaoAutomatica() {
 
   iniciarRelogioSincronizacao();
 
-  const intervaloAtual = obterIntervaloAtualizacaoMs();
-
-  intervaloAtualizacaoPaginaAtiva = window.setInterval(() => {
-    atualizarPaginaAtivaAutomaticamente();
-  }, intervaloAtual);
+  const paginaAtiva = obterPaginaAtivaAtual();
+  if (paginaExigeAtualizacaoVisualAutomatica(paginaAtiva)) {
+    const intervaloAtual = obterIntervaloAtualizacaoMs(paginaAtiva);
+    intervaloAtualizacaoPaginaAtiva = window.setInterval(() => {
+      atualizarPaginaAtivaAutomaticamente();
+    }, intervaloAtual);
+  } else {
+    intervaloAtualizacaoPaginaAtiva = null;
+  }
 
   intervaloAtualizacaoNotificacoes = window.setInterval(() => {
     if (!existeSessaoAtivaParaAtualizacao()) return;
@@ -3680,7 +4052,7 @@ function lancamentoPodeGerarAlertaTempoReal(lancamento = null) {
   if (!lancamento) return false;
   if (String(lancamento.status || '').toLowerCase() !== 'pendente') return false;
   if (!tarefaDisponivelHoje(lancamento.dias_semana)) return false;
-  if (!checklistFoiLancadoHoje(lancamento.lancado_em, lancamento.created_at)) {
+  if (!lancamentoProgramadoHoje(lancamento)) {
     // Compatibilidade para bases antigas sem datas preenchidas no lançamento.
     if (lancamento.lancado_em || lancamento.created_at) return false;
   }
@@ -4210,6 +4582,10 @@ function isMissingTimeClockIntervalsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.ponto_intervalos"'));
 }
 
+function isMissingLaunchEventsTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.checklist_lancamento_eventos"'));
+}
+
 function isMissingQuickAlertsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.alertas_rapidos"'));
 }
@@ -4245,6 +4621,7 @@ function obterPermissoesUsuario() {
   if (codigo === 'MASTER' || codigo === 'ADM') {
     permissoes.bater_ponto = true;
     permissoes.relatorio_ponto = true;
+    permissoes.relatorio_lancamentos = true;
     permissoes.tarefas_atraso = true;
     permissoes.tarefas_rapidas = true;
     permissoes.receber_alertas_rapidas = true;
@@ -4308,6 +4685,34 @@ function aplicarPermissoesSistema() {
     const fallback = Array.from(document.querySelectorAll('.nav-btn[data-page]')).find(btn => btn.style.display !== 'none');
     if (fallback) fallback.click();
   }
+
+  const itensChecklist = Array.from(document.querySelectorAll('#menuChecklistGroup .nav-btn[data-page]'));
+  const grupoChecklist = document.getElementById('menuChecklistGroup');
+  const algumVisivel = itensChecklist.some(btn => btn.style.display !== 'none');
+  if (grupoChecklist) {
+    grupoChecklist.style.display = algumVisivel ? '' : 'none';
+  }
+
+  const itensRelatorios = Array.from(document.querySelectorAll('#menuRelatoriosGroup .nav-btn[data-page]'));
+  const grupoRelatorios = document.getElementById('menuRelatoriosGroup');
+  const algumRelatorioVisivel = itensRelatorios.some(btn => btn.style.display !== 'none');
+  if (grupoRelatorios) {
+    grupoRelatorios.style.display = algumRelatorioVisivel ? '' : 'none';
+  }
+
+  const itensFuncionarios = Array.from(document.querySelectorAll('#menuFuncionariosGroup .nav-btn[data-page]'));
+  const grupoFuncionarios = document.getElementById('menuFuncionariosGroup');
+  const algumFuncionarioVisivel = itensFuncionarios.some(btn => btn.style.display !== 'none');
+  if (grupoFuncionarios) {
+    grupoFuncionarios.style.display = algumFuncionarioVisivel ? '' : 'none';
+  }
+
+  const itensConfiguracoes = Array.from(document.querySelectorAll('#menuConfiguracoesGroup .nav-btn[data-page]'));
+  const grupoConfiguracoes = document.getElementById('menuConfiguracoesGroup');
+  const algumaConfiguracaoVisivel = itensConfiguracoes.some(btn => btn.style.display !== 'none');
+  if (grupoConfiguracoes) {
+    grupoConfiguracoes.style.display = algumaConfiguracaoVisivel ? '' : 'none';
+  }
 }
 
 async function countTable(tableName) {
@@ -4365,6 +4770,21 @@ function checklistFoiLancadoHoje(lancadoEm, criadoEm = null) {
   return dataLocalISO(referencia) === dataLocalISO();
 }
 
+function obterDataProgramadaLancamento(item = {}) {
+  const dataProgramada = String(item?.data_programada || '').trim();
+  if (dataProgramada) return dataProgramada;
+  const referencia = item?.lancado_em || item?.created_at || null;
+  return referencia ? dataLocalISO(referencia) : '';
+}
+
+function lancamentoProgramadoNaData(item = {}, dataRef = hoje()) {
+  return obterDataProgramadaLancamento(item) === dataRef;
+}
+
+function lancamentoProgramadoHoje(item = {}) {
+  return lancamentoProgramadoNaData(item, hoje());
+}
+
 function extrairMinutosReferenciaBrasil(dataIso) {
   if (!dataIso) return null;
   const partes = obterPartesDataHoraBrasil(new Date(dataIso));
@@ -4377,7 +4797,7 @@ function extrairMinutosReferenciaBrasil(dataIso) {
 
 function lancamentoRecemCriadoParaAlerta(item = {}, janelaMs = JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS) {
   const referencia = item?.lancado_em || item?.created_at || null;
-  if (!referencia || !checklistFoiLancadoHoje(item?.lancado_em, item?.created_at)) return false;
+  if (!referencia || !lancamentoProgramadoHoje(item)) return false;
 
   const diffMs = Date.now() - new Date(referencia).getTime();
   if (Number.isNaN(diffMs) || diffMs < 0) return false;
@@ -4387,7 +4807,7 @@ function lancamentoRecemCriadoParaAlerta(item = {}, janelaMs = JANELA_ALERTA_IME
 function lancamentoFoiCriadoAposHorarioNoMesmoDia(item = {}) {
   const horarioLimite = horaCurta(item.horario_limite || '');
   if (!horarioLimite) return false;
-  if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return false;
+  if (!lancamentoProgramadoHoje(item)) return false;
 
   const limiteMin = horarioParaMinutos(horarioLimite);
   const criadoMin = extrairMinutosReferenciaBrasil(item.lancado_em || item.created_at);
@@ -4406,6 +4826,104 @@ function fmtDate(str) {
   return new Date(str).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
+function formatarDataProgramadaBr(valor) {
+  if (!valor) return '-';
+  const data = new Date(`${valor}T00:00:00`);
+  if (Number.isNaN(data.getTime())) return valor;
+  return data.toLocaleDateString('pt-BR');
+}
+
+function obterAtorAuditoriaAtual() {
+  if (usuarioSistemaLogado?.tipo === 'admin') {
+    return {
+      funcionarioId: null,
+      nome: usuarioSistemaLogado.username || 'Administrador',
+      origem: 'admin',
+    };
+  }
+
+  if (usuarioSistemaLogado?.id) {
+    return {
+      funcionarioId: usuarioSistemaLogado.id,
+      nome: usuarioSistemaLogado.nome || 'Funcionário',
+      origem: 'sistema',
+    };
+  }
+
+  if (portalFuncionarioLogado?.id) {
+    return {
+      funcionarioId: portalFuncionarioLogado.id,
+      nome: portalFuncionarioLogado.nome || 'Funcionário',
+      origem: 'portal',
+    };
+  }
+
+  return {
+    funcionarioId: null,
+    nome: 'Sistema',
+    origem: 'sistema',
+  };
+}
+
+function tituloEventoLancamento(tipoEvento = '') {
+  const mapa = {
+    lancado: 'Lançado',
+    agendamento_ignorado: 'Ignorado',
+    iniciado: 'Iniciado',
+    finalizado: 'Finalizado',
+    cancelado: 'Cancelado',
+  };
+  return mapa[String(tipoEvento || '').trim()] || 'Evento';
+}
+
+function tagEventoLancamento(tipoEvento = '') {
+  const tipo = String(tipoEvento || '').trim();
+  if (tipo === 'lancado') return '<span class="tag tag-green">Lançado</span>';
+  if (tipo === 'iniciado') return '<span class="tag tag-amber">Iniciado</span>';
+  if (tipo === 'finalizado') return '<span class="tag tag-green">Finalizado</span>';
+  if (tipo === 'agendamento_ignorado') return '<span class="tag tag-red">Ignorado</span>';
+  if (tipo === 'cancelado') return '<span class="tag tag-gray">Cancelado</span>';
+  return `<span class="tag tag-gray">${escaparHtmlBasico(tipo || 'Evento')}</span>`;
+}
+
+async function registrarEventoLancamento({
+  lancamentoId = null,
+  execucaoId = null,
+  tarefaId = null,
+  checklistId = null,
+  funcionarioResponsavelId = null,
+  funcionarioAtorId = null,
+  funcionarioAtorNome = '',
+  tipoEvento = 'lancado',
+  origemEvento = 'sistema',
+  dataProgramada = null,
+  horarioProgramado = null,
+  registradoEm = null,
+  observacao = '',
+  meta = {},
+} = {}) {
+  const { error } = await sb.from('checklist_lancamento_eventos').insert([{
+    lancamento_id: lancamentoId,
+    execucao_id: execucaoId,
+    tarefa_id: tarefaId,
+    checklist_id: checklistId,
+    funcionario_responsavel_id: funcionarioResponsavelId,
+    funcionario_ator_id: funcionarioAtorId,
+    funcionario_ator_nome: funcionarioAtorNome || null,
+    tipo_evento: tipoEvento,
+    origem_evento: origemEvento || 'sistema',
+    data_programada: dataProgramada || null,
+    horario_programado: horaCurta(horarioProgramado || '') || null,
+    registrado_em: registradoEm || new Date().toISOString(),
+    observacao: observacao || null,
+    meta: meta || {},
+  }]);
+
+  if (!error) return true;
+  if (isMissingLaunchEventsTableError(error)) return false;
+  throw error;
+}
+
 function obterFuncionarioOperadorAtual(preferirPortal = false) {
   if (preferirPortal && portalFuncionarioLogado?.id) {
     return { id: portalFuncionarioLogado.id, nome: portalFuncionarioLogado.nome || 'Funcionário', origem: 'portal' };
@@ -4422,7 +4940,15 @@ function obterFuncionarioOperadorAtual(preferirPortal = false) {
   return null;
 }
 
-function abrirModalPin({ titulo = 'Confirmar ação', subtitulo = '', nomeFuncionario = '', textoAcao = 'Confirmar', mensagem = '' } = {}) {
+function abrirModalPin({
+  titulo = 'Confirmar ação',
+  subtitulo = '',
+  nomeFuncionario = '',
+  textoAcao = 'Confirmar',
+  mensagem = '',
+  exibirUsuario = true,
+  placeholderInput = 'Digite seu PIN'
+} = {}) {
   const overlay = document.getElementById('pinActionOverlay');
   const title = document.getElementById('pinActionTitle');
   const subtitle = document.getElementById('pinActionSubtitle');
@@ -4437,6 +4963,8 @@ function abrirModalPin({ titulo = 'Confirmar ação', subtitulo = '', nomeFuncio
   title.textContent = titulo;
   subtitle.textContent = subtitulo;
   userName.textContent = nomeFuncionario ? `Usuário sugerido: ${nomeFuncionario}` : 'Qualquer funcionário pode confirmar com o próprio PIN.';
+  userName.style.display = exibirUsuario ? '' : 'none';
+  input.placeholder = placeholderInput;
   input.value = '';
   msg.textContent = mensagem;
   msg.className = 'msg' + (mensagem ? ' err' : '');
@@ -4515,7 +5043,7 @@ async function obterPendenciasChecklistDoFuncionario(funcionarioId) {
   const [lancamentosRes, execucoesRes] = await Promise.all([
     sb
       .from('checklist_lancamentos')
-      .select('id, nome, status, lancado_em')
+      .select('id, nome, status, lancado_em, created_at, data_programada')
       .eq('funcionario_id', funcionarioId)
       .eq('status', 'pendente')
       .order('lancado_em', { ascending: false })
@@ -4532,7 +5060,7 @@ async function obterPendenciasChecklistDoFuncionario(funcionarioId) {
   if (lancamentosRes.error && !isMissingLancamentosTableError(lancamentosRes.error)) throw lancamentosRes.error;
   if (execucoesRes.error && !isMissingTableError(execucoesRes.error)) throw execucoesRes.error;
 
-  const pendentesInicio = (lancamentosRes.data || []).filter(item => checklistFoiLancadoHoje(item.lancado_em));
+  const pendentesInicio = (lancamentosRes.data || []).filter(item => lancamentoProgramadoHoje(item));
   const pendentesFinalizacao = (execucoesRes.data || [])
     .filter(item => item.data_execucao === hojeLocal)
     .map(item => ({
@@ -4704,6 +5232,39 @@ function horaCurta(horario) {
   return (horario || '').slice(0, 5);
 }
 
+function diaSemanaTokenDaData(dataRef) {
+  const data = dataRef instanceof Date ? dataRef : new Date(dataRef);
+  if (!(data instanceof Date) || Number.isNaN(data.getTime())) return null;
+  const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+  return dias[data.getDay()] || null;
+}
+
+function diasSemanaParaConjunto(diasSemana) {
+  const valor = String(diasSemana || 'todos').trim().toLowerCase();
+  if (!valor || valor === 'todos') {
+    return new Set(['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']);
+  }
+  return new Set(
+    valor
+      .split(',')
+      .map(item => item.trim().toLowerCase())
+      .filter(item => ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'].includes(item))
+  );
+}
+
+function combinarDataHorarioEmIso(dataRef, horario) {
+  const hora = horaCurta(horario);
+  const data = dataRef instanceof Date ? new Date(dataRef.getTime()) : new Date(dataRef);
+  if (!(data instanceof Date) || Number.isNaN(data.getTime())) return new Date().toISOString();
+  if (!hora || !/^\d{2}:\d{2}$/.test(hora)) {
+    data.setHours(12, 0, 0, 0);
+    return data.toISOString();
+  }
+  const [h, m] = hora.split(':').map(Number);
+  data.setHours(h, m, 0, 0);
+  return data.toISOString();
+}
+
 function horarioJaPassouHoje(horario) {
   const limite = horarioParaMinutos(horaCurta(horario));
   const agora = horarioParaMinutos(agoraHoraMinuto());
@@ -4761,8 +5322,9 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
     const chavesExistentes = new Set();
 
     (lancamentosResultado.data || []).forEach(item => {
-      if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return;
-      chavesExistentes.add(criarChaveAgendaDiaria(item.tarefa_id, item.funcionario_id, dataReferencia));
+      const dataProgramada = obterDataProgramadaLancamento(item);
+      if (!dataProgramada) return;
+      chavesExistentes.add(criarChaveAgendaDiaria(item.tarefa_id, item.funcionario_id, dataProgramada));
     });
 
     (execucoesResultado.data || []).forEach(item => {
@@ -4782,16 +5344,34 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
         descricao: item.descricao || null,
         horario_limite: item.horario_limite || null,
         dias_semana: item.dias_semana || 'todos',
+        data_programada: dataReferencia,
         lancado_em: new Date().toISOString(),
+        criado_por_nome: 'Automático',
+        origem_lancamento: 'automatico',
+        observacao_lancamento: 'Lançamento automático do dia.',
         status: 'pendente',
       }));
 
     if (!lancamentosParaCriar.length) return;
 
-    const { error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar);
+    const { data: lancamentosCriados, error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite');
     if (error && !isMissingLancamentosTableError(error)) {
       throw error;
     }
+
+    await Promise.all((lancamentosCriados || []).map(item => registrarEventoLancamento({
+      lancamentoId: item.id,
+      tarefaId: item.tarefa_id,
+      checklistId: item.checklist_id,
+      funcionarioResponsavelId: item.funcionario_id,
+      funcionarioAtorNome: 'Automático',
+      tipoEvento: 'lancado',
+      origemEvento: 'automatico',
+      dataProgramada: item.data_programada,
+      horarioProgramado: item.horario_limite,
+      observacao: 'Lançamento automático do dia.',
+      meta: { automatico: true },
+    }).catch(err => console.warn('Falha ao auditar lançamento automático:', err))));
   } catch (error) {
     console.warn('Não foi possível gerar os lançamentos automáticos do dia:', error);
   } finally {
@@ -5746,7 +6326,7 @@ async function carregarNotificacoes() {
     const carregarLancamentosPendentes = async () => {
       const consultaCompleta = await sb
         .from('checklist_lancamentos')
-        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at')
+        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
 
@@ -5819,7 +6399,7 @@ async function carregarNotificacoes() {
     }
 
     const lancamentoEhDoDiaOuSemData = (item) => {
-      if (checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return true;
+      if (lancamentoProgramadoHoje(item)) return true;
       return !item?.lancado_em && !item?.created_at;
     };
 
@@ -5992,7 +6572,7 @@ async function carregarNotificacoes() {
       let pendentesChecklist = [];
       const consultaPendentesCompleta = await sb
         .from('checklist_lancamentos')
-        .select('id, nome, dias_semana, status, lancado_em, created_at')
+        .select('id, nome, dias_semana, status, lancado_em, created_at, data_programada')
         .eq('status', 'pendente');
 
       if (!consultaPendentesCompleta.error) {
@@ -6381,7 +6961,7 @@ async function carregarChecklists() {
   }
 
   let rows = data || [];
-  rows = rows.filter(t => checklistFoiLancadoHoje(t.lancado_em, t.created_at) && tarefaDisponivelHoje(t.dias_semana));
+  rows = rows.filter(t => lancamentoProgramadoHoje(t) && tarefaDisponivelHoje(t.dias_semana));
 
   const funcionarioIds = [...new Set(rows.map(t => t.funcionario_id).filter(Boolean))];
   let funcionariosMap = {};
@@ -6420,6 +7000,7 @@ async function carregarChecklists() {
         <ul class="checklist-meta">
           <li>Funcionário responsável: ${funcionariosMap[String(t.funcionario_id)] ?? '-'}</li>
           <li>Qualquer funcionário pode aceitar com o próprio PIN.</li>
+          <li>Data programada: ${formatarDataProgramadaBr(obterDataProgramadaLancamento(t))}</li>
           ${t.horario_limite ? `<li style="color:var(--amber)">Prazo máximo: ${t.horario_limite}</li>` : ''}
         </ul>
       </div>
@@ -6602,7 +7183,7 @@ async function carregarFuncionarios() {
     }
 
     lista.innerHTML = '<div class="lista">' + data.map(f => `
-      <div class="item">
+      <div class="item tarefa-cadastrada-item">
         <div class="item-info">
           <div class="item-nome">${f.nome}</div>
           <div class="item-detalhe">E-mail: ${f.email || '-'} · PIN: ${f.pin ? f.pin : '-'}${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
@@ -7600,8 +8181,190 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
   `;
 }
 
+function renderizarListaTarefas(dados = []) {
+  const lista = document.getElementById('listaTarefas');
+  if (!lista) return;
+
+  if (!dados.length) {
+    const filtroAtivo = String(document.getElementById('filtroTarefasNome')?.value || '').trim();
+    lista.innerHTML = filtroAtivo
+      ? '<div class="empty">Nenhuma tarefa encontrada para o filtro informado.</div>'
+      : '<div class="empty">Nenhuma tarefa cadastrada.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + dados.map(t => `
+    <div class="item tarefa-cadastrada-item">
+      <div class="tarefa-cadastrada-header">
+        <div class="tarefa-cadastrada-header-main">
+          <div class="tarefa-cadastrada-info-topo">
+            <div class="item-nome">${t.nome}</div>
+          </div>
+          <div class="tarefa-cadastrada-meta">
+            <span><strong>Resp.</strong> ${t.funcionarios?.nome ?? '-'}</span>
+            ${t.checklists?.nome ? `<span><strong>Check</strong> ${t.checklists.nome}</span>` : ''}
+            ${t.horario_limite ? `<span style="color:var(--amber)"><strong>Prazo</strong> ${t.horario_limite}</span>` : ''}
+            ${t.dias_semana ? `<span><strong>Base</strong> ${formatarDias(t.dias_semana)}</span>` : ''}
+          </div>
+          ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
+        </div>
+        <div class="item-actions tarefa-cadastrada-actions">
+          ${t.ativo ? `<span class="tag tag-green tag-status-mini" title="Tarefa ativa">Ativa</span>` : `<span class="tag tag-gray tag-status-mini" title="Tarefa inativa">Inativa</span>`}
+          <button class="btn btn-ghost btn-sm" title="Editar tarefa" onclick="editarTarefa('${t.id}')">Editar</button>
+          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          <button class="btn btn-red btn-sm" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">Excluir</button>
+        </div>
+      </div>
+      <details class="tarefa-launch-details">
+        <summary>Configurar lançamento</summary>
+        ${renderizarSelecaoFuncionariosLancamento(t)}
+      </details>
+    </div>`).join('') + '</div>';
+}
+
+function filtrarTarefasCadastradas() {
+  if (!Array.isArray(tarefasCadastradasCache)) return;
+  const filtro = String(document.getElementById('filtroTarefasNome')?.value || '').trim().toLowerCase();
+  if (!filtro) {
+    renderizarListaTarefas(tarefasCadastradasCache);
+    return;
+  }
+
+  const dados = tarefasCadastradasCache.filter(item => {
+    const texto = [
+      item.nome || '',
+      item.descricao || '',
+      item.funcionarios?.nome || '',
+      item.checklists?.nome || '',
+    ].join(' ').toLowerCase();
+    return texto.includes(filtro);
+  });
+  renderizarListaTarefas(dados);
+}
+
+function limparFiltroTarefasCadastradas() {
+  const input = document.getElementById('filtroTarefasNome');
+  if (input) input.value = '';
+  filtrarTarefasCadastradas();
+}
+
+function renderizarItensTarefaNoCadastro() {
+  const lista = document.getElementById('listaItensTarefaCadastro');
+  const resumo = document.getElementById('resumoItensTarefa');
+  if (!lista || !resumo) return;
+
+  const total = Array.isArray(itensRascunhoTarefaCadastro) ? itensRascunhoTarefaCadastro.length : 0;
+  resumo.textContent = total === 1 ? '1 item configurado.' : `${total} itens configurados.`;
+
+  if (!total) {
+    lista.innerHTML = '<div class="empty">Adicione os itens que o funcionário deve marcar durante a execução.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + itensRascunhoTarefaCadastro.map((item, index) => `
+    <div class="item">
+      <div class="item-info">
+        <div class="item-nome">#${index + 1} - ${escaparHtmlBasico(item.nome || '')}</div>
+        <div class="item-detalhe">${item.obrigatorio ? 'Obrigatorio' : 'Opcional'}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-red btn-sm" type="button" onclick="removerItemTarefaNoCadastro(${index})">Excluir</button>
+      </div>
+    </div>
+  `).join('') + '</div>';
+}
+
+function adicionarItemTarefaNoCadastro() {
+  const inputNome = document.getElementById('nomeItemTarefaCadastro');
+  const selectObrigatorio = document.getElementById('obrigatorioItemTarefaCadastro');
+  if (!inputNome || !selectObrigatorio) return;
+
+  const nome = String(inputNome.value || '').trim();
+  if (!nome) {
+    setMsg('msgTarefas', 'Digite o nome do item para adicionar.', 'err');
+    return;
+  }
+
+  itensRascunhoTarefaCadastro.push({
+    nome,
+    obrigatorio: String(selectObrigatorio.value || 'true') === 'true',
+  });
+
+  inputNome.value = '';
+  inputNome.focus();
+  renderizarItensTarefaNoCadastro();
+  setMsg('msgTarefas', 'Item adicionado na tarefa.', 'ok');
+}
+
+function removerItemTarefaNoCadastro(index) {
+  if (!Array.isArray(itensRascunhoTarefaCadastro)) return;
+  if (index < 0 || index >= itensRascunhoTarefaCadastro.length) return;
+  itensRascunhoTarefaCadastro.splice(index, 1);
+  renderizarItensTarefaNoCadastro();
+}
+
+async function carregarItensTarefaNoCadastro(checklistId) {
+  itensRascunhoTarefaCadastro = [];
+  if (!checklistId) {
+    renderizarItensTarefaNoCadastro();
+    return;
+  }
+
+  const { data, error } = await sb
+    .from('checklist_itens')
+    .select('id, nome, ordem, obrigatorio')
+    .eq('checklist_id', checklistId)
+    .order('ordem');
+
+  if (error && !isMissingTableError(error)) {
+    console.warn('Nao foi possivel carregar itens da tarefa em edicao:', error);
+    setMsg('msgTarefas', 'Nao foi possivel carregar os itens da tarefa em edicao.', 'err');
+    renderizarItensTarefaNoCadastro();
+    return;
+  }
+
+  itensRascunhoTarefaCadastro = (data || []).map(item => ({
+    nome: item.nome || '',
+    obrigatorio: item.obrigatorio !== false,
+  }));
+  renderizarItensTarefaNoCadastro();
+}
+
+async function salvarItensDaTarefa(checklistId) {
+  if (!checklistId) return;
+
+  const itensNormalizados = (itensRascunhoTarefaCadastro || [])
+    .map(item => ({
+      nome: String(item?.nome || '').trim(),
+      obrigatorio: item?.obrigatorio !== false,
+    }))
+    .filter(item => item.nome);
+
+  const { error: erroLimpeza } = await sb
+    .from('checklist_itens')
+    .delete()
+    .eq('checklist_id', checklistId);
+
+  if (erroLimpeza && !isMissingTableError(erroLimpeza)) {
+    throw erroLimpeza;
+  }
+
+  if (!itensNormalizados.length) return;
+
+  const payload = itensNormalizados.map((item, index) => ({
+    checklist_id: checklistId,
+    nome: item.nome,
+    ordem: index + 1,
+    obrigatorio: item.obrigatorio,
+  }));
+
+  const { error: erroInsert } = await sb.from('checklist_itens').insert(payload);
+  if (erroInsert) throw erroInsert;
+}
+
 async function carregarTarefas() {
   const lista = document.getElementById('listaTarefas');
+  if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   try {
@@ -7620,35 +8383,8 @@ async function carregarTarefas() {
       return;
     }
 
-    if (!data?.length) {
-      lista.innerHTML = '<div class="empty">Nenhuma tarefa cadastrada.</div>';
-      return;
-    }
-
-    lista.innerHTML = '<div class="lista">' + data.map(t => `
-      <div class="item tarefa-cadastrada-item">
-        <div class="tarefa-cadastrada-header">
-          <div class="tarefa-cadastrada-header-main">
-            <div class="tarefa-cadastrada-info-topo">
-              <div class="item-nome">${t.nome}</div>
-            </div>
-            <div class="tarefa-cadastrada-meta">
-              <span><strong>Resp.</strong> ${t.funcionarios?.nome ?? '-'}</span>
-              ${t.checklists?.nome ? `<span><strong>Check</strong> ${t.checklists.nome}</span>` : ''}
-              ${t.horario_limite ? `<span style="color:var(--amber)"><strong>Prazo</strong> ${t.horario_limite}</span>` : ''}
-              ${t.dias_semana ? `<span><strong>Base</strong> ${formatarDias(t.dias_semana)}</span>` : ''}
-            </div>
-            ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
-          </div>
-          <div class="item-actions tarefa-cadastrada-actions">
-            ${t.ativo ? `<span class="tag tag-green tag-status-mini" title="Tarefa ativa">Ativa</span>` : `<span class="tag tag-gray tag-status-mini" title="Tarefa inativa">Inativa</span>`}
-            <button class="btn btn-ghost btn-sm" title="Editar tarefa" onclick="editarTarefa('${t.id}')">Editar</button>
-            ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
-            <button class="btn btn-red btn-sm" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">Excluir</button>
-          </div>
-        </div>
-        ${renderizarSelecaoFuncionariosLancamento(t)}
-      </div>`).join('') + '</div>';
+    tarefasCadastradasCache = data || [];
+    filtrarTarefasCadastradas();
   } catch (err) {
     console.error('Erro inesperado ao carregar tarefas:', err);
     lista.innerHTML = '<div class="empty">Erro inesperado ao carregar tarefas. Tente novamente mais tarde.</div>';
@@ -7664,7 +8400,7 @@ async function carregarChecklistsTarefas() {
   try {
     const { data, error } = await sb
       .from('checklist_lancamentos')
-      .select('id, nome, descricao, horario_limite, funcionario_id, status, lancado_em')
+      .select('id, nome, descricao, horario_limite, funcionario_id, status, lancado_em, data_programada, criado_por_nome, observacao_lancamento')
       .order('lancado_em', { ascending: false })
       .limit(300);
 
@@ -7679,6 +8415,10 @@ async function carregarChecklistsTarefas() {
     }
 
     if (!data?.length) {
+      checklistsLancadosCache = [];
+      checklistsLancadosFuncionariosMap = {};
+      checklistsLancadosUltimaListaFiltrada = [];
+      window.checklistsLancadosFiltradosIds = [];
       lista.innerHTML = '<div class="empty">Nenhum checklist lançado.</div>';
       return;
     }
@@ -7692,30 +8432,255 @@ async function carregarChecklistsTarefas() {
         .select('id, nome')
         .in('id', funcionarioIds);
       funcionariosMap = Object.fromEntries((funcionariosData || []).map(item => [String(item.id), item.nome]));
-    }
 
-    lista.innerHTML = '<div class="lista">' + data.map(c => `
-      <div class="item">
-        <div class="item-info">
-          <div class="item-nome">${c.nome}</div>
-          <div class="item-detalhe">Funcionário: ${funcionariosMap[String(c.funcionario_id)] || '-'}</div>
-          <div class="item-detalhe">Horário: ${c.horario_limite || '-'}</div>
-          <div class="item-detalhe">${c.descricao || 'Checklist lançado no sistema.'}</div>
-          <div class="item-detalhe">Lançado em: ${c.lancado_em ? fmtDate(c.lancado_em) : '-'}</div>
-        </div>
-        <div class="item-actions">
-          ${c.status === 'finalizado'
-            ? '<span class="tag tag-green">Finalizado</span>'
-            : c.status === 'iniciado'
-            ? '<span class="tag tag-amber">Iniciado</span>'
-            : '<span class="tag tag-gray">Pendente</span>'}
-          <button class="btn btn-red btn-sm" onclick="excluirChecklistCadastradoTarefa('${c.id}')">Excluir</button>
-        </div>
-      </div>`).join('') + '</div>';
+      const filtroFuncionarioAtual = String(document.getElementById('filtroChecklistLancadoFuncionario')?.value || '');
+      const selFuncionario = document.getElementById('filtroChecklistLancadoFuncionario');
+      if (selFuncionario) {
+        const nomesOrdenados = (funcionariosData || [])
+          .map(item => ({ id: String(item.id), nome: String(item.nome || 'Funcionário') }))
+          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+        selFuncionario.innerHTML = '<option value="">- Todos os funcionários -</option>' + nomesOrdenados
+          .map(item => `<option value="${item.id}">${item.nome}</option>`)
+          .join('');
+
+        selFuncionario.value = nomesOrdenados.some(item => item.id === filtroFuncionarioAtual) ? filtroFuncionarioAtual : '';
+      }
+    } else {
+      const selFuncionario = document.getElementById('filtroChecklistLancadoFuncionario');
+      if (selFuncionario) selFuncionario.innerHTML = '<option value="">- Todos os funcionários -</option>';
+    }
+    checklistsLancadosCache = data || [];
+    checklistsLancadosFuncionariosMap = funcionariosMap || {};
+    aplicarFiltroListaChecklistsLancados();
   } catch (err) {
     console.error('Erro inesperado ao carregar checklists cadastrados:', err);
+    checklistsLancadosCache = [];
+    checklistsLancadosFuncionariosMap = {};
+    checklistsLancadosUltimaListaFiltrada = [];
+    window.checklistsLancadosFiltradosIds = [];
     lista.innerHTML = '<div class="empty">Erro inesperado ao carregar checklists lançados.</div>';
   }
+}
+
+function obterFiltrosChecklistsLancadosAtuais() {
+  const filtroBusca = String(document.getElementById('filtroChecklistLancadoBusca')?.value || '').trim().toLowerCase();
+  const filtroFuncionario = String(document.getElementById('filtroChecklistLancadoFuncionario')?.value || '');
+  const filtroStatus = String(document.getElementById('filtroChecklistLancadoStatus')?.value || '').trim().toLowerCase();
+  return { filtroBusca, filtroFuncionario, filtroStatus };
+}
+
+function aplicarFiltroListaChecklistsLancados() {
+  const lista = document.getElementById('listaChecklistsTarefas');
+  if (!lista) return;
+
+  const { filtroBusca, filtroFuncionario, filtroStatus } = obterFiltrosChecklistsLancadosAtuais();
+  const dadosFiltrados = (checklistsLancadosCache || []).filter(c => {
+    const statusAtual = String(c.status || 'pendente').toLowerCase();
+    const funcionarioAtual = String(c.funcionario_id || '');
+    const textoBase = `${String(c.nome || '')} ${String(c.descricao || '')}`.toLowerCase();
+
+    if (filtroBusca && !textoBase.includes(filtroBusca)) return false;
+    if (filtroStatus && statusAtual !== filtroStatus) return false;
+    if (filtroFuncionario && funcionarioAtual !== filtroFuncionario) return false;
+    return true;
+  });
+
+  checklistsLancadosUltimaListaFiltrada = dadosFiltrados;
+  window.checklistsLancadosFiltradosIds = dadosFiltrados.map(item => String(item.id));
+
+  if (!dadosFiltrados.length) {
+    lista.innerHTML = '<div class="empty">Nenhum checklist lançado com os filtros selecionados.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + dadosFiltrados.map(c => `
+    <div class="item">
+      <div class="item-info">
+        <div class="item-nome">${c.nome}</div>
+        <div class="item-detalhe">Funcionário: ${checklistsLancadosFuncionariosMap[String(c.funcionario_id)] || '-'}</div>
+        <div class="item-detalhe">Agendado para: ${formatarDataProgramadaBr(obterDataProgramadaLancamento(c))}</div>
+        <div class="item-detalhe">Horário: ${c.horario_limite || '-'}</div>
+        <div class="item-detalhe">${c.descricao || 'Checklist lançado no sistema.'}</div>
+        <div class="item-detalhe">Lançado em: ${c.lancado_em ? fmtDate(c.lancado_em) : '-'}</div>
+        <div class="item-detalhe">Por: ${c.criado_por_nome || 'Sistema'}</div>
+        ${c.observacao_lancamento ? `<div class="item-detalhe">Obs.: ${c.observacao_lancamento}</div>` : ''}
+      </div>
+      <div class="item-actions">
+        ${c.status === 'finalizado'
+          ? '<span class="tag tag-green">Finalizado</span>'
+          : c.status === 'iniciado'
+          ? '<span class="tag tag-amber">Iniciado</span>'
+          : '<span class="tag tag-gray">Pendente</span>'}
+        <button class="btn btn-red btn-sm" onclick="excluirChecklistCadastradoTarefa('${c.id}')">Excluir</button>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+function filtrarChecklistsLancados() {
+  if (!Array.isArray(checklistsLancadosCache) || !checklistsLancadosCache.length) {
+    carregarChecklistsTarefas();
+    return;
+  }
+  aplicarFiltroListaChecklistsLancados();
+}
+
+function limparFiltrosChecklistsLancados() {
+  const campoBusca = document.getElementById('filtroChecklistLancadoBusca');
+  const campoFuncionario = document.getElementById('filtroChecklistLancadoFuncionario');
+  const campoStatus = document.getElementById('filtroChecklistLancadoStatus');
+  if (campoBusca) campoBusca.value = '';
+  if (campoFuncionario) campoFuncionario.value = '';
+  if (campoStatus) campoStatus.value = '';
+  carregarChecklistsTarefas();
+}
+
+function forcarCampoBuscaChecklistsLancadosEmBranco() {
+  const campoBusca = document.getElementById('filtroChecklistLancadoBusca');
+  if (!campoBusca) return;
+  if (filtroChecklistLancadoBuscaEditado) return;
+  campoBusca.value = '';
+  campoBusca.removeAttribute('value');
+}
+
+function marcarCampoBuscaChecklistLancadoComoEditado(campo = null) {
+  filtroChecklistLancadoBuscaEditado = true;
+  const input = campo || document.getElementById('filtroChecklistLancadoBusca');
+  if (!input) return;
+}
+
+function redefinirCampoBuscaChecklistLancado() {
+  filtroChecklistLancadoBuscaEditado = false;
+  const campoBusca = document.getElementById('filtroChecklistLancadoBusca');
+  if (!campoBusca) return;
+  campoBusca.value = '';
+  campoBusca.removeAttribute('value');
+  window.setTimeout(() => forcarCampoBuscaChecklistsLancadosEmBranco(), 50);
+  window.setTimeout(() => forcarCampoBuscaChecklistsLancadosEmBranco(), 400);
+  window.setTimeout(() => forcarCampoBuscaChecklistsLancadosEmBranco(), 1200);
+}
+
+async function validarSenhaMasterParaExclusao(senha = '') {
+  const valor = String(senha || '').trim();
+  if (!valor) return false;
+
+  const usuariosPredefinidos = (typeof predefinedUsers !== 'undefined' && Array.isArray(predefinedUsers))
+    ? predefinedUsers
+    : [];
+
+  const mestres = usuariosPredefinidos.filter(item => {
+    const username = String(item?.username || '').toLowerCase();
+    return username === 'admin' || username === 'master';
+  });
+
+  const referencia = mestres.length ? mestres : usuariosPredefinidos;
+  if (referencia.some(item => String(item?.password || '') === valor)) {
+    return true;
+  }
+
+  const perfilCodigo = String(usuarioSistemaLogado?.perfil?.codigo || '').toUpperCase();
+  const perfilNome = String(usuarioSistemaLogado?.perfil?.nome || '').toLowerCase();
+  const adminPorPerfil = perfilCodigo === 'ADM' || perfilNome.includes('admin');
+  if (!adminPorPerfil || !usuarioSistemaLogado?.id) return false;
+
+  try {
+    const { data, error } = await sb
+      .from('funcionarios')
+      .select('pin, ativo')
+      .eq('id', usuarioSistemaLogado.id)
+      .maybeSingle();
+    if (error || !data || data.ativo !== true) return false;
+    return String(data.pin || '') === valor;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function excluirChecklistsLancadosFiltrados() {
+  aplicarFiltroListaChecklistsLancados();
+  const ids = (window.checklistsLancadosFiltradosIds || []).filter(Boolean);
+  if (!ids.length) {
+    setMsg('msgTarefas', 'Não há checklists lançados para excluir com os filtros atuais.', 'err');
+    return;
+  }
+
+  const confirmacaoSenha = await abrirModalPin({
+    titulo: 'Confirmação de exclusão',
+    subtitulo: 'Digite a senha master para excluir os checklists filtrados.',
+    textoAcao: 'Validar senha',
+    exibirUsuario: false,
+    placeholderInput: 'Digite a senha master'
+  });
+  if (!confirmacaoSenha?.pin) {
+    setMsg('msgTarefas', 'Exclusão cancelada.', 'err');
+    return;
+  }
+
+  if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
+    setMsg('msgTarefas', 'Senha master inválida. Exclusão cancelada.', 'err');
+    return;
+  }
+
+  const confirmar = confirm(`Excluir ${ids.length} checklist(s) lançado(s) filtrado(s)?\n\nEsta ação remove também execuções e respostas vinculadas.`);
+  if (!confirmar) return;
+
+  try {
+    const { data: execucoes, error: erroExecucoes } = await sb
+      .from('checklist_execucoes')
+      .select('id')
+      .in('lancamento_id', ids);
+
+    if (erroExecucoes && !isMissingTableError(erroExecucoes)) {
+      throw erroExecucoes;
+    }
+
+    const execucaoIds = (execucoes || []).map(item => item.id).filter(Boolean);
+
+    if (execucaoIds.length) {
+      const { error: erroMovimentacoes } = await sb
+        .from('checklist_execucao_usuarios')
+        .delete()
+        .in('execucao_id', execucaoIds);
+      if (erroMovimentacoes && !isMissingExecutionUsersTableError(erroMovimentacoes)) {
+        throw erroMovimentacoes;
+      }
+
+      const { error: erroRespostas } = await sb
+        .from('checklist_respostas')
+        .delete()
+        .in('execucao_id', execucaoIds);
+      if (erroRespostas && !isMissingTableError(erroRespostas)) {
+        throw erroRespostas;
+      }
+
+      const { error: erroDeleteExecucoes } = await sb
+        .from('checklist_execucoes')
+        .delete()
+        .in('id', execucaoIds);
+      if (erroDeleteExecucoes && !isMissingTableError(erroDeleteExecucoes)) {
+        throw erroDeleteExecucoes;
+      }
+    }
+
+    const { error: erroDeleteLancamentos } = await sb
+      .from('checklist_lancamentos')
+      .delete()
+      .in('id', ids);
+    if (erroDeleteLancamentos) {
+      throw erroDeleteLancamentos;
+    }
+  } catch (error) {
+    console.error('Erro ao excluir checklists lançados filtrados:', error);
+    setMsg('msgTarefas', `Não foi possível excluir os checklists filtrados: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgTarefas', `${ids.length} checklist(s) lançado(s) excluído(s).`, 'ok');
+  window.checklistsLancadosFiltradosIds = [];
+  carregarChecklistsTarefas();
+  carregarChecklists();
+  carregarExecucoes();
+  carregarNotificacoes();
 }
 
 async function excluirChecklistCadastradoTarefa(id) {
@@ -7748,9 +8713,16 @@ async function criarTarefa() {
   const funcionarioId = document.getElementById('funcionarioTarefa').value || null;
   if (!nome) { setMsg('msgTarefas', 'Digite o nome da tarefa.', 'err'); return; }
 
-  const diasSelecionados = obterDiasSelecionados();
-  const diasStr = diasSelecionados.length > 0 ? diasSelecionados.join(',') : 'todos';
-  const payload = { nome, descricao: descricao || null, checklist_id: null, horario_limite: horarioLimite || null, dias_semana: diasStr, funcionario_id: funcionarioId };
+  const diasStr = 'todos';
+  const checklistRefEdicao = checklistReferenciaEmEdicaoId || tarefaEmEdicaoId || null;
+  const payload = {
+    nome,
+    descricao: descricao || null,
+    checklist_id: checklistRefEdicao,
+    horario_limite: horarioLimite || null,
+    dias_semana: diasStr,
+    funcionario_id: funcionarioId,
+  };
   const editandoAgora = !!tarefaEmEdicaoId;
   const query = editandoAgora
     ? sb.from('tarefas').update(payload).eq('id', tarefaEmEdicaoId).select()
@@ -7768,18 +8740,47 @@ async function criarTarefa() {
     return;
   }
 
-  if (editandoAgora && data?.[0]?.id) {
+  const tarefaSalva = data?.[0] || null;
+  if (!tarefaSalva?.id) {
+    setMsg('msgTarefas', 'Tarefa salva, mas sem retorno de ID. Tente novamente.', 'err');
+    return;
+  }
+
+  const checklistReferencia = String(tarefaSalva.checklist_id || checklistRefEdicao || tarefaSalva.id || '');
+
+  if (!tarefaSalva.checklist_id) {
+    const { error: erroVinculoChecklist } = await sb
+      .from('tarefas')
+      .update({ checklist_id: checklistReferencia })
+      .eq('id', tarefaSalva.id);
+
+    if (erroVinculoChecklist && !isMissingTableError(erroVinculoChecklist)) {
+      setMsg('msgTarefas', `Tarefa salva, mas nao foi possivel vincular checklist: ${mensagemErroSupabase(erroVinculoChecklist, 'erro desconhecido')}`, 'err');
+      return;
+    }
+  }
+
+  try {
+    await salvarItensDaTarefa(checklistReferencia);
+  } catch (erroItens) {
+    console.error('Erro ao salvar itens da tarefa:', erroItens);
+    setMsg('msgTarefas', `Tarefa salva, mas ocorreu erro ao salvar itens: ${mensagemErroSupabase(erroItens, 'erro desconhecido')}`, 'err');
+    await carregarTarefas();
+    return;
+  }
+
+  if (editandoAgora) {
     try {
       await sb
         .from('checklist_lancamentos')
         .update({
-          checklist_id: payload.checklist_id,
+          checklist_id: checklistReferencia,
           nome: payload.nome,
           descricao: payload.descricao,
           horario_limite: payload.horario_limite,
           dias_semana: payload.dias_semana,
         })
-        .eq('tarefa_id', data[0].id)
+        .eq('tarefa_id', tarefaSalva.id)
         .eq('status', 'pendente');
     } catch (syncError) {
       console.warn('Não foi possível sincronizar lançamentos pendentes da tarefa:', syncError);
@@ -7787,23 +8788,31 @@ async function criarTarefa() {
   }
 
   limparFormularioTarefa();
-  setMsg('msgTarefas', editandoAgora ? 'Tarefa atualizada.' : 'Tarefa criada.', 'ok');
+  setMsg('msgTarefas', editandoAgora
+    ? 'Tarefa atualizada.'
+    : 'Tarefa cadastrada. Agora clique em "Lançar tarefa" para aparecer em Checklists lançados.', 'ok');
   carregarTarefas();
   carregarChecklistsTarefas();
 }
 
 function limparFormularioTarefa() {
   tarefaEmEdicaoId = null;
+  checklistReferenciaEmEdicaoId = null;
+  itensRascunhoTarefaCadastro = [];
   document.getElementById('nomeTarefa').value = '';
   document.getElementById('descTarefa').value = '';
   document.getElementById('descTarefa').setAttribute('readonly', 'readonly');
   document.getElementById('horarioTarefa').value = '';
   document.getElementById('funcionarioTarefa').value = '';
-  limparDias();
+  const campoNomeItem = document.getElementById('nomeItemTarefaCadastro');
+  const campoObrigatorio = document.getElementById('obrigatorioItemTarefaCadastro');
+  if (campoNomeItem) campoNomeItem.value = '';
+  if (campoObrigatorio) campoObrigatorio.value = 'true';
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'none';
+  renderizarItensTarefaNoCadastro();
 }
 
 async function editarTarefa(id) {
@@ -7820,17 +8829,18 @@ async function editarTarefa(id) {
   }
 
   tarefaEmEdicaoId = id;
+  checklistReferenciaEmEdicaoId = tarefa.checklist_id || tarefa.id || null;
   document.getElementById('nomeTarefa').value = tarefa.nome || '';
   document.getElementById('descTarefa').value = tarefa.descricao || '';
   document.getElementById('descTarefa').removeAttribute('readonly');
   document.getElementById('horarioTarefa').value = tarefa.horario_limite || '';
   document.getElementById('funcionarioTarefa').value = tarefa.funcionario_id || '';
-  preencherDiasSelecionados(tarefa.dias_semana);
 
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  await carregarItensTarefaNoCadastro(checklistReferenciaEmEdicaoId);
   setMsg('msgTarefas', `Editando tarefa: ${tarefa.nome}.`, 'ok');
 }
 
@@ -7839,11 +8849,13 @@ function cancelarEdicaoTarefa() {
   setMsg('msgTarefas', 'Edição cancelada.', 'ok');
 }
 
-async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '', diasOverride = '') {
+async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '', diasSemanaOverride = '') {
   if (!tarefasDisponiveis) {
     setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
     return;
   }
+
+  setMsgLancamentoTarefa(id, '', '');
 
   const { data: tarefa, error: errTarefa } = await sb
     .from('tarefas')
@@ -7859,31 +8871,127 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const funcionarioSelecionado = String(funcionarioIdOverride || '').trim() || String(tarefa.funcionario_id || '').trim();
   if (!funcionarioSelecionado) {
-    setMsg('msgTarefas', 'Marque um funcionário no checkbox da tarefa antes de lançar.', 'err');
+    setMsg('msgTarefas', '', '');
+    setMsgLancamentoTarefa(id, 'Marque um funcionário no card antes de lançar.', 'err');
     return;
   }
   const horarioSelecionado = horaCurta(horarioOverride || '') || horaCurta(tarefa.horario_limite || '');
   if (!horarioSelecionado) {
-    setMsg('msgTarefas', 'Informe o horário no card da tarefa antes de lançar.', 'err');
-    return;
-  }
-  const diasSelecionados = String(diasOverride || '').trim();
-  if (!diasSelecionados) {
-    setMsg('msgTarefas', 'Selecione ao menos um dia no card da tarefa antes de lançar.', 'err');
+    setMsg('msgTarefas', '', '');
+    setMsgLancamentoTarefa(id, 'Informe o horário no card da tarefa antes de lançar.', 'err');
     return;
   }
 
-  const { error } = await sb.from('checklist_lancamentos').insert([{
-    tarefa_id: tarefa.id,
-    checklist_id: tarefa.checklist_id || null,
-    funcionario_id: funcionarioSelecionado || null,
-    nome: tarefa.nome,
-    descricao: tarefa.descricao || null,
-    horario_limite: horarioSelecionado || null,
-    dias_semana: diasSelecionados,
-    lancado_em: new Date().toISOString(),
-    status: 'pendente'
-  }]);
+  const diasLancamento = String(diasSemanaOverride || '').trim().toLowerCase();
+  const diasPermitidos = diasSemanaParaConjunto(diasLancamento || '');
+  if (!diasPermitidos.size) {
+    setMsg('msgTarefas', '', '');
+    setMsgLancamentoTarefa(id, 'Selecione pelo menos um dia no card da tarefa antes de lançar.', 'err');
+    return;
+  }
+  const hojeData = new Date();
+  hojeData.setHours(0, 0, 0, 0);
+  const ignorarHoje = !!horarioSelecionado && horarioJaPassouHoje(horarioSelecionado);
+  const agoraIso = new Date().toISOString();
+  const atorAuditoria = obterAtorAuditoriaAtual();
+
+  const consultarLancamentosExistentes = async (comCreatedAt = true) => {
+    const campos = comCreatedAt ? 'id, lancado_em, created_at, data_programada' : 'id, lancado_em';
+    const { data, error } = await sb
+      .from('checklist_lancamentos')
+      .select(campos)
+      .eq('tarefa_id', tarefa.id)
+      .eq('funcionario_id', funcionarioSelecionado);
+    return { data, error };
+  };
+
+  let { data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(true);
+  if (erroExistentes && String(erroExistentes.message || '').toLowerCase().includes('created_at')) {
+    ({ data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(false));
+  }
+
+  if (erroExistentes && !isMissingLancamentosTableError(erroExistentes)) {
+    setMsg('msgTarefas', `Erro ao validar lançamentos existentes: ${mensagemErroSupabase(erroExistentes, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  const chavesExistentes = new Set(
+    (existentes || [])
+      .map(item => obterDataProgramadaLancamento(item) || dataLocalISO(item.lancado_em || item.created_at))
+      .filter(Boolean)
+      .map(data => `${tarefa.id}::${funcionarioSelecionado}::${data}`)
+  );
+
+  const lancamentosParaCriar = [];
+  let pulouHojePorHorario = false;
+
+  for (let offset = 0; offset <= HORIZONTE_AGENDAMENTO_MANUAL_DIAS; offset++) {
+    const dataAlvo = new Date(hojeData);
+    dataAlvo.setDate(hojeData.getDate() + offset);
+    const diaToken = diaSemanaTokenDaData(dataAlvo);
+    if (!diaToken || !diasPermitidos.has(diaToken)) continue;
+
+    if (offset === 0 && ignorarHoje) {
+      pulouHojePorHorario = true;
+      continue;
+    }
+
+    const dataIsoLocal = dataLocalISO(dataAlvo);
+    const chave = `${tarefa.id}::${funcionarioSelecionado}::${dataIsoLocal}`;
+    if (chavesExistentes.has(chave)) continue;
+
+    lancamentosParaCriar.push({
+      tarefa_id: tarefa.id,
+      checklist_id: tarefa.checklist_id || null,
+      funcionario_id: funcionarioSelecionado || null,
+      nome: tarefa.nome,
+      descricao: tarefa.descricao || null,
+      horario_limite: horarioSelecionado || null,
+      dias_semana: diasLancamento || 'todos',
+      data_programada: dataIsoLocal,
+      lancado_em: agoraIso,
+      criado_por_id: atorAuditoria.funcionarioId,
+      criado_por_nome: atorAuditoria.nome,
+      origem_lancamento: 'manual',
+      observacao_lancamento: pulouHojePorHorario && dataIsoLocal !== hoje()
+        ? `Hoje foi ignorado porque o horário ${horarioSelecionado} já havia passado.`
+        : 'Lançamento manual registrado no painel.',
+      status: 'pendente',
+    });
+  }
+
+  if (pulouHojePorHorario) {
+    try {
+      await registrarEventoLancamento({
+        tarefaId: tarefa.id,
+        checklistId: tarefa.checklist_id || null,
+        funcionarioResponsavelId: funcionarioSelecionado,
+        funcionarioAtorId: atorAuditoria.funcionarioId,
+        funcionarioAtorNome: atorAuditoria.nome,
+        tipoEvento: 'agendamento_ignorado',
+        origemEvento: atorAuditoria.origem,
+        dataProgramada: hoje(),
+        horarioProgramado: horarioSelecionado,
+        registradoEm: agoraIso,
+        observacao: `Hoje foi ignorado porque o lançamento ocorreu após ${horarioSelecionado}. O sistema agendou apenas o próximo ciclo válido.`,
+        meta: {
+          motivo: 'horario_expirado',
+          hora_lancamento: agoraHoraMinuto(),
+        },
+      });
+    } catch (erroAuditoria) {
+      console.warn('Não foi possível registrar o agendamento ignorado:', erroAuditoria);
+    }
+  }
+
+  if (!lancamentosParaCriar.length) {
+    setMsg('msgTarefas', pulouHojePorHorario
+      ? 'Hoje foi ignorado porque o horário já passou. Os próximos dias já estavam agendados.'
+      : 'Nenhum novo lançamento criado. Esta tarefa já estava agendada para os próximos dias.', 'ok');
+    return;
+  }
+
+  const { data: lancamentosCriados, error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite');
 
   if (error) {
     if (isMissingLancamentosTableError(error)) {
@@ -7895,8 +9003,39 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     return;
   }
 
-  setMsg('msgTarefas', 'Novo lançamento enviado para a aba Checklists.', 'ok');
+  try {
+    await Promise.all((lancamentosCriados || []).map(item => registrarEventoLancamento({
+      lancamentoId: item.id,
+      tarefaId: item.tarefa_id,
+      checklistId: item.checklist_id,
+      funcionarioResponsavelId: item.funcionario_id,
+      funcionarioAtorId: atorAuditoria.funcionarioId,
+      funcionarioAtorNome: atorAuditoria.nome,
+      tipoEvento: 'lancado',
+      origemEvento: atorAuditoria.origem,
+      dataProgramada: item.data_programada,
+      horarioProgramado: item.horario_limite,
+      registradoEm: agoraIso,
+      observacao: pulouHojePorHorario
+        ? 'Lançamento manual criado após ignorar o dia corrente por horário expirado.'
+        : 'Lançamento manual registrado.',
+      meta: {
+        dias_semana: diasLancamento || 'todos',
+      },
+    })));
+  } catch (erroAuditoria) {
+    console.warn('Não foi possível registrar a auditoria do lançamento manual:', erroAuditoria);
+  }
+
+  const mensagemSucesso = pulouHojePorHorario
+    ? `Hoje foi ignorado (horário já passou). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
+    : `${lancamentosParaCriar.length} lançamento(s) enviado(s) para a aba Checklists.`;
+  setMsg('msgTarefas', '', '');
+  setMsgLancamentoTarefa(id, mensagemSucesso, 'ok');
   carregarTarefas();
+  carregarChecklistsTarefas();
+  carregarChecklists();
+  carregarNotificacoes();
 }
 
 async function excluirTarefa(id) {
@@ -8376,7 +9515,7 @@ async function iniciarChecklistDireto(lancamentoId) {
 
   const { data: lancamentoAtual, error: errLancamento } = await sb
     .from('checklist_lancamentos')
-    .select('id, tarefa_id, nome, descricao, funcionario_id, checklist_id, status')
+    .select('id, tarefa_id, nome, descricao, funcionario_id, checklist_id, status, data_programada, horario_limite')
     .eq('id', lancamentoId)
     .single();
 
@@ -8463,6 +9602,26 @@ async function iniciarChecklistDireto(lancamentoId) {
     } else {
       console.warn('Não foi possível registrar o usuário que iniciou a tarefa:', movError);
     }
+  }
+
+  try {
+    await registrarEventoLancamento({
+      lancamentoId: lancamento.id,
+      execucaoId: exec.id,
+      tarefaId: lancamento.tarefa_id || null,
+      checklistId: lancamento.checklist_id || null,
+      funcionarioResponsavelId: lancamento.funcionario_id || null,
+      funcionarioAtorId: confirmacao.funcionarioId,
+      funcionarioAtorNome: confirmacao.nomeFuncionario,
+      tipoEvento: 'iniciado',
+      origemEvento: operador.origem || 'sistema',
+      dataProgramada: lancamento.data_programada || hoje(),
+      horarioProgramado: lancamento.horario_limite || null,
+      registradoEm: confirmacao.confirmadoEm,
+      observacao: `Checklist iniciado por ${confirmacao.nomeFuncionario}.`,
+    });
+  } catch (erroAuditoria) {
+    console.warn('Não foi possível auditar o início da tarefa:', erroAuditoria);
   }
 
   pararSomNotificacao();
@@ -8593,7 +9752,7 @@ async function carregarTarefasPortal() {
     .order('horario_limite', { ascending: true })
     .order('nome', { ascending: true });
 
-  const tarefasHoje = (tarefas || []).filter(t => checklistFoiLancadoHoje(t.lancado_em, t.created_at) && tarefaDisponivelHoje(t.dias_semana));
+  const tarefasHoje = (tarefas || []).filter(t => lancamentoProgramadoHoje(t) && tarefaDisponivelHoje(t.dias_semana));
 
   const funcionarioIds = [...new Set(tarefasHoje.map(t => t.funcionario_id).filter(Boolean).map(item => String(item)))];
   let funcionariosMap = {};
@@ -8730,6 +9889,26 @@ async function iniciarTarefaPortal(lancamentoId, tarefaNome) {
     if (!isMissingExecutionRegistrySchemaError(movError)) {
       console.warn('Não foi possível registrar o usuário que iniciou no portal:', movError);
     }
+  }
+
+  try {
+    await registrarEventoLancamento({
+      lancamentoId: tarefa.id,
+      execucaoId: exec.id,
+      tarefaId: tarefa.tarefa_id || null,
+      checklistId: tarefa.checklist_id || null,
+      funcionarioResponsavelId: tarefa.funcionario_id || null,
+      funcionarioAtorId: confirmacao.funcionarioId,
+      funcionarioAtorNome: confirmacao.nomeFuncionario,
+      tipoEvento: 'iniciado',
+      origemEvento: operador.origem || 'portal',
+      dataProgramada: tarefa.data_programada || hoje(),
+      horarioProgramado: tarefa.horario_limite || null,
+      registradoEm: confirmacao.confirmadoEm,
+      observacao: `Checklist iniciado pelo portal por ${confirmacao.nomeFuncionario}.`,
+    });
+  } catch (erroAuditoria) {
+    console.warn('Não foi possível auditar o início via portal:', erroAuditoria);
   }
 
   pararSomNotificacao();
@@ -9618,6 +10797,290 @@ async function carregarRelatorioPonto() {
   setMsg('msgRelatorioPonto', `${rows.length} registro(s) encontrado(s).`, 'ok');
 }
 
+function resetFiltroRelatorioLancamentos() {
+  const hojeLocal = hoje();
+  const dataInicio = document.getElementById('filtroLancamentoDataInicio');
+  const dataFim = document.getElementById('filtroLancamentoDataFim');
+  const evento = document.getElementById('filtroLancamentoEvento');
+  const funcionario = document.getElementById('filtroLancamentoFuncionario');
+  const busca = document.getElementById('filtroLancamentoBusca');
+
+  if (dataInicio) dataInicio.value = hojeLocal;
+  if (dataFim) dataFim.value = hojeLocal;
+  if (evento) {
+    evento.value = '';
+    evento.selectedIndex = 0;
+  }
+  if (funcionario) {
+    funcionario.value = '';
+    funcionario.selectedIndex = 0;
+  }
+  if (busca) busca.value = '';
+  carregarRelatorioLancamentos();
+}
+
+async function carregarRelatorioLancamentos() {
+  const lista = document.getElementById('listaRelatorioLancamentos');
+  const campoDataInicio = document.getElementById('filtroLancamentoDataInicio');
+  const campoDataFim = document.getElementById('filtroLancamentoDataFim');
+  const campoEvento = document.getElementById('filtroLancamentoEvento');
+  const campoFuncionario = document.getElementById('filtroLancamentoFuncionario');
+  const campoBusca = document.getElementById('filtroLancamentoBusca');
+  if (!lista) return;
+
+  if (campoDataInicio && !campoDataInicio.value) campoDataInicio.value = hoje();
+  if (campoDataFim && !campoDataFim.value) campoDataFim.value = hoje();
+
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
+
+  const dataInicio = campoDataInicio?.value || '';
+  const dataFim = campoDataFim?.value || '';
+  const tipoEvento = String(campoEvento?.value || '').trim();
+  const funcionarioId = String(campoFuncionario?.value || '').trim();
+  const busca = String(campoBusca?.value || '').trim().toLowerCase();
+
+  try {
+    const [funcionariosRes, eventosRes] = await Promise.all([
+          sb.from('funcionarios').select('id, nome').order('nome'),
+          (() => {
+            let query = sb
+              .from('checklist_lancamento_eventos')
+              .select('id, lancamento_id, execucao_id, tarefa_id, checklist_id, funcionario_responsavel_id, funcionario_ator_id, funcionario_ator_nome, tipo_evento, origem_evento, data_programada, horario_programado, registrado_em, observacao, meta')
+              .order('data_programada', { ascending: false })
+              .order('registrado_em', { ascending: false })
+              .limit(500);
+
+            if (tipoEvento) query = query.eq('tipo_evento', tipoEvento);
+            if (funcionarioId) query = query.eq('funcionario_responsavel_id', funcionarioId);
+            return query;
+          })(),
+    ]);
+
+    if (funcionariosRes.error) throw funcionariosRes.error;
+    if (eventosRes.error) {
+      if (isMissingLaunchEventsTableError(eventosRes.error)) {
+        lista.innerHTML = '<div class="empty">Rode a nova migration de auditoria para habilitar este relatório.</div>';
+        setMsg('msgRelatorioLancamentos', 'Tabela checklist_lancamento_eventos não encontrada no banco.', 'err');
+        return;
+      }
+      throw eventosRes.error;
+    }
+
+    const funcionarios = funcionariosRes.data || [];
+    const valorFuncionarioAtual = String(campoFuncionario?.value || '');
+    if (campoFuncionario) {
+      campoFuncionario.innerHTML = '<option value="">- Todos os responsáveis -</option>' + funcionarios
+        .map(item => `<option value="${item.id}">${escaparHtmlBasico(item.nome || 'Funcionário')}</option>`)
+        .join('');
+      campoFuncionario.value = funcionarios.some(item => String(item.id) === valorFuncionarioAtual) ? valorFuncionarioAtual : '';
+    }
+
+    const funcionariosMap = Object.fromEntries(funcionarios.map(item => [String(item.id), item.nome]));
+    let eventos = eventosRes.data || [];
+
+    if (!eventos.length) {
+      const [lancamentosRes, execucoesRes] = await Promise.all([
+        (() => {
+          let query = sb
+            .from('checklist_lancamentos')
+            .select('id, tarefa_id, checklist_id, funcionario_id, nome, horario_limite, data_programada, lancado_em, criado_por_nome');
+          if (dataInicio) query = query.gte('data_programada', dataInicio);
+          if (dataFim) query = query.lte('data_programada', dataFim);
+          if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+          return query.limit(500);
+        })(),
+        (() => {
+          let query = sb
+            .from('checklist_execucoes')
+            .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, usuario_inicio_id, usuario_fim_id, data_execucao, iniciado_em, inicio_confirmado_em, finalizado_em, finalizacao_confirmada_em, status')
+            .order('data_execucao', { ascending: false });
+          if (dataInicio) query = query.gte('data_execucao', dataInicio);
+          if (dataFim) query = query.lte('data_execucao', dataFim);
+          if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+          return query.limit(500);
+        })(),
+      ]);
+
+      if (lancamentosRes.error && !isMissingLancamentosTableError(lancamentosRes.error)) throw lancamentosRes.error;
+      if (execucoesRes.error && !isMissingTableError(execucoesRes.error)) throw execucoesRes.error;
+
+      const lancamentosData = lancamentosRes.data || [];
+      const execucoesData = execucoesRes.data || [];
+      const eventosFallback = [];
+
+      if (!tipoEvento || tipoEvento === 'lancado') {
+        lancamentosData.forEach(item => {
+          eventosFallback.push({
+            id: `fallback-lancado-${item.id}`,
+            lancamento_id: item.id,
+            execucao_id: null,
+            tarefa_id: item.tarefa_id || null,
+            checklist_id: item.checklist_id || null,
+            funcionario_responsavel_id: item.funcionario_id || null,
+            funcionario_ator_id: null,
+            funcionario_ator_nome: item.criado_por_nome || 'Sistema',
+            tipo_evento: 'lancado',
+            origem_evento: 'fallback_lancamentos',
+            data_programada: item.data_programada || dataLocalISO(item.lancado_em),
+            horario_programado: item.horario_limite || null,
+            registrado_em: item.lancado_em || combinarDataHorarioEmIso(item.data_programada || hoje(), item.horario_limite || '12:00'),
+            observacao: 'Lançamento recuperado diretamente da agenda.',
+            meta: { fallback: true },
+            nome_evento: item.nome || '',
+          });
+        });
+      }
+
+      if (!tipoEvento || tipoEvento === 'iniciado' || tipoEvento === 'finalizado') {
+        execucoesData.forEach(item => {
+          const inicio = item.inicio_confirmado_em || item.iniciado_em || null;
+          const fim = item.finalizacao_confirmada_em || item.finalizado_em || null;
+
+          if ((!tipoEvento || tipoEvento === 'iniciado') && inicio) {
+            eventosFallback.push({
+              id: `fallback-iniciado-${item.id}`,
+              lancamento_id: item.lancamento_id || null,
+              execucao_id: item.id,
+              tarefa_id: item.tarefa_id || null,
+              checklist_id: item.checklist_id || null,
+              funcionario_responsavel_id: item.funcionario_id || null,
+              funcionario_ator_id: item.usuario_inicio_id || null,
+              funcionario_ator_nome: '',
+              tipo_evento: 'iniciado',
+              origem_evento: 'fallback_execucoes',
+              data_programada: item.data_execucao || dataLocalISO(inicio),
+              horario_programado: null,
+              registrado_em: inicio,
+              observacao: 'Início recuperado diretamente das execuções.',
+              meta: { fallback: true },
+            });
+          }
+
+          if ((!tipoEvento || tipoEvento === 'finalizado') && fim) {
+            eventosFallback.push({
+              id: `fallback-finalizado-${item.id}`,
+              lancamento_id: item.lancamento_id || null,
+              execucao_id: item.id,
+              tarefa_id: item.tarefa_id || null,
+              checklist_id: item.checklist_id || null,
+              funcionario_responsavel_id: item.funcionario_id || null,
+              funcionario_ator_id: item.usuario_fim_id || null,
+              funcionario_ator_nome: '',
+              tipo_evento: 'finalizado',
+              origem_evento: 'fallback_execucoes',
+              data_programada: item.data_execucao || dataLocalISO(fim),
+              horario_programado: null,
+              registrado_em: fim,
+              observacao: 'Finalização recuperada diretamente das execuções.',
+              meta: { fallback: true },
+            });
+          }
+        });
+      }
+
+      eventos = eventosFallback
+        .sort((a, b) => new Date(b.registrado_em || 0).getTime() - new Date(a.registrado_em || 0).getTime())
+        .slice(0, 500);
+    }
+
+    const tarefaIds = [...new Set(eventos.map(item => item.tarefa_id).filter(Boolean).map(item => String(item)))];
+    const checklistIds = [...new Set(eventos.map(item => item.checklist_id).filter(Boolean).map(item => String(item)))];
+    const lancamentoIds = [...new Set(eventos.map(item => item.lancamento_id).filter(Boolean).map(item => String(item)))];
+
+    let tarefasMap = {};
+    let checklistsMap = {};
+    let lancamentosMap = {};
+
+    if (tarefaIds.length) {
+      const { data: tarefasData, error: tarefasError } = await sb.from('tarefas').select('id, nome').in('id', tarefaIds);
+      if (tarefasError && !isMissingTableError(tarefasError)) throw tarefasError;
+      tarefasMap = Object.fromEntries((tarefasData || []).map(item => [String(item.id), item.nome]));
+    }
+
+    if (checklistIds.length) {
+      const { data: checklistsData, error: checklistsError } = await sb.from('checklists').select('id, nome').in('id', checklistIds);
+      if (checklistsError) throw checklistsError;
+      checklistsMap = Object.fromEntries((checklistsData || []).map(item => [String(item.id), item.nome]));
+    }
+
+    if (lancamentoIds.length) {
+      const { data: lancamentosData, error: lancamentosError } = await sb
+        .from('checklist_lancamentos')
+        .select('id, nome, descricao, status, data_programada, horario_limite, lancado_em, criado_por_nome, observacao_lancamento')
+        .in('id', lancamentoIds);
+      if (lancamentosError && !isMissingLancamentosTableError(lancamentosError)) throw lancamentosError;
+      lancamentosMap = Object.fromEntries((lancamentosData || []).map(item => [String(item.id), item]));
+    }
+
+    const eventosFiltrados = eventos.filter(item => {
+      const lancamento = lancamentosMap[String(item.lancamento_id)] || null;
+      const dataReferencia = String(item.data_programada || '').trim() || dataLocalISO(item.registrado_em);
+      if (dataInicio && (!dataReferencia || dataReferencia < dataInicio)) return false;
+      if (dataFim && (!dataReferencia || dataReferencia > dataFim)) return false;
+
+      if (!busca) return true;
+      const nomeTarefa = item.nome_evento || lancamento?.nome || tarefasMap[String(item.tarefa_id)] || checklistsMap[String(item.checklist_id)] || '';
+      const textoBusca = [
+        nomeTarefa,
+        lancamento?.descricao || '',
+        item.observacao || '',
+        lancamento?.observacao_lancamento || '',
+        item.funcionario_ator_nome || '',
+        funcionariosMap[String(item.funcionario_responsavel_id)] || '',
+        tituloEventoLancamento(item.tipo_evento),
+      ].join(' ').toLowerCase();
+      return textoBusca.includes(busca);
+    });
+
+    relatorioLancamentosCache = eventosFiltrados;
+
+    if (!eventosFiltrados.length) {
+      lista.innerHTML = '<div class="empty">Nenhum evento encontrado com os filtros selecionados.</div>';
+      setMsg('msgRelatorioLancamentos', '', '');
+      return;
+    }
+
+    lista.innerHTML = '<div class="lista">' + eventosFiltrados.map(item => {
+          const lancamento = lancamentosMap[String(item.lancamento_id)] || null;
+          const nomeTarefa = item.nome_evento || lancamento?.nome || tarefasMap[String(item.tarefa_id)] || checklistsMap[String(item.checklist_id)] || 'Checklist';
+          const nomeResponsavel = funcionariosMap[String(item.funcionario_responsavel_id)] || 'Sem responsável';
+          const horarioProgramado = horaCurta(item.horario_programado || lancamento?.horario_limite || '') || '-';
+          const dataProgramada = formatarDataProgramadaBr(item.data_programada || lancamento?.data_programada || '');
+          const ator = item.funcionario_ator_nome || funcionariosMap[String(item.funcionario_ator_id)] || 'Sistema';
+          const observacao = item.observacao || lancamento?.observacao_lancamento || item.meta?.motivo || 'Sem observação adicional.';
+          const descricao = lancamento?.descricao || '';
+          const lancadoEm = lancamento?.lancado_em ? fmtDate(lancamento.lancado_em) : '-';
+          const porLancamento = lancamento?.criado_por_nome || 'Sistema';
+          const statusAtual = String(lancamento?.status || '').trim().toLowerCase();
+          const statusTexto = statusAtual === 'finalizado' ? 'Finalizado' : statusAtual === 'iniciado' ? 'Iniciado' : statusAtual === 'pendente' ? 'Pendente' : '-';
+          return `
+            <div class="item">
+              <div class="item-info">
+                <div class="item-nome">${escaparHtmlBasico(nomeTarefa)} · ${escaparHtmlBasico(tituloEventoLancamento(item.tipo_evento))}</div>
+                <div class="item-detalhe">Responsável: ${escaparHtmlBasico(nomeResponsavel)}</div>
+                <div class="item-detalhe">Agendado para: ${escaparHtmlBasico(dataProgramada)} · Horário: ${escaparHtmlBasico(horarioProgramado)}</div>
+                ${descricao ? `<div class="item-detalhe">${escaparHtmlBasico(descricao)}</div>` : ''}
+                <div class="item-detalhe">Lançado em: ${escaparHtmlBasico(lancadoEm)} · Por: ${escaparHtmlBasico(porLancamento)}</div>
+                <div class="item-detalhe">Registrado em: ${escaparHtmlBasico(fmtDate(item.registrado_em))} · Por: ${escaparHtmlBasico(ator)}</div>
+                <div class="item-detalhe">Status atual: ${escaparHtmlBasico(statusTexto)}</div>
+                <div class="item-detalhe">Origem: ${escaparHtmlBasico(item.origem_evento || 'sistema')}</div>
+                <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
+              </div>
+              <div class="item-actions">
+                ${tagEventoLancamento(item.tipo_evento)}
+              </div>
+            </div>
+          `;
+    }).join('') + '</div>';
+
+    setMsg('msgRelatorioLancamentos', `${eventosFiltrados.length} evento(s) encontrado(s).`, 'ok');
+  } catch (error) {
+    console.error('Erro ao carregar relatório de lançamentos:', error);
+    lista.innerHTML = '<div class="empty">Erro ao carregar o relatório de tarefas.</div>';
+    setMsg('msgRelatorioLancamentos', `Não foi possível carregar o relatório: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+  }
+}
+
 // 
 // EXECU-!-"ES
 // 
@@ -9635,9 +11098,9 @@ async function montarContextoExecucoes(rows = [], dataRef = hoje()) {
       ? sb.from('tarefas').select('id, nome, descricao, horario_limite, checklist_id').in('id', tarefaIds)
       : Promise.resolve({ data: [], error: null }),
     lancamentoIds.length
-      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, lancado_em, status').in('id', lancamentoIds)
+      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, lancado_em, status, data_programada').in('id', lancamentoIds)
       : tarefaIds.length
-      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, lancado_em, status').in('tarefa_id', tarefaIds)
+      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, lancado_em, status, data_programada').in('tarefa_id', tarefaIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -9957,7 +11420,7 @@ async function carregarTarefasAtrasoMaster() {
     const carregarLancamentosPendentesAtraso = async () => {
       const consultaCompleta = await sb
         .from('checklist_lancamentos')
-        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, created_at')
+        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, created_at, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
 
@@ -10021,7 +11484,7 @@ async function carregarTarefasAtrasoMaster() {
     }
 
     const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
-      if (!checklistFoiLancadoHoje(item.lancado_em, item.created_at)) return false;
+      if (!lancamentoProgramadoHoje(item)) return false;
       if (!tarefaDisponivelHoje(item.dias_semana)) return false;
       if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
       const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
@@ -10097,7 +11560,7 @@ async function finalizarExecucaoDireta(id) {
 
   const { data: execucao, error: errExecucao } = await sb
     .from('checklist_execucoes')
-    .select('id, tarefa_id, checklist_id, funcionario_id, status')
+    .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, status, data_execucao')
     .eq('id', id)
     .single();
 
@@ -10145,6 +11608,25 @@ async function finalizarExecucaoDireta(id) {
     if (!isMissingExecutionRegistrySchemaError(movError)) {
       console.warn('Não foi possível registrar o usuário que finalizou:', movError);
     }
+  }
+
+  try {
+    await registrarEventoLancamento({
+      lancamentoId: execucao.lancamento_id || null,
+      execucaoId: execucao.id,
+      tarefaId: execucao.tarefa_id || null,
+      checklistId: execucao.checklist_id || null,
+      funcionarioResponsavelId: execucao.funcionario_id || null,
+      funcionarioAtorId: confirmacao.funcionarioId,
+      funcionarioAtorNome: confirmacao.nomeFuncionario,
+      tipoEvento: 'finalizado',
+      origemEvento: operador.origem || 'sistema',
+      dataProgramada: execucao.data_execucao || hoje(),
+      registradoEm: confirmacao.confirmadoEm,
+      observacao: `Checklist finalizado por ${confirmacao.nomeFuncionario}.`,
+    });
+  } catch (erroAuditoria) {
+    console.warn('Não foi possível auditar a finalização da tarefa:', erroAuditoria);
   }
 
   await enviarEmailChecklistFinalizado(id);
@@ -10264,7 +11746,7 @@ async function finalizarExecucao() {
 
   const { data: execucao, error: errExecucao } = await sb
     .from('checklist_execucoes')
-    .select('id, tarefa_id, checklist_id, funcionario_id, status')
+    .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, status, data_execucao')
     .eq('id', execucaoAtualId)
     .single();
 
@@ -10329,6 +11811,25 @@ async function finalizarExecucao() {
     if (!isMissingExecutionRegistrySchemaError(movError)) {
       console.warn('Não foi possível registrar o usuário que finalizou no histórico:', movError);
     }
+  }
+
+  try {
+    await registrarEventoLancamento({
+      lancamentoId: execucao.lancamento_id || null,
+      execucaoId: execucao.id,
+      tarefaId: execucao.tarefa_id || null,
+      checklistId: execucao.checklist_id || null,
+      funcionarioResponsavelId: execucao.funcionario_id || null,
+      funcionarioAtorId: confirmacao.funcionarioId,
+      funcionarioAtorNome: confirmacao.nomeFuncionario,
+      tipoEvento: 'finalizado',
+      origemEvento: operador.origem || 'sistema',
+      dataProgramada: execucao.data_execucao || hoje(),
+      registradoEm: confirmacao.confirmadoEm,
+      observacao: `Checklist finalizado por ${confirmacao.nomeFuncionario}.`,
+    });
+  } catch (erroAuditoria) {
+    console.warn('Não foi possível auditar a finalização no modal:', erroAuditoria);
   }
 
   await enviarEmailChecklistFinalizado(execucaoAtualId);
@@ -10466,6 +11967,7 @@ window.setTimeout(() => {
 
     nameEl.textContent = nomeUsuario;
     container.hidden = false;
+    container.style.display = 'flex';
   }
 
 function salvarSessaoSistema(usuario) {
@@ -10890,9 +12392,24 @@ function salvarSessaoSistema(usuario) {
   window.setTimeout(() => {
     forcarCampoObservacaoTarefaEmBranco();
   }, 250);
+  renderizarItensTarefaNoCadastro();
+  document.getElementById('nomeItemTarefaCadastro')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      adicionarItemTarefaNoCadastro();
+    }
+  });
+  document.getElementById('filtroChecklistLancadoBusca')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      filtrarChecklistsLancados();
+    }
+  });
 </script>
 </body>
 </html>
+
+
 
 
 
