@@ -1282,12 +1282,123 @@
       gap: 8px;
     }
     .tarefas-filtros-row input {
-      min-width: 240px;
+      min-width: 190px;
+      max-width: 340px;
+      flex: 1 1 240px;
     }
     .tarefas-filtros-row .btn {
       padding: 8px 12px;
       min-height: 36px;
       font-size: 13px;
+    }
+    .tarefas-consulta-box {
+      border: 1px solid rgba(107, 143, 112, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 10px;
+      background: rgba(12, 20, 16, 0.55);
+    }
+    .tarefas-consulta-lista {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(8, 15, 11, 0.9);
+      padding: 6px;
+      margin-top: 6px;
+    }
+    .tarefas-consulta-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px 10px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+    }
+    .tarefas-consulta-item:hover {
+      background: rgba(24, 34, 24, 0.7);
+      border-color: rgba(107, 143, 112, 0.22);
+    }
+    .tarefas-consulta-item-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .tarefas-consulta-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
+    .tarefas-consulta-item-nome {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tarefas-consulta-item-acoes {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+    .tarefas-consulta-item-config {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 8px;
+      margin-top: 2px;
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 900px) {
+      .tarefas-consulta-item {
+        grid-template-columns: 1fr;
+      }
+      .tarefas-consulta-item-acoes {
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+    }
+    .btn-fav-star {
+      min-width: 30px;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      line-height: 1;
+      color: #fcd34d;
+    }
+    .btn-fav-star.inativo {
+      color: #6b8f70;
+    }
+    .item-actions .btn-fav-star {
+      width: 30px !important;
+      min-width: 30px !important;
+      padding: 0 !important;
+    }
+    .tarefas-favoritas-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 6px 0;
+    }
+    .tarefas-favoritas-titulo {
+      font-size: 11px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
     }
     .tarefa-itens-builder {
       margin-top: 8px;
@@ -1388,6 +1499,13 @@
     }
     .tarefa-launch-details[open] summary {
       border-bottom-color: var(--border);
+    }
+    .tarefa-launch-panel {
+      display: none;
+      margin-top: 6px;
+    }
+    .tarefa-launch-panel.aberta {
+      display: block;
     }
     .tarefa-lancamento-grid {
       display: grid;
@@ -2810,9 +2928,17 @@
 
         <div class="card">
           <div class="card-title">Tarefas cadastradas</div>
-          <div class="form-row tarefas-filtros-row">
-            <input id="filtroTarefasNome" type="text" placeholder="Buscar por nome da tarefa" oninput="filtrarTarefasCadastradas()">
-            <button class="btn btn-ghost" type="button" onclick="limparFiltroTarefasCadastradas()">Limpar</button>
+          <div class="tarefas-consulta-box">
+            <div class="form-row tarefas-filtros-row">
+              <input id="filtroTarefasNome" name="consulta_tarefas_sem_autofill" type="text" placeholder="Buscar na listagem de tarefas" autocomplete="off" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="desbloquearCampoBuscaTarefas(this)" oninput="marcarCampoBuscaTarefasComoEditado(this); filtrarTarefasCadastradas()">
+              <button class="btn btn-green" type="button" onclick="aplicarSelecaoConsultaTarefas()">Selecionar</button>
+              <button class="btn btn-ghost" type="button" onclick="selecionarTodasTarefasConsulta()">Todas</button>
+              <button class="btn btn-ghost" type="button" onclick="toggleSomenteFavoritasTarefas()">Favoritas</button>
+              <button class="btn btn-ghost" type="button" onclick="toggleMinimizarFavoritasTarefas()">Minimizar/Maximizar favoritos</button>
+              <button class="btn btn-ghost" type="button" onclick="limparFiltroTarefasCadastradas()">Limpar</button>
+            </div>
+            <div id="resumoConsultaTarefas" class="item-detalhe">Selecione as tarefas para exibir abaixo.</div>
+            <div id="listaConsultaTarefas" class="tarefas-consulta-lista"><div class="empty">Carregando tarefas cadastradas...</div></div>
           </div>
           <div id="listaTarefas"><div class="empty">Carregando⬦</div></div>
         </div>
@@ -2947,8 +3073,8 @@
         </div>
 
         <div class="card">
-          <div class="card-title">Histórico de hoje</div>
-          <div id="pontoResumoHoje"><div class="empty">Carregando histórico de pontos...</div></div>
+          <div class="card-title">Status de ponto de hoje</div>
+          <div id="pontoResumoHoje"><div class="empty">Carregando status de pontos...</div></div>
         </div>
       </section>
 
@@ -3235,11 +3361,18 @@ let ultimoToquePinPontoEm = 0;
 let intervaloVigilanciaPinPonto = null;
 let notificacoesHistoricoMaster = [];
 let filtroChecklistLancadoBuscaEditado = false;
+let filtroTarefasNomeEditado = false;
 let checklistsLancadosCache = [];
 let checklistsLancadosFuncionariosMap = {};
 let checklistsLancadosUltimaListaFiltrada = [];
 let relatorioLancamentosCache = [];
 let tarefasCadastradasCache = [];
+let tarefasSelecionadasIds = new Set();
+let tarefasConsultaMarcadasIds = new Set();
+let tarefasFavoritasIds = new Set();
+let tarefasConfigLancamentoAbertasIds = new Set();
+let mostrarSomenteFavoritasTarefas = false;
+let favoritosTarefasMinimizados = false;
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
@@ -3864,6 +3997,41 @@ function desbloquearCampoDescricaoTarefa(campo) {
   }
 }
 
+function forcarCampoBuscaTarefasEmBranco() {
+  const campo = document.getElementById('filtroTarefasNome');
+  if (!campo) return;
+  if (filtroTarefasNomeEditado) return;
+  campo.value = '';
+  campo.removeAttribute('value');
+}
+
+function marcarCampoBuscaTarefasComoEditado(campo = null) {
+  const input = campo || document.getElementById('filtroTarefasNome');
+  if (!input) return;
+  filtroTarefasNomeEditado = String(input.value || '').trim().length > 0;
+}
+
+function desbloquearCampoBuscaTarefas(campo) {
+  if (!campo) return;
+  campo.removeAttribute('readonly');
+  if (!filtroTarefasNomeEditado) {
+    campo.value = '';
+    campo.removeAttribute('value');
+  }
+}
+
+function redefinirCampoBuscaTarefas() {
+  filtroTarefasNomeEditado = false;
+  const campo = document.getElementById('filtroTarefasNome');
+  if (!campo) return;
+  campo.value = '';
+  campo.removeAttribute('value');
+  campo.setAttribute('readonly', 'readonly');
+  window.setTimeout(() => forcarCampoBuscaTarefasEmBranco(), 50);
+  window.setTimeout(() => forcarCampoBuscaTarefasEmBranco(), 400);
+  window.setTimeout(() => forcarCampoBuscaTarefasEmBranco(), 1200);
+}
+
 function abrirPagina(id, botao) {
   if (usuarioSistemaLogado && !usuarioPodeAcessar(id)) return;
   if (id === 'itens') {
@@ -3892,6 +4060,7 @@ function abrirPagina(id, botao) {
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
     carregarSelectFuncionariosTarefa();
+    redefinirCampoBuscaTarefas();
     carregarTarefas();
     forcarCampoObservacaoTarefaEmBranco();
   }
@@ -6960,8 +7129,21 @@ async function carregarChecklists() {
     return;
   }
 
-  let rows = data || [];
-  rows = rows.filter(t => lancamentoProgramadoHoje(t) && tarefaDisponivelHoje(t.dias_semana));
+  const dataHoje = hoje();
+  let rows = (data || []).filter(t => {
+    const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
+    if (dataReferencia < dataHoje) return false;
+    return tarefaDisponivelHoje(t.dias_semana, dataReferencia);
+  });
+  rows.sort((a, b) => {
+    const dataA = String(obterDataProgramadaLancamento(a) || '').trim();
+    const dataB = String(obterDataProgramadaLancamento(b) || '').trim();
+    if (dataA !== dataB) return dataA.localeCompare(dataB);
+    const horaA = String(horaCurta(a?.horario_limite || '') || '99:99');
+    const horaB = String(horaCurta(b?.horario_limite || '') || '99:99');
+    if (horaA !== horaB) return horaA.localeCompare(horaB);
+    return String(a?.nome || '').localeCompare(String(b?.nome || ''), 'pt-BR');
+  });
 
   const funcionarioIds = [...new Set(rows.map(t => t.funcionario_id).filter(Boolean))];
   let funcionariosMap = {};
@@ -7999,7 +8181,7 @@ function obterFuncionarioLancamentoSelecionado(tarefaId, funcionarioPadrao = '')
   const idTarefa = String(tarefaId || '');
   const selecionado = selecaoFuncionarioLancamentoPorTarefa[idTarefa];
   if (selecionado) return String(selecionado);
-  return String(funcionarioPadrao || '');
+  return '';
 }
 
 function obterHorarioLancamentoSelecionado(tarefaId, horarioPadrao = '') {
@@ -8128,7 +8310,9 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
       </label>
     `).join('');
 
-  const selecionado = obterFuncionarioLancamentoSelecionado(tarefa.id, tarefa.funcionario_id || '');
+  const selecionado = obterFuncionarioLancamentoSelecionado(tarefa.id, '');
+  const funcionarioSelecionadoObj = funcionariosAtivosTarefa.find(item => String(item.id || '') === String(selecionado || ''));
+  const nomeSelecionado = funcionarioSelecionadoObj?.nome ? escaparHtmlBasico(funcionarioSelecionadoObj.nome) : 'Nenhum selecionado';
   const opcoes = funcionariosAtivosTarefa.map(funcionario => {
     const idFuncionario = String(funcionario.id || '');
     const checked = selecionado && idFuncionario === String(selecionado) ? 'checked' : '';
@@ -8173,6 +8357,7 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
         </div>
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-funcionarios">
           <span class="tarefa-funcionarios-label">Funcionário</span>
+          <div class="item-detalhe" style="margin-top:0;margin-bottom:4px">Principal: ${nomeSelecionado}</div>
           <div class="tarefa-funcionarios-grid">${opcoes}</div>
         </div>
       </div>
@@ -8181,19 +8366,169 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
   `;
 }
 
-function renderizarListaTarefas(dados = []) {
-  const lista = document.getElementById('listaTarefas');
+function obterStorageFavoritosTarefas() {
+  return `zuqui_tarefas_favoritas:${obterChaveUsuarioNotificacoes()}`;
+}
+
+function carregarFavoritosTarefas() {
+  try {
+    const bruto = localStorage.getItem(obterStorageFavoritosTarefas());
+    if (!bruto) return new Set();
+    const arr = JSON.parse(bruto);
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.map(item => String(item)));
+  } catch (e) {
+    return new Set();
+  }
+}
+
+function salvarFavoritosTarefas() {
+  try {
+    localStorage.setItem(obterStorageFavoritosTarefas(), JSON.stringify(Array.from(tarefasFavoritasIds)));
+  } catch (e) {}
+}
+
+function normalizarEstadosConsultaTarefas() {
+  const idsValidos = new Set((tarefasCadastradasCache || []).map(item => String(item.id)));
+
+  tarefasFavoritasIds = new Set(Array.from(tarefasFavoritasIds).filter(id => idsValidos.has(id)));
+  tarefasSelecionadasIds = new Set(Array.from(tarefasSelecionadasIds).filter(id => idsValidos.has(id)));
+  tarefasConsultaMarcadasIds = new Set(Array.from(tarefasConsultaMarcadasIds).filter(id => idsValidos.has(id)));
+  tarefasConfigLancamentoAbertasIds = new Set(Array.from(tarefasConfigLancamentoAbertasIds).filter(id => idsValidos.has(id)));
+
+  // Segurança operacional: inicia sempre sem marcações automáticas.
+  tarefasSelecionadasIds = new Set();
+  tarefasConsultaMarcadasIds = new Set();
+}
+
+function obterTarefasFiltradasConsulta() {
+  const filtro = String(document.getElementById('filtroTarefasNome')?.value || '').trim().toLowerCase();
+  let dados = tarefasCadastradasCache || [];
+
+  if (mostrarSomenteFavoritasTarefas) {
+    dados = dados.filter(item => tarefasFavoritasIds.has(String(item.id)));
+  }
+
+  if (filtro) {
+    dados = dados.filter(item => {
+      const texto = [
+        item.nome || '',
+        item.descricao || '',
+        item.funcionarios?.nome || '',
+        item.checklists?.nome || '',
+      ].join(' ').toLowerCase();
+      return texto.includes(filtro);
+    });
+  }
+
+  return dados;
+}
+
+function atualizarResumoConsultaTarefas(totalFiltrado = 0) {
+  const resumo = document.getElementById('resumoConsultaTarefas');
+  if (!resumo) return;
+  const marcadas = tarefasConsultaMarcadasIds.size;
+  const exibidas = tarefasFavoritasIds.size;
+  const textoFavoritas = mostrarSomenteFavoritasTarefas ? ' · filtro: favoritas' : '';
+  resumo.textContent = `${totalFiltrado} na lista · ${marcadas} marcadas · ${exibidas} favoritas exibidas abaixo${textoFavoritas}`;
+}
+
+function marcarConsultaTarefa(id, marcado) {
+  const chave = String(id || '');
+  if (!chave) return;
+  if (marcado) tarefasConsultaMarcadasIds.add(chave);
+  else tarefasConsultaMarcadasIds.delete(chave);
+  const dadosFiltrados = obterTarefasFiltradasConsulta();
+  atualizarResumoConsultaTarefas(dadosFiltrados.length);
+}
+
+function toggleFavoritaTarefa(id) {
+  const chave = String(id || '');
+  if (!chave) return;
+  if (tarefasFavoritasIds.has(chave)) tarefasFavoritasIds.delete(chave);
+  else tarefasFavoritasIds.add(chave);
+  salvarFavoritosTarefas();
+  filtrarTarefasCadastradas();
+}
+
+function renderizarListaConsultaTarefas() {
+  const lista = document.getElementById('listaConsultaTarefas');
   if (!lista) return;
 
-  if (!dados.length) {
-    const filtroAtivo = String(document.getElementById('filtroTarefasNome')?.value || '').trim();
-    lista.innerHTML = filtroAtivo
-      ? '<div class="empty">Nenhuma tarefa encontrada para o filtro informado.</div>'
-      : '<div class="empty">Nenhuma tarefa cadastrada.</div>';
+  const dadosFiltrados = obterTarefasFiltradasConsulta();
+  atualizarResumoConsultaTarefas(dadosFiltrados.length);
+
+  if (!dadosFiltrados.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma tarefa encontrada na consulta.</div>';
     return;
   }
 
-  lista.innerHTML = '<div class="lista">' + dados.map(t => `
+  lista.innerHTML = dadosFiltrados.map(item => {
+    const id = String(item.id || '');
+    const marcada = tarefasConsultaMarcadasIds.has(id);
+    const favorita = tarefasFavoritasIds.has(id);
+    const configuracaoAberta = tarefasConfigLancamentoAbertasIds.has(id);
+    return `
+      <div class="tarefas-consulta-item">
+        <div class="tarefas-consulta-item-main">
+          <input type="checkbox" ${marcada ? 'checked' : ''} onchange="marcarConsultaTarefa('${id}', this.checked)">
+          <div class="tarefas-consulta-item-nome" title="${escaparHtmlBasico(item.nome || '')}">
+            ${escaparHtmlBasico(item.nome || 'Tarefa sem nome')}
+          </div>
+          <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${id}')">${favorita ? '★' : '☆'}</button>
+        </div>
+        <div class="tarefas-consulta-item-acoes">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar regras' : 'Configurar lançamento'}</button>
+          ${item.ativo ? `<button class="btn btn-amber btn-sm" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
+        </div>
+        ${configuracaoAberta ? `<div class="tarefas-consulta-item-config">${renderizarSelecaoFuncionariosLancamento(item)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function aplicarSelecaoConsultaTarefas() {
+  if (!tarefasConsultaMarcadasIds.size) {
+    setMsg('msgTarefas', 'Marque ao menos uma tarefa na lista para exibir.', 'err');
+    return;
+  }
+  tarefasSelecionadasIds = new Set(Array.from(tarefasConsultaMarcadasIds));
+  renderizarListaTarefas();
+  setMsg('msgTarefas', `${tarefasSelecionadasIds.size} tarefa(s) selecionada(s) para exibição.`, 'ok');
+}
+
+function selecionarTodasTarefasConsulta() {
+  const dadosFiltrados = obterTarefasFiltradasConsulta();
+  tarefasConsultaMarcadasIds = new Set(dadosFiltrados.map(item => String(item.id)));
+  renderizarListaConsultaTarefas();
+}
+
+function toggleSomenteFavoritasTarefas() {
+  mostrarSomenteFavoritasTarefas = !mostrarSomenteFavoritasTarefas;
+  renderizarListaConsultaTarefas();
+}
+
+function toggleMinimizarFavoritasTarefas() {
+  favoritosTarefasMinimizados = !favoritosTarefasMinimizados;
+  renderizarListaTarefas();
+}
+
+function toggleConfigLancamentoTarefa(id) {
+  const chave = String(id || '');
+  if (!chave) return;
+  if (tarefasConfigLancamentoAbertasIds.has(chave)) {
+    tarefasConfigLancamentoAbertasIds.delete(chave);
+  } else {
+    tarefasConfigLancamentoAbertasIds.add(chave);
+  }
+  renderizarListaConsultaTarefas();
+  renderizarListaTarefas();
+}
+
+function renderizarCardTarefaCadastrada(t) {
+  const favorita = tarefasFavoritasIds.has(String(t.id));
+  return `
     <div class="item tarefa-cadastrada-item">
       <div class="tarefa-cadastrada-header">
         <div class="tarefa-cadastrada-header-main">
@@ -8209,43 +8544,57 @@ function renderizarListaTarefas(dados = []) {
           ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
         </div>
         <div class="item-actions tarefa-cadastrada-actions">
-          ${t.ativo ? `<span class="tag tag-green tag-status-mini" title="Tarefa ativa">Ativa</span>` : `<span class="tag tag-gray tag-status-mini" title="Tarefa inativa">Inativa</span>`}
-          <button class="btn btn-ghost btn-sm" title="Editar tarefa" onclick="editarTarefa('${t.id}')">Editar</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', '${t.funcionario_id || ''}'), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${t.id}')">${favorita ? '★' : '☆'}</button>
+          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', ''), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">Excluir</button>
         </div>
       </div>
-      <details class="tarefa-launch-details">
-        <summary>Configurar lançamento</summary>
-        ${renderizarSelecaoFuncionariosLancamento(t)}
-      </details>
-    </div>`).join('') + '</div>';
+    </div>`;
+}
+
+function renderizarListaTarefas() {
+  const lista = document.getElementById('listaTarefas');
+  if (!lista) return;
+
+  const favoritas = (tarefasCadastradasCache || []).filter(item => tarefasFavoritasIds.has(String(item.id)));
+
+  if (!favoritas.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma tarefa favorita. Clique na estrela na lista acima para fixar.</div>';
+    return;
+  }
+
+  if (favoritosTarefasMinimizados) {
+    lista.innerHTML = `
+      <div class="tarefas-favoritas-header">
+        <div class="tarefas-favoritas-titulo">Favoritas minimizadas (${favoritas.length})</div>
+      </div>
+    `;
+    return;
+  }
+
+  lista.innerHTML = `
+    <div class="tarefas-favoritas-header">
+      <div class="tarefas-favoritas-titulo">Favoritas</div>
+    </div>
+    <div class="lista">${favoritas.map(renderizarCardTarefaCadastrada).join('')}</div>
+  `;
 }
 
 function filtrarTarefasCadastradas() {
   if (!Array.isArray(tarefasCadastradasCache)) return;
-  const filtro = String(document.getElementById('filtroTarefasNome')?.value || '').trim().toLowerCase();
-  if (!filtro) {
-    renderizarListaTarefas(tarefasCadastradasCache);
-    return;
-  }
-
-  const dados = tarefasCadastradasCache.filter(item => {
-    const texto = [
-      item.nome || '',
-      item.descricao || '',
-      item.funcionarios?.nome || '',
-      item.checklists?.nome || '',
-    ].join(' ').toLowerCase();
-    return texto.includes(filtro);
-  });
-  renderizarListaTarefas(dados);
+  renderizarListaConsultaTarefas();
+  renderizarListaTarefas();
 }
 
 function limparFiltroTarefasCadastradas() {
   const input = document.getElementById('filtroTarefasNome');
-  if (input) input.value = '';
-  filtrarTarefasCadastradas();
+  if (input) {
+    input.value = '';
+    input.removeAttribute('value');
+  }
+  filtroTarefasNomeEditado = false;
+  mostrarSomenteFavoritasTarefas = false;
+  renderizarListaConsultaTarefas();
 }
 
 function renderizarItensTarefaNoCadastro() {
@@ -8362,6 +8711,68 @@ async function salvarItensDaTarefa(checklistId) {
   if (erroInsert) throw erroInsert;
 }
 
+async function garantirChecklistReferenciaDaTarefa({ tarefaId, nome, descricao = null, checklistIdPreferido = null }) {
+  if (!tarefaId) return null;
+
+  const nomeChecklist = String(nome || '').trim() || 'Checklist';
+  const descricaoChecklist = String(descricao || '').trim() || null;
+
+  const verificarChecklist = async (id) => {
+    const checklistId = String(id || '').trim();
+    if (!checklistId) return null;
+    const { data, error } = await sb
+      .from('checklists')
+      .select('id')
+      .eq('id', checklistId)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.id ? String(data.id) : null;
+  };
+
+  let checklistIdValido = null;
+  try {
+    checklistIdValido = await verificarChecklist(checklistIdPreferido);
+  } catch (error) {
+    if (!isMissingTableError(error)) throw error;
+    return null;
+  }
+
+  if (!checklistIdValido) {
+    const { data: tarefaAtual, error: erroTarefaAtual } = await sb
+      .from('tarefas')
+      .select('checklist_id')
+      .eq('id', tarefaId)
+      .maybeSingle();
+    if (erroTarefaAtual && !isMissingTableError(erroTarefaAtual)) throw erroTarefaAtual;
+    checklistIdValido = await verificarChecklist(tarefaAtual?.checklist_id || null);
+  }
+
+  if (!checklistIdValido) {
+    const { data: checklistCriado, error: erroCriarChecklist } = await sb
+      .from('checklists')
+      .insert([{ nome: nomeChecklist, descricao: descricaoChecklist }])
+      .select('id')
+      .single();
+    if (erroCriarChecklist) throw erroCriarChecklist;
+    checklistIdValido = String(checklistCriado?.id || '');
+  } else {
+    await sb
+      .from('checklists')
+      .update({ nome: nomeChecklist, descricao: descricaoChecklist })
+      .eq('id', checklistIdValido);
+  }
+
+  if (!checklistIdValido) return null;
+
+  const { error: erroVincularChecklist } = await sb
+    .from('tarefas')
+    .update({ checklist_id: checklistIdValido })
+    .eq('id', tarefaId);
+  if (erroVincularChecklist) throw erroVincularChecklist;
+
+  return checklistIdValido;
+}
+
 async function carregarTarefas() {
   const lista = document.getElementById('listaTarefas');
   if (!lista) return;
@@ -8384,6 +8795,8 @@ async function carregarTarefas() {
     }
 
     tarefasCadastradasCache = data || [];
+    tarefasFavoritasIds = carregarFavoritosTarefas();
+    normalizarEstadosConsultaTarefas();
     filtrarTarefasCadastradas();
   } catch (err) {
     console.error('Erro inesperado ao carregar tarefas:', err);
@@ -8714,11 +9127,11 @@ async function criarTarefa() {
   if (!nome) { setMsg('msgTarefas', 'Digite o nome da tarefa.', 'err'); return; }
 
   const diasStr = 'todos';
-  const checklistRefEdicao = checklistReferenciaEmEdicaoId || tarefaEmEdicaoId || null;
+  const checklistRefEdicao = checklistReferenciaEmEdicaoId || null;
   const payload = {
     nome,
     descricao: descricao || null,
-    checklist_id: checklistRefEdicao,
+    checklist_id: null,
     horario_limite: horarioLimite || null,
     dias_semana: diasStr,
     funcionario_id: funcionarioId,
@@ -8745,19 +9158,28 @@ async function criarTarefa() {
     setMsg('msgTarefas', 'Tarefa salva, mas sem retorno de ID. Tente novamente.', 'err');
     return;
   }
+  const tarefaSalvaId = String(tarefaSalva.id);
+  tarefasConfigLancamentoAbertasIds.add(tarefaSalvaId);
 
-  const checklistReferencia = String(tarefaSalva.checklist_id || checklistRefEdicao || tarefaSalva.id || '');
+  let checklistReferencia = null;
+  try {
+    checklistReferencia = await garantirChecklistReferenciaDaTarefa({
+      tarefaId: tarefaSalva.id,
+      nome: payload.nome,
+      descricao: payload.descricao,
+      checklistIdPreferido: tarefaSalva.checklist_id || checklistRefEdicao || null,
+    });
+  } catch (erroVinculoChecklist) {
+    console.error('Erro ao garantir referência de checklist da tarefa:', erroVinculoChecklist);
+    setMsg('msgTarefas', `Tarefa salva, mas nao foi possivel vincular checklist: ${mensagemErroSupabase(erroVinculoChecklist, 'erro desconhecido')}`, 'err');
+    await carregarTarefas();
+    return;
+  }
 
-  if (!tarefaSalva.checklist_id) {
-    const { error: erroVinculoChecklist } = await sb
-      .from('tarefas')
-      .update({ checklist_id: checklistReferencia })
-      .eq('id', tarefaSalva.id);
-
-    if (erroVinculoChecklist && !isMissingTableError(erroVinculoChecklist)) {
-      setMsg('msgTarefas', `Tarefa salva, mas nao foi possivel vincular checklist: ${mensagemErroSupabase(erroVinculoChecklist, 'erro desconhecido')}`, 'err');
-      return;
-    }
+  if (!checklistReferencia) {
+    setMsg('msgTarefas', 'Tarefa salva, mas não foi possível preparar o checklist vinculado.', 'err');
+    await carregarTarefas();
+    return;
   }
 
   try {
@@ -8829,7 +9251,7 @@ async function editarTarefa(id) {
   }
 
   tarefaEmEdicaoId = id;
-  checklistReferenciaEmEdicaoId = tarefa.checklist_id || tarefa.id || null;
+  checklistReferenciaEmEdicaoId = tarefa.checklist_id || null;
   document.getElementById('nomeTarefa').value = tarefa.nome || '';
   document.getElementById('descTarefa').value = tarefa.descricao || '';
   document.getElementById('descTarefa').removeAttribute('readonly');
@@ -8869,7 +9291,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     return;
   }
 
-  const funcionarioSelecionado = String(funcionarioIdOverride || '').trim() || String(tarefa.funcionario_id || '').trim();
+  const funcionarioSelecionado = String(funcionarioIdOverride || '').trim();
   if (!funcionarioSelecionado) {
     setMsg('msgTarefas', '', '');
     setMsgLancamentoTarefa(id, 'Marque um funcionário no card antes de lançar.', 'err');
@@ -8883,6 +9305,11 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   }
 
   const diasLancamento = String(diasSemanaOverride || '').trim().toLowerCase();
+  if (!diasLancamento) {
+    setMsg('msgTarefas', '', '');
+    setMsgLancamentoTarefa(id, 'Selecione pelo menos um dia da semana antes de lançar.', 'err');
+    return;
+  }
   const diasPermitidos = diasSemanaParaConjunto(diasLancamento || '');
   if (!diasPermitidos.size) {
     setMsg('msgTarefas', '', '');
@@ -9030,7 +9457,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   const mensagemSucesso = pulouHojePorHorario
     ? `Hoje foi ignorado (horário já passou). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
     : `${lancamentosParaCriar.length} lançamento(s) enviado(s) para a aba Checklists.`;
-  setMsg('msgTarefas', '', '');
+  setMsg('msgTarefas', mensagemSucesso, 'ok');
   setMsgLancamentoTarefa(id, mensagemSucesso, 'ok');
   carregarTarefas();
   carregarChecklistsTarefas();
@@ -9532,6 +9959,13 @@ async function iniciarChecklistDireto(lancamentoId) {
     return;
   }
 
+  const dataProgramada = String(lancamentoAtual.data_programada || '').trim();
+  const dataHoje = hoje();
+  if (dataProgramada && dataProgramada > dataHoje) {
+    setMsg('msgChecklists', `Este checklist está programado para ${formatarDataProgramadaBr(dataProgramada)} e ainda não pode ser iniciado.`, 'err');
+    return;
+  }
+
   const confirmacao = await confirmarAcaoComPin({
     funcionario: operador,
     titulo: 'Aceitar checklist',
@@ -9716,10 +10150,14 @@ function diaSemanaAtual() {
   return dias[new Date().getDay()];
 }
 
-function tarefaDisponivelHoje(diasSemana) {
+function tarefaDisponivelHoje(diasSemana, dataRef = hoje()) {
   if (!diasSemana || diasSemana === 'todos') return true;
-  const hoje = diaSemanaAtual();
-  return diasSemana.split(',').map(d => d.trim()).includes(hoje);
+  const dataBase = String(dataRef || '').trim();
+  const diaToken = dataBase
+    ? diaSemanaTokenDaData(new Date(`${dataBase}T00:00:00`))
+    : diaSemanaAtual();
+  if (!diaToken) return true;
+  return diasSemana.split(',').map(d => d.trim()).includes(diaToken);
 }
 
 async function carregarTarefasPortal() {
@@ -10329,7 +10767,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       container.innerHTML = '<div class="empty">Rode o SQL da tabela ponto_registros para usar o registro de ponto.</div>';
       return;
     }
-    container.innerHTML = `<div class="empty">Erro ao carregar histórico de ponto: ${mensagemErroSupabase(error, 'erro desconhecido')}.</div>`;
+    container.innerHTML = `<div class="empty">Erro ao carregar status de ponto: ${mensagemErroSupabase(error, 'erro desconhecido')}.</div>`;
     return;
   }
 
@@ -10361,84 +10799,67 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     });
   }
 
-  const eventos = [];
   const nomePadrao = 'Funcionário';
 
-  const obterStatusRegistro = (registro) => {
-    const intervalos = intervalosPorRegistro[String(registro.id)] || [];
-    const intervaloAberto = intervalos.some(item => item.inicio_em && !item.retorno_em);
-    const aberto = intervaloAberto || !registro.saida_em;
-    return {
-      texto: aberto ? 'Aberto' : 'Fechado',
-      classe: aberto ? 'tag tag-amber' : 'tag tag-green',
-    };
+  const formatarHora = (valorIso) => {
+    if (!valorIso) return '-';
+    const data = new Date(valorIso);
+    if (Number.isNaN(data.getTime())) return '-';
+    return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const statusPorFuncionario = {};
-  rows.forEach(item => {
-    const funcionarioId = String(item.funcionario_id || '');
-    if (!funcionarioId) return;
-    if (!statusPorFuncionario[funcionarioId]) {
-      const nome = item.funcionarios?.nome || relatorioPontoFuncionarioCache[funcionarioId] || nomePadrao;
-      statusPorFuncionario[funcionarioId] = {
-        nome,
-        ...obterStatusRegistro(item),
-      };
-    }
+  const statusPorFuncionario = new Map();
+  rows.forEach(registro => {
+    const funcionarioIdAtual = String(registro.funcionario_id || '');
+    if (!funcionarioIdAtual || statusPorFuncionario.has(funcionarioIdAtual)) return;
+
+    const nome = registro.funcionarios?.nome || relatorioPontoFuncionarioCache[funcionarioIdAtual] || nomePadrao;
+    const intervalos = intervalosPorRegistro[String(registro.id)] || [];
+    const intervaloAberto = intervalos.find(item => item.inicio_em && !item.retorno_em) || null;
+    const aberto = !!intervaloAberto || !registro.saida_em;
+
+    const eventos = [
+      registro.entrada_em,
+      registro.saida_em,
+      ...intervalos.map(item => item.inicio_em),
+      ...intervalos.map(item => item.retorno_em),
+    ]
+      .filter(Boolean)
+      .map(item => ({ bruto: item, ts: new Date(item).getTime() }))
+      .filter(item => !Number.isNaN(item.ts))
+      .sort((a, b) => b.ts - a.ts);
+
+    const ultimaBatida = eventos[0]?.bruto || null;
+    const textoStatus = aberto ? 'Aberto' : 'Fechado';
+    const classeStatus = aberto ? 'tag tag-amber' : 'tag tag-green';
+    const rotuloHora = aberto ? 'Última batida' : 'Fechado às';
+
+    statusPorFuncionario.set(funcionarioIdAtual, {
+      nome,
+      textoStatus,
+      classeStatus,
+      rotuloHora,
+      hora: formatarHora(ultimaBatida),
+    });
   });
 
-  rows.forEach(item => {
-    const nome = item.funcionarios?.nome || relatorioPontoFuncionarioCache[String(item.funcionario_id)] || nomePadrao;
-    const status = obterStatusRegistro(item);
-    if (item.entrada_em) {
-      eventos.push({ ts: item.entrada_em, nome, statusTexto: status.texto, statusClasse: status.classe });
-    }
-    if (item.saida_em) {
-      eventos.push({ ts: item.saida_em, nome, statusTexto: status.texto, statusClasse: status.classe });
-    }
-  });
-
-  intervalosData.forEach(intervalo => {
-    const registro = rows.find(r => String(r.id) === String(intervalo.ponto_registro_id));
-    const nome = registro?.funcionarios?.nome || relatorioPontoFuncionarioCache[String(registro?.funcionario_id)] || nomePadrao;
-    const status = registro ? obterStatusRegistro(registro) : { texto: 'Aberto', classe: 'tag tag-amber' };
-    if (intervalo.inicio_em) eventos.push({ ts: intervalo.inicio_em, nome, statusTexto: status.texto, statusClasse: status.classe });
-    if (intervalo.retorno_em) eventos.push({ ts: intervalo.retorno_em, nome, statusTexto: status.texto, statusClasse: status.classe });
-  });
-
-  const eventosOrdenados = eventos
-    .filter(item => !!item.ts)
-    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
-
-  if (!eventosOrdenados.length) {
-    container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
+  const listaStatus = Array.from(statusPorFuncionario.values()).filter(item => item.textoStatus === 'Aberto');
+  if (!listaStatus.length) {
+    container.innerHTML = '<div class="empty">Nenhum ponto em aberto no momento.</div>';
     return;
   }
 
-  const listaStatus = Object.values(statusPorFuncionario);
-  const blocoStatus = listaStatus.length
-    ? '<div class="lista">' + listaStatus.map(item => `
-      <div class="item">
-        <div class="item-info">
-          <div class="item-detalhe"><strong>${item.nome}</strong> · Ponto ${item.texto.toLowerCase()}</div>
-        </div>
-        <div class="item-actions">
-          <span class="${item.classe}">${item.texto}</span>
-        </div>
-      </div>
-    `).join('') + '</div>'
-    : '';
-
-  container.innerHTML = '<div class="lista">' + eventosOrdenados.map(item => `
+  container.innerHTML = '<div class="lista">' + listaStatus.map(item => `
     <div class="item">
       <div class="item-info">
-        <div class="item-detalhe">PONTO REGISTRADO • ${item.nome} • ${fmtDate(item.ts)}</div>
+        <div class="item-nome">${item.nome}</div>
+        <div class="item-detalhe">${item.rotuloHora}: ${item.hora}</div>
       </div>
       <div class="item-actions">
-        <span class="${item.statusClasse}">${item.statusTexto}</span>
+        <span class="${item.classeStatus}">${item.textoStatus}</span>
       </div>
     </div>
-  `).join('') + '</div>' + blocoStatus + '<div style="font-size:12px;color:var(--text-dim);margin-top:8px">Status do ponto: Aberto = jornada em andamento ou fora para intervalo. Fechado = último registro com saída concluída.</div>';
+  `).join('') + '</div>';
 }
 
 async function carregarBaterPonto() {
@@ -11147,7 +11568,7 @@ async function obterLinhasBaseExecucoes(dataExecucao = hoje()) {
   let query = sb
     .from('checklist_execucoes')
     .select('id, funcionario_id, usuario_inicio_id, usuario_fim_id, data_execucao, status')
-    .in('status', ['aberto', 'pausado', 'finalizado']);
+    .in('status', ['aberto', 'pausado']);
 
   if (!usuarioPodeVerTodasExecucoes() && usuarioSistemaLogado?.id) {
     query = query.or(`funcionario_id.eq.${usuarioSistemaLogado.id},usuario_inicio_id.eq.${usuarioSistemaLogado.id},usuario_fim_id.eq.${usuarioSistemaLogado.id}`);
@@ -11155,7 +11576,7 @@ async function obterLinhasBaseExecucoes(dataExecucao = hoje()) {
 
   const { data: rows, error } = await query;
   if (error) throw error;
-  return (rows || []).filter(item => item.status !== 'finalizado' || item.data_execucao === dataExecucao);
+  return rows || [];
 }
 
 async function obterMapaFuncionariosExecucao(rows = []) {
@@ -11330,7 +11751,7 @@ async function carregarExecucoes() {
     let query = sb
       .from('checklist_execucoes')
       .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, usuario_inicio_id, usuario_fim_id, iniciado_em, inicio_confirmado_em, finalizado_em, finalizacao_confirmada_em, status, data_execucao')
-      .in('status', ['aberto', 'pausado', 'finalizado'])
+      .in('status', ['aberto', 'pausado'])
       .order('iniciado_em', { ascending: false });
 
     if (!usuarioPodeVerTodasExecucoes() && usuarioSistemaLogado?.id) {
@@ -11341,7 +11762,6 @@ async function carregarExecucoes() {
     if (error) throw error;
 
     const rows = (rowsBrutas || []).filter(item => {
-      if (item.status === 'finalizado' && item.data_execucao !== data) return false;
       if (!execucaoDentroDoFiltroHora(item, horaInicio, horaFim)) return false;
       if (funcionarioId && String(item.funcionario_id || '') !== String(funcionarioId)) return false;
       if (usuarioInicioId && String(item.usuario_inicio_id || '') !== String(usuarioInicioId)) return false;
@@ -11876,6 +12296,10 @@ window.addEventListener('resize', function() {
   }
 });
 
+window.addEventListener('pageshow', function() {
+  redefinirCampoBuscaTarefas();
+});
+
 ['click', 'keydown', 'touchstart'].forEach(eventName => {
   window.addEventListener(eventName, habilitarSomNotificacao, { once: true });
 });
@@ -11887,6 +12311,7 @@ carregarNotificacoes();
 iniciarAtualizacaoAutomatica();
 window.setTimeout(() => {
   forcarCampoObservacaoTarefaEmBranco();
+  redefinirCampoBuscaTarefas();
 }, 250);
 </script>
 
@@ -12391,6 +12816,7 @@ function salvarSessaoSistema(usuario) {
   iniciarAtualizacaoAutomatica();
   window.setTimeout(() => {
     forcarCampoObservacaoTarefaEmBranco();
+    redefinirCampoBuscaTarefas();
   }, 250);
   renderizarItensTarefaNoCadastro();
   document.getElementById('nomeItemTarefaCadastro')?.addEventListener('keydown', (event) => {
