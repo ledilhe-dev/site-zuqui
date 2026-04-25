@@ -3541,7 +3541,7 @@
             </div>
             <div class="campo-com-label valor">
               <label class="campo-label" for="contaValorCompra">Valor da compra</label>
-              <input id="contaValorCompra" class="campo-curto" type="text" inputmode="decimal" placeholder="0,00">
+                <input id="contaValorCompra" class="campo-curto" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" required>
             </div>
             <div class="campo-com-label parcela">
               <label class="campo-label" for="contaQtdParcelas">Qtd parcelas</label>
@@ -8666,8 +8666,40 @@ function formatarMoedaBRFinanceiro(valor = 0) {
 function lerValorMonetarioFinanceiro(valor = '') {
   const txt = String(valor || '').trim();
   if (!txt) return NaN;
-  const normalizado = txt.replace(/\./g, '').replace(',', '.');
+  const semMoeda = txt.replace(/[^\d,.-]/g, '');
+  if (!semMoeda) return NaN;
+  const normalizado = semMoeda.replace(/\./g, '').replace(',', '.');
   return Number(normalizado);
+}
+
+function formatarEntradaMoedaFinanceiro(valor = '') {
+  const digitos = String(valor || '').replace(/\D/g, '');
+  if (!digitos) return '';
+  return formatarMoedaBRFinanceiro(Number(digitos) / 100);
+}
+
+function configurarCampoValorCompraFinanceiro(limpar = false) {
+  const campo = document.getElementById('contaValorCompra');
+  if (!campo) return;
+
+  if (campo.dataset.financeiroMoedaReady !== '1') {
+    campo.dataset.financeiroMoedaReady = '1';
+    campo.setAttribute('autocomplete', 'off');
+    campo.addEventListener('input', () => {
+      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
+    });
+    campo.addEventListener('blur', () => {
+      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
+    });
+  }
+
+  if (limpar) {
+    campo.value = '';
+    campo.removeAttribute('value');
+    return;
+  }
+
+  campo.value = formatarEntradaMoedaFinanceiro(campo.value);
 }
 
 function adicionarDiasDataISOFinanceiro(dataISO = '', dias = 0) {
@@ -9159,7 +9191,7 @@ function limparFormularioContaAPagarFinanceiro() {
   if (campoFornecedorId) campoFornecedorId.value = '';
   if (campoCompra) campoCompra.value = hoje();
   if (campoVencimento) campoVencimento.value = hoje();
-  if (campoValor) campoValor.value = '';
+  configurarCampoValorCompraFinanceiro(true);
   if (campoQtdParcelas) campoQtdParcelas.value = '';
   if (campoIntervaloParcelas) campoIntervaloParcelas.value = '';
   if (campoObservacao) campoObservacao.value = '';
@@ -9359,7 +9391,7 @@ function editarContaAPagarFinanceiro(id) {
   document.getElementById('contaFornecedorId').value = item.fornecedor_id || '';
   document.getElementById('contaDataCompra').value = item.data_compra || '';
   document.getElementById('contaDataVencimento').value = item.data_vencimento || '';
-  document.getElementById('contaValorCompra').value = Number(item.valor_compra || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  configurarCampoValorCompraFinanceiro(true);
   document.getElementById('contaObservacao').value = item.observacao || '';
   document.getElementById('contaQtdParcelas').value = item.qtd_parcelas ? String(item.qtd_parcelas) : '';
   document.getElementById('contaIntervaloParcelasDias').value = item.intervalo_parcelas_dias ? String(item.intervalo_parcelas_dias) : '';
@@ -9367,7 +9399,7 @@ function editarContaAPagarFinanceiro(id) {
   const btnCancelar = document.getElementById('btnCancelarContaAPagarFinanceiro');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
-  setMsg('msgContaAPagarFinanceiro', `Editando conta de ${item.fornecedores?.nome || 'fornecedor'}.`, 'ok');
+  setMsg('msgContaAPagarFinanceiro', `Editando conta de ${item.fornecedores?.nome || 'fornecedor'}. Reinforme o valor da compra.`, 'ok');
 }
 
 async function excluirContaAPagarFinanceiro(id) {
