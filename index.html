@@ -3426,6 +3426,7 @@
               <option value="">- Todos os status -</option>
               <option value="pendente">Pendente</option>
               <option value="pago">Pago</option>
+              <option value="excluido">Excluído</option>
             </select>
             <select id="filtroRelFinanceiroFornecedor">
               <option value="">- Todos os fornecedores -</option>
@@ -5237,6 +5238,17 @@ function isMissingContasAPagarPagamentoColumnsError(error) {
     msg.includes('forma_pagamento') ||
     msg.includes('forma_pagamento_id') ||
     msg.includes('pago_confirmado_em')
+  );
+}
+
+function isMissingContasAPagarAuditoriaColumnsError(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  return error?.code === '42703' && (
+    msg.includes('criado_por_id') ||
+    msg.includes('criado_por_nome') ||
+    msg.includes('excluido_em') ||
+    msg.includes('excluido_por_id') ||
+    msg.includes('excluido_por_nome')
   );
 }
 
@@ -9349,12 +9361,13 @@ async function salvarContaAPagarFinanceiro() {
   };
 
   const editando = !!contaAPagarFinanceiroEmEdicaoId;
+  const atorAuditoria = obterAtorAuditoriaAtual();
   let query = null;
   if (editando) {
     query = sb.from('contasapagar').update({
       ...payloadBase,
       numero_parcela: Number.parseInt(String(contasAPagarFinanceiroCache.find(item => String(item.id) === String(contaAPagarFinanceiroEmEdicaoId))?.numero_parcela || 1), 10) || 1,
-    }).eq('id', contaAPagarFinanceiroEmEdicaoId);
+    }).eq('id', contaAPagarFinanceiroEmEdicaoId).is('excluido_em', null);
   } else {
     const grupoParcelasId = crypto?.randomUUID ? crypto.randomUUID() : null;
     const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
@@ -9363,14 +9376,16 @@ async function salvarContaAPagarFinanceiro() {
       data_vencimento: adicionarDiasDataISOFinanceiro(dataVencimento, idx * (intervaloParcelasDiasFinal || 0)),
       numero_parcela: idx + 1,
       grupo_parcelas_id: grupoParcelasId,
+      criado_por_id: atorAuditoria.funcionarioId || null,
+      criado_por_nome: atorAuditoria.nome || 'Sistema',
     }));
     query = sb.from('contasapagar').insert(linhas);
   }
 
   const { error } = await query;
   if (error) {
-    if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingColumnError(error)) {
-      setMsg('msgContaAPagarFinanceiro', 'Rode o SQL das tabelas financeiras antes de usar esta tela.', 'err');
+    if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingContasAPagarAuditoriaColumnsError(error) || isMissingColumnError(error)) {
+      setMsg('msgContaAPagarFinanceiro', 'Rode o SQL mais recente do financeiro antes de usar esta tela.', 'err');
       return;
     }
     setMsg('msgContaAPagarFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
@@ -9399,12 +9414,17 @@ async function carregarContasAPagarFinanceiro() {
   const { data, error } = await sb
     .from('contasapagar')
     .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, observacao, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, created_at, fornecedores(nome)')
+    .is('excluido_em', null)
     .order('data_vencimento', { ascending: true });
 
   if (error) {
     contasAPagarFinanceiroCache = [];
     if (isMissingContasAPagarTableError(error)) {
       lista.innerHTML = '<div class="empty">Rode o SQL da tabela contasapagar para habilitar este cadastro.</div>';
+      return;
+    }
+    if (isMissingContasAPagarAuditoriaColumnsError(error)) {
+      lista.innerHTML = '<div class="empty">Rode a migration de auditoria do contas a pagar para habilitar este cadastro.</div>';
       return;
     }
     if (isMissingFornecedoresTableError(error)) {
@@ -9475,10 +9495,45 @@ function editarContaAPagarFinanceiro(id) {
 }
 
 async function excluirContaAPagarFinanceiro(id) {
-  if (!confirm('Excluir esta conta a pagar?')) return;
-  const { error } = await sb.from('contasapagar').delete().eq('id', id);
+  const item = contasAPagarFinanceiroCache.find(conta => String(conta.id) === String(id));
+  if (!item) {
+    setMsg('msgContaAPagarFinanceiro', 'Conta não encontrada.', 'err');
+    return;
+  }
+
+  const operador = obterFuncionarioOperadorAtual();
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: operador,
+    titulo: 'Excluir conta a pagar',
+    subtitulo: `Confirme o PIN para excluir a conta de ${item.fornecedores?.nome || 'fornecedor'}. A exclusão ficará registrada no relatório.`,
+    textoAcao: 'Excluir conta',
+  });
+
+  if (!confirmacao) return;
+
+  const { data, error } = await sb
+    .from('contasapagar')
+    .update({
+      excluido_em: confirmacao.confirmadoEm,
+      excluido_por_id: confirmacao.funcionarioId,
+      excluido_por_nome: confirmacao.nomeFuncionario,
+    })
+    .eq('id', id)
+    .is('excluido_em', null)
+    .select('id')
+    .maybeSingle();
+
   if (error) {
+    if (isMissingContasAPagarAuditoriaColumnsError(error)) {
+      setMsg('msgContaAPagarFinanceiro', 'Rode a migration de auditoria do contas a pagar antes de excluir.', 'err');
+      return;
+    }
     setMsg('msgContaAPagarFinanceiro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  if (!data?.id) {
+    setMsg('msgContaAPagarFinanceiro', 'Esta conta já foi excluída ou não está mais disponível.', 'err');
+    carregarContasAPagarFinanceiro();
     return;
   }
   if (contaAPagarFinanceiroEmEdicaoId === id) limparFormularioContaAPagarFinanceiro();
@@ -9488,6 +9543,22 @@ async function excluirContaAPagarFinanceiro(id) {
 
 function obterStatusContaBaixaFinanceiro(item) {
   return item?.pago_confirmado_em ? 'pago' : 'pendente';
+}
+
+function obterStatusContaRelatorioFinanceiro(item) {
+  if (item?.excluido_em) return 'excluido';
+  return obterStatusContaBaixaFinanceiro(item);
+}
+
+function obterDataReferenciaContaRelatorioFinanceiro(item) {
+  if (item?.excluido_em) return String(item.excluido_em || '').trim();
+  return String(item?.data_pagamento || item?.data_vencimento || item?.data_compra || '').trim();
+}
+
+function tagStatusContaRelatorioFinanceiro(status = '') {
+  if (status === 'pago') return '<span class="tag tag-green">Pago</span>';
+  if (status === 'excluido') return '<span class="tag tag-red">Excluído</span>';
+  return '<span class="tag tag-amber">Pendente</span>';
 }
 
 async function carregarBaixarContasFinanceiro() {
@@ -9501,12 +9572,17 @@ async function carregarBaixarContasFinanceiro() {
   const { data, error } = await sb
     .from('contasapagar')
     .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo)')
+    .is('excluido_em', null)
     .order('data_vencimento', { ascending: true });
 
   if (error) {
     contasBaixarFinanceiroCache = [];
     if (isMissingContasAPagarTableError(error)) {
       lista.innerHTML = '<div class="empty">Rode o SQL da tabela contasapagar para habilitar esta aba.</div>';
+      return;
+    }
+    if (isMissingContasAPagarAuditoriaColumnsError(error)) {
+      lista.innerHTML = '<div class="empty">Rode a migration de auditoria do contas a pagar para habilitar esta aba.</div>';
       return;
     }
     if (isMissingFormasPagamentoTableError(error)) {
@@ -9601,9 +9677,9 @@ async function editarPagamentoContaFinanceiro(id) {
     forma_pagamento: formaSelecionada.nome,
   };
 
-  const { error } = await sb.from('contasapagar').update(payload).eq('id', id);
+  const { error } = await sb.from('contasapagar').update(payload).eq('id', id).is('excluido_em', null);
   if (error) {
-    if (isMissingContasAPagarPagamentoColumnsError(error)) {
+    if (isMissingContasAPagarPagamentoColumnsError(error) || isMissingContasAPagarAuditoriaColumnsError(error)) {
       setMsg('msgBaixarContasFinanceiro', 'Rode o SQL da migração de baixa de contas para habilitar esses campos.', 'err');
       return;
     }
@@ -9650,9 +9726,9 @@ async function confirmarPagamentoContaFinanceiro(id) {
     pago_confirmado_em: new Date().toISOString(),
   };
 
-  const { error } = await sb.from('contasapagar').update(payload).eq('id', id);
+  const { error } = await sb.from('contasapagar').update(payload).eq('id', id).is('excluido_em', null);
   if (error) {
-    if (isMissingContasAPagarPagamentoColumnsError(error)) {
+    if (isMissingContasAPagarPagamentoColumnsError(error) || isMissingContasAPagarAuditoriaColumnsError(error)) {
       setMsg('msgBaixarContasFinanceiro', 'Rode o SQL da migração de baixa de contas para habilitar confirmação de pagamento.', 'err');
       return;
     }
@@ -9670,7 +9746,8 @@ async function desconfirmarPagamentoContaFinanceiro(id) {
   const { error } = await sb
     .from('contasapagar')
     .update({ pago_confirmado_em: null })
-    .eq('id', id);
+    .eq('id', id)
+    .is('excluido_em', null);
 
   if (error) {
     setMsg('msgBaixarContasFinanceiro', `Não foi possível reabrir a conta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
@@ -12808,7 +12885,7 @@ function renderizarDashboardFornecedoresRelatorioFinanceiro(itens = []) {
 
   const agregados = {};
   itens.forEach(item => {
-    if (obterStatusContaBaixaFinanceiro(item) !== 'pago') return;
+    if (obterStatusContaRelatorioFinanceiro(item) !== 'pago') return;
     const nome = obterNomeFornecedorRelatorioFinanceiro(item);
     if (!agregados[nome]) agregados[nome] = { nome, total: 0, qtd: 0 };
     agregados[nome].total += obterValorPagoRelatorioFinanceiro(item);
@@ -12845,7 +12922,7 @@ function renderizarDashboardFormasRelatorioFinanceiro(itens = []) {
   const agregados = {};
   let totalPagamentos = 0;
   itens.forEach(item => {
-    if (obterStatusContaBaixaFinanceiro(item) !== 'pago') return;
+    if (obterStatusContaRelatorioFinanceiro(item) !== 'pago') return;
     const nome = obterNomeFormaRelatorioFinanceiro(item);
     if (!agregados[nome]) agregados[nome] = { nome, total: 0, qtd: 0 };
     agregados[nome].total += obterValorPagoRelatorioFinanceiro(item);
@@ -12905,10 +12982,15 @@ function exportarRelatorioFinanceiroCsv() {
     'Valor pago',
     'Parcela',
     'Observacao',
+    'Criado por',
+    'Cadastrado em',
+    'Excluido por',
+    'Excluido em',
   ];
 
   const linhas = itens.map(item => {
-    const status = obterStatusContaBaixaFinanceiro(item) === 'pago' ? 'Pago' : 'Pendente';
+    const statusAtual = obterStatusContaRelatorioFinanceiro(item);
+    const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
     const parcela = `${item.numero_parcela || 1}/${item.qtd_parcelas || 1}`;
     return [
       obterNomeFornecedorRelatorioFinanceiro(item),
@@ -12921,6 +13003,10 @@ function exportarRelatorioFinanceiroCsv() {
       obterValorPagoRelatorioFinanceiro(item).toFixed(2),
       parcela,
       String(item.observacao || '').trim(),
+      String(item.criado_por_nome || 'Cadastro anterior').trim(),
+      item.created_at ? fmtDate(item.created_at) : '-',
+      String(item.excluido_por_nome || '').trim() || '-',
+      item.excluido_em ? fmtDate(item.excluido_em) : '-',
     ].map(escaparCsvRelatorioFinanceiro).join(';');
   });
 
@@ -12953,7 +13039,8 @@ function imprimirRelatorioFinanceiroPdf() {
   }, 0);
 
   const linhas = itens.map(item => {
-    const status = obterStatusContaBaixaFinanceiro(item) === 'pago' ? 'Pago' : 'Pendente';
+    const statusAtual = obterStatusContaRelatorioFinanceiro(item);
+    const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
     return `
       <tr>
         <td>${escaparHtmlBasico(obterNomeFornecedorRelatorioFinanceiro(item))}</td>
@@ -12963,6 +13050,8 @@ function imprimirRelatorioFinanceiroPdf() {
         <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_compra || 0))}</td>
         <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item)))}</td>
         <td>${escaparHtmlBasico(String(item.observacao || '').trim() || '-')}</td>
+        <td>${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')}<br>${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</td>
+        <td>${escaparHtmlBasico(String(item.excluido_por_nome || '').trim() || '-')}<br>${escaparHtmlBasico(item.excluido_em ? fmtDate(item.excluido_em) : '-')}</td>
       </tr>
     `;
   }).join('');
@@ -13009,6 +13098,8 @@ function imprimirRelatorioFinanceiroPdf() {
               <th>Valor título</th>
               <th>Valor pago</th>
               <th>Observação</th>
+              <th>Cadastro</th>
+              <th>Exclusão</th>
             </tr>
           </thead>
           <tbody>${linhas}</tbody>
@@ -13032,13 +13123,13 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
   }
 
   const ordenados = [...itens].sort((a, b) => {
-    const dataA = new Date(`${a.data_vencimento || a.data_pagamento || '1970-01-01'}T00:00:00`).getTime();
-    const dataB = new Date(`${b.data_vencimento || b.data_pagamento || '1970-01-01'}T00:00:00`).getTime();
+    const dataA = new Date(obterDataReferenciaContaRelatorioFinanceiro(a) || '1970-01-01T00:00:00').getTime();
+    const dataB = new Date(obterDataReferenciaContaRelatorioFinanceiro(b) || '1970-01-01T00:00:00').getTime();
     return dataB - dataA;
   });
 
   lista.innerHTML = '<div class="lista">' + ordenados.map(item => {
-    const status = obterStatusContaBaixaFinanceiro(item);
+    const status = obterStatusContaRelatorioFinanceiro(item);
     const valorCompra = Number(item.valor_compra || 0);
     const valorPago = obterValorPagoRelatorioFinanceiro(item);
     const fornecedor = obterNomeFornecedorRelatorioFinanceiro(item);
@@ -13052,9 +13143,11 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
           <div class="item-detalhe">Valor do titulo: ${formatarMoedaBRFinanceiro(valorCompra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)}</div>
           <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
+          <div class="item-detalhe">Cadastro: ${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
+          <div class="item-detalhe">Exclusão: ${escaparHtmlBasico(String(item.excluido_por_nome || '').trim() || '-')} · ${escaparHtmlBasico(item.excluido_em ? fmtDate(item.excluido_em) : '-')}</div>
         </div>
         <div class="item-actions">
-          ${status === 'pago' ? '<span class="tag tag-green">Pago</span>' : '<span class="tag tag-amber">Pendente</span>'}
+          ${tagStatusContaRelatorioFinanceiro(status)}
         </div>
       </div>
     `;
@@ -13112,11 +13205,11 @@ async function carregarRelatorioFinanceiro() {
   try {
     const { data, error } = await sb
       .from('contasapagar')
-      .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, fornecedores(nome), formas_pagamento(id, nome)')
+      .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, criado_por_nome, excluido_em, excluido_por_nome, fornecedores(nome), formas_pagamento(id, nome)')
       .order('data_vencimento', { ascending: false });
 
     if (error) {
-      if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingFormasPagamentoTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingColumnError(error)) {
+      if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingFormasPagamentoTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingContasAPagarAuditoriaColumnsError(error) || isMissingColumnError(error)) {
         listaDetalhes.innerHTML = '<div class="empty">Rode as migrations do financeiro para habilitar este relatorio.</div>';
         listaFornecedores.innerHTML = '<div class="empty">Dependencias do financeiro nao encontradas.</div>';
         listaFormas.innerHTML = '<div class="empty">Dependencias do financeiro nao encontradas.</div>';
@@ -13157,11 +13250,11 @@ async function carregarRelatorioFinanceiro() {
     const filtroBusca = textoFinanceiroNormalizado(String(campoBusca?.value || '').trim());
 
     const itensFiltrados = rows.filter(item => {
-      const status = obterStatusContaBaixaFinanceiro(item);
+      const status = obterStatusContaRelatorioFinanceiro(item);
       const fornecedorId = String(item.fornecedor_id || '').trim();
       const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
       const formaNome = obterNomeFormaRelatorioFinanceiro(item);
-      const dataReferencia = String(item.data_pagamento || item.data_vencimento || item.data_compra || '').trim();
+      const dataReferencia = obterDataReferenciaContaRelatorioFinanceiro(item);
       const textoBusca = textoFinanceiroNormalizado([
         obterNomeFornecedorRelatorioFinanceiro(item),
         formaNome,
@@ -13169,6 +13262,8 @@ async function carregarRelatorioFinanceiro() {
         item.data_compra || '',
         item.data_vencimento || '',
         item.data_pagamento || '',
+        item.criado_por_nome || '',
+        item.excluido_por_nome || '',
       ].join(' '));
 
       if (filtroDataInicio && (!dataReferencia || dataReferencia < filtroDataInicio)) return false;
@@ -13183,9 +13278,12 @@ async function carregarRelatorioFinanceiro() {
     relatorioFinanceiroCache = itensFiltrados;
 
     const totalGeral = itensFiltrados.reduce((acc, item) => acc + (Number(item.valor_compra || 0) || 0), 0);
-    const totalPago = itensFiltrados.reduce((acc, item) => acc + obterValorPagoRelatorioFinanceiro(item), 0);
+    const totalPago = itensFiltrados.reduce((acc, item) => {
+      if (obterStatusContaRelatorioFinanceiro(item) !== 'pago') return acc;
+      return acc + obterValorPagoRelatorioFinanceiro(item);
+    }, 0);
     const totalPendente = itensFiltrados.reduce((acc, item) => {
-      if (obterStatusContaBaixaFinanceiro(item) === 'pago') return acc;
+      if (obterStatusContaRelatorioFinanceiro(item) !== 'pendente') return acc;
       const valorCompra = Number(item.valor_compra || 0);
       return acc + (Number.isFinite(valorCompra) ? valorCompra : 0);
     }, 0);
