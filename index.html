@@ -456,6 +456,16 @@
     .topbar-main > div {
       display: none;
     }
+    #topbarTitleWrap {
+      display: block !important;
+      min-width: 0;
+    }
+    #topbar-title,
+    #topbar-sub {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .topbar-user {
       display: inline-flex;
       flex-direction: column;
@@ -966,6 +976,10 @@
       margin-bottom: 1px;
     }
     .page-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 8px; }
+    .pagina > .page-title,
+    .pagina > .page-sub {
+      display: none;
+    }
 
     /* ---- CARDS / GRID ---- */
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -1134,44 +1148,68 @@
         box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.05);
       }
     }
-    .rf-chart {
+    .rf-pie-dashboard {
       display: grid;
-      gap: 8px;
-      margin: 0 0 12px;
+      grid-template-columns: 132px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      min-height: 142px;
+      margin: 0;
       padding: 10px;
       border: 1px dashed var(--border);
       border-radius: var(--radius-sm);
       background: rgba(0, 0, 0, 0.12);
     }
-    .rf-chart-row {
+    .rf-pie {
+      width: 124px;
+      height: 124px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: var(--surface2);
+      position: relative;
+      overflow: hidden;
+    }
+    .rf-pie::after {
+      content: '';
+      position: absolute;
+      inset: 36px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .rf-pie-legenda {
       display: grid;
-      grid-template-columns: minmax(120px, 240px) 1fr auto;
+      gap: 7px;
+      min-width: 0;
+    }
+    .rf-pie-legenda-item {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
-    }
-    .rf-chart-label {
-      font-size: 12px;
       color: var(--text-muted);
-      white-space: nowrap;
+      font-size: 12px;
+    }
+    .rf-pie-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .rf-pie-nome {
       overflow: hidden;
+      white-space: nowrap;
       text-overflow: ellipsis;
     }
-    .rf-chart-track {
-      width: 100%;
-      height: 12px;
-      border-radius: 999px;
-      background: var(--surface2);
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    .rf-chart-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #16a34a, #22c55e);
-    }
-    .rf-chart-value {
-      font-size: 12px;
-      color: var(--text);
+    .rf-pie-valor {
       font-family: 'DM Mono', monospace;
+      color: var(--text);
+      font-size: 11px;
+    }
+    .rf-dashboard-pizzas-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
     }
 
     /* ---- FORM ---- */
@@ -1297,7 +1335,14 @@
     }
     .card.card-compact {
       padding-top: 10px;
-      padding-bottom: 10px;
+      padding-bottom: 6px;
+    }
+    #financeiro_contasapagar .card.card-compact {
+      margin-bottom: 8px;
+    }
+    #financeiro_contasapagar #msgContaAPagarFinanceiro:empty {
+      min-height: 0;
+      margin-top: 0;
     }
     .financeiro-form-row {
         display: grid;
@@ -1395,6 +1440,135 @@
       min-width: 150px;
       max-width: 150px;
     }
+    .financeiro-card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+    .financeiro-card-title-row .card-title {
+      margin-bottom: 0;
+    }
+    .financeiro-card-title-row #btnToggleContasAPagarLista {
+      margin-left: clamp(80px, 24vw, 340px);
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.16);
+      color: var(--text);
+      box-shadow: 0 8px 18px rgba(34, 197, 94, 0.12);
+      min-width: 138px;
+    }
+    .financeiro-card-title-row #btnToggleContasAPagarLista:hover {
+      border-color: rgba(34, 197, 94, 0.72);
+      background: rgba(34, 197, 94, 0.24);
+    }
+    .relatorio-financeiro-filtros {
+      display: grid;
+      grid-template-columns:
+        minmax(122px, 0.9fr)
+        minmax(122px, 0.9fr)
+        minmax(132px, 1fr)
+        minmax(170px, 1.25fr)
+        minmax(160px, 1.15fr)
+        minmax(76px, auto)
+        minmax(64px, auto);
+      gap: 8px;
+      align-items: end;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .relatorio-financeiro-filtros .campo-com-label {
+      max-width: none;
+      min-width: 0;
+      flex: initial;
+      padding-top: 17px;
+    }
+    .relatorio-financeiro-filtros .campo-label {
+      left: 0;
+      width: 100%;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 11px;
+      text-align: left;
+    }
+    .relatorio-financeiro-filtros input,
+    .relatorio-financeiro-filtros select {
+      width: 100%;
+      min-width: 0;
+      height: 38px;
+      min-height: 38px;
+      max-height: 38px;
+      padding: 7px 9px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+    }
+    .relatorio-financeiro-filtros input:focus,
+    .relatorio-financeiro-filtros select:focus {
+      border-color: var(--green);
+    }
+    .relatorio-financeiro-filtros input::placeholder {
+      color: var(--text-dim);
+    }
+    .relatorio-financeiro-filtros select option {
+      background: #111;
+      color: var(--text);
+    }
+    .relatorio-financeiro-filtros .btn {
+      height: 38px;
+      min-height: 38px;
+      min-width: 0;
+      padding: 0 12px;
+      white-space: nowrap;
+    }
+    .relatorio-financeiro-acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .relatorio-financeiro-atalho {
+      border-color: rgba(34, 197, 94, 0.22);
+      background: rgba(34, 197, 94, 0.08);
+      color: var(--text);
+    }
+    .btn-export-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      margin-right: 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      color: #fff;
+      letter-spacing: 0;
+    }
+    .btn-export-excel {
+      border-color: rgba(22, 163, 74, 0.4);
+      background: rgba(22, 163, 74, 0.12);
+    }
+    .btn-export-excel .btn-export-icon {
+      background: #107c41;
+    }
+    .btn-export-pdf {
+      border-color: rgba(220, 38, 38, 0.46);
+      background: rgba(220, 38, 38, 0.12);
+    }
+    .btn-export-pdf .btn-export-icon {
+      background: #d71920;
+      font-size: 9px;
+    }
     @media (max-width: 1200px) {
       .financeiro-form-row {
         grid-template-columns: repeat(3, minmax(180px, 1fr));
@@ -1421,17 +1595,25 @@
         min-width: 180px;
         max-width: 100%;
       }
+      .relatorio-financeiro-filtros {
+        grid-template-columns: repeat(3, minmax(160px, 1fr));
+      }
+      .relatorio-financeiro-filtros .btn {
+        width: 100%;
+      }
     }
     @media (max-width: 768px) {
       #financeiro_contasapagar .card {
-        padding: 14px;
+        padding: 12px;
+        border-radius: 10px;
       }
       #financeiro_contasapagar .card-title {
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+        font-size: 12px;
       }
       .financeiro-form-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 9px;
       }
       .financeiro-form-row .campo-com-label {
         padding-top: 15px;
@@ -1462,13 +1644,26 @@
         font-size: 15px;
       }
       .financeiro-observacao-row {
-        margin-top: 10px !important;
+        margin-top: 9px !important;
       }
       .financeiro-observacao-row input {
         width: 100%;
       }
       .financeiro-filtros-row {
         display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      #financeiro_contasapagar .financeiro-card-title-row {
+        align-items: stretch;
+        gap: 8px;
+      }
+      #financeiro_contasapagar .financeiro-card-title-row #btnToggleContasAPagarLista {
+        margin-left: auto;
+        min-width: 132px;
+        min-height: 40px;
+      }
+      .relatorio-financeiro-filtros {
         grid-template-columns: 1fr;
         gap: 10px;
       }
@@ -1483,15 +1678,32 @@
       #listaContasAPagarFinanceiro .item,
       #listaBaixarContasFinanceiro .item {
         padding: 12px;
+        gap: 10px;
       }
       #listaContasAPagarFinanceiro .item-detalhe,
       #listaBaixarContasFinanceiro .item-detalhe {
         line-height: 1.45;
       }
+      #listaContasAPagarFinanceiro .item-actions {
+        width: 100%;
+        justify-content: stretch;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      #listaContasAPagarFinanceiro .item-actions .tag,
+      #listaContasAPagarFinanceiro .item-actions .btn {
+        width: 100%;
+        min-height: 40px;
+        justify-content: center;
+      }
     }
     @media (max-width: 540px) {
+      #financeiro_contasapagar .card.card-compact {
+        padding: 10px;
+      }
       .financeiro-form-row {
         grid-template-columns: 1fr;
+        gap: 8px;
       }
       .financeiro-form-row .campo-com-label,
       .financeiro-form-row #btnSalvarContaAPagarFinanceiro,
@@ -1500,6 +1712,32 @@
       }
       .financeiro-form-row .campo-com-label .campo-label {
         font-size: 10px;
+      }
+      .financeiro-form-row .campo-com-label input,
+      .financeiro-observacao-row input {
+        height: 46px;
+        min-height: 46px;
+      }
+      .financeiro-form-row #btnSalvarContaAPagarFinanceiro,
+      .financeiro-form-row #btnCancelarContaAPagarFinanceiro {
+        width: 100%;
+        min-height: 48px;
+      }
+      #financeiro_contasapagar .financeiro-card-title-row {
+        flex-direction: column;
+      }
+      #financeiro_contasapagar .financeiro-card-title-row #btnToggleContasAPagarLista {
+        margin-left: 0;
+        width: 100%;
+      }
+      #listaContasAPagarFinanceiro .item {
+        align-items: stretch;
+      }
+      #listaContasAPagarFinanceiro .item-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+      #listaContasAPagarFinanceiro .item-actions .tag {
+        grid-column: 1 / -1;
       }
       #financeiro_contasapagar .page-sub {
         line-height: 1.4;
@@ -2201,6 +2439,23 @@
       justify-content: flex-end;
       flex-shrink: 0;
     }
+    .confirmacao-destaque-box {
+      border: 1px solid rgba(34, 197, 94, 0.22);
+      border-radius: var(--radius);
+      background: rgba(34, 197, 94, 0.07);
+      padding: 12px;
+      display: grid;
+      gap: 7px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .confirmacao-destaque-box strong {
+      color: var(--text);
+      font-size: 15px;
+    }
+    .confirmacao-destaque-box span {
+      color: var(--text-muted);
+    }
     .forma-pagamento-modal-intro {
       font-size: 13px;
       color: var(--text-muted);
@@ -2682,12 +2937,15 @@
 
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: 1fr; }
-      .rf-chart-row {
+      .rf-pie-dashboard {
         grid-template-columns: 1fr;
-        gap: 5px;
+        justify-items: center;
       }
-      .rf-chart-value {
-        justify-self: start;
+      .rf-pie-legenda {
+        width: 100%;
+      }
+      .rf-dashboard-pizzas-grid {
+        grid-template-columns: 1fr;
       }
       .content {
         padding: max(12px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom));
@@ -3175,7 +3433,7 @@
     <div class="topbar">
       <div class="topbar-main">
         <button class="btn btn-ghost mobile-menu-btn" type="button" onclick="toggleMobileMenu()" aria-label="Abrir menu">☰</button>
-        <div id="topbarTitleWrap" style="display:none">
+        <div id="topbarTitleWrap">
           <h1 id="topbar-title">Dashboard</h1>
           <div class="sub" id="topbar-sub">Visao geral do sistema</div>
         </div>
@@ -3774,30 +4032,47 @@
 
       <section id="relatorio_financeiro" class="pagina">
         <div class="page-title">Relatório financeiro</div>
-        <div class="page-sub">Visão robusta de títulos, pagamentos, fornecedores e formas de pagamento</div>
 
         <div class="card">
-          <div class="card-title">Filtros financeiros</div>
-          <div class="form-row">
-            <input id="filtroRelFinanceiroDataInicio" type="date">
-            <input id="filtroRelFinanceiroDataFim" type="date">
-            <select id="filtroRelFinanceiroStatus">
-              <option value="">- Todos os status -</option>
-              <option value="pendente">Pendente</option>
-              <option value="pago">Pago</option>
-              <option value="excluido">Excluído</option>
-            </select>
-            <select id="filtroRelFinanceiroFornecedor">
-              <option value="">- Todos os fornecedores -</option>
-            </select>
-            <select id="filtroRelFinanceiroForma">
-              <option value="">- Todas as formas -</option>
-            </select>
-            <input id="filtroRelFinanceiroBusca" type="text" placeholder="Buscar por fornecedor, forma ou observação">
+          <div class="relatorio-financeiro-filtros">
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelFinanceiroDataInicio">Data inicial</label>
+              <input id="filtroRelFinanceiroDataInicio" type="date">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelFinanceiroDataFim">Data final</label>
+              <input id="filtroRelFinanceiroDataFim" type="date">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelFinanceiroStatus">Status</label>
+              <select id="filtroRelFinanceiroStatus">
+                <option value="">- Todos os status -</option>
+                <option value="pendente">Pendente</option>
+                <option value="pago">Pago</option>
+                <option value="excluido">Excluído</option>
+              </select>
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelFinanceiroFornecedor">Fornecedor</label>
+              <select id="filtroRelFinanceiroFornecedor">
+                <option value="">- Todos os fornecedores -</option>
+              </select>
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelFinanceiroForma">Forma de pagamento</label>
+              <select id="filtroRelFinanceiroForma">
+                <option value="">- Todas as formas -</option>
+              </select>
+            </div>
             <button class="btn btn-green" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioFinanceiro()">Hoje</button>
-            <button class="btn btn-ghost" type="button" onclick="exportarRelatorioFinanceiroCsv()">Exportar CSV</button>
-            <button class="btn btn-ghost" type="button" onclick="imprimirRelatorioFinanceiroPdf()">Exportar PDF</button>
+          </div>
+          <div class="relatorio-financeiro-acoes">
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(7)">Próx. 7 dias</button>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(15)">Próx. 15 dias</button>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(30)">Próx. 30 dias</button>
+            <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioFinanceiroCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
+            <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioFinanceiroPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
           </div>
           <div class="msg" id="msgRelatorioFinanceiro"></div>
         </div>
@@ -3830,16 +4105,18 @@
           </button>
         </div>
 
-        <div class="card">
-          <div class="card-title">Dashboard - Fornecedores mais pagos</div>
-          <div id="graficoRelatorioFinanceiroFornecedores" class="rf-chart"><div class="empty">Carregando...</div></div>
-          <div id="listaRelatorioFinanceiroFornecedores"><div class="empty">Carregando...</div></div>
-        </div>
+        <div class="rf-dashboard-pizzas-grid">
+          <div class="card">
+            <div class="card-title">Dashboard - Fornecedores mais pagos</div>
+            <div id="graficoRelatorioFinanceiroFornecedores" class="rf-pie-dashboard"><div class="empty">Carregando...</div></div>
+            <div id="listaRelatorioFinanceiroFornecedores"><div class="empty">Carregando...</div></div>
+          </div>
 
-        <div class="card">
-          <div class="card-title">Dashboard - Formas de pagamento</div>
-          <div id="graficoRelatorioFinanceiroFormas" class="rf-chart"><div class="empty">Carregando...</div></div>
-          <div id="listaRelatorioFinanceiroFormas"><div class="empty">Carregando...</div></div>
+          <div class="card">
+            <div class="card-title">Dashboard - Formas de pagamento</div>
+            <div id="graficoRelatorioFinanceiroFormas" class="rf-pie-dashboard"><div class="empty">Carregando...</div></div>
+            <div id="listaRelatorioFinanceiroFormas"><div class="empty">Carregando...</div></div>
+          </div>
         </div>
 
         <div class="card" id="cardDetalhamentoRelatorioFinanceiro" hidden>
@@ -3914,7 +4191,7 @@
             </div>
             <div class="campo-com-label valor">
               <label class="campo-label" for="contaValorCompra">Valor da compra</label>
-                <input id="contaValorCompra" class="campo-curto" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" required>
+                <input id="contaValorCompra" class="campo-curto" type="text" inputmode="decimal" placeholder="Valor" autocomplete="off" required>
             </div>
             <div class="campo-com-label parcela">
               <label class="campo-label" for="contaQtdParcelas">Qtd parcelas</label>
@@ -3934,14 +4211,18 @@
         </div>
 
         <div class="card">
-          <div class="card-title">Contas cadastradas</div>
+          <div class="financeiro-card-title-row">
+            <div class="card-title">Contas cadastradas</div>
+            <button class="btn btn-ghost btn-sm" id="btnToggleContasAPagarLista" type="button" onclick="toggleListaContasAPagarFinanceiro()">Exibir contas</button>
+          </div>
           <div class="form-row financeiro-filtros-row">
-            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor" oninput="carregarContasAPagarFinanceiro()">
+            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, valor, data, observação ou parcela" oninput="carregarContasAPagarFinanceiro()">
             <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
               <option value="">- Todos os status -</option>
               <option value="pendente">Pendente</option>
               <option value="pago">Pago</option>
             </select>
+            <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
           </div>
           <div id="listaContasAPagarFinanceiro"><div class="empty">Carregando...</div></div>
         </div>
@@ -4211,6 +4492,24 @@
   </div>
 </div>
 
+<div class="overlay" id="confirmacaoFinanceiraOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div>
+        <h3 id="confirmacaoFinanceiraTitle">Confirmar alteração</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="confirmacaoFinanceiraSubtitle"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalConfirmacaoFinanceira('cancelar')">X Fechar</button>
+    </div>
+    <div class="modal-body" id="confirmacaoFinanceiraBody" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" type="button" onclick="fecharModalConfirmacaoFinanceira('cancelar')">Cancelar</button>
+      <button class="btn btn-ghost" type="button" id="confirmacaoFinanceiraNao" onclick="fecharModalConfirmacaoFinanceira('nao')">Não, alterar só este</button>
+      <button class="btn btn-green" type="button" id="confirmacaoFinanceiraSim" onclick="fecharModalConfirmacaoFinanceira('sim')">Sim, alterar todos</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '2.1';
@@ -4242,6 +4541,7 @@ let destinatarioEmailEmEdicaoId = null;
 let fornecedorFinanceiroEmEdicaoId = null;
 let formaPagamentoFinanceiroEmEdicaoId = null;
 let contaAPagarFinanceiroEmEdicaoId = null;
+let contasAPagarListaVisivel = false;
 let contaFinanceiraEmEdicaoId = null;
 let recebivelFinanceiroEmEdicaoId = null;
 let fornecedoresFinanceiroCache = [];
@@ -4277,6 +4577,7 @@ let resolverModalFormaPagamentoPendente = null;
 let formasModalPagamentoFinanceiro = [];
 let resolverModalContaFinanceiraBaixaPendente = null;
 let contasModalContaFinanceiraBaixa = [];
+let resolverModalConfirmacaoFinanceiraPendente = null;
 let resolverModalPontoPendente = null;
 let intervaloAtualizacaoPaginaAtiva = null;
 let intervaloAtualizacaoNotificacoes = null;
@@ -4990,11 +5291,14 @@ function abrirPagina(id, botao) {
   console.log('abrirPagina called with', id);
   document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
-  document.getElementById(id).classList.add('ativa');
+  const paginaAtual = document.getElementById(id);
+  paginaAtual.classList.add('ativa');
   if (botao) botao.classList.add('ativo');
-  const [t, s] = topTitles[id] || ['', ''];
-  document.getElementById('topbar-title').textContent = t;
-  document.getElementById('topbar-sub').textContent = s;
+  const [tituloFallback, subtituloFallback] = topTitles[id] || ['', ''];
+  const tituloPagina = paginaAtual.querySelector(':scope > .page-title')?.textContent?.trim() || tituloFallback;
+  const subtituloPagina = paginaAtual.querySelector(':scope > .page-sub')?.textContent?.trim() || subtituloFallback;
+  document.getElementById('topbar-title').textContent = tituloPagina;
+  document.getElementById('topbar-sub').textContent = subtituloPagina;
   salvarPaginaAtiva(id);
   if (id === 'dashboard') carregarDashboard();
   if (id === 'checklists') { carregarChecklists(); }
@@ -5011,6 +5315,7 @@ function abrirPagina(id, botao) {
     carregarFormasPagamentoFinanceiro();
   }
   if (id === 'financeiro_contasapagar') {
+    contasAPagarListaVisivel = false;
     limparFormularioContaAPagarFinanceiro();
     carregarFornecedoresFinanceiro();
     carregarContasAPagarFinanceiro();
@@ -6254,6 +6559,52 @@ function fecharModalPin(resultado = null) {
 function confirmarModalPin() {
   const input = document.getElementById('pinActionInput');
   fecharModalPin({ pin: (input?.value || '').trim() });
+}
+
+function abrirModalConfirmacaoFinanceira({
+  titulo = 'Confirmar alteração',
+  subtitulo = '',
+  fornecedor = '',
+  lancamento = '',
+  detalhes = [],
+  textoSim = 'Sim, alterar todos',
+  textoNao = 'Não, alterar só este',
+} = {}) {
+  const overlay = document.getElementById('confirmacaoFinanceiraOverlay');
+  const title = document.getElementById('confirmacaoFinanceiraTitle');
+  const subtitle = document.getElementById('confirmacaoFinanceiraSubtitle');
+  const body = document.getElementById('confirmacaoFinanceiraBody');
+  const btnSim = document.getElementById('confirmacaoFinanceiraSim');
+  const btnNao = document.getElementById('confirmacaoFinanceiraNao');
+  if (!overlay || !title || !subtitle || !body || !btnSim || !btnNao) return Promise.resolve('cancelar');
+
+  title.textContent = titulo;
+  subtitle.textContent = subtitulo;
+  btnSim.textContent = textoSim;
+  btnNao.textContent = textoNao;
+  body.innerHTML = `
+    <div class="confirmacao-destaque-box">
+      <strong>${escaparHtmlBasico(fornecedor || 'Fornecedor')}</strong>
+      <span>${escaparHtmlBasico(lancamento || 'Lançamento')}</span>
+      ${(detalhes || []).map(item => `<span>${escaparHtmlBasico(item)}</span>`).join('')}
+    </div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.5">
+      Escolha <strong style="color:var(--text)">Sim</strong> para aplicar a alteração em todos os lançamentos relacionados, ou <strong style="color:var(--text)">Não</strong> para alterar somente este título.
+    </div>
+  `;
+  overlay.classList.add('show');
+
+  return new Promise(resolve => {
+    resolverModalConfirmacaoFinanceiraPendente = resolve;
+  });
+}
+
+function fecharModalConfirmacaoFinanceira(resultado = 'cancelar') {
+  const overlay = document.getElementById('confirmacaoFinanceiraOverlay');
+  if (overlay) overlay.classList.remove('show');
+  const resolver = resolverModalConfirmacaoFinanceiraPendente;
+  resolverModalConfirmacaoFinanceiraPendente = null;
+  if (resolver) resolver(resultado);
 }
 
 function abrirModalFormaPagamentoFinanceiro({ formas = [], formaAtual = '' } = {}) {
@@ -9356,7 +9707,12 @@ function configurarCampoDataContaAPagarFinanceiro(campoId, valor = '') {
 function formatarMoedaBRFinanceiro(valor = 0) {
   const n = Number(valor || 0);
   const seguro = Number.isFinite(n) ? n : 0;
-  return seguro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return seguro.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function lerValorMonetarioFinanceiro(valor = '') {
@@ -9374,20 +9730,47 @@ function formatarEntradaMoedaFinanceiro(valor = '') {
   return formatarMoedaBRFinanceiro(Number(digitos) / 100);
 }
 
+function formatarDigitacaoMoedaFinanceiro(valor = '') {
+  const texto = String(valor || '').replace(/[^\d,]/g, '');
+  if (!texto) return '';
+  const partes = texto.split(',');
+  const reais = partes[0].replace(/^0+(?=\d)/, '') || '0';
+  const centavos = partes.length > 1 ? partes.slice(1).join('').replace(/\D/g, '').slice(0, 2) : '';
+  return partes.length > 1 ? `${reais},${centavos}` : reais;
+}
+
+function formatarValorCampoMoedaFinanceiro(valor = '') {
+  const numero = lerValorMonetarioFinanceiro(valor);
+  if (!Number.isFinite(numero)) return '';
+  return formatarMoedaBRFinanceiro(numero);
+}
+
+function prepararValorCampoMoedaParaEdicao(valor = '') {
+  const numero = lerValorMonetarioFinanceiro(valor);
+  if (!Number.isFinite(numero)) return '';
+  return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function prepararCampoMoedaFinanceiro(campo) {
+  if (!campo || campo.dataset.financeiroMoedaReady === '1') return;
+  campo.dataset.financeiroMoedaReady = '1';
+  campo.setAttribute('autocomplete', 'off');
+  campo.addEventListener('input', () => {
+    campo.value = formatarDigitacaoMoedaFinanceiro(campo.value);
+  });
+  campo.addEventListener('focus', () => {
+    campo.value = prepararValorCampoMoedaParaEdicao(campo.value);
+    window.setTimeout(() => campo.select(), 0);
+  });
+  campo.addEventListener('blur', () => {
+    campo.value = formatarValorCampoMoedaFinanceiro(campo.value);
+  });
+}
+
 function configurarCampoValorCompraFinanceiro(limpar = false) {
   const campo = document.getElementById('contaValorCompra');
   if (!campo) return;
-
-  if (campo.dataset.financeiroMoedaReady !== '1') {
-    campo.dataset.financeiroMoedaReady = '1';
-    campo.setAttribute('autocomplete', 'off');
-    campo.addEventListener('input', () => {
-      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
-    });
-    campo.addEventListener('blur', () => {
-      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
-    });
-  }
+  prepararCampoMoedaFinanceiro(campo);
 
   if (limpar) {
     campo.value = '';
@@ -9395,23 +9778,13 @@ function configurarCampoValorCompraFinanceiro(limpar = false) {
     return;
   }
 
-  campo.value = formatarEntradaMoedaFinanceiro(campo.value);
+  campo.value = formatarValorCampoMoedaFinanceiro(campo.value);
 }
 
 function configurarCampoValorRecebivelFinanceiro(limpar = false, valor = '') {
   const campo = document.getElementById('recebivelValor');
   if (!campo) return;
-
-  if (campo.dataset.financeiroMoedaReady !== '1') {
-    campo.dataset.financeiroMoedaReady = '1';
-    campo.setAttribute('autocomplete', 'off');
-    campo.addEventListener('input', () => {
-      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
-    });
-    campo.addEventListener('blur', () => {
-      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
-    });
-  }
+  prepararCampoMoedaFinanceiro(campo);
 
   if (limpar) {
     campo.value = '';
@@ -9420,27 +9793,17 @@ function configurarCampoValorRecebivelFinanceiro(limpar = false, valor = '') {
   }
 
   if (valor !== '') {
-    campo.value = formatarEntradaMoedaFinanceiro(String(Math.round(Number(valor || 0) * 100)));
+    campo.value = formatarMoedaBRFinanceiro(valor || 0);
     return;
   }
 
-  campo.value = formatarEntradaMoedaFinanceiro(campo.value);
+  campo.value = formatarValorCampoMoedaFinanceiro(campo.value);
 }
 
 function configurarCampoSaldoContaFinanceira(limpar = false, valor = '') {
   const campo = document.getElementById('contaFinanceiraSaldoAtual');
   if (!campo) return;
-
-  if (campo.dataset.financeiroMoedaReady !== '1') {
-    campo.dataset.financeiroMoedaReady = '1';
-    campo.setAttribute('autocomplete', 'off');
-    campo.addEventListener('input', () => {
-      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
-    });
-    campo.addEventListener('blur', () => {
-      campo.value = formatarEntradaMoedaFinanceiro(campo.value);
-    });
-  }
+  prepararCampoMoedaFinanceiro(campo);
 
   if (limpar) {
     campo.value = '';
@@ -9449,11 +9812,88 @@ function configurarCampoSaldoContaFinanceira(limpar = false, valor = '') {
   }
 
   if (valor !== '') {
-    campo.value = formatarEntradaMoedaFinanceiro(String(Math.round(Number(valor || 0) * 100)));
+    campo.value = formatarMoedaBRFinanceiro(valor || 0);
     return;
   }
 
-  campo.value = formatarEntradaMoedaFinanceiro(campo.value);
+  campo.value = formatarValorCampoMoedaFinanceiro(campo.value);
+}
+
+function configurarEnterCadastrosFinanceiros() {
+  const grupos = [
+    {
+      ids: ['fornecedorNome', 'fornecedorCnpj', 'fornecedorTelefone', 'fornecedorEmail'],
+      salvar: () => salvarFornecedorFinanceiro(),
+    },
+    {
+      ids: ['formaPagamentoNome'],
+      salvar: () => salvarFormaPagamentoFinanceiro(),
+    },
+    {
+      ids: ['contaFornecedorBusca', 'contaDataCompra', 'contaDataVencimento', 'contaValorCompra', 'contaQtdParcelas', 'contaIntervaloParcelasDias', 'contaObservacao'],
+      salvar: () => salvarContaAPagarFinanceiro(),
+    },
+    {
+      ids: ['contaFinanceiraNome', 'contaFinanceiraSaldoAtual'],
+      salvar: () => salvarContaFinanceira(),
+    },
+    {
+      ids: ['recebivelPagadorBusca', 'recebivelFormaPagamentoId', 'recebivelValor', 'recebivelContaFinanceiraId'],
+      salvar: () => salvarRecebivelFinanceiro(),
+    },
+  ];
+
+  grupos.forEach(grupo => {
+    grupo.ids.forEach(id => {
+      const campo = document.getElementById(id);
+      if (!campo || campo.dataset.enterCadastroReady === '1') return;
+      campo.dataset.enterCadastroReady = '1';
+      campo.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        grupo.salvar();
+      });
+    });
+  });
+}
+
+function valoresContaAPagarAlterados(contaAnterior = {}, payload = {}) {
+  const anteriorValor = Number(contaAnterior?.valor_compra || 0);
+  const novoValor = Number(payload?.valor_compra || 0);
+  return (
+    String(contaAnterior?.fornecedor_id || '') !== String(payload?.fornecedor_id || '') ||
+    String(contaAnterior?.data_compra || '') !== String(payload?.data_compra || '') ||
+    String(contaAnterior?.data_vencimento || '') !== String(payload?.data_vencimento || '') ||
+    Number(anteriorValor.toFixed(2)) !== Number(novoValor.toFixed(2)) ||
+    String(contaAnterior?.observacao || '').trim() !== String(payload?.observacao || '').trim() ||
+    Number(contaAnterior?.qtd_parcelas || 1) !== Number(payload?.qtd_parcelas || 1) ||
+    Number(contaAnterior?.intervalo_parcelas_dias || 0) !== Number(payload?.intervalo_parcelas_dias || 0)
+  );
+}
+
+function descreverAlteracoesContaAPagar(contaAnterior = {}, payload = {}) {
+  const detalhes = [];
+  const valorAnterior = Number(contaAnterior?.valor_compra || 0);
+  const novoValor = Number(payload?.valor_compra || 0);
+  if (Number(valorAnterior.toFixed(2)) !== Number(novoValor.toFixed(2))) {
+    detalhes.push(`Valor: ${formatarMoedaBRFinanceiro(valorAnterior)} -> ${formatarMoedaBRFinanceiro(novoValor)}`);
+  }
+  if (String(contaAnterior?.data_compra || '') !== String(payload?.data_compra || '')) {
+    detalhes.push(`Compra: ${formatarDataBRFinanceiro(contaAnterior?.data_compra)} -> ${formatarDataBRFinanceiro(payload?.data_compra)}`);
+  }
+  if (String(contaAnterior?.data_vencimento || '') !== String(payload?.data_vencimento || '')) {
+    detalhes.push(`Vencimento: ${formatarDataBRFinanceiro(contaAnterior?.data_vencimento)} -> ${formatarDataBRFinanceiro(payload?.data_vencimento)}`);
+  }
+  if (String(contaAnterior?.observacao || '').trim() !== String(payload?.observacao || '').trim()) {
+    detalhes.push(`Observação: ${String(payload?.observacao || '').trim() || '-'}`);
+  }
+  if (Number(contaAnterior?.qtd_parcelas || 1) !== Number(payload?.qtd_parcelas || 1)) {
+    detalhes.push(`Qtd. parcelas: ${payload?.qtd_parcelas || 1}`);
+  }
+  if (Number(contaAnterior?.intervalo_parcelas_dias || 0) !== Number(payload?.intervalo_parcelas_dias || 0)) {
+    detalhes.push(`Intervalo: ${payload?.intervalo_parcelas_dias || '-'} dia(s)`);
+  }
+  return detalhes;
 }
 
 function adicionarDiasDataISOFinanceiro(dataISO = '', dias = 0) {
@@ -10962,12 +11402,58 @@ async function salvarContaAPagarFinanceiro() {
   };
 
   const editando = !!contaAPagarFinanceiroEmEdicaoId;
+  const contaAnterior = editando
+    ? contasAPagarFinanceiroCache.find(item => String(item.id) === String(contaAPagarFinanceiroEmEdicaoId))
+    : null;
   const atorAuditoria = obterAtorAuditoriaAtual();
   let query = null;
   if (editando) {
+    let aplicarAlteracaoEmTodasParcelas = false;
+    const houveAlteracao = valoresContaAPagarAlterados(contaAnterior, payloadBase);
+    const grupoParcelasId = String(contaAnterior?.grupo_parcelas_id || '').trim();
+    const parcelasRelacionadas = grupoParcelasId
+      ? contasAPagarFinanceiroCache.filter(item => String(item.grupo_parcelas_id || '') === grupoParcelasId && !item.excluido_em)
+      : [];
+
+    if (houveAlteracao && grupoParcelasId && parcelasRelacionadas.length > 1) {
+      const nomeFornecedor = contaAnterior?.fornecedores?.nome || String(campoFornecedor?.value || '').trim() || 'Fornecedor';
+      const nomeLancamento = observacao || contaAnterior?.observacao || 'Lançamento sem observação';
+      const detalhesAlteracoes = descreverAlteracoesContaAPagar(contaAnterior, payloadBase);
+      const decisaoParcelas = await abrirModalConfirmacaoFinanceira({
+        titulo: 'DESEJA ALTERAR EM TODOS LANÇAMENTOS?',
+        subtitulo: 'Este título possui parcelas relacionadas',
+        fornecedor: nomeFornecedor,
+        lancamento: nomeLancamento,
+        detalhes: [
+          `Parcelas relacionadas: ${parcelasRelacionadas.length}`,
+          ...detalhesAlteracoes,
+        ],
+        textoSim: 'Sim, alterar todos',
+        textoNao: 'Não, alterar só este',
+      });
+      if (decisaoParcelas === 'cancelar') {
+        setMsg('msgContaAPagarFinanceiro', 'Edição cancelada. Escolha Sim ou Não para salvar a alteração.', 'err');
+        return;
+      }
+      aplicarAlteracaoEmTodasParcelas = decisaoParcelas === 'sim';
+    }
+
+    if (aplicarAlteracaoEmTodasParcelas) {
+      const { error: erroParcelas } = await sb
+        .from('contasapagar')
+        .update(payloadBase)
+        .eq('grupo_parcelas_id', grupoParcelasId)
+        .is('excluido_em', null);
+
+      if (erroParcelas) {
+        setMsg('msgContaAPagarFinanceiro', `Não foi possível atualizar as parcelas relacionadas: ${mensagemErroSupabase(erroParcelas, 'erro desconhecido')}`, 'err');
+        return;
+      }
+    }
+
     query = sb.from('contasapagar').update({
       ...payloadBase,
-      numero_parcela: Number.parseInt(String(contasAPagarFinanceiroCache.find(item => String(item.id) === String(contaAPagarFinanceiroEmEdicaoId))?.numero_parcela || 1), 10) || 1,
+      numero_parcela: Number.parseInt(String(contaAnterior?.numero_parcela || 1), 10) || 1,
     }).eq('id', contaAPagarFinanceiroEmEdicaoId).is('excluido_em', null);
   } else {
     const grupoParcelasId = crypto?.randomUUID ? crypto.randomUUID() : null;
@@ -11004,12 +11490,45 @@ function cancelarEdicaoContaAPagarFinanceiro() {
   setMsg('msgContaAPagarFinanceiro', 'Edição cancelada.', 'ok');
 }
 
+function atualizarEstadoListaContasAPagarFinanceiro() {
+  const lista = document.getElementById('listaContasAPagarFinanceiro');
+  const btn = document.getElementById('btnToggleContasAPagarLista');
+  const filtroBusca = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
+  const visivel = contasAPagarListaVisivel || !!filtroBusca;
+  if (lista) lista.hidden = !visivel;
+  if (btn) {
+    btn.textContent = visivel ? 'Ocultar contas' : 'Exibir contas';
+    btn.setAttribute('aria-expanded', String(visivel));
+  }
+}
+
+function toggleListaContasAPagarFinanceiro() {
+  contasAPagarListaVisivel = !contasAPagarListaVisivel;
+  atualizarEstadoListaContasAPagarFinanceiro();
+}
+
+function limparFiltroContasAPagarFinanceiro() {
+  const busca = document.getElementById('filtroContaAPagarBusca');
+  const status = document.getElementById('filtroContaAPagarStatus');
+  if (busca) busca.value = '';
+  if (status) {
+    status.value = '';
+    status.selectedIndex = 0;
+  }
+  contasAPagarListaVisivel = false;
+  carregarContasAPagarFinanceiro();
+}
+
 async function carregarContasAPagarFinanceiro() {
   const lista = document.getElementById('listaContasAPagarFinanceiro');
   if (!lista) return;
+  const filtroBuscaBruto = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
+  if (filtroBuscaBruto) contasAPagarListaVisivel = true;
+  atualizarEstadoListaContasAPagarFinanceiro();
   lista.innerHTML = '<div class="empty">Carregando...</div>';
 
-  const filtroBusca = textoFinanceiroNormalizado(document.getElementById('filtroContaAPagarBusca')?.value || '');
+  const filtroBusca = textoFinanceiroNormalizado(filtroBuscaBruto);
+  const filtroBuscaDigitos = filtroBuscaBruto.replace(/\D/g, '');
   const filtroStatus = String(document.getElementById('filtroContaAPagarStatus')?.value || '').trim();
 
   const { data, error } = await sb
@@ -11040,14 +11559,47 @@ async function carregarContasAPagarFinanceiro() {
   const itensFiltrados = contasAPagarFinanceiroCache.filter(item => {
     const nomeFornecedor = String(item.fornecedores?.nome || '').trim();
     const observacaoConta = String(item.observacao || '').trim();
+    const valorConta = Number(item.valor_compra || 0);
+    const valorFormatado = formatarMoedaBRFinanceiro(valorConta);
+    const valorDecimal = Number.isFinite(valorConta) ? valorConta.toFixed(2).replace('.', ',') : '';
+    const valorInteiro = Number.isFinite(valorConta) ? String(Math.trunc(valorConta)) : '';
+    const valorCentavos = Number.isFinite(valorConta) ? String(Math.round(valorConta * 100)) : '';
+    const dataCompraBR = formatarDataBRFinanceiro(item.data_compra);
+    const dataVencimentoBR = formatarDataBRFinanceiro(item.data_vencimento);
+    const dataPagamentoBR = formatarDataBRFinanceiro(item.data_pagamento);
+    const parcelaTexto = `${item.numero_parcela || 1}/${item.qtd_parcelas || 1}`;
+    const intervaloTexto = item.intervalo_parcelas_dias ? `${item.intervalo_parcelas_dias} dias` : '';
     const status = item.data_pagamento ? 'pago' : 'pendente';
-    const bateBusca = !filtroBusca || textoFinanceiroNormalizado(`${nomeFornecedor} ${observacaoConta}`).includes(filtroBusca);
+    const textoBuscaConta = [
+      nomeFornecedor,
+      observacaoConta,
+      valorFormatado,
+      valorDecimal,
+      valorInteiro,
+      valorCentavos,
+      String(valorConta || ''),
+      dataCompraBR,
+      dataVencimentoBR,
+      dataPagamentoBR,
+      item.data_compra || '',
+      item.data_vencimento || '',
+      item.data_pagamento || '',
+      parcelaTexto,
+      intervaloTexto,
+      status,
+    ].join(' ');
+    const textoNormalizadoConta = textoFinanceiroNormalizado(textoBuscaConta);
+    const bateBuscaTexto = !filtroBusca || textoNormalizadoConta.includes(filtroBusca);
+    const bateBuscaNumero = !!filtroBuscaDigitos && [valorInteiro, valorCentavos, valorDecimal.replace(/\D/g, ''), valorFormatado.replace(/\D/g, '')]
+      .some(valor => String(valor || '').includes(filtroBuscaDigitos));
+    const bateBusca = !filtroBusca || bateBuscaTexto || bateBuscaNumero;
     const bateStatus = !filtroStatus || filtroStatus === status;
     return bateBusca && bateStatus;
   });
 
   if (!itensFiltrados.length) {
     lista.innerHTML = '<div class="empty">Nenhuma conta encontrada para o filtro informado.</div>';
+    atualizarEstadoListaContasAPagarFinanceiro();
     return;
   }
 
@@ -11070,6 +11622,7 @@ async function carregarContasAPagarFinanceiro() {
       </div>
     `;
   }).join('') + '</div>';
+  atualizarEstadoListaContasAPagarFinanceiro();
 }
 
 function editarContaAPagarFinanceiro(id) {
@@ -11085,6 +11638,9 @@ function editarContaAPagarFinanceiro(id) {
   configurarCampoDataContaAPagarFinanceiro('contaDataCompra', item.data_compra || '');
   configurarCampoDataContaAPagarFinanceiro('contaDataVencimento', item.data_vencimento || '');
   configurarCampoValorCompraFinanceiro(true);
+  configurarCampoValorCompraFinanceiro(false);
+  const campoValor = document.getElementById('contaValorCompra');
+  if (campoValor) campoValor.value = formatarMoedaBRFinanceiro(item.valor_compra || 0);
   document.getElementById('contaObservacao').value = item.observacao || '';
   document.getElementById('contaQtdParcelas').value = item.qtd_parcelas ? String(item.qtd_parcelas) : '';
   document.getElementById('contaIntervaloParcelasDias').value = item.intervalo_parcelas_dias ? String(item.intervalo_parcelas_dias) : '';
@@ -11092,7 +11648,7 @@ function editarContaAPagarFinanceiro(id) {
   const btnCancelar = document.getElementById('btnCancelarContaAPagarFinanceiro');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
-  setMsg('msgContaAPagarFinanceiro', `Editando conta de ${item.fornecedores?.nome || 'fornecedor'}. Reinforme o valor da compra.`, 'ok');
+  setMsg('msgContaAPagarFinanceiro', `Editando conta de ${item.fornecedores?.nome || 'fornecedor'}.`, 'ok');
 }
 
 async function excluirContaAPagarFinanceiro(id) {
@@ -14563,35 +15119,76 @@ function preencherSelectRelatorioFinanceiro(selectEl, placeholder, opcoes = [], 
   selectEl.value = opcoes.some(item => String(item.valor) === valorSelecionado) ? valorSelecionado : '';
 }
 
-function renderizarGraficoBarrasRelatorioFinanceiro(containerId, itens = [], valorMaximo = 0) {
+const CORES_PIZZA_RELATORIO_FINANCEIRO = ['#22c55e', '#3b82f6', '#f97316', '#ef4444', '#a855f7', '#14b8a6', '#eab308', '#f43f5e', '#84cc16', '#06b6d4'];
+
+function renderizarPizzaRelatorioFinanceiro(containerId, itens = [], mensagemVazia = 'Sem dados para o gráfico no período.') {
   const container = document.getElementById(containerId);
   if (!container) return;
 
   if (!itens.length) {
-    container.innerHTML = '<div class="empty">Sem dados para o gráfico no período.</div>';
+    container.className = 'rf-pie-dashboard';
+    container.innerHTML = `<div class="empty">${escaparHtmlBasico(mensagemVazia)}</div>`;
     return;
   }
 
-  const maximo = Number.isFinite(valorMaximo) && valorMaximo > 0
-    ? valorMaximo
-    : Math.max(...itens.map(item => Number(item.total || 0)), 0);
+  const totalGeral = itens.reduce((acc, item) => acc + (Number(item.total || 0) || 0), 0);
 
-  if (!maximo) {
+  if (!totalGeral) {
+    container.className = 'rf-pie-dashboard';
     container.innerHTML = '<div class="empty">Sem valores para representar no gráfico.</div>';
     return;
   }
 
-  container.innerHTML = itens.map(item => {
-    const total = Number(item.total || 0);
-    const percentual = Math.max(0, Math.min(100, (total / maximo) * 100));
+  let acumulado = 0;
+  const fatias = itens.map((item, idx) => {
+    const valor = Math.max(0, Number(item.total || 0) || 0);
+    const inicio = acumulado;
+    const fim = acumulado + (valor / totalGeral) * 100;
+    acumulado = fim;
+    const cor = CORES_PIZZA_RELATORIO_FINANCEIRO[idx % CORES_PIZZA_RELATORIO_FINANCEIRO.length];
+    return { item, valor, inicio, fim, cor };
+  }).filter(fatia => fatia.valor > 0);
+
+  const gradiente = fatias.map(fatia => `${fatia.cor} ${fatia.inicio.toFixed(2)}% ${fatia.fim.toFixed(2)}%`).join(', ');
+  const maior = fatias[0];
+
+  container.className = 'rf-pie-dashboard';
+  container.innerHTML = `
+    <div class="rf-pie" style="background: conic-gradient(${gradiente});" title="${escaparHtmlBasico(maior?.item?.nome || '-')}: ${escaparHtmlBasico(formatarMoedaBRFinanceiro(maior?.valor || 0))}"></div>
+    <div class="rf-pie-legenda">
+      ${fatias.map(fatia => {
+        const percentual = totalGeral ? ((fatia.valor / totalGeral) * 100) : 0;
+        return `
+          <div class="rf-pie-legenda-item" title="${escaparHtmlBasico(fatia.item.nome || '-')}: ${escaparHtmlBasico(formatarMoedaBRFinanceiro(fatia.valor))} (${percentual.toFixed(1)}%)">
+            <span class="rf-pie-swatch" style="background:${fatia.cor}"></span>
+            <span class="rf-pie-nome">${escaparHtmlBasico(fatia.item.nome || '-')}</span>
+            <span class="rf-pie-valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(fatia.valor))}</span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderizarListaResumoRelatorioFinanceiro(containerId, itens = [], tipo = '') {
+  const lista = document.getElementById(containerId);
+  if (!lista) return;
+
+  if (!itens.length) {
+    lista.innerHTML = '';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + itens.slice(0, 3).map((item, idx) => {
     return `
-      <div class="rf-chart-row">
-        <div class="rf-chart-label" title="${escaparHtmlBasico(item.nome || '')}">${escaparHtmlBasico(item.nome || '-')}</div>
-        <div class="rf-chart-track"><div class="rf-chart-fill" style="width:${percentual.toFixed(2)}%"></div></div>
-        <div class="rf-chart-value">${formatarMoedaBRFinanceiro(total)}</div>
+      <div class="item" title="${escaparHtmlBasico(item.nome || '-')}: ${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.total || 0))}">
+        <div class="item-info">
+          <div class="item-nome">${idx + 1}. ${escaparHtmlBasico(item.nome || '-')}</div>
+          <div class="item-detalhe">Total pago: ${formatarMoedaBRFinanceiro(item.total || 0)} · ${tipo === 'formas' ? 'Utilizações' : 'Pagamentos'}: ${item.qtd || 0}</div>
+        </div>
       </div>
     `;
-  }).join('');
+  }).join('') + '</div>';
 }
 
 function renderizarDashboardFornecedoresRelatorioFinanceiro(itens = []) {
@@ -14612,22 +15209,13 @@ function renderizarDashboardFornecedoresRelatorioFinanceiro(itens = []) {
     .slice(0, 10);
 
   if (!ranking.length) {
-    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', []);
-    lista.innerHTML = '<div class="empty">Sem pagamentos confirmados para montar o ranking de fornecedores.</div>';
+    renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', [], 'Sem pagamentos confirmados para montar o ranking de fornecedores.');
+    lista.innerHTML = '';
     return;
   }
 
-  renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', ranking, ranking[0]?.total || 0);
-
-  lista.innerHTML = '<div class="lista">' + ranking.map((item, idx) => `
-    <div class="item">
-      <div class="item-info">
-        <div class="item-nome">${idx + 1}. ${escaparHtmlBasico(item.nome)}</div>
-        <div class="item-detalhe">Total pago: ${formatarMoedaBRFinanceiro(item.total)} · Pagamentos: ${item.qtd}</div>
-      </div>
-      <div class="item-actions"><span class="tag tag-green">Top pago</span></div>
-    </div>
-  `).join('') + '</div>';
+  renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', ranking);
+  renderizarListaResumoRelatorioFinanceiro('listaRelatorioFinanceiroFornecedores', ranking, 'fornecedores');
 }
 
 function renderizarDashboardFormasRelatorioFinanceiro(itens = []) {
@@ -14635,14 +15223,12 @@ function renderizarDashboardFormasRelatorioFinanceiro(itens = []) {
   if (!lista) return;
 
   const agregados = {};
-  let totalPagamentos = 0;
   itens.forEach(item => {
     if (obterStatusContaRelatorioFinanceiro(item) !== 'pago') return;
     const nome = obterNomeFormaRelatorioFinanceiro(item);
     if (!agregados[nome]) agregados[nome] = { nome, total: 0, qtd: 0 };
     agregados[nome].total += obterValorPagoRelatorioFinanceiro(item);
     agregados[nome].qtd += 1;
-    totalPagamentos += 1;
   });
 
   const ranking = Object.values(agregados)
@@ -14653,25 +15239,13 @@ function renderizarDashboardFormasRelatorioFinanceiro(itens = []) {
     .slice(0, 10);
 
   if (!ranking.length) {
-    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', []);
-    lista.innerHTML = '<div class="empty">Sem pagamentos confirmados para montar o dashboard de formas.</div>';
+    renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', [], 'Sem pagamentos confirmados para montar o dashboard de formas.');
+    lista.innerHTML = '';
     return;
   }
 
-  renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', ranking, ranking[0]?.total || 0);
-
-  lista.innerHTML = '<div class="lista">' + ranking.map(item => {
-    const percentualUso = totalPagamentos ? ((item.qtd / totalPagamentos) * 100) : 0;
-    return `
-      <div class="item">
-        <div class="item-info">
-          <div class="item-nome">${escaparHtmlBasico(item.nome)}</div>
-          <div class="item-detalhe">Total pago: ${formatarMoedaBRFinanceiro(item.total)} · Utilizacoes: ${item.qtd} (${percentualUso.toFixed(1)}%)</div>
-        </div>
-        <div class="item-actions"><span class="tag tag-slate">Forma</span></div>
-      </div>
-    `;
-  }).join('') + '</div>';
+  renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', ranking);
+  renderizarListaResumoRelatorioFinanceiro('listaRelatorioFinanceiroFormas', ranking, 'formas');
 }
 
 function escaparCsvRelatorioFinanceiro(valor = '') {
@@ -14912,7 +15486,6 @@ function resetFiltroRelatorioFinanceiro() {
   const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
   const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
   const campoForma = document.getElementById('filtroRelFinanceiroForma');
-  const campoBusca = document.getElementById('filtroRelFinanceiroBusca');
 
   if (campoDataInicio) campoDataInicio.value = hojeLocal;
   if (campoDataFim) campoDataFim.value = hojeLocal;
@@ -14928,7 +15501,37 @@ function resetFiltroRelatorioFinanceiro() {
     campoForma.value = '';
     campoForma.selectedIndex = 0;
   }
-  if (campoBusca) campoBusca.value = '';
+
+  carregarRelatorioFinanceiro();
+}
+
+function somarDiasDataLocal(dataIso = hoje(), dias = 0) {
+  const data = new Date(`${dataIso}T12:00:00`);
+  if (Number.isNaN(data.getTime())) return hoje();
+  data.setDate(data.getDate() + Number(dias || 0));
+  return dataLocalISO(data);
+}
+
+function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
+  const intervalo = Math.max(1, Number(dias || 7));
+  const hojeLocal = hoje();
+  const campoDataInicio = document.getElementById('filtroRelFinanceiroDataInicio');
+  const campoDataFim = document.getElementById('filtroRelFinanceiroDataFim');
+  const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
+  const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
+  const campoForma = document.getElementById('filtroRelFinanceiroForma');
+
+  if (campoDataInicio) campoDataInicio.value = hojeLocal;
+  if (campoDataFim) campoDataFim.value = somarDiasDataLocal(hojeLocal, intervalo);
+  if (campoStatus) campoStatus.value = 'pendente';
+  if (campoFornecedor) {
+    campoFornecedor.value = '';
+    campoFornecedor.selectedIndex = 0;
+  }
+  if (campoForma) {
+    campoForma.value = '';
+    campoForma.selectedIndex = 0;
+  }
 
   carregarRelatorioFinanceiro();
 }
@@ -14942,7 +15545,6 @@ async function carregarRelatorioFinanceiro() {
   const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
   const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
   const campoForma = document.getElementById('filtroRelFinanceiroForma');
-  const campoBusca = document.getElementById('filtroRelFinanceiroBusca');
 
   if (!listaDetalhes || !listaFornecedores || !listaFormas) return;
 
@@ -14999,7 +15601,6 @@ async function carregarRelatorioFinanceiro() {
     const filtroStatus = String(campoStatus?.value || '').trim();
     const filtroFornecedor = String(campoFornecedor?.value || '').trim();
     const filtroForma = String(campoForma?.value || '').trim();
-    const filtroBusca = textoFinanceiroNormalizado(String(campoBusca?.value || '').trim());
 
     const itensFiltrados = rows.filter(item => {
       const status = obterStatusContaRelatorioFinanceiro(item);
@@ -15007,23 +15608,12 @@ async function carregarRelatorioFinanceiro() {
       const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
       const formaNome = obterNomeFormaRelatorioFinanceiro(item);
       const dataReferencia = obterDataReferenciaContaRelatorioFinanceiro(item);
-      const textoBusca = textoFinanceiroNormalizado([
-        obterNomeFornecedorRelatorioFinanceiro(item),
-        formaNome,
-        item.observacao || '',
-        item.data_compra || '',
-        item.data_vencimento || '',
-        item.data_pagamento || '',
-        item.criado_por_nome || '',
-        item.excluido_por_nome || '',
-      ].join(' '));
 
       if (filtroDataInicio && (!dataReferencia || dataReferencia < filtroDataInicio)) return false;
       if (filtroDataFim && (!dataReferencia || dataReferencia > filtroDataFim)) return false;
       if (filtroStatus && filtroStatus !== status) return false;
       if (filtroFornecedor && filtroFornecedor !== fornecedorId) return false;
       if (filtroForma && filtroForma !== (formaId || formaNome)) return false;
-      if (filtroBusca && !textoBusca.includes(filtroBusca)) return false;
       return true;
     });
 
@@ -15064,8 +15654,8 @@ async function carregarRelatorioFinanceiro() {
     setMsg('msgRelatorioFinanceiro', '', '');
   } catch (error) {
     console.error('Erro ao carregar relatorio financeiro:', error);
-    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', []);
-    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', []);
+    renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', []);
+    renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', []);
     listaDetalhes.innerHTML = '<div class="empty">Erro ao carregar relatorio financeiro.</div>';
     listaFornecedores.innerHTML = '<div class="empty">Erro ao carregar dashboard de fornecedores.</div>';
     listaFormas.innerHTML = '<div class="empty">Erro ao carregar dashboard de formas.</div>';
@@ -16140,6 +16730,10 @@ document.getElementById('contaFinanceiraBaixaOverlay').addEventListener('click',
   if (e.target === this) fecharModalContaFinanceiraBaixa();
 });
 
+document.getElementById('confirmacaoFinanceiraOverlay').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalConfirmacaoFinanceira('cancelar');
+});
+
 document.getElementById('pontoPendenteOverlay').addEventListener('click', function(e) {
   if (e.target === this) fecharModalPendenciaPonto('cancelar');
 });
@@ -16198,6 +16792,10 @@ window.setTimeout(() => {
   <form id="loginForm" class="login-form" onsubmit="handleLogin(event)">
     <input type="text" id="username" class="login-input" placeholder="Nome ou e-mail" required>
     <input type="password" id="password" class="login-input" placeholder="PIN ou senha" required>
+    <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-muted); cursor:pointer;">
+      <input type="checkbox" id="savePassword" style="width:16px; height:16px; cursor:pointer;">
+      Salvar senha
+    </label>
     <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-muted); cursor:pointer;">
       <input type="checkbox" id="keepLoggedIn" style="width:16px; height:16px; cursor:pointer;">
       Manter conectado
@@ -16268,7 +16866,42 @@ window.setTimeout(() => {
     container.style.display = 'flex';
   }
 
-function salvarSessaoSistema(usuario) {
+function obterPreferenciasLoginSalvas() {
+  try {
+    const bruto = localStorage.getItem('zuqui_login_prefs');
+    return bruto ? JSON.parse(bruto) : {};
+  } catch (error) {
+    localStorage.removeItem('zuqui_login_prefs');
+    return {};
+  }
+}
+
+function salvarPreferenciasLogin({ username = '', password = '', salvarSenha = false, manterConectado = false } = {}) {
+  const payload = {
+    salvarSenha: !!salvarSenha,
+    manterConectado: !!manterConectado,
+    username: salvarSenha ? String(username || '').trim() : '',
+    password: salvarSenha ? String(password || '') : '',
+  };
+  localStorage.setItem('zuqui_login_prefs', JSON.stringify(payload));
+}
+
+function restaurarPreferenciasLogin() {
+  const prefs = obterPreferenciasLoginSalvas();
+  const user = document.getElementById('username');
+  const pass = document.getElementById('password');
+  const save = document.getElementById('savePassword');
+  const keep = document.getElementById('keepLoggedIn');
+
+  if (save) save.checked = !!prefs.salvarSenha;
+  if (keep) keep.checked = !!prefs.manterConectado;
+  if (prefs.salvarSenha) {
+    if (user) user.value = String(prefs.username || '');
+    if (pass) pass.value = String(prefs.password || '');
+  }
+}
+
+function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   const usuarioNormalizado = {
     ...usuario,
     perfil: normalizarPerfilUsuario(usuario?.perfil),
@@ -16278,10 +16911,15 @@ function salvarSessaoSistema(usuario) {
   atualizarUsuarioTopbar();
   habilitarSomNotificacao();
   const payload = JSON.stringify(usuarioNormalizado);
-  localStorage.setItem('zuqui_auth', payload);
-  sessionStorage.removeItem('zuqui_auth');
+  if (manterConectado) {
+    localStorage.setItem('zuqui_auth', payload);
+    sessionStorage.removeItem('zuqui_auth');
+  } else {
+    sessionStorage.setItem('zuqui_auth', payload);
+    localStorage.removeItem('zuqui_auth');
+  }
   const chk = document.getElementById('keepLoggedIn');
-  if (chk) chk.checked = true;
+  if (chk) chk.checked = !!manterConectado;
   reiniciarAssinaturaRealtimeNotificacoes();
 }
 
@@ -16337,10 +16975,18 @@ function salvarSessaoSistema(usuario) {
     if (banner) banner.hidden = true;
     const user = document.getElementById('username');
     const pass = document.getElementById('password');
+    const save = document.getElementById('savePassword');
     const chk = document.getElementById('keepLoggedIn');
-    if (user) user.value = '';
-    if (pass) pass.value = '';
-    if (chk) chk.checked = false;
+    const prefs = obterPreferenciasLoginSalvas();
+    if (prefs.salvarSenha) {
+      if (user) user.value = String(prefs.username || '');
+      if (pass) pass.value = String(prefs.password || '');
+    } else {
+      if (user) user.value = '';
+      if (pass) pass.value = '';
+    }
+    if (save) save.checked = !!prefs.salvarSenha;
+    if (chk) chk.checked = !!prefs.manterConectado;
     document.querySelectorAll('.nav-btn[data-page]').forEach(btn => { btn.style.display = ''; });
     setSistemaLogado(false);
     reiniciarAssinaturaRealtimeNotificacoes();
@@ -16595,6 +17241,8 @@ function salvarSessaoSistema(usuario) {
     habilitarSomNotificacao();
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
+    const salvarSenha = document.getElementById('savePassword')?.checked === true;
+    const manterConectado = document.getElementById('keepLoggedIn')?.checked === true;
     const loginComEmail = username.includes('@');
     setMsg('msgLogin', '', '');
 
@@ -16605,7 +17253,8 @@ function salvarSessaoSistema(usuario) {
 
     const isAdmin = predefinedUsers.some(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (isAdmin) {
-      salvarSessaoSistema({ tipo: 'admin', username: username.toLowerCase(), perfil: { codigo: 'ADM', permissoes: obterPermissoesBase('ADM') } });
+      salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
+      salvarSessaoSistema({ tipo: 'admin', username: username.toLowerCase(), perfil: { codigo: 'ADM', permissoes: obterPermissoesBase('ADM') } }, { manterConectado });
       setSistemaLogado(true);
       aplicarPermissoesSistema();
       carregarNotificacoes();
@@ -16706,7 +17355,8 @@ function salvarSessaoSistema(usuario) {
       setMsg('msgLogin', 'Seu perfil não pôde ser carregado agora. Acesso liberado com permissões básicas.', 'ok');
     }
 
-    salvarSessaoSistema({ tipo: 'funcionario', id: funcionario.id, nome: funcionario.nome, perfil_id: funcionario.perfil_id, perfil: perfilFuncionario });
+    salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
+    salvarSessaoSistema({ tipo: 'funcionario', id: funcionario.id, nome: funcionario.nome, perfil_id: funcionario.perfil_id, perfil: perfilFuncionario }, { manterConectado });
     setSistemaLogado(true);
     aplicarPermissoesSistema();
     carregarNotificacoes();
@@ -16720,7 +17370,8 @@ function salvarSessaoSistema(usuario) {
     }
   });
   const keepLoggedInCheckbox = document.getElementById('keepLoggedIn');
-  if (keepLoggedInCheckbox) keepLoggedInCheckbox.checked = true;
+  if (keepLoggedInCheckbox) keepLoggedInCheckbox.checked = false;
+  restaurarPreferenciasLogin();
   restaurarSessaoSistema();
   processarFluxoAutenticacaoPorToken();
   iniciarAtualizacaoAutomatica();
@@ -16742,6 +17393,7 @@ function salvarSessaoSistema(usuario) {
     }
   });
   configurarAberturaAutomaticaDatePicker();
+  configurarEnterCadastrosFinanceiros();
 </script>
 </body>
 </html>
