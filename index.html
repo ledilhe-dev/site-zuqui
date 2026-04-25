@@ -2572,16 +2572,6 @@
         </div>
       </div>
     </div>
-    <div class="nav-group" style="margin-top:auto;border-top:1px solid var(--border);padding-top:12px">
-      <div class="nav-label">Portal</div>
-      <button class="nav-btn" data-page="portal" onclick="abrirPagina('portal', this)">
-        <span class="icon">PO</span>
-        <span class="nav-copy">
-          <span class="nav-title">Portal do funcionario</span>
-          <span class="nav-hint">Acesso do colaborador</span>
-        </span>
-      </button>
-    </div>
   </aside>
 
   <!-- MAIN -->
@@ -2780,7 +2770,7 @@
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="pinFuncionario">Senha</label>
-              <input id="pinFuncionario" class="campo-curto" type="text" placeholder="PIN" maxlength="6">
+              <input id="pinFuncionario" class="campo-curto" type="password" placeholder="PIN" maxlength="6" autocomplete="new-password" name="pin_funcionario_novo" inputmode="numeric" autocapitalize="off" autocorrect="off" spellcheck="false">
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="horarioInicioFuncionario">Hora inicial</label>
@@ -3186,43 +3176,6 @@
         </div>
       </section>
 
-      <!--  PORTAL DO FUNCIONÁRIO  -->
-      <section id="portal" class="pagina">
-        <div class="page-title">Portal do Funcionário</div>
-        <div class="page-sub">Tarefas e execuções do dia</div>
-
-        <div class="card">
-          <div class="card-title">Login do Funcionário</div>
-          <div class="form-row">
-            <select id="portalFuncionarioSelect" style="flex:1">
-              <option value="">- Selecione o funcionário -</option>
-            </select>
-            <input id="portalPin" class="campo-curto" type="password" placeholder="PIN" maxlength="6">
-            <button class="btn btn-green" onclick="loginPortalFuncionario()">Entrar</button>
-            <button class="btn btn-ghost" onclick="logoutPortalFuncionario()">Sair</button>
-          </div>
-          <div style="margin-top:12px; display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" id="portalManterConectado" style="width:16px; height:16px; cursor:pointer;">
-            <label for="portalManterConectado" style="font-size:14px; color:var(--text-muted); cursor:pointer;">
-              Manter conectado
-            </label>
-          </div>
-          <div class="msg" id="msgPortal"></div>
-        </div>
-
-        <div id="portalContainer" style="display:none">
-          <div class="card">
-            <div class="card-title">Tarefas Disponíveis</div>
-            <div id="portalTarefasDisponiveis"><div class="empty">Nenhuma tarefa disponível.</div></div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">Em Andamento</div>
-            <div id="portalTarefasAndamento"><div class="empty">Nenhuma tarefa em andamento.</div></div>
-          </div>
-        </div>
-      </section>
-
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /shell -->
@@ -3302,7 +3255,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '2.0';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -3315,7 +3268,6 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let execucaoAtualId = null;
 let itensExecucao = [];
 let tarefasDisponiveis = true;
-let portalFuncionarioLogado = null;
 let tarefaEmEdicaoId = null;
 let checklistReferenciaEmEdicaoId = null;
 let itensRascunhoTarefaCadastro = [];
@@ -3394,6 +3346,7 @@ const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 15 * 60 * 1000;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
 // Horizonte de agendamento ao clicar em "Lançar tarefa" (ex.: 7, 14, 30).
 const HORIZONTE_AGENDAMENTO_MANUAL_DIAS = 7;
+let checklistLancamentosSuportaColunasAgendamento = null;
 
 function redefinirEstadoAvisoCentralTarefas() {
   avisoCentralTarefasFechado = false;
@@ -3674,9 +3627,6 @@ function obterFuncionarioDestinoAlertaRapidoAtual() {
       return { id: String(usuarioSistemaLogado.id), nome: usuarioSistemaLogado.nome || '' };
     }
   }
-  if (portalFuncionarioLogado?.id) {
-    return { id: String(portalFuncionarioLogado.id), nome: portalFuncionarioLogado.nome || '' };
-  }
   return { id: '', nome: '' };
 }
 
@@ -3752,7 +3702,6 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
 }
 
 function usuarioRecebeAlertaOperacional() {
-  if (portalFuncionarioLogado?.id) return true;
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return false;
 
@@ -3811,7 +3760,6 @@ const PERFIL_PERMISSOES = [
   { key: 'confirmar_alertas_rapidas', label: 'Confirmar alertas rápidos' },
   { key: 'execucoes', label: 'Em andamento' },
   { key: 'tarefas_atraso', label: 'Tarefas em atraso' },
-  { key: 'portal', label: 'Portal do funcionario' },
   { key: 'nova_execucao_manual', label: 'Nova execucao manual' },
   { key: 'ver_todos_checklists', label: 'Ver checklists de todos' },
   { key: 'ver_todas_execucoes', label: 'Ver execucoes de todos' },
@@ -3839,52 +3787,11 @@ function obterPermissoesBase(codigo) {
     confirmar_alertas_rapidas: true,
     execucoes: true,
     tarefas_atraso: false,
-    portal: false,
     nova_execucao_manual: false,
     ver_todos_checklists: false,
     // Liberado para o perfil FUNCIONARIO visualizar o andamento completo.
     ver_todas_execucoes: true,
   };
-}
-
-function salvarSessaoPortal() {
-  if (!portalFuncionarioLogado) return;
-  const manter = document.getElementById('portalManterConectado')?.checked;
-  const dados = JSON.stringify(portalFuncionarioLogado);
-  if (manter) {
-    localStorage.setItem('portalFuncionarioLogado', dados);
-    sessionStorage.removeItem('portalFuncionarioLogado');
-  } else {
-    sessionStorage.setItem('portalFuncionarioLogado', dados);
-    localStorage.removeItem('portalFuncionarioLogado');
-  }
-}
-
-function restaurarSessaoPortal() {
-  try {
-    const salvoLocal = localStorage.getItem('portalFuncionarioLogado');
-    const salvoSessao = sessionStorage.getItem('portalFuncionarioLogado');
-    const salvo = salvoLocal || salvoSessao;
-    if (!salvo) return false;
-
-    portalFuncionarioLogado = JSON.parse(salvo);
-
-    const manter = !!salvoLocal;
-    const chk = document.getElementById('portalManterConectado');
-    if (chk) chk.checked = manter;
-
-    const sel = document.getElementById('portalFuncionarioSelect');
-    if (sel && portalFuncionarioLogado?.id) sel.value = portalFuncionarioLogado.id;
-
-    setMsg('msgPortal', `Login restaurado para ${portalFuncionarioLogado.nome}.`, 'ok');
-    carregarTarefasPortal();
-    return true;
-  } catch (e) {
-    localStorage.removeItem('portalFuncionarioLogado');
-    sessionStorage.removeItem('portalFuncionarioLogado');
-    portalFuncionarioLogado = null;
-    return false;
-  }
 }
 
 // ---- NAVIGATION ----
@@ -3904,7 +3811,6 @@ const topTitles = {
   tarefas_rapidas: ['Alertas rápidas', 'Avisos pontuais para a equipe'],
   execucoes: ['Checklist em andamento', 'Pause, retome e finalize tarefas'],
   tarefas_atraso: ['Checklist em atraso', 'Pendências fora do prazo'],
-  portal: ['Portal do Funcionario', 'Suas tarefas do dia'],
 };
 
 function paginaPertenceMenuChecklist(pageId = '') {
@@ -4062,7 +3968,7 @@ function abrirPagina(id, botao) {
   if (id === 'bater_ponto') { carregarBaterPonto(); }
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
-  if (id === 'funcionarios') { carregarFuncionarios(); carregarSelectPerfisFuncionario(); }
+  if (id === 'funcionarios') { limparFormularioFuncionario(); carregarFuncionarios(); carregarSelectPerfisFuncionario(); }
   if (id === 'solicitacoes') { carregarSolicitacoesAcesso(); }
   if (id === 'emails') { carregarDestinatariosEmail(); }
   if (id === 'configuracoes') { carregarConfiguracoesLoja(); }
@@ -4076,7 +3982,6 @@ function abrirPagina(id, botao) {
   if (id === 'tarefas_rapidas') { carregarTarefasRapidas(); }
   if (id === 'execucoes') { resetFiltroData(false); carregarSelectExecucao(); carregarExecucoes(); }
   if (id === 'tarefas_atraso') { carregarTarefasAtrasoMaster(); }
-  if (id === 'portal') { carregarSelectFuncionariosPortal(); restaurarSessaoPortal(); }
   carregarNotificacoes();
   iniciarAtualizacaoAutomatica();
 }
@@ -4086,7 +3991,7 @@ function obterPaginaAtivaAtual() {
 }
 
 function existeSessaoAtivaParaAtualizacao() {
-  return !!usuarioSistemaLogado || !!portalFuncionarioLogado;
+  return !!usuarioSistemaLogado;
 }
 
 function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
@@ -4178,8 +4083,6 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'tarefas_rapidas') await carregarTarefasRapidas();
     if (paginaAtiva === 'execucoes') await carregarExecucoes();
     if (paginaAtiva === 'tarefas_atraso') await carregarTarefasAtrasoMaster();
-    if (paginaAtiva === 'portal' && portalFuncionarioLogado?.id) await carregarTarefasPortal();
-
     await carregarNotificacoes();
     ultimoSucessoSincronizacaoEm = Date.now();
     atualizarIndicadorSincronizacao('idle', 'Atualizado agora');
@@ -4623,6 +4526,20 @@ async function excluirCadastroCompletoPorEmail(email, opcoes = {}) {
     return { success: false, cancelled: true };
   }
 
+  const { data: funcionariosRelacionados, error: erroFuncionariosRelacionados } = await sb
+    .from('funcionarios')
+    .select('id')
+    .eq('email', emailNormalizado);
+
+  if (erroFuncionariosRelacionados && !isMissingTableError(erroFuncionariosRelacionados)) {
+    return { success: false, message: mensagemErroSupabase(erroFuncionariosRelacionados, 'Não foi possível preparar a exclusão do cadastro.') };
+  }
+
+  for (const item of (funcionariosRelacionados || [])) {
+    const preparo = await desvincularFuncionarioParaExclusao(item.id);
+    if (!preparo.success) return preparo;
+  }
+
   const operacoes = [
     sb.from('email_tokens_auth').delete().eq('email', emailNormalizado),
     sb.from('solicitacoes_acesso').delete().eq('email', emailNormalizado),
@@ -4633,6 +4550,9 @@ async function excluirCadastroCompletoPorEmail(email, opcoes = {}) {
   const falha = resultados.find(resultado => resultado.status === 'fulfilled' && resultado.value?.error && !isMissingAccessRequestsTableError(resultado.value.error) && !isMissingTableError(resultado.value.error));
 
   if (falha && falha.status === 'fulfilled') {
+    if (isForeignKeyViolationError(falha.value.error)) {
+      return { success: false, message: 'Não foi possível excluir porque ainda existem vínculos obrigatórios deste usuário no histórico.' };
+    }
     return { success: false, message: falha.value.error.message || 'Não foi possível excluir o cadastro completo.' };
   }
 
@@ -4764,8 +4684,59 @@ function isMissingLaunchEventsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.checklist_lancamento_eventos"'));
 }
 
+function isMissingChecklistLaunchScheduleColumnsError(error) {
+  const mensagem = String(error?.message || '').toLowerCase();
+  return error?.code === '42703' && (mensagem.includes('created_at') || mensagem.includes('data_programada'));
+}
+
 function isMissingQuickAlertsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.alertas_rapidos"'));
+}
+
+function isForeignKeyViolationError(error) {
+  return error?.code === '23503' || (error?.message && String(error.message).toLowerCase().includes('violates foreign key constraint'));
+}
+
+function isMissingColumnError(error) {
+  return error?.code === '42703' || String(error?.message || '').toLowerCase().includes('column');
+}
+
+async function desvincularFuncionarioParaExclusao(funcionarioId) {
+  const id = String(funcionarioId || '').trim();
+  if (!id) return { success: false, message: 'Funcionário inválido para exclusão.' };
+
+  const operacoes = [
+    sb.from('tarefas').update({ funcionario_id: null }).eq('funcionario_id', id),
+    sb.from('checklist_lancamentos').update({ funcionario_id: null }).eq('funcionario_id', id),
+    sb.from('checklist_execucoes').update({ funcionario_id: null }).eq('funcionario_id', id),
+    sb.from('checklist_execucoes').update({ usuario_inicio_id: null }).eq('usuario_inicio_id', id),
+    sb.from('checklist_execucoes').update({ usuario_fim_id: null }).eq('usuario_fim_id', id),
+    sb.from('checklist_lancamento_eventos').update({ funcionario_responsavel_id: null }).eq('funcionario_responsavel_id', id),
+    sb.from('checklist_lancamento_eventos').update({ funcionario_ator_id: null }).eq('funcionario_ator_id', id),
+  ];
+
+  const resultados = await Promise.allSettled(operacoes);
+  const falha = resultados.find(resultado => {
+    if (resultado.status !== 'fulfilled') return true;
+    const erro = resultado.value?.error;
+    if (!erro) return false;
+    if (
+      isMissingTableError(erro) ||
+      isMissingLancamentosTableError(erro) ||
+      isMissingLaunchEventsTableError(erro) ||
+      isMissingColumnError(erro)
+    ) return false;
+    return true;
+  });
+
+  if (falha) {
+    if (falha.status === 'fulfilled') {
+      return { success: false, message: mensagemErroSupabase(falha.value?.error, 'Erro ao desvincular registros do funcionário.') };
+    }
+    return { success: false, message: 'Erro ao preparar a exclusão do funcionário.' };
+  }
+
+  return { success: true };
 }
 
 function isMissingWorkShiftColumnsError(error) {
@@ -5028,14 +4999,6 @@ function obterAtorAuditoriaAtual() {
     };
   }
 
-  if (portalFuncionarioLogado?.id) {
-    return {
-      funcionarioId: portalFuncionarioLogado.id,
-      nome: portalFuncionarioLogado.nome || 'Funcionário',
-      origem: 'portal',
-    };
-  }
-
   return {
     funcionarioId: null,
     nome: 'Sistema',
@@ -5102,17 +5065,9 @@ async function registrarEventoLancamento({
   throw error;
 }
 
-function obterFuncionarioOperadorAtual(preferirPortal = false) {
-  if (preferirPortal && portalFuncionarioLogado?.id) {
-    return { id: portalFuncionarioLogado.id, nome: portalFuncionarioLogado.nome || 'Funcionário', origem: 'portal' };
-  }
-
+function obterFuncionarioOperadorAtual() {
   if (usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id) {
     return { id: usuarioSistemaLogado.id, nome: usuarioSistemaLogado.nome || 'Funcionário', origem: 'sistema' };
-  }
-
-  if (portalFuncionarioLogado?.id) {
-    return { id: portalFuncionarioLogado.id, nome: portalFuncionarioLogado.nome || 'Funcionário', origem: 'portal' };
   }
 
   return null;
@@ -6502,20 +6457,25 @@ async function carregarNotificacoes() {
     }
 
     const carregarLancamentosPendentes = async () => {
-      const consultaCompleta = await sb
-        .from('checklist_lancamentos')
-        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at, data_programada')
-        .eq('status', 'pendente')
-        .order('lancado_em', { ascending: false });
+      if (checklistLancamentosSuportaColunasAgendamento !== false) {
+        const consultaCompleta = await sb
+          .from('checklist_lancamentos')
+          .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at, data_programada')
+          .eq('status', 'pendente')
+          .order('lancado_em', { ascending: false });
 
-      if (!consultaCompleta.error) return consultaCompleta.data || [];
+        if (!consultaCompleta.error) {
+          checklistLancamentosSuportaColunasAgendamento = true;
+          return consultaCompleta.data || [];
+        }
 
-      const mensagemErro = String(consultaCompleta.error?.message || '').toLowerCase();
-      if (!mensagemErro.includes('created_at')) {
-        throw consultaCompleta.error;
+        if (!isMissingChecklistLaunchScheduleColumnsError(consultaCompleta.error)) {
+          throw consultaCompleta.error;
+        }
+
+        checklistLancamentosSuportaColunasAgendamento = false;
       }
 
-      // Compatibilidade para bancos sem coluna created_at em checklist_lancamentos.
       const consultaFallback = await sb
         .from('checklist_lancamentos')
         .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em')
@@ -6523,7 +6483,7 @@ async function carregarNotificacoes() {
         .order('lancado_em', { ascending: false });
 
       if (consultaFallback.error) throw consultaFallback.error;
-      return (consultaFallback.data || []).map(item => ({ ...item, created_at: null }));
+      return (consultaFallback.data || []).map(item => ({ ...item, created_at: null, data_programada: null }));
     };
 
     let execucoesPendentesQuery = sb
@@ -6757,7 +6717,7 @@ async function carregarNotificacoes() {
         pendentesChecklist = consultaPendentesCompleta.data || [];
       } else {
         const mensagemErro = String(consultaPendentesCompleta.error?.message || '').toLowerCase();
-        if (!mensagemErro.includes('created_at')) throw consultaPendentesCompleta.error;
+        if (!mensagemErro.includes('created_at') && !mensagemErro.includes('data_programada')) throw consultaPendentesCompleta.error;
 
         const consultaPendentesFallback = await sb
           .from('checklist_lancamentos')
@@ -7021,19 +6981,43 @@ function preencherResumoProdutividade({ total = 0, finalizadas = 0, abertas = 0,
 
 async function carregarProdutividadeDiaDashboard(periodo = 'dia') {
   const { inicio, fim, info, labelTotal } = obterIntervaloProdutividade(periodo);
-  const [totalRes, finalizadasRes, abertasRes, pausadasRes, participacaoRes] = await Promise.all([
+  const [totalRes, finalizadasRes, abertasRes, pausadasRes] = await Promise.all([
     sb.from('checklist_execucoes').select('*', { count: 'exact', head: true }).gte('data_execucao', inicio).lte('data_execucao', fim),
     sb.from('checklist_execucoes').select('*', { count: 'exact', head: true }).gte('data_execucao', inicio).lte('data_execucao', fim).eq('status', 'finalizado'),
     sb.from('checklist_execucoes').select('*', { count: 'exact', head: true }).gte('data_execucao', inicio).lte('data_execucao', fim).eq('status', 'aberto'),
     sb.from('checklist_execucoes').select('*', { count: 'exact', head: true }).gte('data_execucao', inicio).lte('data_execucao', fim).eq('status', 'pausado'),
-    sb.from('checklist_execucoes').select('funcionario_id, usuario_fim_id').gte('data_execucao', inicio).lte('data_execucao', fim).eq('status', 'finalizado'),
   ]);
 
-  if (totalRes.error || finalizadasRes.error || abertasRes.error || pausadasRes.error || participacaoRes?.error) {
-    throw totalRes.error || finalizadasRes.error || abertasRes.error || pausadasRes.error || participacaoRes?.error;
+  if (totalRes.error || finalizadasRes.error || abertasRes.error || pausadasRes.error) {
+    throw totalRes.error || finalizadasRes.error || abertasRes.error || pausadasRes.error;
   }
 
-  const participacaoRows = participacaoRes?.data || [];
+  let participacaoRows = [];
+  const participacaoResCompleta = await sb
+    .from('checklist_execucoes')
+    .select('funcionario_id, usuario_fim_id')
+    .gte('data_execucao', inicio)
+    .lte('data_execucao', fim)
+    .eq('status', 'finalizado');
+
+  if (participacaoResCompleta.error) {
+    const msgErr = String(participacaoResCompleta.error?.message || '').toLowerCase();
+    const codigoErr = participacaoResCompleta.error?.code;
+    if (codigoErr === '42703' && msgErr.includes('usuario_fim_id')) {
+      const fallback = await sb
+        .from('checklist_execucoes')
+        .select('funcionario_id')
+        .gte('data_execucao', inicio)
+        .lte('data_execucao', fim)
+        .eq('status', 'finalizado');
+      participacaoRows = (fallback.data || []).map(r => ({ funcionario_id: r.funcionario_id, usuario_fim_id: null }));
+    } else {
+      throw participacaoResCompleta.error;
+    }
+  } else {
+    participacaoRows = participacaoResCompleta.data || [];
+  }
+
   const totalFinalizadas = finalizadasRes.count || 0;
   const contadorPorFuncionario = {};
 
@@ -7416,7 +7400,7 @@ async function criarFuncionario() {
     ? {
         nome,
         email: emailInformado ? email : null,
-        pin: pin || null,
+        ...(pin ? { pin } : {}),
         perfil_id: perfilId,
         horario_trabalho_inicio: horarioInicio,
         horario_trabalho_fim: horarioFim,
@@ -7490,7 +7474,7 @@ async function editarFuncionario(id) {
   funcionarioEmailOriginalEdicao = funcionario.email || '';
   document.getElementById('nomeFuncionario').value = funcionario.nome || '';
   document.getElementById('emailFuncionario').value = funcionario.email || '';
-  document.getElementById('pinFuncionario').value = funcionario.pin || '';
+  document.getElementById('pinFuncionario').value = '';
   document.getElementById('horarioInicioFuncionario').value = String(funcionario.horario_trabalho_inicio || '').slice(0, 5);
   document.getElementById('horarioFimFuncionario').value = String(funcionario.horario_trabalho_fim || '').slice(0, 5);
   document.getElementById('perfilFuncionario').value = funcionario.perfil_id || '';
@@ -7519,6 +7503,12 @@ async function excluirFuncionario(id) {
   }
 
   if (funcionario.email) {
+    const preparo = await desvincularFuncionarioParaExclusao(id);
+    if (!preparo.success) {
+      setMsg('msgFuncionarios', preparo.message || 'Não foi possível preparar a exclusão do funcionário.', 'err');
+      return;
+    }
+
     const resultado = await excluirCadastroCompletoPorEmail(funcionario.email, {
       confirmar: false,
     });
@@ -7527,9 +7517,19 @@ async function excluirFuncionario(id) {
       return;
     }
   } else {
+    const preparo = await desvincularFuncionarioParaExclusao(id);
+    if (!preparo.success) {
+      setMsg('msgFuncionarios', preparo.message || 'Não foi possível preparar a exclusão do funcionário.', 'err');
+      return;
+    }
+
     const { error: erroDelete } = await sb.from('funcionarios').delete().eq('id', id);
     if (erroDelete) {
-      setMsg('msgFuncionarios', 'Não foi possível excluir o funcionário.', 'err');
+      if (isForeignKeyViolationError(erroDelete)) {
+        setMsg('msgFuncionarios', 'Não foi possível excluir porque esse usuário ainda possui vínculos obrigatórios no histórico.', 'err');
+        return;
+      }
+      setMsg('msgFuncionarios', `Não foi possível excluir o funcionário: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}`, 'err');
       return;
     }
   }
@@ -9336,7 +9336,10 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   };
 
   let { data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(true);
-  if (erroExistentes && String(erroExistentes.message || '').toLowerCase().includes('created_at')) {
+  if (erroExistentes && (
+    String(erroExistentes.message || '').toLowerCase().includes('created_at')
+    || String(erroExistentes.message || '').toLowerCase().includes('data_programada')
+  )) {
     ({ data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(false));
   }
 
@@ -10071,83 +10074,6 @@ async function iniciarTarefaAgendada(tarefaId) {
   return iniciarChecklistDireto(tarefaId);
 }
 
-// 
-// PORTAL DO FUNCIONÁRIO
-// 
-async function carregarSelectFuncionariosPortal() {
-  const sel = document.getElementById('portalFuncionarioSelect');
-  sel.innerHTML = '<option value="">- Selecione o funcionário -</option>';
-  const { data } = await sb.from('funcionarios').select('*').eq('ativo', true).order('nome');
-  (data || []).forEach(f => {
-    const o = document.createElement('option');
-    o.value = f.id; o.textContent = f.nome;
-    sel.appendChild(o);
-  });
-
-  if (portalFuncionarioLogado?.id) {
-    sel.value = portalFuncionarioLogado.id;
-  }
-}
-
-async function loginPortalFuncionario() {
-  const funcionarioId = document.getElementById('portalFuncionarioSelect').value;
-  const pin = document.getElementById('portalPin').value.trim();
-
-  if (!funcionarioId) {
-    setMsg('msgPortal', 'Selecione o funcionário.', 'err');
-    return;
-  }
-  if (!pin) {
-    setMsg('msgPortal', 'Digite o PIN do funcionário.', 'err');
-    return;
-  }
-
-  const { data: funcionario, error } = await sb
-    .from('funcionarios')
-    .select('id, nome, pin, ativo')
-    .eq('id', funcionarioId)
-    .eq('ativo', true)
-    .single();
-
-  if (error || !funcionario) {
-    setMsg('msgPortal', 'Funcionário não encontrado.', 'err');
-    return;
-  }
-
-  if (!funcionario.pin || funcionario.pin !== pin) {
-    setMsg('msgPortal', 'PIN inválido.', 'err');
-    return;
-  }
-
-  portalFuncionarioLogado = funcionario;
-  salvarSessaoPortal();
-  reiniciarAssinaturaRealtimeNotificacoes();
-  document.getElementById('portalPin').value = '';
-  setMsg('msgPortal', `Login realizado para ${funcionario.nome}.`, 'ok');
-  await carregarTarefasPortal();
-}
-
-function logoutPortalFuncionario(clearMsg = true) {
-  portalFuncionarioLogado = null;
-  localStorage.removeItem('portalFuncionarioLogado');
-  sessionStorage.removeItem('portalFuncionarioLogado');
-
-  const container = document.getElementById('portalContainer');
-  if (container) container.style.display = 'none';
-
-  const pin = document.getElementById('portalPin');
-  if (pin) pin.value = '';
-
-  const sel = document.getElementById('portalFuncionarioSelect');
-  if (sel) sel.value = '';
-
-  const chk = document.getElementById('portalManterConectado');
-  if (chk) chk.checked = false;
-
-  if (clearMsg) setMsg('msgPortal', '', '');
-  reiniciarAssinaturaRealtimeNotificacoes();
-}
-
 function diaSemanaAtual() {
   const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
   return dias[new Date().getDay()];
@@ -10161,202 +10087,6 @@ function tarefaDisponivelHoje(diasSemana, dataRef = hoje()) {
     : diaSemanaAtual();
   if (!diaToken) return true;
   return diasSemana.split(',').map(d => d.trim()).includes(diaToken);
-}
-
-async function carregarTarefasPortal() {
-  const container = document.getElementById('portalContainer');
-  const disponivel = document.getElementById('portalTarefasDisponiveis');
-  const andamento = document.getElementById('portalTarefasAndamento');
-
-  if (!portalFuncionarioLogado?.id) {
-    container.style.display = 'none';
-    return;
-  }
-
-  container.style.display = 'block';
-  disponivel.innerHTML = '<div class="empty">Carregando⬦</div>';
-  andamento.innerHTML = '<div class="empty">Carregando⬦</div>';
-
-  try {
-    const cfg = await obterConfiguracoesLoja();
-    if (!cfg.missing) {
-      await garantirLancamentosAutomaticosDoDia(cfg.data || null);
-    }
-  } catch (error) {
-    console.warn('Não foi possível preparar os lançamentos do portal:', error);
-  }
-
-  const { data: tarefas, error: errTarefas } = await sb
-    .from('checklist_lancamentos')
-    .select('*')
-    .eq('status', 'pendente')
-    .order('horario_limite', { ascending: true })
-    .order('nome', { ascending: true });
-
-  const tarefasHoje = (tarefas || []).filter(t => lancamentoProgramadoHoje(t) && tarefaDisponivelHoje(t.dias_semana));
-
-  const funcionarioIds = [...new Set(tarefasHoje.map(t => t.funcionario_id).filter(Boolean).map(item => String(item)))];
-  let funcionariosMap = {};
-  if (funcionarioIds.length) {
-    const { data: funcionariosData } = await sb
-      .from('funcionarios')
-      .select('id, nome')
-      .in('id', funcionarioIds);
-    funcionariosMap = Object.fromEntries((funcionariosData || []).map(item => [String(item.id), item.nome]));
-  }
-
-  if (errTarefas || !tarefasHoje.length) {
-    disponivel.innerHTML = '<div class="empty">Nenhuma tarefa disponível para este funcionário hoje.</div>';
-  } else {
-    disponivel.innerHTML = '<div class="lista">' + tarefasHoje.map(t => `
-      <div class="item">
-        <div class="item-info">
-          <div class="item-nome">${t.nome}</div>
-          ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
-          <div class="item-detalhe">Responsável principal: ${funcionariosMap[String(t.funcionario_id)] ?? '-'}</div>
-          ${t.horario_limite ? `<div class="item-detalhe" style="color:var(--amber);margin-top:4px">Prazo máximo: ${t.horario_limite}</div>` : ''}
-          ${t.dias_semana ? `<div class="item-detalhe" style="color:var(--text-dim);font-size:11px;margin-top:4px">Dias: ${formatarDias(t.dias_semana)}</div>` : ''}
-        </div>
-        <div class="item-actions">
-          <button class="btn btn-green btn-sm" onclick="iniciarTarefaPortal('${t.id}', '${t.nome.replace(/'/g, "\'")}')">Iniciar</button>
-        </div>
-      </div>`).join('') + '</div>';
-  }
-
-  const { data: execucoes, error: errExec } = await sb
-    .from('checklist_execucoes')
-    .select('*, tarefas(nome, descricao, horario_limite), checklists(nome)')
-    .eq('status', 'aberto')
-    .or(`funcionario_id.eq.${portalFuncionarioLogado.id},usuario_inicio_id.eq.${portalFuncionarioLogado.id}`)
-    .order('iniciado_em', { ascending: false });
-
-  if (errExec || !execucoes?.length) {
-    andamento.innerHTML = '<div class="empty">Nenhuma tarefa em andamento.</div>';
-  } else {
-    andamento.innerHTML = '<div class="lista">' + execucoes.map(e => `
-      <div class="item">
-        <div class="item-info">
-          <div class="item-nome">${e.tarefas?.nome ?? e.checklists?.nome ?? 'Execucao'}</div>
-          <div class="item-detalhe">Iniciado: ${fmtDate(e.iniciado_em)}</div>
-        </div>
-        <div class="item-actions">
-          <button class="btn btn-amber btn-sm" onclick="abrirModal('${e.id}')">Continuar</button>
-        </div>
-      </div>`).join('') + '</div>';
-  }
-}
-
-async function iniciarTarefaPortal(lancamentoId, tarefaNome) {
-  const operador = obterFuncionarioOperadorAtual(true);
-  if (!operador?.id) {
-    alert('Faça login com o PIN do funcionário.');
-    return;
-  }
-
-  const { data: tarefaAtual, error: errTarefa } = await sb
-    .from('checklist_lancamentos')
-    .select('*')
-    .eq('id', lancamentoId)
-    .single();
-
-  if (errTarefa || !tarefaAtual) {
-    alert('Tarefa não encontrada.');
-    return;
-  }
-
-  if (tarefaAtual.status !== 'pendente') {
-    alert('Esta tarefa já foi iniciada em outro dispositivo.');
-    await carregarTarefasPortal();
-    return;
-  }
-
-  const confirmacao = await confirmarAcaoComPin({
-    funcionario: operador,
-    titulo: 'Aceitar checklist',
-    subtitulo: `Confirme seu PIN para iniciar ${tarefaNome}.`,
-    textoAcao: 'Iniciar tarefa',
-  });
-
-  if (!confirmacao) return;
-
-  const { data: tarefa, error: errReserva } = await sb
-    .from('checklist_lancamentos')
-    .update({ status: 'iniciado' })
-    .eq('id', lancamentoId)
-    .eq('status', 'pendente')
-    .select('*')
-    .single();
-
-  if (errReserva || !tarefa) {
-    alert('Esta tarefa acabou de ser iniciada por outro usuário.');
-    await carregarTarefasPortal();
-    return;
-  }
-
-  const { data: exec, error } = await sb.from('checklist_execucoes').insert([{
-    lancamento_id: tarefa.id,
-    checklist_id: tarefa.checklist_id,
-    tarefa_id: tarefa.tarefa_id || null,
-    funcionario_id: tarefa.funcionario_id || null,
-    usuario_inicio_id: confirmacao.funcionarioId,
-    inicio_confirmado_em: confirmacao.confirmadoEm,
-    data_execucao: hoje(),
-    status: 'aberto',
-  }]).select().single();
-
-  if (error) {
-    try {
-      await sb.from('checklist_lancamentos').update({ status: 'pendente' }).eq('id', tarefa.id).eq('status', 'iniciado');
-    } catch (e) {}
-    if (isMissingExecutionRegistrySchemaError(error)) {
-      alert('Falta atualizar o banco com as novas colunas de início e finalização. Rode a nova migration do Supabase.');
-      return;
-    }
-    alert('Erro ao iniciar tarefa.');
-    return;
-  }
-
-  try {
-    await registrarMovimentacaoExecucao({
-      execucaoId: exec.id,
-      tipoAcao: 'inicio',
-      funcionarioId: confirmacao.funcionarioId,
-      funcionarioResponsavelId: tarefa.funcionario_id || null,
-      tarefaId: tarefa.tarefa_id || null,
-      checklistId: tarefa.checklist_id || null,
-      registradoEm: confirmacao.confirmadoEm,
-    });
-  } catch (movError) {
-    if (!isMissingExecutionRegistrySchemaError(movError)) {
-      console.warn('Não foi possível registrar o usuário que iniciou no portal:', movError);
-    }
-  }
-
-  try {
-    await registrarEventoLancamento({
-      lancamentoId: tarefa.id,
-      execucaoId: exec.id,
-      tarefaId: tarefa.tarefa_id || null,
-      checklistId: tarefa.checklist_id || null,
-      funcionarioResponsavelId: tarefa.funcionario_id || null,
-      funcionarioAtorId: confirmacao.funcionarioId,
-      funcionarioAtorNome: confirmacao.nomeFuncionario,
-      tipoEvento: 'iniciado',
-      origemEvento: operador.origem || 'portal',
-      dataProgramada: tarefa.data_programada || hoje(),
-      horarioProgramado: tarefa.horario_limite || null,
-      registradoEm: confirmacao.confirmadoEm,
-      observacao: `Checklist iniciado pelo portal por ${confirmacao.nomeFuncionario}.`,
-    });
-  } catch (erroAuditoria) {
-    console.warn('Não foi possível auditar o início via portal:', erroAuditoria);
-  }
-
-  pararSomNotificacao();
-
-  alert(`Tarefa "${tarefaNome}" iniciada por ${confirmacao.nomeFuncionario}!`);
-  await carregarTarefasPortal();
-  abrirModal(exec.id);
 }
 
 //
@@ -11850,7 +11580,7 @@ async function carregarTarefasAtrasoMaster() {
       if (!consultaCompleta.error) return consultaCompleta.data || [];
 
       const mensagemErro = String(consultaCompleta.error?.message || '').toLowerCase();
-      if (!mensagemErro.includes('created_at')) {
+      if (!mensagemErro.includes('created_at') && !mensagemErro.includes('data_programada')) {
         throw consultaCompleta.error;
       }
 
@@ -11975,7 +11705,7 @@ async function despausarExecucao(id) {
 }
 
 async function finalizarExecucaoDireta(id) {
-  const operador = obterFuncionarioOperadorAtual(obterPaginaAtivaAtual() === 'portal');
+  const operador = obterFuncionarioOperadorAtual();
   if (!operador) {
     setMsg('msgExecucoes', 'Faça login com um funcionário para finalizar esta tarefa.', 'err');
     return;
@@ -12161,7 +11891,7 @@ function toggleItemModal(i) {
 async function finalizarExecucao() {
   if (!execucaoAtualId) return;
 
-  const operador = obterFuncionarioOperadorAtual(obterPaginaAtivaAtual() === 'portal');
+  const operador = obterFuncionarioOperadorAtual();
   if (!operador) {
     setMsg('msgExecucoes', 'Faça login com um funcionário para finalizar esta tarefa.', 'err');
     return;
@@ -12320,7 +12050,6 @@ function registrarServiceWorkerPwa() {
 // ---- INIT ----
 registrarServiceWorkerPwa();
 carregarDashboard();
-carregarSelectFuncionariosPortal().then(() => restaurarSessaoPortal());
 carregarNotificacoes();
 iniciarAtualizacaoAutomatica();
 window.setTimeout(() => {
@@ -12370,8 +12099,8 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 1.4.1</div>
-    <div>Notas da versão 1.4.1: correções no lançamento por dia, melhoria das listas/favoritos, andamento sem finalizados e ajustes de notificações.</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 2.0</div>
+    <div>Notas da versão 2.0: criação do módulo financeiro com dashboards, exportações CSV e PDF, relatórios financeiros e ajustes de compatibilidade no login e nas notificações.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
@@ -12476,7 +12205,6 @@ function salvarSessaoSistema(usuario) {
     redefinirEstadoAvisoCentralTarefas();
     const banner = document.getElementById('overdueAlertBanner');
     if (banner) banner.hidden = true;
-    logoutPortalFuncionario(false);
     const user = document.getElementById('username');
     const pass = document.getElementById('password');
     const chk = document.getElementById('keepLoggedIn');
@@ -12741,7 +12469,7 @@ function salvarSessaoSistema(usuario) {
     setMsg('msgLogin', '', '');
 
     if (!username || !password) {
-      alert('Preencha usuário e senha.');
+      setMsg('msgLogin', 'Preencha usuário e senha.', 'err');
       return;
     }
 
@@ -12758,44 +12486,78 @@ function salvarSessaoSistema(usuario) {
     let funcionario = null;
     let error = null;
 
-    if (username.includes('@')) {
-      const resposta = await sb
-        .from('funcionarios')
-        .select('id, nome, email, pin, ativo, email_verificado, perfil_id, perfis(nome, codigo, permissoes)')
-        .eq('ativo', true)
-        .eq('email', username.toLowerCase())
-        .maybeSingle();
-      funcionario = resposta.data;
-      error = resposta.error;
-    } else {
+    const consultarFuncionarioComPerfil = async () => {
+      if (username.includes('@')) {
+        const resposta = await sb
+          .from('funcionarios')
+          .select('id, nome, email, pin, ativo, email_verificado, perfil_id, perfis(nome, codigo, permissoes)')
+          .eq('ativo', true)
+          .eq('email', username.toLowerCase())
+          .maybeSingle();
+        return { funcionario: resposta.data, error: resposta.error };
+      }
+
       const resposta = await sb
         .from('funcionarios')
         .select('id, nome, email, pin, ativo, email_verificado, perfil_id, perfis(nome, codigo, permissoes)')
         .eq('ativo', true)
         .ilike('nome', `%${escaparValorLike(username)}%`)
         .limit(20);
-      error = resposta.error;
-      if (!error) {
-        const buscaNormalizada = normalizarTextoComparacao(username);
-        const candidatos = resposta.data || [];
-        funcionario = candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
-          || candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
-          || null;
+
+      if (resposta.error) return { funcionario: null, error: resposta.error };
+      const buscaNormalizada = normalizarTextoComparacao(username);
+      const candidatos = resposta.data || [];
+      const funcionarioEncontrado = candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
+        || candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
+        || null;
+      return { funcionario: funcionarioEncontrado, error: null };
+    };
+
+    const consultarFuncionarioSemPerfil = async () => {
+      if (username.includes('@')) {
+        const resposta = await sb
+          .from('funcionarios')
+          .select('id, nome, email, pin, ativo, email_verificado, perfil_id')
+          .eq('ativo', true)
+          .eq('email', username.toLowerCase())
+          .maybeSingle();
+        return { funcionario: resposta.data ? { ...resposta.data, perfis: null } : null, error: resposta.error };
       }
+
+      const resposta = await sb
+        .from('funcionarios')
+        .select('id, nome, email, pin, ativo, email_verificado, perfil_id')
+        .eq('ativo', true)
+        .ilike('nome', `%${escaparValorLike(username)}%`)
+        .limit(20);
+
+      if (resposta.error) return { funcionario: null, error: resposta.error };
+      const buscaNormalizada = normalizarTextoComparacao(username);
+      const candidatos = resposta.data || [];
+      const funcionarioEncontrado = candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
+        || candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
+        || null;
+      return { funcionario: funcionarioEncontrado ? { ...funcionarioEncontrado, perfis: null } : null, error: null };
+    };
+
+    ({ funcionario, error } = await consultarFuncionarioComPerfil());
+    if (error) {
+      console.warn('Falha ao consultar funcionário com perfil, tentando fallback sem perfil:', error);
+      ({ funcionario, error } = await consultarFuncionarioSemPerfil());
     }
 
     if (error) {
       if (isMissingProfilesTableError(error)) {
-        alert('Rode o SQL da tabela perfis antes de usar o login por perfil.');
+        setMsg('msgLogin', 'Tabela de perfis indisponível no momento. Tente novamente em alguns segundos.', 'err');
         return;
       }
       console.error('Erro no login:', error);
-      alert('Erro ao fazer login.');
+      setMsg('msgLogin', `Erro ao fazer login: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
       return;
     }
 
     if (!funcionario || String(funcionario.pin ?? '') !== password) {
-      alert('Usuário ou senha incorretos.');
+      setMsg('msgLogin', 'Usuário ou senha incorretos.', 'err');
       return;
     }
 
@@ -12804,10 +12566,14 @@ function salvarSessaoSistema(usuario) {
       return;
     }
 
-    const perfilFuncionario = normalizarPerfilUsuario(funcionario.perfis);
-    if (!funcionario.perfil_id || !perfilFuncionario) {
-      setMsg('msgLogin', 'Seu usuário foi aprovado, mas ainda está sem perfil. Defina primeiro o perfil no painel administrativo.', 'err');
-      return;
+    let perfilFuncionario = normalizarPerfilUsuario(funcionario.perfis);
+    if (!perfilFuncionario || !perfilFuncionario.codigo) {
+      perfilFuncionario = {
+        nome: 'Funcionário',
+        codigo: 'FUNCIONARIO',
+        permissoes: obterPermissoesBase('FUNCIONARIO'),
+      };
+      setMsg('msgLogin', 'Seu perfil não pôde ser carregado agora. Acesso liberado com permissões básicas.', 'ok');
     }
 
     salvarSessaoSistema({ tipo: 'funcionario', id: funcionario.id, nome: funcionario.nome, perfil_id: funcionario.perfil_id, perfil: perfilFuncionario });
