@@ -1263,6 +1263,89 @@
         max-width: 100%;
       }
     }
+      @media (max-width: 768px) {
+        #financeiro_contasapagar .card {
+          padding: 14px;
+        }
+        #financeiro_contasapagar .card-title {
+          margin-bottom: 10px;
+        }
+        .financeiro-form-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .financeiro-form-row .campo-com-label {
+          padding-top: 15px;
+        }
+        .financeiro-form-row .campo-com-label.fornecedor,
+        .financeiro-form-row .campo-com-label.observacao-mobile,
+        .financeiro-form-row #btnSalvarContaAPagarFinanceiro,
+        .financeiro-form-row #btnCancelarContaAPagarFinanceiro {
+          grid-column: 1 / -1;
+        }
+        .financeiro-form-row .campo-com-label .campo-label {
+          text-align: left;
+          padding-right: 8px;
+        }
+        .financeiro-form-row .campo-com-label input,
+        .financeiro-form-row .campo-com-label select,
+        .financeiro-observacao-row input,
+        .financeiro-filtros-row input,
+        .financeiro-filtros-row select {
+          min-height: 44px;
+          height: 44px;
+          font-size: 16px;
+        }
+        .financeiro-form-row .btn,
+        .financeiro-filtros-row .btn {
+          min-height: 44px;
+          height: 44px;
+          font-size: 15px;
+        }
+        .financeiro-observacao-row {
+          margin-top: 10px !important;
+        }
+        .financeiro-observacao-row input {
+          width: 100%;
+        }
+        .financeiro-filtros-row {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .financeiro-filtros-row input,
+        .financeiro-filtros-row .campo-curto,
+        .financeiro-filtros-row .btn {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          flex: 1 1 auto !important;
+        }
+        #listaContasAPagarFinanceiro .item,
+        #listaBaixarContasFinanceiro .item {
+          padding: 12px;
+        }
+        #listaContasAPagarFinanceiro .item-detalhe,
+        #listaBaixarContasFinanceiro .item-detalhe {
+          line-height: 1.45;
+        }
+      }
+      @media (max-width: 540px) {
+        .financeiro-form-row {
+          grid-template-columns: 1fr;
+        }
+        .financeiro-form-row .campo-com-label,
+        .financeiro-form-row #btnSalvarContaAPagarFinanceiro,
+        .financeiro-form-row #btnCancelarContaAPagarFinanceiro {
+          grid-column: auto;
+        }
+        .financeiro-form-row .campo-com-label .campo-label {
+          font-size: 10px;
+        }
+        #financeiro_contasapagar .page-sub {
+          line-height: 1.4;
+        }
+      }
     .funcionario-form-row {
       display: flex;
       flex-wrap: wrap;
