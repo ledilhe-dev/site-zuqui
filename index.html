@@ -1446,6 +1446,23 @@
 
     /* ---- LIST ITEMS ---- */
     .lista { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .item-relatorio-excluido {
+      border-color: rgba(239,68,68,0.32);
+      background: linear-gradient(180deg, rgba(52, 18, 18, 0.94), rgba(28, 12, 12, 0.94));
+      box-shadow: inset 0 0 0 1px rgba(239,68,68,0.08);
+    }
+    .item-relatorio-excluido .item-nome {
+      color: #ffb4b4;
+    }
+    .rf-alerta-excluidos {
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(239,68,68,0.28);
+      background: rgba(86, 19, 19, 0.32);
+      color: #ffd7d7;
+      font-size: 13px;
+    }
     #listaTarefas .lista {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
@@ -3447,7 +3464,7 @@
           <div class="stat-card">
             <div class="s-label">Total geral (R$)</div>
             <div class="s-value" id="rfTotalGeral">R$ 0,00</div>
-            <div class="s-desc">Soma de todos os títulos no filtro</div>
+            <div class="s-desc">Soma dos títulos ativos no filtro</div>
           </div>
           <div class="stat-card">
             <div class="s-label">Total pago (R$)</div>
@@ -13122,21 +13139,33 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     return;
   }
 
+  const filtroStatusAtual = String(document.getElementById('filtroRelFinanceiroStatus')?.value || '').trim();
   const ordenados = [...itens].sort((a, b) => {
+    if (filtroStatusAtual === 'excluido') {
+      const aExcluido = obterStatusContaRelatorioFinanceiro(a) === 'excluido' ? 1 : 0;
+      const bExcluido = obterStatusContaRelatorioFinanceiro(b) === 'excluido' ? 1 : 0;
+      if (aExcluido !== bExcluido) return bExcluido - aExcluido;
+    }
     const dataA = new Date(obterDataReferenciaContaRelatorioFinanceiro(a) || '1970-01-01T00:00:00').getTime();
     const dataB = new Date(obterDataReferenciaContaRelatorioFinanceiro(b) || '1970-01-01T00:00:00').getTime();
     return dataB - dataA;
   });
 
-  lista.innerHTML = '<div class="lista">' + ordenados.map(item => {
+  const totalExcluidos = ordenados.filter(item => obterStatusContaRelatorioFinanceiro(item) === 'excluido').length;
+  const resumoExcluidos = totalExcluidos
+    ? `<div class="rf-alerta-excluidos">${totalExcluidos} conta(s) excluída(s) exibida(s) abaixo. Os registros excluídos ficam destacados em vermelho.</div>`
+    : '';
+
+  lista.innerHTML = resumoExcluidos + '<div class="lista">' + ordenados.map(item => {
     const status = obterStatusContaRelatorioFinanceiro(item);
     const valorCompra = Number(item.valor_compra || 0);
     const valorPago = obterValorPagoRelatorioFinanceiro(item);
     const fornecedor = obterNomeFornecedorRelatorioFinanceiro(item);
     const forma = obterNomeFormaRelatorioFinanceiro(item);
     const observacao = String(item.observacao || '').trim() || '-';
+    const classeItem = status === 'excluido' ? 'item item-relatorio-excluido' : 'item';
     return `
-      <div class="item">
+      <div class="${classeItem}">
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
           <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
@@ -13277,7 +13306,8 @@ async function carregarRelatorioFinanceiro() {
 
     relatorioFinanceiroCache = itensFiltrados;
 
-    const totalGeral = itensFiltrados.reduce((acc, item) => acc + (Number(item.valor_compra || 0) || 0), 0);
+    const itensAtivos = itensFiltrados.filter(item => obterStatusContaRelatorioFinanceiro(item) !== 'excluido');
+    const totalGeral = itensAtivos.reduce((acc, item) => acc + (Number(item.valor_compra || 0) || 0), 0);
     const totalPago = itensFiltrados.reduce((acc, item) => {
       if (obterStatusContaRelatorioFinanceiro(item) !== 'pago') return acc;
       return acc + obterValorPagoRelatorioFinanceiro(item);
