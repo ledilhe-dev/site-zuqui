@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="1.4">
+  <meta name="app-version" content="1.4.1">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3302,7 +3302,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.4.1';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -6804,15 +6804,9 @@ async function carregarNotificacoes() {
   } catch (e) {}
 
   if (usuarioEhMasterNotificacoes()) {
-    const historicoAtual = carregarHistoricoNotificacoesMaster();
-    const mapa = new Map();
-    historicoAtual.forEach(item => {
-      if (item?.chave) mapa.set(item.chave, item);
-    });
-    itens.forEach(item => {
-      if (item?.chave) mapa.set(item.chave, item);
-    });
-    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(Array.from(mapa.values()));
+    // Para evitar "notificações fantasmas", o master passa a exibir apenas
+    // notificações efetivamente ativas no banco no momento da consulta.
+    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(itens);
     salvarHistoricoNotificacoesMaster(notificacoesHistoricoMaster);
     notificacoesAtuais = notificacoesHistoricoMaster;
   } else {
@@ -12376,8 +12370,8 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 1.4</div>
-    <div>Notas da versão 1.4: ajuste dos menus e implementação dos relatórios.</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 1.4.1</div>
+    <div>Notas da versão 1.4.1: correções no lançamento por dia, melhoria das listas/favoritos, andamento sem finalizados e ajustes de notificações.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
