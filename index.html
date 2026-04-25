@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="1.4.1">
+  <meta name="app-version" content="2.0">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -186,25 +186,24 @@
     }
 
     .nav-group {
-      margin-bottom: 8px;
-      padding: 6px;
-      border: 1px solid transparent;
-      border-radius: 12px;
-      background: rgba(8, 15, 11, 0.45);
+      margin: 10px 0 0;
+      padding: 8px 0 0;
+      border-top: 1px solid rgba(107, 143, 112, 0.2);
     }
     .nav-group.featured {
-      background: linear-gradient(180deg, rgba(21, 45, 30, 0.78), rgba(12, 24, 17, 0.92));
-      border-color: rgba(34,197,94,0.12);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+      box-shadow: none;
     }
     .nav-label {
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 1.2px;
-      color: var(--text-dim);
+      display: block;
+      padding: 0 8px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.9px;
       text-transform: uppercase;
-      padding: 0 6px;
-      margin-bottom: 3px;
+      color: var(--text-dim);
     }
 
     .nav-btn {
@@ -266,6 +265,7 @@
     }
     .nav-group-checklist .nav-submenu,
     .nav-group-relatorios .nav-submenu,
+    .nav-group-financeiro .nav-submenu,
     .nav-group-funcionarios .nav-submenu,
     .nav-group-configuracao .nav-submenu {
       display: none;
@@ -276,6 +276,7 @@
     }
     .nav-group-checklist.open .nav-submenu,
     .nav-group-relatorios.open .nav-submenu,
+    .nav-group-financeiro.open .nav-submenu,
     .nav-group-funcionarios.open .nav-submenu,
     .nav-group-configuracao.open .nav-submenu {
       display: flex;
@@ -291,6 +292,7 @@
     }
     .nav-group-checklist.open .nav-caret,
     .nav-group-relatorios.open .nav-caret,
+    .nav-group-financeiro.open .nav-caret,
     .nav-group-funcionarios.open .nav-caret,
     .nav-group-configuracao.open .nav-caret {
       transform: rotate(180deg);
@@ -976,6 +978,45 @@
     .stat-card .s-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
     .stat-card .s-value { font-size: 24px; font-weight: 700; color: var(--green); font-family: 'DM Mono', monospace; }
     .stat-card .s-desc { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+    .rf-chart {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 10px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(0, 0, 0, 0.12);
+    }
+    .rf-chart-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 240px) 1fr auto;
+      align-items: center;
+      gap: 8px;
+    }
+    .rf-chart-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rf-chart-track {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--surface2);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .rf-chart-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #16a34a, #22c55e);
+    }
+    .rf-chart-value {
+      font-size: 12px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
 
     /* ---- FORM ---- */
     .card {
@@ -1097,6 +1138,122 @@
       overflow: hidden;
       text-overflow: ellipsis;
       cursor: pointer;
+    }
+    .card.card-compact {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .financeiro-form-row {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      align-items: flex-end;
+      margin-bottom: 0;
+    }
+    .financeiro-form-row .campo-com-label {
+      flex: 1 1 160px;
+      max-width: none;
+      padding-top: 17px;
+    }
+    .financeiro-form-row .campo-com-label.fornecedor {
+      flex: 1.8 1 320px;
+      min-width: 220px;
+    }
+    .financeiro-form-row .campo-com-label.data {
+      flex: 0 0 196px;
+    }
+    .financeiro-form-row .campo-com-label.data .campo-curto,
+    .financeiro-form-row .campo-com-label.data input[type="date"] {
+      max-width: 100% !important;
+      flex: 1 1 auto !important;
+    }
+    .financeiro-form-row .campo-com-label.valor {
+      flex: 0 0 135px;
+    }
+    .financeiro-form-row .campo-com-label.parcela {
+      flex: 0 0 120px;
+    }
+    .financeiro-form-row .campo-com-label.intervalo {
+      flex: 0 0 130px;
+    }
+    .financeiro-form-row .campo-com-label .campo-label {
+      left: 0;
+      top: 0;
+      width: 100%;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .financeiro-form-row .campo-com-label input,
+    .financeiro-form-row .campo-com-label select {
+      width: 100%;
+      min-width: 0;
+      height: 38px;
+      min-height: 38px;
+      max-height: 38px;
+      padding: 7px 10px;
+      font-size: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+    }
+    .financeiro-form-row .campo-com-label input:focus,
+    .financeiro-form-row .campo-com-label select:focus {
+      border-color: var(--green);
+    }
+    .financeiro-form-row .campo-com-label input::placeholder {
+      color: var(--text-dim);
+    }
+    .financeiro-form-row .campo-com-label select option {
+      background: #111;
+    }
+    .financeiro-form-row .btn {
+      height: 38px;
+      min-height: 38px;
+      padding-top: 0;
+      padding-bottom: 0;
+      align-self: flex-end;
+    }
+    .financeiro-filtros-row {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .financeiro-filtros-row input {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .financeiro-filtros-row .campo-curto {
+      flex: 0 0 150px !important;
+      min-width: 150px;
+      max-width: 150px;
+    }
+    @media (max-width: 1500px) {
+      .financeiro-form-row {
+        flex-wrap: wrap;
+      }
+      .financeiro-form-row .campo-com-label.fornecedor,
+      .financeiro-form-row .campo-com-label.data,
+      .financeiro-form-row .campo-com-label.valor,
+      .financeiro-form-row .campo-com-label.parcela,
+      .financeiro-form-row .campo-com-label.intervalo {
+        flex: 1 1 180px;
+      }
+      .financeiro-filtros-row {
+        flex-wrap: wrap;
+      }
+      .financeiro-filtros-row .campo-curto {
+        flex: 1 1 180px !important;
+        min-width: 180px;
+        max-width: 100%;
+      }
     }
     .funcionario-form-row {
       display: flex;
@@ -1777,6 +1934,26 @@
       justify-content: flex-end;
       flex-shrink: 0;
     }
+    .forma-pagamento-modal-intro {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .forma-pagamento-modal-select {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .forma-pagamento-modal-select:focus {
+      border-color: var(--green);
+    }
 
     /* ---- CHECKLIST ITEM (execução) ---- */
     .exec-item {
@@ -2027,7 +2204,10 @@
         border-right: none;
         margin-right: 0;
       }
-      .nav-group { padding: 8px; }
+      .nav-group { padding: 0; }
+      .nav-label {
+        padding: 2px 8px 6px;
+      }
       .topbar {
         padding: 14px 16px;
         align-items: flex-start;
@@ -2150,6 +2330,13 @@
 
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: 1fr; }
+      .rf-chart-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+      .rf-chart-value {
+        justify-self: start;
+      }
       .content {
         padding: max(12px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom));
       }
@@ -2431,7 +2618,7 @@
       </div>
     </div>
     <div class="nav-group featured">
-      <div class="nav-label">Hoje</div>
+      <div class="nav-label">Operação diária</div>
       <button class="nav-btn" data-page="bater_ponto" onclick="abrirPagina('bater_ponto', this)">
         <span class="icon">PT</span>
         <span class="nav-copy">
@@ -2490,7 +2677,7 @@
       </button>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Consultas</div>
+      <div class="nav-label">Relatórios e análise</div>
       <div class="nav-group-relatorios" id="menuRelatoriosGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuRelatorios" type="button" onclick="toggleMenuRelatoriosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
@@ -2513,11 +2700,53 @@
               <span class="nav-title">Relatório tarefas</span>
             </span>
           </button>
+          <button class="nav-btn nav-sub-btn" data-page="relatorio_financeiro" onclick="abrirPagina('relatorio_financeiro', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Relatório financeiro</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
     <div class="nav-group">
-      <div class="nav-label">Configuracao</div>
+      <div class="nav-label">Financeiro</div>
+      <div class="nav-group-financeiro" id="menuFinanceiroGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuFinanceiro" type="button" onclick="toggleMenuFinanceiroSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="icon">FI</span>
+            <span class="nav-copy">
+              <span class="nav-title">Financeiro</span>
+              <span class="nav-hint">Fornecedores e contas</span>
+            </span>
+          </span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="financeiro_fornecedores" onclick="abrirPagina('financeiro_fornecedores', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Cadastro de fornecedor</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="financeiro_formas_pagamento" onclick="abrirPagina('financeiro_formas_pagamento', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Formas de pagamento</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="financeiro_contasapagar" onclick="abrirPagina('financeiro_contasapagar', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Cadastro de contas a pagar</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="financeiro_baixar_contas" onclick="abrirPagina('financeiro_baixar_contas', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Baixar contas</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Administração</div>
       <div class="nav-group-funcionarios" id="menuFuncionariosGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuFuncionarios" type="button" onclick="toggleMenuFuncionariosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
@@ -3176,6 +3405,199 @@
         </div>
       </section>
 
+      <section id="relatorio_financeiro" class="pagina">
+        <div class="page-title">Relatório financeiro</div>
+        <div class="page-sub">Visão robusta de títulos, pagamentos, fornecedores e formas de pagamento</div>
+
+        <div class="card">
+          <div class="card-title">Filtros financeiros</div>
+          <div class="form-row">
+            <input id="filtroRelFinanceiroDataInicio" type="date">
+            <input id="filtroRelFinanceiroDataFim" type="date">
+            <select id="filtroRelFinanceiroStatus">
+              <option value="">- Todos os status -</option>
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago</option>
+            </select>
+            <select id="filtroRelFinanceiroFornecedor">
+              <option value="">- Todos os fornecedores -</option>
+            </select>
+            <select id="filtroRelFinanceiroForma">
+              <option value="">- Todas as formas -</option>
+            </select>
+            <input id="filtroRelFinanceiroBusca" type="text" placeholder="Buscar por fornecedor, forma ou observação">
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
+            <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioFinanceiro()">Hoje</button>
+            <button class="btn btn-ghost" type="button" onclick="exportarRelatorioFinanceiroCsv()">Exportar CSV</button>
+            <button class="btn btn-ghost" type="button" onclick="imprimirRelatorioFinanceiroPdf()">Exportar PDF</button>
+          </div>
+          <div class="msg" id="msgRelatorioFinanceiro"></div>
+        </div>
+
+        <div class="stats-grid" id="cardsRelatorioFinanceiro">
+          <div class="stat-card">
+            <div class="s-label">Total geral (R$)</div>
+            <div class="s-value" id="rfTotalGeral">R$ 0,00</div>
+            <div class="s-desc">Soma de todos os títulos no filtro</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Total pago (R$)</div>
+            <div class="s-value" id="rfTotalPago">R$ 0,00</div>
+            <div class="s-desc">Pagamentos confirmados no filtro</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Total pendente (R$)</div>
+            <div class="s-value" id="rfTotalPendente">R$ 0,00</div>
+            <div class="s-desc">Saldo pendente de pagamento</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Qtd. de títulos</div>
+            <div class="s-value" id="rfQuantidadeTitulos">0</div>
+            <div class="s-desc">Itens retornados no relatório</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Dashboard - Fornecedores mais pagos</div>
+          <div id="graficoRelatorioFinanceiroFornecedores" class="rf-chart"><div class="empty">Carregando...</div></div>
+          <div id="listaRelatorioFinanceiroFornecedores"><div class="empty">Carregando...</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Dashboard - Formas de pagamento</div>
+          <div id="graficoRelatorioFinanceiroFormas" class="rf-chart"><div class="empty">Carregando...</div></div>
+          <div id="listaRelatorioFinanceiroFormas"><div class="empty">Carregando...</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Detalhamento de títulos</div>
+          <div id="listaRelatorioFinanceiro"><div class="empty">Carregando...</div></div>
+        </div>
+      </section>
+
+      <section id="financeiro_fornecedores" class="pagina">
+        <div class="page-title">Cadastro de fornecedor</div>
+        <div class="page-sub">Cadastre e mantenha a base de fornecedores</div>
+
+        <div class="card">
+          <div class="card-title">Novo fornecedor</div>
+          <div class="form-row">
+            <input id="fornecedorNome" type="text" placeholder="Nome do fornecedor (obrigatório)" autocomplete="off">
+            <input id="fornecedorCnpj" class="campo-curto" type="text" placeholder="CPF ou CNPJ" autocomplete="off" maxlength="18" oninput="aplicarMascaraCpfCnpjFornecedorFinanceiro(this)" onblur="normalizarDocumentoFornecedorFinanceiro(this)">
+            <input id="fornecedorTelefone" class="campo-curto" type="text" placeholder="Telefone" autocomplete="off">
+            <input id="fornecedorEmail" type="email" placeholder="E-mail" autocomplete="off">
+            <button class="btn btn-green" id="btnSalvarFornecedorFinanceiro" type="button" onclick="salvarFornecedorFinanceiro()">Cadastrar</button>
+            <button class="btn btn-ghost" id="btnCancelarFornecedorFinanceiro" type="button" onclick="cancelarEdicaoFornecedorFinanceiro()" style="display:none">Cancelar</button>
+          </div>
+          <div class="msg" id="msgFornecedorFinanceiro"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Fornecedores cadastrados</div>
+          <div id="listaFornecedoresFinanceiro"><div class="empty">Carregando...</div></div>
+        </div>
+      </section>
+
+      <section id="financeiro_formas_pagamento" class="pagina">
+        <div class="page-title">Formas de pagamento</div>
+        <div class="page-sub">Cadastre, edite e organize as formas usadas na baixa de títulos</div>
+
+        <div class="card">
+          <div class="card-title">Nova forma de pagamento</div>
+          <div class="form-row">
+            <input id="formaPagamentoNome" type="text" placeholder="Exemplo: PIX, Dinheiro, Cartão" autocomplete="off">
+            <button class="btn btn-green" id="btnSalvarFormaPagamentoFinanceiro" type="button" onclick="salvarFormaPagamentoFinanceiro()">Cadastrar</button>
+            <button class="btn btn-ghost" id="btnCancelarFormaPagamentoFinanceiro" type="button" onclick="cancelarEdicaoFormaPagamentoFinanceiro()" style="display:none">Cancelar</button>
+          </div>
+          <div class="msg" id="msgFormaPagamentoFinanceiro"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Formas cadastradas</div>
+          <div id="listaFormasPagamentoFinanceiro"><div class="empty">Carregando...</div></div>
+        </div>
+      </section>
+
+      <section id="financeiro_contasapagar" class="pagina">
+        <div class="page-title">Cadastro de contas a pagar</div>
+        <div class="page-sub">Registre compras e vencimentos por fornecedor</div>
+
+        <div class="card card-compact">
+          <div class="card-title">Nova conta</div>
+          <div class="financeiro-form-row">
+            <div class="campo-com-label fornecedor">
+              <label class="campo-label" for="contaFornecedorBusca">Fornecedor</label>
+              <input id="contaFornecedorBusca" type="text" list="fornecedoresFinanceiroAutoList" placeholder="Selecione o fornecedor (autobusca por nome, CPF/CNPJ, telefone ou e-mail)" autocomplete="off" oninput="atualizarFornecedorSelecionadoContaAPagar()">
+            </div>
+            <datalist id="fornecedoresFinanceiroAutoList"></datalist>
+            <input id="contaFornecedorId" type="hidden">
+            <div class="campo-com-label data">
+              <label class="campo-label" for="contaDataCompra">Data da compra</label>
+              <input id="contaDataCompra" class="campo-curto" type="date">
+            </div>
+            <div class="campo-com-label data">
+              <label class="campo-label" for="contaDataVencimento">Data de vencimento</label>
+              <input id="contaDataVencimento" class="campo-curto" type="date">
+            </div>
+            <div class="campo-com-label valor">
+              <label class="campo-label" for="contaValorCompra">Valor da compra</label>
+              <input id="contaValorCompra" class="campo-curto" type="text" inputmode="decimal" placeholder="0,00">
+            </div>
+            <div class="campo-com-label parcela">
+              <label class="campo-label" for="contaQtdParcelas">Qtd parcelas</label>
+              <input id="contaQtdParcelas" class="campo-curto" type="number" min="1" step="1" placeholder="">
+            </div>
+            <div class="campo-com-label intervalo">
+              <label class="campo-label" for="contaIntervaloParcelasDias">Dias entre parcelas</label>
+              <input id="contaIntervaloParcelasDias" class="campo-curto" type="number" min="1" step="1" placeholder="">
+            </div>
+            <button class="btn btn-green" id="btnSalvarContaAPagarFinanceiro" type="button" onclick="salvarContaAPagarFinanceiro()">Cadastrar</button>
+            <button class="btn btn-ghost" id="btnCancelarContaAPagarFinanceiro" type="button" onclick="cancelarEdicaoContaAPagarFinanceiro()" style="display:none">Cancelar</button>
+          </div>
+          <div class="form-row" style="margin-top:8px">
+            <input id="contaObservacao" type="text" placeholder="Observação do título (obrigatório)" required>
+          </div>
+          <div class="msg" id="msgContaAPagarFinanceiro"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Contas cadastradas</div>
+          <div class="form-row financeiro-filtros-row">
+            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor" oninput="carregarContasAPagarFinanceiro()">
+            <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
+              <option value="">- Todos os status -</option>
+              <option value="pendente">Pendente</option>
+              <option value="pago">Pago</option>
+            </select>
+          </div>
+          <div id="listaContasAPagarFinanceiro"><div class="empty">Carregando...</div></div>
+        </div>
+      </section>
+
+      <section id="financeiro_baixar_contas" class="pagina">
+        <div class="page-title">Baixar contas</div>
+        <div class="page-sub">Confirme pagamentos e ajuste valor, data e forma de pagamento</div>
+
+        <div class="card">
+          <div class="card-title">Filtros</div>
+          <div class="form-row financeiro-filtros-row">
+            <input id="filtroBaixarContaBusca" type="text" placeholder="Buscar por fornecedor" oninput="carregarBaixarContasFinanceiro()">
+            <select id="filtroBaixarContaStatus" class="campo-curto" onchange="carregarBaixarContasFinanceiro()">
+              <option value="pendente">Pendentes</option>
+              <option value="pago">Pagas</option>
+              <option value="">Todas</option>
+            </select>
+            <button class="btn btn-ghost" type="button" onclick="carregarBaixarContasFinanceiro()">Atualizar</button>
+          </div>
+          <div class="msg" id="msgBaixarContasFinanceiro"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Contas para baixa</div>
+          <div id="listaBaixarContasFinanceiro"><div class="empty">Carregando...</div></div>
+        </div>
+      </section>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /shell -->
@@ -3253,6 +3675,27 @@
   </div>
 </div>
 
+<div class="overlay" id="formaPagamentoOverlay">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div>
+        <h3>Selecionar forma de pagamento</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Campo obrigatório para confirmar a baixa</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalFormaPagamentoFinanceiro()">X Fechar</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div class="forma-pagamento-modal-intro">Escolha uma forma ativa cadastrada no Financeiro.</div>
+      <select id="formaPagamentoModalSelect" class="forma-pagamento-modal-select" onkeydown="if (event.key === 'Enter') { event.preventDefault(); confirmarModalFormaPagamentoFinanceiro(); }"></select>
+      <div class="msg" id="formaPagamentoModalMsg" style="margin-top:0"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" type="button" onclick="fecharModalFormaPagamentoFinanceiro()">Cancelar</button>
+      <button class="btn btn-green" type="button" onclick="confirmarModalFormaPagamentoFinanceiro()">Confirmar forma</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '2.0';
@@ -3281,6 +3724,13 @@ let funcionarioNomeOriginalEdicao = '';
 let funcionarioEmailOriginalEdicao = '';
 let perfilEmEdicaoId = null;
 let destinatarioEmailEmEdicaoId = null;
+let fornecedorFinanceiroEmEdicaoId = null;
+let formaPagamentoFinanceiroEmEdicaoId = null;
+let contaAPagarFinanceiroEmEdicaoId = null;
+let fornecedoresFinanceiroCache = [];
+let formasPagamentoFinanceiroCache = [];
+let contasAPagarFinanceiroCache = [];
+let contasBaixarFinanceiroCache = [];
 let solicitacaoAcessoVisivel = false;
 let painelNotificacoesAberto = false;
 let notificacoesAtuais = [];
@@ -3301,6 +3751,7 @@ let assinaturaAvisoCentralTarefas = '';
 let assinaturaSomAlertaRapidoLista = '';
 let alertasCriticosSilenciadosNaSessao = false;
 let resolverModalPinPendente = null;
+let resolverModalFormaPagamentoPendente = null;
 let resolverModalPontoPendente = null;
 let intervaloAtualizacaoPaginaAtiva = null;
 let intervaloAtualizacaoNotificacoes = null;
@@ -3327,6 +3778,7 @@ let checklistsLancadosCache = [];
 let checklistsLancadosFuncionariosMap = {};
 let checklistsLancadosUltimaListaFiltrada = [];
 let relatorioLancamentosCache = [];
+let relatorioFinanceiroCache = [];
 let tarefasCadastradasCache = [];
 let tarefasSelecionadasIds = new Set();
 let tarefasConsultaMarcadasIds = new Set();
@@ -3749,6 +4201,11 @@ const PERFIL_PERMISSOES = [
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'relatorio_ponto', label: 'Relatório de ponto' },
   { key: 'relatorio_lancamentos', label: 'Relatório de tarefas' },
+  { key: 'relatorio_financeiro', label: 'Relatório financeiro' },
+  { key: 'financeiro_fornecedores', label: 'Financeiro - Fornecedores' },
+  { key: 'financeiro_formas_pagamento', label: 'Financeiro - Formas de pagamento' },
+  { key: 'financeiro_contasapagar', label: 'Financeiro - Contas a pagar' },
+  { key: 'financeiro_baixar_contas', label: 'Financeiro - Baixar contas' },
   { key: 'funcionarios', label: 'Funcionarios' },
   { key: 'solicitacoes', label: 'Solicitacoes de acesso' },
   { key: 'emails', label: 'Envio de e-mail' },
@@ -3776,6 +4233,11 @@ function obterPermissoesBase(codigo) {
     bater_ponto: true,
     relatorio_ponto: false,
     relatorio_lancamentos: false,
+    relatorio_financeiro: false,
+    financeiro_fornecedores: false,
+    financeiro_formas_pagamento: false,
+    financeiro_contasapagar: false,
+    financeiro_baixar_contas: false,
     funcionarios: false,
     solicitacoes: false,
     emails: false,
@@ -3801,6 +4263,11 @@ const topTitles = {
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
+  relatorio_financeiro: ['Relatório financeiro', 'Análise detalhada de títulos e pagamentos'],
+  financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
+  financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
+  financeiro_contasapagar: ['Cadastro de contas a pagar', 'Lançamentos financeiros por fornecedor'],
+  financeiro_baixar_contas: ['Baixar contas', 'Confirmação e ajustes de pagamento'],
   itens: ['Itens do Checklist', 'Itens por modelo'],
   funcionarios: ['Funcionarios', 'Gestao de equipe'],
   solicitacoes: ['Solicitacoes de acesso', 'Aprove ou rejeite pedidos de entrada'],
@@ -3818,7 +4285,11 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_lancamentos'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_lancamentos', 'relatorio_financeiro'].includes(String(pageId || ''));
+}
+
+function paginaPertenceMenuFinanceiro(pageId = '') {
+  return ['financeiro_fornecedores', 'financeiro_formas_pagamento', 'financeiro_contasapagar', 'financeiro_baixar_contas'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFuncionarios(pageId = '') {
@@ -3837,6 +4308,12 @@ function atualizarEstadoMenuChecklist(expandido = false) {
 
 function atualizarEstadoMenuRelatorios(expandido = false) {
   const grupo = document.getElementById('menuRelatoriosGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function atualizarEstadoMenuFinanceiro(expandido = false) {
+  const grupo = document.getElementById('menuFinanceiroGroup');
   if (!grupo) return;
   grupo.classList.toggle('open', !!expandido);
 }
@@ -3865,6 +4342,12 @@ function toggleMenuRelatoriosSubmenu() {
   grupo.classList.toggle('open');
 }
 
+function toggleMenuFinanceiroSubmenu() {
+  const grupo = document.getElementById('menuFinanceiroGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open');
+}
+
 function toggleMenuFuncionariosSubmenu() {
   const grupo = document.getElementById('menuFuncionariosGroup');
   if (!grupo) return;
@@ -3880,8 +4363,23 @@ function toggleMenuConfiguracoesSubmenu() {
 function fecharMenusLaterais() {
   atualizarEstadoMenuChecklist(false);
   atualizarEstadoMenuRelatorios(false);
+  atualizarEstadoMenuFinanceiro(false);
   atualizarEstadoMenuFuncionarios(false);
   atualizarEstadoMenuConfiguracoes(false);
+}
+
+function configurarAberturaAutomaticaDatePicker() {
+  document.querySelectorAll('input[type="date"]').forEach((input) => {
+    if (input.dataset.pickerAuto === '1') return;
+    input.dataset.pickerAuto = '1';
+    const abrir = () => {
+      try {
+        if (typeof input.showPicker === 'function') input.showPicker();
+      } catch (e) {}
+    };
+    input.addEventListener('click', abrir);
+    input.addEventListener('focus', abrir);
+  });
 }
 
 function closeMobileMenu() {
@@ -3968,6 +4466,24 @@ function abrirPagina(id, botao) {
   if (id === 'bater_ponto') { carregarBaterPonto(); }
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
+  if (id === 'relatorio_financeiro') { carregarRelatorioFinanceiro(); }
+  if (id === 'financeiro_fornecedores') {
+    limparFormularioFornecedorFinanceiro();
+    carregarFornecedoresFinanceiro();
+  }
+  if (id === 'financeiro_formas_pagamento') {
+    limparFormularioFormaPagamentoFinanceiro();
+    carregarFormasPagamentoFinanceiro();
+  }
+  if (id === 'financeiro_contasapagar') {
+    limparFormularioContaAPagarFinanceiro();
+    carregarFornecedoresFinanceiro();
+    carregarContasAPagarFinanceiro();
+  }
+  if (id === 'financeiro_baixar_contas') {
+    carregarFormasPagamentoFinanceiro({ render: false, silencioso: true });
+    carregarBaixarContasFinanceiro();
+  }
   if (id === 'funcionarios') { limparFormularioFuncionario(); carregarFuncionarios(); carregarSelectPerfisFuncionario(); }
   if (id === 'solicitacoes') { carregarSolicitacoesAcesso(); }
   if (id === 'emails') { carregarDestinatariosEmail(); }
@@ -3995,7 +4511,7 @@ function existeSessaoAtivaParaAtualizacao() {
 }
 
 function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
-  return ['checklists', 'execucoes', 'tarefas_rapidas', 'relatorio_lancamentos'].includes(pageId);
+  return ['checklists', 'execucoes', 'tarefas_rapidas', 'relatorio_lancamentos', 'relatorio_financeiro'].includes(pageId);
 }
 
 function obterIntervaloAtualizacaoMs(pageId = obterPaginaAtivaAtual()) {
@@ -4069,6 +4585,7 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'bater_ponto') await carregarBaterPonto();
     if (paginaAtiva === 'relatorio_ponto') await carregarRelatorioPonto();
     if (paginaAtiva === 'relatorio_lancamentos') await carregarRelatorioLancamentos();
+    if (paginaAtiva === 'relatorio_financeiro') await carregarRelatorioFinanceiro();
     if (paginaAtiva === 'itens' && document.getElementById('checklistSelect')?.value) {
       await carregarItens();
     }
@@ -4693,6 +5210,28 @@ function isMissingQuickAlertsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.alertas_rapidos"'));
 }
 
+function isMissingFornecedoresTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.fornecedores"'));
+}
+
+function isMissingFormasPagamentoTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.formas_pagamento"'));
+}
+
+function isMissingContasAPagarTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.contasapagar"'));
+}
+
+function isMissingContasAPagarPagamentoColumnsError(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  return error?.code === '42703' && (
+    msg.includes('valor_pago') ||
+    msg.includes('forma_pagamento') ||
+    msg.includes('forma_pagamento_id') ||
+    msg.includes('pago_confirmado_em')
+  );
+}
+
 function isForeignKeyViolationError(error) {
   return error?.code === '23503' || (error?.message && String(error.message).toLowerCase().includes('violates foreign key constraint'));
 }
@@ -4771,6 +5310,8 @@ function obterPermissoesUsuario() {
     permissoes.bater_ponto = true;
     permissoes.relatorio_ponto = true;
     permissoes.relatorio_lancamentos = true;
+    permissoes.relatorio_financeiro = true;
+    permissoes.financeiro_formas_pagamento = true;
     permissoes.tarefas_atraso = true;
     permissoes.tarefas_rapidas = true;
     permissoes.receber_alertas_rapidas = true;
@@ -4847,6 +5388,13 @@ function aplicarPermissoesSistema() {
   const algumRelatorioVisivel = itensRelatorios.some(btn => btn.style.display !== 'none');
   if (grupoRelatorios) {
     grupoRelatorios.style.display = algumRelatorioVisivel ? '' : 'none';
+  }
+
+  const itensFinanceiro = Array.from(document.querySelectorAll('#menuFinanceiroGroup .nav-btn[data-page]'));
+  const grupoFinanceiro = document.getElementById('menuFinanceiroGroup');
+  const algumFinanceiroVisivel = itensFinanceiro.some(btn => btn.style.display !== 'none');
+  if (grupoFinanceiro) {
+    grupoFinanceiro.style.display = algumFinanceiroVisivel ? '' : 'none';
   }
 
   const itensFuncionarios = Array.from(document.querySelectorAll('#menuFuncionariosGroup .nav-btn[data-page]'));
@@ -5132,6 +5680,79 @@ function confirmarModalPin() {
   fecharModalPin({ pin: (input?.value || '').trim() });
 }
 
+function abrirModalFormaPagamentoFinanceiro({ formas = [], formaAtual = '' } = {}) {
+  const overlay = document.getElementById('formaPagamentoOverlay');
+  const select = document.getElementById('formaPagamentoModalSelect');
+  const msg = document.getElementById('formaPagamentoModalMsg');
+  if (!overlay || !select || !msg) return Promise.resolve(null);
+
+  const opcoes = (formas || []).filter(item => item && item.ativo !== false);
+  if (!opcoes.length) return Promise.resolve(null);
+
+  const atualNormalizado = normalizarChaveFormaPagamentoFinanceiro(formaAtual);
+  const atualPorNome = opcoes.find(item => normalizarChaveFormaPagamentoFinanceiro(item.nome) === atualNormalizado) || null;
+
+  select.innerHTML = [
+    '<option value="">Selecione uma forma de pagamento</option>',
+    ...opcoes.map(item => `<option value="${item.id}">${item.nome}</option>`),
+  ].join('');
+
+  select.value = atualPorNome?.id || '';
+  msg.textContent = '';
+  msg.className = 'msg';
+  overlay.classList.add('show');
+
+  window.setTimeout(() => {
+    if (!select.value) select.focus();
+  }, 0);
+
+  return new Promise(resolve => {
+    resolverModalFormaPagamentoPendente = resolve;
+  });
+}
+
+function fecharModalFormaPagamentoFinanceiro(resultado = null) {
+  const overlay = document.getElementById('formaPagamentoOverlay');
+  const select = document.getElementById('formaPagamentoModalSelect');
+  const msg = document.getElementById('formaPagamentoModalMsg');
+
+  if (overlay) overlay.classList.remove('show');
+  if (select) select.innerHTML = '';
+  if (msg) {
+    msg.textContent = '';
+    msg.className = 'msg';
+  }
+
+  const resolver = resolverModalFormaPagamentoPendente;
+  resolverModalFormaPagamentoPendente = null;
+  if (resolver) resolver(resultado);
+}
+
+function confirmarModalFormaPagamentoFinanceiro() {
+  const select = document.getElementById('formaPagamentoModalSelect');
+  const msg = document.getElementById('formaPagamentoModalMsg');
+  const formaId = String(select?.value || '').trim();
+
+  if (!formaId) {
+    if (msg) {
+      msg.textContent = 'Selecione uma forma de pagamento para continuar.';
+      msg.className = 'msg err';
+    }
+    return;
+  }
+
+  const forma = obterFormasPagamentoAtivasFinanceiro().find(item => String(item.id) === formaId) || null;
+  if (!forma) {
+    if (msg) {
+      msg.textContent = 'Forma selecionada inválida. Tente novamente.';
+      msg.className = 'msg err';
+    }
+    return;
+  }
+
+  fecharModalFormaPagamentoFinanceiro(forma);
+}
+
 async function validarPinFuncionario(funcionarioId, pin) {
   if (!funcionarioId || !pin) return false;
 
@@ -5173,22 +5794,34 @@ async function obterPendenciasChecklistDoFuncionario(funcionarioId) {
   if (!funcionarioId) return { pendentesInicio: [], pendentesFinalizacao: [] };
 
   const hojeLocal = dataLocalISO();
-  const [lancamentosRes, execucoesRes] = await Promise.all([
-    sb
+  const consultarLancamentosPendentes = async (comCreatedAt = true) => {
+    const campos = comCreatedAt
+      ? 'id, nome, status, lancado_em, created_at, data_programada'
+      : 'id, nome, status, lancado_em, data_programada';
+    return sb
       .from('checklist_lancamentos')
-      .select('id, nome, status, lancado_em, created_at, data_programada')
+      .select(campos)
       .eq('funcionario_id', funcionarioId)
       .eq('status', 'pendente')
       .order('lancado_em', { ascending: false })
-      .limit(30),
-    sb
-      .from('checklist_execucoes')
-      .select('id, status, data_execucao, tarefas(nome), checklists(nome)')
-      .eq('funcionario_id', funcionarioId)
-      .in('status', ['aberto', 'pausado'])
-      .order('iniciado_em', { ascending: false })
-      .limit(30),
-  ]);
+      .limit(30);
+  };
+
+  let lancamentosRes = await consultarLancamentosPendentes(true);
+  if (lancamentosRes.error && (
+    String(lancamentosRes.error.message || '').toLowerCase().includes('created_at')
+    || String(lancamentosRes.error.message || '').toLowerCase().includes('data_programada')
+  )) {
+    lancamentosRes = await consultarLancamentosPendentes(false);
+  }
+
+  const execucoesRes = await sb
+    .from('checklist_execucoes')
+    .select('id, status, data_execucao, tarefas(nome), checklists(nome)')
+    .eq('funcionario_id', funcionarioId)
+    .in('status', ['aberto', 'pausado'])
+    .order('iniciado_em', { ascending: false })
+    .limit(30);
 
   if (lancamentosRes.error && !isMissingLancamentosTableError(lancamentosRes.error)) throw lancamentosRes.error;
   if (execucoesRes.error && !isMissingTableError(execucoesRes.error)) throw execucoesRes.error;
@@ -5426,19 +6059,32 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
   lancamentoAutomaticoEmAndamento = true;
   try {
     const dataReferencia = dataLocalISO();
-    const [tarefasResultado, lancamentosResultado, execucoesResultado] = await Promise.all([
+    const consultarLancamentosAutomaticos = async (comCreatedAt = true) => {
+      const campos = comCreatedAt
+        ? 'id, tarefa_id, funcionario_id, lancado_em, created_at, status, data_programada'
+        : 'id, tarefa_id, funcionario_id, lancado_em, status, data_programada';
+      return sb.from('checklist_lancamentos').select(campos);
+    };
+
+    const [tarefasResultado, lancamentosPrimeiraTentativa, execucoesResultado] = await Promise.all([
       sb
         .from('tarefas')
         .select('id, nome, descricao, funcionario_id, checklist_id, horario_limite, dias_semana')
         .eq('ativo', true),
-      sb
-        .from('checklist_lancamentos')
-        .select('id, tarefa_id, funcionario_id, lancado_em, created_at, status'),
+      consultarLancamentosAutomaticos(true),
       sb
         .from('checklist_execucoes')
         .select('id, tarefa_id, funcionario_id, data_execucao')
         .eq('data_execucao', dataReferencia),
     ]);
+
+    let lancamentosResultado = lancamentosPrimeiraTentativa;
+    if (lancamentosResultado.error && (
+      String(lancamentosResultado.error.message || '').toLowerCase().includes('created_at')
+      || String(lancamentosResultado.error.message || '').toLowerCase().includes('data_programada')
+    )) {
+      lancamentosResultado = await consultarLancamentosAutomaticos(false);
+    }
 
     if (tarefasResultado.error) {
       if (!isMissingTableError(tarefasResultado.error)) throw tarefasResultado.error;
@@ -6457,6 +7103,12 @@ async function carregarNotificacoes() {
     }
 
     const carregarLancamentosPendentes = async () => {
+      const consultaBase = () => sb
+        .from('checklist_lancamentos')
+        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em')
+        .eq('status', 'pendente')
+        .order('lancado_em', { ascending: false });
+
       if (checklistLancamentosSuportaColunasAgendamento !== false) {
         const consultaCompleta = await sb
           .from('checklist_lancamentos')
@@ -6992,6 +7644,7 @@ async function carregarProdutividadeDiaDashboard(periodo = 'dia') {
     throw totalRes.error || finalizadasRes.error || abertasRes.error || pausadasRes.error;
   }
 
+  // Tenta buscar participação com usuario_fim_id; cai para funcionario_id se coluna não existir.
   let participacaoRows = [];
   const participacaoResCompleta = await sb
     .from('checklist_execucoes')
@@ -7004,6 +7657,7 @@ async function carregarProdutividadeDiaDashboard(periodo = 'dia') {
     const msgErr = String(participacaoResCompleta.error?.message || '').toLowerCase();
     const codigoErr = participacaoResCompleta.error?.code;
     if (codigoErr === '42703' && msgErr.includes('usuario_fim_id')) {
+      // Coluna ainda não existe no banco — usa apenas funcionario_id
       const fallback = await sb
         .from('checklist_execucoes')
         .select('funcionario_id')
@@ -7017,7 +7671,6 @@ async function carregarProdutividadeDiaDashboard(periodo = 'dia') {
   } else {
     participacaoRows = participacaoResCompleta.data || [];
   }
-
   const totalFinalizadas = finalizadasRes.count || 0;
   const contadorPorFuncionario = {};
 
@@ -7888,6 +8541,1041 @@ async function excluirDestinatarioEmail(id) {
   await sb.from('email_notificacoes').delete().eq('id', id);
   if (destinatarioEmailEmEdicaoId === id) limparFormularioDestinatarioEmail();
   carregarDestinatariosEmail();
+}
+
+// 
+// FINANCEIRO
+// 
+function textoFinanceiroNormalizado(valor = '') {
+  return normalizarTextoComparacao(String(valor || ''));
+}
+
+function digitosDocumentoFinanceiro(valor = '') {
+  return String(valor || '').replace(/\D+/g, '');
+}
+
+function formatarCpfCnpjParcialFinanceiro(valor = '') {
+  const digitos = digitosDocumentoFinanceiro(valor).slice(0, 14);
+  if (!digitos) return '';
+
+  if (digitos.length <= 11) {
+    if (digitos.length <= 3) return digitos;
+    if (digitos.length <= 6) return digitos.replace(/(\d{3})(\d+)/, '$1.$2');
+    if (digitos.length <= 9) return digitos.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+    return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d+)/, '$1.$2.$3-$4');
+  }
+
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 5) return digitos.replace(/(\d{2})(\d+)/, '$1.$2');
+  if (digitos.length <= 8) return digitos.replace(/(\d{2})(\d{3})(\d+)/, '$1.$2.$3');
+  if (digitos.length <= 12) return digitos.replace(/(\d{2})(\d{3})(\d{3})(\d+)/, '$1.$2.$3/$4');
+  return digitos.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d+)/, '$1.$2.$3/$4-$5');
+}
+
+function aplicarMascaraCpfCnpjFornecedorFinanceiro(campo) {
+  if (!campo) return;
+  campo.value = formatarCpfCnpjParcialFinanceiro(campo.value);
+}
+
+function normalizarDocumentoFornecedorFinanceiro(campo) {
+  if (!campo) return;
+  const validacao = validarCpfCnpjFinanceiro(campo.value);
+  if (validacao.ok && validacao.valor) {
+    campo.value = validacao.valor;
+  } else if (!digitosDocumentoFinanceiro(campo.value)) {
+    campo.value = '';
+  } else {
+    campo.value = formatarCpfCnpjParcialFinanceiro(campo.value);
+  }
+}
+
+function formatarCpfCnpjFinanceiro(valor = '') {
+  const digitos = digitosDocumentoFinanceiro(valor);
+  if (digitos.length === 11) {
+    return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  }
+  if (digitos.length === 14) {
+    return digitos.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+  return String(valor || '').trim();
+}
+
+function cpfFinanceiroEhValido(valor = '') {
+  const cpf = digitosDocumentoFinanceiro(valor);
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+  let soma = 0;
+  for (let i = 0; i < 9; i += 1) soma += Number(cpf[i]) * (10 - i);
+  let resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+  if (resto !== Number(cpf[9])) return false;
+
+  soma = 0;
+  for (let i = 0; i < 10; i += 1) soma += Number(cpf[i]) * (11 - i);
+  resto = (soma * 10) % 11;
+  if (resto === 10) resto = 0;
+  return resto === Number(cpf[10]);
+}
+
+function cnpjFinanceiroEhValido(valor = '') {
+  const cnpj = digitosDocumentoFinanceiro(valor);
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(cnpj)) return false;
+
+  const calcularDigito = (base, pesos) => {
+    const soma = base.split('').reduce((acc, numero, idx) => acc + Number(numero) * pesos[idx], 0);
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+
+  const base12 = cnpj.slice(0, 12);
+  const digito1 = calcularDigito(base12, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const digito2 = calcularDigito(`${base12}${digito1}`, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return `${digito1}${digito2}` === cnpj.slice(12);
+}
+
+function validarCpfCnpjFinanceiro(valor = '') {
+  const digitos = digitosDocumentoFinanceiro(valor);
+  if (!digitos) return { ok: true, tipo: '', valor: null };
+  if (digitos.length === 11) {
+    if (!cpfFinanceiroEhValido(digitos)) return { ok: false, tipo: 'CPF', valor: digitos };
+    return { ok: true, tipo: 'CPF', valor: formatarCpfCnpjFinanceiro(digitos) };
+  }
+  if (digitos.length === 14) {
+    if (!cnpjFinanceiroEhValido(digitos)) return { ok: false, tipo: 'CNPJ', valor: digitos };
+    return { ok: true, tipo: 'CNPJ', valor: formatarCpfCnpjFinanceiro(digitos) };
+  }
+  return { ok: false, tipo: 'CPF/CNPJ', valor: digitos };
+}
+
+function formatarDataBRFinanceiro(valor = '') {
+  const txt = String(valor || '').trim();
+  if (!txt) return '-';
+  const d = new Date(`${txt}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return txt;
+  return d.toLocaleDateString('pt-BR');
+}
+
+function formatarMoedaBRFinanceiro(valor = 0) {
+  const n = Number(valor || 0);
+  const seguro = Number.isFinite(n) ? n : 0;
+  return seguro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function lerValorMonetarioFinanceiro(valor = '') {
+  const txt = String(valor || '').trim();
+  if (!txt) return NaN;
+  const normalizado = txt.replace(/\./g, '').replace(',', '.');
+  return Number(normalizado);
+}
+
+function adicionarDiasDataISOFinanceiro(dataISO = '', dias = 0) {
+  const base = String(dataISO || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return '';
+  const dt = new Date(`${base}T00:00:00`);
+  if (Number.isNaN(dt.getTime())) return '';
+  dt.setDate(dt.getDate() + Number(dias || 0));
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function normalizarChaveFormaPagamentoFinanceiro(valor = '') {
+  return String(valor || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function limparFormularioFormaPagamentoFinanceiro() {
+  formaPagamentoFinanceiroEmEdicaoId = null;
+  const campoNome = document.getElementById('formaPagamentoNome');
+  if (campoNome) campoNome.value = '';
+  const btnSalvar = document.getElementById('btnSalvarFormaPagamentoFinanceiro');
+  const btnCancelar = document.getElementById('btnCancelarFormaPagamentoFinanceiro');
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
+  if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+function obterFormasPagamentoAtivasFinanceiro() {
+  return (formasPagamentoFinanceiroCache || []).filter(item => item?.ativo !== false);
+}
+
+function montarDescricaoOpcoesFormasPagamentoFinanceiro(lista = []) {
+  return lista.map((item, idx) => `${idx + 1} - ${item.nome}`).join(', ');
+}
+
+function resolverFormaPagamentoPorEntradaFinanceiro(entrada = '', lista = []) {
+  const texto = String(entrada || '').trim();
+  if (!texto) return null;
+
+  const idx = Number.parseInt(texto, 10);
+  if (Number.isFinite(idx) && idx >= 1 && idx <= lista.length) {
+    return lista[idx - 1] || null;
+  }
+
+  const chave = normalizarChaveFormaPagamentoFinanceiro(texto);
+  return lista.find(item => normalizarChaveFormaPagamentoFinanceiro(item.nome) === chave) || null;
+}
+
+async function carregarFormasPagamentoFinanceiro({ render = true, silencioso = false } = {}) {
+  const lista = document.getElementById('listaFormasPagamentoFinanceiro');
+  if (render && lista) lista.innerHTML = '<div class="empty">Carregando...</div>';
+
+  const { data, error } = await sb
+    .from('formas_pagamento')
+    .select('id, nome, ativo, created_at')
+    .order('nome', { ascending: true });
+
+  if (error) {
+    formasPagamentoFinanceiroCache = [];
+    if (!silencioso) {
+      if (isMissingFormasPagamentoTableError(error)) {
+        setMsg('msgFormaPagamentoFinanceiro', 'Rode o SQL das formas de pagamento antes de usar esta tela.', 'err');
+      } else {
+        setMsg('msgFormaPagamentoFinanceiro', `Erro ao carregar formas: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+      }
+    }
+    if (render && lista) {
+      if (isMissingFormasPagamentoTableError(error)) {
+        lista.innerHTML = '<div class="empty">Rode o SQL da tabela formas_pagamento para habilitar este cadastro.</div>';
+      } else {
+        lista.innerHTML = '<div class="empty">Erro ao carregar formas de pagamento.</div>';
+      }
+    }
+    return [];
+  }
+
+  formasPagamentoFinanceiroCache = data || [];
+
+  if (render && lista) {
+    if (!formasPagamentoFinanceiroCache.length) {
+      lista.innerHTML = '<div class="empty">Nenhuma forma de pagamento cadastrada.</div>';
+    } else {
+      lista.innerHTML = '<div class="lista">' + formasPagamentoFinanceiroCache.map(item => `
+        <div class="item">
+          <div class="item-info">
+            <div class="item-nome">${item.nome || '-'}</div>
+            <div class="item-detalhe">Status: ${item.ativo === false ? 'Inativa' : 'Ativa'}</div>
+          </div>
+          <div class="item-actions">
+            ${item.ativo === false ? '<span class="tag">Inativa</span>' : '<span class="tag tag-green">Ativa</span>'}
+            <button class="btn btn-ghost btn-sm" onclick="editarFormaPagamentoFinanceiro('${item.id}')">Editar</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleFormaPagamentoFinanceiro('${item.id}', ${item.ativo === false ? 'false' : 'true'})">${item.ativo === false ? 'Ativar' : 'Inativar'}</button>
+            <button class="btn btn-red" onclick="excluirFormaPagamentoFinanceiro('${item.id}')">Excluir</button>
+          </div>
+        </div>
+      `).join('') + '</div>';
+    }
+  }
+
+  return formasPagamentoFinanceiroCache;
+}
+
+async function salvarFormaPagamentoFinanceiro() {
+  const nomeCampo = document.getElementById('formaPagamentoNome');
+  const nome = String(nomeCampo?.value || '').trim().replace(/\s+/g, ' ');
+  if (!nome) {
+    setMsg('msgFormaPagamentoFinanceiro', 'Digite o nome da forma de pagamento.', 'err');
+    return;
+  }
+
+  const chave = normalizarChaveFormaPagamentoFinanceiro(nome);
+  const duplicado = formasPagamentoFinanceiroCache.find(item =>
+    normalizarChaveFormaPagamentoFinanceiro(item.nome) === chave &&
+    String(item.id) !== String(formaPagamentoFinanceiroEmEdicaoId || '')
+  );
+  if (duplicado) {
+    setMsg('msgFormaPagamentoFinanceiro', 'Já existe uma forma de pagamento com este nome.', 'err');
+    return;
+  }
+
+  const editando = !!formaPagamentoFinanceiroEmEdicaoId;
+  const query = editando
+    ? sb.from('formas_pagamento').update({ nome }).eq('id', formaPagamentoFinanceiroEmEdicaoId)
+    : sb.from('formas_pagamento').insert([{ nome, ativo: true }]);
+
+  const { error } = await query;
+  if (error) {
+    if (isMissingFormasPagamentoTableError(error)) {
+      setMsg('msgFormaPagamentoFinanceiro', 'Rode o SQL das formas de pagamento antes de usar esta tela.', 'err');
+      return;
+    }
+    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  limparFormularioFormaPagamentoFinanceiro();
+  setMsg('msgFormaPagamentoFinanceiro', editando ? 'Forma de pagamento atualizada.' : 'Forma de pagamento cadastrada.', 'ok');
+  await carregarFormasPagamentoFinanceiro();
+}
+
+function editarFormaPagamentoFinanceiro(id) {
+  const item = formasPagamentoFinanceiroCache.find(f => String(f.id) === String(id));
+  if (!item) {
+    setMsg('msgFormaPagamentoFinanceiro', 'Forma de pagamento não encontrada.', 'err');
+    return;
+  }
+
+  formaPagamentoFinanceiroEmEdicaoId = id;
+  const campoNome = document.getElementById('formaPagamentoNome');
+  if (campoNome) campoNome.value = item.nome || '';
+  const btnSalvar = document.getElementById('btnSalvarFormaPagamentoFinanceiro');
+  const btnCancelar = document.getElementById('btnCancelarFormaPagamentoFinanceiro');
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  setMsg('msgFormaPagamentoFinanceiro', `Editando forma: ${item.nome}.`, 'ok');
+}
+
+function cancelarEdicaoFormaPagamentoFinanceiro() {
+  limparFormularioFormaPagamentoFinanceiro();
+  setMsg('msgFormaPagamentoFinanceiro', 'Edição cancelada.', 'ok');
+}
+
+async function toggleFormaPagamentoFinanceiro(id, ativoAtual = true) {
+  const novoStatus = !ativoAtual;
+  const { error } = await sb.from('formas_pagamento').update({ ativo: novoStatus }).eq('id', id);
+  if (error) {
+    if (isMissingFormasPagamentoTableError(error)) {
+      setMsg('msgFormaPagamentoFinanceiro', 'Rode o SQL das formas de pagamento antes de usar esta tela.', 'err');
+      return;
+    }
+    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível alterar status: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  setMsg('msgFormaPagamentoFinanceiro', novoStatus ? 'Forma ativada.' : 'Forma inativada.', 'ok');
+  await carregarFormasPagamentoFinanceiro();
+}
+
+async function excluirFormaPagamentoFinanceiro(id) {
+  if (!confirm('Excluir esta forma de pagamento?')) return;
+
+  const { count, error: erroVinculo } = await sb
+    .from('contasapagar')
+    .select('*', { count: 'exact', head: true })
+    .eq('forma_pagamento_id', id);
+
+  if (erroVinculo && !isMissingContasAPagarPagamentoColumnsError(erroVinculo) && !isMissingContasAPagarTableError(erroVinculo)) {
+    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível validar vínculos: ${mensagemErroSupabase(erroVinculo, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (!erroVinculo && Number(count || 0) > 0) {
+    setMsg('msgFormaPagamentoFinanceiro', 'Não é possível excluir: existem contas vinculadas a esta forma.', 'err');
+    return;
+  }
+
+  const { error } = await sb.from('formas_pagamento').delete().eq('id', id);
+  if (error) {
+    if (isMissingFormasPagamentoTableError(error)) {
+      setMsg('msgFormaPagamentoFinanceiro', 'Rode o SQL das formas de pagamento antes de usar esta tela.', 'err');
+      return;
+    }
+    if (isForeignKeyViolationError(error)) {
+      setMsg('msgFormaPagamentoFinanceiro', 'Não é possível excluir: forma vinculada a contas já cadastradas.', 'err');
+      return;
+    }
+    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (String(formaPagamentoFinanceiroEmEdicaoId || '') === String(id)) {
+    limparFormularioFormaPagamentoFinanceiro();
+  }
+
+  setMsg('msgFormaPagamentoFinanceiro', 'Forma de pagamento excluída.', 'ok');
+  await carregarFormasPagamentoFinanceiro();
+}
+
+async function solicitarFormaPagamentoObrigatoriaFinanceiro(formaAtual = '') {
+  const listaCompleta = await carregarFormasPagamentoFinanceiro({ render: false, silencioso: true });
+  if (!listaCompleta.length) {
+    setMsg('msgBaixarContasFinanceiro', 'Cadastre formas de pagamento na aba Financeiro antes de baixar títulos.', 'err');
+    return null;
+  }
+
+  const formasAtivas = obterFormasPagamentoAtivasFinanceiro();
+  if (!formasAtivas.length) {
+    setMsg('msgBaixarContasFinanceiro', 'Nenhuma forma ativa disponível. Ative ao menos uma em Formas de pagamento.', 'err');
+    return null;
+  }
+
+  const selecionada = await abrirModalFormaPagamentoFinanceiro({
+    formas: formasAtivas,
+    formaAtual: String(formaAtual || '').trim(),
+  });
+  if (selecionada === null) return null;
+
+  const validaSelecionada = formasAtivas.find(item => String(item.id) === String(selecionada.id)) || null;
+  if (!validaSelecionada) {
+    setMsg('msgBaixarContasFinanceiro', 'Forma de pagamento inválida. Escolha uma opção ativa cadastrada.', 'err');
+    return null;
+  }
+
+  return validaSelecionada;
+}
+
+function construirTextoBuscaFornecedorFinanceiro(item = {}) {
+  const nome = String(item.nome || '').trim();
+  const cnpj = String(item.cnpj || '').trim();
+  const documento = cnpj ? formatarCpfCnpjFinanceiro(cnpj) : '';
+  const telefone = String(item.telefone || '').trim();
+  const email = String(item.email || '').trim();
+  const partes = [nome];
+  if (documento) partes.push(`CPF/CNPJ: ${documento}`);
+  if (telefone) partes.push(`Tel: ${telefone}`);
+  if (email) partes.push(`Email: ${email}`);
+  return partes.filter(Boolean).join(' | ');
+}
+
+function atualizarDatalistFornecedoresFinanceiro() {
+  const datalist = document.getElementById('fornecedoresFinanceiroAutoList');
+  if (!datalist) return;
+  datalist.innerHTML = fornecedoresFinanceiroCache.map(item => {
+    const textoBusca = construirTextoBuscaFornecedorFinanceiro(item).replace(/"/g, '&quot;');
+    return `<option value="${textoBusca}"></option>`;
+  }).join('');
+}
+
+function atualizarFornecedorSelecionadoContaAPagar() {
+  const campoBusca = document.getElementById('contaFornecedorBusca');
+  const campoId = document.getElementById('contaFornecedorId');
+  if (!campoBusca || !campoId) return;
+
+  const texto = String(campoBusca.value || '').trim();
+  if (!texto) {
+    campoId.value = '';
+    return;
+  }
+
+  const alvo = textoFinanceiroNormalizado(texto);
+  const fornecedoresComBusca = fornecedoresFinanceiroCache.map(item => ({
+    ...item,
+    _buscaTexto: textoFinanceiroNormalizado(construirTextoBuscaFornecedorFinanceiro(item)),
+    _nomeTexto: textoFinanceiroNormalizado(item.nome || ''),
+    _cnpjTexto: textoFinanceiroNormalizado(item.cnpj || ''),
+    _cnpjDigitos: digitosDocumentoFinanceiro(item.cnpj || ''),
+    _telefoneTexto: textoFinanceiroNormalizado(item.telefone || ''),
+    _emailTexto: textoFinanceiroNormalizado(item.email || ''),
+  }));
+
+  const alvoDigitos = digitosDocumentoFinanceiro(texto);
+
+  let selecionado = fornecedoresComBusca.find(item =>
+    item._buscaTexto === alvo ||
+    item._nomeTexto === alvo ||
+    item._cnpjTexto === alvo ||
+    (alvoDigitos && item._cnpjDigitos === alvoDigitos) ||
+    item._telefoneTexto === alvo ||
+    item._emailTexto === alvo
+  ) || null;
+
+  if (!selecionado) {
+    const similares = fornecedoresComBusca.filter(item =>
+      item._buscaTexto.includes(alvo) ||
+      item._nomeTexto.includes(alvo) ||
+      item._cnpjTexto.includes(alvo) ||
+      (alvoDigitos && item._cnpjDigitos.includes(alvoDigitos)) ||
+      item._telefoneTexto.includes(alvo) ||
+      item._emailTexto.includes(alvo)
+    );
+    if (similares.length === 1) selecionado = similares[0];
+  }
+
+  campoId.value = selecionado?.id || '';
+}
+
+async function carregarFornecedoresFinanceiro() {
+  const lista = document.getElementById('listaFornecedoresFinanceiro');
+  if (lista) lista.innerHTML = '<div class="empty">Carregando...</div>';
+
+  const { data, error } = await sb.from('fornecedores').select('*').order('nome');
+  if (error) {
+    fornecedoresFinanceiroCache = [];
+    atualizarDatalistFornecedoresFinanceiro();
+    if (lista) {
+      if (isMissingFornecedoresTableError(error)) {
+        lista.innerHTML = '<div class="empty">Rode o SQL da tabela fornecedores para habilitar este cadastro.</div>';
+      } else {
+        lista.innerHTML = '<div class="empty">Erro ao carregar fornecedores.</div>';
+      }
+    }
+    return;
+  }
+
+  fornecedoresFinanceiroCache = data || [];
+  atualizarDatalistFornecedoresFinanceiro();
+
+  if (!lista) return;
+  if (!fornecedoresFinanceiroCache.length) {
+    lista.innerHTML = '<div class="empty">Nenhum fornecedor cadastrado.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + fornecedoresFinanceiroCache.map(item => `
+    <div class="item">
+      <div class="item-info">
+        <div class="item-nome">${item.nome || '-'}</div>
+        <div class="item-detalhe">CPF/CNPJ: ${item.cnpj ? formatarCpfCnpjFinanceiro(item.cnpj) : '-'} · Telefone: ${item.telefone || '-'} · E-mail: ${item.email || '-'}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editarFornecedorFinanceiro('${item.id}')">Editar</button>
+        <button class="btn btn-red" onclick="excluirFornecedorFinanceiro('${item.id}')">Excluir</button>
+      </div>
+    </div>
+  `).join('') + '</div>';
+}
+
+function limparFormularioFornecedorFinanceiro() {
+  fornecedorFinanceiroEmEdicaoId = null;
+  const campoNome = document.getElementById('fornecedorNome');
+  const campoCnpj = document.getElementById('fornecedorCnpj');
+  const campoTelefone = document.getElementById('fornecedorTelefone');
+  const campoEmail = document.getElementById('fornecedorEmail');
+  if (campoNome) campoNome.value = '';
+  if (campoCnpj) campoCnpj.value = '';
+  if (campoTelefone) campoTelefone.value = '';
+  if (campoEmail) campoEmail.value = '';
+  const btnSalvar = document.getElementById('btnSalvarFornecedorFinanceiro');
+  const btnCancelar = document.getElementById('btnCancelarFornecedorFinanceiro');
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
+  if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+async function salvarFornecedorFinanceiro() {
+  const nome = String(document.getElementById('fornecedorNome')?.value || '').trim();
+  const cnpjInformado = String(document.getElementById('fornecedorCnpj')?.value || '').trim();
+  const telefone = String(document.getElementById('fornecedorTelefone')?.value || '').trim();
+  const email = String(document.getElementById('fornecedorEmail')?.value || '').trim().toLowerCase();
+
+  if (!nome) {
+    setMsg('msgFornecedorFinanceiro', 'Digite o nome do fornecedor.', 'err');
+    return;
+  }
+
+  const documentoValidado = validarCpfCnpjFinanceiro(cnpjInformado);
+  if (!documentoValidado.ok) {
+    setMsg('msgFornecedorFinanceiro', `${documentoValidado.tipo} inválido. Informe um documento válido.`, 'err');
+    return;
+  }
+
+  const campoDocumento = document.getElementById('fornecedorCnpj');
+  if (campoDocumento) campoDocumento.value = documentoValidado.valor || '';
+
+  const payload = {
+    nome,
+    cnpj: documentoValidado.valor || null,
+    telefone: telefone || null,
+    email: email || null,
+  };
+
+  const editando = !!fornecedorFinanceiroEmEdicaoId;
+  const query = editando
+    ? sb.from('fornecedores').update(payload).eq('id', fornecedorFinanceiroEmEdicaoId)
+    : sb.from('fornecedores').insert([payload]);
+
+  const { error } = await query;
+  if (error) {
+    if (isMissingFornecedoresTableError(error)) {
+      setMsg('msgFornecedorFinanceiro', 'Rode o SQL da tabela fornecedores antes de usar esta tela.', 'err');
+      return;
+    }
+    setMsg('msgFornecedorFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  limparFormularioFornecedorFinanceiro();
+  setMsg('msgFornecedorFinanceiro', editando ? 'Fornecedor atualizado.' : 'Fornecedor cadastrado.', 'ok');
+  await carregarFornecedoresFinanceiro();
+  if (document.getElementById('financeiro_contasapagar')?.classList.contains('ativa')) {
+    carregarContasAPagarFinanceiro();
+  }
+}
+
+function editarFornecedorFinanceiro(id) {
+  const item = fornecedoresFinanceiroCache.find(f => String(f.id) === String(id));
+  if (!item) {
+    setMsg('msgFornecedorFinanceiro', 'Fornecedor não encontrado.', 'err');
+    return;
+  }
+
+  fornecedorFinanceiroEmEdicaoId = id;
+  document.getElementById('fornecedorNome').value = item.nome || '';
+  document.getElementById('fornecedorCnpj').value = item.cnpj ? formatarCpfCnpjParcialFinanceiro(item.cnpj) : '';
+  document.getElementById('fornecedorTelefone').value = item.telefone || '';
+  document.getElementById('fornecedorEmail').value = item.email || '';
+  const btnSalvar = document.getElementById('btnSalvarFornecedorFinanceiro');
+  const btnCancelar = document.getElementById('btnCancelarFornecedorFinanceiro');
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  setMsg('msgFornecedorFinanceiro', `Editando fornecedor: ${item.nome}.`, 'ok');
+}
+
+function cancelarEdicaoFornecedorFinanceiro() {
+  limparFormularioFornecedorFinanceiro();
+  setMsg('msgFornecedorFinanceiro', 'Edição cancelada.', 'ok');
+}
+
+async function excluirFornecedorFinanceiro(id) {
+  if (!confirm('Excluir este fornecedor?')) return;
+
+  const { count, error: erroVinculo } = await sb
+    .from('contasapagar')
+    .select('*', { count: 'exact', head: true })
+    .eq('fornecedor_id', id);
+
+  if (erroVinculo && !isMissingContasAPagarTableError(erroVinculo)) {
+    setMsg('msgFornecedorFinanceiro', `Não foi possível validar vínculos: ${mensagemErroSupabase(erroVinculo, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (!erroVinculo && Number(count || 0) > 0) {
+    setMsg('msgFornecedorFinanceiro', 'Não é possível excluir este fornecedor porque ele possui contas cadastradas.', 'err');
+    return;
+  }
+
+  const { error } = await sb.from('fornecedores').delete().eq('id', id);
+  if (error) {
+    setMsg('msgFornecedorFinanceiro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (fornecedorFinanceiroEmEdicaoId === id) limparFormularioFornecedorFinanceiro();
+  setMsg('msgFornecedorFinanceiro', 'Fornecedor excluído com sucesso.', 'ok');
+  await carregarFornecedoresFinanceiro();
+}
+
+function limparFormularioContaAPagarFinanceiro() {
+  contaAPagarFinanceiroEmEdicaoId = null;
+  const campoFornecedor = document.getElementById('contaFornecedorBusca');
+  const campoFornecedorId = document.getElementById('contaFornecedorId');
+  const campoCompra = document.getElementById('contaDataCompra');
+  const campoVencimento = document.getElementById('contaDataVencimento');
+  const campoValor = document.getElementById('contaValorCompra');
+  const campoQtdParcelas = document.getElementById('contaQtdParcelas');
+  const campoIntervaloParcelas = document.getElementById('contaIntervaloParcelasDias');
+  const campoObservacao = document.getElementById('contaObservacao');
+
+  if (campoFornecedor) campoFornecedor.value = '';
+  if (campoFornecedorId) campoFornecedorId.value = '';
+  if (campoCompra) campoCompra.value = hoje();
+  if (campoVencimento) campoVencimento.value = hoje();
+  if (campoValor) campoValor.value = '';
+  if (campoQtdParcelas) campoQtdParcelas.value = '';
+  if (campoIntervaloParcelas) campoIntervaloParcelas.value = '';
+  if (campoObservacao) campoObservacao.value = '';
+
+  const btnSalvar = document.getElementById('btnSalvarContaAPagarFinanceiro');
+  const btnCancelar = document.getElementById('btnCancelarContaAPagarFinanceiro');
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
+  if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+async function salvarContaAPagarFinanceiro() {
+  const campoFornecedor = document.getElementById('contaFornecedorBusca');
+  const campoFornecedorId = document.getElementById('contaFornecedorId');
+  const dataCompra = String(document.getElementById('contaDataCompra')?.value || '').trim();
+  const dataVencimento = String(document.getElementById('contaDataVencimento')?.value || '').trim();
+  const valorTexto = String(document.getElementById('contaValorCompra')?.value || '').trim();
+  const observacao = String(document.getElementById('contaObservacao')?.value || '').trim();
+  const qtdParcelasTexto = String(document.getElementById('contaQtdParcelas')?.value || '').trim();
+  const intervaloParcelasTexto = String(document.getElementById('contaIntervaloParcelasDias')?.value || '').trim();
+  const qtdParcelas = Number.parseInt(qtdParcelasTexto, 10);
+  const intervaloParcelasDias = Number.parseInt(intervaloParcelasTexto, 10);
+
+  atualizarFornecedorSelecionadoContaAPagar();
+  const fornecedorId = String(campoFornecedorId?.value || '').trim();
+  if (!fornecedorId) {
+    setMsg('msgContaAPagarFinanceiro', 'Selecione um fornecedor válido na busca.', 'err');
+    return;
+  }
+  if (!dataCompra) {
+    setMsg('msgContaAPagarFinanceiro', 'Informe a data da compra.', 'err');
+    return;
+  }
+  if (!dataVencimento) {
+    setMsg('msgContaAPagarFinanceiro', 'Informe a data de vencimento.', 'err');
+    return;
+  }
+  if (!valorTexto) {
+    setMsg('msgContaAPagarFinanceiro', 'Informe o valor da compra.', 'err');
+    return;
+  }
+  if (!observacao) {
+    setMsg('msgContaAPagarFinanceiro', 'A observação do lançamento é obrigatória.', 'err');
+    return;
+  }
+
+  const qtdParcelasInformada = qtdParcelasTexto.length > 0;
+  if (qtdParcelasInformada && (!Number.isFinite(qtdParcelas) || qtdParcelas <= 0)) {
+    setMsg('msgContaAPagarFinanceiro', 'Informe uma quantidade de parcelas válida.', 'err');
+    return;
+  }
+  const qtdParcelasValidada = qtdParcelasInformada ? qtdParcelas : 1;
+  const intervaloInformado = intervaloParcelasTexto.length > 0;
+  if (intervaloInformado && (!Number.isFinite(intervaloParcelasDias) || intervaloParcelasDias <= 0)) {
+    setMsg('msgContaAPagarFinanceiro', 'Informe um intervalo em dias válido.', 'err');
+    return;
+  }
+  let intervaloParcelasDiasFinal = null;
+  if (qtdParcelasValidada > 1) {
+    if (intervaloInformado) {
+      intervaloParcelasDiasFinal = intervaloParcelasDias;
+    } else {
+      const dtCompra = new Date(`${dataCompra}T00:00:00`);
+      const dtVenc = new Date(`${dataVencimento}T00:00:00`);
+      const diffDias = Math.round((dtVenc.getTime() - dtCompra.getTime()) / (24 * 60 * 60 * 1000));
+      intervaloParcelasDiasFinal = diffDias > 0 ? diffDias : 30;
+    }
+  }
+
+  const valorCompra = lerValorMonetarioFinanceiro(valorTexto);
+  if (!Number.isFinite(valorCompra) || valorCompra <= 0) {
+    setMsg('msgContaAPagarFinanceiro', 'Informe um valor de compra válido.', 'err');
+    return;
+  }
+
+  const payloadBase = {
+    fornecedor_id: fornecedorId,
+    data_compra: dataCompra,
+    data_vencimento: dataVencimento,
+    valor_compra: Number(valorCompra.toFixed(2)),
+    observacao,
+    qtd_parcelas: qtdParcelasValidada,
+    intervalo_parcelas_dias: intervaloParcelasDiasFinal,
+  };
+
+  const editando = !!contaAPagarFinanceiroEmEdicaoId;
+  let query = null;
+  if (editando) {
+    query = sb.from('contasapagar').update({
+      ...payloadBase,
+      numero_parcela: Number.parseInt(String(contasAPagarFinanceiroCache.find(item => String(item.id) === String(contaAPagarFinanceiroEmEdicaoId))?.numero_parcela || 1), 10) || 1,
+    }).eq('id', contaAPagarFinanceiroEmEdicaoId);
+  } else {
+    const grupoParcelasId = crypto?.randomUUID ? crypto.randomUUID() : null;
+    const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
+      ...payloadBase,
+      data_pagamento: null,
+      data_vencimento: adicionarDiasDataISOFinanceiro(dataVencimento, idx * (intervaloParcelasDiasFinal || 0)),
+      numero_parcela: idx + 1,
+      grupo_parcelas_id: grupoParcelasId,
+    }));
+    query = sb.from('contasapagar').insert(linhas);
+  }
+
+  const { error } = await query;
+  if (error) {
+    if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingColumnError(error)) {
+      setMsg('msgContaAPagarFinanceiro', 'Rode o SQL das tabelas financeiras antes de usar esta tela.', 'err');
+      return;
+    }
+    setMsg('msgContaAPagarFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  limparFormularioContaAPagarFinanceiro();
+  if (campoFornecedor) campoFornecedor.blur();
+  setMsg('msgContaAPagarFinanceiro', editando ? 'Conta atualizada.' : `${qtdParcelasValidada} conta(s) cadastrada(s) com sucesso.`, 'ok');
+  carregarContasAPagarFinanceiro();
+}
+
+function cancelarEdicaoContaAPagarFinanceiro() {
+  limparFormularioContaAPagarFinanceiro();
+  setMsg('msgContaAPagarFinanceiro', 'Edição cancelada.', 'ok');
+}
+
+async function carregarContasAPagarFinanceiro() {
+  const lista = document.getElementById('listaContasAPagarFinanceiro');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
+
+  const filtroBusca = textoFinanceiroNormalizado(document.getElementById('filtroContaAPagarBusca')?.value || '');
+  const filtroStatus = String(document.getElementById('filtroContaAPagarStatus')?.value || '').trim();
+
+  const { data, error } = await sb
+    .from('contasapagar')
+    .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, observacao, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, created_at, fornecedores(nome)')
+    .order('data_vencimento', { ascending: true });
+
+  if (error) {
+    contasAPagarFinanceiroCache = [];
+    if (isMissingContasAPagarTableError(error)) {
+      lista.innerHTML = '<div class="empty">Rode o SQL da tabela contasapagar para habilitar este cadastro.</div>';
+      return;
+    }
+    if (isMissingFornecedoresTableError(error)) {
+      lista.innerHTML = '<div class="empty">Rode o SQL da tabela fornecedores para vincular contas.</div>';
+      return;
+    }
+    lista.innerHTML = '<div class="empty">Erro ao carregar contas a pagar.</div>';
+    return;
+  }
+
+  contasAPagarFinanceiroCache = data || [];
+  const itensFiltrados = contasAPagarFinanceiroCache.filter(item => {
+    const nomeFornecedor = String(item.fornecedores?.nome || '').trim();
+    const observacaoConta = String(item.observacao || '').trim();
+    const status = item.data_pagamento ? 'pago' : 'pendente';
+    const bateBusca = !filtroBusca || textoFinanceiroNormalizado(`${nomeFornecedor} ${observacaoConta}`).includes(filtroBusca);
+    const bateStatus = !filtroStatus || filtroStatus === status;
+    return bateBusca && bateStatus;
+  });
+
+  if (!itensFiltrados.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma conta encontrada para o filtro informado.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + itensFiltrados.map(item => {
+    const nomeFornecedor = item.fornecedores?.nome || 'Fornecedor não encontrado';
+    const statusPago = !!item.data_pagamento;
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${nomeFornecedor}</div>
+          <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+          <div class="item-detalhe">Valor: ${formatarMoedaBRFinanceiro(item.valor_compra)} · Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}${item.intervalo_parcelas_dias ? ` · intervalo ${item.intervalo_parcelas_dias} dia(s)` : ''}</div>
+          <div class="item-detalhe">Obs.: ${item.observacao || '-'}</div>
+        </div>
+        <div class="item-actions">
+          ${statusPago ? '<span class="tag tag-green">Pago</span>' : '<span class="tag tag-amber">Pendente</span>'}
+          <button class="btn btn-ghost btn-sm" onclick="editarContaAPagarFinanceiro('${item.id}')">Editar</button>
+          <button class="btn btn-red" onclick="excluirContaAPagarFinanceiro('${item.id}')">Excluir</button>
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+function editarContaAPagarFinanceiro(id) {
+  const item = contasAPagarFinanceiroCache.find(conta => String(conta.id) === String(id));
+  if (!item) {
+    setMsg('msgContaAPagarFinanceiro', 'Conta não encontrada.', 'err');
+    return;
+  }
+
+  contaAPagarFinanceiroEmEdicaoId = id;
+  document.getElementById('contaFornecedorBusca').value = item.fornecedores?.nome || '';
+  document.getElementById('contaFornecedorId').value = item.fornecedor_id || '';
+  document.getElementById('contaDataCompra').value = item.data_compra || '';
+  document.getElementById('contaDataVencimento').value = item.data_vencimento || '';
+  document.getElementById('contaValorCompra').value = Number(item.valor_compra || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('contaObservacao').value = item.observacao || '';
+  document.getElementById('contaQtdParcelas').value = item.qtd_parcelas ? String(item.qtd_parcelas) : '';
+  document.getElementById('contaIntervaloParcelasDias').value = item.intervalo_parcelas_dias ? String(item.intervalo_parcelas_dias) : '';
+  const btnSalvar = document.getElementById('btnSalvarContaAPagarFinanceiro');
+  const btnCancelar = document.getElementById('btnCancelarContaAPagarFinanceiro');
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  setMsg('msgContaAPagarFinanceiro', `Editando conta de ${item.fornecedores?.nome || 'fornecedor'}.`, 'ok');
+}
+
+async function excluirContaAPagarFinanceiro(id) {
+  if (!confirm('Excluir esta conta a pagar?')) return;
+  const { error } = await sb.from('contasapagar').delete().eq('id', id);
+  if (error) {
+    setMsg('msgContaAPagarFinanceiro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  if (contaAPagarFinanceiroEmEdicaoId === id) limparFormularioContaAPagarFinanceiro();
+  setMsg('msgContaAPagarFinanceiro', 'Conta excluída com sucesso.', 'ok');
+  carregarContasAPagarFinanceiro();
+}
+
+function obterStatusContaBaixaFinanceiro(item) {
+  return item?.pago_confirmado_em ? 'pago' : 'pendente';
+}
+
+async function carregarBaixarContasFinanceiro() {
+  const lista = document.getElementById('listaBaixarContasFinanceiro');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
+
+  const filtroBusca = textoFinanceiroNormalizado(document.getElementById('filtroBaixarContaBusca')?.value || '');
+  const filtroStatus = String(document.getElementById('filtroBaixarContaStatus')?.value || '').trim();
+
+  const { data, error } = await sb
+    .from('contasapagar')
+    .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo)')
+    .order('data_vencimento', { ascending: true });
+
+  if (error) {
+    contasBaixarFinanceiroCache = [];
+    if (isMissingContasAPagarTableError(error)) {
+      lista.innerHTML = '<div class="empty">Rode o SQL da tabela contasapagar para habilitar esta aba.</div>';
+      return;
+    }
+    if (isMissingFormasPagamentoTableError(error)) {
+      lista.innerHTML = '<div class="empty">Rode o SQL da tabela formas_pagamento para habilitar a seleção obrigatória na baixa.</div>';
+      return;
+    }
+    if (isMissingContasAPagarPagamentoColumnsError(error)) {
+      lista.innerHTML = '<div class="empty">Rode o SQL da migração de baixa de contas para habilitar valor pago, forma de pagamento e confirmação.</div>';
+      return;
+    }
+    lista.innerHTML = '<div class="empty">Erro ao carregar contas para baixa.</div>';
+    return;
+  }
+
+  contasBaixarFinanceiroCache = data || [];
+
+  const itens = contasBaixarFinanceiroCache.filter(item => {
+    const nomeFornecedor = String(item.fornecedores?.nome || '').trim();
+    const observacaoConta = String(item.observacao || '').trim();
+    const formaConta = String(item.formas_pagamento?.nome || item.forma_pagamento || '').trim();
+    const status = obterStatusContaBaixaFinanceiro(item);
+    const bateBusca = !filtroBusca || textoFinanceiroNormalizado(`${nomeFornecedor} ${observacaoConta} ${formaConta}`).includes(filtroBusca);
+    const bateStatus = !filtroStatus || filtroStatus === status;
+    return bateBusca && bateStatus;
+  });
+
+  if (!itens.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma conta encontrada.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + itens.map(item => {
+    const nomeFornecedor = item.fornecedores?.nome || 'Fornecedor não encontrado';
+    const status = obterStatusContaBaixaFinanceiro(item);
+    const valorPago = Number(item.valor_pago || 0);
+    const existePagamento = !!item.data_pagamento;
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${nomeFornecedor}</div>
+          <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+          <div class="item-detalhe">Valor compra: ${formatarMoedaBRFinanceiro(item.valor_compra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)} · Forma: ${item.formas_pagamento?.nome || item.forma_pagamento || '-'}</div>
+          <div class="item-detalhe">Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}${item.intervalo_parcelas_dias ? ` · intervalo ${item.intervalo_parcelas_dias} dia(s)` : ''}</div>
+          <div class="item-detalhe">Obs.: ${item.observacao || '-'}</div>
+        </div>
+        <div class="item-actions">
+          ${status === 'pago' ? '<span class="tag tag-green">Pago confirmado</span>' : '<span class="tag tag-amber">Pendente</span>'}
+          <button class="btn btn-ghost btn-sm" onclick="editarPagamentoContaFinanceiro('${item.id}')">Editar pagamento</button>
+          ${status !== 'pago'
+            ? `<button class="btn btn-green btn-sm" onclick="confirmarPagamentoContaFinanceiro('${item.id}')">${existePagamento ? 'Confirmar' : 'Pagar e confirmar'}</button>`
+            : '<button class="btn btn-ghost btn-sm" onclick="desconfirmarPagamentoContaFinanceiro(\'' + item.id + '\')">Reabrir</button>'
+          }
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+async function editarPagamentoContaFinanceiro(id) {
+  const item = contasBaixarFinanceiroCache.find(conta => String(conta.id) === String(id));
+  if (!item) {
+    setMsg('msgBaixarContasFinanceiro', 'Conta não encontrada.', 'err');
+    return;
+  }
+
+  const valorAtual = Number(item.valor_pago ?? item.valor_compra ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const valorInput = prompt('Valor pago (ex: 199,90):', valorAtual);
+  if (valorInput === null) return;
+  const valorPago = lerValorMonetarioFinanceiro(valorInput);
+  if (!Number.isFinite(valorPago) || valorPago < 0) {
+    setMsg('msgBaixarContasFinanceiro', 'Valor pago inválido.', 'err');
+    return;
+  }
+
+  const dataBase = String(item.data_pagamento || hoje());
+  const dataInput = prompt('Data de pagamento (AAAA-MM-DD):', dataBase);
+  if (dataInput === null) return;
+  const dataPagamento = String(dataInput || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataPagamento)) {
+    setMsg('msgBaixarContasFinanceiro', 'Data inválida. Use o formato AAAA-MM-DD.', 'err');
+    return;
+  }
+
+  const formaBase = String(item.formas_pagamento?.nome || item.forma_pagamento || '').trim();
+  const formaSelecionada = await solicitarFormaPagamentoObrigatoriaFinanceiro(formaBase);
+  if (!formaSelecionada) return;
+
+  const payload = {
+    valor_pago: Number(valorPago.toFixed(2)),
+    data_pagamento: dataPagamento,
+    forma_pagamento_id: formaSelecionada.id,
+    forma_pagamento: formaSelecionada.nome,
+  };
+
+  const { error } = await sb.from('contasapagar').update(payload).eq('id', id);
+  if (error) {
+    if (isMissingContasAPagarPagamentoColumnsError(error)) {
+      setMsg('msgBaixarContasFinanceiro', 'Rode o SQL da migração de baixa de contas para habilitar esses campos.', 'err');
+      return;
+    }
+    setMsg('msgBaixarContasFinanceiro', `Não foi possível salvar edição: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgBaixarContasFinanceiro', 'Pagamento atualizado.', 'ok');
+  carregarBaixarContasFinanceiro();
+  carregarContasAPagarFinanceiro();
+}
+
+async function confirmarPagamentoContaFinanceiro(id) {
+  const item = contasBaixarFinanceiroCache.find(conta => String(conta.id) === String(id));
+  if (!item) {
+    setMsg('msgBaixarContasFinanceiro', 'Conta não encontrada.', 'err');
+    return;
+  }
+
+  let formaSelecionada = null;
+  const formasAtivas = await carregarFormasPagamentoFinanceiro({ render: false, silencioso: true });
+  const listaAtivas = obterFormasPagamentoAtivasFinanceiro();
+  if (!formasAtivas.length || !listaAtivas.length) {
+    setMsg('msgBaixarContasFinanceiro', 'Cadastre e ative ao menos uma forma de pagamento antes de confirmar a baixa.', 'err');
+    return;
+  }
+
+  if (item.forma_pagamento_id) {
+    formaSelecionada = listaAtivas.find(f => String(f.id) === String(item.forma_pagamento_id)) || null;
+  }
+
+  if (!formaSelecionada) {
+    const formaBase = String(item.formas_pagamento?.nome || item.forma_pagamento || '').trim();
+    formaSelecionada = await solicitarFormaPagamentoObrigatoriaFinanceiro(formaBase);
+    if (!formaSelecionada) return;
+  }
+
+  const valorBase = Number(item.valor_pago ?? item.valor_compra ?? 0);
+  const payload = {
+    data_pagamento: item.data_pagamento || hoje(),
+    valor_pago: Number((Number.isFinite(valorBase) ? valorBase : 0).toFixed(2)),
+    forma_pagamento_id: formaSelecionada.id,
+    forma_pagamento: formaSelecionada.nome,
+    pago_confirmado_em: new Date().toISOString(),
+  };
+
+  const { error } = await sb.from('contasapagar').update(payload).eq('id', id);
+  if (error) {
+    if (isMissingContasAPagarPagamentoColumnsError(error)) {
+      setMsg('msgBaixarContasFinanceiro', 'Rode o SQL da migração de baixa de contas para habilitar confirmação de pagamento.', 'err');
+      return;
+    }
+    setMsg('msgBaixarContasFinanceiro', `Não foi possível confirmar pagamento: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgBaixarContasFinanceiro', 'Pagamento confirmado com sucesso.', 'ok');
+  carregarBaixarContasFinanceiro();
+  carregarContasAPagarFinanceiro();
+}
+
+async function desconfirmarPagamentoContaFinanceiro(id) {
+  if (!confirm('Reabrir esta conta como pendente?')) return;
+  const { error } = await sb
+    .from('contasapagar')
+    .update({ pago_confirmado_em: null })
+    .eq('id', id);
+
+  if (error) {
+    setMsg('msgBaixarContasFinanceiro', `Não foi possível reabrir a conta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgBaixarContasFinanceiro', 'Conta reaberta como pendente.', 'ok');
+  carregarBaixarContasFinanceiro();
+  carregarContasAPagarFinanceiro();
 }
 
 // 
@@ -10951,6 +12639,479 @@ async function carregarRelatorioPonto() {
   setMsg('msgRelatorioPonto', `${rows.length} registro(s) encontrado(s).`, 'ok');
 }
 
+function obterNomeFornecedorRelatorioFinanceiro(item) {
+  return String(item?.fornecedores?.nome || 'Fornecedor nao informado').trim() || 'Fornecedor nao informado';
+}
+
+function obterNomeFormaRelatorioFinanceiro(item) {
+  const nomeForma = String(item?.formas_pagamento?.nome || item?.forma_pagamento || '').trim();
+  return nomeForma || 'Nao informado';
+}
+
+function obterValorPagoRelatorioFinanceiro(item) {
+  const valorPago = Number(item?.valor_pago);
+  if (Number.isFinite(valorPago) && valorPago > 0) return valorPago;
+  if (obterStatusContaBaixaFinanceiro(item) === 'pago') {
+    const valorCompra = Number(item?.valor_compra || 0);
+    return Number.isFinite(valorCompra) ? valorCompra : 0;
+  }
+  return 0;
+}
+
+function preencherSelectRelatorioFinanceiro(selectEl, placeholder, opcoes = [], valorAtual = '') {
+  if (!selectEl) return;
+  const valorSelecionado = String(valorAtual || '');
+  selectEl.innerHTML = `<option value="">${placeholder}</option>` + opcoes
+    .map(item => `<option value="${escaparHtmlBasico(item.valor)}">${escaparHtmlBasico(item.rotulo)}</option>`)
+    .join('');
+  selectEl.value = opcoes.some(item => String(item.valor) === valorSelecionado) ? valorSelecionado : '';
+}
+
+function renderizarGraficoBarrasRelatorioFinanceiro(containerId, itens = [], valorMaximo = 0) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!itens.length) {
+    container.innerHTML = '<div class="empty">Sem dados para o gráfico no período.</div>';
+    return;
+  }
+
+  const maximo = Number.isFinite(valorMaximo) && valorMaximo > 0
+    ? valorMaximo
+    : Math.max(...itens.map(item => Number(item.total || 0)), 0);
+
+  if (!maximo) {
+    container.innerHTML = '<div class="empty">Sem valores para representar no gráfico.</div>';
+    return;
+  }
+
+  container.innerHTML = itens.map(item => {
+    const total = Number(item.total || 0);
+    const percentual = Math.max(0, Math.min(100, (total / maximo) * 100));
+    return `
+      <div class="rf-chart-row">
+        <div class="rf-chart-label" title="${escaparHtmlBasico(item.nome || '')}">${escaparHtmlBasico(item.nome || '-')}</div>
+        <div class="rf-chart-track"><div class="rf-chart-fill" style="width:${percentual.toFixed(2)}%"></div></div>
+        <div class="rf-chart-value">${formatarMoedaBRFinanceiro(total)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderizarDashboardFornecedoresRelatorioFinanceiro(itens = []) {
+  const lista = document.getElementById('listaRelatorioFinanceiroFornecedores');
+  if (!lista) return;
+
+  const agregados = {};
+  itens.forEach(item => {
+    if (obterStatusContaBaixaFinanceiro(item) !== 'pago') return;
+    const nome = obterNomeFornecedorRelatorioFinanceiro(item);
+    if (!agregados[nome]) agregados[nome] = { nome, total: 0, qtd: 0 };
+    agregados[nome].total += obterValorPagoRelatorioFinanceiro(item);
+    agregados[nome].qtd += 1;
+  });
+
+  const ranking = Object.values(agregados)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  if (!ranking.length) {
+    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', []);
+    lista.innerHTML = '<div class="empty">Sem pagamentos confirmados para montar o ranking de fornecedores.</div>';
+    return;
+  }
+
+  renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', ranking, ranking[0]?.total || 0);
+
+  lista.innerHTML = '<div class="lista">' + ranking.map((item, idx) => `
+    <div class="item">
+      <div class="item-info">
+        <div class="item-nome">${idx + 1}. ${escaparHtmlBasico(item.nome)}</div>
+        <div class="item-detalhe">Total pago: ${formatarMoedaBRFinanceiro(item.total)} · Pagamentos: ${item.qtd}</div>
+      </div>
+      <div class="item-actions"><span class="tag tag-green">Top pago</span></div>
+    </div>
+  `).join('') + '</div>';
+}
+
+function renderizarDashboardFormasRelatorioFinanceiro(itens = []) {
+  const lista = document.getElementById('listaRelatorioFinanceiroFormas');
+  if (!lista) return;
+
+  const agregados = {};
+  let totalPagamentos = 0;
+  itens.forEach(item => {
+    if (obterStatusContaBaixaFinanceiro(item) !== 'pago') return;
+    const nome = obterNomeFormaRelatorioFinanceiro(item);
+    if (!agregados[nome]) agregados[nome] = { nome, total: 0, qtd: 0 };
+    agregados[nome].total += obterValorPagoRelatorioFinanceiro(item);
+    agregados[nome].qtd += 1;
+    totalPagamentos += 1;
+  });
+
+  const ranking = Object.values(agregados)
+    .sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      return b.qtd - a.qtd;
+    })
+    .slice(0, 10);
+
+  if (!ranking.length) {
+    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', []);
+    lista.innerHTML = '<div class="empty">Sem pagamentos confirmados para montar o dashboard de formas.</div>';
+    return;
+  }
+
+  renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', ranking, ranking[0]?.total || 0);
+
+  lista.innerHTML = '<div class="lista">' + ranking.map(item => {
+    const percentualUso = totalPagamentos ? ((item.qtd / totalPagamentos) * 100) : 0;
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${escaparHtmlBasico(item.nome)}</div>
+          <div class="item-detalhe">Total pago: ${formatarMoedaBRFinanceiro(item.total)} · Utilizacoes: ${item.qtd} (${percentualUso.toFixed(1)}%)</div>
+        </div>
+        <div class="item-actions"><span class="tag tag-slate">Forma</span></div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+function escaparCsvRelatorioFinanceiro(valor = '') {
+  const texto = String(valor ?? '');
+  return `"${texto.replace(/"/g, '""')}"`;
+}
+
+function exportarRelatorioFinanceiroCsv() {
+  const itens = Array.isArray(relatorioFinanceiroCache) ? relatorioFinanceiroCache : [];
+  if (!itens.length) {
+    setMsg('msgRelatorioFinanceiro', 'Não há dados para exportar. Aplique filtros e carregue o relatório.', 'err');
+    return;
+  }
+
+  const cabecalho = [
+    'Fornecedor',
+    'Status',
+    'Forma de pagamento',
+    'Data compra',
+    'Data vencimento',
+    'Data pagamento',
+    'Valor titulo',
+    'Valor pago',
+    'Parcela',
+    'Observacao',
+  ];
+
+  const linhas = itens.map(item => {
+    const status = obterStatusContaBaixaFinanceiro(item) === 'pago' ? 'Pago' : 'Pendente';
+    const parcela = `${item.numero_parcela || 1}/${item.qtd_parcelas || 1}`;
+    return [
+      obterNomeFornecedorRelatorioFinanceiro(item),
+      status,
+      obterNomeFormaRelatorioFinanceiro(item),
+      item.data_compra || '',
+      item.data_vencimento || '',
+      item.data_pagamento || '',
+      Number(item.valor_compra || 0).toFixed(2),
+      obterValorPagoRelatorioFinanceiro(item).toFixed(2),
+      parcela,
+      String(item.observacao || '').trim(),
+    ].map(escaparCsvRelatorioFinanceiro).join(';');
+  });
+
+  const conteudo = [cabecalho.map(escaparCsvRelatorioFinanceiro).join(';'), ...linhas].join('\n');
+  const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `relatorio-financeiro-${hoje()}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  setMsg('msgRelatorioFinanceiro', 'CSV exportado com sucesso.', 'ok');
+}
+
+function imprimirRelatorioFinanceiroPdf() {
+  const itens = Array.isArray(relatorioFinanceiroCache) ? relatorioFinanceiroCache : [];
+  if (!itens.length) {
+    setMsg('msgRelatorioFinanceiro', 'Não há dados para exportar em PDF. Aplique filtros e carregue o relatório.', 'err');
+    return;
+  }
+
+  const totalGeral = itens.reduce((acc, item) => acc + (Number(item.valor_compra || 0) || 0), 0);
+  const totalPago = itens.reduce((acc, item) => acc + obterValorPagoRelatorioFinanceiro(item), 0);
+  const totalPendente = itens.reduce((acc, item) => {
+    if (obterStatusContaBaixaFinanceiro(item) === 'pago') return acc;
+    const valor = Number(item.valor_compra || 0);
+    return acc + (Number.isFinite(valor) ? valor : 0);
+  }, 0);
+
+  const linhas = itens.map(item => {
+    const status = obterStatusContaBaixaFinanceiro(item) === 'pago' ? 'Pago' : 'Pendente';
+    return `
+      <tr>
+        <td>${escaparHtmlBasico(obterNomeFornecedorRelatorioFinanceiro(item))}</td>
+        <td>${escaparHtmlBasico(status)}</td>
+        <td>${escaparHtmlBasico(obterNomeFormaRelatorioFinanceiro(item))}</td>
+        <td>${escaparHtmlBasico(formatarDataBRFinanceiro(item.data_vencimento))}</td>
+        <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_compra || 0))}</td>
+        <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item)))}</td>
+        <td>${escaparHtmlBasico(String(item.observacao || '').trim() || '-')}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const janela = window.open('', '_blank', 'width=1100,height=760');
+  if (!janela) {
+    setMsg('msgRelatorioFinanceiro', 'O navegador bloqueou a janela de impressão. Libere pop-ups para exportar o PDF.', 'err');
+    return;
+  }
+
+  janela.document.write(`
+    <html>
+      <head>
+        <title>Relatório Financeiro</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #111; }
+          h1 { margin: 0 0 8px; font-size: 22px; }
+          .meta { margin-bottom: 14px; font-size: 12px; color: #444; }
+          .totais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+          .box { border: 1px solid #d0d0d0; border-radius: 8px; padding: 10px; }
+          .box .label { font-size: 11px; color: #666; text-transform: uppercase; }
+          .box .valor { font-size: 18px; font-weight: bold; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
+          th { background: #f5f5f5; }
+        </style>
+      </head>
+      <body>
+        <h1>Relatório Financeiro</h1>
+        <div class="meta">Gerado em: ${escaparHtmlBasico(new Date().toLocaleString('pt-BR'))}</div>
+        <div class="totais">
+          <div class="box"><div class="label">Total geral</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalGeral))}</div></div>
+          <div class="box"><div class="label">Total pago</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalPago))}</div></div>
+          <div class="box"><div class="label">Total pendente</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalPendente))}</div></div>
+          <div class="box"><div class="label">Qtd. títulos</div><div class="valor">${escaparHtmlBasico(String(itens.length))}</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fornecedor</th>
+              <th>Status</th>
+              <th>Forma</th>
+              <th>Vencimento</th>
+              <th>Valor título</th>
+              <th>Valor pago</th>
+              <th>Observação</th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.focus();
+  janela.print();
+  setMsg('msgRelatorioFinanceiro', 'PDF preparado para impressão.', 'ok');
+}
+
+function renderizarDetalhesRelatorioFinanceiro(itens = []) {
+  const lista = document.getElementById('listaRelatorioFinanceiro');
+  if (!lista) return;
+
+  if (!itens.length) {
+    lista.innerHTML = '<div class="empty">Nenhum titulo encontrado com os filtros selecionados.</div>';
+    return;
+  }
+
+  const ordenados = [...itens].sort((a, b) => {
+    const dataA = new Date(`${a.data_vencimento || a.data_pagamento || '1970-01-01'}T00:00:00`).getTime();
+    const dataB = new Date(`${b.data_vencimento || b.data_pagamento || '1970-01-01'}T00:00:00`).getTime();
+    return dataB - dataA;
+  });
+
+  lista.innerHTML = '<div class="lista">' + ordenados.map(item => {
+    const status = obterStatusContaBaixaFinanceiro(item);
+    const valorCompra = Number(item.valor_compra || 0);
+    const valorPago = obterValorPagoRelatorioFinanceiro(item);
+    const fornecedor = obterNomeFornecedorRelatorioFinanceiro(item);
+    const forma = obterNomeFormaRelatorioFinanceiro(item);
+    const observacao = String(item.observacao || '').trim() || '-';
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
+          <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+          <div class="item-detalhe">Valor do titulo: ${formatarMoedaBRFinanceiro(valorCompra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)}</div>
+          <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}</div>
+          <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
+        </div>
+        <div class="item-actions">
+          ${status === 'pago' ? '<span class="tag tag-green">Pago</span>' : '<span class="tag tag-amber">Pendente</span>'}
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+function resetFiltroRelatorioFinanceiro() {
+  const hojeLocal = hoje();
+  const campoDataInicio = document.getElementById('filtroRelFinanceiroDataInicio');
+  const campoDataFim = document.getElementById('filtroRelFinanceiroDataFim');
+  const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
+  const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
+  const campoForma = document.getElementById('filtroRelFinanceiroForma');
+  const campoBusca = document.getElementById('filtroRelFinanceiroBusca');
+
+  if (campoDataInicio) campoDataInicio.value = hojeLocal;
+  if (campoDataFim) campoDataFim.value = hojeLocal;
+  if (campoStatus) {
+    campoStatus.value = '';
+    campoStatus.selectedIndex = 0;
+  }
+  if (campoFornecedor) {
+    campoFornecedor.value = '';
+    campoFornecedor.selectedIndex = 0;
+  }
+  if (campoForma) {
+    campoForma.value = '';
+    campoForma.selectedIndex = 0;
+  }
+  if (campoBusca) campoBusca.value = '';
+
+  carregarRelatorioFinanceiro();
+}
+
+async function carregarRelatorioFinanceiro() {
+  const listaDetalhes = document.getElementById('listaRelatorioFinanceiro');
+  const listaFornecedores = document.getElementById('listaRelatorioFinanceiroFornecedores');
+  const listaFormas = document.getElementById('listaRelatorioFinanceiroFormas');
+  const campoDataInicio = document.getElementById('filtroRelFinanceiroDataInicio');
+  const campoDataFim = document.getElementById('filtroRelFinanceiroDataFim');
+  const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
+  const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
+  const campoForma = document.getElementById('filtroRelFinanceiroForma');
+  const campoBusca = document.getElementById('filtroRelFinanceiroBusca');
+
+  if (!listaDetalhes || !listaFornecedores || !listaFormas) return;
+
+  if (campoDataInicio && !campoDataInicio.value) campoDataInicio.value = hoje();
+  if (campoDataFim && !campoDataFim.value) campoDataFim.value = hoje();
+
+  listaDetalhes.innerHTML = '<div class="empty">Carregando...</div>';
+  listaFornecedores.innerHTML = '<div class="empty">Carregando...</div>';
+  listaFormas.innerHTML = '<div class="empty">Carregando...</div>';
+
+  try {
+    const { data, error } = await sb
+      .from('contasapagar')
+      .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, fornecedores(nome), formas_pagamento(id, nome)')
+      .order('data_vencimento', { ascending: false });
+
+    if (error) {
+      if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingFormasPagamentoTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingColumnError(error)) {
+        listaDetalhes.innerHTML = '<div class="empty">Rode as migrations do financeiro para habilitar este relatorio.</div>';
+        listaFornecedores.innerHTML = '<div class="empty">Dependencias do financeiro nao encontradas.</div>';
+        listaFormas.innerHTML = '<div class="empty">Dependencias do financeiro nao encontradas.</div>';
+        setMsg('msgRelatorioFinanceiro', 'Estrutura financeira ainda nao esta completa no banco.', 'err');
+        return;
+      }
+      throw error;
+    }
+
+    const rows = data || [];
+
+    const valorFornecedorAtual = String(campoFornecedor?.value || '').trim();
+    const fornecedoresOpcoes = [...new Map(rows
+      .map(item => ({ valor: String(item.fornecedor_id || '').trim(), rotulo: obterNomeFornecedorRelatorioFinanceiro(item) }))
+      .filter(item => item.valor)
+      .map(item => [item.valor, item])).values()]
+      .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+    preencherSelectRelatorioFinanceiro(campoFornecedor, '- Todos os fornecedores -', fornecedoresOpcoes, valorFornecedorAtual);
+
+    const valorFormaAtual = String(campoForma?.value || '').trim();
+    const formasOpcoes = [...new Map(rows
+      .map(item => {
+        const nomeForma = obterNomeFormaRelatorioFinanceiro(item);
+        const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
+        const chave = formaId || nomeForma;
+        return { valor: chave, rotulo: nomeForma, idForma: formaId };
+      })
+      .filter(item => item.valor && item.rotulo !== 'Nao informado')
+      .map(item => [item.valor, item])).values()]
+      .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+    preencherSelectRelatorioFinanceiro(campoForma, '- Todas as formas -', formasOpcoes, valorFormaAtual);
+
+    const filtroDataInicio = String(campoDataInicio?.value || '').trim();
+    const filtroDataFim = String(campoDataFim?.value || '').trim();
+    const filtroStatus = String(campoStatus?.value || '').trim();
+    const filtroFornecedor = String(campoFornecedor?.value || '').trim();
+    const filtroForma = String(campoForma?.value || '').trim();
+    const filtroBusca = textoFinanceiroNormalizado(String(campoBusca?.value || '').trim());
+
+    const itensFiltrados = rows.filter(item => {
+      const status = obterStatusContaBaixaFinanceiro(item);
+      const fornecedorId = String(item.fornecedor_id || '').trim();
+      const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
+      const formaNome = obterNomeFormaRelatorioFinanceiro(item);
+      const dataReferencia = String(item.data_pagamento || item.data_vencimento || item.data_compra || '').trim();
+      const textoBusca = textoFinanceiroNormalizado([
+        obterNomeFornecedorRelatorioFinanceiro(item),
+        formaNome,
+        item.observacao || '',
+        item.data_compra || '',
+        item.data_vencimento || '',
+        item.data_pagamento || '',
+      ].join(' '));
+
+      if (filtroDataInicio && (!dataReferencia || dataReferencia < filtroDataInicio)) return false;
+      if (filtroDataFim && (!dataReferencia || dataReferencia > filtroDataFim)) return false;
+      if (filtroStatus && filtroStatus !== status) return false;
+      if (filtroFornecedor && filtroFornecedor !== fornecedorId) return false;
+      if (filtroForma && filtroForma !== (formaId || formaNome)) return false;
+      if (filtroBusca && !textoBusca.includes(filtroBusca)) return false;
+      return true;
+    });
+
+    relatorioFinanceiroCache = itensFiltrados;
+
+    const totalGeral = itensFiltrados.reduce((acc, item) => acc + (Number(item.valor_compra || 0) || 0), 0);
+    const totalPago = itensFiltrados.reduce((acc, item) => acc + obterValorPagoRelatorioFinanceiro(item), 0);
+    const totalPendente = itensFiltrados.reduce((acc, item) => {
+      if (obterStatusContaBaixaFinanceiro(item) === 'pago') return acc;
+      const valorCompra = Number(item.valor_compra || 0);
+      return acc + (Number.isFinite(valorCompra) ? valorCompra : 0);
+    }, 0);
+
+    const qtdTitulos = itensFiltrados.length;
+    const elTotalGeral = document.getElementById('rfTotalGeral');
+    const elTotalPago = document.getElementById('rfTotalPago');
+    const elTotalPendente = document.getElementById('rfTotalPendente');
+    const elQtdTitulos = document.getElementById('rfQuantidadeTitulos');
+    if (elTotalGeral) elTotalGeral.textContent = formatarMoedaBRFinanceiro(totalGeral);
+    if (elTotalPago) elTotalPago.textContent = formatarMoedaBRFinanceiro(totalPago);
+    if (elTotalPendente) elTotalPendente.textContent = formatarMoedaBRFinanceiro(totalPendente);
+    if (elQtdTitulos) elQtdTitulos.textContent = String(qtdTitulos);
+
+    renderizarDashboardFornecedoresRelatorioFinanceiro(itensFiltrados);
+    renderizarDashboardFormasRelatorioFinanceiro(itensFiltrados);
+    renderizarDetalhesRelatorioFinanceiro(itensFiltrados);
+
+    setMsg('msgRelatorioFinanceiro', `${qtdTitulos} titulo(s) encontrado(s). Total geral: ${formatarMoedaBRFinanceiro(totalGeral)}.`, 'ok');
+  } catch (error) {
+    console.error('Erro ao carregar relatorio financeiro:', error);
+    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', []);
+    renderizarGraficoBarrasRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', []);
+    listaDetalhes.innerHTML = '<div class="empty">Erro ao carregar relatorio financeiro.</div>';
+    listaFornecedores.innerHTML = '<div class="empty">Erro ao carregar dashboard de fornecedores.</div>';
+    listaFormas.innerHTML = '<div class="empty">Erro ao carregar dashboard de formas.</div>';
+    setMsg('msgRelatorioFinanceiro', `Nao foi possivel carregar o relatorio financeiro: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+  }
+}
+
 function resetFiltroRelatorioLancamentos() {
   const hojeLocal = hoje();
   const dataInicio = document.getElementById('filtroLancamentoDataInicio');
@@ -12010,6 +14171,10 @@ document.getElementById('pinActionOverlay').addEventListener('click', function(e
   if (e.target === this) fecharModalPin();
 });
 
+document.getElementById('formaPagamentoOverlay').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalFormaPagamentoFinanceiro();
+});
+
 document.getElementById('pontoPendenteOverlay').addEventListener('click', function(e) {
   if (e.target === this) fecharModalPendenciaPonto('cancelar');
 });
@@ -12611,6 +14776,7 @@ function salvarSessaoSistema(usuario) {
       filtrarChecklistsLancados();
     }
   });
+  configurarAberturaAutomaticaDatePicker();
 </script>
 </body>
 </html>
