@@ -14201,7 +14201,7 @@ window.addEventListener('pageshow', function() {
 function registrarServiceWorkerPwa() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+      navigator.serviceWorker.register('./service-worker-v4.js', { scope: './' })
       .catch(error => {
         console.warn('Falha ao registrar Service Worker do PWA:', error);
       });
