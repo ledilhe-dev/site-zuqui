@@ -9551,7 +9551,7 @@ function obterStatusContaRelatorioFinanceiro(item) {
 }
 
 function obterDataReferenciaContaRelatorioFinanceiro(item) {
-  if (item?.excluido_em) return String(item.excluido_em || '').trim();
+  if (item?.excluido_em) return String(item.excluido_em || '').trim().slice(0, 10);
   return String(item?.data_pagamento || item?.data_vencimento || item?.data_compra || '').trim();
 }
 
