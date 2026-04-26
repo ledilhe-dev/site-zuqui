@@ -1045,7 +1045,7 @@
     }
     .cofre-overview {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.2fr);
+      grid-template-columns: minmax(260px, 1fr) minmax(250px, 1.05fr);
       gap: 10px;
       margin-bottom: 14px;
       align-items: stretch;
@@ -1055,34 +1055,39 @@
       grid-template-columns: 1fr;
     }
     .cofre-saldo-principal {
-      min-height: 190px;
+      min-height: 172px;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      overflow: hidden;
     }
     .cofre-saldo-principal .stat-label {
       font-size: 15px;
       margin-bottom: 12px;
     }
     .cofre-saldo-principal .stat-value {
-      font-size: clamp(48px, 6vw, 82px);
-      line-height: 1;
+      font-size: clamp(42px, 4.6vw, 68px);
+      line-height: 0.98;
       letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .cofre-pizza-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 12px;
       display: grid;
-      grid-template-columns: 160px 1fr;
-      gap: 14px;
+      grid-template-columns: 140px 1fr;
+      gap: 12px;
       align-items: center;
-      min-height: 156px;
+      min-height: 146px;
+      overflow: hidden;
     }
     .cofre-pizza {
-      width: 144px;
-      height: 144px;
+      width: 126px;
+      height: 126px;
       border-radius: 50%;
       border: 1px solid rgba(255,255,255,0.16);
       background: var(--surface2);
@@ -1092,7 +1097,7 @@
     .cofre-pizza::after {
       content: '';
       position: absolute;
-      inset: 42px;
+      inset: 36px;
       border-radius: 50%;
       background: var(--surface);
       border: 1px solid rgba(255,255,255,0.1);
@@ -2662,12 +2667,39 @@
       font-size: 11px;
       opacity: 0.78;
     }
+    .conta-financeira-movimentacao-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .conta-financeira-movimentacao-toggle .rotulo {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .conta-financeira-movimentacao-toggle .btn-sm {
+      min-width: 86px;
+    }
+    .conta-financeira-movimentacao-toggle .btn-sm.ativo {
+      border-color: rgba(34, 197, 94, 0.45);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25) inset;
+      background: rgba(34, 197, 94, 0.18);
+      color: #dcfce7;
+    }
     .conta-financeira-cor-0 { background: linear-gradient(135deg, rgba(37, 99, 235, 0.92), rgba(29, 78, 216, 0.72)); }
     .conta-financeira-cor-1 { background: linear-gradient(135deg, rgba(22, 163, 74, 0.92), rgba(21, 128, 61, 0.72)); }
     .conta-financeira-cor-2 { background: linear-gradient(135deg, rgba(234, 88, 12, 0.94), rgba(194, 65, 12, 0.74)); }
     .conta-financeira-cor-3 { background: linear-gradient(135deg, rgba(14, 116, 144, 0.94), rgba(21, 94, 117, 0.74)); }
     .conta-financeira-cor-4 { background: linear-gradient(135deg, rgba(190, 24, 93, 0.92), rgba(157, 23, 77, 0.72)); }
     .conta-financeira-cor-5 { background: linear-gradient(135deg, rgba(124, 58, 237, 0.9), rgba(109, 40, 217, 0.72)); }
+    .conta-financeira-opcao-neutra {
+      background: linear-gradient(135deg, rgba(71, 85, 105, 0.92), rgba(51, 65, 85, 0.74));
+      border-color: rgba(148, 163, 184, 0.35);
+      color: #e2e8f0;
+    }
 
     /* ---- CHECKLIST ITEM (execução) ---- */
     .exec-item {
@@ -3466,7 +3498,12 @@
           </button>
           <button class="nav-btn nav-sub-btn" data-page="relatorio_financeiro" onclick="abrirPagina('relatorio_financeiro', this)">
             <span class="nav-copy">
-              <span class="nav-title">Relatório financeiro</span>
+              <span class="nav-title">Relatório de contas a pagar</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="relatorio_ajuste_saldo" onclick="abrirPagina('relatorio_ajuste_saldo', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Relatório ajuste de saldo</span>
             </span>
           </button>
         </div>
@@ -4290,6 +4327,103 @@
         </div>
       </section>
 
+      <section id="relatorio_ajuste_saldo" class="pagina">
+        <div class="page-title">Relatório ajuste de saldo</div>
+        <div class="page-sub">Consulte os ajustes manuais feitos no saldo das contas financeiras.</div>
+
+        <div class="card">
+          <div class="relatorio-financeiro-filtros">
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelAjusteSaldoDataInicio">Data início</label>
+              <input id="filtroRelAjusteSaldoDataInicio" type="date">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelAjusteSaldoDataFim">Data fim</label>
+              <input id="filtroRelAjusteSaldoDataFim" type="date">
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelAjusteSaldoConta">Conta financeira</label>
+              <select id="filtroRelAjusteSaldoConta">
+                <option value="">- Todas as contas -</option>
+              </select>
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelAjusteSaldoTipo">Tipo</label>
+              <select id="filtroRelAjusteSaldoTipo">
+                <option value="">Todos</option>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+              </select>
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelAjusteSaldoUsuario">Usuário</label>
+              <select id="filtroRelAjusteSaldoUsuario">
+                <option value="">- Todos os usuários -</option>
+              </select>
+            </div>
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelAjusteSaldoBuscaMotivo">Buscar motivo</label>
+              <input id="filtroRelAjusteSaldoBuscaMotivo" type="text" placeholder="Digite parte do motivo do ajuste">
+            </div>
+            <button class="btn btn-green" id="btnFiltrarRelAjusteSaldo" type="button" onclick="carregarRelatorioAjusteSaldo()">Filtrar</button>
+            <button class="btn btn-ghost" id="btnHojeRelAjusteSaldo" type="button" onclick="resetFiltroRelatorioAjusteSaldo()">Hoje</button>
+          </div>
+          <div class="relatorio-financeiro-acoes">
+            <button class="btn btn-ghost btn-export-excel" id="btnExportarExcelRelAjusteSaldo" type="button" onclick="exportarRelatorioAjusteSaldoCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
+            <button class="btn btn-ghost btn-export-pdf" id="btnExportarPdfRelAjusteSaldo" type="button" onclick="imprimirRelatorioAjusteSaldoPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
+          </div>
+          <div class="msg" id="msgRelatorioAjusteSaldo"></div>
+        </div>
+
+        <div class="stats-grid" id="cardsRelatorioAjusteSaldo">
+          <div class="stat-card" id="cardRelAjusteSaldoEntradas">
+            <div class="s-label">Total de entradas</div>
+            <div class="s-value" id="relAjusteSaldoTotalEntradas">R$ 0,00</div>
+            <div class="s-desc">Somatório dos ajustes do tipo entrada no período.</div>
+          </div>
+          <div class="stat-card" id="cardRelAjusteSaldoSaidas">
+            <div class="s-label">Total de saídas</div>
+            <div class="s-value" id="relAjusteSaldoTotalSaidas">R$ 0,00</div>
+            <div class="s-desc">Somatório dos ajustes do tipo saída no período.</div>
+          </div>
+          <div class="stat-card" id="cardRelAjusteSaldoLiquido">
+            <div class="s-label">Saldo líquido dos ajustes</div>
+            <div class="s-value" id="relAjusteSaldoLiquido">R$ 0,00</div>
+            <div class="s-desc">Entradas menos saídas de ajustes manuais.</div>
+          </div>
+          <div class="stat-card" id="cardRelAjusteSaldoQuantidade">
+            <div class="s-label">Quantidade de ajustes</div>
+            <div class="s-value" id="relAjusteSaldoQuantidade">0</div>
+            <div class="s-desc">Total de registros de ajuste encontrados.</div>
+          </div>
+        </div>
+
+        <div class="card" id="cardRelatorioAjusteSaldoDetalhes">
+          <div class="card-title">Detalhes dos ajustes</div>
+          <div id="tabelaRelatorioAjusteSaldoWrap" style="overflow-x:auto">
+            <table id="tabelaRelatorioAjusteSaldo" style="width:100%;border-collapse:collapse;min-width:980px">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Data/hora</th>
+                  <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Conta financeira</th>
+                  <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Tipo</th>
+                  <th style="text-align:right;padding:10px;border-bottom:1px solid var(--border)">Valor</th>
+                  <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Motivo</th>
+                  <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Usuário</th>
+                  <th style="text-align:right;padding:10px;border-bottom:1px solid var(--border)">Saldo anterior</th>
+                  <th style="text-align:right;padding:10px;border-bottom:1px solid var(--border)">Saldo após</th>
+                </tr>
+              </thead>
+              <tbody id="listaRelatorioAjusteSaldo">
+                <tr>
+                  <td colspan="8" style="padding:16px;color:var(--text-muted)">Use os filtros para carregar os ajustes de saldo.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section id="financeiro_fornecedores" class="pagina">
         <div class="page-title">Cadastro de fornecedor</div>
         <div class="page-sub">Cadastre e mantenha a base de fornecedores</div>
@@ -4649,6 +4783,11 @@
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div class="forma-pagamento-modal-intro">Clique na conta financeira que será usada para pagar este título.</div>
+      <div class="conta-financeira-movimentacao-toggle" id="contaFinanceiraMovimentacaoToggle">
+        <span class="rotulo">Movimentar saldo da conta?</span>
+        <button class="btn btn-ghost btn-sm" type="button" id="btnContaFinanceiraMovimentarSim" onclick="definirMovimentacaoSaldoContaFinanceiraBaixa(true)">Sim</button>
+        <button class="btn btn-ghost btn-sm" type="button" id="btnContaFinanceiraMovimentarNao" onclick="definirMovimentacaoSaldoContaFinanceiraBaixa(false)">Nao</button>
+      </div>
       <div class="conta-financeira-opcoes" id="contaFinanceiraBaixaOpcoes"></div>
       <div class="msg" id="contaFinanceiraBaixaMsg" style="margin-top:0"></div>
     </div>
@@ -4783,6 +4922,7 @@ let resolverModalFormaPagamentoPendente = null;
 let formasModalPagamentoFinanceiro = [];
 let resolverModalContaFinanceiraBaixaPendente = null;
 let contasModalContaFinanceiraBaixa = [];
+let modalContaFinanceiraMovimentarSaldo = true;
 let resolverModalConfirmacaoFinanceiraPendente = null;
 let resolverModalPontoPendente = null;
 let intervaloAtualizacaoPaginaAtiva = null;
@@ -4811,6 +4951,8 @@ let checklistsLancadosFuncionariosMap = {};
 let checklistsLancadosUltimaListaFiltrada = [];
 let relatorioLancamentosCache = [];
 let relatorioFinanceiroCache = [];
+let relatorioAjusteSaldoCache = [];
+let relatorioAjusteSaldoContasCache = [];
 let relatorioFinanceiroDetalhesAberto = false;
 let tarefasCadastradasCache = [];
 let tarefasSelecionadasIds = new Set();
@@ -5239,7 +5381,8 @@ const PERFIL_PERMISSOES = [
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'relatorio_ponto', label: 'Relatório de ponto' },
   { key: 'relatorio_lancamentos', label: 'Relatório de tarefas' },
-  { key: 'relatorio_financeiro', label: 'Relatório financeiro' },
+  { key: 'relatorio_financeiro', label: 'Relatório de contas a pagar' },
+  { key: 'relatorio_ajuste_saldo', label: 'Relatório ajuste de saldo' },
   { key: 'financeiro_fornecedores', label: 'Financeiro - Fornecedores' },
   { key: 'financeiro_formas_pagamento', label: 'Financeiro - Formas de pagamento' },
   { key: 'financeiro_contasapagar', label: 'Financeiro - Contas a pagar' },
@@ -5275,6 +5418,7 @@ function obterPermissoesBase(codigo) {
     relatorio_ponto: false,
     relatorio_lancamentos: false,
     relatorio_financeiro: false,
+    relatorio_ajuste_saldo: false,
     financeiro_fornecedores: false,
     financeiro_formas_pagamento: false,
     financeiro_contasapagar: false,
@@ -5307,7 +5451,8 @@ const topTitles = {
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
-  relatorio_financeiro: ['Relatório financeiro', 'Análise detalhada de títulos e pagamentos'],
+  relatorio_financeiro: ['Relatório de contas a pagar', 'Análise detalhada de títulos e pagamentos'],
+  relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
   financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
   financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
   financeiro_contasapagar: ['Cadastro de contas a pagar', 'Lançamentos financeiros por fornecedor'],
@@ -5332,7 +5477,7 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_lancamentos', 'relatorio_financeiro'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
@@ -5503,6 +5648,10 @@ function abrirPagina(id, botao) {
   document.querySelectorAll('.pagina').forEach(p => p.classList.remove('ativa'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
   const paginaAtual = document.getElementById(id);
+  if (!paginaAtual) {
+    console.warn('Página não encontrada:', id);
+    return;
+  }
   paginaAtual.classList.add('ativa');
   if (botao) botao.classList.add('ativo');
   const [tituloFallback, subtituloFallback] = topTitles[id] || ['', ''];
@@ -5517,6 +5666,7 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
   if (id === 'relatorio_financeiro') { carregarRelatorioFinanceiro(); }
+  if (id === 'relatorio_ajuste_saldo') { carregarRelatorioAjusteSaldo(); }
   if (id === 'financeiro_fornecedores') {
     limparFormularioFornecedorFinanceiro();
     carregarFornecedoresFinanceiro();
@@ -5579,7 +5729,7 @@ function existeSessaoAtivaParaAtualizacao() {
 }
 
 function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
-  return ['checklists', 'execucoes', 'tarefas_rapidas', 'relatorio_lancamentos', 'relatorio_financeiro'].includes(pageId);
+  return ['checklists', 'execucoes', 'tarefas_rapidas', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
 }
 
 function obterIntervaloAtualizacaoMs(pageId = obterPaginaAtivaAtual()) {
@@ -5654,6 +5804,7 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'relatorio_ponto') await carregarRelatorioPonto();
     if (paginaAtiva === 'relatorio_lancamentos') await carregarRelatorioLancamentos();
     if (paginaAtiva === 'relatorio_financeiro') await carregarRelatorioFinanceiro();
+    if (paginaAtiva === 'relatorio_ajuste_saldo') await carregarRelatorioAjusteSaldo();
     if (paginaAtiva === 'itens' && document.getElementById('checklistSelect')?.value) {
       await carregarItens();
     }
@@ -6302,6 +6453,10 @@ function isMissingContasFinanceirasMovimentacoesTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.contas_financeiras_movimentacoes"'));
 }
 
+function isMissingContasFinanceirasAjustesSaldoTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.contas_financeiras_ajustes_saldo"'));
+}
+
 function isMissingContasAPagarPagamentoColumnsError(error) {
   const msg = String(error?.message || '').toLowerCase();
   return error?.code === '42703' && (
@@ -6402,6 +6557,7 @@ function obterPermissoesUsuario() {
     permissoes.relatorio_ponto = true;
     permissoes.relatorio_lancamentos = true;
     permissoes.relatorio_financeiro = true;
+    permissoes.relatorio_ajuste_saldo = true;
     permissoes.financeiro_formas_pagamento = true;
     permissoes.financeiro_conta_financeira = true;
     permissoes.financeiro_recebiveis = true;
@@ -6886,7 +7042,19 @@ function selecionarFormaPagamentoFinanceiro(formaId) {
   fecharModalFormaPagamentoFinanceiro(forma);
 }
 
-function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = '', valor = 0, titulo = '' } = {}) {
+function atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa() {
+  const btnSim = document.getElementById('btnContaFinanceiraMovimentarSim');
+  const btnNao = document.getElementById('btnContaFinanceiraMovimentarNao');
+  if (btnSim) btnSim.classList.toggle('ativo', modalContaFinanceiraMovimentarSaldo === true);
+  if (btnNao) btnNao.classList.toggle('ativo', modalContaFinanceiraMovimentarSaldo === false);
+}
+
+function definirMovimentacaoSaldoContaFinanceiraBaixa(movimentar = true) {
+  modalContaFinanceiraMovimentarSaldo = movimentar === true;
+  atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
+}
+
+function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = '', valor = 0, titulo = '', movimentarSaldo = true } = {}) {
   const overlay = document.getElementById('contaFinanceiraBaixaOverlay');
   const opcoesEl = document.getElementById('contaFinanceiraBaixaOpcoes');
   const msg = document.getElementById('contaFinanceiraBaixaMsg');
@@ -6896,6 +7064,8 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   const opcoes = (contas || []).filter(item => item && item.ativo !== false);
   if (!opcoes.length) return Promise.resolve(null);
   contasModalContaFinanceiraBaixa = opcoes;
+  modalContaFinanceiraMovimentarSaldo = movimentarSaldo !== false;
+  atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
 
   if (subtitle) {
     subtitle.textContent = `Valor da baixa: ${formatarMoedaBRFinanceiro(valor || 0)}${titulo ? ` · ${titulo}` : ''}`;
@@ -6931,7 +7101,10 @@ function selecionarContaFinanceiraBaixa(id) {
     }
     return;
   }
-  fecharModalContaFinanceiraBaixa(conta);
+  fecharModalContaFinanceiraBaixa({
+    ...conta,
+    movimentarSaldo: modalContaFinanceiraMovimentarSaldo === true,
+  });
 }
 
 function fecharModalContaFinanceiraBaixa(resultado = null) {
@@ -6946,6 +7119,7 @@ function fecharModalContaFinanceiraBaixa(resultado = null) {
   }
 
   contasModalContaFinanceiraBaixa = [];
+  modalContaFinanceiraMovimentarSaldo = true;
   const resolver = resolverModalContaFinanceiraBaixaPendente;
   resolverModalContaFinanceiraBaixaPendente = null;
   if (resolver) resolver(resultado);
@@ -12210,11 +12384,15 @@ async function obterSaldoTotalContasFinanceiras() {
   }, 0);
 }
 
-async function solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(contaAtualId = '', { valor = 0, titulo = '' } = {}) {
+function contaBaixadaSemMovimentacaoSaldo(item = null) {
+  return String(item?.observacao || '').includes(OBS_BAIXA_SEM_MOVIMENTACAO_TAG);
+}
+
+async function solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(contaAtualId = '', { valor = 0, titulo = '', movimentarSaldo = true } = {}) {
   const contas = await carregarContasFinanceiras({ render: false, silencioso: true });
   const ativas = (contas || []).filter(item => item?.ativo !== false);
   if (!ativas.length) {
-    setMsg('msgBaixarContasFinanceiro', 'Cadastre e ative uma conta financeira antes de baixar títulos.', 'err');
+    setMsg('msgBaixarContasFinanceiro', 'Cadastre e ative uma conta financeira antes de baixar titulos.', 'err');
     return null;
   }
 
@@ -12223,11 +12401,21 @@ async function solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(contaAtualId =
     contaAtualId,
     valor,
     titulo,
+    movimentarSaldo,
   });
   if (!selecionada) {
     return null;
   }
   return selecionada;
+}
+
+const OBS_BAIXA_SEM_MOVIMENTACAO_TAG = '[BAIXA SEM MOVIMENTACAO DE SALDO]';
+
+function ajustarObservacaoBaixaSemMovimentacao(observacaoAtual = '', semMovimentacao = false) {
+  const base = String(observacaoAtual || '').replace(OBS_BAIXA_SEM_MOVIMENTACAO_TAG, '').trim();
+  if (!semMovimentacao) return base;
+  if (!base) return OBS_BAIXA_SEM_MOVIMENTACAO_TAG;
+  return `${base} ${OBS_BAIXA_SEM_MOVIMENTACAO_TAG}`;
 }
 
 async function carregarBaixarContasFinanceiro() {
@@ -12350,8 +12538,10 @@ async function editarPagamentoContaFinanceiro(id) {
   const contaSelecionada = await solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(item.conta_financeira_id || '', {
     valor: valorPago,
     titulo: item.fornecedores?.nome || 'fornecedor',
+    movimentarSaldo: !contaBaixadaSemMovimentacaoSaldo(item),
   });
   if (!contaSelecionada) return;
+  const movimentarSaldo = contaSelecionada.movimentarSaldo === true;
 
   const payload = {
     valor_pago: Number(valorPago.toFixed(2)),
@@ -12359,6 +12549,7 @@ async function editarPagamentoContaFinanceiro(id) {
     forma_pagamento_id: formaSelecionada.id,
     forma_pagamento: formaSelecionada.nome,
     conta_financeira_id: contaSelecionada.id,
+    observacao: ajustarObservacaoBaixaSemMovimentacao(item.observacao, !movimentarSaldo),
   };
 
   const { error } = await sb.from('contasapagar').update(payload).eq('id', id).is('excluido_em', null);
@@ -12409,14 +12600,18 @@ async function confirmarPagamentoContaFinanceiro(id) {
   const contaSelecionada = await solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(item.conta_financeira_id || '', {
     valor: valorPagoFinal,
     titulo: item.fornecedores?.nome || 'fornecedor',
+    movimentarSaldo: !contaBaixadaSemMovimentacaoSaldo(item),
   });
   if (!contaSelecionada) return;
+  const movimentarSaldo = contaSelecionada.movimentarSaldo === true;
 
   const operador = obterFuncionarioOperadorAtual();
   const confirmacaoPin = await confirmarAcaoComPin({
     funcionario: operador,
     titulo: 'Confirmar baixa financeira',
-    subtitulo: `Confirme o PIN para pagar ${formatarMoedaBRFinanceiro(valorPagoFinal)} pela conta ${contaSelecionada.nome || '-'}.`,
+    subtitulo: movimentarSaldo
+      ? `Confirme o PIN para pagar ${formatarMoedaBRFinanceiro(valorPagoFinal)} pela conta ${contaSelecionada.nome || '-'}.`
+      : `Confirme o PIN para baixar ${formatarMoedaBRFinanceiro(valorPagoFinal)} sem movimentar saldo da conta financeira.`,
     textoAcao: 'Confirmar baixa',
   });
   if (!confirmacaoPin) return;
@@ -12427,6 +12622,7 @@ async function confirmarPagamentoContaFinanceiro(id) {
     forma_pagamento_id: formaSelecionada.id,
     forma_pagamento: formaSelecionada.nome,
     conta_financeira_id: contaSelecionada.id,
+    observacao: ajustarObservacaoBaixaSemMovimentacao(item.observacao, !movimentarSaldo),
     pago_confirmado_em: new Date().toISOString(),
   };
 
@@ -12444,22 +12640,29 @@ async function confirmarPagamentoContaFinanceiro(id) {
     return;
   }
 
-  const { error: erroMovimentacao } = await registrarMovimentacaoContaFinanceira({
-    contaFinanceiraId: contaSelecionada.id,
-    contaApagarId: id,
-    tipo: 'saida',
-    valor: valorPagoFinal,
-    descricao: `Pagamento de título para ${item.fornecedores?.nome || 'fornecedor'}`,
-  });
-  if (erroMovimentacao) {
-    setMsg('msgBaixarContasFinanceiro', `Pagamento confirmado, mas não foi possível atualizar o saldo da conta: ${mensagemErroSupabase(erroMovimentacao, 'erro desconhecido')}`, 'err');
-    return;
+  if (movimentarSaldo === true) {
+    const { error: erroMovimentacao } = await registrarMovimentacaoContaFinanceira({
+      contaFinanceiraId: contaSelecionada.id,
+      contaApagarId: id,
+      tipo: 'saida',
+      valor: valorPagoFinal,
+      descricao: `Pagamento de título para ${item.fornecedores?.nome || 'fornecedor'}`,
+    });
+    if (erroMovimentacao) {
+      setMsg('msgBaixarContasFinanceiro', `Pagamento confirmado, mas não foi possível atualizar o saldo da conta: ${mensagemErroSupabase(erroMovimentacao, 'erro desconhecido')}`, 'err');
+      return;
+    }
   }
 
-  setMsg('msgBaixarContasFinanceiro', 'Pagamento confirmado com sucesso.', 'ok');
+  setMsg('msgBaixarContasFinanceiro', movimentarSaldo
+    ? 'Pagamento confirmado com sucesso.'
+    : 'Pagamento confirmado sem movimentar saldo da conta financeira.', 'ok');
   await carregarContasFinanceiras({ render: false, silencioso: true });
   if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
     await carregarCofreFinanceiro();
+  }
+  if (document.getElementById('relatorio_financeiro')?.classList.contains('ativa')) {
+    await carregarRelatorioFinanceiro();
   }
   carregarBaixarContasFinanceiro();
   carregarContasAPagarFinanceiro();
@@ -12468,7 +12671,8 @@ async function confirmarPagamentoContaFinanceiro(id) {
 async function desconfirmarPagamentoContaFinanceiro(id) {
   if (!confirm('Reabrir esta conta como pendente?')) return;
   const item = contasBaixarFinanceiroCache.find(conta => String(conta.id) === String(id)) || null;
-  if (item?.conta_financeira_id && Number(item.valor_pago || item.valor_compra || 0) > 0) {
+  const movimentarSaldo = !contaBaixadaSemMovimentacaoSaldo(item);
+  if (movimentarSaldo === true && item?.conta_financeira_id && Number(item.valor_pago || item.valor_compra || 0) > 0) {
     const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({
       contaFinanceiraId: item.conta_financeira_id,
       contaApagarId: id,
@@ -12497,6 +12701,9 @@ async function desconfirmarPagamentoContaFinanceiro(id) {
   await carregarContasFinanceiras({ render: false, silencioso: true });
   if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
     await carregarCofreFinanceiro();
+  }
+  if (document.getElementById('relatorio_financeiro')?.classList.contains('ativa')) {
+    await carregarRelatorioFinanceiro();
   }
   carregarBaixarContasFinanceiro();
   carregarContasAPagarFinanceiro();
@@ -16196,6 +16403,370 @@ async function carregarRelatorioFinanceiro() {
     listaFormas.innerHTML = '<div class="empty">Erro ao carregar dashboard de formas.</div>';
     setMsg('msgRelatorioFinanceiro', `Nao foi possivel carregar o relatorio financeiro: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
   }
+}
+
+function obterChaveUsuarioRelAjusteSaldo(item = {}) {
+  const id = String(item.usuario_id || '').trim();
+  if (id) return `id:${id}`;
+  const nome = String(item.usuario_nome || '').trim().toLowerCase();
+  return nome ? `nome:${nome}` : '';
+}
+
+function calcularResumoRelatorioAjusteSaldo(itens = []) {
+  const resumo = { totalEntradas: 0, totalSaidas: 0, saldoLiquido: 0, quantidade: 0 };
+  (itens || []).forEach(item => {
+    const valor = Math.abs(Number(item.valor || 0) || 0);
+    const tipo = String(item.tipo || '').trim().toLowerCase();
+    if (tipo === 'saida') resumo.totalSaidas += valor;
+    else resumo.totalEntradas += valor;
+    resumo.quantidade += 1;
+  });
+  resumo.saldoLiquido = resumo.totalEntradas - resumo.totalSaidas;
+  return resumo;
+}
+
+function preencherFiltrosRelatorioAjusteSaldo(itens = []) {
+  const selectConta = document.getElementById('filtroRelAjusteSaldoConta');
+  const selectUsuario = document.getElementById('filtroRelAjusteSaldoUsuario');
+  if (!selectConta || !selectUsuario) return;
+
+  const valorContaAtual = String(selectConta.value || '').trim();
+  const valorUsuarioAtual = String(selectUsuario.value || '').trim();
+
+  const opcoesContas = (relatorioAjusteSaldoContasCache || [])
+    .filter(item => item?.ativo !== false)
+    .map(item => ({ valor: String(item.id || '').trim(), rotulo: String(item.nome || '').trim() }))
+    .filter(item => item.valor && item.rotulo)
+    .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  preencherSelectRelatorioFinanceiro(selectConta, '- Todas as contas -', opcoesContas, valorContaAtual);
+
+  const mapaUsuarios = new Map();
+  (itens || []).forEach(item => {
+    const chave = obterChaveUsuarioRelAjusteSaldo(item);
+    if (!chave) return;
+    const nome = String(item.usuario_nome || '').trim() || 'Usuario nao informado';
+    mapaUsuarios.set(chave, { valor: chave, rotulo: nome });
+  });
+  const opcoesUsuarios = Array.from(mapaUsuarios.values()).sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  preencherSelectRelatorioFinanceiro(selectUsuario, '- Todos os usuarios -', opcoesUsuarios, valorUsuarioAtual);
+}
+
+function renderizarRelatorioAjusteSaldo(itens = []) {
+  const lista = document.getElementById('listaRelatorioAjusteSaldo');
+  if (!lista) return;
+
+  if (!itens.length) {
+    lista.innerHTML = '<tr><td colspan="8" style="padding:16px;color:var(--text-muted)">Nenhum ajuste de saldo encontrado para os filtros informados.</td></tr>';
+    return;
+  }
+
+  lista.innerHTML = itens.map(item => {
+    const tipoNormalizado = String(item.tipo || '').trim().toLowerCase();
+    const tipoTexto = tipoNormalizado === 'saida' ? 'Saida' : 'Entrada';
+    const sinal = tipoNormalizado === 'saida' ? '-' : '+';
+    return `
+      <tr>
+        <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</td>
+        <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.conta_financeira_nome || 'Conta nao informada')}</td>
+        <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(tipoTexto)}</td>
+        <td style="padding:10px;border-bottom:1px solid var(--border);text-align:right">${escaparHtmlBasico(`${sinal}${formatarMoedaBRFinanceiro(item.valor || 0)}`)}</td>
+        <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(String(item.motivo || '').trim() || '-')}</td>
+        <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(String(item.usuario_nome || '').trim() || '-')}</td>
+        <td style="padding:10px;border-bottom:1px solid var(--border);text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_anterior || 0))}</td>
+        <td style="padding:10px;border-bottom:1px solid var(--border);text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_apos || 0))}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function resetFiltroRelatorioAjusteSaldo() {
+  const hojeLocal = hoje();
+  const dataInicio = document.getElementById('filtroRelAjusteSaldoDataInicio');
+  const dataFim = document.getElementById('filtroRelAjusteSaldoDataFim');
+  const conta = document.getElementById('filtroRelAjusteSaldoConta');
+  const tipo = document.getElementById('filtroRelAjusteSaldoTipo');
+  const usuario = document.getElementById('filtroRelAjusteSaldoUsuario');
+  const buscaMotivo = document.getElementById('filtroRelAjusteSaldoBuscaMotivo');
+
+  if (dataInicio) dataInicio.value = hojeLocal;
+  if (dataFim) dataFim.value = hojeLocal;
+  if (conta) {
+    conta.value = '';
+    conta.selectedIndex = 0;
+  }
+  if (tipo) {
+    tipo.value = '';
+    tipo.selectedIndex = 0;
+  }
+  if (usuario) {
+    usuario.value = '';
+    usuario.selectedIndex = 0;
+  }
+  if (buscaMotivo) buscaMotivo.value = '';
+
+  carregarRelatorioAjusteSaldo();
+}
+
+async function carregarRelatorioAjusteSaldo() {
+  const lista = document.getElementById('listaRelatorioAjusteSaldo');
+  const campoDataInicio = document.getElementById('filtroRelAjusteSaldoDataInicio');
+  const campoDataFim = document.getElementById('filtroRelAjusteSaldoDataFim');
+  const campoConta = document.getElementById('filtroRelAjusteSaldoConta');
+  const campoTipo = document.getElementById('filtroRelAjusteSaldoTipo');
+  const campoUsuario = document.getElementById('filtroRelAjusteSaldoUsuario');
+  const campoBusca = document.getElementById('filtroRelAjusteSaldoBuscaMotivo');
+
+  const elEntradas = document.getElementById('relAjusteSaldoTotalEntradas');
+  const elSaidas = document.getElementById('relAjusteSaldoTotalSaidas');
+  const elLiquido = document.getElementById('relAjusteSaldoLiquido');
+  const elQuantidade = document.getElementById('relAjusteSaldoQuantidade');
+
+  if (!lista) return;
+
+  if (campoDataInicio && !campoDataInicio.value) campoDataInicio.value = hoje();
+  if (campoDataFim && !campoDataFim.value) campoDataFim.value = hoje();
+
+  lista.innerHTML = '<tr><td colspan="8" style="padding:16px;color:var(--text-muted)">Carregando ajustes de saldo...</td></tr>';
+
+  try {
+    const [ajustesRes, contasRes] = await Promise.all([
+      sb
+        .from('contas_financeiras_ajustes_saldo')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      sb
+        .from('contas_financeiras')
+        .select('id, nome, ativo')
+        .order('nome'),
+    ]);
+
+    if (ajustesRes.error) {
+      if (isMissingContasFinanceirasAjustesSaldoTableError(ajustesRes.error)) {
+        lista.innerHTML = '<tr><td colspan="8" style="padding:16px;color:var(--text-muted)">A tabela contas_financeiras_ajustes_saldo ainda nao existe. Rode a migration para habilitar este relatorio.</td></tr>';
+        setMsg('msgRelatorioAjusteSaldo', 'Tabela de ajustes de saldo ainda nao encontrada no banco.', 'err');
+        if (elEntradas) elEntradas.textContent = formatarMoedaBRFinanceiro(0);
+        if (elSaidas) elSaidas.textContent = formatarMoedaBRFinanceiro(0);
+        if (elLiquido) elLiquido.textContent = formatarMoedaBRFinanceiro(0);
+        if (elQuantidade) elQuantidade.textContent = '0';
+        return;
+      }
+      throw ajustesRes.error;
+    }
+
+    if (contasRes.error && !isMissingContasFinanceirasTableError(contasRes.error)) {
+      throw contasRes.error;
+    }
+
+    relatorioAjusteSaldoContasCache = contasRes.data || [];
+    const contasMap = Object.fromEntries((relatorioAjusteSaldoContasCache || []).map(item => [String(item.id), item.nome || '']));
+
+    const ajustesBase = ajustesRes.data || [];
+    const usuarioIds = [...new Set(ajustesBase.map(item => String(item.usuario_id || '').trim()).filter(Boolean))];
+    let funcionariosMap = {};
+    if (usuarioIds.length) {
+      const { data: funcionariosData, error: funcionariosError } = await sb
+        .from('funcionarios')
+        .select('id, nome')
+        .in('id', usuarioIds);
+      if (funcionariosError && !isMissingTableError(funcionariosError)) throw funcionariosError;
+      funcionariosMap = Object.fromEntries((funcionariosData || []).map(item => [String(item.id), String(item.nome || '').trim()]));
+    }
+
+    const itensBase = ajustesBase.map(item => {
+      const usuarioId = String(item.usuario_id || '').trim();
+      const usuarioNome = String(item.usuario_nome || '').trim() || String(funcionariosMap[usuarioId] || '').trim();
+      const motivoAjuste = String(item.motivo || item.observacao || item.descricao || item.justificativa || '').trim();
+      return {
+        ...item,
+        motivo: motivoAjuste,
+        usuario_nome: usuarioNome,
+        conta_financeira_nome: String(contasMap[String(item.conta_financeira_id)] || '').trim() || 'Conta nao informada',
+      };
+    });
+
+    preencherFiltrosRelatorioAjusteSaldo(itensBase);
+
+    const filtroDataInicio = String(campoDataInicio?.value || '').trim();
+    const filtroDataFim = String(campoDataFim?.value || '').trim();
+    const filtroConta = String(campoConta?.value || '').trim();
+    const filtroTipo = String(campoTipo?.value || '').trim().toLowerCase();
+    const filtroUsuario = String(campoUsuario?.value || '').trim();
+    const filtroBusca = String(campoBusca?.value || '').trim().toLowerCase();
+
+    const itensFiltrados = itensBase
+      .filter(item => {
+        const dataAjuste = String(item.created_at || '').slice(0, 10);
+        const contaId = String(item.conta_financeira_id || '').trim();
+        const tipo = String(item.tipo || '').trim().toLowerCase();
+        const chaveUsuario = obterChaveUsuarioRelAjusteSaldo(item);
+        const motivo = String(item.motivo || '').trim().toLowerCase();
+
+        if (filtroDataInicio && (!dataAjuste || dataAjuste < filtroDataInicio)) return false;
+        if (filtroDataFim && (!dataAjuste || dataAjuste > filtroDataFim)) return false;
+        if (filtroConta && filtroConta !== contaId) return false;
+        if (filtroTipo && filtroTipo !== tipo) return false;
+        if (filtroUsuario && filtroUsuario !== chaveUsuario) return false;
+        if (filtroBusca && !motivo.includes(filtroBusca)) return false;
+        return true;
+      })
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
+    relatorioAjusteSaldoCache = itensFiltrados;
+
+    const resumo = calcularResumoRelatorioAjusteSaldo(itensFiltrados);
+    if (elEntradas) elEntradas.textContent = formatarMoedaBRFinanceiro(resumo.totalEntradas);
+    if (elSaidas) elSaidas.textContent = formatarMoedaBRFinanceiro(resumo.totalSaidas);
+    if (elLiquido) elLiquido.textContent = formatarMoedaBRFinanceiro(resumo.saldoLiquido);
+    if (elQuantidade) elQuantidade.textContent = String(resumo.quantidade);
+
+    renderizarRelatorioAjusteSaldo(itensFiltrados);
+
+    if (!itensBase.length) {
+      lista.innerHTML = '<tr><td colspan="8" style="padding:16px;color:var(--text-muted)">Nenhum ajuste de saldo cadastrado ate o momento.</td></tr>';
+      setMsg('msgRelatorioAjusteSaldo', 'Ainda nao existem ajustes de saldo registrados.', 'ok');
+      return;
+    }
+
+    if (!itensFiltrados.length) {
+      setMsg('msgRelatorioAjusteSaldo', 'Nenhum ajuste encontrado para os filtros informados.', 'ok');
+      return;
+    }
+
+    setMsg('msgRelatorioAjusteSaldo', `${itensFiltrados.length} ajuste(s) encontrado(s).`, 'ok');
+  } catch (error) {
+    console.error('Erro ao carregar relatorio de ajuste de saldo:', error);
+    lista.innerHTML = '<tr><td colspan="8" style="padding:16px;color:var(--text-muted)">Nao foi possivel carregar o relatorio de ajuste de saldo.</td></tr>';
+    if (elEntradas) elEntradas.textContent = formatarMoedaBRFinanceiro(0);
+    if (elSaidas) elSaidas.textContent = formatarMoedaBRFinanceiro(0);
+    if (elLiquido) elLiquido.textContent = formatarMoedaBRFinanceiro(0);
+    if (elQuantidade) elQuantidade.textContent = '0';
+    setMsg('msgRelatorioAjusteSaldo', `Nao foi possivel carregar o relatorio: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+  }
+}
+
+function escaparCsvRelatorioAjusteSaldo(valor = '') {
+  const texto = String(valor ?? '');
+  return `"${texto.replace(/"/g, '""')}"`;
+}
+
+function exportarRelatorioAjusteSaldoCsv() {
+  const itens = Array.isArray(relatorioAjusteSaldoCache) ? relatorioAjusteSaldoCache : [];
+  if (!itens.length) {
+    setMsg('msgRelatorioAjusteSaldo', 'Nao ha dados para exportar. Aplique filtros e carregue o relatorio.', 'err');
+    return;
+  }
+
+  const cabecalho = [
+    'Data/hora',
+    'Conta financeira',
+    'Tipo',
+    'Valor',
+    'Motivo',
+    'Usuario',
+    'Saldo anterior',
+    'Saldo apos',
+  ];
+
+  const linhas = itens.map(item => {
+    const tipo = String(item.tipo || '').trim().toLowerCase() === 'saida' ? 'Saida' : 'Entrada';
+    return [
+      item.created_at ? fmtDate(item.created_at) : '-',
+      String(item.conta_financeira_nome || 'Conta nao informada').trim(),
+      tipo,
+      Number(item.valor || 0).toFixed(2),
+      String(item.motivo || '').trim(),
+      String(item.usuario_nome || '').trim(),
+      Number(item.saldo_anterior || 0).toFixed(2),
+      Number(item.saldo_apos || 0).toFixed(2),
+    ].map(escaparCsvRelatorioAjusteSaldo).join(';');
+  });
+
+  const conteudo = [cabecalho.map(escaparCsvRelatorioAjusteSaldo).join(';'), ...linhas].join('\n');
+  const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'relatorio-ajuste-saldo.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  setMsg('msgRelatorioAjusteSaldo', 'CSV exportado com sucesso.', 'ok');
+}
+
+function imprimirRelatorioAjusteSaldoPdf() {
+  const itens = Array.isArray(relatorioAjusteSaldoCache) ? relatorioAjusteSaldoCache : [];
+  if (!itens.length) {
+    setMsg('msgRelatorioAjusteSaldo', 'Nao ha dados para exportar em PDF. Aplique filtros e carregue o relatorio.', 'err');
+    return;
+  }
+
+  const dataInicio = String(document.getElementById('filtroRelAjusteSaldoDataInicio')?.value || '').trim();
+  const dataFim = String(document.getElementById('filtroRelAjusteSaldoDataFim')?.value || '').trim();
+  const periodo = `${dataInicio || '-'} ate ${dataFim || '-'}`;
+  const geradoEm = new Date().toLocaleString('pt-BR');
+
+  const linhas = itens.map(item => {
+    const tipo = String(item.tipo || '').trim().toLowerCase() === 'saida' ? 'Saida' : 'Entrada';
+    return `
+      <tr>
+        <td>${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</td>
+        <td>${escaparHtmlBasico(String(item.conta_financeira_nome || 'Conta nao informada').trim())}</td>
+        <td>${escaparHtmlBasico(tipo)}</td>
+        <td style="text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor || 0))}</td>
+        <td>${escaparHtmlBasico(String(item.motivo || '').trim() || '-')}</td>
+        <td>${escaparHtmlBasico(String(item.usuario_nome || '').trim() || '-')}</td>
+        <td style="text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_anterior || 0))}</td>
+        <td style="text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_apos || 0))}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const janela = window.open('', '_blank', 'width=1200,height=760');
+  if (!janela) {
+    setMsg('msgRelatorioAjusteSaldo', 'O navegador bloqueou a janela de impressao. Libere pop-ups para exportar o PDF.', 'err');
+    return;
+  }
+
+  janela.document.write(`
+    <html>
+      <head>
+        <title>Relatorio ajuste de saldo</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #111; }
+          h1 { margin: 0 0 8px; font-size: 22px; }
+          .meta { margin-bottom: 14px; font-size: 12px; color: #444; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
+          th { background: #f5f5f5; }
+        </style>
+      </head>
+      <body>
+        <h1>Relatorio ajuste de saldo</h1>
+        <div class="meta">Periodo filtrado: ${escaparHtmlBasico(periodo)}</div>
+        <div class="meta">Gerado em: ${escaparHtmlBasico(geradoEm)}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data/hora</th>
+              <th>Conta financeira</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Motivo</th>
+              <th>Usuario</th>
+              <th>Saldo anterior</th>
+              <th>Saldo apos</th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.focus();
+  janela.print();
+  setMsg('msgRelatorioAjusteSaldo', 'PDF preparado para impressao.', 'ok');
 }
 
 function resetFiltroRelatorioLancamentos() {
