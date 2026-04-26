@@ -1804,6 +1804,23 @@
       align-self: end;
       white-space: nowrap;
     }
+    .funcionario-cadastro-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .funcionario-cadastro-header .item-detalhe {
+      margin-top: 4px;
+    }
+    .funcionario-cadastro-header #btnToggleCadastroFuncionario {
+      white-space: nowrap;
+    }
+    #cadastroFuncionarioConteudo[hidden] {
+      display: none !important;
+    }
     #btnSalvarTarefa,
     #btnCancelarEdicaoTarefa {
       height: 38px;
@@ -1961,6 +1978,16 @@
       padding: 8px 12px;
       min-height: 36px;
       font-size: 13px;
+    }
+    .tarefa-cadastro-atalhos {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      margin: 2px 0 8px;
+    }
+    #tarefaItensBuilderCard[hidden] {
+      display: none !important;
     }
     .tarefas-consulta-box {
       border: 1px solid rgba(107, 143, 112, 0.2);
@@ -2300,6 +2327,22 @@
       gap: 8px;
       padding: 7px 9px;
     }
+    #listaFuncionarios .tarefa-cadastrada-item {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    #listaFuncionarios .item-info {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    #listaFuncionarios .item-actions {
+      align-self: flex-start;
+      justify-content: flex-end;
+      margin-top: 0;
+      gap: 6px;
+    }
     .tarefa-cadastrada-header {
       display: flex;
       align-items: flex-start;
@@ -2366,6 +2409,27 @@
     }
     .checklist-item .item-nome { font-size: 13px; }
     .checklist-item .item-detalhe { font-size: 11px; line-height: 1.25; }
+    .checklist-item.checklist-alerta-discreto {
+      border-color: rgba(245, 158, 11, 0.35);
+      background: rgba(245, 158, 11, 0.06);
+    }
+    .checklist-card-aviso {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.10);
+      color: var(--amber);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .checklist-card-aviso.atrasado {
+      background: rgba(239, 68, 68, 0.10);
+      color: var(--red);
+    }
     .checklist-meta { margin: 4px 0 0; padding-left: 18px; color: var(--text-muted); }
     .checklist-meta li { margin: 2px 0; }
     .permissoes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
@@ -2438,6 +2502,49 @@
       gap: 10px;
       justify-content: flex-end;
       flex-shrink: 0;
+    }
+    .ajuste-saldo-modal {
+      max-height: none;
+    }
+    .ajuste-saldo-modal .modal-body {
+      flex: 0 0 auto;
+      overflow: visible;
+      gap: 10px !important;
+      padding: 16px 24px;
+    }
+    .ajuste-saldo-field {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ajuste-saldo-field:focus {
+      border-color: var(--green);
+      background: rgba(6, 16, 12, 0.95);
+    }
+    .ajuste-saldo-field::placeholder {
+      color: var(--text-dim);
+    }
+    select.ajuste-saldo-field option {
+      background: #111;
+      color: var(--text);
+    }
+    textarea.ajuste-saldo-field {
+      min-height: 72px;
+      resize: vertical;
+    }
+    .ajuste-saldo-tipos {
+      display: flex;
+      gap: 8px;
+      margin: 0;
     }
     .confirmacao-destaque-box {
       border: 1px solid rgba(34, 197, 94, 0.22);
@@ -2887,6 +2994,40 @@
       .tarefa-form-acoes {
         justify-content: flex-start;
       }
+      #tarefas .tarefa-cadastro-atalhos {
+        margin-top: 2px;
+      }
+      #tarefas .tarefa-cadastro-atalhos .btn {
+        width: 100%;
+      }
+      #tarefas .tarefas-filtros-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      #tarefas .tarefas-filtros-row input {
+        grid-column: 1 / -1;
+        max-width: none;
+      }
+      #tarefas .tarefas-filtros-row .btn {
+        width: 100%;
+      }
+      #tarefas .tarefas-filtros-row #btnSelecionarConsultaTarefas {
+        grid-column: 1 / -1;
+      }
+      #tarefas .tarefas-consulta-item-acoes {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      #tarefas .tarefas-consulta-item-acoes .btn {
+        width: 100%;
+        min-height: 38px;
+      }
+      #tarefas .tarefas-consulta-item-acoes .btn.btn-red {
+        grid-column: 1 / -1;
+      }
       .dias-semana-linha {
         flex-direction: column;
         align-items: flex-start;
@@ -2906,6 +3047,9 @@
       }
       .funcionario-form-row #btnSalvarFuncionario,
       .funcionario-form-row #btnCancelarEdicaoFuncionario {
+        width: 100%;
+      }
+      .funcionario-cadastro-header #btnToggleCadastroFuncionario {
         width: 100%;
       }
       .dias-semana-checks label {
@@ -2937,6 +3081,13 @@
 
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: 1fr; }
+      #listaFuncionarios .tarefa-cadastrada-item {
+        flex-direction: column;
+      }
+      #listaFuncionarios .item-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
       .rf-pie-dashboard {
         grid-template-columns: 1fr;
         justify-items: center;
@@ -3055,6 +3206,9 @@
         height: 38px;
         padding: 7px 9px;
         font-size: 11px;
+      }
+      #tarefas .tarefas-filtros-row {
+        grid-template-columns: 1fr;
       }
       .card {
         padding: 12px;
@@ -3612,36 +3766,44 @@
         <div class="page-sub">Cadastro e gestão de funcionários</div>
 
         <div class="card">
-          <div class="card-title">Novo funcionário</div>
-          <div class="form-row funcionario-form-row">
-            <div class="campo-com-label">
-              <label class="campo-label" for="nomeFuncionario">Nome</label>
-              <input id="nomeFuncionario" type="text" placeholder="Nome do funcionário">
+          <div class="funcionario-cadastro-header">
+            <div>
+              <div class="card-title" id="tituloCadastroFuncionario">Novo funcionário</div>
+              <div class="item-detalhe" id="subtituloCadastroFuncionario">Clique em "Novo cadastro" para abrir o formulário.</div>
             </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="emailFuncionario">E-mail</label>
-              <input id="emailFuncionario" type="email" placeholder="E-mail (opcional)">
+            <button class="btn btn-green" id="btnToggleCadastroFuncionario" type="button" onclick="toggleCadastroFuncionario()">Novo cadastro</button>
+          </div>
+          <div id="cadastroFuncionarioConteudo" hidden>
+            <div class="form-row funcionario-form-row">
+              <div class="campo-com-label">
+                <label class="campo-label" for="nomeFuncionario">Nome</label>
+                <input id="nomeFuncionario" type="text" placeholder="Nome do funcionário">
+              </div>
+              <div class="campo-com-label">
+                <label class="campo-label" for="emailFuncionario">E-mail</label>
+                <input id="emailFuncionario" type="email" placeholder="E-mail (opcional)">
+              </div>
+              <div class="campo-com-label">
+                <label class="campo-label" for="pinFuncionario" id="labelPinFuncionario">Senha</label>
+                <input id="pinFuncionario" class="campo-curto" type="password" placeholder="PIN" maxlength="6" autocomplete="new-password" name="pin_funcionario_novo" inputmode="numeric" autocapitalize="off" autocorrect="off" spellcheck="false">
+              </div>
+              <div class="campo-com-label">
+                <label class="campo-label" for="horarioInicioFuncionario">Hora inicial</label>
+                <input id="horarioInicioFuncionario" class="campo-curto" type="time" placeholder="Início turno">
+              </div>
+              <div class="campo-com-label">
+                <label class="campo-label" for="horarioFimFuncionario">Hora final</label>
+                <input id="horarioFimFuncionario" class="campo-curto" type="time" placeholder="Fim turno">
+              </div>
+              <div class="campo-com-label">
+                <label class="campo-label" for="perfilFuncionario">Perfil</label>
+                <select id="perfilFuncionario">
+                  <option value="">- Selecione o perfil -</option>
+                </select>
+              </div>
+              <button class="btn btn-green" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
+              <button class="btn btn-ghost" id="btnCancelarEdicaoFuncionario" onclick="cancelarEdicaoFuncionario()" style="display:none">Cancelar</button>
             </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="pinFuncionario">Senha</label>
-              <input id="pinFuncionario" class="campo-curto" type="password" placeholder="PIN" maxlength="6" autocomplete="new-password" name="pin_funcionario_novo" inputmode="numeric" autocapitalize="off" autocorrect="off" spellcheck="false">
-            </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="horarioInicioFuncionario">Hora inicial</label>
-              <input id="horarioInicioFuncionario" class="campo-curto" type="time" placeholder="Início turno">
-            </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="horarioFimFuncionario">Hora final</label>
-              <input id="horarioFimFuncionario" class="campo-curto" type="time" placeholder="Fim turno">
-            </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="perfilFuncionario">Perfil</label>
-              <select id="perfilFuncionario">
-                <option value="">- Selecione o perfil -</option>
-              </select>
-            </div>
-            <button class="btn btn-green" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
-            <button class="btn btn-ghost" id="btnCancelarEdicaoFuncionario" onclick="cancelarEdicaoFuncionario()" style="display:none">Cancelar</button>
           </div>
           <div class="msg" id="msgFuncionarios"></div>
         </div>
@@ -3759,7 +3921,10 @@
               <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
             </div>
           </div>
-          <div class="tarefa-itens-builder">
+          <div class="tarefa-cadastro-atalhos">
+            <button class="btn btn-ghost btn-sm" id="btnToggleItensCadastroTarefa" type="button" onclick="toggleItensTarefaCadastro()">Ocultar itens opcionais</button>
+          </div>
+          <div class="tarefa-itens-builder" id="tarefaItensBuilderCard">
             <div class="tarefa-itens-builder-topo">
               <div class="card-title" style="margin:0">Itens do checklist</div>
               <div class="item-detalhe" id="resumoItensTarefa">Nenhum item adicionado.</div>
@@ -3784,10 +3949,10 @@
           <div class="tarefas-consulta-box">
             <div class="form-row tarefas-filtros-row">
               <input id="filtroTarefasNome" name="consulta_tarefas_sem_autofill" type="text" placeholder="Buscar na listagem de tarefas" autocomplete="off" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="desbloquearCampoBuscaTarefas(this)" oninput="marcarCampoBuscaTarefasComoEditado(this); filtrarTarefasCadastradas()">
-              <button class="btn btn-green" type="button" onclick="aplicarSelecaoConsultaTarefas()">Selecionar</button>
+              <button class="btn btn-green" id="btnSelecionarConsultaTarefas" type="button" onclick="aplicarSelecaoConsultaTarefas()">Selecionar</button>
               <button class="btn btn-ghost" type="button" onclick="selecionarTodasTarefasConsulta()">Todas</button>
               <button class="btn btn-ghost" type="button" onclick="toggleSomenteFavoritasTarefas()">Favoritas</button>
-              <button class="btn btn-ghost" type="button" onclick="toggleMinimizarFavoritasTarefas()">Minimizar/Maximizar favoritos</button>
+              <button class="btn btn-ghost" id="btnMinimizarFavoritasTarefas" type="button" onclick="toggleMinimizarFavoritasTarefas()">Compactar favoritas</button>
               <button class="btn btn-ghost" type="button" onclick="limparFiltroTarefasCadastradas()">Limpar</button>
             </div>
             <div id="resumoConsultaTarefas" class="item-detalhe">Selecione as tarefas para exibir abaixo.</div>
@@ -4365,6 +4530,7 @@
             <button class="btn btn-green" id="btnToggleExtratoCofre" type="button" onclick="toggleExtratoCofre()">Exibir extrato</button>
             <button class="btn btn-ghost" type="button" onclick="exportarExtratoCofreCsv()">Exportar CSV</button>
             <button class="btn btn-ghost" type="button" onclick="exportarExtratoCofrePdf()">Exportar PDF</button>
+            <button class="btn btn-amber" id="btnAbrirAjusteSaldoCofre" type="button" onclick="abrirModalAjusteSaldoCofre()">Ajustar saldo</button>
           </div>
           <div class="msg" id="msgCofreFinanceiro"></div>
         </div>
@@ -4492,6 +4658,44 @@
   </div>
 </div>
 
+<div class="overlay" id="ajusteSaldoCofreOverlay">
+  <div class="modal ajuste-saldo-modal" style="max-width:560px" onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); salvarAjusteSaldoCofre(); }">
+    <div class="modal-header">
+      <div>
+        <h3>Ajustar saldo</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Informe a conta, o tipo de ajuste e confirme com PIN.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalAjusteSaldoCofre()">X Fechar</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <label class="campo-label" for="ajusteSaldoContaSelect">Conta financeira</label>
+      <select id="ajusteSaldoContaSelect" class="ajuste-saldo-field">
+        <option value="">Selecione a conta</option>
+      </select>
+
+      <div class="ajuste-saldo-tipos">
+        <button class="btn" id="ajusteSaldoTipoEntrada" type="button" onclick="selecionarTipoAjusteSaldoCofre('entrada')" style="background:#3b82f6;color:#fff;border:1px solid rgba(59,130,246,0.55)">Entrada</button>
+        <button class="btn btn-red" id="ajusteSaldoTipoSaida" type="button" onclick="selecionarTipoAjusteSaldoCofre('saida')">Saída</button>
+      </div>
+
+      <label class="campo-label" for="ajusteSaldoValor">Valor</label>
+      <input id="ajusteSaldoValor" class="ajuste-saldo-field" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+
+      <label class="campo-label" for="ajusteSaldoMotivo">Motivo</label>
+      <textarea id="ajusteSaldoMotivo" class="ajuste-saldo-field" rows="2" placeholder="Descreva o motivo do ajuste"></textarea>
+
+      <label class="campo-label" for="ajusteSaldoPin">PIN</label>
+      <input id="ajusteSaldoPin" class="ajuste-saldo-field" type="password" inputmode="numeric" maxlength="6" placeholder="Digite seu PIN" autocomplete="off">
+
+      <div class="msg" id="ajusteSaldoMsg" style="margin-top:0"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btnCancelarAjusteSaldoCofre" type="button" onclick="fecharModalAjusteSaldoCofre()">Cancelar</button>
+      <button class="btn btn-green" id="btnSalvarAjusteSaldoCofre" type="button" onclick="salvarAjusteSaldoCofre()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="confirmacaoFinanceiraOverlay">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
@@ -4536,6 +4740,7 @@ let usuarioSistemaLogado = null;
 let funcionarioEmEdicaoId = null;
 let funcionarioNomeOriginalEdicao = '';
 let funcionarioEmailOriginalEdicao = '';
+let cadastroFuncionarioAberto = false;
 let perfilEmEdicaoId = null;
 let destinatarioEmailEmEdicaoId = null;
 let fornecedorFinanceiroEmEdicaoId = null;
@@ -4544,6 +4749,7 @@ let contaAPagarFinanceiroEmEdicaoId = null;
 let contasAPagarListaVisivel = false;
 let contaFinanceiraEmEdicaoId = null;
 let recebivelFinanceiroEmEdicaoId = null;
+let ajusteSaldoCofreTipo = 'entrada';
 let fornecedoresFinanceiroCache = [];
 let formasPagamentoFinanceiroCache = [];
 let contasAPagarFinanceiroCache = [];
@@ -4613,6 +4819,7 @@ let tarefasFavoritasIds = new Set();
 let tarefasConfigLancamentoAbertasIds = new Set();
 let mostrarSomenteFavoritasTarefas = false;
 let favoritosTarefasMinimizados = false;
+let itensCadastroTarefaExpandidos = true;
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
@@ -4869,6 +5076,10 @@ function tipoNotificacaoTarefaAtrasada(tipo) {
 
 function tipoNotificacaoCritica(tipo) {
   return tipoNotificacaoTarefaAtrasada(tipo) || tipo === 'alerta_rapido';
+}
+
+function paginaPermiteAlertaForte(pageId = obterPaginaAtivaAtual()) {
+  return ['execucoes', 'tarefas_atraso'].includes(pageId);
 }
 
 function obterQuantidadeAtrasosNotificacao() {
@@ -5345,6 +5556,8 @@ function abrirPagina(id, botao) {
   if (id === 'configuracoes') { carregarConfiguracoesLoja(); }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
+    atualizarEstadoItensCadastroTarefa({ forcarPorViewport: true });
+    atualizarBotaoFavoritasMinimizadas();
     carregarSelectFuncionariosTarefa();
     redefinirCampoBuscaTarefas();
     carregarTarefas();
@@ -5725,7 +5938,7 @@ function configurarSegurancaCampoPinPonto() {
   campoPin.setAttribute('autocorrect', 'off');
   campoPin.setAttribute('spellcheck', 'false');
   campoPin.setAttribute('name', 'ponto_pin_seguro');
-  campoPin.readOnly = true;
+  campoPin.readOnly = false;
   campoPin.addEventListener('focus', () => {
     campoPin.readOnly = false;
     registrarInteracaoCampoPinPonto();
@@ -5736,7 +5949,7 @@ function configurarSegurancaCampoPinPonto() {
   });
 
   campoPin.addEventListener('blur', () => {
-    limparCampoPinPonto();
+    agendarLimpezaCampoPinPonto();
   });
 
   document.addEventListener('visibilitychange', () => {
@@ -7721,6 +7934,12 @@ function renderizarAvisoCentralTarefas() {
   const btnSecundario = document.getElementById('btnOverdueAlertExecucoes');
   if (!banner || !list) return;
 
+  if (!paginaPermiteAlertaForte()) {
+    banner.hidden = true;
+    list.innerHTML = '';
+    return;
+  }
+
   const criticas = obterNotificacoesCriticas();
   const criticasOperacionais = criticas.filter(item => tipoNotificacaoTarefaAtrasada(item?.tipo));
   const alertasRapidos = criticas.filter(item => item?.tipo === 'alerta_rapido');
@@ -7879,6 +8098,7 @@ function sincronizarAvisoNotificacoes() {
   const execucoesAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'execucao_atrasada');
   const agora = Date.now();
   let somTocadoNesteCiclo = false;
+  const alertaFortePermitido = paginaPermiteAlertaForte();
 
   renderizarAvisoCentralTarefas();
 
@@ -7901,7 +8121,7 @@ function sincronizarAvisoNotificacoes() {
   };
 
   if (quantidadeNotificacoesAnterior === null) {
-    if (totalCriticoAtual > 0 && existeSessaoAtivaParaAtualizacao()) {
+    if (totalCriticoAtual > 0 && existeSessaoAtivaParaAtualizacao() && alertaFortePermitido) {
       destacarNovasNotificacoes();
       avisoCentralTarefasFechado = false;
       renderizarAvisoCentralTarefas();
@@ -7920,7 +8140,7 @@ function sincronizarAvisoNotificacoes() {
     return;
   }
 
-  if (totalCriticoAtual > 0 && assinaturaCriticaAtual !== assinaturaAlertasCriticosAnterior) {
+  if (totalCriticoAtual > 0 && assinaturaCriticaAtual !== assinaturaAlertasCriticosAnterior && alertaFortePermitido) {
     destacarNovasNotificacoes();
     avisoCentralTarefasFechado = false;
     renderizarAvisoCentralTarefas();
@@ -7932,7 +8152,7 @@ function sincronizarAvisoNotificacoes() {
     if (!painelNotificacoesAberto) {
       togglePainelNotificacoes(true);
     }
-  } else if (totalAtual > quantidadeNotificacoesAnterior) {
+  } else if (totalAtual > quantidadeNotificacoesAnterior && alertaFortePermitido) {
     destacarNovasNotificacoes();
     const notificacaoMaisRecente = notificacoesAtuais[0] || null;
     const notificacaoSilenciosa = notificacaoMaisRecente?.tipo === 'checklist_agendado';
@@ -7949,7 +8169,7 @@ function sincronizarAvisoNotificacoes() {
     return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS;
   });
 
-  if (lembretesExecucaoDevidos.length) {
+  if (lembretesExecucaoDevidos.length && alertaFortePermitido) {
     lembretesExecucaoDevidos.forEach(item => {
       if (item?.chave) {
         ultimosLembretesExecucaoEm[item.chave] = agora;
@@ -7965,7 +8185,7 @@ function sincronizarAvisoNotificacoes() {
     return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_LEMBRETE_CHECKLIST_MS;
   });
 
-  if (lembretesChecklistDevidos.length) {
+  if (lembretesChecklistDevidos.length && alertaFortePermitido) {
     lembretesChecklistDevidos.forEach(item => {
       if (item?.chave) {
         ultimosLembretesChecklistEm[item.chave] = agora;
@@ -7981,7 +8201,7 @@ function sincronizarAvisoNotificacoes() {
     return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS;
   });
 
-  if (lembretesTarefaAtrasadaDevidos.length) {
+  if (lembretesTarefaAtrasadaDevidos.length && alertaFortePermitido) {
     lembretesTarefaAtrasadaDevidos.forEach(item => {
       if (item?.chave) {
         ultimosLembretesTarefaAtrasadaEm[item.chave] = agora;
@@ -8722,6 +8942,28 @@ function tagStatus(s) {
 // 
 // CHECKLISTS
 // 
+function obterAvisoDiscretoChecklist(lancamento = {}) {
+  if (!lancamentoProgramadoHoje(lancamento)) return null;
+  if (lancamentoFoiCriadoAposHorarioNoMesmoDia(lancamento)) return null;
+
+  const prazo = obterContextoPrazo(lancamento.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+  if (prazo.vencido) {
+    return {
+      classe: 'atrasado',
+      texto: `Prazo vencido${horaCurta(lancamento.horario_limite) ? ` desde ${horaCurta(lancamento.horario_limite)}` : ''}`,
+    };
+  }
+  if (prazo.ativo || lancamentoRecemCriadoParaAlerta(lancamento)) {
+    return {
+      classe: '',
+      texto: horaCurta(lancamento.horario_limite)
+        ? `Atenção ao prazo: ${horaCurta(lancamento.horario_limite)}`
+        : 'Checklist pendente',
+    };
+  }
+  return null;
+}
+
 async function carregarChecklists() {
   const lista = document.getElementById('listaChecklists');
   lista.innerHTML = '<div class="empty">Carregando...</div>';
@@ -8799,10 +9041,13 @@ async function carregarChecklists() {
     return;
   }
 
-  lista.innerHTML = '<div class="lista">' + rows.map(t => `
-    <div class="item checklist-item">
+  lista.innerHTML = '<div class="lista">' + rows.map(t => {
+    const aviso = obterAvisoDiscretoChecklist(t);
+    return `
+    <div class="item checklist-item${aviso ? ' checklist-alerta-discreto' : ''}">
       <div class="item-info">
         <div class="item-nome">${t.nome}</div>
+        ${aviso ? `<div class="checklist-card-aviso ${aviso.classe}">${aviso.texto}</div>` : ''}
         ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
         <ul class="checklist-meta">
           <li>Funcionário responsável: ${funcionariosMap[String(t.funcionario_id)] ?? '-'}</li>
@@ -8815,7 +9060,8 @@ async function carregarChecklists() {
         <button class="btn btn-green" onclick="iniciarChecklistDireto('${t.id}')">Iniciar</button>
         ${usuarioEhAdministrador() ? `<button class="btn btn-red" onclick="excluirChecklistLancado('${t.id}')">Excluir</button>` : ''}
       </div>
-    </div>`).join('') + '</div>';
+    </div>`;
+  }).join('') + '</div>';
 }
 
 async function carregarOpcoesFiltroChecklists() {
@@ -8993,11 +9239,11 @@ async function carregarFuncionarios() {
       <div class="item tarefa-cadastrada-item">
         <div class="item-info">
           <div class="item-nome">${f.nome}</div>
-          <div class="item-detalhe">E-mail: ${f.email || '-'} · PIN: ${f.pin ? f.pin : '-'}${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
+          <div class="item-detalhe">E-mail: ${f.email || '-'} · Senha: ${f.pin ? '••••••' : '-'}${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
           <div class="item-detalhe">Turno: ${f.horario_trabalho_inicio || '--:--'} às ${f.horario_trabalho_fim || '--:--'}</div>
         </div>
         <div class="item-actions">
-          ${f.ativo ? '<span class="tag tag-green">Ativo</span>' : '<span class="tag tag-gray">Inativo</span>'}
+          ${f.ativo ? '' : '<span class="tag tag-gray">Inativo</span>'}
           ${!f.email ? '<span class="tag tag-gray">Sem e-mail</span>' : f.email_verificado === true ? '<span class="tag tag-green">E-mail ok</span>' : '<span class="tag tag-amber">E-mail pendente</span>'}
           <button class="btn btn-ghost btn-sm" onclick="editarFuncionario('${f.id}')">Editar</button>
           <button class="btn btn-amber btn-sm" onclick="toggleFuncionario('${f.id}', ${f.ativo})">${f.ativo ? 'Desativar' : 'Ativar'}</button>
@@ -9007,6 +9253,57 @@ async function carregarFuncionarios() {
   } catch (err) {
     console.error('Erro inesperado ao carregar funcionários:', err);
     lista.innerHTML = '<div class="empty">Erro inesperado ao carregar funcionários. Tente novamente mais tarde.</div>';
+  }
+}
+
+function atualizarEstadoCadastroFuncionarioUI() {
+  const conteudo = document.getElementById('cadastroFuncionarioConteudo');
+  const btnToggle = document.getElementById('btnToggleCadastroFuncionario');
+  const titulo = document.getElementById('tituloCadastroFuncionario');
+  const subtitulo = document.getElementById('subtituloCadastroFuncionario');
+  const labelPin = document.getElementById('labelPinFuncionario');
+  const campoPin = document.getElementById('pinFuncionario');
+  const btnSalvar = document.getElementById('btnSalvarFuncionario');
+
+  if (!conteudo || !btnToggle || !titulo || !subtitulo) return;
+
+  conteudo.hidden = !cadastroFuncionarioAberto;
+
+  if (funcionarioEmEdicaoId) {
+    titulo.textContent = 'Editar funcionário';
+    subtitulo.textContent = 'Atualize os dados. A senha só muda se preencher o campo.';
+    btnToggle.textContent = 'Fechar cadastro';
+    if (labelPin) labelPin.textContent = 'Alterar senha (opcional)';
+    if (campoPin) campoPin.placeholder = 'Nova senha';
+    if (btnSalvar) btnSalvar.textContent = 'Salvar';
+    return;
+  }
+
+  titulo.textContent = 'Novo funcionário';
+  subtitulo.textContent = cadastroFuncionarioAberto
+    ? 'Preencha os dados para cadastrar.'
+    : 'Clique em "Novo cadastro" para abrir o formulário.';
+  btnToggle.textContent = cadastroFuncionarioAberto ? 'Fechar cadastro' : 'Novo cadastro';
+  if (labelPin) labelPin.textContent = 'Senha';
+  if (campoPin) campoPin.placeholder = 'PIN';
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
+}
+
+function toggleCadastroFuncionario(forcarAberto = null) {
+  if (typeof forcarAberto === 'boolean') {
+    cadastroFuncionarioAberto = forcarAberto;
+  } else {
+    cadastroFuncionarioAberto = !cadastroFuncionarioAberto;
+  }
+  atualizarEstadoCadastroFuncionarioUI();
+
+  if (cadastroFuncionarioAberto) {
+    window.setTimeout(() => {
+      const alvo = funcionarioEmEdicaoId
+        ? document.getElementById('pinFuncionario')
+        : document.getElementById('nomeFuncionario');
+      alvo?.focus();
+    }, 0);
   }
 }
 
@@ -9080,10 +9377,10 @@ function limparFormularioFuncionario() {
   document.getElementById('horarioInicioFuncionario').value = '';
   document.getElementById('horarioFimFuncionario').value = '';
   document.getElementById('perfilFuncionario').value = '';
-  const btnSalvar = document.getElementById('btnSalvarFuncionario');
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
-  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
   if (btnCancelar) btnCancelar.style.display = 'none';
+  cadastroFuncionarioAberto = false;
+  atualizarEstadoCadastroFuncionarioUI();
 }
 
 async function editarFuncionario(id) {
@@ -9110,16 +9407,16 @@ async function editarFuncionario(id) {
   funcionarioEmEdicaoId = id;
   funcionarioNomeOriginalEdicao = funcionario.nome || '';
   funcionarioEmailOriginalEdicao = funcionario.email || '';
+  cadastroFuncionarioAberto = true;
   document.getElementById('nomeFuncionario').value = funcionario.nome || '';
   document.getElementById('emailFuncionario').value = funcionario.email || '';
   document.getElementById('pinFuncionario').value = '';
   document.getElementById('horarioInicioFuncionario').value = String(funcionario.horario_trabalho_inicio || '').slice(0, 5);
   document.getElementById('horarioFimFuncionario').value = String(funcionario.horario_trabalho_fim || '').slice(0, 5);
   document.getElementById('perfilFuncionario').value = funcionario.perfil_id || '';
-  const btnSalvar = document.getElementById('btnSalvarFuncionario');
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
-  if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  atualizarEstadoCadastroFuncionarioUI();
   setMsg('msgFuncionarios', `Editando funcionário: ${funcionario.nome}.`, 'ok');
 
   window.setTimeout(() => {
@@ -10568,7 +10865,8 @@ async function registrarMovimentacaoContaFinanceira({ contaFinanceiraId, recebiv
 
   const tipoMov = String(tipo || 'entrada').toLowerCase();
   const delta = (tipoMov === 'saida' || tipoMov === 'estorno') ? -valorMov : valorMov;
-  const saldoApos = Number((Number(conta.saldo_atual || 0) + delta).toFixed(2));
+  const saldoAntes = Number(conta.saldo_atual || 0);
+  const saldoApos = Number((saldoAntes + delta).toFixed(2));
 
   const { error: erroUpdate } = await sb
     .from('contas_financeiras')
@@ -10588,7 +10886,7 @@ async function registrarMovimentacaoContaFinanceira({ contaFinanceiraId, recebiv
       saldo_apos: saldoApos,
     }]);
 
-  return { error: erroMov || null };
+  return { error: erroMov || null, saldoAnterior: saldoAntes, saldoApos };
 }
 
 function limparFormularioRecebivelFinanceiro() {
@@ -10887,6 +11185,61 @@ function renderizarPizzaCofreContas(contas = []) {
   `).join('');
 }
 
+function obterPessoaMovimentacaoCofre(item = {}) {
+  return item.ajuste_saldo?.funcionario_nome
+    || item.recebiveis?.fornecedores?.nome
+    || item.contasapagar?.fornecedores?.nome
+    || '-';
+}
+
+function obterFormaMovimentacaoCofre(item = {}) {
+  if (item.ajuste_saldo?.id) return 'Ajuste de saldo';
+  return item.recebiveis?.formas_pagamento?.nome || item.contasapagar?.formas_pagamento?.nome || '-';
+}
+
+function criarChavePareamentoAjusteCofre(item = {}) {
+  return [
+    String(item.conta_financeira_id || ''),
+    String(item.tipo || '').toLowerCase(),
+    Number(item.valor || 0).toFixed(2),
+    Number(item.saldo_apos ?? item.saldo_atual ?? 0).toFixed(2),
+  ].join('|');
+}
+
+async function anexarAuditoriaAjustesCofre(movimentacoes = [], filtroInicio = '', filtroFim = '') {
+  const ajustesMov = (movimentacoes || []).filter(item => String(item.descricao || '').toLowerCase().startsWith('ajuste manual de saldo:'));
+  if (!ajustesMov.length) return movimentacoes || [];
+
+  let query = sb
+    .from('contas_financeiras_ajustes_saldo')
+    .select('id, conta_financeira_id, tipo, valor, saldo_anterior, saldo_atual, observacao, funcionario_id, funcionario_nome, created_at')
+    .order('created_at', { ascending: false });
+  if (filtroInicio) query = query.gte('created_at', `${filtroInicio}T00:00:00`);
+  if (filtroFim) query = query.lte('created_at', `${filtroFim}T23:59:59`);
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn('Não foi possível carregar auditoria de ajustes do cofre:', error);
+    return movimentacoes || [];
+  }
+
+  const ajustesPorChave = new Map();
+  (data || []).forEach(item => {
+    const chave = criarChavePareamentoAjusteCofre(item);
+    const lista = ajustesPorChave.get(chave) || [];
+    lista.push(item);
+    ajustesPorChave.set(chave, lista);
+  });
+
+  return (movimentacoes || []).map(item => {
+    if (!String(item.descricao || '').toLowerCase().startsWith('ajuste manual de saldo:')) return item;
+    const chave = criarChavePareamentoAjusteCofre(item);
+    const lista = ajustesPorChave.get(chave) || [];
+    const ajuste = lista.shift() || null;
+    return ajuste ? { ...item, ajuste_saldo: ajuste } : item;
+  });
+}
+
 function renderizarExtratoCofre(itens = []) {
   const lista = document.getElementById('listaCofreFinanceiro');
   if (!lista) return;
@@ -10911,8 +11264,8 @@ function renderizarExtratoCofre(itens = []) {
     const sinal = ehSaida ? '-' : '+';
     const conta = escaparHtmlBasico(item.contas_financeiras?.nome || 'Conta não encontrada');
     const descricao = escaparHtmlBasico(item.descricao || rotulo);
-    const pessoa = escaparHtmlBasico(item.recebiveis?.fornecedores?.nome || item.contasapagar?.fornecedores?.nome || '-');
-    const forma = escaparHtmlBasico(item.recebiveis?.formas_pagamento?.nome || item.contasapagar?.formas_pagamento?.nome || '-');
+    const pessoa = escaparHtmlBasico(obterPessoaMovimentacaoCofre(item));
+    const forma = escaparHtmlBasico(obterFormaMovimentacaoCofre(item));
     const dataMov = formatarDataBRFinanceiro(String(item.created_at || '').slice(0, 10));
     const valor = `${sinal}${formatarMoedaBRFinanceiro(item.valor || 0)}`;
     return `
@@ -10944,6 +11297,131 @@ function toggleExtratoCofre() {
   renderizarExtratoCofre(cofreMovimentacoesCache);
 }
 
+function preencherSelectAjusteSaldoCofre(valorAtual = '') {
+  const select = document.getElementById('ajusteSaldoContaSelect');
+  if (!select) return;
+  const contas = (contasFinanceirasCache || []).filter(item => item?.ativo !== false || String(item.id) === String(valorAtual || ''));
+  select.innerHTML = '<option value="">Selecione a conta</option>' + contas.map(item => (
+    `<option value="${item.id}"${String(item.id) === String(valorAtual || '') ? ' selected' : ''}>${item.nome || '-'} (${formatarMoedaBRFinanceiro(item.saldo_atual || 0)})</option>`
+  )).join('');
+}
+
+function selecionarTipoAjusteSaldoCofre(tipo = 'entrada') {
+  ajusteSaldoCofreTipo = String(tipo || 'entrada').toLowerCase() === 'saida' ? 'saida' : 'entrada';
+  const btnEntrada = document.getElementById('ajusteSaldoTipoEntrada');
+  const btnSaida = document.getElementById('ajusteSaldoTipoSaida');
+  if (btnEntrada) btnEntrada.style.opacity = ajusteSaldoCofreTipo === 'entrada' ? '1' : '0.55';
+  if (btnSaida) btnSaida.style.opacity = ajusteSaldoCofreTipo === 'saida' ? '1' : '0.55';
+}
+
+async function abrirModalAjusteSaldoCofre() {
+  const overlay = document.getElementById('ajusteSaldoCofreOverlay');
+  const valor = document.getElementById('ajusteSaldoValor');
+  const motivo = document.getElementById('ajusteSaldoMotivo');
+  const pin = document.getElementById('ajusteSaldoPin');
+  const msg = document.getElementById('ajusteSaldoMsg');
+  const btnSalvar = document.getElementById('btnSalvarAjusteSaldoCofre');
+  if (!overlay) return;
+
+  if (valor) valor.value = '';
+  if (motivo) motivo.value = '';
+  if (pin) pin.value = '';
+  if (btnSalvar) btnSalvar.disabled = false;
+  if (msg) {
+    msg.textContent = '';
+    msg.className = 'msg';
+  }
+
+  await carregarContasFinanceiras({ render: false, silencioso: true });
+  preencherSelectAjusteSaldoCofre();
+  selecionarTipoAjusteSaldoCofre('entrada');
+  overlay.classList.add('show');
+  window.setTimeout(() => document.getElementById('ajusteSaldoContaSelect')?.focus(), 0);
+}
+
+function fecharModalAjusteSaldoCofre() {
+  const overlay = document.getElementById('ajusteSaldoCofreOverlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+async function salvarAjusteSaldoCofre() {
+  const btnSalvar = document.getElementById('btnSalvarAjusteSaldoCofre');
+  if (btnSalvar?.disabled) return;
+
+  const contaId = String(document.getElementById('ajusteSaldoContaSelect')?.value || '').trim();
+  const valorTexto = String(document.getElementById('ajusteSaldoValor')?.value || '').trim();
+  const motivo = String(document.getElementById('ajusteSaldoMotivo')?.value || '').trim();
+  const pin = String(document.getElementById('ajusteSaldoPin')?.value || '').trim();
+
+  const valor = lerValorMonetarioFinanceiro(valorTexto);
+  if (!contaId) {
+    setMsg('ajusteSaldoMsg', 'Selecione a conta financeira.', 'err');
+    return;
+  }
+  if (!Number.isFinite(valor) || valor <= 0) {
+    setMsg('ajusteSaldoMsg', 'Informe um valor maior que zero.', 'err');
+    return;
+  }
+  if (!motivo) {
+    setMsg('ajusteSaldoMsg', 'Informe o motivo do ajuste.', 'err');
+    return;
+  }
+  if (!pin) {
+    setMsg('ajusteSaldoMsg', 'Digite o PIN para confirmar.', 'err');
+    return;
+  }
+
+  const funcionarioConfirmado = await obterFuncionarioAtivoPorPin(pin);
+  if (!funcionarioConfirmado?.id) {
+    setMsg('ajusteSaldoMsg', 'PIN inválido ou funcionário inativo.', 'err');
+    return;
+  }
+
+  if (btnSalvar) btnSalvar.disabled = true;
+  setMsg('ajusteSaldoMsg', 'Salvando ajuste...', '');
+
+  const tipoAjuste = ajusteSaldoCofreTipo === 'saida' ? 'saida' : 'entrada';
+  const descricao = `Ajuste manual de saldo: ${motivo}`;
+  const movimento = await registrarMovimentacaoContaFinanceira({
+    contaFinanceiraId: contaId,
+    tipo: tipoAjuste,
+    valor,
+    descricao,
+  });
+
+  if (movimento.error) {
+    if (btnSalvar) btnSalvar.disabled = false;
+    setMsg('ajusteSaldoMsg', `Não foi possível ajustar o saldo: ${mensagemErroSupabase(movimento.error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  const { error: erroAuditoria } = await sb
+    .from('contas_financeiras_ajustes_saldo')
+    .insert([{
+      conta_financeira_id: contaId,
+      tipo: tipoAjuste,
+      valor: Number(valor.toFixed(2)),
+      saldo_anterior: Number(Number(movimento.saldoAnterior || 0).toFixed(2)),
+      saldo_atual: Number(Number(movimento.saldoApos || 0).toFixed(2)),
+      observacao: motivo,
+      funcionario_id: funcionarioConfirmado.id,
+      funcionario_nome: funcionarioConfirmado.nome || 'Funcionário',
+    }]);
+
+  if (erroAuditoria) {
+    if (btnSalvar) btnSalvar.disabled = false;
+    setMsg('ajusteSaldoMsg', `Saldo alterado, mas não foi possível registrar a auditoria: ${mensagemErroSupabase(erroAuditoria, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (btnSalvar) btnSalvar.disabled = false;
+  fecharModalAjusteSaldoCofre();
+  abrirPagina('financeiro_cofre', document.querySelector('.nav-btn[data-page="financeiro_cofre"]'));
+  await carregarContasFinanceiras({ render: false, silencioso: true });
+  await carregarCofreFinanceiro();
+  setMsg('msgCofreFinanceiro', `Ajuste salvo: ${tipoAjuste === 'saida' ? 'saída' : 'entrada'} de ${formatarMoedaBRFinanceiro(valor)} por ${funcionarioConfirmado.nome || 'funcionário'}.`, 'ok');
+}
+
 function exportarExtratoCofreCsv() {
   const itens = Array.isArray(cofreMovimentacoesCache) ? cofreMovimentacoesCache : [];
   if (!itens.length) {
@@ -10955,8 +11433,8 @@ function exportarExtratoCofreCsv() {
   const linhas = itens.map(item => {
     const tipo = String(item.tipo || 'entrada').toLowerCase();
     const ehSaida = tipo === 'saida' || tipo === 'estorno';
-    const pessoa = item.recebiveis?.fornecedores?.nome || item.contasapagar?.fornecedores?.nome || '-';
-    const forma = item.recebiveis?.formas_pagamento?.nome || item.contasapagar?.formas_pagamento?.nome || '-';
+    const pessoa = obterPessoaMovimentacaoCofre(item);
+    const forma = obterFormaMovimentacaoCofre(item);
     const valor = (ehSaida ? -1 : 1) * (Number(item.valor || 0) || 0);
     return [
       String(item.created_at || '').slice(0, 10),
@@ -10992,8 +11470,8 @@ function exportarExtratoCofrePdf() {
   const linhas = itens.map(item => {
     const tipo = String(item.tipo || 'entrada').toLowerCase();
     const ehSaida = tipo === 'saida' || tipo === 'estorno';
-    const pessoa = item.recebiveis?.fornecedores?.nome || item.contasapagar?.fornecedores?.nome || '-';
-    const forma = item.recebiveis?.formas_pagamento?.nome || item.contasapagar?.formas_pagamento?.nome || '-';
+    const pessoa = obterPessoaMovimentacaoCofre(item);
+    const forma = obterFormaMovimentacaoCofre(item);
     const valor = `${ehSaida ? '-' : '+'}${formatarMoedaBRFinanceiro(item.valor || 0)}`;
     return `
       <tr>
@@ -11114,7 +11592,7 @@ async function carregarCofreFinanceiro() {
     return;
   }
 
-  const todos = data || [];
+  const todos = await anexarAuditoriaAjustesCofre(data || [], filtroInicio, filtroFim);
   cofreMovimentacoesCache = todos;
   atualizarResumoCofreFinanceiro({ saldoTotal, movimentos: todos });
   renderizarExtratoCofre(todos);
@@ -12507,6 +12985,40 @@ function obterStorageFavoritosTarefas() {
   return `zuqui_tarefas_favoritas:${obterChaveUsuarioNotificacoes()}`;
 }
 
+function viewportTarefaEhMobile() {
+  return window.matchMedia('(max-width: 900px)').matches;
+}
+
+function atualizarEstadoItensCadastroTarefa({ forcarPorViewport = false } = {}) {
+  const card = document.getElementById('tarefaItensBuilderCard');
+  const btn = document.getElementById('btnToggleItensCadastroTarefa');
+  if (!card || !btn) return;
+
+  if (forcarPorViewport) {
+    itensCadastroTarefaExpandidos = !viewportTarefaEhMobile();
+  }
+
+  card.hidden = !itensCadastroTarefaExpandidos;
+  btn.textContent = itensCadastroTarefaExpandidos
+    ? 'Ocultar itens opcionais'
+    : 'Mostrar itens opcionais';
+}
+
+function toggleItensTarefaCadastro(forcarAberto = null) {
+  if (typeof forcarAberto === 'boolean') {
+    itensCadastroTarefaExpandidos = forcarAberto;
+  } else {
+    itensCadastroTarefaExpandidos = !itensCadastroTarefaExpandidos;
+  }
+  atualizarEstadoItensCadastroTarefa();
+}
+
+function atualizarBotaoFavoritasMinimizadas() {
+  const btn = document.getElementById('btnMinimizarFavoritasTarefas');
+  if (!btn) return;
+  btn.textContent = favoritosTarefasMinimizados ? 'Expandir favoritas' : 'Compactar favoritas';
+}
+
 function carregarFavoritosTarefas() {
   try {
     const bruto = localStorage.getItem(obterStorageFavoritosTarefas());
@@ -12615,7 +13127,7 @@ function renderizarListaConsultaTarefas() {
           <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${id}')">${favorita ? '★' : '☆'}</button>
         </div>
         <div class="tarefas-consulta-item-acoes">
-          <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar regras' : 'Configurar lançamento'}</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="abrirConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Opções abertas' : 'Opções de lançamento'}</button>
           ${item.ativo ? `<button class="btn btn-amber btn-sm" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
         </div>
@@ -12648,7 +13160,24 @@ function toggleSomenteFavoritasTarefas() {
 
 function toggleMinimizarFavoritasTarefas() {
   favoritosTarefasMinimizados = !favoritosTarefasMinimizados;
+  atualizarBotaoFavoritasMinimizadas();
   renderizarListaTarefas();
+}
+
+function abrirConfigLancamentoTarefa(id) {
+  const chave = String(id || '');
+  if (!chave) return;
+
+  tarefasConfigLancamentoAbertasIds = new Set([chave]);
+  renderizarListaConsultaTarefas();
+  renderizarListaTarefas();
+
+  if (viewportTarefaEhMobile()) {
+    window.setTimeout(() => {
+      const alvo = document.querySelector(`.dias-lancamento-checkbox[data-tarefa-id="${chave}"]`)?.closest('.tarefas-consulta-item-config');
+      alvo?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 30);
+  }
 }
 
 function toggleConfigLancamentoTarefa(id) {
@@ -12692,6 +13221,7 @@ function renderizarCardTarefaCadastrada(t) {
 function renderizarListaTarefas() {
   const lista = document.getElementById('listaTarefas');
   if (!lista) return;
+  atualizarBotaoFavoritasMinimizadas();
 
   const favoritas = (tarefasCadastradasCache || []).filter(item => tarefasFavoritasIds.has(String(item.id)));
 
@@ -13399,6 +13929,7 @@ async function editarTarefa(id) {
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  toggleItensTarefaCadastro(true);
   await carregarItensTarefaNoCadastro(checklistReferenciaEmEdicaoId);
   setMsg('msgTarefas', `Editando tarefa: ${tarefa.nome}.`, 'ok');
 }
@@ -13430,26 +13961,30 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const funcionarioSelecionado = String(funcionarioIdOverride || '').trim();
   if (!funcionarioSelecionado) {
-    setMsg('msgTarefas', '', '');
+    abrirConfigLancamentoTarefa(id);
+    setMsg('msgTarefas', 'Selecione um funcionário nas opções de lançamento antes de lançar.', 'err');
     setMsgLancamentoTarefa(id, 'Marque um funcionário no card antes de lançar.', 'err');
     return;
   }
   const horarioSelecionado = horaCurta(horarioOverride || '') || horaCurta(tarefa.horario_limite || '');
   if (!horarioSelecionado) {
-    setMsg('msgTarefas', '', '');
+    abrirConfigLancamentoTarefa(id);
+    setMsg('msgTarefas', 'Defina o horário nas opções de lançamento antes de lançar.', 'err');
     setMsgLancamentoTarefa(id, 'Informe o horário no card da tarefa antes de lançar.', 'err');
     return;
   }
 
   const diasLancamento = String(diasSemanaOverride || '').trim().toLowerCase();
   if (!diasLancamento) {
-    setMsg('msgTarefas', '', '');
+    abrirConfigLancamentoTarefa(id);
+    setMsg('msgTarefas', 'Selecione ao menos um dia nas opções de lançamento antes de lançar.', 'err');
     setMsgLancamentoTarefa(id, 'Selecione pelo menos um dia da semana antes de lançar.', 'err');
     return;
   }
   const diasPermitidos = diasSemanaParaConjunto(diasLancamento || '');
   if (!diasPermitidos.size) {
-    setMsg('msgTarefas', '', '');
+    abrirConfigLancamentoTarefa(id);
+    setMsg('msgTarefas', 'Selecione ao menos um dia nas opções de lançamento antes de lançar.', 'err');
     setMsgLancamentoTarefa(id, 'Selecione pelo menos um dia no card da tarefa antes de lançar.', 'err');
     return;
   }
@@ -16728,6 +17263,10 @@ document.getElementById('formaPagamentoOverlay').addEventListener('click', funct
 
 document.getElementById('contaFinanceiraBaixaOverlay').addEventListener('click', function(e) {
   if (e.target === this) fecharModalContaFinanceiraBaixa();
+});
+
+document.getElementById('ajusteSaldoCofreOverlay').addEventListener('click', function(e) {
+  if (e.target === this) fecharModalAjusteSaldoCofre();
 });
 
 document.getElementById('confirmacaoFinanceiraOverlay').addEventListener('click', function(e) {
