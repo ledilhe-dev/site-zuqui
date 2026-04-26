@@ -2212,21 +2212,34 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.1fr) 112px;
+        grid-template-columns: minmax(0, 1.55fr) minmax(190px, 0.8fr) minmax(104px, 0.38fr);
       grid-template-areas: "dias func horario";
-      gap: 8px 10px;
-      align-items: start;
-      padding: 8px;
+        gap: 6px 10px;
+        align-items: center;
+        padding: 6px 6px;
     }
     .tarefa-lancamento-bloco {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+        gap: 3px;
       min-width: 0;
     }
-    .tarefa-lancamento-bloco-dias { grid-area: dias; }
-    .tarefa-lancamento-bloco-horario { grid-area: horario; }
-    .tarefa-lancamento-bloco-funcionarios { grid-area: func; }
+      .tarefa-lancamento-bloco-dias {
+        grid-area: dias;
+        min-width: 0;
+      }
+    .tarefa-lancamento-bloco-horario {
+      grid-area: horario;
+      justify-self: end;
+      align-self: center;
+      width: 100%;
+      max-width: 108px;
+    }
+    .tarefa-lancamento-bloco-funcionarios {
+      grid-area: func;
+      padding-left: 10px;
+      align-self: center;
+    }
     .tarefa-lancamento-topo {
       display: flex;
       align-items: center;
@@ -2251,18 +2264,46 @@
     .tarefa-lancamento-grid .tarefa-funcionarios-grid {
       width: 100%;
     }
+    .tarefa-dias-checks,
+    #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .tarefa-dia-option,
+    #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option {
+      min-height: 30px;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px !important;
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+    .tarefa-dia-option span,
+    #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option span {
+      min-width: auto;
+      text-align: left;
+      font-size: 12px;
+    }
     .tarefa-lancamento-horario {
       display: inline-flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 2px;
       margin-left: 0;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 6px;
-      min-width: 112px;
+      padding: 4px 8px;
+      min-width: 100px;
+      width: 100%;
     }
     .tarefa-lancamento-horario span {
       font-size: 10px;
@@ -2273,8 +2314,8 @@
       white-space: nowrap;
     }
     .tarefa-lancamento-horario input[type="time"] {
-      width: 84px;
-      min-width: 84px;
+      width: 90px;
+      min-width: 90px;
       height: 26px;
       padding: 3px 6px;
       border-radius: 8px;
@@ -2317,6 +2358,56 @@
       height: 14px;
       margin: 0;
       cursor: pointer;
+    }
+    .tarefa-funcionario-resumo {
+      margin-top: 0;
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+    .tarefa-funcionario-resumo strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+    .tarefa-funcionario-acoes {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tarefa-modal-funcionarios-busca {
+      width: 100%;
+    }
+    .tarefa-modal-funcionarios-lista {
+      display: grid;
+      gap: 8px;
+      max-height: min(46vh, 340px);
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .tarefa-modal-funcionarios-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .tarefa-modal-funcionarios-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      cursor: pointer;
+    }
+    .tarefa-modal-funcionarios-item span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 13px;
     }
     .item-actions {
       display: flex;
@@ -3068,6 +3159,56 @@
         width: 100%;
         gap: 10px 14px;
       }
+      #tarefas .tarefa-lancamento-grid {
+        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+        grid-template-areas:
+          "dias func"
+          "horario func";
+        gap: 8px;
+        align-items: start;
+      }
+      #tarefas .tarefa-lancamento-bloco {
+        gap: 6px;
+      }
+      #tarefas .tarefa-lancamento-bloco-funcionarios {
+        padding-left: 6px;
+        align-self: start;
+      }
+      .tarefa-dias-checks,
+      #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid,
+      #tarefas .tarefa-lancamento-bloco-funcionarios .tarefa-funcionarios-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        align-items: start;
+      }
+      .tarefa-dia-option,
+      #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option {
+        min-height: 34px;
+        white-space: normal;
+      }
+      #tarefas .tarefa-lancamento-horario {
+        min-width: 0;
+        width: 100%;
+        align-items: flex-start;
+      }
+      #tarefas .tarefa-lancamento-horario input[type="time"] {
+        width: 92px;
+        min-width: 92px;
+      }
+      #tarefas .tarefa-funcionario-acoes .btn {
+        width: 100%;
+      }
+      #tarefas .tarefa-funcionario-option {
+        min-width: 0;
+        font-size: 12px;
+        padding: 4px 8px;
+      }
+      #tarefas .tarefa-funcionario-option span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
       .funcionario-form-row {
         display: flex;
         flex-direction: column;
@@ -3323,15 +3464,19 @@
         justify-content: flex-start;
       }
       .tarefa-lancamento-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         grid-template-areas:
-          "dias"
-          "horario"
-          "func";
+          "dias horario"
+          "func func";
       }
       .tarefa-lancamento-horario {
         align-items: flex-start;
         min-width: 0;
+      }
+      .tarefa-dias-checks,
+      #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid,
+      #tarefas .tarefa-lancamento-bloco-funcionarios .tarefa-funcionarios-grid {
+        grid-template-columns: 1fr;
       }
       .tarefa-cadastrada-item {
         gap: 8px;
@@ -3959,9 +4104,9 @@
             </div>
           </div>
           <div class="tarefa-cadastro-atalhos">
-            <button class="btn btn-ghost btn-sm" id="btnToggleItensCadastroTarefa" type="button" onclick="toggleItensTarefaCadastro()">Ocultar itens opcionais</button>
+            <button class="btn btn-ghost btn-sm" id="btnToggleItensCadastroTarefa" type="button" onclick="toggleItensTarefaCadastro()">Mostrar itens opcionais</button>
           </div>
-          <div class="tarefa-itens-builder" id="tarefaItensBuilderCard">
+          <div class="tarefa-itens-builder" id="tarefaItensBuilderCard" hidden>
             <div class="tarefa-itens-builder-topo">
               <div class="card-title" style="margin:0">Itens do checklist</div>
               <div class="item-detalhe" id="resumoItensTarefa">Nenhum item adicionado.</div>
@@ -4797,6 +4942,28 @@
   </div>
 </div>
 
+<div class="overlay" id="tarefaFuncionariosOverlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <h3>Selecionar funcionário(s)</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Escolha os responsáveis para esta tarefa.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="cancelarModalFuncionariosLancamentoTarefa()">X Fechar</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <input id="tarefaFuncionariosBusca" class="tarefa-modal-funcionarios-busca" type="text" placeholder="Buscar funcionário por nome" oninput="renderizarListaModalFuncionariosLancamentoTarefa()">
+      <div id="tarefaFuncionariosResumo" class="item-detalhe" style="margin-top:0"></div>
+      <div id="tarefaFuncionariosLista" class="tarefa-modal-funcionarios-lista"><div class="empty">Carregando...</div></div>
+      <div id="tarefaFuncionariosMsg" class="msg" style="margin-top:0"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" type="button" onclick="cancelarModalFuncionariosLancamentoTarefa()">Cancelar</button>
+      <button class="btn btn-green" type="button" onclick="aplicarModalFuncionariosLancamentoTarefa()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="ajusteSaldoCofreOverlay">
   <div class="modal ajuste-saldo-modal" style="max-width:560px" onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); salvarAjusteSaldoCofre(); }">
     <div class="modal-header">
@@ -4875,6 +5042,8 @@ let funcionariosAtivosTarefa = [];
 let selecaoFuncionarioLancamentoPorTarefa = {};
 let horarioLancamentoPorTarefa = {};
 let diasLancamentoPorTarefa = {};
+let tarefaModalFuncionariosTarefaId = '';
+let tarefaModalFuncionariosSelecionadoId = '';
 let usuarioSistemaLogado = null;
 let funcionarioEmEdicaoId = null;
 let funcionarioNomeOriginalEdicao = '';
@@ -4961,7 +5130,7 @@ let tarefasFavoritasIds = new Set();
 let tarefasConfigLancamentoAbertasIds = new Set();
 let mostrarSomenteFavoritasTarefas = false;
 let favoritosTarefasMinimizados = false;
-let itensCadastroTarefaExpandidos = true;
+let itensCadastroTarefaExpandidos = false;
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
@@ -5706,7 +5875,7 @@ function abrirPagina(id, botao) {
   if (id === 'configuracoes') { carregarConfiguracoesLoja(); }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
-    atualizarEstadoItensCadastroTarefa({ forcarPorViewport: true });
+    atualizarEstadoItensCadastroTarefa();
     atualizarBotaoFavoritasMinimizadas();
     carregarSelectFuncionariosTarefa();
     redefinirCampoBuscaTarefas();
@@ -12999,11 +13168,45 @@ function escaparHtmlBasico(valor) {
     .replace(/'/g, '&#39;');
 }
 
-function obterFuncionarioLancamentoSelecionado(tarefaId, funcionarioPadrao = '') {
+function obterFuncionariosLancamentoSelecionados(tarefaId, funcionarioPadrao = '') {
   const idTarefa = String(tarefaId || '');
   const selecionado = selecaoFuncionarioLancamentoPorTarefa[idTarefa];
-  if (selecionado) return String(selecionado);
-  return '';
+  if (Array.isArray(selecionado)) {
+    return [...new Set(selecionado.map(item => String(item || '').trim()).filter(Boolean))];
+  }
+  const valor = String(selecionado || '').trim();
+  if (!valor) return [];
+  if (valor.includes(',')) {
+    return [...new Set(valor.split(',').map(item => String(item || '').trim()).filter(Boolean))];
+  }
+  return [valor];
+}
+
+function obterFuncionarioLancamentoSelecionado(tarefaId, funcionarioPadrao = '') {
+  const selecionados = obterFuncionariosLancamentoSelecionados(tarefaId, funcionarioPadrao);
+  return selecionados[0] || '';
+}
+
+function obterResumoSelecaoFuncionarioLancamento(tarefaId) {
+  const selecionados = obterFuncionariosLancamentoSelecionados(tarefaId);
+  if (!selecionados.length) return 'Nenhum funcionário selecionado';
+
+  const nomes = selecionados.map(id => {
+    const funcionario = funcionariosAtivosTarefa.find(item => String(item.id || '') === String(id));
+    return String(funcionario?.nome || '').trim();
+  }).filter(Boolean);
+
+  if (!nomes.length) return 'Nenhum funcionário selecionado';
+  if (nomes.length === 1) return `1 selecionado: ${nomes[0]}`;
+  return `${nomes.length} selecionados: ${nomes.slice(0, 2).join(', ')}${nomes.length > 2 ? '...' : ''}`;
+}
+
+function atualizarResumoFuncionarioLancamentoNoCard(tarefaId) {
+  const idTarefa = String(tarefaId || '');
+  if (!idTarefa) return;
+  const el = document.getElementById(`resumoFuncionarioLancamento_${idTarefa}`);
+  if (!el) return;
+  el.textContent = obterResumoSelecaoFuncionarioLancamento(idTarefa);
 }
 
 function obterHorarioLancamentoSelecionado(tarefaId, horarioPadrao = '') {
@@ -13089,6 +13292,120 @@ function selecionarFuncionarioLancamento(tarefaId, funcionarioId, marcado) {
   if (selecaoFuncionarioLancamentoPorTarefa[idTarefa] === idFuncionario) {
     delete selecaoFuncionarioLancamentoPorTarefa[idTarefa];
   }
+  atualizarResumoFuncionarioLancamentoNoCard(idTarefa);
+}
+
+function renderizarListaModalFuncionariosLancamentoTarefa() {
+  const lista = document.getElementById('tarefaFuncionariosLista');
+  const buscaEl = document.getElementById('tarefaFuncionariosBusca');
+  const resumoEl = document.getElementById('tarefaFuncionariosResumo');
+  if (!lista) return;
+
+  const busca = String(buscaEl?.value || '').trim().toLowerCase();
+  const selecionadoId = String(tarefaModalFuncionariosSelecionadoId || '').trim();
+  const funcionarios = (funcionariosAtivosTarefa || []).filter(item => {
+    const nome = String(item?.nome || '').toLowerCase();
+    return !busca || nome.includes(busca);
+  });
+
+  if (resumoEl) {
+    const nomeSelecionado = (funcionariosAtivosTarefa || []).find(item => String(item.id || '') === selecionadoId)?.nome || '';
+    resumoEl.textContent = nomeSelecionado
+      ? `Selecionado: ${nomeSelecionado}`
+      : 'Nenhum funcionário selecionado';
+  }
+
+  if (!funcionarios.length) {
+    lista.innerHTML = '<div class="empty">Nenhum funcionário encontrado para esta busca.</div>';
+    return;
+  }
+
+  lista.innerHTML = funcionarios.map(funcionario => {
+    const idFuncionario = String(funcionario.id || '');
+    const checked = idFuncionario === selecionadoId ? 'checked' : '';
+    return `
+      <label class="tarefa-modal-funcionarios-item">
+        <input
+          type="checkbox"
+          data-funcionario-id="${escaparHtmlBasico(idFuncionario)}"
+          onchange="selecionarFuncionarioLancamentoModal('${escaparHtmlBasico(idFuncionario)}', this.checked)"
+          ${checked}
+        >
+        <span>${escaparHtmlBasico(funcionario.nome || 'Funcionário')}</span>
+      </label>
+    `;
+  }).join('');
+}
+
+function selecionarFuncionarioLancamentoModal(funcionarioId, marcado) {
+  const idFuncionario = String(funcionarioId || '').trim();
+  if (!idFuncionario) return;
+
+  if (marcado) {
+    tarefaModalFuncionariosSelecionadoId = idFuncionario;
+  } else if (String(tarefaModalFuncionariosSelecionadoId) === idFuncionario) {
+    tarefaModalFuncionariosSelecionadoId = '';
+  }
+
+  document.querySelectorAll('#tarefaFuncionariosLista input[type="checkbox"]').forEach(input => {
+    input.checked = String(input.dataset.funcionarioId || '') === String(tarefaModalFuncionariosSelecionadoId || '');
+  });
+  renderizarListaModalFuncionariosLancamentoTarefa();
+}
+
+function abrirModalFuncionariosLancamentoTarefa(tarefaId) {
+  const overlay = document.getElementById('tarefaFuncionariosOverlay');
+  const buscaEl = document.getElementById('tarefaFuncionariosBusca');
+  const msgEl = document.getElementById('tarefaFuncionariosMsg');
+  const idTarefa = String(tarefaId || '');
+  if (!overlay || !idTarefa) return;
+
+  tarefaModalFuncionariosTarefaId = idTarefa;
+  tarefaModalFuncionariosSelecionadoId = obterFuncionarioLancamentoSelecionado(idTarefa, '');
+
+  if (buscaEl) buscaEl.value = '';
+  if (msgEl) {
+    msgEl.textContent = '';
+    msgEl.className = 'msg';
+  }
+
+  renderizarListaModalFuncionariosLancamentoTarefa();
+  overlay.classList.add('show');
+}
+
+function cancelarModalFuncionariosLancamentoTarefa() {
+  const overlay = document.getElementById('tarefaFuncionariosOverlay');
+  const lista = document.getElementById('tarefaFuncionariosLista');
+  const resumo = document.getElementById('tarefaFuncionariosResumo');
+  const msg = document.getElementById('tarefaFuncionariosMsg');
+  const busca = document.getElementById('tarefaFuncionariosBusca');
+  if (overlay) overlay.classList.remove('show');
+  if (lista) lista.innerHTML = '<div class="empty">Carregando...</div>';
+  if (resumo) resumo.textContent = '';
+  if (msg) {
+    msg.textContent = '';
+    msg.className = 'msg';
+  }
+  if (busca) busca.value = '';
+  tarefaModalFuncionariosTarefaId = '';
+  tarefaModalFuncionariosSelecionadoId = '';
+}
+
+function aplicarModalFuncionariosLancamentoTarefa() {
+  const idTarefa = String(tarefaModalFuncionariosTarefaId || '').trim();
+  if (!idTarefa) {
+    cancelarModalFuncionariosLancamentoTarefa();
+    return;
+  }
+
+  if (tarefaModalFuncionariosSelecionadoId) {
+    selecaoFuncionarioLancamentoPorTarefa[idTarefa] = String(tarefaModalFuncionariosSelecionadoId);
+  } else {
+    delete selecaoFuncionarioLancamentoPorTarefa[idTarefa];
+  }
+
+  atualizarResumoFuncionarioLancamentoNoCard(idTarefa);
+  cancelarModalFuncionariosLancamentoTarefa();
 }
 
 function gerarIdMsgLancamentoTarefa(tarefaId) {
@@ -13133,25 +13450,7 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
     `).join('');
 
   const selecionado = obterFuncionarioLancamentoSelecionado(tarefa.id, '');
-  const funcionarioSelecionadoObj = funcionariosAtivosTarefa.find(item => String(item.id || '') === String(selecionado || ''));
-  const nomeSelecionado = funcionarioSelecionadoObj?.nome ? escaparHtmlBasico(funcionarioSelecionadoObj.nome) : 'Nenhum selecionado';
-  const opcoes = funcionariosAtivosTarefa.map(funcionario => {
-    const idFuncionario = String(funcionario.id || '');
-    const checked = selecionado && idFuncionario === String(selecionado) ? 'checked' : '';
-    return `
-      <label class="tarefa-funcionario-option">
-        <input
-          class="funcionario-lancamento-checkbox"
-          type="checkbox"
-          data-tarefa-id="${tarefaIdEscapado}"
-          data-funcionario-id="${escaparHtmlBasico(idFuncionario)}"
-          onchange="selecionarFuncionarioLancamento('${tarefaIdEscapado}','${escaparHtmlBasico(idFuncionario)}', this.checked)"
-          ${checked}
-        >
-        <span>${escaparHtmlBasico(funcionario.nome || 'Funcionário')}</span>
-      </label>
-    `;
-  }).join('');
+  const resumoSelecionado = escaparHtmlBasico(obterResumoSelecaoFuncionarioLancamento(tarefa.id));
 
   const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
   return `
@@ -13179,8 +13478,10 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
         </div>
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-funcionarios">
           <span class="tarefa-funcionarios-label">Funcionário</span>
-          <div class="item-detalhe" style="margin-top:0;margin-bottom:4px">Principal: ${nomeSelecionado}</div>
-          <div class="tarefa-funcionarios-grid">${opcoes}</div>
+          <div class="item-detalhe tarefa-funcionario-resumo" id="resumoFuncionarioLancamento_${tarefaIdEscapado}"><strong>${resumoSelecionado}</strong></div>
+          <div class="tarefa-funcionario-acoes">
+            <button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalFuncionariosLancamentoTarefa('${tarefaIdEscapado}')">Selecionar funcionário(s)</button>
+          </div>
         </div>
       </div>
       <div class="msg" id="${gerarIdMsgLancamentoTarefa(tarefa.id)}"></div>
@@ -13334,7 +13635,7 @@ function renderizarListaConsultaTarefas() {
           <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${id}')">${favorita ? '★' : '☆'}</button>
         </div>
         <div class="tarefas-consulta-item-acoes">
-          <button class="btn btn-ghost btn-sm" type="button" onclick="abrirConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Opções abertas' : 'Opções de lançamento'}</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar opções' : 'Opções de lançamento'}</button>
           ${item.ativo ? `<button class="btn btn-amber btn-sm" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
         </div>
@@ -13390,13 +13691,22 @@ function abrirConfigLancamentoTarefa(id) {
 function toggleConfigLancamentoTarefa(id) {
   const chave = String(id || '');
   if (!chave) return;
+  let abriuAgora = false;
   if (tarefasConfigLancamentoAbertasIds.has(chave)) {
     tarefasConfigLancamentoAbertasIds.delete(chave);
   } else {
-    tarefasConfigLancamentoAbertasIds.add(chave);
+    tarefasConfigLancamentoAbertasIds = new Set([chave]);
+    abriuAgora = true;
   }
   renderizarListaConsultaTarefas();
   renderizarListaTarefas();
+
+  if (abriuAgora && viewportTarefaEhMobile()) {
+    window.setTimeout(() => {
+      const alvo = document.querySelector(`.dias-lancamento-checkbox[data-tarefa-id="${chave}"]`)?.closest('.tarefas-consulta-item-config');
+      alvo?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 30);
+  }
 }
 
 function renderizarCardTarefaCadastrada(t) {
