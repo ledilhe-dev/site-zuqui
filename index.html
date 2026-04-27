@@ -17751,6 +17751,11 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     const periodosHtml = item.periodos.length
       ? item.periodos
           .sort((a, b) => ts(a.entrada) - ts(b.entrada))
+          .filter(periodo => {
+            const abertoOriginal = !periodo.saida || periodo.aberto;
+            // Esconde abertura duplicada quando a entrada coincide com uma saída já consolidada no dia.
+            return !abertoOriginal || !item.ultimaSaidaTs || ts(periodo.entrada) > item.ultimaSaidaTs;
+          })
           .map(periodo => {
             const abertoOriginal = !periodo.saida || periodo.aberto;
             const aberto = abertoOriginal && (!item.ultimaSaidaTs || ts(periodo.entrada) > item.ultimaSaidaTs);

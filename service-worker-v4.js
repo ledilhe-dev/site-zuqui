@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v5';
+const CACHE_NAME = 'check-diario-pwa-v6';
 const CORE_ASSETS = [
   './',
   './index.html',
