@@ -9352,6 +9352,16 @@ async function carregarNotificacoes() {
       lancamentosExecucaoMap = Object.fromEntries((lancamentosExecucaoData || []).map(item => [String(item.id), item]));
     }
 
+    const lancamentosComExecucaoAtivaIds = new Set((execucoesPendentes || [])
+      .map(item => item.lancamento_id)
+      .filter(Boolean)
+      .map(item => String(item)));
+
+    const lancamentoJaPossuiExecucaoAtiva = (item = {}) => {
+      const id = String(item?.id || '');
+      return !!id && lancamentosComExecucaoAtivaIds.has(id);
+    };
+
     const lancamentoEhDoDiaOuSemData = (item) => {
       if (lancamentoProgramadoHoje(item)) return true;
       return !item?.lancado_em && !item?.created_at;
@@ -9361,6 +9371,7 @@ async function carregarNotificacoes() {
       if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
         return false;
       }
+      if (lancamentoJaPossuiExecucaoAtiva(item)) return false;
       if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
       const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       return (prazo.ativo && !prazo.vencido) || lancamentoRecemCriadoParaAlerta(item);
@@ -9370,6 +9381,7 @@ async function carregarNotificacoes() {
       if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
         return false;
       }
+      if (lancamentoJaPossuiExecucaoAtiva(item)) return false;
       if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
       const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       return prazo.ativo && prazo.vencido;
@@ -19168,9 +19180,15 @@ async function carregarTarefasAtrasoMaster() {
       lancamentosMap = Object.fromEntries((lancamentosRes.data || []).map(item => [String(item.id), item]));
     }
 
+    const lancamentosComExecucaoAtivaIds = new Set((execucoesRes.data || [])
+      .map(item => item.lancamento_id)
+      .filter(Boolean)
+      .map(item => String(item)));
+
     const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
       if (!lancamentoProgramadoHoje(item)) return false;
       if (!tarefaDisponivelHoje(item.dias_semana)) return false;
+      if (lancamentosComExecucaoAtivaIds.has(String(item.id || ''))) return false;
       if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
       const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       return prazo.vencido;
@@ -19180,6 +19198,7 @@ async function carregarTarefasAtrasoMaster() {
       nome: checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist',
       responsavel: funcionariosMap[String(item.funcionario_id)] || 'Sem responsável',
       horario: horaCurta(item.horario_limite) || '-',
+      dataProgramada: formatarDataProgramadaBr(obterDataProgramadaLancamento(item)),
       detalhe: 'Não iniciado no prazo',
       page: 'checklists',
     }));
@@ -19190,6 +19209,7 @@ async function carregarTarefasAtrasoMaster() {
       nome: tarefasMap[String(item.tarefa_id)]?.nome || checklistsMap[String(item.checklist_id)] || 'Checklist',
       responsavel: funcionariosMap[String(item.funcionario_id)] || 'Sem responsável',
       horario: horaCurta(tarefasMap[String(item.tarefa_id)]?.horario_limite || lancamentosMap[String(item.lancamento_id)]?.horario_limite) || '-',
+      dataProgramada: formatarDataProgramadaBr(item.data_execucao || hoje()),
       detalhe: item.status === 'pausado' ? 'Pausado sem finalização' : 'Aberto sem finalização',
       page: 'execucoes',
     }));
@@ -19207,7 +19227,7 @@ async function carregarTarefasAtrasoMaster() {
       <div class="item">
         <div class="item-info">
           <div class="item-nome">${item.nome}</div>
-          <div class="item-detalhe">Responsável: ${item.responsavel} · Horário: ${item.horario}</div>
+          <div class="item-detalhe">Responsável: ${item.responsavel} · Data: ${item.dataProgramada || '-'} · Horário: ${item.horario}</div>
           <div class="item-detalhe">${item.detalhe}</div>
         </div>
         <div class="item-actions">
