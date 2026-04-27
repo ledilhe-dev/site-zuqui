@@ -2753,6 +2753,43 @@
     }
     .checklist-meta { margin: 4px 0 0; padding-left: 18px; color: var(--text-muted); }
     .checklist-meta li { margin: 2px 0; }
+    .checklists-futuros-box {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(10, 15, 13, 0.7);
+      overflow: hidden;
+    }
+    .checklists-futuros-box summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(24, 34, 24, 0.85);
+    }
+    .checklists-futuros-box summary::-webkit-details-marker { display: none; }
+    .checklists-futuros-box summary::after {
+      content: 'Abrir';
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: none;
+      color: var(--green);
+      border: 1px solid rgba(34,197,94,0.22);
+      background: rgba(34,197,94,0.08);
+      border-radius: 999px;
+      padding: 4px 9px;
+      flex-shrink: 0;
+    }
+    .checklists-futuros-box[open] summary::after { content: 'Fechar'; }
+    .checklists-futuros-conteudo { padding: 10px; }
     .permissoes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
     .perm-item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); font-size: 13px; color: var(--text); }
     .perm-item input { width: 16px; height: 16px; }
@@ -9847,11 +9884,11 @@ async function carregarChecklists() {
   if (!rows.length) {
     lista.innerHTML = usandoFiltros
       ? '<div class="empty">Nenhum checklist encontrado com os filtros informados.</div>'
-      : '<div class="empty">Nenhum checklist lancado para iniciar.</div>';
+      : '<div class="empty">Nenhum checklist lancado para hoje.</div>';
     return;
   }
 
-  lista.innerHTML = '<div class="lista">' + rows.map(t => {
+  const renderizarCardsChecklist = (itens) => '<div class="lista">' + itens.map(t => {
     const aviso = obterAvisoDiscretoChecklist(t);
     return `
     <div class="item checklist-item${aviso ? ' checklist-alerta-discreto' : ''}">
@@ -9872,6 +9909,29 @@ async function carregarChecklists() {
       </div>
     </div>`;
   }).join('') + '</div>';
+
+  const rowsHoje = rows.filter(t => {
+    const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
+    return dataReferencia === dataHoje;
+  });
+
+  const rowsFuturos = rows.filter(t => {
+    const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
+    return dataReferencia > dataHoje;
+  });
+
+  const htmlHoje = rowsHoje.length
+    ? renderizarCardsChecklist(rowsHoje)
+    : `<div class="empty">${usandoFiltros ? 'Nenhum checklist de hoje encontrado com os filtros informados.' : 'Nenhum checklist lancado para hoje.'}</div>`;
+
+  const htmlFuturos = rowsFuturos.length
+    ? `<details class="checklists-futuros-box">
+        <summary>Próxima semana (${rowsFuturos.length})</summary>
+        <div class="checklists-futuros-conteudo">${renderizarCardsChecklist(rowsFuturos)}</div>
+      </details>`
+    : '';
+
+  lista.innerHTML = htmlHoje + htmlFuturos;
 }
 
 async function carregarOpcoesFiltroChecklists() {
