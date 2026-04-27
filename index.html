@@ -7,13 +7,19 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="2.1">
+  <meta name="app-version" content="2.2">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
+  <!--
+    Versão 2.2 - Produção
+    Principais ajustes:
+    - Solicitação e aprovação de ajuste de ponto.
+    - Correção de duplicidade ao editar títulos/contas a pagar parceladas.
+  -->
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
@@ -1897,6 +1903,225 @@
       border-color: rgba(245, 158, 11, 0.55);
     }
 
+    /* ---- PONTO: REGISTRO E AJUSTES ---- */
+
+    .ponto-resumo-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ponto-resumo-linha {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.85fr) minmax(360px, 2.5fr) minmax(150px, 0.7fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(10, 15, 13, 0.72);
+    }
+    .ponto-resumo-nome {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ponto-resumo-sequencia {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+    .ponto-periodo-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(107, 143, 112, 0.22);
+      background: rgba(24, 34, 24, 0.72);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .ponto-periodo-chip.aberto {
+      border-color: rgba(34, 197, 94, 0.48);
+      background: rgba(34, 197, 94, 0.12);
+      color: #bbf7d0;
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.08);
+    }
+    .ponto-hora-entrada {
+      color: #86efac;
+      font-family: 'DM Mono', monospace;
+    }
+    .ponto-hora-saida {
+      color: #fcd34d;
+      font-family: 'DM Mono', monospace;
+    }
+    .ponto-hora-aberto {
+      color: #22c55e;
+      font-family: 'DM Mono', monospace;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .ponto-resumo-metricas {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      color: var(--text-muted);
+      font-size: 11px;
+      line-height: 1.25;
+      min-width: 0;
+    }
+    .ponto-resumo-metricas strong {
+      color: var(--green);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+    }
+    .ponto-resumo-tag {
+      justify-self: end;
+      white-space: nowrap;
+    }
+    @media (max-width: 980px) {
+      .ponto-resumo-linha {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+      .ponto-resumo-tag {
+        justify-self: start;
+      }
+      .ponto-resumo-nome {
+        white-space: normal;
+      }
+    }
+
+    #bater_ponto .ponto-registro-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #pontoPinInput {
+      flex: 0 1 240px !important;
+      min-width: 210px !important;
+      max-width: 280px !important;
+      height: 44px;
+      min-height: 44px;
+      font-size: 18px;
+      letter-spacing: 4px;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+    }
+    .ponto-ajuste-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(8, 12, 10, 0.62);
+      backdrop-filter: blur(4px);
+    }
+    .ponto-ajuste-modal-overlay[hidden] {
+      display: none !important;
+    }
+    .ponto-ajuste-modal-card {
+      width: min(520px, calc(100vw - 28px));
+      max-height: calc(100vh - 34px);
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid rgba(34, 197, 94, 0.28);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+    }
+    .ponto-ajuste-modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .ponto-ajuste-modal-sub {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+    .ponto-ajuste-form {
+      display: grid;
+      gap: 10px;
+    }
+    .ponto-ajuste-form label {
+      display: grid;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    .ponto-ajuste-form input,
+    .ponto-ajuste-form textarea {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+    .ponto-ajuste-form textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+    .ponto-ajuste-form input:focus,
+    .ponto-ajuste-form textarea:focus {
+      border-color: var(--green);
+    }
+    .ponto-ajuste-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .ponto-ajustes-filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .ponto-ajustes-filtros select,
+    .ponto-ajustes-filtros input {
+      flex: 1 1 160px;
+      min-width: 150px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+    }
+    @media (max-width: 640px) {
+      #bater_ponto .ponto-registro-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      #pontoPinInput,
+      #bater_ponto .ponto-registro-row .btn {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+    }
+
     /* ---- BUTTONS ---- */
     .btn {
       border: none;
@@ -3725,6 +3950,11 @@
               <span class="nav-title">Funcionários</span>
             </span>
           </button>
+          <button class="nav-btn nav-sub-btn" data-page="ponto_ajustes" onclick="abrirPagina('ponto_ajustes', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Solicitações de ajuste de ponto</span>
+            </span>
+          </button>
           <button class="nav-btn nav-sub-btn" data-page="perfis" onclick="abrirPagina('perfis', this)">
             <span class="nav-copy">
               <span class="nav-title">Perfis</span>
@@ -4229,9 +4459,10 @@
       <section id="bater_ponto" class="pagina">
         <div class="card">
           <div class="card-title">Registrar ponto</div>
-          <div class="form-row">
-            <input id="pontoPinInput" class="campo-curto" type="password" placeholder="PIN" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }">
+          <div class="ponto-registro-row">
+            <input id="pontoPinInput" type="password" placeholder="PIN / senha" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }">
             <button class="btn btn-green" type="button" onclick="registrarPontoFuncionario()">Registrar ponto</button>
+            <button class="btn btn-amber" type="button" onclick="abrirModalSolicitarAjustePonto()">Solicitar ajuste</button>
           </div>
           <div class="msg" id="msgPonto"></div>
         </div>
@@ -4341,6 +4572,34 @@
         <div class="card">
           <div class="card-title">Registros de ponto</div>
           <div id="listaRelatorioPonto"><div class="empty">Carregando⬦</div></div>
+        </div>
+      </section>
+
+      <!--  AJUSTES DE PONTO  -->
+      <section id="ponto_ajustes" class="pagina">
+        <div class="page-title">Solicitações de ajuste de ponto</div>
+        <div class="page-sub">Aprove ou recuse pedidos de correção de batida feitos pelos funcionários</div>
+
+        <div class="card">
+          <div class="card-title">Filtros</div>
+          <div class="ponto-ajustes-filtros">
+            <select id="filtroPontoAjusteStatus">
+              <option value="pendente">Pendentes</option>
+              <option value="aprovado">Aprovados</option>
+              <option value="recusado">Recusados</option>
+              <option value="todos">Todos</option>
+            </select>
+            <input id="filtroPontoAjusteDataInicio" type="date" title="Data inicial">
+            <input id="filtroPontoAjusteDataFim" type="date" title="Data final">
+            <button class="btn btn-green" type="button" onclick="carregarAjustesPonto()">Filtrar</button>
+            <button class="btn btn-ghost" type="button" onclick="resetFiltroAjustesPonto()">Pendentes</button>
+          </div>
+          <div class="msg" id="msgPontoAjustes"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Solicitações de ajuste de ponto</div>
+          <div id="listaPontoAjustes"><div class="empty">Carregando solicitações...</div></div>
         </div>
       </section>
 
@@ -4617,7 +4876,7 @@
         <div class="page-sub">Registre compras e vencimentos por fornecedor</div>
 
         <div class="card card-compact">
-          <div class="card-title">Nova conta</div>
+          <div class="card-title" id="tituloContaAPagarFinanceiro">Nova conta</div>
           <div class="financeiro-form-row">
             <div class="campo-com-label fornecedor">
               <label class="campo-label" for="contaFornecedorBusca">Fornecedor</label>
@@ -4651,6 +4910,7 @@
           <div class="form-row financeiro-observacao-row" style="margin-top:8px">
             <input id="contaObservacao" type="text" placeholder="Observação do título (obrigatório)" required>
           </div>
+          <div class="msg" id="msgModoEdicaoContaAPagarFinanceiro" style="display:none"></div>
           <div class="msg" id="msgContaAPagarFinanceiro"></div>
         </div>
 
@@ -4661,12 +4921,19 @@
           </div>
           <div class="form-row financeiro-filtros-row">
             <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, valor, data, observação ou parcela" oninput="carregarContasAPagarFinanceiro()">
+            <input id="filtroContaAPagarCadastroInicio" class="campo-curto" type="date" title="Cadastro início" aria-label="Cadastro início" onchange="carregarContasAPagarFinanceiro()">
+            <input id="filtroContaAPagarCadastroFim" class="campo-curto" type="date" title="Cadastro fim" aria-label="Cadastro fim" onchange="carregarContasAPagarFinanceiro()">
             <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
               <option value="">- Todos os status -</option>
               <option value="pendente">Pendente</option>
               <option value="pago">Pago</option>
             </select>
             <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
+          </div>
+          <div class="form-row financeiro-filtros-row financeiro-selecao-contas-row" id="acoesSelecaoContasAPagarFinanceiro" style="margin-top:8px">
+            <button class="btn btn-ghost" id="btnSelecionarTodasContasAPagarFinanceiro" type="button" onclick="toggleSelecionarTodasContasAPagarFinanceiro()">Marcar todos</button>
+            <button class="btn btn-red" id="btnExcluirContasAPagarSelecionadasFinanceiro" type="button" onclick="excluirContasAPagarSelecionadasFinanceiro()" disabled>Excluir selecionadas</button>
+            <div class="item-detalhe" id="resumoSelecaoContasAPagarFinanceiro" style="align-self:center">Nenhuma conta selecionada.</div>
           </div>
           <div id="listaContasAPagarFinanceiro"><div class="empty">Carregando...</div></div>
         </div>
@@ -4833,6 +5100,32 @@
       <div class="overdue-alert-actions">
         <button class="btn btn-red" id="btnOverdueAlertAction" type="button" onclick="abrirPainelTarefasAtrasadas(event)">Ver checklists</button>
         <button class="btn btn-ghost" id="btnOverdueAlertExecucoes" type="button" onclick="abrirPainelExecucoesEmAndamento(event)">Acompanhar tarefa</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ponto-ajuste-modal-overlay" id="modalSolicitarAjustePonto" hidden>
+    <div class="ponto-ajuste-modal-card">
+      <div class="ponto-ajuste-modal-title">Solicitar ajuste de ponto</div>
+      <div class="ponto-ajuste-modal-sub">Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.</div>
+      <div class="ponto-ajuste-form">
+        <label>PIN do funcionário
+          <input id="ajustePontoPin" type="password" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="Digite seu PIN">
+        </label>
+        <label>Data do ajuste
+          <input id="ajustePontoData" type="date">
+        </label>
+        <label>Horário solicitado
+          <input id="ajustePontoHorario" type="time">
+        </label>
+        <label>Motivo
+          <textarea id="ajustePontoMotivo" maxlength="300" placeholder="Exemplo: esqueci de bater a saída no horário correto"></textarea>
+        </label>
+        <div class="msg" id="msgSolicitarAjustePonto"></div>
+        <div class="ponto-ajuste-actions">
+          <button class="btn btn-ghost" type="button" onclick="fecharModalSolicitarAjustePonto()">Cancelar</button>
+          <button class="btn btn-green" type="button" onclick="salvarSolicitacaoAjustePonto()">Enviar solicitação</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5020,9 +5313,34 @@
   </div>
 </div>
 
+
+<div class="overlay" id="confirmacaoSistemaOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div>
+        <h3 id="confirmacaoSistemaTitle">Confirmar ação</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="confirmacaoSistemaSubtitle"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="resolverConfirmacaoSistema(false)">X Fechar</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div id="confirmacaoSistemaBody" style="font-size:14px;color:var(--text);line-height:1.5"></div>
+      <div id="confirmacaoSistemaInputWrap" style="display:none;flex-direction:column;gap:6px">
+        <label id="confirmacaoSistemaInputLabel" style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px">Motivo</label>
+        <textarea id="confirmacaoSistemaInput" rows="4" style="width:100%;resize:vertical;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:14px" placeholder="Descreva o motivo"></textarea>
+      </div>
+      <div id="confirmacaoSistemaMsg" style="font-size:13px;color:var(--red)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" type="button" id="confirmacaoSistemaCancelar" onclick="resolverConfirmacaoSistema(false)">Cancelar</button>
+      <button class="btn btn-green" type="button" id="confirmacaoSistemaConfirmar" onclick="resolverConfirmacaoSistema(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.2';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -5030,6 +5348,82 @@ const AUTH_EMAIL_FUNCTION_NAME = 'autenticacao-email';
 const AUTH_REDIRECT_URL = 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+let confirmacaoSistemaResolver = null;
+let confirmacaoSistemaOpcaoAtual = null;
+
+function abrirConfirmacaoSistema(opcoes = {}) {
+  const overlay = document.getElementById('confirmacaoSistemaOverlay');
+  if (!overlay) {
+    return Promise.resolve({ confirmado: window.confirm(opcoes.body || opcoes.title || 'Confirmar ação?'), valor: '' });
+  }
+
+  const title = document.getElementById('confirmacaoSistemaTitle');
+  const subtitle = document.getElementById('confirmacaoSistemaSubtitle');
+  const body = document.getElementById('confirmacaoSistemaBody');
+  const inputWrap = document.getElementById('confirmacaoSistemaInputWrap');
+  const inputLabel = document.getElementById('confirmacaoSistemaInputLabel');
+  const input = document.getElementById('confirmacaoSistemaInput');
+  const msg = document.getElementById('confirmacaoSistemaMsg');
+  const btnCancelar = document.getElementById('confirmacaoSistemaCancelar');
+  const btnConfirmar = document.getElementById('confirmacaoSistemaConfirmar');
+
+  confirmacaoSistemaOpcaoAtual = {
+    exigeTexto: Boolean(opcoes.exigeTexto),
+  };
+
+  if (title) title.textContent = opcoes.title || 'Confirmar ação';
+  if (subtitle) subtitle.textContent = opcoes.subtitle || '';
+  if (body) body.innerHTML = opcoes.body || '';
+  if (msg) msg.textContent = '';
+  if (btnCancelar) btnCancelar.textContent = opcoes.cancelText || 'Cancelar';
+  if (btnConfirmar) {
+    btnConfirmar.textContent = opcoes.confirmText || 'Confirmar';
+    btnConfirmar.className = `btn ${opcoes.confirmClass || 'btn-green'}`;
+  }
+  if (inputWrap) inputWrap.style.display = opcoes.input ? 'flex' : 'none';
+  if (inputLabel) inputLabel.textContent = opcoes.inputLabel || 'Motivo';
+  if (input) {
+    input.value = '';
+    input.placeholder = opcoes.inputPlaceholder || 'Descreva o motivo';
+  }
+
+  overlay.classList.add('show');
+  overlay.style.display = 'flex';
+
+  setTimeout(() => {
+    if (opcoes.input && input) input.focus();
+    else if (btnConfirmar) btnConfirmar.focus();
+  }, 50);
+
+  return new Promise((resolve) => {
+    confirmacaoSistemaResolver = resolve;
+  });
+}
+
+function resolverConfirmacaoSistema(confirmado) {
+  const overlay = document.getElementById('confirmacaoSistemaOverlay');
+  const input = document.getElementById('confirmacaoSistemaInput');
+  const msg = document.getElementById('confirmacaoSistemaMsg');
+  const valor = input ? input.value.trim() : '';
+
+  if (confirmado && confirmacaoSistemaOpcaoAtual?.exigeTexto && !valor) {
+    if (msg) msg.textContent = 'Informe o motivo antes de confirmar.';
+    if (input) input.focus();
+    return;
+  }
+
+  if (overlay) {
+    overlay.classList.remove('show');
+    overlay.style.display = 'none';
+  }
+
+  const resolver = confirmacaoSistemaResolver;
+  confirmacaoSistemaResolver = null;
+  confirmacaoSistemaOpcaoAtual = null;
+  if (resolver) resolver({ confirmado: Boolean(confirmado), valor });
+}
 
 // ---- STATE ----
 let execucaoAtualId = null;
@@ -5061,6 +5455,8 @@ let ajusteSaldoCofreTipo = 'entrada';
 let fornecedoresFinanceiroCache = [];
 let formasPagamentoFinanceiroCache = [];
 let contasAPagarFinanceiroCache = [];
+let contasAPagarFinanceiroVisiveisIds = [];
+let contasAPagarFinanceiroSelecionadasIds = new Set();
 let contasBaixarFinanceiroCache = [];
 let contasFinanceirasCache = [];
 let extratoContaFinanceiraCache = [];
@@ -5549,6 +5945,7 @@ const PERFIL_PERMISSOES = [
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'relatorio_ponto', label: 'Relatório de ponto' },
+  { key: 'ponto_ajustes', label: 'Solicitações de ajuste de ponto' },
   { key: 'relatorio_lancamentos', label: 'Relatório de tarefas' },
   { key: 'relatorio_financeiro', label: 'Relatório de contas a pagar' },
   { key: 'relatorio_ajuste_saldo', label: 'Relatório ajuste de saldo' },
@@ -5585,6 +5982,7 @@ function obterPermissoesBase(codigo) {
     checklists: true,
     bater_ponto: true,
     relatorio_ponto: false,
+    ponto_ajustes: false,
     relatorio_lancamentos: false,
     relatorio_financeiro: false,
     relatorio_ajuste_saldo: false,
@@ -5619,6 +6017,7 @@ const topTitles = {
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
+  ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
   relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
   relatorio_financeiro: ['Relatório de contas a pagar', 'Análise detalhada de títulos e pagamentos'],
   relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
@@ -5654,7 +6053,7 @@ function paginaPertenceMenuFinanceiro(pageId = '') {
 }
 
 function paginaPertenceMenuFuncionarios(pageId = '') {
-  return ['funcionarios', 'perfis'].includes(String(pageId || ''));
+  return ['funcionarios', 'ponto_ajustes', 'perfis'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuConfiguracoes(pageId = '') {
@@ -5833,6 +6232,7 @@ function abrirPagina(id, botao) {
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
+  if (id === 'ponto_ajustes') { carregarAjustesPonto(); }
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
   if (id === 'relatorio_financeiro') { carregarRelatorioFinanceiro(); }
   if (id === 'relatorio_ajuste_saldo') { carregarRelatorioAjusteSaldo(); }
@@ -5898,7 +6298,7 @@ function existeSessaoAtivaParaAtualizacao() {
 }
 
 function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
-  return ['checklists', 'execucoes', 'tarefas_rapidas', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
+  return ['checklists', 'execucoes', 'tarefas_rapidas', 'ponto_ajustes', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
 }
 
 function obterIntervaloAtualizacaoMs(pageId = obterPaginaAtivaAtual()) {
@@ -5971,6 +6371,7 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'checklists') await carregarChecklists();
     if (paginaAtiva === 'bater_ponto') await carregarBaterPonto();
     if (paginaAtiva === 'relatorio_ponto') await carregarRelatorioPonto();
+    if (paginaAtiva === 'ponto_ajustes') await carregarAjustesPonto();
     if (paginaAtiva === 'relatorio_lancamentos') await carregarRelatorioLancamentos();
     if (paginaAtiva === 'relatorio_financeiro') await carregarRelatorioFinanceiro();
     if (paginaAtiva === 'relatorio_ajuste_saldo') await carregarRelatorioAjusteSaldo();
@@ -6724,6 +7125,7 @@ function obterPermissoesUsuario() {
   if (codigo === 'MASTER' || codigo === 'ADM') {
     permissoes.bater_ponto = true;
     permissoes.relatorio_ponto = true;
+    permissoes.ponto_ajustes = true;
     permissoes.relatorio_lancamentos = true;
     permissoes.relatorio_financeiro = true;
     permissoes.relatorio_ajuste_saldo = true;
@@ -12120,6 +12522,32 @@ async function excluirFornecedorFinanceiro(id) {
   await carregarFornecedoresFinanceiro();
 }
 
+function atualizarModoEdicaoContaAPagarFinanceiro(editando = false) {
+  const titulo = document.getElementById('tituloContaAPagarFinanceiro');
+  const btnSalvar = document.getElementById('btnSalvarContaAPagarFinanceiro');
+  const btnCancelar = document.getElementById('btnCancelarContaAPagarFinanceiro');
+  const campoQtdParcelas = document.getElementById('contaQtdParcelas');
+  const campoIntervaloParcelas = document.getElementById('contaIntervaloParcelasDias');
+  const avisoEdicao = document.getElementById('msgModoEdicaoContaAPagarFinanceiro');
+
+  if (titulo) titulo.textContent = editando ? 'Editando conta a pagar' : 'Nova conta';
+  if (btnSalvar) btnSalvar.textContent = editando ? 'Salvar edição' : 'Cadastrar';
+  if (btnCancelar) btnCancelar.style.display = editando ? 'inline-flex' : 'none';
+
+  [campoQtdParcelas, campoIntervaloParcelas].forEach(campo => {
+    if (!campo) return;
+    campo.disabled = !!editando;
+    campo.style.opacity = editando ? '0.55' : '';
+    campo.title = editando ? 'Modo edição: este campo não gera novas parcelas.' : '';
+  });
+
+  if (avisoEdicao) {
+    avisoEdicao.style.display = editando ? 'block' : 'none';
+    avisoEdicao.className = editando ? 'msg ok' : 'msg';
+    avisoEdicao.textContent = editando ? 'Modo edição: este salvamento não criará novas parcelas.' : '';
+  }
+}
+
 function limparFormularioContaAPagarFinanceiro() {
   contaAPagarFinanceiroEmEdicaoId = null;
   const campoFornecedor = document.getElementById('contaFornecedorBusca');
@@ -12140,10 +12568,7 @@ function limparFormularioContaAPagarFinanceiro() {
   if (campoIntervaloParcelas) campoIntervaloParcelas.value = '';
   if (campoObservacao) campoObservacao.value = '';
 
-  const btnSalvar = document.getElementById('btnSalvarContaAPagarFinanceiro');
-  const btnCancelar = document.getElementById('btnCancelarContaAPagarFinanceiro');
-  if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
-  if (btnCancelar) btnCancelar.style.display = 'none';
+  atualizarModoEdicaoContaAPagarFinanceiro(false);
 }
 
 async function salvarContaAPagarFinanceiro() {
@@ -12159,6 +12584,7 @@ async function salvarContaAPagarFinanceiro() {
   const intervaloParcelasTexto = String(document.getElementById('contaIntervaloParcelasDias')?.value || '').trim();
   const qtdParcelas = Number.parseInt(qtdParcelasTexto, 10);
   const intervaloParcelasDias = Number.parseInt(intervaloParcelasTexto, 10);
+  const editando = !!contaAPagarFinanceiroEmEdicaoId;
 
   atualizarFornecedorSelecionadoContaAPagar();
   const fornecedorId = String(campoFornecedorId?.value || '').trim();
@@ -12180,6 +12606,107 @@ async function salvarContaAPagarFinanceiro() {
   }
   if (!observacao) {
     setMsg('msgContaAPagarFinanceiro', 'A observação do lançamento é obrigatória.', 'err');
+    return;
+  }
+
+  const valorCompra = lerValorMonetarioFinanceiro(valorTexto);
+  if (!Number.isFinite(valorCompra) || valorCompra <= 0) {
+    setMsg('msgContaAPagarFinanceiro', 'Informe um valor de compra válido.', 'err');
+    return;
+  }
+
+  const atorAuditoria = obterAtorAuditoriaAtual();
+
+  if (editando) {
+    const contaAnterior = contasAPagarFinanceiroCache.find(item => String(item.id) === String(contaAPagarFinanceiroEmEdicaoId));
+    if (!contaAnterior) {
+      console.error('Modo edição sem conta anterior carregada. Salvamento cancelado para evitar duplicação de parcelas.', { contaAPagarFinanceiroEmEdicaoId });
+      setMsg('msgContaAPagarFinanceiro', 'Não foi possível localizar a conta em edição. Recarregue a lista antes de salvar.', 'err');
+      return;
+    }
+
+    const payloadEdicaoAtual = {
+      fornecedor_id: fornecedorId,
+      data_compra: dataCompra,
+      data_vencimento: dataVencimento,
+      valor_compra: Number(valorCompra.toFixed(2)),
+      observacao,
+      qtd_parcelas: Number.parseInt(String(contaAnterior?.qtd_parcelas || 1), 10) || 1,
+      intervalo_parcelas_dias: contaAnterior?.intervalo_parcelas_dias || null,
+      numero_parcela: Number.parseInt(String(contaAnterior?.numero_parcela || 1), 10) || 1,
+    };
+
+    const payloadEdicaoGrupo = {
+      fornecedor_id: fornecedorId,
+      data_compra: dataCompra,
+      valor_compra: Number(valorCompra.toFixed(2)),
+      observacao,
+      qtd_parcelas: Number.parseInt(String(contaAnterior?.qtd_parcelas || 1), 10) || 1,
+      intervalo_parcelas_dias: contaAnterior?.intervalo_parcelas_dias || null,
+    };
+
+    let aplicarAlteracaoEmTodasParcelas = false;
+    const houveAlteracao = valoresContaAPagarAlterados(contaAnterior, payloadEdicaoAtual);
+    const grupoParcelasId = String(contaAnterior?.grupo_parcelas_id || '').trim();
+    const parcelasRelacionadas = grupoParcelasId
+      ? contasAPagarFinanceiroCache.filter(item => String(item.grupo_parcelas_id || '') === grupoParcelasId && !item.excluido_em)
+      : [];
+
+    if (houveAlteracao && grupoParcelasId && parcelasRelacionadas.length > 1) {
+      const nomeFornecedor = contaAnterior?.fornecedores?.nome || String(campoFornecedor?.value || '').trim() || 'Fornecedor';
+      const nomeLancamento = observacao || contaAnterior?.observacao || 'Lançamento sem observação';
+      const detalhesAlteracoes = descreverAlteracoesContaAPagar(contaAnterior, payloadEdicaoAtual);
+      const decisaoParcelas = await abrirModalConfirmacaoFinanceira({
+        titulo: 'DESEJA ALTERAR EM TODOS LANÇAMENTOS?',
+        subtitulo: 'Este título possui parcelas relacionadas',
+        fornecedor: nomeFornecedor,
+        lancamento: nomeLancamento,
+        detalhes: [
+          `Parcelas relacionadas: ${parcelasRelacionadas.length}`,
+          ...detalhesAlteracoes,
+        ],
+        textoSim: 'Sim, alterar todos',
+        textoNao: 'Não, alterar só este',
+      });
+      if (decisaoParcelas === 'cancelar') {
+        setMsg('msgContaAPagarFinanceiro', 'Edição cancelada. Escolha Sim ou Não para salvar a alteração.', 'err');
+        return;
+      }
+      aplicarAlteracaoEmTodasParcelas = decisaoParcelas === 'sim';
+    }
+
+    if (aplicarAlteracaoEmTodasParcelas) {
+      const { error: erroParcelas } = await sb
+        .from('contasapagar')
+        .update(payloadEdicaoGrupo)
+        .eq('grupo_parcelas_id', grupoParcelasId)
+        .is('excluido_em', null);
+
+      if (erroParcelas) {
+        setMsg('msgContaAPagarFinanceiro', `Não foi possível atualizar as parcelas relacionadas: ${mensagemErroSupabase(erroParcelas, 'erro desconhecido')}`, 'err');
+        return;
+      }
+    }
+
+    const { error } = await sb
+      .from('contasapagar')
+      .update(payloadEdicaoAtual)
+      .eq('id', contaAPagarFinanceiroEmEdicaoId)
+      .is('excluido_em', null);
+
+    if (error) {
+      if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingContasAPagarAuditoriaColumnsError(error) || isMissingColumnError(error)) {
+        setMsg('msgContaAPagarFinanceiro', 'Rode o SQL mais recente do financeiro antes de usar esta tela.', 'err');
+        return;
+      }
+      setMsg('msgContaAPagarFinanceiro', `Não foi possível salvar a edição: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+      return;
+    }
+
+    limparFormularioContaAPagarFinanceiro();
+    if (campoFornecedor) campoFornecedor.blur();
+    setMsg('msgContaAPagarFinanceiro', aplicarAlteracaoEmTodasParcelas ? 'Parcelas relacionadas atualizadas sem criar novos lançamentos.' : 'Conta atualizada sem criar novas parcelas.', 'ok');
+    carregarContasAPagarFinanceiro();
     return;
   }
 
@@ -12206,12 +12733,13 @@ async function salvarContaAPagarFinanceiro() {
     }
   }
 
-  const valorCompra = lerValorMonetarioFinanceiro(valorTexto);
-  if (!Number.isFinite(valorCompra) || valorCompra <= 0) {
-    setMsg('msgContaAPagarFinanceiro', 'Informe um valor de compra válido.', 'err');
+  if (contaAPagarFinanceiroEmEdicaoId) {
+    console.error('Proteção anti-duplicação: tentativa de inserir novas parcelas durante edição.', { contaAPagarFinanceiroEmEdicaoId });
+    setMsg('msgContaAPagarFinanceiro', 'Salvamento cancelado para evitar duplicação de parcelas. Cancele a edição e tente novamente.', 'err');
     return;
   }
 
+  const grupoParcelasId = crypto?.randomUUID ? crypto.randomUUID() : null;
   const payloadBase = {
     fornecedor_id: fornecedorId,
     data_compra: dataCompra,
@@ -12221,76 +12749,17 @@ async function salvarContaAPagarFinanceiro() {
     qtd_parcelas: qtdParcelasValidada,
     intervalo_parcelas_dias: intervaloParcelasDiasFinal,
   };
+  const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
+    ...payloadBase,
+    data_pagamento: null,
+    data_vencimento: adicionarDiasDataISOFinanceiro(dataVencimento, idx * (intervaloParcelasDiasFinal || 0)),
+    numero_parcela: idx + 1,
+    grupo_parcelas_id: grupoParcelasId,
+    criado_por_id: atorAuditoria.funcionarioId || null,
+    criado_por_nome: atorAuditoria.nome || 'Sistema',
+  }));
+  const { error } = await sb.from('contasapagar').insert(linhas);
 
-  const editando = !!contaAPagarFinanceiroEmEdicaoId;
-  const contaAnterior = editando
-    ? contasAPagarFinanceiroCache.find(item => String(item.id) === String(contaAPagarFinanceiroEmEdicaoId))
-    : null;
-  const atorAuditoria = obterAtorAuditoriaAtual();
-  let query = null;
-  if (editando) {
-    let aplicarAlteracaoEmTodasParcelas = false;
-    const houveAlteracao = valoresContaAPagarAlterados(contaAnterior, payloadBase);
-    const grupoParcelasId = String(contaAnterior?.grupo_parcelas_id || '').trim();
-    const parcelasRelacionadas = grupoParcelasId
-      ? contasAPagarFinanceiroCache.filter(item => String(item.grupo_parcelas_id || '') === grupoParcelasId && !item.excluido_em)
-      : [];
-
-    if (houveAlteracao && grupoParcelasId && parcelasRelacionadas.length > 1) {
-      const nomeFornecedor = contaAnterior?.fornecedores?.nome || String(campoFornecedor?.value || '').trim() || 'Fornecedor';
-      const nomeLancamento = observacao || contaAnterior?.observacao || 'Lançamento sem observação';
-      const detalhesAlteracoes = descreverAlteracoesContaAPagar(contaAnterior, payloadBase);
-      const decisaoParcelas = await abrirModalConfirmacaoFinanceira({
-        titulo: 'DESEJA ALTERAR EM TODOS LANÇAMENTOS?',
-        subtitulo: 'Este título possui parcelas relacionadas',
-        fornecedor: nomeFornecedor,
-        lancamento: nomeLancamento,
-        detalhes: [
-          `Parcelas relacionadas: ${parcelasRelacionadas.length}`,
-          ...detalhesAlteracoes,
-        ],
-        textoSim: 'Sim, alterar todos',
-        textoNao: 'Não, alterar só este',
-      });
-      if (decisaoParcelas === 'cancelar') {
-        setMsg('msgContaAPagarFinanceiro', 'Edição cancelada. Escolha Sim ou Não para salvar a alteração.', 'err');
-        return;
-      }
-      aplicarAlteracaoEmTodasParcelas = decisaoParcelas === 'sim';
-    }
-
-    if (aplicarAlteracaoEmTodasParcelas) {
-      const { error: erroParcelas } = await sb
-        .from('contasapagar')
-        .update(payloadBase)
-        .eq('grupo_parcelas_id', grupoParcelasId)
-        .is('excluido_em', null);
-
-      if (erroParcelas) {
-        setMsg('msgContaAPagarFinanceiro', `Não foi possível atualizar as parcelas relacionadas: ${mensagemErroSupabase(erroParcelas, 'erro desconhecido')}`, 'err');
-        return;
-      }
-    }
-
-    query = sb.from('contasapagar').update({
-      ...payloadBase,
-      numero_parcela: Number.parseInt(String(contaAnterior?.numero_parcela || 1), 10) || 1,
-    }).eq('id', contaAPagarFinanceiroEmEdicaoId).is('excluido_em', null);
-  } else {
-    const grupoParcelasId = crypto?.randomUUID ? crypto.randomUUID() : null;
-    const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
-      ...payloadBase,
-      data_pagamento: null,
-      data_vencimento: adicionarDiasDataISOFinanceiro(dataVencimento, idx * (intervaloParcelasDiasFinal || 0)),
-      numero_parcela: idx + 1,
-      grupo_parcelas_id: grupoParcelasId,
-      criado_por_id: atorAuditoria.funcionarioId || null,
-      criado_por_nome: atorAuditoria.nome || 'Sistema',
-    }));
-    query = sb.from('contasapagar').insert(linhas);
-  }
-
-  const { error } = await query;
   if (error) {
     if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingContasAPagarAuditoriaColumnsError(error) || isMissingColumnError(error)) {
       setMsg('msgContaAPagarFinanceiro', 'Rode o SQL mais recente do financeiro antes de usar esta tela.', 'err');
@@ -12302,7 +12771,7 @@ async function salvarContaAPagarFinanceiro() {
 
   limparFormularioContaAPagarFinanceiro();
   if (campoFornecedor) campoFornecedor.blur();
-  setMsg('msgContaAPagarFinanceiro', editando ? 'Conta atualizada.' : `${qtdParcelasValidada} conta(s) cadastrada(s) com sucesso.`, 'ok');
+  setMsg('msgContaAPagarFinanceiro', `${qtdParcelasValidada} conta(s) cadastrada(s) com sucesso.`, 'ok');
   carregarContasAPagarFinanceiro();
 }
 
@@ -12315,7 +12784,9 @@ function atualizarEstadoListaContasAPagarFinanceiro() {
   const lista = document.getElementById('listaContasAPagarFinanceiro');
   const btn = document.getElementById('btnToggleContasAPagarLista');
   const filtroBusca = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
-  const visivel = contasAPagarListaVisivel || !!filtroBusca;
+  const filtroCadastroInicio = String(document.getElementById('filtroContaAPagarCadastroInicio')?.value || '').trim();
+  const filtroCadastroFim = String(document.getElementById('filtroContaAPagarCadastroFim')?.value || '').trim();
+  const visivel = contasAPagarListaVisivel || !!filtroBusca || !!filtroCadastroInicio || !!filtroCadastroFim;
   if (lista) lista.hidden = !visivel;
   if (btn) {
     btn.textContent = visivel ? 'Ocultar contas' : 'Exibir contas';
@@ -12328,15 +12799,131 @@ function toggleListaContasAPagarFinanceiro() {
   atualizarEstadoListaContasAPagarFinanceiro();
 }
 
+function obterDataISOFiltroContaAPagar(id) {
+  const valor = String(document.getElementById(id)?.value || '').trim();
+  if (!valor) return '';
+  return converterDataBRParaISOFinanceiro(valor) || valor.slice(0, 10);
+}
+
+function dentroDoPeriodoCadastroContaAPagar(item, dataInicio = '', dataFim = '') {
+  if (!dataInicio && !dataFim) return true;
+  const dataCadastro = String(item?.created_at || '').trim().slice(0, 10);
+  if (!dataCadastro) return false;
+  if (dataInicio && dataCadastro < dataInicio) return false;
+  if (dataFim && dataCadastro > dataFim) return false;
+  return true;
+}
+
 function limparFiltroContasAPagarFinanceiro() {
   const busca = document.getElementById('filtroContaAPagarBusca');
+  const cadastroInicio = document.getElementById('filtroContaAPagarCadastroInicio');
+  const cadastroFim = document.getElementById('filtroContaAPagarCadastroFim');
   const status = document.getElementById('filtroContaAPagarStatus');
   if (busca) busca.value = '';
+  if (cadastroInicio) cadastroInicio.value = '';
+  if (cadastroFim) cadastroFim.value = '';
   if (status) {
     status.value = '';
     status.selectedIndex = 0;
   }
   contasAPagarListaVisivel = false;
+  contasAPagarFinanceiroSelecionadasIds.clear();
+  contasAPagarFinanceiroVisiveisIds = [];
+  atualizarResumoSelecaoContasAPagarFinanceiro();
+  carregarContasAPagarFinanceiro();
+}
+
+function atualizarResumoSelecaoContasAPagarFinanceiro() {
+  const totalVisiveis = contasAPagarFinanceiroVisiveisIds.length;
+  const selecionadosVisiveis = contasAPagarFinanceiroVisiveisIds.filter(id => contasAPagarFinanceiroSelecionadasIds.has(String(id)));
+  const qtdSelecionados = selecionadosVisiveis.length;
+  const btnSelecionar = document.getElementById('btnSelecionarTodasContasAPagarFinanceiro');
+  const btnExcluir = document.getElementById('btnExcluirContasAPagarSelecionadasFinanceiro');
+  const resumo = document.getElementById('resumoSelecaoContasAPagarFinanceiro');
+  if (btnSelecionar) {
+    btnSelecionar.textContent = totalVisiveis && qtdSelecionados === totalVisiveis ? 'Desmarcar todos' : 'Marcar todos';
+    btnSelecionar.disabled = !totalVisiveis;
+  }
+  if (btnExcluir) btnExcluir.disabled = !qtdSelecionados;
+  if (resumo) {
+    resumo.textContent = qtdSelecionados
+      ? `${qtdSelecionados} conta(s) selecionada(s) de ${totalVisiveis}.`
+      : (totalVisiveis ? `${totalVisiveis} conta(s) no filtro. Nenhuma selecionada.` : 'Nenhuma conta selecionada.');
+  }
+}
+
+function atualizarSelecaoContaAPagarFinanceiro(id, marcado) {
+  const chave = String(id || '');
+  if (!chave) return;
+  if (marcado) contasAPagarFinanceiroSelecionadasIds.add(chave);
+  else contasAPagarFinanceiroSelecionadasIds.delete(chave);
+  atualizarResumoSelecaoContasAPagarFinanceiro();
+}
+
+function toggleSelecionarTodasContasAPagarFinanceiro() {
+  if (!contasAPagarFinanceiroVisiveisIds.length) return;
+  const todosSelecionados = contasAPagarFinanceiroVisiveisIds.every(id => contasAPagarFinanceiroSelecionadasIds.has(String(id)));
+  contasAPagarFinanceiroVisiveisIds.forEach(id => {
+    const chave = String(id);
+    if (todosSelecionados) contasAPagarFinanceiroSelecionadasIds.delete(chave);
+    else contasAPagarFinanceiroSelecionadasIds.add(chave);
+  });
+  document.querySelectorAll('.checkbox-conta-apagar-financeiro').forEach(input => {
+    const id = input.getAttribute('data-conta-id');
+    input.checked = contasAPagarFinanceiroSelecionadasIds.has(String(id));
+  });
+  atualizarResumoSelecaoContasAPagarFinanceiro();
+}
+
+async function excluirContasAPagarSelecionadasFinanceiro() {
+  const idsSelecionados = contasAPagarFinanceiroVisiveisIds
+    .filter(id => contasAPagarFinanceiroSelecionadasIds.has(String(id)))
+    .map(String);
+
+  if (!idsSelecionados.length) {
+    setMsg('msgContaAPagarFinanceiro', 'Selecione pelo menos uma conta para excluir.', 'err');
+    return;
+  }
+
+  const confirmacaoTela = confirm(`Excluir ${idsSelecionados.length} conta(s) selecionada(s)? Esta ação ficará registrada no relatório.`);
+  if (!confirmacaoTela) return;
+
+  const operador = obterFuncionarioOperadorAtual();
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: operador,
+    titulo: 'Excluir contas selecionadas',
+    subtitulo: `Confirme o PIN para excluir ${idsSelecionados.length} conta(s) a pagar selecionada(s).`,
+    textoAcao: 'Excluir selecionadas',
+  });
+
+  if (!confirmacao) return;
+
+  const { data, error } = await sb
+    .from('contasapagar')
+    .update({
+      excluido_em: confirmacao.confirmadoEm,
+      excluido_por_id: confirmacao.funcionarioId,
+      excluido_por_nome: confirmacao.nomeFuncionario,
+    })
+    .in('id', idsSelecionados)
+    .is('excluido_em', null)
+    .select('id');
+
+  if (error) {
+    if (isMissingContasAPagarAuditoriaColumnsError(error)) {
+      setMsg('msgContaAPagarFinanceiro', 'Rode a migration de auditoria do contas a pagar antes de excluir.', 'err');
+      return;
+    }
+    setMsg('msgContaAPagarFinanceiro', `Não foi possível excluir as selecionadas: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  const excluidas = Array.isArray(data) ? data.length : 0;
+  if (contaAPagarFinanceiroEmEdicaoId && idsSelecionados.includes(String(contaAPagarFinanceiroEmEdicaoId))) {
+    limparFormularioContaAPagarFinanceiro();
+  }
+  idsSelecionados.forEach(id => contasAPagarFinanceiroSelecionadasIds.delete(String(id)));
+  setMsg('msgContaAPagarFinanceiro', `${excluidas} conta(s) excluída(s) com sucesso.`, 'ok');
   carregarContasAPagarFinanceiro();
 }
 
@@ -12344,7 +12931,9 @@ async function carregarContasAPagarFinanceiro() {
   const lista = document.getElementById('listaContasAPagarFinanceiro');
   if (!lista) return;
   const filtroBuscaBruto = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
-  if (filtroBuscaBruto) contasAPagarListaVisivel = true;
+  const filtroCadastroInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarCadastroInicio');
+  const filtroCadastroFim = obterDataISOFiltroContaAPagar('filtroContaAPagarCadastroFim');
+  if (filtroBuscaBruto || filtroCadastroInicio || filtroCadastroFim) contasAPagarListaVisivel = true;
   atualizarEstadoListaContasAPagarFinanceiro();
   lista.innerHTML = '<div class="empty">Carregando...</div>';
 
@@ -12415,12 +13004,19 @@ async function carregarContasAPagarFinanceiro() {
       .some(valor => String(valor || '').includes(filtroBuscaDigitos));
     const bateBusca = !filtroBusca || bateBuscaTexto || bateBuscaNumero;
     const bateStatus = !filtroStatus || filtroStatus === status;
-    return bateBusca && bateStatus;
+    const bateCadastro = dentroDoPeriodoCadastroContaAPagar(item, filtroCadastroInicio, filtroCadastroFim);
+    return bateBusca && bateStatus && bateCadastro;
   });
+
+  contasAPagarFinanceiroVisiveisIds = itensFiltrados.map(item => String(item.id));
+  contasAPagarFinanceiroSelecionadasIds = new Set(
+    Array.from(contasAPagarFinanceiroSelecionadasIds).filter(id => contasAPagarFinanceiroVisiveisIds.includes(String(id)))
+  );
 
   if (!itensFiltrados.length) {
     lista.innerHTML = '<div class="empty">Nenhuma conta encontrada para o filtro informado.</div>';
     atualizarEstadoListaContasAPagarFinanceiro();
+    atualizarResumoSelecaoContasAPagarFinanceiro();
     return;
   }
 
@@ -12430,9 +13026,13 @@ async function carregarContasAPagarFinanceiro() {
     return `
       <div class="item">
         <div class="item-info">
-          <div class="item-nome">${nomeFornecedor}</div>
+          <label class="item-nome" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input class="checkbox-conta-apagar-financeiro" data-conta-id="${item.id}" type="checkbox" ${contasAPagarFinanceiroSelecionadasIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoContaAPagarFinanceiro('${item.id}', this.checked)">
+            <span>${nomeFornecedor}</span>
+          </label>
           <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
           <div class="item-detalhe">Valor: ${formatarMoedaBRFinanceiro(item.valor_compra)} · Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}${item.intervalo_parcelas_dias ? ` · intervalo ${item.intervalo_parcelas_dias} dia(s)` : ''}</div>
+          <div class="item-detalhe">Cadastro: ${item.created_at ? fmtDate(item.created_at) : '-'}</div>
           <div class="item-detalhe">Obs.: ${item.observacao || '-'}</div>
         </div>
         <div class="item-actions">
@@ -12444,6 +13044,7 @@ async function carregarContasAPagarFinanceiro() {
     `;
   }).join('') + '</div>';
   atualizarEstadoListaContasAPagarFinanceiro();
+  atualizarResumoSelecaoContasAPagarFinanceiro();
 }
 
 function editarContaAPagarFinanceiro(id) {
@@ -12465,10 +13066,7 @@ function editarContaAPagarFinanceiro(id) {
   document.getElementById('contaObservacao').value = item.observacao || '';
   document.getElementById('contaQtdParcelas').value = item.qtd_parcelas ? String(item.qtd_parcelas) : '';
   document.getElementById('contaIntervaloParcelasDias').value = item.intervalo_parcelas_dias ? String(item.intervalo_parcelas_dias) : '';
-  const btnSalvar = document.getElementById('btnSalvarContaAPagarFinanceiro');
-  const btnCancelar = document.getElementById('btnCancelarContaAPagarFinanceiro');
-  if (btnSalvar) btnSalvar.textContent = 'Salvar';
-  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  atualizarModoEdicaoContaAPagarFinanceiro(true);
   setMsg('msgContaAPagarFinanceiro', `Editando conta de ${item.fornecedores?.nome || 'fornecedor'}.`, 'ok');
 }
 
@@ -12514,6 +13112,7 @@ async function excluirContaAPagarFinanceiro(id) {
     carregarContasAPagarFinanceiro();
     return;
   }
+  contasAPagarFinanceiroSelecionadasIds.delete(String(id));
   if (contaAPagarFinanceiroEmEdicaoId === id) limparFormularioContaAPagarFinanceiro();
   setMsg('msgContaAPagarFinanceiro', 'Conta excluída com sucesso.', 'ok');
   carregarContasAPagarFinanceiro();
@@ -15672,7 +16271,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     .from('ponto_registros')
     .select('id, funcionario_id, entrada_em, saida_em, created_at, funcionarios(nome)')
     .eq('data_ponto', hojeLocal)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: true });
 
   const id = String(funcionarioId || '');
   if (id) {
@@ -15697,20 +16296,18 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   }
 
   const ids = rows.map(item => item.id).filter(Boolean);
-  let intervalosData = [];
   const intervalosPorRegistro = {};
   if (ids.length) {
     const { data: dataInt, error: errInt } = await sb
       .from('ponto_intervalos')
-      .select('ponto_registro_id, inicio_em, retorno_em')
+      .select('ponto_registro_id, inicio_em, retorno_em, ordem')
       .in('ponto_registro_id', ids);
 
     if (errInt && !isMissingTimeClockIntervalsTableError(errInt)) {
       container.innerHTML = `<div class="empty">Erro ao carregar intervalos de ponto: ${mensagemErroSupabase(errInt, 'erro desconhecido')}.</div>`;
       return;
     }
-    intervalosData = dataInt || [];
-    intervalosData.forEach(item => {
+    (dataInt || []).forEach(item => {
       const chave = String(item.ponto_registro_id || '');
       if (!chave) return;
       if (!intervalosPorRegistro[chave]) intervalosPorRegistro[chave] = [];
@@ -15718,67 +16315,138 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     });
   }
 
-  const nomePadrao = 'Funcionário';
+  const escapeHtml = (valor) => String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 
   const formatarHora = (valorIso) => {
-    if (!valorIso) return '-';
+    if (!valorIso) return '--:--';
     const data = new Date(valorIso);
-    if (Number.isNaN(data.getTime())) return '-';
+    if (Number.isNaN(data.getTime())) return '--:--';
     return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const statusPorFuncionario = new Map();
+  const ts = (valorIso) => {
+    if (!valorIso) return 0;
+    const data = new Date(valorIso);
+    return Number.isNaN(data.getTime()) ? 0 : data.getTime();
+  };
+
+  const montarPeriodos = (registro, intervalos) => {
+    const ordenados = [...(intervalos || [])]
+      .filter(item => item && item.inicio_em)
+      .sort((a, b) => (Number(a.ordem || 0) - Number(b.ordem || 0)) || (ts(a.inicio_em) - ts(b.inicio_em)));
+
+    const periodos = [];
+    let entradaAtual = registro.entrada_em || null;
+
+    ordenados.forEach(intervalo => {
+      if (entradaAtual) {
+        periodos.push({ entrada: entradaAtual, saida: intervalo.inicio_em || null, aberto: false });
+      }
+      entradaAtual = intervalo.retorno_em || null;
+    });
+
+    if (entradaAtual || registro.saida_em) {
+      periodos.push({
+        entrada: entradaAtual || registro.entrada_em || null,
+        saida: registro.saida_em || null,
+        aberto: !registro.saida_em,
+      });
+    }
+
+    if (!periodos.length && registro.entrada_em) {
+      periodos.push({ entrada: registro.entrada_em, saida: registro.saida_em || null, aberto: !registro.saida_em });
+    }
+
+    return periodos;
+  };
+
+  const porFuncionario = new Map();
   rows.forEach(registro => {
     const funcionarioIdAtual = String(registro.funcionario_id || '');
-    if (!funcionarioIdAtual || statusPorFuncionario.has(funcionarioIdAtual)) return;
+    if (!funcionarioIdAtual) return;
 
-    const nome = registro.funcionarios?.nome || relatorioPontoFuncionarioCache[funcionarioIdAtual] || nomePadrao;
+    const nome = registro.funcionarios?.nome || relatorioPontoFuncionarioCache[funcionarioIdAtual] || 'Funcionário';
     const intervalos = intervalosPorRegistro[String(registro.id)] || [];
-    const intervaloAberto = intervalos.find(item => item.inicio_em && !item.retorno_em) || null;
-    const aberto = !!intervaloAberto || !registro.saida_em;
+    const resumo = obterResumoJornadaPonto(registro, intervalos);
+    const periodos = montarPeriodos(registro, intervalos);
 
-    const eventos = [
-      registro.entrada_em,
-      registro.saida_em,
-      ...intervalos.map(item => item.inicio_em),
-      ...intervalos.map(item => item.retorno_em),
-    ]
-      .filter(Boolean)
-      .map(item => ({ bruto: item, ts: new Date(item).getTime() }))
-      .filter(item => !Number.isNaN(item.ts))
-      .sort((a, b) => b.ts - a.ts);
+    if (!porFuncionario.has(funcionarioIdAtual)) {
+      porFuncionario.set(funcionarioIdAtual, {
+        nome,
+        periodos: [],
+        totalMinutos: 0,
+        aberto: false,
+        ultimaEntradaTs: 0,
+        ultimaSaidaTs: 0,
+        ultimaEntrada: null,
+        ultimaSaida: null,
+      });
+    }
 
-    const ultimaBatida = eventos[0]?.bruto || null;
-    const textoStatus = aberto ? 'Aberto' : 'Fechado';
-    const classeStatus = aberto ? 'tag tag-amber' : 'tag tag-green';
-    const rotuloHora = aberto ? 'Última batida' : 'Fechado às';
+    const item = porFuncionario.get(funcionarioIdAtual);
+    item.totalMinutos += Number(resumo?.totalMinutos || 0);
+    item.aberto = item.aberto || !registro.saida_em || !!intervalos.find(inter => inter.inicio_em && !inter.retorno_em);
 
-    statusPorFuncionario.set(funcionarioIdAtual, {
-      nome,
-      textoStatus,
-      classeStatus,
-      rotuloHora,
-      hora: formatarHora(ultimaBatida),
+    periodos.forEach(periodo => {
+      item.periodos.push(periodo);
+      const entradaTs = ts(periodo.entrada);
+      const saidaTs = ts(periodo.saida);
+      if (entradaTs > item.ultimaEntradaTs) {
+        item.ultimaEntradaTs = entradaTs;
+        item.ultimaEntrada = periodo.entrada;
+      }
+      if (saidaTs > item.ultimaSaidaTs) {
+        item.ultimaSaidaTs = saidaTs;
+        item.ultimaSaida = periodo.saida;
+      }
     });
   });
 
-  const listaStatus = Array.from(statusPorFuncionario.values()).filter(item => item.textoStatus === 'Aberto');
+  const listaStatus = Array.from(porFuncionario.values())
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
   if (!listaStatus.length) {
-    container.innerHTML = '<div class="empty">Nenhum ponto em aberto no momento.</div>';
+    container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
     return;
   }
 
-  container.innerHTML = '<div class="lista">' + listaStatus.map(item => `
-    <div class="item">
-      <div class="item-info">
-        <div class="item-nome">${item.nome}</div>
-        <div class="item-detalhe">${item.rotuloHora}: ${item.hora}</div>
+  container.innerHTML = '<div class="ponto-resumo-lista">' + listaStatus.map(item => {
+    const periodosHtml = item.periodos.length
+      ? item.periodos
+          .sort((a, b) => ts(a.entrada) - ts(b.entrada))
+          .map(periodo => {
+            const aberto = !periodo.saida || periodo.aberto;
+            return `
+              <span class="ponto-periodo-chip${aberto ? ' aberto' : ''}">
+                <span class="ponto-hora-entrada">${formatarHora(periodo.entrada)}</span>
+                <span>→</span>
+                <span class="${aberto ? 'ponto-hora-aberto' : 'ponto-hora-saida'}">${aberto ? 'Aberto agora' : formatarHora(periodo.saida)}</span>
+              </span>
+            `;
+          }).join('')
+      : '<span class="ponto-periodo-chip">Sem batidas detalhadas</span>';
+
+    const statusClasse = item.aberto ? 'tag tag-amber' : 'tag tag-green';
+    const statusTexto = item.aberto ? 'Aberto agora' : 'Fechado';
+
+    return `
+      <div class="ponto-resumo-linha">
+        <div class="ponto-resumo-nome">${escapeHtml(item.nome)}</div>
+        <div class="ponto-resumo-sequencia">${periodosHtml}</div>
+        <div class="ponto-resumo-metricas">
+          <div>Total: <strong>${formatarDuracaoMinutos(item.totalMinutos)}</strong></div>
+          <div>Última entrada: ${formatarHora(item.ultimaEntrada)}</div>
+          <div>Última saída: ${item.ultimaSaida ? formatarHora(item.ultimaSaida) : '-'}</div>
+        </div>
+        <div class="ponto-resumo-tag"><span class="${statusClasse}">${statusTexto}</span></div>
       </div>
-      <div class="item-actions">
-        <span class="${item.classeStatus}">${item.textoStatus}</span>
-      </div>
-    </div>
-  `).join('') + '</div>';
+    `;
+  }).join('') + '</div>';
 }
 
 async function carregarBaterPonto() {
@@ -15960,6 +16628,446 @@ async function registrarPontoFuncionario() {
   if (obterPaginaAtivaAtual() === 'relatorio_ponto') {
     await carregarRelatorioPonto();
   }
+}
+
+
+function abrirModalSolicitarAjustePonto() {
+  const modal = document.getElementById('modalSolicitarAjustePonto');
+  if (!modal) return;
+  const data = document.getElementById('ajustePontoData');
+  const horario = document.getElementById('ajustePontoHorario');
+  const motivo = document.getElementById('ajustePontoMotivo');
+  const pin = document.getElementById('ajustePontoPin');
+  if (data) data.value = dataLocalISO();
+  if (horario) horario.value = '';
+  if (motivo) motivo.value = '';
+  if (pin) pin.value = '';
+  setMsg('msgSolicitarAjustePonto', '', '');
+  modal.hidden = false;
+  setTimeout(() => pin?.focus(), 80);
+}
+
+function fecharModalSolicitarAjustePonto() {
+  const modal = document.getElementById('modalSolicitarAjustePonto');
+  if (modal) modal.hidden = true;
+  setMsg('msgSolicitarAjustePonto', '', '');
+}
+
+function isMissingPontoAjustesTableError(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  return error?.code === 'PGRST205' || msg.includes('missing relation "public.ponto_ajustes_solicitacoes"') || msg.includes('ponto_ajustes_solicitacoes');
+}
+
+async function salvarSolicitacaoAjustePonto() {
+  const pin = String(document.getElementById('ajustePontoPin')?.value || '').trim();
+  const dataAjuste = String(document.getElementById('ajustePontoData')?.value || '').trim();
+  const horarioAjuste = String(document.getElementById('ajustePontoHorario')?.value || '').trim();
+  const motivo = String(document.getElementById('ajustePontoMotivo')?.value || '').trim();
+
+  if (!pin || !dataAjuste || !horarioAjuste || !motivo) {
+    setMsg('msgSolicitarAjustePonto', 'Preencha PIN, data, horário e motivo.', 'err');
+    return;
+  }
+
+  const funcionario = await obterFuncionarioAtivoPorPin(pin);
+  if (!funcionario?.id) {
+    setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
+    return;
+  }
+
+  setMsg('msgSolicitarAjustePonto', 'Enviando solicitação...', 'ok');
+  const { error } = await sb
+    .from('ponto_ajustes_solicitacoes')
+    .insert([{
+      funcionario_id: funcionario.id,
+      funcionario_nome: funcionario.nome || 'Funcionário',
+      data_ajuste: dataAjuste,
+      horario_ajuste: horarioAjuste,
+      motivo,
+      status: 'pendente',
+    }]);
+
+  if (error) {
+    if (isMissingPontoAjustesTableError(error)) {
+      setMsg('msgSolicitarAjustePonto', 'Tabela ponto_ajustes_solicitacoes não encontrada. Confirme se o SQL foi executado.', 'err');
+      return;
+    }
+    setMsg('msgSolicitarAjustePonto', `Erro ao enviar solicitação: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgPonto', `Solicitação enviada para aprovação do administrador (${funcionario.nome || 'Funcionário'}).`, 'ok');
+  fecharModalSolicitarAjustePonto();
+  if (obterPaginaAtivaAtual() === 'ponto_ajustes') await carregarAjustesPonto();
+}
+
+function formatarDataHoraSolicitacaoPonto(valor) {
+  if (!valor) return '-';
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function formatarHorarioAjustePonto(valor) {
+  return String(valor || '').slice(0, 5) || '-';
+}
+
+function obterNomeAdminAtual() {
+  return usuarioSistemaLogado?.nome || usuarioSistemaLogado?.email || 'Administrador';
+}
+
+function obterIdAdminAtual() {
+  return usuarioSistemaLogado?.id || null;
+}
+
+function resetFiltroAjustesPonto() {
+  const status = document.getElementById('filtroPontoAjusteStatus');
+  const dataInicio = document.getElementById('filtroPontoAjusteDataInicio');
+  const dataFim = document.getElementById('filtroPontoAjusteDataFim');
+  if (status) status.value = 'pendente';
+  if (dataInicio) dataInicio.value = '';
+  if (dataFim) dataFim.value = '';
+  carregarAjustesPonto();
+}
+
+async function carregarAjustesPonto() {
+  const lista = document.getElementById('listaPontoAjustes');
+  if (!lista) return;
+  if (!usuarioPodeAcessar('ponto_ajustes')) {
+    lista.innerHTML = '<div class="empty">Você não tem permissão para acessar os ajustes de ponto.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="empty">Carregando solicitações...</div>';
+  const statusFiltro = String(document.getElementById('filtroPontoAjusteStatus')?.value || 'pendente');
+  const dataInicio = String(document.getElementById('filtroPontoAjusteDataInicio')?.value || '');
+  const dataFim = String(document.getElementById('filtroPontoAjusteDataFim')?.value || '');
+
+  let query = sb
+    .from('ponto_ajustes_solicitacoes')
+    .select('*')
+    .order('solicitado_em', { ascending: false });
+
+  if (statusFiltro && statusFiltro !== 'todos') query = query.eq('status', statusFiltro);
+  if (dataInicio) query = query.gte('data_ajuste', dataInicio);
+  if (dataFim) query = query.lte('data_ajuste', dataFim);
+
+  const { data, error } = await query;
+  if (error) {
+    if (isMissingPontoAjustesTableError(error)) {
+      lista.innerHTML = '<div class="empty">Tabela ponto_ajustes_solicitacoes não encontrada. Confirme se o SQL foi executado.</div>';
+      return;
+    }
+    lista.innerHTML = `<div class="empty">Erro ao carregar ajustes: ${mensagemErroSupabase(error, 'erro desconhecido')}.</div>`;
+    return;
+  }
+
+  const itens = data || [];
+  if (!itens.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma solicitação encontrada para os filtros atuais.</div>';
+    return;
+  }
+
+  lista.innerHTML = '<div class="lista">' + itens.map(item => {
+    const status = String(item.status || 'pendente');
+    const tagClasse = status === 'aprovado' ? 'tag tag-green' : status === 'recusado' ? 'tag tag-red' : 'tag tag-amber';
+    const acoes = status === 'pendente' ? `
+      <button class="btn btn-green" type="button" onclick="aprovarAjustePonto('${item.id}')">Aprovar</button>
+      <button class="btn btn-red" type="button" onclick="recusarAjustePonto('${item.id}')">Recusar</button>
+    ` : '';
+    const detalheFinal = status === 'aprovado'
+      ? `Operador master que aprovou: ${item.aprovado_por_nome || '-'} · ${formatarDataHoraSolicitacaoPonto(item.aprovado_em)}`
+      : status === 'recusado'
+        ? `Operador master que recusou: ${item.recusado_por_nome || '-'} · ${formatarDataHoraSolicitacaoPonto(item.recusado_em)} · Motivo da recusa: ${item.motivo_recusa || '-'}`
+        : 'Aguardando aprovação do administrador';
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${item.funcionario_nome || 'Funcionário'}</div>
+          <div class="item-detalhe">Data: ${formatarDataPonto(item.data_ajuste)} · Horário: ${formatarHorarioAjustePonto(item.horario_ajuste)}</div>
+          <div class="item-detalhe">Motivo: ${item.motivo || '-'}</div>
+          <div class="item-detalhe">Solicitado em: ${formatarDataHoraSolicitacaoPonto(item.solicitado_em)}</div>
+          <div class="item-detalhe">${detalheFinal}</div>
+        </div>
+        <div class="item-actions">
+          <span class="${tagClasse}">${status.toUpperCase()}</span>
+          ${acoes}
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+function montarIsoAjustePonto(dataAjuste, horarioAjuste) {
+  const data = String(dataAjuste || '').trim();
+  const hora = String(horarioAjuste || '').slice(0, 5);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !/^\d{2}:\d{2}$/.test(hora)) return null;
+  const d = new Date(`${data}T${hora}:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+async function aplicarAjusteAprovadoNoPonto(solicitacao) {
+  const funcionarioId = solicitacao?.funcionario_id;
+  const dataAjuste = solicitacao?.data_ajuste;
+  const horarioIso = montarIsoAjustePonto(dataAjuste, solicitacao?.horario_ajuste);
+  if (!funcionarioId || !dataAjuste || !horarioIso) {
+    return { ok: false, mensagem: 'Solicitação sem funcionário, data ou horário válidos.' };
+  }
+
+  const normalizarIso = (valor) => {
+    if (!valor) return '';
+    const d = new Date(valor);
+    return Number.isNaN(d.getTime()) ? '' : d.toISOString();
+  };
+
+  const ordenarUnicos = (valores = []) => {
+    const mapa = new Map();
+    valores
+      .map(normalizarIso)
+      .filter(Boolean)
+      .forEach((iso) => mapa.set(iso, iso));
+    return [...mapa.values()].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  };
+
+  const { data: registros, error: erroBusca } = await sb
+    .from('ponto_registros')
+    .select('*')
+    .eq('funcionario_id', funcionarioId)
+    .eq('data_ponto', dataAjuste)
+    .order('created_at', { ascending: true });
+
+  if (erroBusca) {
+    if (isMissingTimeClockTableError(erroBusca)) {
+      return { ok: false, mensagem: 'Tabela ponto_registros não encontrada.' };
+    }
+    return { ok: false, mensagem: mensagemErroSupabase(erroBusca, 'erro desconhecido') };
+  }
+
+  const registro = (registros || [])[0] || null;
+  if (!registro) {
+    const { error } = await sb
+      .from('ponto_registros')
+      .insert([{
+        funcionario_id: funcionarioId,
+        data_ponto: dataAjuste,
+        entrada_em: horarioIso,
+        saida_em: null,
+      }]);
+    if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
+    return { ok: true, mensagem: 'Criado registro de entrada com o horário aprovado. O ponto ficou aberto até a próxima saída.' };
+  }
+
+  const registrosExtras = (registros || []).filter(item => item.id !== registro.id);
+  if (registrosExtras.length) {
+    const extrasIds = registrosExtras.map(item => item.id).filter(Boolean);
+    const { error: erroRemoveExtras } = await sb
+      .from('ponto_registros')
+      .update({ saida_em: null })
+      .in('id', extrasIds);
+    if (erroRemoveExtras) {
+      return { ok: false, mensagem: `Existem registros duplicados no mesmo dia e não foi possível normalizar: ${mensagemErroSupabase(erroRemoveExtras, 'erro desconhecido')}` };
+    }
+  }
+
+  const { data: intervalos, error: erroIntervalos } = await sb
+    .from('ponto_intervalos')
+    .select('id, ordem, inicio_em, retorno_em')
+    .eq('ponto_registro_id', registro.id)
+    .order('ordem', { ascending: true });
+
+  if (erroIntervalos && !isMissingTimeClockIntervalsTableError(erroIntervalos)) {
+    return { ok: false, mensagem: mensagemErroSupabase(erroIntervalos, 'erro desconhecido') };
+  }
+
+  if (isMissingTimeClockIntervalsTableError(erroIntervalos)) {
+    if (!registro.entrada_em) {
+      const { error } = await sb
+        .from('ponto_registros')
+        .update({ entrada_em: horarioIso, saida_em: null })
+        .eq('id', registro.id);
+      if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
+      return { ok: true, mensagem: 'Entrada ajustada com o horário aprovado.' };
+    }
+    if (!registro.saida_em) {
+      const { error } = await sb
+        .from('ponto_registros')
+        .update({ saida_em: horarioIso })
+        .eq('id', registro.id);
+      if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
+      return { ok: true, mensagem: 'Saída ajustada com o horário aprovado. O ponto ficou fechado.' };
+    }
+    return { ok: false, mensagem: 'Tabela ponto_intervalos não encontrada para reorganizar múltiplas batidas no mesmo dia.' };
+  }
+
+  const listaIntervalos = intervalos || [];
+  const batidas = ordenarUnicos([
+    registro.entrada_em,
+    ...listaIntervalos.flatMap(item => [item.inicio_em, item.retorno_em]),
+    registro.saida_em,
+    horarioIso,
+  ]);
+
+  if (!batidas.length) {
+    return { ok: false, mensagem: 'Não foi possível montar a sequência de batidas do dia.' };
+  }
+
+  const entradaEm = batidas[0];
+  const saidaEm = batidas.length % 2 === 0 ? batidas[batidas.length - 1] : null;
+  const novosIntervalos = [];
+  const limiteIntervalos = saidaEm ? batidas.length - 1 : batidas.length;
+  for (let i = 1; i + 1 < limiteIntervalos; i += 2) {
+    novosIntervalos.push({
+      ponto_registro_id: registro.id,
+      ordem: novosIntervalos.length + 1,
+      inicio_em: batidas[i],
+      retorno_em: batidas[i + 1],
+    });
+  }
+
+  const { error: erroAtualizaRegistro } = await sb
+    .from('ponto_registros')
+    .update({
+      entrada_em: entradaEm,
+      saida_em: saidaEm,
+    })
+    .eq('id', registro.id);
+  if (erroAtualizaRegistro) {
+    return { ok: false, mensagem: mensagemErroSupabase(erroAtualizaRegistro, 'erro desconhecido') };
+  }
+
+  if (listaIntervalos.length) {
+    const { error: erroLimpaIntervalos } = await sb
+      .from('ponto_intervalos')
+      .delete()
+      .eq('ponto_registro_id', registro.id);
+    if (erroLimpaIntervalos) {
+      return { ok: false, mensagem: `Registro principal atualizado, mas não foi possível reorganizar os intervalos: ${mensagemErroSupabase(erroLimpaIntervalos, 'erro desconhecido')}` };
+    }
+  }
+
+  if (novosIntervalos.length) {
+    const { error: erroInsereIntervalos } = await sb
+      .from('ponto_intervalos')
+      .insert(novosIntervalos);
+    if (erroInsereIntervalos) {
+      return { ok: false, mensagem: `Registro principal atualizado, mas não foi possível recriar os intervalos: ${mensagemErroSupabase(erroInsereIntervalos, 'erro desconhecido')}` };
+    }
+  }
+
+  const statusFinal = saidaEm ? 'fechado' : 'aberto';
+  const totalPeriodos = Math.ceil(batidas.length / 2);
+  return {
+    ok: true,
+    mensagem: `Ajuste aplicado na sequência do dia. O ponto ficou ${statusFinal}, com ${totalPeriodos} período(s) registrado(s).`,
+  };
+}
+async function aprovarAjustePonto(id) {
+  if (!usuarioPodeAcessar('ponto_ajustes')) return;
+  const operadorMasterNome = obterNomeAdminAtual();
+  if (!operadorMasterNome) {
+    setMsg('msgPontoAjustes', 'Não foi possível identificar o operador master logado.', 'err');
+    return;
+  }
+  const confirmacao = await abrirConfirmacaoSistema({
+    title: 'Aprovar ajuste de ponto',
+    subtitle: `Operador master: ${operadorMasterNome}`,
+    body: 'Deseja aprovar esta solicitação e aplicar o horário no ponto do funcionário?',
+    confirmText: 'Aprovar ajuste',
+    cancelText: 'Cancelar',
+    confirmClass: 'btn-green',
+  });
+  if (!confirmacao.confirmado) return;
+
+  const { data: solicitacao, error: erroBusca } = await sb
+    .from('ponto_ajustes_solicitacoes')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (erroBusca || !solicitacao) {
+    setMsg('msgPontoAjustes', `Não foi possível localizar a solicitação: ${mensagemErroSupabase(erroBusca, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  if (String(solicitacao.status || '') !== 'pendente') {
+    setMsg('msgPontoAjustes', 'Esta solicitação já foi analisada.', 'err');
+    await carregarAjustesPonto();
+    return;
+  }
+
+  const resultado = await aplicarAjusteAprovadoNoPonto(solicitacao);
+  if (!resultado.ok) {
+    setMsg('msgPontoAjustes', `Não foi possível aplicar o ajuste no ponto: ${resultado.mensagem}`, 'err');
+    return;
+  }
+
+  const { error: erroUpdate } = await sb
+    .from('ponto_ajustes_solicitacoes')
+    .update({
+      status: 'aprovado',
+      aprovado_em: new Date().toISOString(),
+      aprovado_por_id: obterIdAdminAtual(),
+      aprovado_por_nome: operadorMasterNome,
+    })
+    .eq('id', id);
+
+  if (erroUpdate) {
+    setMsg('msgPontoAjustes', `O ponto foi aplicado, mas não consegui atualizar a solicitação: ${mensagemErroSupabase(erroUpdate, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgPontoAjustes', `Ajuste aprovado. ${resultado.mensagem}`, 'ok');
+  await carregarAjustesPonto();
+  await carregarResumoPontoHoje();
+  await carregarHorasDashboard();
+  if (obterPaginaAtivaAtual() === 'relatorio_ponto') await carregarRelatorioPonto();
+}
+
+async function recusarAjustePonto(id) {
+  if (!usuarioPodeAcessar('ponto_ajustes')) return;
+  const operadorMasterNome = obterNomeAdminAtual();
+  if (!operadorMasterNome) {
+    setMsg('msgPontoAjustes', 'Não foi possível identificar o operador master logado.', 'err');
+    return;
+  }
+
+  const confirmacao = await abrirConfirmacaoSistema({
+    title: 'Recusar ajuste de ponto',
+    subtitle: `Operador master: ${operadorMasterNome}`,
+    body: 'Informe o motivo da recusa. Este motivo ficará registrado na solicitação.',
+    input: true,
+    exigeTexto: true,
+    inputLabel: 'Motivo da recusa',
+    inputPlaceholder: 'Ex.: horário divergente, solicitação duplicada, falta de justificativa...',
+    confirmText: 'Recusar solicitação',
+    cancelText: 'Cancelar',
+    confirmClass: 'btn-red',
+  });
+  if (!confirmacao.confirmado) return;
+  const motivoLimpo = String(confirmacao.valor || '').trim();
+  if (!motivoLimpo) {
+    setMsg('msgPontoAjustes', 'Para recusar, informe o motivo da recusa. A recusa não foi salva.', 'err');
+    return;
+  }
+
+  const { error } = await sb
+    .from('ponto_ajustes_solicitacoes')
+    .update({
+      status: 'recusado',
+      recusado_em: new Date().toISOString(),
+      recusado_por_id: obterIdAdminAtual(),
+      recusado_por_nome: operadorMasterNome,
+      motivo_recusa: motivoLimpo,
+    })
+    .eq('id', id)
+    .eq('status', 'pendente');
+
+  if (error) {
+    setMsg('msgPontoAjustes', `Não foi possível recusar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  setMsg('msgPontoAjustes', 'Solicitação recusada com operador master e motivo registrados.', 'ok');
+  await carregarAjustesPonto();
 }
 
 function registroAtendeFiltroHorario(registro, horaInicio = '', horaFim = '') {
@@ -18247,7 +19355,7 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 2.1</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 2.2</div>
     <div>Notas da versão 2.1: recebíveis, cofre, contas financeiras com extrato, baixa vinculada ao saldo, relatório financeiro ajustado, exportações em PDF e dashboard de saldos por conta.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
