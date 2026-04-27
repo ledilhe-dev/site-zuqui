@@ -500,6 +500,21 @@
       border: 1px solid rgba(107,143,112,0.18);
       background: rgba(17,26,20,0.92);
     }
+    .topbar-store {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 1px;
+      min-width: 170px;
+      max-width: 260px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(107,143,112,0.18);
+      background: rgba(17,26,20,0.92);
+      flex-shrink: 0;
+    }
     .topbar-user-label {
       font-size: 10px;
       font-weight: 700;
@@ -520,6 +535,10 @@
       font-weight: 600;
       line-height: 1.15;
       color: var(--text);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     #topbarUserInfo {
       display: inline-flex;
@@ -3748,6 +3767,12 @@
         flex-wrap: wrap;
         row-gap: 8px;
       }
+      .topbar-store {
+        order: 0;
+        width: auto;
+        max-width: 100%;
+        min-width: 0;
+      }
       .topbar-actions .btn-sm {
         font-size: 12px;
         padding: 8px 10px;
@@ -4239,6 +4264,10 @@
           <div class="sub" id="topbar-sub">Visao geral do sistema</div>
         </div>
       </div>
+      <div class="topbar-store" id="topbarStoreInfo" hidden>
+        <div class="topbar-user-label">Loja logada</div>
+        <div class="topbar-store-name" id="topbar-store-name">-</div>
+      </div>
       <div class="topbar-actions">
         <div class="sync-status is-idle" id="syncStatus" aria-live="polite" title="Sincronização automática ativa">
           <span class="sync-dot"></span>
@@ -4248,8 +4277,6 @@
           </span>
         </div>
         <div class="topbar-user" id="topbarUserInfo" hidden>
-          <div class="topbar-user-label">Loja logada</div>
-          <div class="topbar-user-name topbar-store-name" id="topbar-store-name">-</div>
           <div class="topbar-user-label">Usuário logado</div>
           <div class="topbar-user-name" id="topbar-user-name">-</div>
         </div>
@@ -21072,28 +21099,44 @@ window.setTimeout(() => {
       || usuarioSistemaLogado?.loja_nome_exibicao
       || ''
     ).trim();
-
     if (lojaDireta) return lojaDireta;
-    if (usuarioSistemaLogado?.tipo === 'admin_loja') return 'Loja vinculada';
-    if (usuarioSistemaLogado?.tipo === 'admin') return 'Todas as lojas';
-    return 'Loja padrão';
+
+    const nomeLojaConfiguracao = String(document.getElementById('configNomeLoja')?.value || '').trim();
+    if (nomeLojaConfiguracao) return nomeLojaConfiguracao;
+
+    return '';
+  }
+
+  async function resolverNomeLojaTopbarConfiguracoes() {
+    try {
+      const { data, error } = await sb
+        .from('configuracoes_loja')
+        .select('nome_loja')
+        .limit(5);
+      if (error) return '';
+      const nome = (data || []).map(item => String(item?.nome_loja || '').trim()).find(Boolean);
+      return nome || '';
+    } catch (_) {
+      return '';
+    }
   }
 
   async function preencherNomeLojaTopbarPorId(lojaId = '') {
     const lojaNameEl = document.getElementById('topbar-store-name');
     const id = String(lojaId || '').trim();
-    if (!lojaNameEl || !id) return;
+    if (!lojaNameEl || !id) return '';
 
     if (topbarNomeLojaCache.has(id)) {
-      lojaNameEl.textContent = topbarNomeLojaCache.get(id) || 'Loja vinculada';
-      return;
+      const nomeCache = topbarNomeLojaCache.get(id) || '';
+      lojaNameEl.textContent = nomeCache || '-';
+      return nomeCache;
     }
 
     try {
       let nomeLoja = '';
       const consultaLojas = await sb
         .from('lojas')
-        .select('id, nome, nome_loja, descricao, codigo')
+        .select('*')
         .eq('id', id)
         .maybeSingle();
 
@@ -21105,7 +21148,7 @@ window.setTimeout(() => {
       if (!nomeLoja) {
         const consultaFiliais = await sb
           .from('filiais')
-          .select('id, nome, nome_loja, descricao, codigo')
+          .select('*')
           .eq('id', id)
           .maybeSingle();
         if (!consultaFiliais.error && consultaFiliais.data) {
@@ -21119,20 +21162,25 @@ window.setTimeout(() => {
         if (String(usuarioSistemaLogado?.loja_id || '') === id) {
           lojaNameEl.textContent = nomeLoja;
         }
+        return nomeLoja;
       }
     } catch (_) {
       // Mantém fallback silencioso para não poluir UX da topbar.
     }
+
+    return '';
   }
 
   function atualizarUsuarioTopbar() {
-    const container = document.getElementById('topbarUserInfo');
+      const container = document.getElementById('topbarUserInfo');
+      const lojaContainer = document.getElementById('topbarStoreInfo');
     const nameEl = document.getElementById('topbar-user-name');
       const lojaNameEl = document.getElementById('topbar-store-name');
-      if (!container || !nameEl || !lojaNameEl) return;
+      if (!container || !lojaContainer || !nameEl || !lojaNameEl) return;
 
     if (!usuarioSistemaLogado) {
       container.hidden = true;
+        lojaContainer.hidden = true;
       nameEl.textContent = '-';
         lojaNameEl.textContent = '-';
       return;
@@ -21143,13 +21191,24 @@ window.setTimeout(() => {
       : (usuarioSistemaLogado.nome || usuarioSistemaLogado.username || 'Usuário');
 
     nameEl.textContent = nomeUsuario;
-    lojaNameEl.textContent = obterNomeLojaSessaoTopbar();
+    lojaNameEl.textContent = obterNomeLojaSessaoTopbar() || '-';
     container.hidden = false;
+    lojaContainer.hidden = false;
     container.style.display = 'flex';
+    lojaContainer.style.display = 'inline-flex';
 
     const lojaId = String(usuarioSistemaLogado?.loja_id || '').trim();
     if (usuarioSistemaLogado?.tipo === 'admin_loja' && lojaId) {
-      preencherNomeLojaTopbarPorId(lojaId);
+      preencherNomeLojaTopbarPorId(lojaId).then(nome => {
+        if (!nome && lojaNameEl.textContent === '-') lojaNameEl.textContent = 'Loja vinculada';
+      });
+      return;
+    }
+
+    if (lojaNameEl.textContent === '-') {
+      resolverNomeLojaTopbarConfiguracoes().then(nome => {
+        if (nome) lojaNameEl.textContent = nome;
+      });
     }
   }
 
@@ -21641,7 +21700,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
             try {
               const lojaRes = await sb
                 .from('lojas')
-                .select('id, nome, nome_loja, descricao, codigo')
+                .select('*')
                 .eq('id', lojaIdAdmin)
                 .maybeSingle();
               if (!lojaRes.error && lojaRes.data) {
@@ -21654,7 +21713,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
               try {
                 const filialRes = await sb
                   .from('filiais')
-                  .select('id, nome, nome_loja, descricao, codigo')
+                  .select('*')
                   .eq('id', lojaIdAdmin)
                   .maybeSingle();
                 if (!filialRes.error && filialRes.data) {
