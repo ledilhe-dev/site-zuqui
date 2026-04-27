@@ -1942,6 +1942,90 @@
       border-color: rgba(245, 158, 11, 0.55);
     }
 
+
+
+    /* ---- AJUSTES FINAIS PONTO ADM / RELATÓRIO ---- */
+    .ponto-ajuste-tipo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .ponto-ajuste-tipo-opcao {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      font-weight: 700;
+    }
+    .ponto-ajuste-tipo-opcao.ativo {
+      border-color: rgba(34, 197, 94, 0.55);
+      background: rgba(34, 197, 94, 0.14);
+      color: var(--text);
+    }
+    .ponto-ajustado-admin {
+      border-color: rgba(245, 158, 11, 0.55) !important;
+      background: rgba(245, 158, 11, 0.08) !important;
+      box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.9);
+    }
+    .ponto-ajuste-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      width: fit-content;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.13);
+      color: #fbbf24;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.25px;
+      line-height: 1.15;
+      max-width: 100%;
+      white-space: normal;
+    }
+    .ponto-ajuste-historico {
+      margin-top: 5px;
+      font-size: 10px;
+      color: #fcd34d;
+      line-height: 1.28;
+      max-width: 520px;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .ponto-ajuste-historico strong {
+      color: #fde68a;
+      font-weight: 800;
+    }
+    .ponto-ajuste-historico .ponto-ajuste-linha {
+      display: block;
+      margin-top: 2px;
+    }
+    .relatorio-ponto-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .relatorio-ponto-title-row .card-title { margin-bottom: 0; }
+    .relatorio-ponto-acoes {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .relatorio-ponto-body[hidden] { display: none !important; }
+    .btn-export-icon.excel { background: #107c41; }
+    .btn-export-icon.pdf { background: #d71920; }
+
     /* ---- PONTO: REGISTRO E AJUSTES ---- */
 
     .ponto-resumo-lista {
@@ -1974,6 +2058,28 @@
       flex-wrap: wrap;
       gap: 6px;
       min-width: 0;
+    }
+    .ponto-resumo-sequencia .ponto-ajuste-historico {
+      flex: 0 0 100%;
+      width: 100%;
+      margin: 0 0 2px 0;
+      line-height: 1.15;
+    }
+    .ponto-resumo-sequencia .ponto-ajuste-badge {
+      flex: 0 0 100%;
+      margin: 0 0 1px 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #fbbf24;
+      font-size: 10px;
+      line-height: 1.05;
+      border-radius: 0;
+    }
+    .ponto-resumo-sequencia .ponto-ajuste-linha {
+      display: block;
+      font-size: 10px;
+      line-height: 1.15;
     }
     .ponto-periodo-chip {
       display: inline-flex;
@@ -4654,8 +4760,17 @@
         </div>
 
         <div class="card">
-          <div class="card-title">Registros de ponto</div>
-          <div id="listaRelatorioPonto"><div class="empty">Carregando⬦</div></div>
+          <div class="relatorio-ponto-title-row">
+            <div class="card-title">Registros de ponto</div>
+            <div class="relatorio-ponto-acoes">
+              <button class="btn btn-ghost btn-sm" type="button" onclick="toggleRegistrosRelatorioPonto()" id="btnToggleRegistrosRelatorioPonto">Mostrar registros</button>
+              <button class="btn btn-export-excel btn-sm" type="button" onclick="exportarRelatorioPontoExcel()"><span class="btn-export-icon excel">X</span>Excel</button>
+              <button class="btn btn-export-pdf btn-sm" type="button" onclick="exportarRelatorioPontoPDF()"><span class="btn-export-icon pdf">PDF</span>PDF</button>
+            </div>
+          </div>
+          <div class="relatorio-ponto-body" id="relatorioPontoRegistrosBody" hidden>
+            <div id="listaRelatorioPonto"><div class="empty">Carregando⬦</div></div>
+          </div>
         </div>
       </section>
 
@@ -5191,9 +5306,11 @@
   <div class="ponto-ajuste-modal-overlay" id="modalSolicitarAjustePonto" hidden>
     <div class="ponto-ajuste-modal-card">
       <div class="ponto-ajuste-modal-title">Solicitar ajuste de ponto</div>
-      <div class="ponto-ajuste-modal-sub">Descreva o horário que precisa ser ajustado. O sistema usará automaticamente o usuário logado para identificar o funcionário.</div>
+      <div class="ponto-ajuste-modal-sub">Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.</div>
       <div class="ponto-ajuste-form">
-        <input id="ajustePontoPin" type="hidden" value="">
+        <label>PIN do funcionário
+          <input id="ajustePontoPin" type="password" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="Digite seu PIN">
+        </label>
         <label>Data do ajuste
           <input id="ajustePontoData" type="date">
         </label>
@@ -5215,22 +5332,31 @@
   <div class="ponto-ajuste-modal-overlay" id="modalAjusteManualAdminPonto" hidden>
     <div class="ponto-ajuste-modal-card">
       <div class="ponto-ajuste-modal-title">Ajuste manual de ponto</div>
-      <div class="ponto-ajuste-modal-sub">Disponível apenas para Administrador. Escolha o funcionário, informe o horário correto, a senha do administrador e o motivo do ajuste.</div>
+      <div class="ponto-ajuste-modal-sub">Disponível apenas para Administrador. Adicione uma batida esquecida ou anule uma batida errada mantendo o histórico do ajuste.</div>
       <div class="ponto-ajuste-form">
+        <label>Tipo de ajuste
+          <div class="ponto-ajuste-tipo-grid">
+            <button class="ponto-ajuste-tipo-opcao ativo" id="adminAjusteTipoAdicionar" type="button" onclick="selecionarTipoAjusteManualAdminPonto('adicionar')">Adicionar batida</button>
+            <button class="ponto-ajuste-tipo-opcao" id="adminAjusteTipoAnular" type="button" onclick="selecionarTipoAjusteManualAdminPonto('anular')">Anular batida</button>
+          </div>
+        </label>
         <label>Funcionário
-          <select id="adminAjustePontoFuncionario"></select>
+          <select id="adminAjustePontoFuncionario" onchange="atualizarBatidasDisponiveisAnulacaoPonto()"></select>
         </label>
         <label>Data do ajuste
-          <input id="adminAjustePontoData" type="date">
+          <input id="adminAjustePontoData" type="date" onchange="atualizarBatidasDisponiveisAnulacaoPonto()">
         </label>
-        <label>Horário correto
+        <label id="adminAjustePontoHorarioLabel">Horário correto
           <input id="adminAjustePontoHorario" type="time">
+        </label>
+        <label id="adminAjustePontoBatidaLabel" hidden>Batida que será anulada
+          <select id="adminAjustePontoBatida"></select>
         </label>
         <label>Senha/PIN do administrador
           <input id="adminAjustePontoSenha" type="password" maxlength="20" autocomplete="off" placeholder="Confirme sua senha">
         </label>
         <label>Motivo do ajuste
-          <textarea id="adminAjustePontoMotivo" maxlength="300" placeholder="Exemplo: funcionária esqueceu de bater a saída; horário conferido pelo administrador"></textarea>
+          <textarea id="adminAjustePontoMotivo" maxlength="300" placeholder="Exemplo: funcionária esqueceu de bater; horário conferido pelo administrador"></textarea>
         </label>
         <div class="msg" id="msgAjusteManualAdminPonto"></div>
         <div class="ponto-ajuste-actions">
@@ -5609,7 +5735,6 @@ let ultimoSucessoSincronizacaoEm = null;
 let ultimosLembretesExecucaoEm = {};
 let ultimosLembretesChecklistEm = {};
 let ultimosLembretesTarefaAtrasadaEm = {};
-let ultimosLembretesAlertasRapidosEm = {};
 let execucoesPaginaAtual = 1;
 let dashboardProdutividadePeriodo = 'dia';
 let dashboardHorasPeriodo = 'dia';
@@ -5643,7 +5768,6 @@ const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
-const INTERVALO_LEMBRETE_ALERTA_RAPIDO_MS = 10 * 60 * 1000;
 const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
 const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
 const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 10 * 60 * 1000;
@@ -6038,143 +6162,9 @@ function usuarioPodeReceberAlertaRapido() {
   if (!usuarioRecebeAlertaOperacional()) return false;
   const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
   const codigo = String(perfil?.codigo || '').toUpperCase();
-  if (codigo === 'FUNCIONARIO') return false;
   if (codigo === 'GERENTE' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
   return !!obterPermissoesUsuario().receber_alertas_rapidas;
 }
-
-function usuarioPodeVerNotificacaoAjustePontoAdmin() {
-  return !!usuarioSistemaLogado && (usuarioEhAdministrador() || usuarioPodeAcessar('ponto_ajustes'));
-}
-
-function usuarioPodeVerNotificacaoRetornoAjustePonto(item = {}) {
-  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
-  if (!funcionarioRestritoId) return false;
-  return String(item?.funcionario_id || '') === String(funcionarioRestritoId || '');
-}
-
-function ajustePontoEhManualAdmin(item = {}) {
-  const motivo = String(item?.motivo || '').toUpperCase();
-  return motivo.includes('[AJUSTE MANUAL ADMIN]') || motivo.includes('[ANULACAO MANUAL ADMIN]');
-}
-
-function limparMotivoAjustePontoNotificacao(motivo = '') {
-  return String(motivo || '')
-    .replace(/\[AJUSTE MANUAL ADMIN\]/gi, '')
-    .replace(/\[ANULACAO MANUAL ADMIN\]/gi, '')
-    .trim();
-}
-
-function montarDescricaoAjustePonto(item = {}) {
-  const nome = item?.funcionario_nome || 'Funcionário';
-  const data = formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '-';
-  const hora = formatarHorarioAjustePonto(item?.horario_ajuste || '');
-  const motivo = limparMotivoAjustePontoNotificacao(item?.motivo || '');
-  const base = `${nome} · ${data} às ${hora}`;
-  return motivo ? `${base} · Motivo: ${motivo}` : base;
-}
-
-async function carregarNotificacoesAjustesPonto(itens = []) {
-  try {
-    const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
-    const podeVerPendentes = usuarioPodeVerNotificacaoAjustePontoAdmin();
-    const podeVerRetorno = !!funcionarioRestritoId;
-    if (!podeVerPendentes && !podeVerRetorno) return;
-
-    let query = sb
-      .from('ponto_ajustes_solicitacoes')
-      .select('*')
-      .order('solicitado_em', { ascending: false })
-      .limit(80);
-
-    if (podeVerRetorno && !podeVerPendentes) {
-      query = query.eq('funcionario_id', funcionarioRestritoId);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      if (!isMissingPontoAjustesTableError(error)) {
-        console.warn('Falha ao carregar notificações de ajuste de ponto:', error);
-      }
-      return;
-    }
-
-    (data || []).forEach(item => {
-      const status = String(item?.status || '').trim().toLowerCase();
-      const id = String(item?.id || '');
-      if (!id) return;
-
-      if (status === 'pendente' && podeVerPendentes) {
-        itens.push({
-          chave: `ponto_ajuste_pendente::${id}::${item?.solicitado_em || ''}`,
-          tipo: 'ponto_ajuste_pendente',
-          page: 'ponto_ajustes',
-          titulo: 'Solicitação de ajuste de ponto pendente',
-          descricao: montarDescricaoAjustePonto(item),
-          meta: {
-            funcionarioId: item?.funcionario_id || '',
-            nomeFuncionario: item?.funcionario_nome || 'Funcionário',
-            dataProgramada: formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '',
-            horarioProgramado: formatarHorarioAjustePonto(item?.horario_ajuste || ''),
-          },
-        });
-      }
-
-      if (!usuarioPodeVerNotificacaoRetornoAjustePonto(item)) return;
-
-      if (status === 'aprovado') {
-        const manualAdmin = ajustePontoEhManualAdmin(item);
-        const dataEvento = item?.aprovado_em || item?.solicitado_em || '';
-        itens.push({
-          chave: `ponto_ajuste_${manualAdmin ? 'manual_admin' : 'aprovado'}::${id}::${dataEvento}`,
-          tipo: manualAdmin ? 'ponto_ajuste_manual_admin' : 'ponto_ajuste_aprovado',
-          page: 'bater_ponto',
-          titulo: manualAdmin ? 'Ajuste manual realizado pelo administrador' : 'Ajuste de ponto aprovado',
-          descricao: `${montarDescricaoAjustePonto(item)}${item?.aprovado_por_nome ? ' · Por: ' + item.aprovado_por_nome : ''}`,
-          meta: {
-            funcionarioId: item?.funcionario_id || '',
-            nomeFuncionario: item?.funcionario_nome || 'Funcionário',
-            dataProgramada: formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '',
-            horarioProgramado: formatarHorarioAjustePonto(item?.horario_ajuste || ''),
-          },
-        });
-      }
-
-      if (status === 'recusado') {
-        const dataEvento = item?.recusado_em || item?.solicitado_em || '';
-        const motivoRecusa = String(item?.motivo_recusa || '').trim();
-        itens.push({
-          chave: `ponto_ajuste_recusado::${id}::${dataEvento}`,
-          tipo: 'ponto_ajuste_recusado',
-          page: 'bater_ponto',
-          titulo: 'Ajuste de ponto recusado',
-          descricao: `${montarDescricaoAjustePonto(item)}${motivoRecusa ? ' · Recusa: ' + motivoRecusa : ''}${item?.recusado_por_nome ? ' · Por: ' + item.recusado_por_nome : ''}`,
-          meta: {
-            funcionarioId: item?.funcionario_id || '',
-            nomeFuncionario: item?.funcionario_nome || 'Funcionário',
-            dataProgramada: formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '',
-            horarioProgramado: formatarHorarioAjustePonto(item?.horario_ajuste || ''),
-          },
-        });
-      }
-    });
-  } catch (e) {
-    console.warn('Falha ao montar notificações de ajuste de ponto:', e);
-  }
-}
-
-function filtrarNotificacoesPermitidasFuncionarioRestrito(itens = []) {
-  if (!obterFuncionarioRestritoLogadoId()) return itens || [];
-  const tiposPermitidos = new Set([
-    'checklist_pendente',
-    'checklist_agendado',
-    'ponto_ajuste_aprovado',
-    'ponto_ajuste_recusado',
-    'ponto_ajuste_manual_admin',
-  ]);
-  return (itens || []).filter(item => tiposPermitidos.has(String(item?.tipo || '')));
-}
-
 
 function usuarioPodeConfirmarAlertaRapido() {
   const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
@@ -6758,7 +6748,6 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'ponto_ajustes_solicitacoes' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_rapidos' }, atualizarNotificacoes)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
@@ -8541,8 +8530,6 @@ async function processarFilaAlertasEmail() {
 async function enviarEmailChecklistFinalizado(execucaoId) {
   if (!execucaoId) return;
 
-  await carregarNotificacoesAjustesPonto(itens);
-
   try {
     const cfg = await obterConfiguracoesLoja();
     if (cfg.missing || !cfg.data?.enviar_email_lembrete) return;
@@ -8794,14 +8781,7 @@ function falarNovaTarefaNotificacao() {
   } catch (e) {}
 }
 
-function montarFalaAlertaRapidoNotificacao(item = null) {
-  const meta = item?.meta || {};
-  const nome = String(meta.nomeFuncionario || meta.nome_funcionario || meta.funcionarioDestinoNome || '').trim() || 'FUNCIONÁRIO';
-  const mensagem = String(meta.mensagem || meta.nomeTarefa || item?.descricao || item?.titulo || 'NOVO ALERTA').replace(/^ALERTA\s*:?\s*/i, '').replace(/["“”]/g, '').trim() || 'NOVO ALERTA';
-  return `NOVO ALERTA - ${nome} - ${mensagem}`.toUpperCase();
-}
-
-function falarAlertaRapidoNotificacao(item = null) {
+function falarAlertaRapidoNotificacao() {
   if (!('speechSynthesis' in window)) return;
   try {
     const synth = window.speechSynthesis;
@@ -8810,31 +8790,27 @@ function falarAlertaRapidoNotificacao(item = null) {
     const vozPtBr = vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt-br'))
       || vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt'))
       || null;
-    const texto = montarFalaAlertaRapidoNotificacao(item);
 
-    for (let i = 0; i < 2; i += 1) {
-      const utter = new SpeechSynthesisUtterance(texto);
+    for (let i = 0; i < 3; i += 1) {
+      const utter = new SpeechSynthesisUtterance('ALERTA RÁPIDO!');
       utter.lang = 'pt-BR';
       utter.volume = 1;
-      utter.rate = 1.05;
-      utter.pitch = 1.18;
+      utter.rate = 1.18;
+      utter.pitch = 1.24;
       if (vozPtBr) utter.voice = vozPtBr;
       synth.speak(utter);
     }
   } catch (e) {}
 }
 
-function tocarSomAlertaRapidoNotificacao(forcar = false, item = null) {
+function tocarSomAlertaRapidoNotificacao(forcar = false) {
   if (forcar) {
     somNotificacaoBloqueadoAte = 0;
   }
-  tocarSireneSequencial({ quantidade: 2, duracao: 2.0, volume: 0.34, frequenciaBaixa: 520, frequenciaAlta: 1320, espacamento: 0.22 });
+  tocarSomNotificacaoFallback(true, false);
   window.setTimeout(() => {
-    tocarSinoNotificacaoAlto({ quantidade: 3, volume: 0.55, espacamento: 0.18 });
-  }, 180);
-  window.setTimeout(() => {
-    falarAlertaRapidoNotificacao(item);
-  }, 900);
+    falarAlertaRapidoNotificacao();
+  }, 260);
 }
 
 function falarVerificarTarefaNotificacao() {
@@ -9289,15 +9265,6 @@ function limparControleLembretesTarefaAtrasada(chavesAtivas = []) {
   });
 }
 
-function limparControleLembretesAlertasRapidos(chavesAtivas = []) {
-  const ativos = new Set(chavesAtivas);
-  Object.keys(ultimosLembretesAlertasRapidosEm).forEach(chave => {
-    if (!ativos.has(chave)) {
-      delete ultimosLembretesAlertasRapidosEm[chave];
-    }
-  });
-}
-
 function sincronizarAvisoNotificacoes() {
   const totalAtual = notificacoesAtuais.length;
   const notificacoesCriticas = obterNotificacoesCriticas();
@@ -9305,7 +9272,7 @@ function sincronizarAvisoNotificacoes() {
   const assinaturaCriticaAtual = notificacoesCriticas.map(item => item.chave).sort().join('|');
   const criticasOperacionais = notificacoesCriticas.filter(item => tipoNotificacaoTarefaAtrasada(item?.tipo));
   const alertasRapidos = notificacoesCriticas.filter(item => item?.tipo === 'alerta_rapido');
-  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente');
+  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente' || item.tipo === 'alerta_rapido');
   const tarefasAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'tarefa_atrasada');
   const execucoesAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'execucao_atrasada');
   const agora = Date.now();
@@ -9317,11 +9284,10 @@ function sincronizarAvisoNotificacoes() {
   limparControleLembretesExecucao(execucoesAtrasadas.map(item => item.chave).filter(Boolean));
   limparControleLembretesChecklist(lancamentosPendentes.map(item => item.chave).filter(Boolean));
   limparControleLembretesTarefaAtrasada(tarefasAtrasadas.map(item => item.chave).filter(Boolean));
-  limparControleLembretesAlertasRapidos(alertasRapidos.map(item => item.chave).filter(Boolean));
 
   const tocarSomCriticoChecklist = () => {
     if (!criticasOperacionais.length && alertasRapidos.length) {
-      tocarSomAlertaRapidoNotificacao(true, alertasRapidos[0]);
+      tocarSomAlertaRapidoNotificacao(true);
     } else {
       tocarSomNotificacao(true);
     }
@@ -9406,23 +9372,6 @@ function sincronizarAvisoNotificacoes() {
     });
     if (!somTocadoNesteCiclo) {
       tocarSomCriticoChecklist();
-    }
-  }
-
-  const lembretesAlertasRapidosDevidos = alertasRapidos.filter(item => {
-    const ultimoLembrete = ultimosLembretesAlertasRapidosEm[item.chave] || 0;
-    return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_LEMBRETE_ALERTA_RAPIDO_MS;
-  });
-
-  if (lembretesAlertasRapidosDevidos.length && alertaFortePermitido) {
-    lembretesAlertasRapidosDevidos.forEach(item => {
-      if (item?.chave) {
-        ultimosLembretesAlertasRapidosEm[item.chave] = agora;
-      }
-    });
-    if (!somTocadoNesteCiclo) {
-      tocarSomAlertaRapidoNotificacao(true, lembretesAlertasRapidosDevidos[0]);
-      somTocadoNesteCiclo = true;
     }
   }
 
@@ -9906,16 +9855,14 @@ async function carregarNotificacoes() {
     }
   } catch (e) {}
 
-  const itensPermitidosUsuario = filtrarNotificacoesPermitidasFuncionarioRestrito(itens);
-
   if (usuarioEhMasterNotificacoes()) {
     // Para evitar "notificações fantasmas", o master passa a exibir apenas
     // notificações efetivamente ativas no banco no momento da consulta.
-    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(itensPermitidosUsuario).filter(item => !notificacaoFoiLimpaPeloUsuario(item));
+    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(itens).filter(item => !notificacaoFoiLimpaPeloUsuario(item));
     salvarHistoricoNotificacoesMaster(notificacoesHistoricoMaster);
     notificacoesAtuais = notificacoesHistoricoMaster;
   } else {
-    notificacoesAtuais = itensPermitidosUsuario.filter(item => !notificacaoFoiLimpaPeloUsuario(item));
+    notificacoesAtuais = itens.filter(item => !notificacaoFoiLimpaPeloUsuario(item));
   }
   atualizarBadgeTarefasAtraso(obterQuantidadeAtrasosNotificacao());
   renderizarListaNotificacoes();
@@ -17674,7 +17621,6 @@ async function salvarAjusteManualAdminPonto() {
 
   setMsg('msgPonto', `Ajuste manual aplicado para ${funcionarioNome}. ${resultado.mensagem}`, 'ok');
   fecharModalAjusteManualAdminPonto();
-  await carregarNotificacoes();
   await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoId() || '');
   await carregarHorasDashboard();
   if (obterPaginaAtivaAtual() === 'relatorio_ponto') await carregarRelatorioPonto();
@@ -17694,7 +17640,7 @@ function abrirModalSolicitarAjustePonto() {
   if (pin) pin.value = '';
   setMsg('msgSolicitarAjustePonto', '', '');
   modal.hidden = false;
-  setTimeout(() => horario?.focus() || data?.focus(), 80);
+  setTimeout(() => pin?.focus(), 80);
 }
 
 function fecharModalSolicitarAjustePonto() {
@@ -17709,20 +17655,19 @@ function isMissingPontoAjustesTableError(error) {
 }
 
 async function salvarSolicitacaoAjustePonto() {
+  const pin = String(document.getElementById('ajustePontoPin')?.value || '').trim();
   const dataAjuste = String(document.getElementById('ajustePontoData')?.value || '').trim();
   const horarioAjuste = String(document.getElementById('ajustePontoHorario')?.value || '').trim();
   const motivo = String(document.getElementById('ajustePontoMotivo')?.value || '').trim();
 
-  if (!dataAjuste || !horarioAjuste || !motivo) {
-    setMsg('msgSolicitarAjustePonto', 'Preencha data, horário e motivo.', 'err');
+  if (!pin || !dataAjuste || !horarioAjuste || !motivo) {
+    setMsg('msgSolicitarAjustePonto', 'Preencha PIN, data, horário e motivo.', 'err');
     return;
   }
 
-  const funcionario = usuarioSistemaLogado?.id
-    ? { id: usuarioSistemaLogado.id, nome: usuarioSistemaLogado.nome || 'Funcionário' }
-    : null;
+  const funcionario = await obterFuncionarioAtivoPorPin(pin);
   if (!funcionario?.id) {
-    setMsg('msgSolicitarAjustePonto', 'Não foi possível identificar o funcionário logado. Faça login novamente.', 'err');
+    setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
     return;
   }
 
@@ -17749,7 +17694,6 @@ async function salvarSolicitacaoAjustePonto() {
 
   setMsg('msgPonto', `Solicitação enviada para aprovação do administrador (${funcionario.nome || 'Funcionário'}).`, 'ok');
   fecharModalSolicitarAjustePonto();
-  await carregarNotificacoes();
   if (obterPaginaAtivaAtual() === 'ponto_ajustes') await carregarAjustesPonto();
 }
 
@@ -18069,7 +18013,6 @@ async function aprovarAjustePonto(id) {
   }
 
   setMsg('msgPontoAjustes', `Ajuste aprovado. ${resultado.mensagem}`, 'ok');
-  await carregarNotificacoes();
   await carregarAjustesPonto();
   await carregarResumoPontoHoje();
   await carregarHorasDashboard();
@@ -18120,7 +18063,6 @@ async function recusarAjustePonto(id) {
     return;
   }
   setMsg('msgPontoAjustes', 'Solicitação recusada com operador master e motivo registrados.', 'ok');
-  await carregarNotificacoes();
   await carregarAjustesPonto();
 }
 
@@ -20984,6 +20926,405 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       filtrarChecklistsLancados();
     }
   });
+
+
+/* ==== AJUSTE FINAL: PONTO ADM, ANULAÇÃO E RELATÓRIO FECHADO ==== */
+let adminAjusteManualPontoTipoAtual = 'adicionar';
+let relatorioPontoRegistrosVisiveis = false;
+window.__relatorioPontoUltimosRows = [];
+window.__relatorioPontoUltimoPeriodo = '';
+
+function escapeHtmlPonto(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function toggleRegistrosRelatorioPonto(forcarAberto = null) {
+  const body = document.getElementById('relatorioPontoRegistrosBody');
+  const btn = document.getElementById('btnToggleRegistrosRelatorioPonto');
+  if (!body) return;
+  relatorioPontoRegistrosVisiveis = typeof forcarAberto === 'boolean' ? forcarAberto : !!body.hidden;
+  body.hidden = !relatorioPontoRegistrosVisiveis;
+  if (btn) btn.textContent = relatorioPontoRegistrosVisiveis ? 'Ocultar registros' : 'Mostrar registros';
+}
+
+function selecionarTipoAjusteManualAdminPonto(tipo = 'adicionar') {
+  adminAjusteManualPontoTipoAtual = tipo === 'anular' ? 'anular' : 'adicionar';
+  document.getElementById('adminAjusteTipoAdicionar')?.classList.toggle('ativo', adminAjusteManualPontoTipoAtual === 'adicionar');
+  document.getElementById('adminAjusteTipoAnular')?.classList.toggle('ativo', adminAjusteManualPontoTipoAtual === 'anular');
+  const horarioLabel = document.getElementById('adminAjustePontoHorarioLabel');
+  const batidaLabel = document.getElementById('adminAjustePontoBatidaLabel');
+  if (horarioLabel) horarioLabel.hidden = adminAjusteManualPontoTipoAtual === 'anular';
+  if (batidaLabel) batidaLabel.hidden = adminAjusteManualPontoTipoAtual !== 'anular';
+  const motivo = document.getElementById('adminAjustePontoMotivo');
+  if (motivo) {
+    motivo.placeholder = adminAjusteManualPontoTipoAtual === 'anular'
+      ? 'Exemplo: batida duplicada ou lançada no horário errado; conferido pelo administrador'
+      : 'Exemplo: funcionária esqueceu de bater; horário conferido pelo administrador';
+  }
+  if (adminAjusteManualPontoTipoAtual === 'anular') atualizarBatidasDisponiveisAnulacaoPonto();
+}
+
+function montarListaBatidasPonto(registro, intervalos = []) {
+  const lista = [];
+  if (registro?.entrada_em) lista.push({ tipo: 'entrada', iso: registro.entrada_em, label: 'Entrada' });
+  [...(intervalos || [])]
+    .sort((a, b) => (Number(a.ordem || 0) - Number(b.ordem || 0)) || (new Date(a.inicio_em || 0) - new Date(b.inicio_em || 0)))
+    .forEach((intervalo, idx) => {
+      if (intervalo.inicio_em) lista.push({ tipo: 'intervalo_inicio', iso: intervalo.inicio_em, label: `Início intervalo ${idx + 1}` });
+      if (intervalo.retorno_em) lista.push({ tipo: 'intervalo_retorno', iso: intervalo.retorno_em, label: `Retorno intervalo ${idx + 1}` });
+    });
+  if (registro?.saida_em) lista.push({ tipo: 'saida', iso: registro.saida_em, label: 'Saída' });
+  return lista.filter(item => item.iso).sort((a, b) => new Date(a.iso).getTime() - new Date(b.iso).getTime());
+}
+
+async function obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataPonto) {
+  const { data: registro, error } = await sb
+    .from('ponto_registros')
+    .select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at')
+    .eq('funcionario_id', funcionarioId)
+    .eq('data_ponto', dataPonto)
+    .maybeSingle();
+  if (error) throw error;
+  if (!registro?.id) return { registro: null, intervalos: [] };
+  const { data: intervalos, error: erroInt } = await sb
+    .from('ponto_intervalos')
+    .select('id, ponto_registro_id, ordem, inicio_em, retorno_em')
+    .eq('ponto_registro_id', registro.id)
+    .order('ordem', { ascending: true });
+  if (erroInt && !isMissingTimeClockIntervalsTableError(erroInt)) throw erroInt;
+  return { registro, intervalos: isMissingTimeClockIntervalsTableError(erroInt) ? [] : (intervalos || []) };
+}
+
+async function atualizarBatidasDisponiveisAnulacaoPonto() {
+  const select = document.getElementById('adminAjustePontoBatida');
+  if (!select || adminAjusteManualPontoTipoAtual !== 'anular') return;
+  const funcionarioId = String(document.getElementById('adminAjustePontoFuncionario')?.value || '').trim();
+  const dataAjuste = String(document.getElementById('adminAjustePontoData')?.value || '').trim();
+  select.innerHTML = '<option value="">Carregando batidas...</option>';
+  if (!funcionarioId || !dataAjuste) {
+    select.innerHTML = '<option value="">Selecione funcionário e data</option>';
+    return;
+  }
+  try {
+    const { registro, intervalos } = await obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataAjuste);
+    const batidas = montarListaBatidasPonto(registro, intervalos);
+    if (!batidas.length) {
+      select.innerHTML = '<option value="">Nenhuma batida encontrada nessa data</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">- Selecione a batida errada -</option>' + batidas.map(item => {
+      const hora = formatarHoraPonto(item.iso);
+      return `<option value="${escapeHtmlPonto(item.iso)}">${escapeHtmlPonto(item.label)} · ${escapeHtmlPonto(hora)}</option>`;
+    }).join('');
+  } catch (_) {
+    select.innerHTML = '<option value="">Erro ao carregar batidas</option>';
+  }
+}
+
+async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso }) {
+  const { registro, intervalos } = await obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataAjuste);
+  if (!registro?.id) return { ok: false, mensagem: 'Nenhum registro de ponto encontrado para essa data.' };
+  const batidasAtuais = montarListaBatidasPonto(registro, intervalos).map(item => item.iso);
+  const alvo = new Date(batidaIso).getTime();
+  const batidas = batidasAtuais.filter(iso => new Date(iso).getTime() !== alvo);
+  if (batidas.length === batidasAtuais.length) return { ok: false, mensagem: 'Batida selecionada não foi encontrada.' };
+
+  const entradaEm = batidas[0] || null;
+  const saidaEm = batidas.length && batidas.length % 2 === 0 ? batidas[batidas.length - 1] : null;
+  const novosIntervalos = [];
+  const limite = saidaEm ? batidas.length - 1 : batidas.length;
+  for (let i = 1; i + 1 < limite; i += 2) {
+    novosIntervalos.push({ ponto_registro_id: registro.id, ordem: novosIntervalos.length + 1, inicio_em: batidas[i], retorno_em: batidas[i + 1] });
+  }
+
+  const { error: erroAtualiza } = await sb.from('ponto_registros').update({ entrada_em: entradaEm, saida_em: saidaEm }).eq('id', registro.id);
+  if (erroAtualiza) return { ok: false, mensagem: mensagemErroSupabase(erroAtualiza, 'erro desconhecido') };
+
+  const { error: erroDelete } = await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
+  if (erroDelete && !isMissingTimeClockIntervalsTableError(erroDelete)) {
+    return { ok: false, mensagem: `Batida anulada no registro principal, mas houve erro ao limpar intervalos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
+  }
+  if (novosIntervalos.length) {
+    const { error: erroInsert } = await sb.from('ponto_intervalos').insert(novosIntervalos);
+    if (erroInsert) return { ok: false, mensagem: `Batida anulada, mas houve erro ao recriar intervalos: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}` };
+  }
+  return { ok: true, mensagem: `Batida das ${formatarHoraPonto(batidaIso)} anulada. Sequência do dia reorganizada.` };
+}
+
+async function carregarAjustesAprovadosPontoPorPeriodo(dataInicio = '', dataFim = '', funcionarioId = '') {
+  try {
+    let query = sb.from('ponto_ajustes_solicitacoes').select('*').eq('status', 'aprovado').order('aprovado_em', { ascending: false });
+    if (dataInicio) query = query.gte('data_ajuste', dataInicio);
+    if (dataFim) query = query.lte('data_ajuste', dataFim);
+    if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+    const { data, error } = await query;
+    if (error) return [];
+    return data || [];
+  } catch (_) { return []; }
+}
+
+function montarMapaAjustesPonto(ajustes = []) {
+  const mapa = {};
+  (ajustes || []).forEach(item => {
+    const chave = `${String(item.funcionario_id || '')}|${String(item.data_ajuste || '')}`;
+    if (!mapa[chave]) mapa[chave] = [];
+    mapa[chave].push(item);
+  });
+  return mapa;
+}
+
+function montarHtmlAjustesPonto(ajustes = []) {
+  if (!ajustes?.length) return '';
+  return `<span class="ponto-ajuste-badge">Ponto ajustado/editado</span>` +
+    `<div class="ponto-ajuste-historico">` + ajustes.map(item => {
+      const tipo = String(item.motivo || '').includes('[ANULACAO MANUAL ADMIN]') ? 'Anulação manual' : 'Ajuste manual';
+      const horario = formatarHorarioAjustePonto(item.horario_ajuste);
+      const quando = formatarDataHoraSolicitacaoPonto(item.aprovado_em || item.solicitado_em || item.created_at);
+      const admin = item.aprovado_por_nome || 'Administrador';
+      const motivo = String(item.motivo || '').replace('[AJUSTE MANUAL ADMIN]', '').replace('[ANULACAO MANUAL ADMIN]', '').trim();
+      return `<span class="ponto-ajuste-linha"><strong>${escapeHtmlPonto(tipo)}</strong>: ${escapeHtmlPonto(item.data_ajuste || '-')} às ${escapeHtmlPonto(horario)}</span>` +
+        `<span class="ponto-ajuste-linha"><strong>Ajustado/editado por:</strong> ${escapeHtmlPonto(admin)}</span>` +
+        `<span class="ponto-ajuste-linha"><strong>Data e hora:</strong> ${escapeHtmlPonto(quando)}</span>` +
+        (motivo ? `<span class="ponto-ajuste-linha"><strong>Motivo:</strong> ${escapeHtmlPonto(motivo)}</span>` : '');
+    }).join('') + `</div>`;
+}
+
+function abrirModalAjusteManualAdminPonto(funcionarioId = '') {
+  if (!usuarioEhAdministrador()) {
+    setMsg('msgPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+    return;
+  }
+  const modal = document.getElementById('modalAjusteManualAdminPonto');
+  if (!modal) return;
+  const sel = document.getElementById('adminAjustePontoFuncionario');
+  const data = document.getElementById('adminAjustePontoData');
+  const horario = document.getElementById('adminAjustePontoHorario');
+  const senha = document.getElementById('adminAjustePontoSenha');
+  const motivo = document.getElementById('adminAjustePontoMotivo');
+  selecionarTipoAjusteManualAdminPonto('adicionar');
+  carregarSelectFuncionariosPonto().then(() => {
+    if (sel && funcionarioId) sel.value = String(funcionarioId);
+  }).catch(() => {});
+  if (sel && funcionarioId) sel.value = String(funcionarioId);
+  if (data) data.value = dataLocalISO();
+  if (horario) horario.value = '';
+  if (senha) senha.value = '';
+  if (motivo) motivo.value = '';
+  setMsg('msgAjusteManualAdminPonto', '', '');
+  modal.hidden = false;
+  setTimeout(() => (sel && !sel.value ? sel.focus() : horario?.focus()), 80);
+}
+
+async function salvarAjusteManualAdminPonto() {
+  if (!usuarioEhAdministrador()) {
+    setMsg('msgAjusteManualAdminPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+    return;
+  }
+
+  const funcionarioId = String(document.getElementById('adminAjustePontoFuncionario')?.value || '').trim();
+  const dataAjuste = String(document.getElementById('adminAjustePontoData')?.value || '').trim();
+  const horarioAjuste = String(document.getElementById('adminAjustePontoHorario')?.value || '').trim();
+  const batidaAnular = String(document.getElementById('adminAjustePontoBatida')?.value || '').trim();
+  const senha = String(document.getElementById('adminAjustePontoSenha')?.value || '').trim();
+  const motivo = String(document.getElementById('adminAjustePontoMotivo')?.value || '').trim();
+  const tipo = adminAjusteManualPontoTipoAtual === 'anular' ? 'anular' : 'adicionar';
+
+  if (!funcionarioId || !dataAjuste || !senha || !motivo || (tipo === 'adicionar' && !horarioAjuste) || (tipo === 'anular' && !batidaAnular)) {
+    setMsg('msgAjusteManualAdminPonto', tipo === 'anular'
+      ? 'Preencha funcionário, data, batida que será anulada, senha do administrador e motivo.'
+      : 'Preencha funcionário, data, horário, senha do administrador e motivo.', 'err');
+    return;
+  }
+
+  setMsg('msgAjusteManualAdminPonto', 'Validando senha do administrador...', 'ok');
+  let senhaOk = false;
+  try { senhaOk = await validarSenhaAdministradorParaAjustePonto(senha); }
+  catch (error) {
+    setMsg('msgAjusteManualAdminPonto', `Não foi possível validar a senha: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  if (!senhaOk) {
+    setMsg('msgAjusteManualAdminPonto', 'Senha/PIN do administrador inválido.', 'err');
+    return;
+  }
+
+  const funcionarioNome = relatorioPontoFuncionarioCache[funcionarioId]
+    || document.getElementById('adminAjustePontoFuncionario')?.selectedOptions?.[0]?.textContent
+    || 'Funcionário';
+
+  setMsg('msgAjusteManualAdminPonto', tipo === 'anular' ? 'Anulando batida...' : 'Aplicando ajuste no ponto...', 'ok');
+  let resultado;
+  let solicitacaoManual;
+  if (tipo === 'anular') {
+    resultado = await anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso: batidaAnular });
+    solicitacaoManual = {
+      funcionario_id: funcionarioId, funcionario_nome: funcionarioNome, data_ajuste: dataAjuste,
+      horario_ajuste: formatarHoraPonto(batidaAnular), motivo: `[ANULACAO MANUAL ADMIN] ${motivo}`,
+      status: 'aprovado', aprovado_em: new Date().toISOString(), aprovado_por_id: obterIdAdminAtual(), aprovado_por_nome: obterNomeAdminAtual(),
+    };
+  } else {
+    solicitacaoManual = {
+      funcionario_id: funcionarioId, funcionario_nome: funcionarioNome, data_ajuste: dataAjuste,
+      horario_ajuste: horarioAjuste, motivo: `[AJUSTE MANUAL ADMIN] ${motivo}`,
+      status: 'aprovado', aprovado_em: new Date().toISOString(), aprovado_por_id: obterIdAdminAtual(), aprovado_por_nome: obterNomeAdminAtual(),
+    };
+    resultado = await aplicarAjusteAprovadoNoPonto(solicitacaoManual);
+  }
+
+  if (!resultado.ok) {
+    setMsg('msgAjusteManualAdminPonto', `Não foi possível concluir: ${resultado.mensagem}`, 'err');
+    return;
+  }
+
+  try { await sb.from('ponto_ajustes_solicitacoes').insert([solicitacaoManual]); }
+  catch (e) { console.warn('Não foi possível registrar o ajuste manual no histórico:', e); }
+
+  setMsg('msgPonto', `${tipo === 'anular' ? 'Batida anulada' : 'Ajuste manual aplicado'} para ${funcionarioNome}. ${resultado.mensagem}`, 'ok');
+  fecharModalAjusteManualAdminPonto();
+  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoId() || '');
+  await carregarHorasDashboard();
+  if (obterPaginaAtivaAtual() === 'relatorio_ponto') await carregarRelatorioPonto();
+  if (obterPaginaAtivaAtual() === 'ponto_ajustes') await carregarAjustesPonto();
+}
+
+const carregarResumoPontoHojeOriginalComAjuste = carregarResumoPontoHoje;
+carregarResumoPontoHoje = async function(funcionarioId = '') {
+  await carregarResumoPontoHojeOriginalComAjuste(funcionarioId);
+  const container = document.getElementById('pontoResumoHoje');
+  if (!container) return;
+  const hoje = dataLocalISO();
+  const ajustes = await carregarAjustesAprovadosPontoPorPeriodo(hoje, hoje, funcionarioId || '');
+  if (!ajustes.length) return;
+  const nomesAjustados = new Set(ajustes.map(a => String(a.funcionario_nome || relatorioPontoFuncionarioCache[String(a.funcionario_id)] || '').toUpperCase().trim()).filter(Boolean));
+  container.querySelectorAll('.ponto-resumo-linha').forEach(linha => {
+    const nomeEl = linha.querySelector('.ponto-resumo-nome');
+    const nome = String(nomeEl?.childNodes?.[0]?.textContent || nomeEl?.textContent || '').toUpperCase().trim();
+    if (!nomesAjustados.has(nome)) return;
+    linha.classList.add('ponto-ajustado-admin');
+    const sequenciaEl = linha.querySelector('.ponto-resumo-sequencia');
+    if (sequenciaEl && !sequenciaEl.querySelector('.ponto-ajuste-badge')) {
+      const ajustesNome = ajustes.filter(a => String(a.funcionario_nome || relatorioPontoFuncionarioCache[String(a.funcionario_id)] || '').toUpperCase().trim() === nome);
+      sequenciaEl.insertAdjacentHTML('afterbegin', montarHtmlAjustesPonto(ajustesNome));
+    }
+  });
+};
+
+async function carregarRelatorioPonto() {
+  const lista = document.getElementById('listaRelatorioPonto');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+  const body = document.getElementById('relatorioPontoRegistrosBody');
+  const btnToggle = document.getElementById('btnToggleRegistrosRelatorioPonto');
+  if (body && !relatorioPontoRegistrosVisiveis) body.hidden = true;
+  if (btnToggle) btnToggle.textContent = relatorioPontoRegistrosVisiveis ? 'Ocultar registros' : 'Mostrar registros';
+
+  await carregarSelectFuncionariosPonto();
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const funcionarioId = funcionarioRestritoId || String(document.getElementById('filtroPontoFuncionario')?.value || '');
+  const dataInicioEl = document.getElementById('filtroPontoDataInicio');
+  const dataFimEl = document.getElementById('filtroPontoDataFim');
+  if (dataInicioEl && dataFimEl && !dataInicioEl.value && !dataFimEl.value) {
+    const hojeLocal = dataLocalISO();
+    dataInicioEl.value = hojeLocal;
+    dataFimEl.value = hojeLocal;
+  }
+  const dataInicio = dataInicioEl?.value || '';
+  const dataFim = dataFimEl?.value || '';
+  const horaInicio = document.getElementById('filtroPontoHoraInicio')?.value || '';
+  const horaFim = document.getElementById('filtroPontoHoraFim')?.value || '';
+  const infoPeriodo = `Período: ${dataInicio || '-'} até ${dataFim || '-'}.`;
+  let query = sb.from('ponto_registros').select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at').order('data_ponto', { ascending: false }).order('entrada_em', { ascending: false });
+  if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+  if (dataInicio) query = query.gte('data_ponto', dataInicio);
+  if (dataFim) query = query.lte('data_ponto', dataFim);
+  const { data, error } = await query;
+  if (error) {
+    if (isMissingTimeClockTableError(error)) {
+      lista.innerHTML = '<div class="empty">Rode o SQL da tabela ponto_registros para habilitar o relatório de ponto.</div>';
+      setMsg('msgRelatorioPonto', 'Tabela ponto_registros não encontrada no banco.', 'err');
+      return;
+    }
+    lista.innerHTML = '<div class="empty">Erro ao carregar relatório de ponto.</div>';
+    setMsg('msgRelatorioPonto', 'Não foi possível carregar o relatório de ponto.', 'err');
+    return;
+  }
+  let rows = await anexarNomesFuncionariosARegistrosPonto(data || []);
+  const registrosIds = rows.map(item => item.id).filter(Boolean);
+  let intervalosPorRegistro = {};
+  if (registrosIds.length) {
+    const { data: intervalosData, error: intervalosError } = await sb.from('ponto_intervalos').select('id, ponto_registro_id, ordem, inicio_em, retorno_em').in('ponto_registro_id', registrosIds).order('ordem', { ascending: true });
+    if (intervalosError && !isMissingTimeClockIntervalsTableError(intervalosError)) {
+      setMsg('msgRelatorioPonto', 'Não foi possível carregar os intervalos de ponto.', 'err');
+      return;
+    }
+    (intervalosData || []).forEach(item => {
+      const chave = String(item.ponto_registro_id);
+      if (!intervalosPorRegistro[chave]) intervalosPorRegistro[chave] = [];
+      intervalosPorRegistro[chave].push(item);
+    });
+  }
+  rows = rows.map(item => ({ ...item, intervalos_ponto: intervalosPorRegistro[String(item.id)] || [] }));
+  rows = rows.filter(item => registroAtendeFiltroHorario(item, horaInicio, horaFim));
+  const ajustes = await carregarAjustesAprovadosPontoPorPeriodo(dataInicio, dataFim, funcionarioId);
+  const ajustesMapa = montarMapaAjustesPonto(ajustes);
+  rows = rows.map(item => ({ ...item, ajustes_admin: ajustesMapa[`${String(item.funcionario_id || '')}|${String(item.data_ponto || '')}`] || [] }));
+  window.__relatorioPontoUltimosRows = rows;
+  window.__relatorioPontoUltimoPeriodo = infoPeriodo;
+  atualizarPainelRelatorioPonto(rows, infoPeriodo);
+  if (!rows.length) {
+    lista.innerHTML = '<div class="empty">Nenhum registro de ponto encontrado com os filtros informados.</div>';
+    setMsg('msgRelatorioPonto', '', '');
+    return;
+  }
+  lista.innerHTML = '<div class="lista">' + rows.map(item => {
+    const nomeFuncionario = item.funcionarios?.nome || relatorioPontoFuncionarioCache[String(item.funcionario_id)] || 'Funcionário';
+    const resumoJornada = obterResumoJornadaPonto(item, item.intervalos_ponto || []);
+    const ajustesHtml = montarHtmlAjustesPonto(item.ajustes_admin || []);
+    return `<div class="item${item.ajustes_admin?.length ? ' ponto-ajustado-admin' : ''}">
+        <div class="item-info"><div class="item-nome">${escapeHtmlPonto(nomeFuncionario)} · ${formatarDataPonto(item.data_ponto)}</div><div class="item-detalhe">Entrada: ${formatarHoraPonto(item.entrada_em)} · ${montarResumoIntervalos(item.intervalos_ponto || [])} · Saída: ${formatarHoraPonto(item.saida_em)}</div><div class="item-detalhe">Status: ${resumoJornada.status}</div><div class="item-detalhe">Total trabalhado no dia: ${resumoJornada.totalTexto}</div>${ajustesHtml}</div>
+        <div class="item-actions">${resumoJornada.proximaAcao === 'Retorno' ? '<span class="tag tag-amber">Fora</span>' : '<span class="tag tag-green">Em jornada</span>'}</div>
+      </div>`;
+  }).join('') + '</div>';
+  setMsg('msgRelatorioPonto', `${rows.length} registro(s) encontrado(s).`, 'ok');
+}
+
+function montarLinhasExportacaoRelatorioPonto() {
+  const rows = window.__relatorioPontoUltimosRows || [];
+  return rows.map(item => {
+    const nome = item.funcionarios?.nome || relatorioPontoFuncionarioCache[String(item.funcionario_id)] || 'Funcionário';
+    const resumo = obterResumoJornadaPonto(item, item.intervalos_ponto || []);
+    const ajustes = (item.ajustes_admin || []).map(aj => {
+      const tipo = String(aj.motivo || '').includes('[ANULACAO MANUAL ADMIN]') ? 'Anulação manual ADM' : 'Ajuste manual ADM';
+      return `${tipo} em ${aj.data_ajuste || '-'} às ${formatarHorarioAjustePonto(aj.horario_ajuste)} por ${aj.aprovado_por_nome || 'Administrador'} (${formatarDataHoraSolicitacaoPonto(aj.aprovado_em || aj.solicitado_em)})`;
+    }).join(' | ');
+    return { Funcionario: nome, Data: item.data_ponto || '', Entrada: formatarHoraPonto(item.entrada_em), Intervalos: montarResumoIntervalos(item.intervalos_ponto || []).replace(/<[^>]+>/g, ''), Saida: formatarHoraPonto(item.saida_em), Status: resumo.status, Total: resumo.totalTexto, Ajustes_ADM: ajustes || 'Sem ajuste manual ADM' };
+  });
+}
+
+function exportarRelatorioPontoExcel() {
+  const linhas = montarLinhasExportacaoRelatorioPonto();
+  if (!linhas.length) { setMsg('msgRelatorioPonto', 'Nenhum registro para exportar.', 'err'); return; }
+  const headers = Object.keys(linhas[0]);
+  const csv = [headers.join(';')].concat(linhas.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `relatorio-ponto-${dataLocalISO()}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function exportarRelatorioPontoPDF() {
+  const linhas = montarLinhasExportacaoRelatorioPonto();
+  if (!linhas.length) { setMsg('msgRelatorioPonto', 'Nenhum registro para exportar.', 'err'); return; }
+  const htmlLinhas = linhas.map(row => `<tr><td>${escapeHtmlPonto(row.Funcionario)}</td><td>${escapeHtmlPonto(row.Data)}</td><td>${escapeHtmlPonto(row.Entrada)}</td><td>${escapeHtmlPonto(row.Intervalos)}</td><td>${escapeHtmlPonto(row.Saida)}</td><td>${escapeHtmlPonto(row.Status)}</td><td>${escapeHtmlPonto(row.Total)}</td><td>${escapeHtmlPonto(row.Ajustes_ADM)}</td></tr>`).join('');
+  const win = window.open('', '_blank');
+  if (!win) { setMsg('msgRelatorioPonto', 'O navegador bloqueou a janela de PDF.', 'err'); return; }
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de ponto</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}</style></head><body><h1>Relatório de ponto</h1><p>${escapeHtmlPonto(window.__relatorioPontoUltimoPeriodo || '')}</p><table><thead><tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Intervalos</th><th>Saída</th><th>Status</th><th>Total</th><th>Ajustes ADM</th></tr></thead><tbody>${htmlLinhas}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.close();
+}
+
   configurarAberturaAutomaticaDatePicker();
   configurarEnterCadastrosFinanceiros();
 </script>
