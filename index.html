@@ -2070,9 +2070,9 @@
       display: none !important;
     }
     .ponto-ajuste-modal-card {
-      width: min(520px, calc(100vw - 28px));
-      max-height: calc(100vh - 34px);
-      overflow-y: auto;
+      width: min(640px, calc(100vw - 28px));
+      max-height: none;
+      overflow: visible;
       background: var(--surface);
       border: 1px solid rgba(34, 197, 94, 0.28);
       border-radius: 18px;
@@ -2105,7 +2105,8 @@
       color: var(--text-muted);
     }
     .ponto-ajuste-form input,
-    .ponto-ajuste-form textarea {
+    .ponto-ajuste-form textarea,
+    .ponto-ajuste-form select {
       width: 100%;
       min-height: 42px;
       padding: 9px 11px;
@@ -2117,12 +2118,17 @@
       font-size: 14px;
       outline: none;
     }
+    .ponto-ajuste-form select option {
+      background: var(--bg);
+      color: var(--text);
+    }
     .ponto-ajuste-form textarea {
       min-height: 84px;
       resize: vertical;
     }
     .ponto-ajuste-form input:focus,
-    .ponto-ajuste-form textarea:focus {
+    .ponto-ajuste-form textarea:focus,
+    .ponto-ajuste-form select:focus {
       border-color: var(--green);
     }
     .ponto-ajuste-actions {
@@ -4372,10 +4378,11 @@
           <div class="card-title">Novo perfil</div>
           <div class="form-row">
             <input id="nomePerfil" type="text" placeholder="Nome do perfil">
-            <select id="codigoPerfil" class="campo-curto" style="max-width:160px;flex:0 0 160px !important">
-              <option value="FUNCIONARIO">FUNCIONARIO</option>
-              <option value="ADM">ADM</option>
-              <option value="PERSONALIZADO">PERSONALIZADO</option>
+            <select id="codigoPerfil" class="campo-curto" style="max-width:180px;flex:0 0 180px !important">
+              <option value="FUNCIONARIO">Funcionário</option>
+              <option value="GERENTE">Gerente</option>
+              <option value="ADM">Administrador</option>
+              <option value="PERSONALIZADO">Personalizado</option>
             </select>
             <button class="btn btn-green" id="btnSalvarPerfil" onclick="criarPerfil()">Cadastrar</button>
             <button class="btn btn-ghost" id="btnCancelarEdicaoPerfil" onclick="cancelarEdicaoPerfil()" style="display:none">Cancelar</button>
@@ -4539,6 +4546,7 @@
             <input id="pontoPinInput" type="password" placeholder="PIN / senha" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }">
             <button class="btn btn-green" type="button" onclick="registrarPontoFuncionario()">Registrar ponto</button>
             <button class="btn btn-amber" type="button" onclick="abrirModalSolicitarAjustePonto()">Solicitar ajuste</button>
+            <button class="btn btn-ghost" id="btnAjusteManualAdminPonto" type="button" onclick="abrirModalAjusteManualAdminPonto()" hidden>Ajuste manual ADM</button>
           </div>
           <div class="msg" id="msgPonto"></div>
         </div>
@@ -5183,11 +5191,9 @@
   <div class="ponto-ajuste-modal-overlay" id="modalSolicitarAjustePonto" hidden>
     <div class="ponto-ajuste-modal-card">
       <div class="ponto-ajuste-modal-title">Solicitar ajuste de ponto</div>
-      <div class="ponto-ajuste-modal-sub">Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.</div>
+      <div class="ponto-ajuste-modal-sub">Descreva o horário que precisa ser ajustado. O sistema usará automaticamente o usuário logado para identificar o funcionário.</div>
       <div class="ponto-ajuste-form">
-        <label>PIN do funcionário
-          <input id="ajustePontoPin" type="password" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="Digite seu PIN">
-        </label>
+        <input id="ajustePontoPin" type="hidden" value="">
         <label>Data do ajuste
           <input id="ajustePontoData" type="date">
         </label>
@@ -5201,6 +5207,35 @@
         <div class="ponto-ajuste-actions">
           <button class="btn btn-ghost" type="button" onclick="fecharModalSolicitarAjustePonto()">Cancelar</button>
           <button class="btn btn-green" type="button" onclick="salvarSolicitacaoAjustePonto()">Enviar solicitação</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ponto-ajuste-modal-overlay" id="modalAjusteManualAdminPonto" hidden>
+    <div class="ponto-ajuste-modal-card">
+      <div class="ponto-ajuste-modal-title">Ajuste manual de ponto</div>
+      <div class="ponto-ajuste-modal-sub">Disponível apenas para Administrador. Escolha o funcionário, informe o horário correto, a senha do administrador e o motivo do ajuste.</div>
+      <div class="ponto-ajuste-form">
+        <label>Funcionário
+          <select id="adminAjustePontoFuncionario"></select>
+        </label>
+        <label>Data do ajuste
+          <input id="adminAjustePontoData" type="date">
+        </label>
+        <label>Horário correto
+          <input id="adminAjustePontoHorario" type="time">
+        </label>
+        <label>Senha/PIN do administrador
+          <input id="adminAjustePontoSenha" type="password" maxlength="20" autocomplete="off" placeholder="Confirme sua senha">
+        </label>
+        <label>Motivo do ajuste
+          <textarea id="adminAjustePontoMotivo" maxlength="300" placeholder="Exemplo: funcionária esqueceu de bater a saída; horário conferido pelo administrador"></textarea>
+        </label>
+        <div class="msg" id="msgAjusteManualAdminPonto"></div>
+        <div class="ponto-ajuste-actions">
+          <button class="btn btn-ghost" type="button" onclick="fecharModalAjusteManualAdminPonto()">Cancelar</button>
+          <button class="btn btn-green" type="button" onclick="salvarAjusteManualAdminPonto()">Aplicar ajuste</button>
         </div>
       </div>
     </div>
@@ -5574,6 +5609,7 @@ let ultimoSucessoSincronizacaoEm = null;
 let ultimosLembretesExecucaoEm = {};
 let ultimosLembretesChecklistEm = {};
 let ultimosLembretesTarefaAtrasadaEm = {};
+let ultimosLembretesAlertasRapidosEm = {};
 let execucoesPaginaAtual = 1;
 let dashboardProdutividadePeriodo = 'dia';
 let dashboardHorasPeriodo = 'dia';
@@ -5607,6 +5643,7 @@ const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
+const INTERVALO_LEMBRETE_ALERTA_RAPIDO_MS = 10 * 60 * 1000;
 const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
 const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
 const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 10 * 60 * 1000;
@@ -5652,7 +5689,7 @@ function usuarioEhMasterNotificacoes() {
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
   const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
-  return codigo === 'MASTER' || codigo === 'ADM';
+  return codigo === 'MASTER' || codigo === 'ADM' || codigo === 'GERENTE' || codigo === 'GESTOR' || usuarioEhContaZuquiOperacional();
 }
 
 function carregarHistoricoNotificacoesMaster() {
@@ -6001,14 +6038,148 @@ function usuarioPodeReceberAlertaRapido() {
   if (!usuarioRecebeAlertaOperacional()) return false;
   const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
   const codigo = String(perfil?.codigo || '').toUpperCase();
-  if (codigo === 'FUNCIONARIO' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
+  if (codigo === 'FUNCIONARIO') return false;
+  if (codigo === 'GERENTE' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
   return !!obterPermissoesUsuario().receber_alertas_rapidas;
 }
+
+function usuarioPodeVerNotificacaoAjustePontoAdmin() {
+  return !!usuarioSistemaLogado && (usuarioEhAdministrador() || usuarioPodeAcessar('ponto_ajustes'));
+}
+
+function usuarioPodeVerNotificacaoRetornoAjustePonto(item = {}) {
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  if (!funcionarioRestritoId) return false;
+  return String(item?.funcionario_id || '') === String(funcionarioRestritoId || '');
+}
+
+function ajustePontoEhManualAdmin(item = {}) {
+  const motivo = String(item?.motivo || '').toUpperCase();
+  return motivo.includes('[AJUSTE MANUAL ADMIN]') || motivo.includes('[ANULACAO MANUAL ADMIN]');
+}
+
+function limparMotivoAjustePontoNotificacao(motivo = '') {
+  return String(motivo || '')
+    .replace(/\[AJUSTE MANUAL ADMIN\]/gi, '')
+    .replace(/\[ANULACAO MANUAL ADMIN\]/gi, '')
+    .trim();
+}
+
+function montarDescricaoAjustePonto(item = {}) {
+  const nome = item?.funcionario_nome || 'Funcionário';
+  const data = formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '-';
+  const hora = formatarHorarioAjustePonto(item?.horario_ajuste || '');
+  const motivo = limparMotivoAjustePontoNotificacao(item?.motivo || '');
+  const base = `${nome} · ${data} às ${hora}`;
+  return motivo ? `${base} · Motivo: ${motivo}` : base;
+}
+
+async function carregarNotificacoesAjustesPonto(itens = []) {
+  try {
+    const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+    const podeVerPendentes = usuarioPodeVerNotificacaoAjustePontoAdmin();
+    const podeVerRetorno = !!funcionarioRestritoId;
+    if (!podeVerPendentes && !podeVerRetorno) return;
+
+    let query = sb
+      .from('ponto_ajustes_solicitacoes')
+      .select('*')
+      .order('solicitado_em', { ascending: false })
+      .limit(80);
+
+    if (podeVerRetorno && !podeVerPendentes) {
+      query = query.eq('funcionario_id', funcionarioRestritoId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      if (!isMissingPontoAjustesTableError(error)) {
+        console.warn('Falha ao carregar notificações de ajuste de ponto:', error);
+      }
+      return;
+    }
+
+    (data || []).forEach(item => {
+      const status = String(item?.status || '').trim().toLowerCase();
+      const id = String(item?.id || '');
+      if (!id) return;
+
+      if (status === 'pendente' && podeVerPendentes) {
+        itens.push({
+          chave: `ponto_ajuste_pendente::${id}::${item?.solicitado_em || ''}`,
+          tipo: 'ponto_ajuste_pendente',
+          page: 'ponto_ajustes',
+          titulo: 'Solicitação de ajuste de ponto pendente',
+          descricao: montarDescricaoAjustePonto(item),
+          meta: {
+            funcionarioId: item?.funcionario_id || '',
+            nomeFuncionario: item?.funcionario_nome || 'Funcionário',
+            dataProgramada: formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '',
+            horarioProgramado: formatarHorarioAjustePonto(item?.horario_ajuste || ''),
+          },
+        });
+      }
+
+      if (!usuarioPodeVerNotificacaoRetornoAjustePonto(item)) return;
+
+      if (status === 'aprovado') {
+        const manualAdmin = ajustePontoEhManualAdmin(item);
+        const dataEvento = item?.aprovado_em || item?.solicitado_em || '';
+        itens.push({
+          chave: `ponto_ajuste_${manualAdmin ? 'manual_admin' : 'aprovado'}::${id}::${dataEvento}`,
+          tipo: manualAdmin ? 'ponto_ajuste_manual_admin' : 'ponto_ajuste_aprovado',
+          page: 'bater_ponto',
+          titulo: manualAdmin ? 'Ajuste manual realizado pelo administrador' : 'Ajuste de ponto aprovado',
+          descricao: `${montarDescricaoAjustePonto(item)}${item?.aprovado_por_nome ? ' · Por: ' + item.aprovado_por_nome : ''}`,
+          meta: {
+            funcionarioId: item?.funcionario_id || '',
+            nomeFuncionario: item?.funcionario_nome || 'Funcionário',
+            dataProgramada: formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '',
+            horarioProgramado: formatarHorarioAjustePonto(item?.horario_ajuste || ''),
+          },
+        });
+      }
+
+      if (status === 'recusado') {
+        const dataEvento = item?.recusado_em || item?.solicitado_em || '';
+        const motivoRecusa = String(item?.motivo_recusa || '').trim();
+        itens.push({
+          chave: `ponto_ajuste_recusado::${id}::${dataEvento}`,
+          tipo: 'ponto_ajuste_recusado',
+          page: 'bater_ponto',
+          titulo: 'Ajuste de ponto recusado',
+          descricao: `${montarDescricaoAjustePonto(item)}${motivoRecusa ? ' · Recusa: ' + motivoRecusa : ''}${item?.recusado_por_nome ? ' · Por: ' + item.recusado_por_nome : ''}`,
+          meta: {
+            funcionarioId: item?.funcionario_id || '',
+            nomeFuncionario: item?.funcionario_nome || 'Funcionário',
+            dataProgramada: formatarDataISOParaBR(item?.data_ajuste || '') || item?.data_ajuste || '',
+            horarioProgramado: formatarHorarioAjustePonto(item?.horario_ajuste || ''),
+          },
+        });
+      }
+    });
+  } catch (e) {
+    console.warn('Falha ao montar notificações de ajuste de ponto:', e);
+  }
+}
+
+function filtrarNotificacoesPermitidasFuncionarioRestrito(itens = []) {
+  if (!obterFuncionarioRestritoLogadoId()) return itens || [];
+  const tiposPermitidos = new Set([
+    'checklist_pendente',
+    'checklist_agendado',
+    'ponto_ajuste_aprovado',
+    'ponto_ajuste_recusado',
+    'ponto_ajuste_manual_admin',
+  ]);
+  return (itens || []).filter(item => tiposPermitidos.has(String(item?.tipo || '')));
+}
+
 
 function usuarioPodeConfirmarAlertaRapido() {
   const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
   const codigo = String(perfil?.codigo || '').toUpperCase();
-  if (codigo === 'FUNCIONARIO' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
+  if (codigo === 'GERENTE' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
   return !!obterPermissoesUsuario().confirmar_alertas_rapidas;
 }
 
@@ -6049,7 +6220,8 @@ const PERFIL_PERMISSOES = [
 ];
 
 function obterPermissoesBase(codigo) {
-  if (codigo === 'ADM') {
+  const codigoNormalizado = normalizarCodigoPerfil(codigo);
+  if (codigoNormalizado === 'ADM' || codigoNormalizado === 'MASTER' || codigoNormalizado === 'GERENTE' || codigoNormalizado === 'GESTOR') {
     return Object.fromEntries(PERFIL_PERMISSOES.map(p => [p.key, true]));
   }
 
@@ -6082,8 +6254,7 @@ function obterPermissoesBase(codigo) {
     tarefas_atraso: false,
     nova_execucao_manual: false,
     ver_todos_checklists: false,
-    // Liberado para o perfil FUNCIONARIO visualizar o andamento completo.
-    ver_todas_execucoes: true,
+    ver_todas_execucoes: false,
   };
 }
 
@@ -6587,6 +6758,7 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ponto_ajustes_solicitacoes' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_rapidos' }, atualizarNotificacoes)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
@@ -7189,37 +7361,53 @@ function obterPermissoesUsuario() {
     return {};
   }
 
-  const codigo = perfilNormalizado.codigo;
-  const permissoes = { ...obterPermissoesBase(codigo), ...normalizarPermissoesPerfil(perfilNormalizado.permissoes) };
-  // Perfis operacionais devem sempre enxergar o andamento completo para poder agir.
-  if (codigo === 'FUNCIONARIO' || codigo === 'GESTOR') {
-    permissoes.execucoes = true;
-    // Funcionário individual vê somente as próprias execuções.
-    // A conta operacional ZUQUI e perfis gerais continuam vendo tudo.
-    permissoes.ver_todas_execucoes = usuarioEhPerfilOperacionalGeral();
+  const codigo = normalizarCodigoPerfil(perfilNormalizado.codigo);
+
+  if (codigo === 'ADM' || codigo === 'MASTER' || codigo === 'GERENTE' || codigo === 'GESTOR') {
+    const permissoes = { ...obterPermissoesBase(codigo), ...normalizarPermissoesPerfil(perfilNormalizado.permissoes) };
+    PERFIL_PERMISSOES.forEach(p => { permissoes[p.key] = true; });
     permissoes.bater_ponto = true;
-    permissoes.relatorio_ponto = false;
-    permissoes.tarefas_rapidas = true;
-    permissoes.receber_alertas_rapidas = true;
-    permissoes.confirmar_alertas_rapidas = true;
+    permissoes.ver_todos_checklists = true;
+    permissoes.ver_todas_execucoes = true;
+    return permissoes;
   }
-  if (codigo === 'MASTER' || codigo === 'ADM') {
-    permissoes.bater_ponto = true;
-    permissoes.relatorio_ponto = true;
-    permissoes.ponto_ajustes = true;
-    permissoes.relatorio_lancamentos = true;
-    permissoes.relatorio_financeiro = true;
-    permissoes.relatorio_ajuste_saldo = true;
-    permissoes.financeiro_formas_pagamento = true;
-    permissoes.financeiro_conta_financeira = true;
-    permissoes.financeiro_recebiveis = true;
-    permissoes.financeiro_cofre = true;
-    permissoes.tarefas_atraso = true;
-    permissoes.tarefas_rapidas = true;
-    permissoes.receber_alertas_rapidas = true;
-    permissoes.confirmar_alertas_rapidas = true;
+
+  if (codigo === 'FUNCIONARIO') {
+    return {
+      ...obterPermissoesBase('FUNCIONARIO'),
+      checklists: true,
+      bater_ponto: true,
+      execucoes: true,
+      receber_alertas_rapidas: true,
+      confirmar_alertas_rapidas: true,
+      ver_todos_checklists: false,
+      ver_todas_execucoes: false,
+      ponto_ajustes: false,
+      relatorio_ponto: false,
+      dashboard: false,
+      funcionarios: false,
+      perfis: false,
+      tarefas: false,
+      tarefas_rapidas: false,
+      financeiro_fornecedores: false,
+      financeiro_formas_pagamento: false,
+      financeiro_contasapagar: false,
+      financeiro_baixar_contas: false,
+      financeiro_conta_financeira: false,
+      financeiro_recebiveis: false,
+      financeiro_cofre: false,
+      relatorio_lancamentos: false,
+      relatorio_financeiro: false,
+      relatorio_ajuste_saldo: false,
+      solicitacoes: false,
+      emails: false,
+      configuracoes: false,
+      tarefas_atraso: false,
+      nova_execucao_manual: false,
+    };
   }
-  return permissoes;
+
+  return { ...obterPermissoesBase(codigo), ...normalizarPermissoesPerfil(perfilNormalizado.permissoes) };
 }
 
 function usuarioPodeAcessar(pageId) {
@@ -7229,7 +7417,7 @@ function usuarioPodeAcessar(pageId) {
 }
 
 function usuarioEhAdministrador() {
-  return usuarioSistemaLogado?.tipo === 'admin' || usuarioSistemaLogado?.perfil?.codigo === 'ADM';
+  return usuarioSistemaLogado?.tipo === 'admin' || normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo) === 'ADM';
 }
 
 function usuarioEhContaZuquiOperacional() {
@@ -7241,8 +7429,8 @@ function usuarioEhContaZuquiOperacional() {
 function usuarioEhPerfilOperacionalGeral() {
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
-  const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
-  return codigo === 'ADM' || codigo === 'MASTER' || usuarioEhContaZuquiOperacional();
+  const codigo = normalizarCodigoPerfil(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '');
+  return codigo === 'ADM' || codigo === 'MASTER' || codigo === 'GERENTE' || codigo === 'GESTOR' || usuarioEhContaZuquiOperacional();
 }
 
 function usuarioDeveVerApenasProprioFuncionario() {
@@ -7263,6 +7451,14 @@ function usuarioPodeVerTodasExecucoes() {
   return usuarioEhPerfilOperacionalGeral() || !!obterPermissoesUsuario().ver_todas_execucoes;
 }
 
+function normalizarCodigoPerfil(codigo) {
+  const valor = String(codigo || '').trim().toUpperCase();
+  if (['FUNCIONARIOS', 'FUNCIONÁRIOS', 'GERENCIA', 'GERENTE', 'GESTOR'].includes(valor)) return 'GERENTE';
+  if (['FUNCIONARIO', 'FUNCIONÁRIO'].includes(valor)) return 'FUNCIONARIO';
+  if (['ADMIN', 'ADMINISTRADOR'].includes(valor)) return 'ADM';
+  return valor;
+}
+
 function normalizarPermissoesPerfil(permissoes) {
   if (!permissoes) return {};
   if (typeof permissoes === 'string') {
@@ -7281,8 +7477,15 @@ function normalizarPerfilUsuario(perfil) {
   const perfilBase = Array.isArray(perfil) ? (perfil[0] || null) : perfil;
   if (!perfilBase || typeof perfilBase !== 'object') return null;
 
+  const codigo = normalizarCodigoPerfil(perfilBase.codigo);
+  const nome = codigo === 'GERENTE' && normalizarTextoComparacao(perfilBase.nome || '').includes('funcion')
+    ? 'Gerente'
+    : (perfilBase.nome || (codigo === 'FUNCIONARIO' ? 'Funcionário' : perfilBase.nome));
+
   return {
     ...perfilBase,
+    nome,
+    codigo,
     permissoes: normalizarPermissoesPerfil(perfilBase.permissoes),
   };
 }
@@ -8338,6 +8541,8 @@ async function processarFilaAlertasEmail() {
 async function enviarEmailChecklistFinalizado(execucaoId) {
   if (!execucaoId) return;
 
+  await carregarNotificacoesAjustesPonto(itens);
+
   try {
     const cfg = await obterConfiguracoesLoja();
     if (cfg.missing || !cfg.data?.enviar_email_lembrete) return;
@@ -8589,7 +8794,14 @@ function falarNovaTarefaNotificacao() {
   } catch (e) {}
 }
 
-function falarAlertaRapidoNotificacao() {
+function montarFalaAlertaRapidoNotificacao(item = null) {
+  const meta = item?.meta || {};
+  const nome = String(meta.nomeFuncionario || meta.nome_funcionario || meta.funcionarioDestinoNome || '').trim() || 'FUNCIONÁRIO';
+  const mensagem = String(meta.mensagem || meta.nomeTarefa || item?.descricao || item?.titulo || 'NOVO ALERTA').replace(/^ALERTA\s*:?\s*/i, '').replace(/["“”]/g, '').trim() || 'NOVO ALERTA';
+  return `NOVO ALERTA - ${nome} - ${mensagem}`.toUpperCase();
+}
+
+function falarAlertaRapidoNotificacao(item = null) {
   if (!('speechSynthesis' in window)) return;
   try {
     const synth = window.speechSynthesis;
@@ -8598,27 +8810,31 @@ function falarAlertaRapidoNotificacao() {
     const vozPtBr = vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt-br'))
       || vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt'))
       || null;
+    const texto = montarFalaAlertaRapidoNotificacao(item);
 
-    for (let i = 0; i < 3; i += 1) {
-      const utter = new SpeechSynthesisUtterance('ALERTA RÁPIDO!');
+    for (let i = 0; i < 2; i += 1) {
+      const utter = new SpeechSynthesisUtterance(texto);
       utter.lang = 'pt-BR';
       utter.volume = 1;
-      utter.rate = 1.18;
-      utter.pitch = 1.24;
+      utter.rate = 1.05;
+      utter.pitch = 1.18;
       if (vozPtBr) utter.voice = vozPtBr;
       synth.speak(utter);
     }
   } catch (e) {}
 }
 
-function tocarSomAlertaRapidoNotificacao(forcar = false) {
+function tocarSomAlertaRapidoNotificacao(forcar = false, item = null) {
   if (forcar) {
     somNotificacaoBloqueadoAte = 0;
   }
-  tocarSomNotificacaoFallback(true, false);
+  tocarSireneSequencial({ quantidade: 2, duracao: 2.0, volume: 0.34, frequenciaBaixa: 520, frequenciaAlta: 1320, espacamento: 0.22 });
   window.setTimeout(() => {
-    falarAlertaRapidoNotificacao();
-  }, 260);
+    tocarSinoNotificacaoAlto({ quantidade: 3, volume: 0.55, espacamento: 0.18 });
+  }, 180);
+  window.setTimeout(() => {
+    falarAlertaRapidoNotificacao(item);
+  }, 900);
 }
 
 function falarVerificarTarefaNotificacao() {
@@ -9073,6 +9289,15 @@ function limparControleLembretesTarefaAtrasada(chavesAtivas = []) {
   });
 }
 
+function limparControleLembretesAlertasRapidos(chavesAtivas = []) {
+  const ativos = new Set(chavesAtivas);
+  Object.keys(ultimosLembretesAlertasRapidosEm).forEach(chave => {
+    if (!ativos.has(chave)) {
+      delete ultimosLembretesAlertasRapidosEm[chave];
+    }
+  });
+}
+
 function sincronizarAvisoNotificacoes() {
   const totalAtual = notificacoesAtuais.length;
   const notificacoesCriticas = obterNotificacoesCriticas();
@@ -9080,7 +9305,7 @@ function sincronizarAvisoNotificacoes() {
   const assinaturaCriticaAtual = notificacoesCriticas.map(item => item.chave).sort().join('|');
   const criticasOperacionais = notificacoesCriticas.filter(item => tipoNotificacaoTarefaAtrasada(item?.tipo));
   const alertasRapidos = notificacoesCriticas.filter(item => item?.tipo === 'alerta_rapido');
-  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente' || item.tipo === 'alerta_rapido');
+  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente');
   const tarefasAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'tarefa_atrasada');
   const execucoesAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'execucao_atrasada');
   const agora = Date.now();
@@ -9092,10 +9317,11 @@ function sincronizarAvisoNotificacoes() {
   limparControleLembretesExecucao(execucoesAtrasadas.map(item => item.chave).filter(Boolean));
   limparControleLembretesChecklist(lancamentosPendentes.map(item => item.chave).filter(Boolean));
   limparControleLembretesTarefaAtrasada(tarefasAtrasadas.map(item => item.chave).filter(Boolean));
+  limparControleLembretesAlertasRapidos(alertasRapidos.map(item => item.chave).filter(Boolean));
 
   const tocarSomCriticoChecklist = () => {
     if (!criticasOperacionais.length && alertasRapidos.length) {
-      tocarSomAlertaRapidoNotificacao(true);
+      tocarSomAlertaRapidoNotificacao(true, alertasRapidos[0]);
     } else {
       tocarSomNotificacao(true);
     }
@@ -9180,6 +9406,23 @@ function sincronizarAvisoNotificacoes() {
     });
     if (!somTocadoNesteCiclo) {
       tocarSomCriticoChecklist();
+    }
+  }
+
+  const lembretesAlertasRapidosDevidos = alertasRapidos.filter(item => {
+    const ultimoLembrete = ultimosLembretesAlertasRapidosEm[item.chave] || 0;
+    return !ultimoLembrete || (agora - ultimoLembrete) >= INTERVALO_LEMBRETE_ALERTA_RAPIDO_MS;
+  });
+
+  if (lembretesAlertasRapidosDevidos.length && alertaFortePermitido) {
+    lembretesAlertasRapidosDevidos.forEach(item => {
+      if (item?.chave) {
+        ultimosLembretesAlertasRapidosEm[item.chave] = agora;
+      }
+    });
+    if (!somTocadoNesteCiclo) {
+      tocarSomAlertaRapidoNotificacao(true, lembretesAlertasRapidosDevidos[0]);
+      somTocadoNesteCiclo = true;
     }
   }
 
@@ -9338,6 +9581,24 @@ async function carregarNotificacoes() {
       execucoesPendentesQuery.order('iniciado_em', { ascending: false }),
     ]);
 
+    const lancamentoIdsPendentesParaAuditoria = [...new Set((lancamentosPendentes || [])
+      .map(item => item.id)
+      .filter(Boolean)
+      .map(item => String(item)))];
+    let execucoesDoDiaDosLancamentos = [];
+
+    if (lancamentoIdsPendentesParaAuditoria.length) {
+      const { data: execucoesLancamentosData, error: errExecucoesLancamentos } = await sb
+        .from('checklist_execucoes')
+        .select('id, lancamento_id, status, data_execucao')
+        .in('lancamento_id', lancamentoIdsPendentesParaAuditoria)
+        .eq('data_execucao', hoje());
+
+      if (!errExecucoesLancamentos) {
+        execucoesDoDiaDosLancamentos = execucoesLancamentosData || [];
+      }
+    }
+
     const funcionarioRestritoNotificacoesId = obterFuncionarioRestritoLogadoId();
     if (funcionarioRestritoNotificacoesId) {
       for (let i = lancamentosPendentes.length - 1; i >= 0; i--) {
@@ -9389,7 +9650,14 @@ async function carregarNotificacoes() {
       lancamentosExecucaoMap = Object.fromEntries((lancamentosExecucaoData || []).map(item => [String(item.id), item]));
     }
 
-    const lancamentosComExecucaoAtivaIds = new Set((execucoesPendentes || [])
+    const lancamentosComExecucaoAtivaIds = new Set([
+      ...(execucoesPendentes || []),
+      ...(execucoesDoDiaDosLancamentos || []),
+    ]
+      .filter(item => {
+        const statusExecucao = String(item?.status || '').trim().toLowerCase();
+        return statusExecucao !== 'cancelado' && statusExecucao !== 'cancelada';
+      })
       .map(item => item.lancamento_id)
       .filter(Boolean)
       .map(item => String(item)));
@@ -9638,14 +9906,16 @@ async function carregarNotificacoes() {
     }
   } catch (e) {}
 
+  const itensPermitidosUsuario = filtrarNotificacoesPermitidasFuncionarioRestrito(itens);
+
   if (usuarioEhMasterNotificacoes()) {
     // Para evitar "notificações fantasmas", o master passa a exibir apenas
     // notificações efetivamente ativas no banco no momento da consulta.
-    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(itens).filter(item => !notificacaoFoiLimpaPeloUsuario(item));
+    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(itensPermitidosUsuario).filter(item => !notificacaoFoiLimpaPeloUsuario(item));
     salvarHistoricoNotificacoesMaster(notificacoesHistoricoMaster);
     notificacoesAtuais = notificacoesHistoricoMaster;
   } else {
-    notificacoesAtuais = itens.filter(item => !notificacaoFoiLimpaPeloUsuario(item));
+    notificacoesAtuais = itensPermitidosUsuario.filter(item => !notificacaoFoiLimpaPeloUsuario(item));
   }
   atualizarBadgeTarefasAtraso(obterQuantidadeAtrasosNotificacao());
   renderizarListaNotificacoes();
@@ -13974,8 +14244,9 @@ async function editarPerfil(id) {
 
   perfilEmEdicaoId = id;
   document.getElementById('nomePerfil').value = perfil.nome || '';
-  document.getElementById('codigoPerfil').value = perfil.codigo || 'FUNCIONARIO';
-  renderizarPermissoesPerfil({ ...obterPermissoesBase(perfil.codigo || 'FUNCIONARIO'), ...(perfil.permissoes || {}) });
+  const codigoPerfilNormalizado = normalizarCodigoPerfil(perfil.codigo || 'FUNCIONARIO');
+  document.getElementById('codigoPerfil').value = codigoPerfilNormalizado || 'FUNCIONARIO';
+  renderizarPermissoesPerfil({ ...obterPermissoesBase(codigoPerfilNormalizado || 'FUNCIONARIO'), ...(perfil.permissoes || {}) });
   const btnSalvar = document.getElementById('btnSalvarPerfil');
   const btnCancelar = document.getElementById('btnCancelarEdicaoPerfil');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
@@ -16275,9 +16546,10 @@ function preencherSelectFuncionariosPonto(selectEl, funcionarios = [], {
 }
 
 async function carregarSelectFuncionariosPonto() {
-  const [selPonto, selRelatorio] = [
+  const [selPonto, selRelatorio, selAdminAjuste] = [
     document.getElementById('pontoFuncionarioSelect'),
     document.getElementById('filtroPontoFuncionario'),
+    document.getElementById('adminAjustePontoFuncionario'),
   ];
 
   try {
@@ -16289,6 +16561,7 @@ async function carregarSelectFuncionariosPonto() {
 
     preencherSelectFuncionariosPonto(selPonto, funcionarios, { placeholder: '- Selecione o funcionário -' });
     preencherSelectFuncionariosPonto(selRelatorio, funcionarios, { incluirTodos: !funcionarioRestritoId });
+    preencherSelectFuncionariosPonto(selAdminAjuste, funcionarios, { placeholder: '- Selecione o funcionário -' });
 
     if (funcionarioRestritoId) {
       if (selPonto) {
@@ -16299,9 +16572,14 @@ async function carregarSelectFuncionariosPonto() {
         selRelatorio.value = funcionarioRestritoId;
         selRelatorio.disabled = true;
       }
+      if (selAdminAjuste) {
+        selAdminAjuste.value = funcionarioRestritoId;
+        selAdminAjuste.disabled = true;
+      }
     } else {
       if (selPonto) selPonto.disabled = false;
       if (selRelatorio) selRelatorio.disabled = false;
+      if (selAdminAjuste) selAdminAjuste.disabled = false;
       if (selPonto && !selPonto.value && usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id) {
         selPonto.value = String(usuarioSistemaLogado.id);
       }
@@ -16823,6 +17101,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
 
     if (!porFuncionario.has(funcionarioIdAtual)) {
       porFuncionario.set(funcionarioIdAtual, {
+        id: funcionarioIdAtual,
         nome,
         periodos: [],
         totalMinutos: 0,
@@ -16880,6 +17159,10 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     const statusClasse = item.aberto ? 'tag tag-amber' : 'tag tag-green';
     const statusTexto = item.aberto ? 'Aberto agora' : 'Fechado';
 
+    const acaoAdmin = usuarioEhAdministrador()
+      ? `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalAjusteManualAdminPonto('${item.id}')">Ajustar</button>`
+      : '';
+
     return `
       <div class="ponto-resumo-linha">
         <div class="ponto-resumo-nome">${escapeHtml(item.nome)}</div>
@@ -16889,7 +17172,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
           <div>Última entrada: ${formatarHora(item.ultimaEntrada)}</div>
           <div>Última saída: ${item.ultimaSaida ? formatarHora(item.ultimaSaida) : '-'}</div>
         </div>
-        <div class="ponto-resumo-tag"><span class="${statusClasse}">${statusTexto}</span></div>
+        <div class="ponto-resumo-tag" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap"><span class="${statusClasse}">${statusTexto}</span>${acaoAdmin}</div>
       </div>
     `;
   }).join('') + '</div>';
@@ -16905,6 +17188,8 @@ async function carregarBaterPonto() {
     campoPin.style.display = funcionarioRestritoId ? 'none' : '';
     campoPin.required = !funcionarioRestritoId;
   }
+  const btnAjusteManualAdmin = document.getElementById('btnAjusteManualAdminPonto');
+  if (btnAjusteManualAdmin) btnAjusteManualAdmin.hidden = !usuarioEhAdministrador();
   await carregarResumoPontoHoje(funcionarioRestritoId || '');
   await carregarHorasDashboard();
 }
@@ -17273,6 +17558,129 @@ async function registrarPontoFuncionario() {
 }
 
 
+function abrirModalAjusteManualAdminPonto(funcionarioId = '') {
+  if (!usuarioEhAdministrador()) {
+    setMsg('msgPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+    return;
+  }
+  const modal = document.getElementById('modalAjusteManualAdminPonto');
+  if (!modal) return;
+  const sel = document.getElementById('adminAjustePontoFuncionario');
+  const data = document.getElementById('adminAjustePontoData');
+  const horario = document.getElementById('adminAjustePontoHorario');
+  const senha = document.getElementById('adminAjustePontoSenha');
+  const motivo = document.getElementById('adminAjustePontoMotivo');
+  carregarSelectFuncionariosPonto().then(() => {
+    if (sel && funcionarioId) sel.value = String(funcionarioId);
+  }).catch(() => {});
+  if (sel && funcionarioId) sel.value = String(funcionarioId);
+  if (data) data.value = dataLocalISO();
+  if (horario) horario.value = '';
+  if (senha) senha.value = '';
+  if (motivo) motivo.value = '';
+  setMsg('msgAjusteManualAdminPonto', '', '');
+  modal.hidden = false;
+  setTimeout(() => (sel && !sel.value ? sel.focus() : horario?.focus()), 80);
+}
+
+function fecharModalAjusteManualAdminPonto() {
+  const modal = document.getElementById('modalAjusteManualAdminPonto');
+  if (modal) modal.hidden = true;
+  setMsg('msgAjusteManualAdminPonto', '', '');
+}
+
+async function validarSenhaAdministradorParaAjustePonto(senhaInformada) {
+  const senha = String(senhaInformada || '').trim();
+  if (!senha) return false;
+
+  if (usuarioSistemaLogado?.tipo === 'admin') {
+    const username = String(usuarioSistemaLogado?.username || '').toLowerCase();
+    return predefinedUsers.some(u => String(u.username || '').toLowerCase() === username && String(u.password || '') === senha);
+  }
+
+  if (usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id && usuarioEhAdministrador()) {
+    const { data, error } = await sb
+      .from('funcionarios')
+      .select('id, pin, ativo')
+      .eq('id', usuarioSistemaLogado.id)
+      .eq('ativo', true)
+      .maybeSingle();
+    if (error) throw error;
+    return String(data?.pin ?? '') === senha;
+  }
+
+  return false;
+}
+
+async function salvarAjusteManualAdminPonto() {
+  if (!usuarioEhAdministrador()) {
+    setMsg('msgAjusteManualAdminPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+    return;
+  }
+
+  const funcionarioId = String(document.getElementById('adminAjustePontoFuncionario')?.value || '').trim();
+  const dataAjuste = String(document.getElementById('adminAjustePontoData')?.value || '').trim();
+  const horarioAjuste = String(document.getElementById('adminAjustePontoHorario')?.value || '').trim();
+  const senha = String(document.getElementById('adminAjustePontoSenha')?.value || '').trim();
+  const motivo = String(document.getElementById('adminAjustePontoMotivo')?.value || '').trim();
+
+  if (!funcionarioId || !dataAjuste || !horarioAjuste || !senha || !motivo) {
+    setMsg('msgAjusteManualAdminPonto', 'Preencha funcionário, data, horário, senha do administrador e motivo.', 'err');
+    return;
+  }
+
+  setMsg('msgAjusteManualAdminPonto', 'Validando senha do administrador...', 'ok');
+  let senhaOk = false;
+  try {
+    senhaOk = await validarSenhaAdministradorParaAjustePonto(senha);
+  } catch (error) {
+    setMsg('msgAjusteManualAdminPonto', `Não foi possível validar a senha: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (!senhaOk) {
+    setMsg('msgAjusteManualAdminPonto', 'Senha/PIN do administrador inválido.', 'err');
+    return;
+  }
+
+  const funcionarioNome = relatorioPontoFuncionarioCache[funcionarioId]
+    || document.getElementById('adminAjustePontoFuncionario')?.selectedOptions?.[0]?.textContent
+    || 'Funcionário';
+
+  const solicitacaoManual = {
+    funcionario_id: funcionarioId,
+    funcionario_nome: funcionarioNome,
+    data_ajuste: dataAjuste,
+    horario_ajuste: horarioAjuste,
+    motivo: `[AJUSTE MANUAL ADMIN] ${motivo}`,
+    status: 'aprovado',
+    aprovado_em: new Date().toISOString(),
+    aprovado_por_id: obterIdAdminAtual(),
+    aprovado_por_nome: obterNomeAdminAtual(),
+  };
+
+  setMsg('msgAjusteManualAdminPonto', 'Aplicando ajuste no ponto...', 'ok');
+  const resultado = await aplicarAjusteAprovadoNoPonto(solicitacaoManual);
+  if (!resultado.ok) {
+    setMsg('msgAjusteManualAdminPonto', `Não foi possível aplicar o ajuste: ${resultado.mensagem}`, 'err');
+    return;
+  }
+
+  try {
+    await sb.from('ponto_ajustes_solicitacoes').insert([solicitacaoManual]);
+  } catch (e) {
+    console.warn('Não foi possível registrar o ajuste manual no histórico de solicitações:', e);
+  }
+
+  setMsg('msgPonto', `Ajuste manual aplicado para ${funcionarioNome}. ${resultado.mensagem}`, 'ok');
+  fecharModalAjusteManualAdminPonto();
+  await carregarNotificacoes();
+  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoId() || '');
+  await carregarHorasDashboard();
+  if (obterPaginaAtivaAtual() === 'relatorio_ponto') await carregarRelatorioPonto();
+  if (obterPaginaAtivaAtual() === 'ponto_ajustes') await carregarAjustesPonto();
+}
+
 function abrirModalSolicitarAjustePonto() {
   const modal = document.getElementById('modalSolicitarAjustePonto');
   if (!modal) return;
@@ -17286,7 +17694,7 @@ function abrirModalSolicitarAjustePonto() {
   if (pin) pin.value = '';
   setMsg('msgSolicitarAjustePonto', '', '');
   modal.hidden = false;
-  setTimeout(() => pin?.focus(), 80);
+  setTimeout(() => horario?.focus() || data?.focus(), 80);
 }
 
 function fecharModalSolicitarAjustePonto() {
@@ -17301,19 +17709,20 @@ function isMissingPontoAjustesTableError(error) {
 }
 
 async function salvarSolicitacaoAjustePonto() {
-  const pin = String(document.getElementById('ajustePontoPin')?.value || '').trim();
   const dataAjuste = String(document.getElementById('ajustePontoData')?.value || '').trim();
   const horarioAjuste = String(document.getElementById('ajustePontoHorario')?.value || '').trim();
   const motivo = String(document.getElementById('ajustePontoMotivo')?.value || '').trim();
 
-  if (!pin || !dataAjuste || !horarioAjuste || !motivo) {
-    setMsg('msgSolicitarAjustePonto', 'Preencha PIN, data, horário e motivo.', 'err');
+  if (!dataAjuste || !horarioAjuste || !motivo) {
+    setMsg('msgSolicitarAjustePonto', 'Preencha data, horário e motivo.', 'err');
     return;
   }
 
-  const funcionario = await obterFuncionarioAtivoPorPin(pin);
+  const funcionario = usuarioSistemaLogado?.id
+    ? { id: usuarioSistemaLogado.id, nome: usuarioSistemaLogado.nome || 'Funcionário' }
+    : null;
   if (!funcionario?.id) {
-    setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
+    setMsg('msgSolicitarAjustePonto', 'Não foi possível identificar o funcionário logado. Faça login novamente.', 'err');
     return;
   }
 
@@ -17340,6 +17749,7 @@ async function salvarSolicitacaoAjustePonto() {
 
   setMsg('msgPonto', `Solicitação enviada para aprovação do administrador (${funcionario.nome || 'Funcionário'}).`, 'ok');
   fecharModalSolicitarAjustePonto();
+  await carregarNotificacoes();
   if (obterPaginaAtivaAtual() === 'ponto_ajustes') await carregarAjustesPonto();
 }
 
@@ -17659,6 +18069,7 @@ async function aprovarAjustePonto(id) {
   }
 
   setMsg('msgPontoAjustes', `Ajuste aprovado. ${resultado.mensagem}`, 'ok');
+  await carregarNotificacoes();
   await carregarAjustesPonto();
   await carregarResumoPontoHoje();
   await carregarHorasDashboard();
@@ -17709,6 +18120,7 @@ async function recusarAjustePonto(id) {
     return;
   }
   setMsg('msgPontoAjustes', 'Solicitação recusada com operador master e motivo registrados.', 'ok');
+  await carregarNotificacoes();
   await carregarAjustesPonto();
 }
 
