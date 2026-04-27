@@ -515,6 +515,12 @@
       text-align: left;
       word-break: break-word;
     }
+    .topbar-store-name {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.15;
+      color: var(--text);
+    }
     #topbarUserInfo {
       display: inline-flex;
       align-items: center;
@@ -4242,6 +4248,8 @@
           </span>
         </div>
         <div class="topbar-user" id="topbarUserInfo" hidden>
+          <div class="topbar-user-label">Loja logada</div>
+          <div class="topbar-user-name topbar-store-name" id="topbar-store-name">-</div>
           <div class="topbar-user-label">Usuário logado</div>
           <div class="topbar-user-name" id="topbar-user-name">-</div>
         </div>
@@ -21051,14 +21059,78 @@ window.setTimeout(() => {
     shell.style.display = logado ? 'flex' : 'none';
   }
 
+  const topbarNomeLojaCache = new Map();
+
+  function obterNomeLojaSessaoTopbar() {
+    const lojaDireta = String(
+      usuarioSistemaLogado?.loja_nome
+      || usuarioSistemaLogado?.nome_loja
+      || usuarioSistemaLogado?.loja_nome_exibicao
+      || ''
+    ).trim();
+
+    if (lojaDireta) return lojaDireta;
+    if (usuarioSistemaLogado?.tipo === 'admin_loja') return 'Loja vinculada';
+    if (usuarioSistemaLogado?.tipo === 'admin') return 'Todas as lojas';
+    return 'Loja padrão';
+  }
+
+  async function preencherNomeLojaTopbarPorId(lojaId = '') {
+    const lojaNameEl = document.getElementById('topbar-store-name');
+    const id = String(lojaId || '').trim();
+    if (!lojaNameEl || !id) return;
+
+    if (topbarNomeLojaCache.has(id)) {
+      lojaNameEl.textContent = topbarNomeLojaCache.get(id) || 'Loja vinculada';
+      return;
+    }
+
+    try {
+      let nomeLoja = '';
+      const consultaLojas = await sb
+        .from('lojas')
+        .select('id, nome, nome_loja, descricao, codigo')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!consultaLojas.error && consultaLojas.data) {
+        const item = consultaLojas.data;
+        nomeLoja = String(item.nome || item.nome_loja || item.descricao || item.codigo || '').trim();
+      }
+
+      if (!nomeLoja) {
+        const consultaFiliais = await sb
+          .from('filiais')
+          .select('id, nome, nome_loja, descricao, codigo')
+          .eq('id', id)
+          .maybeSingle();
+        if (!consultaFiliais.error && consultaFiliais.data) {
+          const item = consultaFiliais.data;
+          nomeLoja = String(item.nome || item.nome_loja || item.descricao || item.codigo || '').trim();
+        }
+      }
+
+      if (nomeLoja) {
+        topbarNomeLojaCache.set(id, nomeLoja);
+        if (String(usuarioSistemaLogado?.loja_id || '') === id) {
+          lojaNameEl.textContent = nomeLoja;
+        }
+      }
+    } catch (_) {
+      // Mantém fallback silencioso para não poluir UX da topbar.
+    }
+  }
+
   function atualizarUsuarioTopbar() {
     const container = document.getElementById('topbarUserInfo');
     const nameEl = document.getElementById('topbar-user-name');
-    if (!container || !nameEl) return;
+      const lojaNameEl = document.getElementById('topbar-store-name');
+      if (!container || !nameEl || !lojaNameEl) return;
 
     if (!usuarioSistemaLogado) {
       container.hidden = true;
       nameEl.textContent = '-';
+        lojaNameEl.textContent = '-';
       return;
     }
 
@@ -21067,8 +21139,14 @@ window.setTimeout(() => {
       : (usuarioSistemaLogado.nome || usuarioSistemaLogado.username || 'Usuário');
 
     nameEl.textContent = nomeUsuario;
+    lojaNameEl.textContent = obterNomeLojaSessaoTopbar();
     container.hidden = false;
     container.style.display = 'flex';
+
+    const lojaId = String(usuarioSistemaLogado?.loja_id || '').trim();
+    if (usuarioSistemaLogado?.tipo === 'admin_loja' && lojaId) {
+      preencherNomeLojaTopbarPorId(lojaId);
+    }
   }
 
 function obterPreferenciasLoginSalvas() {
@@ -21552,6 +21630,37 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
           .ilike('usuario', username)
           .maybeSingle();
         if (!erroAdmin && adminLoja && String(adminLoja.pin ?? '') === password) {
+          let nomeLojaAdmin = '';
+          const lojaIdAdmin = String(adminLoja.loja_id || '').trim();
+
+          if (lojaIdAdmin) {
+            try {
+              const lojaRes = await sb
+                .from('lojas')
+                .select('id, nome, nome_loja, descricao, codigo')
+                .eq('id', lojaIdAdmin)
+                .maybeSingle();
+              if (!lojaRes.error && lojaRes.data) {
+                const loja = lojaRes.data;
+                nomeLojaAdmin = String(loja.nome || loja.nome_loja || loja.descricao || loja.codigo || '').trim();
+              }
+            } catch (_) {}
+
+            if (!nomeLojaAdmin) {
+              try {
+                const filialRes = await sb
+                  .from('filiais')
+                  .select('id, nome, nome_loja, descricao, codigo')
+                  .eq('id', lojaIdAdmin)
+                  .maybeSingle();
+                if (!filialRes.error && filialRes.data) {
+                  const filial = filialRes.data;
+                  nomeLojaAdmin = String(filial.nome || filial.nome_loja || filial.descricao || filial.codigo || '').trim();
+                }
+              } catch (_) {}
+            }
+          }
+
           salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
           salvarSessaoSistema({
             tipo: 'admin_loja',
@@ -21559,6 +21668,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
             nome: adminLoja.nome,
             usuario: adminLoja.usuario,
             loja_id: adminLoja.loja_id,
+            loja_nome: nomeLojaAdmin || 'Loja vinculada',
             perfil: { codigo: 'ADM', permissoes: obterPermissoesBase('ADM') }
           }, { manterConectado });
           setSistemaLogado(true);
