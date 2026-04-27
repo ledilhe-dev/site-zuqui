@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="2.2">
+  <meta name="app-version" content="3.0">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,10 +15,11 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 2.2 - Produção
+    Versão 3.0 - Produção
     Principais ajustes:
-    - Solicitação e aprovação de ajuste de ponto.
-    - Correção de duplicidade ao editar títulos/contas a pagar parceladas.
+    - Criação de multilojas (isolamento por loja e operação por unidade).
+    - Consolidação de regras de acesso por perfil em ambiente multiunidade.
+    - Ajustes gerais de estabilidade no fluxo operacional.
   -->
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -2261,7 +2262,7 @@
       color: var(--text);
       font-family: inherit;
     }
-    @media (max-width: 640px) {
+    @media (max-width: 640px), (hover: none) and (pointer: coarse) {
       #bater_ponto .ponto-registro-row {
         display: grid;
         grid-template-columns: 1fr;
@@ -2270,6 +2271,46 @@
       #bater_ponto .ponto-registro-row .btn {
         width: 100% !important;
         max-width: 100% !important;
+      }
+
+      .ponto-ajuste-modal-overlay {
+        align-items: flex-start;
+        padding: 8px;
+      }
+      .ponto-ajuste-modal-card {
+        width: calc(100vw - 16px);
+        margin-top: 8px;
+        border-radius: 14px;
+        padding: 14px;
+        max-height: calc(100dvh - 20px);
+        overflow: hidden;
+      }
+      #modalSolicitarAjustePonto .ponto-ajuste-modal-sub {
+        display: none;
+      }
+      #modalSolicitarAjustePonto .ponto-ajuste-form {
+        gap: 8px;
+      }
+      #modalSolicitarAjustePonto .ponto-ajuste-form label {
+        gap: 4px;
+        font-size: 10px;
+      }
+      #modalSolicitarAjustePonto .ponto-ajuste-form input,
+      #modalSolicitarAjustePonto .ponto-ajuste-form textarea,
+      #modalSolicitarAjustePonto .ponto-ajuste-form select {
+        min-height: 38px;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+      #modalSolicitarAjustePonto #ajustePontoMotivo {
+        min-height: 64px;
+        resize: none;
+      }
+      #modalSolicitarAjustePonto .ponto-ajuste-actions {
+        margin-top: 2px;
+      }
+      #modalSolicitarAjustePonto .ponto-ajuste-actions .btn {
+        flex: 1;
       }
     }
 
@@ -4460,6 +4501,42 @@
         </div>
 
         <div class="card">
+          <div class="card-title">Filiais (Lojas)</div>
+          <div class="form-row">
+            <input id="nomeLojaCadastro" type="text" placeholder="Nome da filial">
+            <input id="codigoLojaCadastro" class="campo-curto" type="text" placeholder="Código (opcional)">
+            <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
+              <input id="ativoLojaCadastro" type="checkbox" checked>
+              <span>Ativa</span>
+            </label>
+            <button class="btn btn-green" id="btnSalvarLojaCadastro" onclick="salvarLojaCadastro()">Cadastrar filial</button>
+            <button class="btn btn-ghost" id="btnCancelarEdicaoLojaCadastro" onclick="cancelarEdicaoLojaCadastro()" style="display:none">Cancelar</button>
+          </div>
+          <div class="msg" id="msgLojasCadastro"></div>
+          <div id="listaLojasCadastro"><div class="empty">Carregando⬦</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Admins por loja</div>
+          <div class="form-row">
+            <select id="lojaAdminCadastro" class="campo-curto" style="min-width:220px;">
+              <option value="">- Selecione a loja -</option>
+            </select>
+            <input id="nomeAdminCadastro" type="text" placeholder="Nome do admin">
+            <input id="usuarioAdminCadastro" class="campo-curto" type="text" placeholder="Usuário login">
+            <input id="pinAdminCadastro" class="campo-curto" type="password" placeholder="PIN" maxlength="20" autocomplete="new-password">
+            <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
+              <input id="ativoAdminCadastro" type="checkbox" checked>
+              <span>Ativo</span>
+            </label>
+            <button class="btn btn-green" id="btnSalvarAdminCadastro" onclick="salvarAdminLojaCadastro()">Cadastrar admin</button>
+            <button class="btn btn-ghost" id="btnCancelarEdicaoAdminCadastro" onclick="cancelarEdicaoAdminLojaCadastro()" style="display:none">Cancelar</button>
+          </div>
+          <div class="msg" id="msgAdminsCadastro"></div>
+          <div id="listaAdminsCadastro"><div class="empty">Carregando⬦</div></div>
+        </div>
+
+        <div class="card">
           <div class="card-title">Lembrete de checklist</div>
           <div class="form-row">
             <input id="configHorarioLancamento" class="campo-curto" type="time" placeholder="Lançamento">
@@ -4660,7 +4737,7 @@
         <div class="card">
           <div class="card-title">Horas trabalhadas por colaborador</div>
           <div class="dashboard-period-tabs">
-            <button class="dashboard-period-btn active" data-horas-periodo="dia" onclick="trocarPeriodoHorasDashboard('dia', this)">24h</button>
+            <button class="dashboard-period-btn active" data-horas-periodo="dia" onclick="trocarPeriodoHorasDashboard('dia', this)">Hoje</button>
             <button class="dashboard-period-btn" data-horas-periodo="semana" onclick="trocarPeriodoHorasDashboard('semana', this)">Semana</button>
             <button class="dashboard-period-btn" data-horas-periodo="mes" onclick="trocarPeriodoHorasDashboard('mes', this)">Mês</button>
             <button class="dashboard-period-btn" data-horas-periodo="ano" onclick="trocarPeriodoHorasDashboard('ano', this)">Ano</button>
@@ -5306,9 +5383,9 @@
   <div class="ponto-ajuste-modal-overlay" id="modalSolicitarAjustePonto" hidden>
     <div class="ponto-ajuste-modal-card">
       <div class="ponto-ajuste-modal-title">Solicitar ajuste de ponto</div>
-      <div class="ponto-ajuste-modal-sub">Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.</div>
+      <div class="ponto-ajuste-modal-sub" id="ajustePontoModalSubtexto">Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.</div>
       <div class="ponto-ajuste-form">
-        <label>PIN do funcionário
+        <label id="ajustePontoPinField">PIN do funcionário
           <input id="ajustePontoPin" type="password" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="Digite seu PIN">
         </label>
         <label>Data do ajuste
@@ -5586,6 +5663,61 @@ const AUTH_REDIRECT_URL = 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Sobrescreve sb.from para injetar filtro loja_id automaticamente em admin_loja
+// Apenas tabelas que JÁ TÊM a coluna loja_id no banco atual.
+// Tabelas sem loja_id (checklists, fornecedores, contasapagar, etc.) serão
+// adicionadas aqui após a aplicação das migrations multiempresa.
+const TABELAS_COM_LOJA_ID = new Set([
+  'funcionarios',
+  'checklist_execucoes',
+  'ponto_registros',
+  'tarefas'
+]);
+function obterLojaIdSessao() {
+  const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
+  return s && s.tipo === 'admin_loja' ? (s.loja_id || null) : null;
+}
+(function() {
+  const _from = sb.from.bind(sb);
+  sb.from = function(tabela) {
+    const builder = _from(tabela);
+    const lojaId = obterLojaIdSessao();
+    if (!lojaId || !TABELAS_COM_LOJA_ID.has(tabela)) return builder;
+    // Filtro em leitura/atualização/exclusão
+    ['select', 'update', 'delete'].forEach(metodo => {
+      if (typeof builder[metodo] !== 'function') return;
+      const _orig = builder[metodo].bind(builder);
+      builder[metodo] = function(...args) {
+        const result = _orig(...args);
+        if (result && typeof result.eq === 'function') {
+          return result.eq('loja_id', lojaId);
+        }
+        return result;
+      };
+    });
+    // Injeta loja_id automaticamente nos inserts
+    if (typeof builder.insert === 'function') {
+      const _origInsert = builder.insert.bind(builder);
+      builder.insert = function(valores, opts) {
+        const comLoja = Array.isArray(valores)
+          ? valores.map(v => ({ loja_id: lojaId, ...v }))
+          : { loja_id: lojaId, ...valores };
+        return _origInsert(comLoja, opts);
+      };
+    }
+    // Injeta loja_id nos upserts
+    if (typeof builder.upsert === 'function') {
+      const _origUpsert = builder.upsert.bind(builder);
+      builder.upsert = function(valores, opts) {
+        const comLoja = Array.isArray(valores)
+          ? valores.map(v => ({ loja_id: lojaId, ...v }))
+          : { loja_id: lojaId, ...valores };
+        return _origUpsert(comLoja, opts);
+      };
+    }
+    return builder;
+  };
+})();
 
 let confirmacaoSistemaResolver = null;
 let confirmacaoSistemaOpcaoAtual = null;
@@ -5676,6 +5808,11 @@ let diasLancamentoPorTarefa = {};
 let tarefaModalFuncionariosTarefaId = '';
 let tarefaModalFuncionariosSelecionadoId = '';
 let usuarioSistemaLogado = null;
+let lojasCadastroCache = [];
+let lojaCadastroEmEdicaoId = null;
+let tabelaLojasCadastroAtiva = 'lojas';
+let adminsLojaCadastroCache = [];
+let adminLojaCadastroEmEdicaoId = null;
 let funcionarioEmEdicaoId = null;
 let funcionarioNomeOriginalEdicao = '';
 let funcionarioEmailOriginalEdicao = '';
@@ -5811,6 +5948,7 @@ function obterStorageNotificacoesMasterDispensadas() {
 
 function usuarioEhMasterNotificacoes() {
   if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
   const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
   return codigo === 'MASTER' || codigo === 'ADM' || codigo === 'GERENTE' || codigo === 'GESTOR' || usuarioEhContaZuquiOperacional();
@@ -7216,6 +7354,14 @@ function isMissingAccessRequestsTableError(error) {
 
 function isMissingStoreSettingsTableError(error) {
   return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.configuracoes_loja"'));
+}
+
+function isMissingStoresTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.lojas"'));
+}
+
+function isMissingAdminUsersTableError(error) {
+  return error?.code === 'PGRST205' || (error?.message && error.message.includes('missing relation "public.usuarios_admin"'));
 }
 
 function isMissingTimeClockTableError(error) {
@@ -9511,12 +9657,12 @@ async function carregarNotificacoes() {
 
       const consultaFallback = await sb
         .from('checklist_lancamentos')
-        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em')
+        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
 
       if (consultaFallback.error) throw consultaFallback.error;
-      return (consultaFallback.data || []).map(item => ({ ...item, created_at: null, data_programada: null }));
+      return (consultaFallback.data || []).map(item => ({ ...item, created_at: null }));
     };
 
     let execucoesPendentesQuery = sb
@@ -14008,6 +14154,472 @@ async function desconfirmarPagamentoContaFinanceiro(id) {
 // 
 // CONFIGURACOES DA LOJA
 // 
+function obterNomeRegistroLoja(item = {}) {
+  return String(item.nome || item.nome_loja || item.descricao || '').trim();
+}
+
+function obterCodigoRegistroLoja(item = {}) {
+  return String(item.codigo || item.sigla || '').trim();
+}
+
+function obterAtivoRegistroLoja(item = {}) {
+  if (typeof item.ativo === 'boolean') return item.ativo;
+  if (typeof item.inativo === 'boolean') return !item.inativo;
+  return true;
+}
+
+function limparFormularioLojaCadastro() {
+  lojaCadastroEmEdicaoId = null;
+  const nome = document.getElementById('nomeLojaCadastro');
+  const codigo = document.getElementById('codigoLojaCadastro');
+  const ativo = document.getElementById('ativoLojaCadastro');
+  const btnSalvar = document.getElementById('btnSalvarLojaCadastro');
+  const btnCancelar = document.getElementById('btnCancelarEdicaoLojaCadastro');
+  if (nome) nome.value = '';
+  if (codigo) codigo.value = '';
+  if (ativo) ativo.checked = true;
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar filial';
+  if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+function renderizarListaLojasCadastro() {
+  const lista = document.getElementById('listaLojasCadastro');
+  if (!lista) return;
+
+  if (!lojasCadastroCache.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma filial cadastrada.</div>';
+    return;
+  }
+
+  const ordenadas = [...lojasCadastroCache].sort((a, b) =>
+    obterNomeRegistroLoja(a).localeCompare(obterNomeRegistroLoja(b), 'pt-BR', { sensitivity: 'base' })
+  );
+
+  lista.innerHTML = '<div class="lista">' + ordenadas.map(item => {
+    const id = String(item.id || '');
+    const nome = obterNomeRegistroLoja(item) || 'Sem nome';
+    const codigo = obterCodigoRegistroLoja(item);
+    const ativa = obterAtivoRegistroLoja(item);
+    const detalhe = [
+      codigo ? `Código: ${codigo}` : '',
+      `Status: ${ativa ? 'Ativa' : 'Inativa'}`,
+    ].filter(Boolean).join(' · ');
+
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${escaparHtmlBasico(nome)}</div>
+          <div class="item-detalhe">${escaparHtmlBasico(detalhe || 'Sem detalhes')}</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editarLojaCadastro('${id}')">Editar</button>
+          <button class="btn btn-ghost btn-sm" onclick="alternarAtivoLojaCadastro('${id}')">${ativa ? 'Inativar' : 'Ativar'}</button>
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+async function carregarLojasCadastro() {
+  const lista = document.getElementById('listaLojasCadastro');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+
+  const tentativas = [];
+  for (const tabela of ['lojas', 'filiais']) {
+    const { data, error } = await sb.from(tabela).select('*');
+    tentativas.push({ tabela, data: data || [], error });
+  }
+
+  const comDados = tentativas.find(item => !item.error && item.data.length > 0);
+  const semDadosMasValida = tentativas.find(item => !item.error);
+  const escolhida = comDados || semDadosMasValida;
+
+  if (!escolhida) {
+    const erroRelevante = tentativas.find(item => item.error && !isMissingStoresTableError(item.error))?.error
+      || tentativas.find(item => item.error)?.error
+      || null;
+    lojasCadastroCache = [];
+    if (!erroRelevante || isMissingStoresTableError(erroRelevante)) {
+      lista.innerHTML = '<div class="empty">Tabela de lojas/filiais não encontrada. Rode o SQL da estrutura multi filiais.</div>';
+      setMsg('msgLojasCadastro', 'As tabelas public.lojas/public.filiais ainda não estão disponíveis neste ambiente.', 'err');
+      return;
+    }
+    lista.innerHTML = '<div class="empty">Erro ao carregar filiais.</div>';
+    setMsg('msgLojasCadastro', `Não foi possível carregar filiais: ${mensagemErroSupabase(erroRelevante, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  tabelaLojasCadastroAtiva = escolhida.tabela;
+  lojasCadastroCache = escolhida.data;
+  atualizarSelectLojasAdminCadastro();
+  renderizarListaLojasCadastro();
+  setMsg('msgLojasCadastro', `Tabela ativa: ${tabelaLojasCadastroAtiva}.`, 'ok');
+}
+
+function obterVariantesPayloadLoja({ nome, codigo, ativo }) {
+  const codigoNormalizado = codigo || null;
+  return [
+    { nome, codigo: codigoNormalizado, ativo },
+    { nome_loja: nome, codigo: codigoNormalizado, ativo },
+    { nome, codigo: codigoNormalizado },
+    { nome_loja: nome, codigo: codigoNormalizado },
+    { nome, ativo },
+    { nome_loja: nome, ativo },
+    { nome },
+    { nome_loja: nome },
+  ];
+}
+
+async function persistirLojaComFallback({ id = '', nome = '', codigo = '', ativo = true }) {
+  const variantes = obterVariantesPayloadLoja({ nome, codigo, ativo });
+  let ultimoErro = null;
+
+  for (const payload of variantes) {
+    for (const tabela of [tabelaLojasCadastroAtiva, 'lojas', 'filiais']) {
+      let erro = null;
+      if (id) {
+        ({ error: erro } = await sb.from(tabela).update(payload).eq('id', id));
+      } else {
+        ({ error: erro } = await sb.from(tabela).insert([payload]));
+      }
+
+      if (!erro) {
+        tabelaLojasCadastroAtiva = tabela;
+        return { error: null };
+      }
+
+      ultimoErro = erro;
+      if (isMissingStoresTableError(erro)) continue;
+      if (!isMissingColumnError(erro)) {
+        return { error: erro };
+      }
+    }
+  }
+
+  return { error: ultimoErro };
+}
+
+async function salvarLojaCadastro() {
+  const nome = String(document.getElementById('nomeLojaCadastro')?.value || '').trim();
+  const codigo = String(document.getElementById('codigoLojaCadastro')?.value || '').trim();
+  const ativo = document.getElementById('ativoLojaCadastro')?.checked !== false;
+
+  if (!nome) {
+    setMsg('msgLojasCadastro', 'Informe o nome da filial.', 'err');
+    return;
+  }
+
+  const { error } = await persistirLojaComFallback({
+    id: lojaCadastroEmEdicaoId,
+    nome,
+    codigo,
+    ativo,
+  });
+
+  if (error) {
+    if (isMissingStoresTableError(error)) {
+      setMsg('msgLojasCadastro', 'Tabela de lojas não encontrada. Rode o SQL da estrutura multi filiais.', 'err');
+      return;
+    }
+    setMsg('msgLojasCadastro', `Não foi possível salvar filial: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  const estavaEditando = !!lojaCadastroEmEdicaoId;
+  limparFormularioLojaCadastro();
+  setMsg('msgLojasCadastro', estavaEditando ? 'Filial atualizada com sucesso.' : 'Filial cadastrada com sucesso.', 'ok');
+  await carregarLojasCadastro();
+  await carregarAdminsLojaCadastro();
+}
+
+function editarLojaCadastro(id) {
+  const item = lojasCadastroCache.find(loja => String(loja.id) === String(id));
+  if (!item) {
+    setMsg('msgLojasCadastro', 'Filial não encontrada para edição.', 'err');
+    return;
+  }
+
+  lojaCadastroEmEdicaoId = String(item.id);
+  const nome = document.getElementById('nomeLojaCadastro');
+  const codigo = document.getElementById('codigoLojaCadastro');
+  const ativo = document.getElementById('ativoLojaCadastro');
+  const btnSalvar = document.getElementById('btnSalvarLojaCadastro');
+  const btnCancelar = document.getElementById('btnCancelarEdicaoLojaCadastro');
+
+  if (nome) nome.value = obterNomeRegistroLoja(item);
+  if (codigo) codigo.value = obterCodigoRegistroLoja(item);
+  if (ativo) ativo.checked = obterAtivoRegistroLoja(item);
+  if (btnSalvar) btnSalvar.textContent = 'Salvar filial';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  setMsg('msgLojasCadastro', `Editando filial: ${obterNomeRegistroLoja(item) || '-'}.`, 'ok');
+}
+
+function cancelarEdicaoLojaCadastro() {
+  limparFormularioLojaCadastro();
+  setMsg('msgLojasCadastro', 'Edição de filial cancelada.', 'ok');
+}
+
+async function alternarAtivoLojaCadastro(id) {
+  const item = lojasCadastroCache.find(loja => String(loja.id) === String(id));
+  if (!item) {
+    setMsg('msgLojasCadastro', 'Filial não encontrada.', 'err');
+    return;
+  }
+
+  const novoAtivo = !obterAtivoRegistroLoja(item);
+  const variantes = [
+    { ativo: novoAtivo },
+    { inativo: !novoAtivo },
+  ];
+
+  let erroFinal = null;
+  for (const payload of variantes) {
+    for (const tabela of [tabelaLojasCadastroAtiva, 'lojas', 'filiais']) {
+      const { error } = await sb.from(tabela).update(payload).eq('id', id);
+      if (!error) {
+        tabelaLojasCadastroAtiva = tabela;
+        setMsg('msgLojasCadastro', `Filial ${novoAtivo ? 'ativada' : 'inativada'} com sucesso.`, 'ok');
+        await carregarLojasCadastro();
+        await carregarAdminsLojaCadastro();
+        return;
+      }
+      erroFinal = error;
+      if (isMissingStoresTableError(error)) continue;
+      if (!isMissingColumnError(error)) break;
+    }
+    if (erroFinal && !isMissingColumnError(erroFinal) && !isMissingStoresTableError(erroFinal)) {
+      break;
+    }
+  }
+
+  setMsg('msgLojasCadastro', `Não foi possível alterar status da filial: ${mensagemErroSupabase(erroFinal, 'erro desconhecido')}`, 'err');
+}
+
+function obterNomeLojaCadastroPorId(lojaId = '') {
+  const id = String(lojaId || '').trim();
+  if (!id) return '';
+  const loja = lojasCadastroCache.find(item => String(item.id || '') === id);
+  return obterNomeRegistroLoja(loja) || id;
+}
+
+function atualizarSelectLojasAdminCadastro() {
+  const select = document.getElementById('lojaAdminCadastro');
+  if (!select) return;
+
+  const valorAtual = String(select.value || '').trim();
+  select.innerHTML = '<option value="">- Selecione a loja -</option>';
+
+  const ordenadas = [...lojasCadastroCache].sort((a, b) =>
+    obterNomeRegistroLoja(a).localeCompare(obterNomeRegistroLoja(b), 'pt-BR', { sensitivity: 'base' })
+  );
+
+  ordenadas.forEach(item => {
+    const option = document.createElement('option');
+    option.value = String(item.id || '');
+    const nome = obterNomeRegistroLoja(item) || 'Loja sem nome';
+    const codigo = obterCodigoRegistroLoja(item);
+    option.textContent = codigo ? `${nome} (${codigo})` : nome;
+    select.appendChild(option);
+  });
+
+  if (valorAtual && ordenadas.some(item => String(item.id || '') === valorAtual)) {
+    select.value = valorAtual;
+  }
+}
+
+function limparFormularioAdminLojaCadastro() {
+  adminLojaCadastroEmEdicaoId = null;
+  const loja = document.getElementById('lojaAdminCadastro');
+  const nome = document.getElementById('nomeAdminCadastro');
+  const usuario = document.getElementById('usuarioAdminCadastro');
+  const pin = document.getElementById('pinAdminCadastro');
+  const ativo = document.getElementById('ativoAdminCadastro');
+  const btnSalvar = document.getElementById('btnSalvarAdminCadastro');
+  const btnCancelar = document.getElementById('btnCancelarEdicaoAdminCadastro');
+  if (loja) loja.value = '';
+  if (nome) nome.value = '';
+  if (usuario) usuario.value = '';
+  if (pin) pin.value = '';
+  if (ativo) ativo.checked = true;
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar admin';
+  if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+function renderizarListaAdminsLojaCadastro() {
+  const lista = document.getElementById('listaAdminsCadastro');
+  if (!lista) return;
+
+  if (!adminsLojaCadastroCache.length) {
+    lista.innerHTML = '<div class="empty">Nenhum admin por loja cadastrado.</div>';
+    return;
+  }
+
+  const ordenados = [...adminsLojaCadastroCache].sort((a, b) =>
+    String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' })
+  );
+
+  lista.innerHTML = '<div class="lista">' + ordenados.map(item => {
+    const id = String(item.id || '');
+    const ativo = item.ativo !== false;
+    const lojaNome = obterNomeLojaCadastroPorId(item.loja_id);
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${escaparHtmlBasico(item.nome || '-')}</div>
+          <div class="item-detalhe">Usuário: ${escaparHtmlBasico(item.usuario || '-')} · Loja: ${escaparHtmlBasico(lojaNome || '-')} · Status: ${ativo ? 'Ativo' : 'Inativo'}</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editarAdminLojaCadastro('${id}')">Editar</button>
+          <button class="btn btn-ghost btn-sm" onclick="alternarAtivoAdminLojaCadastro('${id}')">${ativo ? 'Inativar' : 'Ativar'}</button>
+          <button class="btn btn-ghost btn-sm" onclick="excluirAdminLojaCadastro('${id}')" style="color:#e05c5c">Excluir</button>
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+async function carregarAdminsLojaCadastro() {
+  const lista = document.getElementById('listaAdminsCadastro');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+
+  const { data, error } = await sb
+    .from('usuarios_admin')
+    .select('id, loja_id, nome, usuario, pin, ativo')
+    .order('nome', { ascending: true });
+
+  if (error) {
+    adminsLojaCadastroCache = [];
+    if (isMissingAdminUsersTableError(error)) {
+      lista.innerHTML = '<div class="empty">Tabela de admins por loja não encontrada. Rode o SQL 8.</div>';
+      setMsg('msgAdminsCadastro', 'A tabela public.usuarios_admin ainda não está disponível neste ambiente.', 'err');
+      return;
+    }
+    lista.innerHTML = '<div class="empty">Erro ao carregar admins por loja.</div>';
+    setMsg('msgAdminsCadastro', `Não foi possível carregar admins: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  adminsLojaCadastroCache = data || [];
+  renderizarListaAdminsLojaCadastro();
+  setMsg('msgAdminsCadastro', '', '');
+}
+
+async function salvarAdminLojaCadastro() {
+  const lojaId = String(document.getElementById('lojaAdminCadastro')?.value || '').trim();
+  const nome = String(document.getElementById('nomeAdminCadastro')?.value || '').trim();
+  const usuario = String(document.getElementById('usuarioAdminCadastro')?.value || '').trim().toLowerCase();
+  const pinInformado = String(document.getElementById('pinAdminCadastro')?.value || '').trim();
+  const ativo = document.getElementById('ativoAdminCadastro')?.checked !== false;
+
+  if (!lojaId) {
+    setMsg('msgAdminsCadastro', 'Selecione a loja do admin.', 'err');
+    return;
+  }
+  if (!nome) {
+    setMsg('msgAdminsCadastro', 'Informe o nome do admin.', 'err');
+    return;
+  }
+  if (!usuario) {
+    setMsg('msgAdminsCadastro', 'Informe o usuário de login.', 'err');
+    return;
+  }
+
+  const registroAtual = adminsLojaCadastroCache.find(item => String(item.id || '') === String(adminLojaCadastroEmEdicaoId || ''));
+  const pin = pinInformado || String(registroAtual?.pin || '').trim();
+  if (!pin) {
+    setMsg('msgAdminsCadastro', 'Informe o PIN/senha do admin.', 'err');
+    return;
+  }
+
+  const payload = { loja_id: lojaId, nome, usuario, pin, ativo };
+  const query = adminLojaCadastroEmEdicaoId
+    ? sb.from('usuarios_admin').update(payload).eq('id', adminLojaCadastroEmEdicaoId)
+    : sb.from('usuarios_admin').insert([payload]);
+
+  const { error } = await query;
+  if (error) {
+    if (isMissingAdminUsersTableError(error)) {
+      setMsg('msgAdminsCadastro', 'Tabela de admins por loja não encontrada. Rode o SQL 8.', 'err');
+      return;
+    }
+    if (error?.code === '23505') {
+      setMsg('msgAdminsCadastro', 'Este usuário já existe. Use outro login para este admin.', 'err');
+      return;
+    }
+    setMsg('msgAdminsCadastro', `Não foi possível salvar admin: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  const editando = !!adminLojaCadastroEmEdicaoId;
+  limparFormularioAdminLojaCadastro();
+  setMsg('msgAdminsCadastro', editando ? 'Admin atualizado com sucesso.' : 'Admin cadastrado com sucesso.', 'ok');
+  await carregarAdminsLojaCadastro();
+}
+
+function editarAdminLojaCadastro(id) {
+  const item = adminsLojaCadastroCache.find(admin => String(admin.id || '') === String(id));
+  if (!item) {
+    setMsg('msgAdminsCadastro', 'Admin não encontrado.', 'err');
+    return;
+  }
+
+  adminLojaCadastroEmEdicaoId = String(item.id);
+  const loja = document.getElementById('lojaAdminCadastro');
+  const nome = document.getElementById('nomeAdminCadastro');
+  const usuario = document.getElementById('usuarioAdminCadastro');
+  const pin = document.getElementById('pinAdminCadastro');
+  const ativo = document.getElementById('ativoAdminCadastro');
+  const btnSalvar = document.getElementById('btnSalvarAdminCadastro');
+  const btnCancelar = document.getElementById('btnCancelarEdicaoAdminCadastro');
+
+  if (loja) loja.value = String(item.loja_id || '');
+  if (nome) nome.value = String(item.nome || '');
+  if (usuario) usuario.value = String(item.usuario || '');
+  if (pin) pin.value = String(item.pin || '');
+  if (ativo) ativo.checked = item.ativo !== false;
+  if (btnSalvar) btnSalvar.textContent = 'Salvar admin';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  setMsg('msgAdminsCadastro', `Editando admin ${item.nome || '-'} (${item.usuario || '-'})`, 'ok');
+}
+
+function cancelarEdicaoAdminLojaCadastro() {
+  limparFormularioAdminLojaCadastro();
+  setMsg('msgAdminsCadastro', 'Edição de admin cancelada.', 'ok');
+}
+
+async function excluirAdminLojaCadastro(id) {
+  const item = adminsLojaCadastroCache.find(admin => String(admin.id || '') === String(id));
+  if (!item) return;
+  if (!confirm(`Excluir permanentemente o admin "${item.nome}"?`)) return;
+  const { error } = await sb.from('usuarios_admin').delete().eq('id', id);
+  if (error) {
+    setMsg('msgAdminsCadastro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  setMsg('msgAdminsCadastro', 'Admin excluído com sucesso.', 'ok');
+  await carregarAdminsLojaCadastro();
+}
+
+async function alternarAtivoAdminLojaCadastro(id) {
+  const item = adminsLojaCadastroCache.find(admin => String(admin.id || '') === String(id));
+  if (!item) {
+    setMsg('msgAdminsCadastro', 'Admin não encontrado.', 'err');
+    return;
+  }
+
+  const novoAtivo = item.ativo === false;
+  const { error } = await sb.from('usuarios_admin').update({ ativo: novoAtivo }).eq('id', id);
+  if (error) {
+    setMsg('msgAdminsCadastro', `Não foi possível alterar status do admin: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  setMsg('msgAdminsCadastro', `Admin ${novoAtivo ? 'ativado' : 'inativado'} com sucesso.`, 'ok');
+  await carregarAdminsLojaCadastro();
+}
+
 async function carregarConfiguracoesLoja() {
   const resultado = await obterConfiguracoesLoja();
   if (resultado.missing) {
@@ -14018,6 +14630,8 @@ async function carregarConfiguracoesLoja() {
     document.getElementById('configHorarioLancamento').value = '';
     document.getElementById('configHorarioLembrete').value = '';
     document.getElementById('configEnviarEmailLembrete').checked = false;
+    await carregarLojasCadastro();
+    await carregarAdminsLojaCadastro();
     return;
   }
 
@@ -14029,6 +14643,8 @@ async function carregarConfiguracoesLoja() {
   document.getElementById('configHorarioLembrete').value = cfg.horario_lembrete_checklist || '';
   document.getElementById('configEnviarEmailLembrete').checked = !!cfg.enviar_email_lembrete;
   setMsg('msgConfiguracoes', '', '');
+  await carregarLojasCadastro();
+  await carregarAdminsLojaCadastro();
 }
 
 async function salvarConfiguracoesLoja() {
@@ -17634,13 +18250,25 @@ function abrirModalSolicitarAjustePonto() {
   const horario = document.getElementById('ajustePontoHorario');
   const motivo = document.getElementById('ajustePontoMotivo');
   const pin = document.getElementById('ajustePontoPin');
+  const pinField = document.getElementById('ajustePontoPinField');
+  const subtexto = document.getElementById('ajustePontoModalSubtexto');
+  const funcionarioLogadoId = String(obterFuncionarioRestritoLogadoId() || '').trim();
+  const usarFuncionarioLogadoNoMobile = dispositivoMovelSolicitacaoAjustePonto() && !!funcionarioLogadoId;
+
+  if (pinField) pinField.hidden = usarFuncionarioLogadoNoMobile;
+  if (subtexto) {
+    subtexto.textContent = usarFuncionarioLogadoNoMobile
+      ? 'Sua conta já está identificada neste celular. Informe data, horário e motivo para o administrador aprovar a solicitação.'
+      : 'Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.';
+  }
+
   if (data) data.value = dataLocalISO();
   if (horario) horario.value = '';
   if (motivo) motivo.value = '';
   if (pin) pin.value = '';
   setMsg('msgSolicitarAjustePonto', '', '');
   modal.hidden = false;
-  setTimeout(() => pin?.focus(), 80);
+  setTimeout(() => (usarFuncionarioLogadoNoMobile ? horario?.focus() : pin?.focus()), 80);
 }
 
 function fecharModalSolicitarAjustePonto() {
@@ -17654,21 +18282,58 @@ function isMissingPontoAjustesTableError(error) {
   return error?.code === 'PGRST205' || msg.includes('missing relation "public.ponto_ajustes_solicitacoes"') || msg.includes('ponto_ajustes_solicitacoes');
 }
 
+function dispositivoMovelSolicitacaoAjustePonto() {
+  try {
+    const coarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    const mobileUA = /android|iphone|ipad|ipod/i.test(String(navigator.userAgent || ''));
+    return coarsePointer || mobileUA;
+  } catch (_) {
+    return false;
+  }
+}
+
 async function salvarSolicitacaoAjustePonto() {
   const pin = String(document.getElementById('ajustePontoPin')?.value || '').trim();
   const dataAjuste = String(document.getElementById('ajustePontoData')?.value || '').trim();
   const horarioAjuste = String(document.getElementById('ajustePontoHorario')?.value || '').trim();
   const motivo = String(document.getElementById('ajustePontoMotivo')?.value || '').trim();
 
-  if (!pin || !dataAjuste || !horarioAjuste || !motivo) {
-    setMsg('msgSolicitarAjustePonto', 'Preencha PIN, data, horário e motivo.', 'err');
+  if (!dataAjuste || !horarioAjuste || !motivo) {
+    setMsg('msgSolicitarAjustePonto', 'Preencha data, horário e motivo.', 'err');
     return;
   }
 
-  const funcionario = await obterFuncionarioAtivoPorPin(pin);
-  if (!funcionario?.id) {
-    setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
-    return;
+  const funcionarioLogadoId = String(obterFuncionarioRestritoLogadoId() || '').trim();
+  const usarFuncionarioLogadoNoMobile = dispositivoMovelSolicitacaoAjustePonto() && !!funcionarioLogadoId;
+
+  let funcionario = null;
+  if (usarFuncionarioLogadoNoMobile) {
+    const { data: funcionarioData, error: funcionarioErro } = await sb
+      .from('funcionarios')
+      .select('id, nome, ativo')
+      .eq('id', funcionarioLogadoId)
+      .eq('ativo', true)
+      .single();
+
+    if (funcionarioErro || !funcionarioData?.id) {
+      setMsg('msgSolicitarAjustePonto', 'Não foi possível identificar seu usuário logado. Faça login novamente e tente de novo.', 'err');
+      return;
+    }
+
+    funcionario = {
+      id: funcionarioData.id,
+      nome: funcionarioData.nome || usuarioSistemaLogado?.nome || 'Funcionário',
+    };
+  } else {
+    if (!pin) {
+      setMsg('msgSolicitarAjustePonto', 'Informe o PIN do funcionário.', 'err');
+      return;
+    }
+    funcionario = await obterFuncionarioAtivoPorPin(pin);
+    if (!funcionario?.id) {
+      setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
+      return;
+    }
   }
 
   setMsg('msgSolicitarAjustePonto', 'Enviando solicitação...', 'ok');
@@ -19820,7 +20485,7 @@ async function carregarTarefasAtrasoMaster() {
 
       const consultaFallback = await sb
         .from('checklist_lancamentos')
-        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em')
+        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
 
@@ -19846,6 +20511,13 @@ async function carregarTarefasAtrasoMaster() {
 
     const funcionariosMap = Object.fromEntries((funcionariosRes.data || []).map(item => [String(item.id), item.nome]));
     const checklistsMap = Object.fromEntries((checklistsRes.data || []).map(item => [String(item.id), item.nome]));
+
+    // Para admin_loja: filtrar lancamentos apenas da loja do usuário (via funcionariosMap já filtrado pelo override)
+    const funcionariosIdsDaLoja = new Set(Object.keys(funcionariosMap));
+    const lancamentosPendentesFiltrados = (usuarioSistemaLogado?.tipo === 'admin_loja')
+      ? (lancamentosPendentes || []).filter(item => item.funcionario_id && funcionariosIdsDaLoja.has(String(item.funcionario_id)))
+      : (lancamentosPendentes || []);
+
     const tarefasIds = [...new Set((execucoesRes.data || []).map(item => item.tarefa_id).filter(Boolean).map(item => String(item)))];
     let tarefasMap = {};
 
@@ -19875,7 +20547,7 @@ async function carregarTarefasAtrasoMaster() {
       .filter(Boolean)
       .map(item => String(item)));
 
-    const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
+    const lancamentosAtrasados = lancamentosPendentesFiltrados.filter(item => {
       if (!lancamentoProgramadoHoje(item)) return false;
       if (!tarefaDisponivelHoje(item.dias_semana)) return false;
       if (lancamentosComExecucaoAtivaIds.has(String(item.id || ''))) return false;
@@ -20361,8 +21033,8 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 2.2</div>
-    <div>Notas da versão 2.1: recebíveis, cofre, contas financeiras com extrato, baixa vinculada ao saldo, relatório financeiro ajustado, exportações em PDF e dashboard de saldos por conta.</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 3.0</div>
+    <div>Notas da versão 3.0: criação de multilojas, segregação de dados por loja e melhorias de permissões para operação por unidade.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
@@ -20441,6 +21113,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     perfil: normalizarPerfilUsuario(usuario?.perfil),
   };
   usuarioSistemaLogado = usuarioNormalizado;
+  window.__sessaoSistema = () => usuarioSistemaLogado;
   redefinirEstadoAvisoCentralTarefas();
   atualizarUsuarioTopbar();
   habilitarSomNotificacao();
@@ -20475,6 +21148,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         ...usuario,
         perfil: normalizarPerfilUsuario(usuario?.perfil),
       };
+      window.__sessaoSistema = () => usuarioSistemaLogado;
       redefinirEstadoAvisoCentralTarefas();
       atualizarUsuarioTopbar();
       habilitarSomNotificacao();
@@ -20870,6 +21544,31 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     }
 
     if (!funcionario || String(funcionario.pin ?? '') !== password) {
+      // Tenta login como admin de loja (usuarios_admin: usuario + pin)
+      if (!loginComEmail) {
+        const { data: adminLoja, error: erroAdmin } = await sb
+          .from('usuarios_admin')
+          .select('id, nome, usuario, pin, ativo, loja_id')
+          .eq('ativo', true)
+          .ilike('usuario', username)
+          .maybeSingle();
+        if (!erroAdmin && adminLoja && String(adminLoja.pin ?? '') === password) {
+          salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
+          salvarSessaoSistema({
+            tipo: 'admin_loja',
+            id: adminLoja.id,
+            nome: adminLoja.nome,
+            usuario: adminLoja.usuario,
+            loja_id: adminLoja.loja_id,
+            perfil: { codigo: 'ADM', permissoes: obterPermissoesBase('ADM') }
+          }, { manterConectado });
+          setSistemaLogado(true);
+          aplicarPermissoesSistema();
+          carregarNotificacoes();
+          window.setTimeout(() => restaurarPaginaAtivaSalvaOuPadrao(), 0);
+          return;
+        }
+      }
       setMsg('msgLogin', 'Usuário ou senha incorretos.', 'err');
       return;
     }
