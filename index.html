@@ -17718,7 +17718,6 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
 
     const item = porFuncionario.get(funcionarioIdAtual);
     item.totalMinutos += Number(resumo?.totalMinutos || 0);
-    item.aberto = item.aberto || !registro.saida_em || !!intervalos.find(inter => inter.inicio_em && !inter.retorno_em);
 
     periodos.forEach(periodo => {
       item.periodos.push(periodo);
@@ -17736,6 +17735,11 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   });
 
   const listaStatus = Array.from(porFuncionario.values())
+    .map(item => {
+      // Considera em aberto apenas quando a última entrada é mais recente que a última saída.
+      item.aberto = item.ultimaEntradaTs > item.ultimaSaidaTs;
+      return item;
+    })
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   if (!listaStatus.length) {
@@ -17748,12 +17752,14 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       ? item.periodos
           .sort((a, b) => ts(a.entrada) - ts(b.entrada))
           .map(periodo => {
-            const aberto = !periodo.saida || periodo.aberto;
+            const abertoOriginal = !periodo.saida || periodo.aberto;
+            const aberto = abertoOriginal && (!item.ultimaSaidaTs || ts(periodo.entrada) > item.ultimaSaidaTs);
+            const saidaExibida = aberto ? null : (periodo.saida || item.ultimaSaida || null);
             return `
               <span class="ponto-periodo-chip${aberto ? ' aberto' : ''}">
                 <span class="ponto-hora-entrada">${formatarHora(periodo.entrada)}</span>
                 <span>→</span>
-                <span class="${aberto ? 'ponto-hora-aberto' : 'ponto-hora-saida'}">${aberto ? 'Aberto agora' : formatarHora(periodo.saida)}</span>
+                <span class="${aberto ? 'ponto-hora-aberto' : 'ponto-hora-saida'}">${aberto ? 'Aberto agora' : formatarHora(saidaExibida)}</span>
               </span>
             `;
           }).join('')
