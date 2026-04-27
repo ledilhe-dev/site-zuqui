@@ -7303,6 +7303,12 @@ function lancamentoProgramadoHoje(item = {}) {
   return lancamentoProgramadoNaData(item, hoje());
 }
 
+function lancamentoContaComoExistenteParaAgenda(item = {}) {
+  const status = String(item?.status || '').trim().toLowerCase();
+  if (['cancelado', 'cancelada', 'excluido', 'excluida'].includes(status)) return false;
+  return true;
+}
+
 function extrairMinutosReferenciaBrasil(dataIso) {
   if (!dataIso) return null;
   const partes = obterPartesDataHoraBrasil(new Date(dataIso));
@@ -7982,6 +7988,40 @@ function horarioJaPassouHoje(horario) {
   return agora > limite;
 }
 
+function agoraHoraMinutoUTC() {
+  const agora = new Date();
+  const horas = String(agora.getUTCHours()).padStart(2, '0');
+  const minutos = String(agora.getUTCMinutes()).padStart(2, '0');
+  return `${horas}:${minutos}`;
+}
+
+function agoraHoraMinutoOperacional() {
+  // Os turnos cadastrados na aba Funcionários são horários locais da loja.
+  // Por isso a validação de turno deve usar a mesma base local da regra do checklist.
+  return agoraHoraMinuto();
+}
+
+function funcionarioPossuiTurnoPreenchido(funcionario = {}) {
+  const inicio = horarioParaMinutos(horaCurta(funcionario?.horario_trabalho_inicio || ''));
+  const fim = horarioParaMinutos(horaCurta(funcionario?.horario_trabalho_fim || ''));
+  return inicio !== null && fim !== null;
+}
+
+function funcionarioDentroDoTurnoOperacional(funcionario = {}) {
+  if (!funcionarioPossuiTurnoPreenchido(funcionario)) return true;
+
+  const inicio = horarioParaMinutos(horaCurta(funcionario.horario_trabalho_inicio || ''));
+  const fim = horarioParaMinutos(horaCurta(funcionario.horario_trabalho_fim || ''));
+  const agora = horarioParaMinutos(agoraHoraMinutoOperacional());
+  if (inicio === null || fim === null || agora === null) return true;
+
+  // Turno normal, exemplo 08:00 às 18:00.
+  if (inicio <= fim) return agora >= inicio && agora <= fim;
+
+  // Turno virando o dia, exemplo 22:00 às 06:00.
+  return agora >= inicio || agora <= fim;
+}
+
 function criarChaveAgendaDiaria(tarefaId, funcionarioId, dataRef = dataLocalISO()) {
   return [dataRef || dataLocalISO(), tarefaId || 'sem-tarefa', funcionarioId || 'sem-funcionario'].join('::');
 }
@@ -8002,10 +8042,11 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
   lancamentoAutomaticoEmAndamento = true;
   try {
     const dataReferencia = dataLocalISO();
-    const consultarLancamentosAutomaticos = async (comCreatedAt = true) => {
-      const campos = comCreatedAt
-        ? 'id, tarefa_id, funcionario_id, lancado_em, created_at, status, data_programada'
-        : 'id, tarefa_id, funcionario_id, lancado_em, status, data_programada';
+    const consultarLancamentosAutomaticos = async (comCreatedAt = true, comStatus = true) => {
+      const camposBase = comCreatedAt
+        ? ['id', 'tarefa_id', 'funcionario_id', 'lancado_em', 'created_at', 'data_programada']
+        : ['id', 'tarefa_id', 'funcionario_id', 'lancado_em', 'data_programada'];
+      const campos = [...camposBase, ...(comStatus ? ['status'] : [])].join(', ');
       return sb.from('checklist_lancamentos').select(campos);
     };
 
@@ -8014,7 +8055,7 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
         .from('tarefas')
         .select('id, nome, descricao, funcionario_id, checklist_id, horario_limite, dias_semana')
         .eq('ativo', true),
-      consultarLancamentosAutomaticos(true),
+      consultarLancamentosAutomaticos(true, true),
       sb
         .from('checklist_execucoes')
         .select('id, tarefa_id, funcionario_id, data_execucao')
@@ -8025,8 +8066,10 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
     if (lancamentosResultado.error && (
       String(lancamentosResultado.error.message || '').toLowerCase().includes('created_at')
       || String(lancamentosResultado.error.message || '').toLowerCase().includes('data_programada')
+      || String(lancamentosResultado.error.message || '').toLowerCase().includes('status')
     )) {
-      lancamentosResultado = await consultarLancamentosAutomaticos(false);
+      const erroTexto = String(lancamentosResultado.error.message || '').toLowerCase();
+      lancamentosResultado = await consultarLancamentosAutomaticos(false, !erroTexto.includes('status'));
     }
 
     if (tarefasResultado.error) {
@@ -8041,9 +8084,28 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
 
     if (execucoesResultado.error) throw execucoesResultado.error;
 
+    const funcionariosIdsTurno = [...new Set((tarefasResultado.data || [])
+      .map(item => item.funcionario_id)
+      .filter(Boolean)
+      .map(id => String(id)))];
+    let funcionariosPorIdTurno = new Map();
+    if (funcionariosIdsTurno.length) {
+      const { data: funcionariosTurno, error: erroFuncionariosTurno } = await sb
+        .from('funcionarios')
+        .select('id, horario_trabalho_inicio, horario_trabalho_fim')
+        .in('id', funcionariosIdsTurno);
+
+      if (erroFuncionariosTurno && !isMissingWorkShiftColumnsError(erroFuncionariosTurno)) {
+        throw erroFuncionariosTurno;
+      }
+
+      funcionariosPorIdTurno = new Map((funcionariosTurno || []).map(funcionario => [String(funcionario.id), funcionario]));
+    }
+
     const chavesExistentes = new Set();
 
     (lancamentosResultado.data || []).forEach(item => {
+      if (!lancamentoContaComoExistenteParaAgenda(item)) return;
       const dataProgramada = obterDataProgramadaLancamento(item);
       if (!dataProgramada) return;
       chavesExistentes.add(criarChaveAgendaDiaria(item.tarefa_id, item.funcionario_id, dataProgramada));
@@ -8055,6 +8117,9 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
 
     const lancamentosParaCriar = (tarefasResultado.data || [])
       .filter(item => item.funcionario_id && tarefaDisponivelHoje(item.dias_semana))
+      // Se o funcionário tiver turno preenchido, só lança hoje dentro do turno local cadastrado.
+      // Se o turno estiver vazio/incompleto, segue apenas a regra normal do checklist.
+      .filter(item => funcionarioDentroDoTurnoOperacional(funcionariosPorIdTurno.get(String(item.funcionario_id)) || null))
       // Se o horário da tarefa já passou no dia atual, ignora hoje e agenda apenas os próximos dias.
       .filter(item => !item.horario_limite || !horarioJaPassouHoje(item.horario_limite))
       .filter(item => !chavesExistentes.has(criarChaveAgendaDiaria(item.id, item.funcionario_id, dataReferencia)))
@@ -15104,14 +15169,36 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     setMsgLancamentoTarefa(id, 'Selecione pelo menos um dia no card da tarefa antes de lançar.', 'err');
     return;
   }
+  const { data: funcionarioTurno, error: erroFuncionarioTurno } = await sb
+    .from('funcionarios')
+    .select('id, nome, horario_trabalho_inicio, horario_trabalho_fim')
+    .eq('id', funcionarioSelecionado)
+    .single();
+
+  if (erroFuncionarioTurno) {
+    if (isMissingWorkShiftColumnsError(erroFuncionarioTurno)) {
+      setMsg('msgTarefas', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
+      setMsgLancamentoTarefa(id, 'Faltam as colunas de turno no cadastro de funcionários.', 'err');
+      return;
+    }
+    console.error('Erro ao validar turno do funcionário:', erroFuncionarioTurno);
+    setMsg('msgTarefas', 'Não foi possível validar o turno do funcionário antes do lançamento.', 'err');
+    setMsgLancamentoTarefa(id, 'Erro ao validar turno do funcionário.', 'err');
+    return;
+  }
+
   const hojeData = new Date();
   hojeData.setHours(0, 0, 0, 0);
-  const ignorarHoje = !!horarioSelecionado && horarioJaPassouHoje(horarioSelecionado);
+  const turnoFuncionarioPreenchido = funcionarioPossuiTurnoPreenchido(funcionarioTurno);
+  const ignorarHojePorTurno = turnoFuncionarioPreenchido && !funcionarioDentroDoTurnoOperacional(funcionarioTurno);
+  const ignorarHojePorHorario = !!horarioSelecionado && horarioJaPassouHoje(horarioSelecionado);
+  const ignorarHoje = ignorarHojePorTurno || ignorarHojePorHorario;
   const agoraIso = new Date().toISOString();
   const atorAuditoria = obterAtorAuditoriaAtual();
 
-  const consultarLancamentosExistentes = async (comCreatedAt = true) => {
-    const campos = comCreatedAt ? 'id, lancado_em, created_at, data_programada' : 'id, lancado_em';
+  const consultarLancamentosExistentes = async (comCreatedAt = true, comStatus = true) => {
+    const camposBase = comCreatedAt ? ['id', 'lancado_em', 'created_at', 'data_programada'] : ['id', 'lancado_em'];
+    const campos = [...camposBase, ...(comStatus ? ['status'] : [])].join(', ');
     const { data, error } = await sb
       .from('checklist_lancamentos')
       .select(campos)
@@ -15120,12 +15207,14 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     return { data, error };
   };
 
-  let { data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(true);
+  let { data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(true, true);
   if (erroExistentes && (
     String(erroExistentes.message || '').toLowerCase().includes('created_at')
     || String(erroExistentes.message || '').toLowerCase().includes('data_programada')
+    || String(erroExistentes.message || '').toLowerCase().includes('status')
   )) {
-    ({ data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(false));
+    const erroTexto = String(erroExistentes.message || '').toLowerCase();
+    ({ data: existentes, error: erroExistentes } = await consultarLancamentosExistentes(false, !erroTexto.includes('status')));
   }
 
   if (erroExistentes && !isMissingLancamentosTableError(erroExistentes)) {
@@ -15135,6 +15224,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const chavesExistentes = new Set(
     (existentes || [])
+      .filter(item => lancamentoContaComoExistenteParaAgenda(item))
       .map(item => obterDataProgramadaLancamento(item) || dataLocalISO(item.lancado_em || item.created_at))
       .filter(Boolean)
       .map(data => `${tarefa.id}::${funcionarioSelecionado}::${data}`)
@@ -15142,6 +15232,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const lancamentosParaCriar = [];
   let pulouHojePorHorario = false;
+  let pulouHojePorTurno = false;
 
   for (let offset = 0; offset <= HORIZONTE_AGENDAMENTO_MANUAL_DIAS; offset++) {
     const dataAlvo = new Date(hojeData);
@@ -15150,7 +15241,8 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     if (!diaToken || !diasPermitidos.has(diaToken)) continue;
 
     if (offset === 0 && ignorarHoje) {
-      pulouHojePorHorario = true;
+      pulouHojePorTurno = ignorarHojePorTurno;
+      pulouHojePorHorario = ignorarHojePorHorario;
       continue;
     }
 
@@ -15171,15 +15263,22 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       criado_por_id: atorAuditoria.funcionarioId,
       criado_por_nome: atorAuditoria.nome,
       origem_lancamento: 'manual',
-      observacao_lancamento: pulouHojePorHorario && dataIsoLocal !== hoje()
-        ? `Hoje foi ignorado porque o horário ${horarioSelecionado} já havia passado.`
-        : 'Lançamento manual registrado no painel.',
+      observacao_lancamento: pulouHojePorTurno && dataIsoLocal !== hoje()
+        ? `Hoje foi ignorado porque o funcionário está fora do turno cadastrado (${horaCurta(funcionarioTurno?.horario_trabalho_inicio)} às ${horaCurta(funcionarioTurno?.horario_trabalho_fim)} no horário local).`
+        : pulouHojePorHorario && dataIsoLocal !== hoje()
+          ? `Hoje foi ignorado porque o horário ${horarioSelecionado} já havia passado.`
+          : 'Lançamento manual registrado no painel.',
       status: 'pendente',
     });
   }
 
-  if (pulouHojePorHorario) {
+  if (pulouHojePorHorario || pulouHojePorTurno) {
     try {
+      const motivoIgnorado = pulouHojePorTurno ? 'fora_turno_funcionario' : 'horario_expirado';
+      const observacaoIgnorado = pulouHojePorTurno
+        ? `Hoje foi ignorado porque o funcionário está fora do turno cadastrado (${horaCurta(funcionarioTurno?.horario_trabalho_inicio)} às ${horaCurta(funcionarioTurno?.horario_trabalho_fim)} no horário local). O sistema agendou apenas o próximo ciclo válido.`
+        : `Hoje foi ignorado porque o lançamento ocorreu após ${horarioSelecionado}. O sistema agendou apenas o próximo ciclo válido.`;
+
       await registrarEventoLancamento({
         tarefaId: tarefa.id,
         checklistId: tarefa.checklist_id || null,
@@ -15191,10 +15290,14 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
         dataProgramada: hoje(),
         horarioProgramado: horarioSelecionado,
         registradoEm: agoraIso,
-        observacao: `Hoje foi ignorado porque o lançamento ocorreu após ${horarioSelecionado}. O sistema agendou apenas o próximo ciclo válido.`,
+        observacao: observacaoIgnorado,
         meta: {
-          motivo: 'horario_expirado',
+          motivo: motivoIgnorado,
           hora_lancamento: agoraHoraMinuto(),
+          hora_lancamento_utc: agoraHoraMinutoUTC(),
+          hora_lancamento_local: agoraHoraMinutoOperacional(),
+          turno_inicio_local: horaCurta(funcionarioTurno?.horario_trabalho_inicio || ''),
+          turno_fim_local: horaCurta(funcionarioTurno?.horario_trabalho_fim || ''),
         },
       });
     } catch (erroAuditoria) {
@@ -15203,9 +15306,13 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   }
 
   if (!lancamentosParaCriar.length) {
-    setMsg('msgTarefas', pulouHojePorHorario
-      ? 'Hoje foi ignorado porque o horário já passou. Os próximos dias já estavam agendados.'
-      : 'Nenhum novo lançamento criado. Esta tarefa já estava agendada para os próximos dias.', 'ok');
+    const mensagemSemNovoLancamento = pulouHojePorTurno
+      ? 'Hoje foi ignorado porque o funcionário está fora do turno cadastrado. Os próximos dias já estavam agendados.'
+      : pulouHojePorHorario
+        ? 'Hoje foi ignorado porque o horário já passou. Os próximos dias já estavam agendados.'
+        : 'Nenhum novo lançamento criado. Esta tarefa já estava agendada para os próximos dias.';
+    setMsg('msgTarefas', mensagemSemNovoLancamento, 'ok');
+    setMsgLancamentoTarefa(id, mensagemSemNovoLancamento, 'ok');
     return;
   }
 
@@ -15234,20 +15341,27 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       dataProgramada: item.data_programada,
       horarioProgramado: item.horario_limite,
       registradoEm: agoraIso,
-      observacao: pulouHojePorHorario
-        ? 'Lançamento manual criado após ignorar o dia corrente por horário expirado.'
-        : 'Lançamento manual registrado.',
+      observacao: pulouHojePorTurno
+        ? 'Lançamento manual criado após ignorar o dia corrente por funcionário fora do turno cadastrado.'
+        : pulouHojePorHorario
+          ? 'Lançamento manual criado após ignorar o dia corrente por horário expirado.'
+          : 'Lançamento manual registrado.',
       meta: {
         dias_semana: diasLancamento || 'todos',
+        turno_validado_local: turnoFuncionarioPreenchido,
+        turno_inicio_local: horaCurta(funcionarioTurno?.horario_trabalho_inicio || ''),
+        turno_fim_local: horaCurta(funcionarioTurno?.horario_trabalho_fim || ''),
       },
     })));
   } catch (erroAuditoria) {
     console.warn('Não foi possível registrar a auditoria do lançamento manual:', erroAuditoria);
   }
 
-  const mensagemSucesso = pulouHojePorHorario
-    ? `Hoje foi ignorado (horário já passou). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
-    : `${lancamentosParaCriar.length} lançamento(s) enviado(s) para a aba Checklists.`;
+  const mensagemSucesso = pulouHojePorTurno
+    ? `Hoje foi ignorado (funcionário fora do turno cadastrado no horário local). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
+    : pulouHojePorHorario
+      ? `Hoje foi ignorado (horário já passou). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
+      : `${lancamentosParaCriar.length} lançamento(s) enviado(s) para a aba Checklists.`;
   setMsg('msgTarefas', mensagemSucesso, 'ok');
   setMsgLancamentoTarefa(id, mensagemSucesso, 'ok');
   carregarTarefas();
