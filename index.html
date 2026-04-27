@@ -18259,13 +18259,12 @@ function abrirModalSolicitarAjustePonto() {
   const pin = document.getElementById('ajustePontoPin');
   const pinField = document.getElementById('ajustePontoPinField');
   const subtexto = document.getElementById('ajustePontoModalSubtexto');
-  const funcionarioLogadoId = String(obterFuncionarioRestritoLogadoId() || '').trim();
-  const usarFuncionarioLogadoNoMobile = dispositivoMovelSolicitacaoAjustePonto() && !!funcionarioLogadoId;
+  const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
 
-  if (pinField) pinField.hidden = usarFuncionarioLogadoNoMobile;
+  if (pinField) pinField.hidden = usarSessaoFuncionario;
   if (subtexto) {
-    subtexto.textContent = usarFuncionarioLogadoNoMobile
-      ? 'Sua conta já está identificada neste celular. Informe data, horário e motivo para o administrador aprovar a solicitação.'
+    subtexto.textContent = usarSessaoFuncionario
+      ? 'Sua conta já está identificada. Informe data, horário e motivo para o administrador aprovar a solicitação.'
       : 'Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.';
   }
 
@@ -18275,7 +18274,7 @@ function abrirModalSolicitarAjustePonto() {
   if (pin) pin.value = '';
   setMsg('msgSolicitarAjustePonto', '', '');
   modal.hidden = false;
-  setTimeout(() => (usarFuncionarioLogadoNoMobile ? horario?.focus() : pin?.focus()), 80);
+  setTimeout(() => (usarSessaoFuncionario ? horario?.focus() : pin?.focus()), 80);
 }
 
 function fecharModalSolicitarAjustePonto() {
@@ -18299,6 +18298,11 @@ function dispositivoMovelSolicitacaoAjustePonto() {
   }
 }
 
+function usarSessaoFuncionarioSolicitacaoAjustePonto() {
+  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
+  return usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId;
+}
+
 async function salvarSolicitacaoAjustePonto() {
   const pin = String(document.getElementById('ajustePontoPin')?.value || '').trim();
   const dataAjuste = String(document.getElementById('ajustePontoData')?.value || '').trim();
@@ -18310,11 +18314,11 @@ async function salvarSolicitacaoAjustePonto() {
     return;
   }
 
-  const funcionarioLogadoId = String(obterFuncionarioRestritoLogadoId() || '').trim();
-  const usarFuncionarioLogadoNoMobile = dispositivoMovelSolicitacaoAjustePonto() && !!funcionarioLogadoId;
+  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
+  const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
 
   let funcionario = null;
-  if (usarFuncionarioLogadoNoMobile) {
+  if (usarSessaoFuncionario) {
     const { data: funcionarioData, error: funcionarioErro } = await sb
       .from('funcionarios')
       .select('id, nome, ativo')
