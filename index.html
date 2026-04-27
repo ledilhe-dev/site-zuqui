@@ -6397,8 +6397,42 @@ const PERFIL_PERMISSOES = [
 
 function obterPermissoesBase(codigo) {
   const codigoNormalizado = normalizarCodigoPerfil(codigo);
-  if (codigoNormalizado === 'ADM' || codigoNormalizado === 'MASTER' || codigoNormalizado === 'GERENTE' || codigoNormalizado === 'GESTOR') {
+  if (codigoNormalizado === 'ADM' || codigoNormalizado === 'MASTER') {
     return Object.fromEntries(PERFIL_PERMISSOES.map(p => [p.key, true]));
+  }
+
+  if (codigoNormalizado === 'GERENTE' || codigoNormalizado === 'GESTOR') {
+    return {
+      dashboard: true,
+      checklists: true,
+      bater_ponto: true,
+      relatorio_ponto: true,
+      ponto_ajustes: true,
+      relatorio_lancamentos: true,
+      relatorio_financeiro: false,
+      relatorio_ajuste_saldo: false,
+      financeiro_fornecedores: false,
+      financeiro_formas_pagamento: false,
+      financeiro_contasapagar: false,
+      financeiro_baixar_contas: false,
+      financeiro_conta_financeira: false,
+      financeiro_recebiveis: false,
+      financeiro_cofre: false,
+      funcionarios: false,
+      solicitacoes: false,
+      emails: false,
+      configuracoes: false,
+      perfis: false,
+      tarefas: false,
+      tarefas_rapidas: true,
+      receber_alertas_rapidas: true,
+      confirmar_alertas_rapidas: true,
+      execucoes: true,
+      tarefas_atraso: true,
+      nova_execucao_manual: true,
+      ver_todos_checklists: true,
+      ver_todas_execucoes: true,
+    };
   }
 
   return {
@@ -7546,7 +7580,7 @@ function obterPermissoesUsuario() {
 
   const codigo = normalizarCodigoPerfil(perfilNormalizado.codigo);
 
-  if (codigo === 'ADM' || codigo === 'MASTER' || codigo === 'GERENTE' || codigo === 'GESTOR') {
+  if (codigo === 'ADM' || codigo === 'MASTER') {
     const permissoes = { ...obterPermissoesBase(codigo), ...normalizarPermissoesPerfil(perfilNormalizado.permissoes) };
     PERFIL_PERMISSOES.forEach(p => { permissoes[p.key] = true; });
     permissoes.bater_ponto = true;
@@ -7606,20 +7640,27 @@ function usuarioEhAdministrador() {
 function usuarioEhContaZuquiOperacional() {
   if (!usuarioSistemaLogado) return false;
   const nome = normalizarTextoComparacao(usuarioSistemaLogado.nome || usuarioSistemaLogado.username || '');
-  return nome === 'zuqui';
+  return usuarioSistemaLogado?.tipo === 'admin' && nome === 'zuqui';
 }
 
 function usuarioEhPerfilOperacionalGeral() {
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
   const codigo = normalizarCodigoPerfil(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '');
-  return codigo === 'ADM' || codigo === 'MASTER' || codigo === 'GERENTE' || codigo === 'GESTOR' || usuarioEhContaZuquiOperacional();
+  return codigo === 'ADM' || codigo === 'MASTER' || usuarioEhContaZuquiOperacional();
+}
+
+function usuarioTemEscopoTodosFuncionariosPorPermissao() {
+  const permissoes = obterPermissoesUsuario();
+  return !!(permissoes.ver_todos_checklists || permissoes.ver_todas_execucoes);
 }
 
 function usuarioDeveVerApenasProprioFuncionario() {
   return !!(usuarioSistemaLogado?.tipo === 'funcionario'
     && usuarioSistemaLogado?.id
-    && !usuarioEhPerfilOperacionalGeral());
+    && !usuarioEhPerfilOperacionalGeral()
+    && !usuarioTemEscopoTodosFuncionariosPorPermissao());
 }
 
 function obterFuncionarioRestritoLogadoId() {
