@@ -7194,7 +7194,9 @@ function obterPermissoesUsuario() {
   // Perfis operacionais devem sempre enxergar o andamento completo para poder agir.
   if (codigo === 'FUNCIONARIO' || codigo === 'GESTOR') {
     permissoes.execucoes = true;
-    permissoes.ver_todas_execucoes = true;
+    // Funcionário individual vê somente as próprias execuções.
+    // A conta operacional ZUQUI e perfis gerais continuam vendo tudo.
+    permissoes.ver_todas_execucoes = usuarioEhPerfilOperacionalGeral();
     permissoes.bater_ponto = true;
     permissoes.relatorio_ponto = false;
     permissoes.tarefas_rapidas = true;
@@ -7230,12 +7232,35 @@ function usuarioEhAdministrador() {
   return usuarioSistemaLogado?.tipo === 'admin' || usuarioSistemaLogado?.perfil?.codigo === 'ADM';
 }
 
+function usuarioEhContaZuquiOperacional() {
+  if (!usuarioSistemaLogado) return false;
+  const nome = normalizarTextoComparacao(usuarioSistemaLogado.nome || usuarioSistemaLogado.username || '');
+  return nome === 'zuqui';
+}
+
+function usuarioEhPerfilOperacionalGeral() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
+  return codigo === 'ADM' || codigo === 'MASTER' || usuarioEhContaZuquiOperacional();
+}
+
+function usuarioDeveVerApenasProprioFuncionario() {
+  return !!(usuarioSistemaLogado?.tipo === 'funcionario'
+    && usuarioSistemaLogado?.id
+    && !usuarioEhPerfilOperacionalGeral());
+}
+
+function obterFuncionarioRestritoLogadoId() {
+  return usuarioDeveVerApenasProprioFuncionario() ? String(usuarioSistemaLogado.id || '') : '';
+}
+
 function usuarioPodeVerTodosChecklists() {
-  return !!obterPermissoesUsuario().ver_todos_checklists;
+  return usuarioEhPerfilOperacionalGeral() || !!obterPermissoesUsuario().ver_todos_checklists;
 }
 
 function usuarioPodeVerTodasExecucoes() {
-  return !!obterPermissoesUsuario().ver_todas_execucoes;
+  return usuarioEhPerfilOperacionalGeral() || !!obterPermissoesUsuario().ver_todas_execucoes;
 }
 
 function normalizarPermissoesPerfil(permissoes) {
@@ -9313,6 +9338,18 @@ async function carregarNotificacoes() {
       execucoesPendentesQuery.order('iniciado_em', { ascending: false }),
     ]);
 
+    const funcionarioRestritoNotificacoesId = obterFuncionarioRestritoLogadoId();
+    if (funcionarioRestritoNotificacoesId) {
+      for (let i = lancamentosPendentes.length - 1; i >= 0; i--) {
+        if (String(lancamentosPendentes[i]?.funcionario_id || '') !== funcionarioRestritoNotificacoesId) lancamentosPendentes.splice(i, 1);
+      }
+      if (Array.isArray(execucoesPendentes)) {
+        for (let i = execucoesPendentes.length - 1; i >= 0; i--) {
+          if (String(execucoesPendentes[i]?.funcionario_id || '') !== funcionarioRestritoNotificacoesId) execucoesPendentes.splice(i, 1);
+        }
+      }
+    }
+
     const funcionarioIds = [...new Set([
       ...(lancamentosPendentes || []).map(item => item.funcionario_id).filter(Boolean),
       ...(execucoesPendentes || []).map(item => item.funcionario_id).filter(Boolean),
@@ -9983,6 +10020,11 @@ async function carregarChecklists() {
     if (dataReferencia < dataHoje) return false;
     return tarefaDisponivelHoje(t.dias_semana, dataReferencia);
   });
+
+  const funcionarioRestritoChecklistId = obterFuncionarioRestritoLogadoId();
+  if (funcionarioRestritoChecklistId) {
+    rows = rows.filter(t => String(t.funcionario_id || '') === funcionarioRestritoChecklistId);
+  }
   rows.sort((a, b) => {
     const dataA = String(obterDataProgramadaLancamento(a) || '').trim();
     const dataB = String(obterDataProgramadaLancamento(b) || '').trim();
@@ -10081,16 +10123,25 @@ async function carregarOpcoesFiltroChecklists() {
     sb.from('tarefas').select('id, nome').order('nome'),
   ]);
 
-  selFuncionario.innerHTML = '<option value="">- Todos os funcionarios -</option>';
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  selFuncionario.innerHTML = funcionarioRestritoId ? '' : '<option value="">- Todos os funcionarios -</option>';
   if (!funcionariosRes.error) {
-    (funcionariosRes.data || []).forEach(item => {
-      const opt = document.createElement('option');
-      opt.value = String(item.id);
-      opt.textContent = item.nome || 'Funcionario';
-      selFuncionario.appendChild(opt);
-    });
+    (funcionariosRes.data || [])
+      .filter(item => !funcionarioRestritoId || String(item.id) === funcionarioRestritoId)
+      .forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = String(item.id);
+        opt.textContent = item.nome || 'Funcionario';
+        selFuncionario.appendChild(opt);
+      });
   }
-  selFuncionario.value = [...selFuncionario.options].some(opt => opt.value === valorFuncionarioAtual) ? valorFuncionarioAtual : '';
+  if (funcionarioRestritoId) {
+    selFuncionario.value = funcionarioRestritoId;
+    selFuncionario.disabled = true;
+  } else {
+    selFuncionario.disabled = false;
+    selFuncionario.value = [...selFuncionario.options].some(opt => opt.value === valorFuncionarioAtual) ? valorFuncionarioAtual : '';
+  }
 
   selTarefa.innerHTML = '<option value="">- Todas as tarefas -</option>';
   if (!tarefasRes.error || isMissingTableError(tarefasRes.error)) {
@@ -10107,7 +10158,8 @@ async function carregarOpcoesFiltroChecklists() {
 function limparFiltrosChecklists() {
   const campoFuncionario = document.getElementById('filtroChecklistFuncionario');
   const campoTarefa = document.getElementById('filtroChecklistTarefa');
-  if (campoFuncionario) campoFuncionario.value = '';
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  if (campoFuncionario) campoFuncionario.value = funcionarioRestritoId || '';
   if (campoTarefa) campoTarefa.value = '';
   carregarChecklists();
 }
@@ -16229,12 +16281,30 @@ async function carregarSelectFuncionariosPonto() {
   ];
 
   try {
-    const funcionarios = await carregarFuncionariosAtivosPonto();
-    preencherSelectFuncionariosPonto(selPonto, funcionarios, { placeholder: '- Selecione o funcionário -' });
-    preencherSelectFuncionariosPonto(selRelatorio, funcionarios, { incluirTodos: true });
+    let funcionarios = await carregarFuncionariosAtivosPonto();
+    const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+    if (funcionarioRestritoId) {
+      funcionarios = funcionarios.filter(item => String(item.id) === funcionarioRestritoId);
+    }
 
-    if (selPonto && !selPonto.value && usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id) {
-      selPonto.value = String(usuarioSistemaLogado.id);
+    preencherSelectFuncionariosPonto(selPonto, funcionarios, { placeholder: '- Selecione o funcionário -' });
+    preencherSelectFuncionariosPonto(selRelatorio, funcionarios, { incluirTodos: !funcionarioRestritoId });
+
+    if (funcionarioRestritoId) {
+      if (selPonto) {
+        selPonto.value = funcionarioRestritoId;
+        selPonto.disabled = true;
+      }
+      if (selRelatorio) {
+        selRelatorio.value = funcionarioRestritoId;
+        selRelatorio.disabled = true;
+      }
+    } else {
+      if (selPonto) selPonto.disabled = false;
+      if (selRelatorio) selRelatorio.disabled = false;
+      if (selPonto && !selPonto.value && usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id) {
+        selPonto.value = String(usuarioSistemaLogado.id);
+      }
     }
   } catch (error) {
     console.warn('Não foi possível carregar os funcionários do ponto:', error);
@@ -16272,7 +16342,7 @@ function obterIntervaloDatasPorPeriodo(periodo = 'dia', referencia = new Date())
 async function carregarRegistrosPontoComIntervalos({ inicio = '', fim = '', funcionarioId = '' } = {}) {
   let query = sb
     .from('ponto_registros')
-    .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, funcionarios(nome)')
+    .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
     .order('data_ponto', { ascending: false })
     .order('entrada_em', { ascending: false });
 
@@ -16284,6 +16354,31 @@ async function carregarRegistrosPontoComIntervalos({ inicio = '', fim = '', func
   if (error) throw error;
 
   let rows = data || [];
+  const funcionarioIds = [...new Set(rows.map(item => item.funcionario_id).filter(Boolean).map(String))];
+  const nomesPorFuncionario = {};
+
+  if (funcionarioIds.length) {
+    const { data: funcionariosData, error: funcionariosError } = await sb
+      .from('funcionarios')
+      .select('id, nome')
+      .in('id', funcionarioIds);
+
+    if (!funcionariosError) {
+      (funcionariosData || []).forEach(func => {
+        nomesPorFuncionario[String(func.id)] = func.nome || 'Funcionário';
+      });
+    } else {
+      console.warn('Não foi possível carregar nomes dos funcionários para o resumo de horas:', funcionariosError);
+    }
+  }
+
+  rows = rows.map(item => ({
+    ...item,
+    funcionarios: {
+      nome: nomesPorFuncionario[String(item.funcionario_id)] || relatorioPontoFuncionarioCache[String(item.funcionario_id)] || 'Funcionário',
+    },
+  }));
+
   const ids = rows.map(item => item.id).filter(Boolean);
   const intervalosPorRegistro = {};
 
@@ -16308,7 +16403,6 @@ async function carregarRegistrosPontoComIntervalos({ inicio = '', fim = '', func
     intervalos_ponto: intervalosPorRegistro[String(item.id)] || [],
   }));
 }
-
 function calcularResumoHorasPorFuncionario(rows = []) {
   const mapa = {};
   rows.forEach(item => {
@@ -16396,7 +16490,8 @@ async function carregarHorasDashboard() {
   setMsg(msgId, '', '');
   try {
     const { inicio, fim, info } = obterIntervaloDatasPorPeriodo(dashboardHorasPeriodo || 'dia');
-    const rows = await carregarRegistrosPontoComIntervalos({ inicio, fim });
+    const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+    const rows = await carregarRegistrosPontoComIntervalos({ inicio, fim, funcionarioId: funcionarioRestritoId || '' });
     const resumo = calcularResumoHorasPorFuncionario(rows);
 
     renderizarParticipacaoHoras({
@@ -16570,6 +16665,48 @@ function checklistDentroJanelaAlerta(horario) {
   return contexto.ativo;
 }
 
+
+async function anexarNomesFuncionariosARegistrosPonto(rows = []) {
+  const lista = Array.isArray(rows) ? rows : [];
+  const ids = [...new Set(lista.map(item => item?.funcionario_id).filter(Boolean).map(String))];
+  const nomes = {};
+
+  ids.forEach(id => {
+    if (relatorioPontoFuncionarioCache[String(id)]) {
+      nomes[String(id)] = relatorioPontoFuncionarioCache[String(id)];
+    }
+  });
+
+  const idsParaBuscar = ids.filter(id => !nomes[String(id)]);
+  if (idsParaBuscar.length) {
+    const { data, error } = await sb
+      .from('funcionarios')
+      .select('id, nome')
+      .in('id', idsParaBuscar);
+
+    if (!error) {
+      (data || []).forEach(func => {
+        const id = String(func.id || '');
+        if (!id) return;
+        nomes[id] = func.nome || 'Funcionário';
+        relatorioPontoFuncionarioCache[id] = nomes[id];
+      });
+    } else {
+      console.warn('Não foi possível carregar nomes dos funcionários do ponto:', error);
+    }
+  }
+
+  return lista.map(item => {
+    const id = String(item?.funcionario_id || '');
+    return {
+      ...item,
+      funcionarios: {
+        nome: nomes[id] || relatorioPontoFuncionarioCache[id] || 'Funcionário',
+      },
+    };
+  });
+}
+
 async function carregarResumoPontoHoje(funcionarioId = '') {
   const container = document.getElementById('pontoResumoHoje');
   if (!container) return;
@@ -16577,7 +16714,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   const hojeLocal = dataLocalISO();
   let query = sb
     .from('ponto_registros')
-    .select('id, funcionario_id, entrada_em, saida_em, created_at, funcionarios(nome)')
+    .select('id, funcionario_id, entrada_em, saida_em, created_at')
     .eq('data_ponto', hojeLocal)
     .order('created_at', { ascending: true });
 
@@ -16597,7 +16734,8 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     return;
   }
 
-  const rows = registros || [];
+  let rows = registros || [];
+  rows = await anexarNomesFuncionariosARegistrosPonto(rows);
   if (!rows.length) {
     container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
     return;
@@ -16761,21 +16899,177 @@ async function carregarBaterPonto() {
   configurarSegurancaCampoPinPonto();
   limparCampoPinPonto();
   await carregarSelectFuncionariosPonto();
-  await carregarResumoPontoHoje('');
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const campoPin = document.getElementById('pontoPinInput');
+  if (campoPin) {
+    campoPin.style.display = funcionarioRestritoId ? 'none' : '';
+    campoPin.required = !funcionarioRestritoId;
+  }
+  await carregarResumoPontoHoje(funcionarioRestritoId || '');
   await carregarHorasDashboard();
 }
 
-async function registrarPontoFuncionario() {
-  const pin = String(document.getElementById('pontoPinInput')?.value || '').trim();
 
-  if (!pin) {
-    setMsg('msgPonto', 'Digite o PIN do funcionário.', 'err');
-    return;
+function detectarOrigemRegistroPonto() {
+  const ua = navigator.userAgent || '';
+  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  return {
+    origem_registro: mobile ? 'celular' : 'computador',
+    registrado_via: mobile ? 'celular' : 'computador',
+    dispositivo_info: ua.slice(0, 480),
+  };
+}
+
+function obterGeolocalizacaoAtualPonto() {
+  const origem = detectarOrigemRegistroPonto();
+  if (origem.registrado_via !== 'celular') {
+    return Promise.resolve({
+      ...origem,
+      geolocalizacao_status: 'nao_solicitada_computador',
+      latitude: null,
+      longitude: null,
+      precisao_metros: null,
+      endereco_aproximado: null,
+    });
   }
 
-  const funcionario = await obterFuncionarioAtivoPorPin(pin);
+  if (!navigator.geolocation) {
+    return Promise.resolve({
+      ...origem,
+      geolocalizacao_status: 'indisponivel',
+      latitude: null,
+      longitude: null,
+      precisao_metros: null,
+      endereco_aproximado: null,
+    });
+  }
+
+  setMsg('msgPonto', 'Solicitando localização do celular...', '');
+  return new Promise(resolve => {
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({
+        ...origem,
+        geolocalizacao_status: 'permitida',
+        latitude: pos.coords?.latitude ?? null,
+        longitude: pos.coords?.longitude ?? null,
+        precisao_metros: pos.coords?.accuracy ?? null,
+        endereco_aproximado: null,
+      }),
+      err => resolve({
+        ...origem,
+        geolocalizacao_status: err?.code === 1 ? 'negada' : 'erro',
+        latitude: null,
+        longitude: null,
+        precisao_metros: null,
+        endereco_aproximado: null,
+      }),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  });
+}
+
+function isMissingPontoGeoColumnsError(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  return String(error?.code || '') === '42703'
+    || msg.includes('origem_registro')
+    || msg.includes('dispositivo_info')
+    || msg.includes('geolocalizacao_status')
+    || msg.includes('ultima_batida')
+    || msg.includes('registrado_via')
+    || msg.includes('latitude')
+    || msg.includes('longitude');
+}
+
+function montarCamposAuditoriaPonto(meta = {}, tipoBatida = '') {
+  const agoraIso = new Date().toISOString();
+  return {
+    origem_registro: meta.origem_registro || null,
+    registrado_via: meta.registrado_via || null,
+    dispositivo_info: meta.dispositivo_info || null,
+    latitude: meta.latitude ?? null,
+    longitude: meta.longitude ?? null,
+    precisao_metros: meta.precisao_metros ?? null,
+    geolocalizacao_status: meta.geolocalizacao_status || null,
+    endereco_aproximado: meta.endereco_aproximado || null,
+    usuario_logado_id: usuarioSistemaLogado?.tipo === 'funcionario' ? (usuarioSistemaLogado.id || null) : null,
+    ultima_batida_em: agoraIso,
+    ultima_batida_tipo: tipoBatida || null,
+    ultima_batida_origem: meta.origem_registro || null,
+    ultima_batida_dispositivo: meta.dispositivo_info || null,
+    ultima_batida_latitude: meta.latitude ?? null,
+    ultima_batida_longitude: meta.longitude ?? null,
+    ultima_batida_precisao_metros: meta.precisao_metros ?? null,
+    ultima_batida_geolocalizacao_status: meta.geolocalizacao_status || null,
+    ultima_batida_endereco_aproximado: meta.endereco_aproximado || null,
+  };
+}
+
+async function executarComFallbackColunasPonto(queryBuilder, campos, camposBasicos) {
+  const resposta = await queryBuilder(campos);
+  if (!resposta.error) return resposta;
+  if (isMissingPontoGeoColumnsError(resposta.error)) {
+    return await queryBuilder(camposBasicos);
+  }
+  return resposta;
+}
+
+async function registrarAuditoriaBatidaPonto({ pontoRegistroId, funcionarioId, tipoBatida, registradoEm, meta }) {
+  if (!pontoRegistroId || !funcionarioId) return;
+  try {
+    await sb.from('ponto_batidas_auditoria').insert([{
+      ponto_registro_id: pontoRegistroId,
+      funcionario_id: funcionarioId,
+      usuario_logado_id: usuarioSistemaLogado?.tipo === 'funcionario' ? (usuarioSistemaLogado.id || null) : null,
+      tipo_batida: tipoBatida || null,
+      registrado_em: registradoEm || new Date().toISOString(),
+      origem_registro: meta?.origem_registro || null,
+      registrado_via: meta?.registrado_via || null,
+      dispositivo_info: meta?.dispositivo_info || null,
+      latitude: meta?.latitude ?? null,
+      longitude: meta?.longitude ?? null,
+      precisao_metros: meta?.precisao_metros ?? null,
+      geolocalizacao_status: meta?.geolocalizacao_status || null,
+      endereco_aproximado: meta?.endereco_aproximado || null,
+    }]);
+  } catch (e) {
+    console.warn('Auditoria de batida indisponível:', e);
+  }
+}
+
+async function obterFuncionarioLogadoParaPonto() {
+  if (!obterFuncionarioRestritoLogadoId()) return null;
+  const { data, error } = await sb
+    .from('funcionarios')
+    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim')
+    .eq('id', usuarioSistemaLogado.id)
+    .eq('ativo', true)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+async function registrarPontoFuncionario() {
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const pin = String(document.getElementById('pontoPinInput')?.value || '').trim();
+
+  let funcionario = null;
+  if (funcionarioRestritoId) {
+    try {
+      funcionario = await obterFuncionarioLogadoParaPonto();
+    } catch (error) {
+      setMsg('msgPonto', `Não foi possível validar seu usuário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+      return;
+    }
+  } else {
+    if (!pin) {
+      setMsg('msgPonto', 'Digite o PIN do funcionário.', 'err');
+      return;
+    }
+    funcionario = await obterFuncionarioAtivoPorPin(pin);
+  }
+
   if (!funcionario?.id) {
-    setMsg('msgPonto', 'PIN inválido.', 'err');
+    setMsg('msgPonto', funcionarioRestritoId ? 'Usuário não encontrado ou inativo.' : 'PIN inválido.', 'err');
     return;
   }
 
@@ -16783,7 +17077,10 @@ async function registrarPontoFuncionario() {
   relatorioPontoFuncionarioCache[funcionarioId] = funcionario.nome || 'Funcionário';
   const dataHoje = dataLocalISO();
   const agora = new Date().toISOString();
+  const auditoriaPonto = await obterGeolocalizacaoAtualPonto();
   let tipoAvisoPonto = 'iniciado';
+  let tipoBatidaRegistrada = '';
+  let pontoRegistroAuditoriaId = '';
 
   const { data: registrosHoje, error: erroBusca } = await sb
     .from('ponto_registros')
@@ -16805,14 +17102,21 @@ async function registrarPontoFuncionario() {
   const registroHoje = registros[0] || null;
 
   if (!registroHoje) {
-    const { error: erroEntrada } = await sb
-      .from('ponto_registros')
-      .insert([{
-        funcionario_id: funcionarioId,
-        data_ponto: dataHoje,
-        entrada_em: agora,
-        saida_em: null,
-      }]);
+    const camposEntradaBasicos = {
+      funcionario_id: funcionarioId,
+      data_ponto: dataHoje,
+      entrada_em: agora,
+      saida_em: null,
+    };
+    const camposEntrada = { ...camposEntradaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'entrada') };
+    const respostaEntrada = await executarComFallbackColunasPonto(
+      (campos) => sb.from('ponto_registros').insert([campos]).select('id').maybeSingle(),
+      camposEntrada,
+      camposEntradaBasicos,
+    );
+    const erroEntrada = respostaEntrada.error;
+    pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
+    tipoBatidaRegistrada = 'entrada';
 
     if (erroEntrada) {
       if (isMissingTimeClockTableError(erroEntrada)) {
@@ -16851,10 +17155,15 @@ async function registrarPontoFuncionario() {
     if (!podeContinuarComPendencias) return;
 
     if (!registroHoje.entrada_em) {
-      const { error: erroEntradaInicial } = await sb
-        .from('ponto_registros')
-        .update({ entrada_em: agora, saida_em: null })
-        .eq('id', registroHoje.id);
+      const camposEntradaInicialBasicos = { entrada_em: agora, saida_em: null };
+      const camposEntradaInicial = { ...camposEntradaInicialBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'entrada') };
+      const { error: erroEntradaInicial } = await executarComFallbackColunasPonto(
+        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
+        camposEntradaInicial,
+        camposEntradaInicialBasicos,
+      );
+      pontoRegistroAuditoriaId = registroHoje.id;
+      tipoBatidaRegistrada = 'entrada';
 
       if (erroEntradaInicial) {
         setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroEntradaInicial, 'erro desconhecido')}`, 'err');
@@ -16865,26 +17174,36 @@ async function registrarPontoFuncionario() {
         .from('ponto_intervalos')
         .update({ retorno_em: agora })
         .eq('id', ultimoIntervaloAberto.id);
+      pontoRegistroAuditoriaId = registroHoje.id;
+      tipoBatidaRegistrada = 'retorno';
 
       if (erroRetorno) {
         setMsg('msgPonto', `Não foi possível registrar o retorno: ${mensagemErroSupabase(erroRetorno, 'erro desconhecido')}`, 'err');
         return;
       }
 
-      const { error: erroReabre } = await sb
-        .from('ponto_registros')
-        .update({ saida_em: null })
-        .eq('id', registroHoje.id);
+      const camposReabreBasicos = { saida_em: null };
+      const camposReabre = { ...camposReabreBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'retorno') };
+      const { error: erroReabre } = await executarComFallbackColunasPonto(
+        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
+        camposReabre,
+        camposReabreBasicos,
+      );
 
       if (erroReabre) {
         setMsg('msgPonto', `Não foi possível atualizar o status do ponto: ${mensagemErroSupabase(erroReabre, 'erro desconhecido')}`, 'err');
         return;
       }
     } else if (!registroHoje.saida_em) {
-      const { error: erroSaida } = await sb
-        .from('ponto_registros')
-        .update({ saida_em: agora })
-        .eq('id', registroHoje.id);
+      const camposSaidaBasicos = { saida_em: agora };
+      const camposSaida = { ...camposSaidaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'saida') };
+      const { error: erroSaida } = await executarComFallbackColunasPonto(
+        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
+        camposSaida,
+        camposSaidaBasicos,
+      );
+      pontoRegistroAuditoriaId = registroHoje.id;
+      tipoBatidaRegistrada = 'saida';
 
       if (erroSaida) {
         setMsg('msgPonto', `Não foi possível registrar a saída: ${mensagemErroSupabase(erroSaida, 'erro desconhecido')}`, 'err');
@@ -16911,16 +17230,31 @@ async function registrarPontoFuncionario() {
         return;
       }
 
-      const { error: erroLimpaSaida } = await sb
-        .from('ponto_registros')
-        .update({ saida_em: null })
-        .eq('id', registroHoje.id);
+      const camposLimpaSaidaBasicos = { saida_em: null };
+      const camposLimpaSaida = { ...camposLimpaSaidaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'retorno') };
+      const { error: erroLimpaSaida } = await executarComFallbackColunasPonto(
+        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
+        camposLimpaSaida,
+        camposLimpaSaidaBasicos,
+      );
+      pontoRegistroAuditoriaId = registroHoje.id;
+      tipoBatidaRegistrada = 'retorno';
 
       if (erroLimpaSaida) {
         setMsg('msgPonto', `Não foi possível atualizar o status do ponto: ${mensagemErroSupabase(erroLimpaSaida, 'erro desconhecido')}`, 'err');
         return;
       }
     }
+  }
+
+  if (pontoRegistroAuditoriaId && tipoBatidaRegistrada) {
+    await registrarAuditoriaBatidaPonto({
+      pontoRegistroId: pontoRegistroAuditoriaId,
+      funcionarioId,
+      tipoBatida: tipoBatidaRegistrada,
+      registradoEm: agora,
+      meta: auditoriaPonto,
+    });
   }
 
   setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
@@ -16931,7 +17265,7 @@ async function registrarPontoFuncionario() {
     clearTimeout(timeoutLimpezaPinPonto);
     timeoutLimpezaPinPonto = null;
   }
-  await carregarResumoPontoHoje();
+  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoId() || '');
   await carregarHorasDashboard();
   if (obterPaginaAtivaAtual() === 'relatorio_ponto') {
     await carregarRelatorioPonto();
@@ -17462,7 +17796,8 @@ async function carregarRelatorioPonto() {
 
   await carregarSelectFuncionariosPonto();
 
-  const funcionarioId = String(document.getElementById('filtroPontoFuncionario')?.value || '');
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const funcionarioId = funcionarioRestritoId || String(document.getElementById('filtroPontoFuncionario')?.value || '');
   const dataInicioEl = document.getElementById('filtroPontoDataInicio');
   const dataFimEl = document.getElementById('filtroPontoDataFim');
   if (dataInicioEl && dataFimEl && !dataInicioEl.value && !dataFimEl.value) {
@@ -17478,7 +17813,7 @@ async function carregarRelatorioPonto() {
 
   let query = sb
     .from('ponto_registros')
-    .select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at, funcionarios(nome)')
+    .select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at')
     .order('data_ponto', { ascending: false })
     .order('entrada_em', { ascending: false });
 
@@ -17499,6 +17834,7 @@ async function carregarRelatorioPonto() {
   }
 
   let rows = data || [];
+  rows = await anexarNomesFuncionariosARegistrosPonto(rows);
   const registrosIds = rows.map(item => item.id).filter(Boolean);
   let intervalosPorRegistro = {};
   if (registrosIds.length) {
