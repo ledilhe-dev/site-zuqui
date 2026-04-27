@@ -61,42 +61,42 @@
 
     /* ---- SIDEBAR ---- */
     .sidebar {
-      width: 240px;
+      width: 280px;
       flex-shrink: 0;
       background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 16px 12px;
-      gap: 4px;
+      padding: 18px 14px;
+      gap: 6px;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 20px;
+      gap: 12px;
+      font-size: 22px;
       font-weight: 700;
       color: var(--green);
       letter-spacing: -0.5px;
-      padding: 0 6px 14px;
+      padding: 0 8px 16px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .logo img {
-      width: 36px;
-      height: 36px;
+      width: 42px;
+      height: 42px;
       flex-shrink: 0;
       border-radius: 12px;
       box-shadow: 0 12px 24px rgba(0,0,0,0.25);
     }
     .logo strong {
       display: block;
-      font-size: 15px;
+      font-size: 17px;
       color: var(--text);
       letter-spacing: -0.4px;
     }
-    .logo span { color: var(--text-muted); font-weight: 400; font-size: 11px; display: block; margin-top: 1px; }
+    .logo span { color: var(--text-muted); font-weight: 400; font-size: 12px; display: block; margin-top: 2px; }
     .login-brand {
       display: flex;
       flex-direction: column;
@@ -192,8 +192,8 @@
     }
 
     .nav-group {
-      margin: 10px 0 0;
-      padding: 8px 0 0;
+      margin: 12px 0 0;
+      padding: 10px 0 0;
       border-top: 1px solid rgba(107, 143, 112, 0.2);
     }
     .nav-group.featured {
@@ -204,8 +204,8 @@
     }
     .nav-label {
       display: block;
-      padding: 0 8px 6px;
-      font-size: 10px;
+      padding: 0 10px 7px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.9px;
       text-transform: uppercase;
@@ -215,16 +215,16 @@
     .nav-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
       border: none;
       background: transparent;
       color: var(--text-muted);
       text-align: left;
-      padding: 7px 9px;
+      padding: 10px 11px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       font-family: inherit;
       font-weight: 500;
       transition: all 0.15s;
@@ -233,8 +233,8 @@
     .nav-btn:hover { background: var(--surface2); color: var(--text); }
     .nav-btn.ativo { background: var(--green-glow); color: var(--green); }
     .nav-btn .icon {
-      width: 24px;
-      height: 24px;
+      width: 30px;
+      height: 30px;
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
@@ -243,7 +243,7 @@
       background: rgba(34,197,94,0.08);
       border: 1px solid rgba(34,197,94,0.12);
       color: var(--green);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.4px;
       text-transform: uppercase;
@@ -254,16 +254,16 @@
       min-width: 0;
     }
     .nav-title {
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 650;
       color: inherit;
       line-height: 1.2;
     }
     .nav-hint {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text-dim);
-      margin-top: 1px;
-      line-height: 1.2;
+      margin-top: 2px;
+      line-height: 1.25;
     }
     .nav-btn.ativo .nav-hint,
     .nav-btn:hover .nav-hint {
@@ -291,7 +291,7 @@
       justify-content: space-between;
     }
     .nav-caret {
-      font-size: 10px;
+      font-size: 12px;
       color: var(--text-dim);
       transition: transform 0.15s ease;
       margin-left: 6px;
@@ -305,8 +305,8 @@
     }
     .nav-sub-btn {
       margin-bottom: 0;
-      padding: 6px 8px;
-      font-size: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
       background: rgba(255, 255, 255, 0.02);
     }
     .nav-sub-btn.ativo {
@@ -435,6 +435,20 @@
         background: rgba(249, 115, 22, 0.25);
         border-color: rgba(249, 115, 22, 0.6);
         box-shadow: 0 12px 26px rgba(249, 115, 22, 0.24);
+      }
+    }
+
+    @media (max-width: 1180px) and (min-width: 901px) {
+      .sidebar {
+        width: 260px;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+      .nav-btn {
+        padding: 9px 10px;
+      }
+      .nav-title {
+        font-size: 13px;
       }
     }
 
@@ -724,6 +738,31 @@
       color: var(--text-muted);
       line-height: 1.35;
     }
+    .notification-item {
+      display: block;
+    }
+    .notification-item-main {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      padding: 0;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .notification-item-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .notification-item-actions .btn {
+      min-height: 26px;
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
     .overdue-alert-banner {
       position: fixed;
       inset: 0;
@@ -5570,7 +5609,7 @@ const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
 const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
 const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
-const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 2 * 60 * 1000;
+const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 10 * 60 * 1000;
 const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
 const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 15 * 60 * 1000;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
@@ -6494,17 +6533,20 @@ function injetarAlertaChecklistTempoReal(lancamento = null) {
 
   const nomeChecklist = String(lancamento.nome || 'Checklist');
   const horarioProgramado = horaCurta(lancamento.horario_limite) || 'não informado';
+  const dataProgramada = formatarDataNotificacaoLancamento(lancamento);
+  const resumoDataHora = montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado);
 
   notificacoesAtuais.unshift({
     chave,
     tipo: 'checklist_pendente',
     page: 'checklists',
     titulo: 'Checklist pendente aguardando início',
-    descricao: `${nomeChecklist} · Horário previsto: ${horarioProgramado}.`,
+    descricao: `${nomeChecklist} · ${resumoDataHora}.`,
     meta: {
       nomeTarefa: nomeChecklist,
       nomeFuncionario: 'Responsável',
       horarioProgramado,
+      dataProgramada,
     },
   });
 
@@ -8359,6 +8401,41 @@ async function obterConfiguracoesLoja() {
   return { data, missing: false };
 }
 
+function formatarDataNotificacaoLancamento(item = {}) {
+  const dataRef = obterDataProgramadaLancamento(item);
+  if (!dataRef) return 'não informada';
+  return formatarDataProgramadaBr(dataRef);
+}
+
+function montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado) {
+  const dataTexto = dataProgramada || 'não informada';
+  const horaTexto = horarioProgramado || 'não informado';
+  return `Data: ${dataTexto} · Horário: ${horaTexto}`;
+}
+
+function limparNotificacaoUsuario(event, index) {
+  if (event?.preventDefault) event.preventDefault();
+  if (event?.stopPropagation) event.stopPropagation();
+  const item = notificacoesAtuais[index];
+  if (!item?.chave) return;
+
+  marcarNotificacoesComoLidas([item.chave]);
+  if (usuarioEhMasterNotificacoes() && !tipoNotificacaoCritica(item?.tipo)) {
+    dispensarNotificacoesMaster([item.chave]);
+  }
+  notificacoesAtuais = notificacoesAtuais.filter((_, itemIndex) => itemIndex !== index);
+  quantidadeNotificacoesAnterior = notificacoesAtuais.length;
+  quantidadeAlertasCriticosAnterior = obterNotificacoesCriticas().length;
+  assinaturaAlertasCriticosAnterior = obterNotificacoesCriticas().map(n => n.chave).sort().join('|');
+  atualizarBadgeTarefasAtraso(obterQuantidadeAtrasosNotificacao());
+  renderizarListaNotificacoes();
+  sincronizarAvisoNotificacoes();
+}
+
+function notificacaoFoiLimpaPeloUsuario(item) {
+  return notificacaoJaFoiLida(item?.chave);
+}
+
 function renderizarListaNotificacoes() {
   const count = document.getElementById('notificationCount');
   const list = document.getElementById('notificationList');
@@ -8385,14 +8462,21 @@ function renderizarListaNotificacoes() {
   }
 
   list.innerHTML = '<div class="notification-list">' + notificacoesAtuais.map((n, index) => `
-    <button class="notification-item" type="button" onclick="abrirNotificacao(${index})">
-      <strong>${n.titulo}</strong>
-      <span>${n.descricao}</span>
-    </button>
+    <div class="notification-item">
+      <button class="notification-item-main" type="button" onclick="abrirNotificacao(${index})">
+        <strong>${n.titulo}</strong>
+        <span>${n.descricao}</span>
+      </button>
+      <div class="notification-item-actions">
+        <button class="btn btn-ghost btn-sm" type="button" onclick="limparNotificacaoUsuario(event, ${index})">Limpar</button>
+      </div>
+    </div>
   `).join('') + '</div>';
 
   renderizarAvisoCentralTarefas();
 }
+
+
 
 function togglePainelNotificacoes(force = null) {
   const panel = document.getElementById('notificationPanel');
@@ -8400,21 +8484,12 @@ function togglePainelNotificacoes(force = null) {
   const abrindo = typeof force === 'boolean' ? force : !painelNotificacoesAberto;
   painelNotificacoesAberto = typeof force === 'boolean' ? force : !painelNotificacoesAberto;
   panel.classList.toggle('show', painelNotificacoesAberto);
-  if (abrindo && notificacoesAtuais.length && !usuarioEhMasterNotificacoes()) {
-    marcarNotificacoesComoLidas(notificacoesAtuais.map(item => item.chave));
-    quantidadeNotificacoesAnterior = 0;
-    const count = document.getElementById('notificationCount');
-    const button = document.querySelector('.notification-btn');
-    if (count) {
-      count.textContent = '0';
-      count.classList.remove('show');
-    }
-    if (button) {
-      button.classList.remove('has-alert');
-      button.title = 'Notificacoes';
-    }
+  if (abrindo && notificacoesAtuais.length) {
+    renderizarListaNotificacoes();
   }
 }
+
+
 
 function obterCaminhosAudioNotificacao() {
   const origem = window.location.origin;
@@ -8598,6 +8673,45 @@ function bloquearDisparoSomPor(ms) {
   }
 }
 
+function tocarSinoNotificacaoAlto({ quantidade = 4, volume = 0.42, espacamento = 0.34 } = {}) {
+  const duracaoToque = 0.34;
+  const duracaoTotal = (quantidade * duracaoToque) + ((quantidade - 1) * espacamento);
+
+  const disparar = () => {
+    const inicioBase = audioContextNotificacao.currentTime + 0.02;
+    for (let i = 0; i < quantidade; i += 1) {
+      const inicio = inicioBase + (i * (duracaoToque + espacamento));
+      const fim = inicio + duracaoToque;
+      const osciladorA = audioContextNotificacao.createOscillator();
+      const osciladorB = audioContextNotificacao.createOscillator();
+      const gain = audioContextNotificacao.createGain();
+
+      osciladorA.type = 'sine';
+      osciladorB.type = 'triangle';
+      osciladorA.frequency.setValueAtTime(1046.5, inicio);
+      osciladorB.frequency.setValueAtTime(1318.5, inicio);
+      osciladorA.frequency.exponentialRampToValueAtTime(1568, fim - 0.04);
+      osciladorB.frequency.exponentialRampToValueAtTime(2093, fim - 0.04);
+
+      gain.gain.setValueAtTime(0.0001, inicio);
+      gain.gain.exponentialRampToValueAtTime(volume, inicio + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.0001, fim);
+
+      osciladorA.connect(gain);
+      osciladorB.connect(gain);
+      gain.connect(audioContextNotificacao.destination);
+      osciladorA.start(inicio);
+      osciladorB.start(inicio);
+      osciladorA.stop(fim + 0.02);
+      osciladorB.stop(fim + 0.02);
+    }
+  };
+
+  garantirContextoAudioAtivo(disparar);
+  return duracaoTotal;
+}
+
+
 function tocarSireneSequencial({
   quantidade = 2,
   duracao = 2.1,
@@ -8654,13 +8768,10 @@ function tocarSomNotificacaoFallback(critico = false, incluirFala = true) {
   if (!somNotificacaoHabilitado) return;
   if (!somNotificacaoPodeDisparar()) return;
 
-  const duracaoTotalSirenes = tocarSireneSequencial({
-    quantidade: 2,
-    duracao: critico ? 2.6 : 2.1,
-    volume: critico ? 0.23 : 0.18,
-    frequenciaBaixa: 620,
-    frequenciaAlta: 1220,
-    espacamento: 0.32,
+  const duracaoTotalSirenes = tocarSinoNotificacaoAlto({
+    quantidade: critico ? 5 : 4,
+    volume: critico ? 0.48 : 0.4,
+    espacamento: critico ? 0.26 : 0.34,
   });
 
   const duracaoFalaMs = incluirFala ? 3600 : 0;
@@ -8831,6 +8942,10 @@ function renderizarAvisoCentralTarefas() {
     const horario = item?.tipo === 'alerta_rapido'
       ? 'Aviso imediato'
       : (item?.meta?.horarioProgramado || item?.meta?.horario_programado || 'Não informado');
+    const dataProgramada = item?.meta?.dataProgramada || item?.meta?.data_programada || '';
+    const dataHorarioTexto = item?.tipo === 'alerta_rapido'
+      ? horario
+      : (dataProgramada ? `${dataProgramada} às ${horario}` : horario);
     const rodape = item?.tipo === 'alerta_rapido'
       ? 'Aviso rápido. Confirme com seu PIN para finalizar o aviso.'
       : item?.tipo === 'execucao_atrasada'
@@ -8840,7 +8955,7 @@ function renderizarAvisoCentralTarefas() {
     <div class="overdue-alert-item">
       <div class="overdue-alert-task">${nomeTarefa}</div>
       <div class="overdue-alert-funcionario">${nomeFuncionario}</div>
-      <div class="overdue-alert-horario">${item?.tipo === 'alerta_rapido' ? 'Aviso para: ' : 'Hora para executar tarefa: '}${horario}</div>
+      <div class="overdue-alert-horario">${item?.tipo === 'alerta_rapido' ? 'Aviso para: ' : 'Data e hora da tarefa: '}${dataHorarioTexto}</div>
       <div class="overdue-alert-rodape">${rodape}</div>
     </div>
   `;
@@ -8887,7 +9002,7 @@ function abrirPainelExecucoesEmAndamento(event) {
 }
 
 function obterInicioExecucaoParaLembrete(item) {
-  return item?.inicio_confirmado_em || item?.iniciado_em || null;
+  return item?.inicio_confirmado_em || null;
 }
 
 function execucaoPrecisaLembreteFinalizacao(item) {
@@ -9071,17 +9186,14 @@ async function abrirNotificacao(index) {
     await confirmarAlertaRapidoNotificacao(item, index);
     return;
   }
-  if (!usuarioEhMasterNotificacoes()) {
-    marcarNotificacoesComoLidas([item.chave]);
-    notificacoesAtuais = notificacoesAtuais.filter((_, itemIndex) => itemIndex !== index);
-    renderizarListaNotificacoes();
-  }
   togglePainelNotificacoes(false);
   if (item.page) {
     const botao = document.querySelector(`.nav-btn[data-page="${item.page}"]`);
     abrirPagina(item.page, botao);
   }
 }
+
+
 
 async function carregarNotificacoes() {
   const itens = [];
@@ -9276,17 +9388,20 @@ async function carregarNotificacoes() {
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
       const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+      const dataProgramada = formatarDataNotificacaoLancamento(item);
+      const resumoDataHora = montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado);
 
       itens.push({
         chave: criarChaveAlerta('checklist_pendente', item.id),
         tipo: 'checklist_pendente',
         page: 'checklists',
         titulo: 'Checklist pendente aguardando início',
-        descricao: `${nomeChecklist}${nomeFuncionario ? ' · Responsável: ' + nomeFuncionario : ''} · Horário previsto: ${horarioProgramado}.`,
+        descricao: `${nomeChecklist}${nomeFuncionario ? ' · Responsável: ' + nomeFuncionario : ''} · ${resumoDataHora}.`,
         meta: {
           nomeTarefa: nomeChecklist,
           nomeFuncionario: nomeFuncionario || 'Sem responsável',
           horarioProgramado,
+          dataProgramada,
         },
       });
     });
@@ -9298,13 +9413,15 @@ async function carregarNotificacoes() {
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
       const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+      const dataProgramada = formatarDataNotificacaoLancamento(item);
+      const resumoDataHora = montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado);
       const titulo = prazo.vencido ? 'Checklist não iniciado após o prazo' : 'Checklist não iniciado e próximo do prazo';
       const descricao = prazo.vencido
-        ? `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Horário previsto: ${horarioProgramado}.`
-        : `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Falta menos de 1 hora para o horário previsto: ${horarioProgramado}.`;
+        ? `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. ${resumoDataHora}.`
+        : `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Falta menos de 1 hora. ${resumoDataHora}.`;
       const mensagem = prazo.vencido
-        ? `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Horário previsto: ${horarioProgramado}.`
-        : `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Falta menos de 1 hora para o horário previsto: ${horarioProgramado}.`;
+        ? `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. ${resumoDataHora}.`
+        : `${nomeChecklist} ainda não foi iniciado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Falta menos de 1 hora. ${resumoDataHora}.`;
       const assunto = prazo.vencido
         ? `CHECK DIARIO: checklist não iniciado após o prazo - ${nomeChecklist}`
         : `CHECK DIARIO: checklist próximo do prazo sem início - ${nomeChecklist}`;
@@ -9319,6 +9436,7 @@ async function carregarNotificacoes() {
           nomeTarefa: nomeChecklist,
           nomeFuncionario: nomeFuncionario || 'Sem responsável',
           horarioProgramado,
+          dataProgramada,
         },
       });
 
@@ -9333,6 +9451,7 @@ async function carregarNotificacoes() {
             nome_funcionario: nomeFuncionario || null,
             status_alerta: prazo.vencido ? 'nao_iniciado' : 'proximo_do_prazo',
             horario_programado: horarioProgramado,
+            data_programada: dataProgramada,
           },
         });
       }
@@ -9344,17 +9463,20 @@ async function carregarNotificacoes() {
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
       const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+      const dataProgramada = formatarDataNotificacaoLancamento(item);
+      const resumoDataHora = montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado);
 
       itens.push({
         chave: criarChaveAlerta('checklist_agendado', item.id),
         tipo: 'checklist_agendado',
         page: 'checklists',
         titulo: 'Nova tarefa agendada para o próximo ciclo',
-        descricao: `${nomeChecklist}${nomeFuncionario ? ' · Responsável: ' + nomeFuncionario : ''} · Horário previsto: ${horarioProgramado}. Hoje não gera alerta crítico.`,
+        descricao: `${nomeChecklist}${nomeFuncionario ? ' · Responsável: ' + nomeFuncionario : ''} · ${resumoDataHora}. Hoje não gera alerta crítico.`,
         meta: {
           nomeTarefa: nomeChecklist,
           nomeFuncionario: nomeFuncionario || 'Sem responsável',
           horarioProgramado,
+          dataProgramada,
         },
       });
     });
@@ -9470,11 +9592,11 @@ async function carregarNotificacoes() {
   if (usuarioEhMasterNotificacoes()) {
     // Para evitar "notificações fantasmas", o master passa a exibir apenas
     // notificações efetivamente ativas no banco no momento da consulta.
-    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(itens);
+    notificacoesHistoricoMaster = filtrarNotificacoesMasterDispensadas(itens).filter(item => !notificacaoFoiLimpaPeloUsuario(item));
     salvarHistoricoNotificacoesMaster(notificacoesHistoricoMaster);
     notificacoesAtuais = notificacoesHistoricoMaster;
   } else {
-    notificacoesAtuais = itens.filter(item => notificacaoDeveSempreAparecer(item) || !notificacaoJaFoiLida(item.chave));
+    notificacoesAtuais = itens.filter(item => !notificacaoFoiLimpaPeloUsuario(item));
   }
   atualizarBadgeTarefasAtraso(obterQuantidadeAtrasosNotificacao());
   renderizarListaNotificacoes();
