@@ -17763,7 +17763,8 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     const statusTexto = item.aberto ? 'Aberto agora' : 'Fechado';
 
     const acaoAdmin = usuarioEhAdministrador()
-      ? `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalAjusteManualAdminPonto('${item.id}')">Ajustar</button>`
+      ? `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalAjusteManualAdminPonto('${item.id}')">Ajustar</button>
+         <button class="btn btn-ghost btn-sm" type="button" style="color:#fca5a5;border-color:rgba(239,68,68,0.4)" onclick="abrirModalExclusaoAjusteManualAdminPonto('${item.id}')">Excluir ajuste</button>`
       : '';
 
     return `
@@ -18161,7 +18162,11 @@ async function registrarPontoFuncionario() {
 }
 
 
-function abrirModalAjusteManualAdminPonto(funcionarioId = '') {
+function abrirModalExclusaoAjusteManualAdminPonto(funcionarioId = '') {
+  abrirModalAjusteManualAdminPonto(funcionarioId, 'anular', dataLocalISO());
+}
+
+function abrirModalAjusteManualAdminPonto(funcionarioId = '', tipoInicial = 'adicionar', dataInicial = '') {
   if (!usuarioEhAdministrador()) {
     setMsg('msgPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
     return;
@@ -21968,7 +21973,7 @@ function montarHtmlAjustesPonto(ajustes = []) {
     }).join('') + `</div>`;
 }
 
-function abrirModalAjusteManualAdminPonto(funcionarioId = '') {
+function abrirModalAjusteManualAdminPonto(funcionarioId = '', tipoInicial = 'adicionar', dataInicial = '') {
   if (!usuarioEhAdministrador()) {
     setMsg('msgPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
     return;
@@ -21980,18 +21985,31 @@ function abrirModalAjusteManualAdminPonto(funcionarioId = '') {
   const horario = document.getElementById('adminAjustePontoHorario');
   const senha = document.getElementById('adminAjustePontoSenha');
   const motivo = document.getElementById('adminAjustePontoMotivo');
-  selecionarTipoAjusteManualAdminPonto('adicionar');
+  const tipoAjuste = tipoInicial === 'anular' ? 'anular' : 'adicionar';
+  selecionarTipoAjusteManualAdminPonto(tipoAjuste);
   carregarSelectFuncionariosPonto().then(() => {
     if (sel && funcionarioId) sel.value = String(funcionarioId);
+    if (tipoAjuste === 'anular') atualizarBatidasDisponiveisAnulacaoPonto();
   }).catch(() => {});
   if (sel && funcionarioId) sel.value = String(funcionarioId);
-  if (data) data.value = dataLocalISO();
+  if (data) data.value = dataInicial || dataLocalISO();
   if (horario) horario.value = '';
   if (senha) senha.value = '';
   if (motivo) motivo.value = '';
   setMsg('msgAjusteManualAdminPonto', '', '');
   modal.hidden = false;
-  setTimeout(() => (sel && !sel.value ? sel.focus() : horario?.focus()), 80);
+  if (tipoAjuste === 'anular') atualizarBatidasDisponiveisAnulacaoPonto();
+  setTimeout(() => {
+    if (sel && !sel.value) {
+      sel.focus();
+      return;
+    }
+    if (tipoAjuste === 'anular') {
+      document.getElementById('adminAjustePontoBatida')?.focus();
+      return;
+    }
+    horario?.focus();
+  }, 80);
 }
 
 async function salvarAjusteManualAdminPonto() {
