@@ -5896,6 +5896,7 @@ let avisoCentralTarefasFechado = false;
 let assinaturaAvisoCentralTarefas = '';
 let assinaturaSomAlertaRapidoLista = '';
 let alertasCriticosSilenciadosNaSessao = false;
+let assinaturaUltimoRedirecionamentoChecklist = '';
 let resolverModalPinPendente = null;
 let resolverModalFormaPagamentoPendente = null;
 let formasModalPagamentoFinanceiro = [];
@@ -5959,6 +5960,7 @@ function redefinirEstadoAvisoCentralTarefas() {
   avisoCentralTarefasFechado = false;
   assinaturaAvisoCentralTarefas = '';
   assinaturaAlertasCriticosAnterior = '';
+  assinaturaUltimoRedirecionamentoChecklist = '';
   quantidadeNotificacoesAnterior = null;
   quantidadeAlertasCriticosAnterior = null;
   alertasCriticosSilenciadosNaSessao = obterSilenciamentoAlertasCriticosDaSessao();
@@ -6353,6 +6355,12 @@ function usuarioPodeConfirmarAlertaRapido() {
 
 function usuarioPodeGerenciarAlertasRapidos() {
   return usuarioEhMasterNotificacoes();
+}
+
+function usuarioEhPerfilGerencialNotificacoes() {
+  if (!usuarioSistemaLogado) return false;
+  const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
+  return codigo === 'GERENTE' || codigo === 'GESTOR' || codigo === 'MASTER';
 }
 
 const PERFIL_PERMISSOES = [
@@ -9187,6 +9195,22 @@ function tocarSomNotificacaoFallback(critico = false, incluirFala = true) {
   }
 }
 
+function tocarSomNovaTarefaChecklist() {
+  if (!somNotificacaoHabilitado) {
+    habilitarSomNotificacao();
+  }
+  if (!somNotificacaoHabilitado) return;
+  if (!somNotificacaoPodeDisparar()) return;
+
+  const duracaoTotalSino = tocarSinoNotificacaoAlto({
+    quantidade: 3,
+    volume: 0.45,
+    espacamento: 0.32,
+  });
+
+  bloquearDisparoSomPor(Math.round((duracaoTotalSino * 1000) + 240));
+}
+
 function tocarBipCurtoTarefaAtrasada() {
   if (!somNotificacaoHabilitado) {
     habilitarSomNotificacao();
@@ -9464,6 +9488,29 @@ function sincronizarAvisoNotificacoes() {
   const agora = Date.now();
   let somTocadoNesteCiclo = false;
   const alertaFortePermitido = paginaPermiteAlertaForte();
+  const chavesCriticasAnteriores = new Set(String(assinaturaAlertasCriticosAnterior || '').split('|').filter(Boolean));
+  const notificacoesCriticasNovas = notificacoesCriticas.filter(item => !chavesCriticasAnteriores.has(String(item?.chave || '')));
+  const novasTarefasChecklist = notificacoesCriticasNovas.filter(item => item?.tipo === 'checklist_pendente' || item?.tipo === 'lancamento_atrasado');
+  const possuiNovaTarefaChecklist = novasTarefasChecklist.length > 0;
+  const podeAlertarNovaTarefaChecklist = possuiNovaTarefaChecklist && existeSessaoAtivaParaAtualizacao();
+
+  const redirecionarParaChecklistSeNecessario = () => {
+    if (!possuiNovaTarefaChecklist) return;
+    if (!usuarioPodeAcessar('checklists')) return;
+    if (!usuarioEhMasterNotificacoes() || !usuarioEhPerfilGerencialNotificacoes()) return;
+
+    const assinaturaNovaTarefa = novasTarefasChecklist
+      .map(item => String(item?.chave || ''))
+      .filter(Boolean)
+      .sort()
+      .join('|');
+
+    if (!assinaturaNovaTarefa || assinaturaNovaTarefa === assinaturaUltimoRedirecionamentoChecklist) return;
+    assinaturaUltimoRedirecionamentoChecklist = assinaturaNovaTarefa;
+
+    const botaoChecklist = document.querySelector('.nav-btn[data-page="checklists"]');
+    abrirPagina('checklists', botaoChecklist);
+  };
 
   renderizarAvisoCentralTarefas();
 
@@ -9486,18 +9533,22 @@ function sincronizarAvisoNotificacoes() {
   };
 
   if (quantidadeNotificacoesAnterior === null) {
-    if (totalCriticoAtual > 0 && existeSessaoAtivaParaAtualizacao() && alertaFortePermitido) {
+    if (totalCriticoAtual > 0 && existeSessaoAtivaParaAtualizacao() && (alertaFortePermitido || podeAlertarNovaTarefaChecklist)) {
       destacarNovasNotificacoes();
       avisoCentralTarefasFechado = false;
       renderizarAvisoCentralTarefas();
       if (execucoesAtrasadas.length) {
         tocarSomCriticoExecucao();
+      } else if (possuiNovaTarefaChecklist) {
+        tocarSomNovaTarefaChecklist();
+        somTocadoNesteCiclo = true;
       } else {
         tocarSomCriticoChecklist();
       }
       if (!painelNotificacoesAberto) {
         togglePainelNotificacoes(true);
       }
+      redirecionarParaChecklistSeNecessario();
     }
     quantidadeNotificacoesAnterior = totalAtual;
     quantidadeAlertasCriticosAnterior = totalCriticoAtual;
@@ -9505,28 +9556,37 @@ function sincronizarAvisoNotificacoes() {
     return;
   }
 
-  if (totalCriticoAtual > 0 && assinaturaCriticaAtual !== assinaturaAlertasCriticosAnterior && alertaFortePermitido) {
+  if (totalCriticoAtual > 0 && assinaturaCriticaAtual !== assinaturaAlertasCriticosAnterior && (alertaFortePermitido || podeAlertarNovaTarefaChecklist)) {
     destacarNovasNotificacoes();
     avisoCentralTarefasFechado = false;
     renderizarAvisoCentralTarefas();
     if (execucoesAtrasadas.length) {
       tocarSomCriticoExecucao();
+    } else if (possuiNovaTarefaChecklist) {
+      tocarSomNovaTarefaChecklist();
+      somTocadoNesteCiclo = true;
     } else {
       tocarSomCriticoChecklist();
     }
     if (!painelNotificacoesAberto) {
       togglePainelNotificacoes(true);
     }
-  } else if (totalAtual > quantidadeNotificacoesAnterior && alertaFortePermitido) {
+    redirecionarParaChecklistSeNecessario();
+  } else if (totalAtual > quantidadeNotificacoesAnterior && (alertaFortePermitido || podeAlertarNovaTarefaChecklist)) {
     destacarNovasNotificacoes();
     const notificacaoMaisRecente = notificacoesAtuais[0] || null;
     const notificacaoSilenciosa = notificacaoMaisRecente?.tipo === 'checklist_agendado';
     if (!notificacaoSilenciosa) {
-      tocarSomNotificacao(false);
+      if (possuiNovaTarefaChecklist) {
+        tocarSomNovaTarefaChecklist();
+      } else {
+        tocarSomNotificacao(false);
+      }
     }
     if (!painelNotificacoesAberto) {
       togglePainelNotificacoes(true);
     }
+    redirecionarParaChecklistSeNecessario();
   }
 
   const lembretesExecucaoDevidos = execucoesAtrasadas.filter(item => {
