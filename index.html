@@ -15,11 +15,13 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.0 - Produção
+    Versão 3.1 - Produção
     Principais ajustes:
-    - Criação de multilojas (isolamento por loja e operação por unidade).
-    - Consolidação de regras de acesso por perfil em ambiente multiunidade.
-    - Ajustes gerais de estabilidade no fluxo operacional.
+    - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
+    - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
+    - Dashboard: card de checklists exibe apenas os modelos da loja logada.
+    - Banco de dados: NOT NULL + trigger em ponto_registros e checklists para loja_id.
+    - Segurança: fallback de consulta de ponto usa inner join (funcionarios.loja_id) para evitar vazamento entre lojas.
   -->
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -3013,9 +3015,109 @@
     }
     .checklists-futuros-box[open] summary::after { content: 'Fechar'; }
     .checklists-futuros-conteudo { padding: 10px; }
-    .permissoes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
-    .perm-item { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); font-size: 13px; color: var(--text); }
+    #perfis .perfil-form-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    #perfis .perfil-form-row > * { min-width: 0; }
+    #perfis .perfil-titulo-inline {
+      margin: 0;
+      align-self: center;
+      white-space: nowrap;
+      min-width: 90px;
+    }
+    #nomePerfil {
+      max-width: 180px;
+      flex: 0 0 180px !important;
+    }
+    #codigoPerfil {
+      max-width: 160px;
+      flex: 0 0 160px !important;
+    }
+    #filtroPermissoesPerfil {
+      min-width: 170px;
+      max-width: 250px;
+      flex: 1 1 210px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    #perfis .perfil-form-row .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+    #btnMarcarDesmarcarPermissoesPerfil {
+      max-width: 130px;
+    }
+    #filtroPermissoesPerfil::placeholder { color: var(--text-muted); }
+    @media (max-width: 1280px) {
+      #perfis .perfil-form-row {
+        flex-wrap: wrap;
+      }
+      #filtroPermissoesPerfil {
+        max-width: none;
+        flex: 1 1 100%;
+      }
+    }
+    .permissoes-grid { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; max-height: 330px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgba(5,12,9,0.35); padding: 6px; }
+    .perm-item { display: flex; align-items: center; gap: 8px; padding: 5px 7px; border: 1px solid transparent; border-radius: 6px; background: transparent; font-size: 12px; line-height: 1.25; color: var(--text); min-height: 28px; }
+    .perm-item:hover { background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.14); }
+    .perm-item[hidden] { display: none !important; }
     .perm-item input { width: 16px; height: 16px; }
+    #perfis .card,
+    #funcionarios .card {
+      padding: 12px 14px;
+    }
+    #perfis .card-title,
+    #funcionarios .card-title {
+      font-size: 12px;
+      letter-spacing: .55px;
+    }
+    #perfis .form-row,
+    #funcionarios .form-row {
+      gap: 8px;
+    }
+    #perfis input,
+    #perfis select,
+    #funcionarios input,
+    #funcionarios select {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+    #perfis .btn,
+    #funcionarios .btn {
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+    #listaPerfis .item,
+    #listaFuncionarios .item {
+      padding: 7px 10px;
+      min-height: 0;
+    }
+    #listaPerfis .item-nome,
+    #listaFuncionarios .item-nome {
+      font-size: 12px;
+      line-height: 1.25;
+    }
+    #listaPerfis .item-detalhe,
+    #listaFuncionarios .item-detalhe {
+      font-size: 10px;
+      line-height: 1.25;
+    }
+    #listaPerfis .item-actions,
+    #listaFuncionarios .item-actions {
+      gap: 5px;
+    }
+    #listaPerfis .btn,
+    #listaFuncionarios .btn {
+      min-height: 28px;
+      padding: 0 9px;
+      font-size: 11px;
+    }
 
     .tag {
       display: inline-flex;
@@ -4337,7 +4439,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="cardDadosLojaConfig">
           <div class="card-title">Produtividade (Etapa 1 de 3)</div>
           <div class="dashboard-period-tabs">
             <button class="dashboard-period-btn active" data-prod-periodo="dia" onclick="trocarPeriodoProdutividade('dia', this)">Dia</button>
@@ -4380,7 +4482,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="cardCadastroLojasConfig">
           <div class="card-title">Execuções recentes</div>
           <div id="dash-execucoes">
             <div class="empty">Carregando⬦</div>
@@ -4393,7 +4495,7 @@
         <div class="page-title">Checklists</div>
         <div class="page-sub">Modelos prontos para iniciar tarefa</div>
 
-        <div class="card">
+        <div class="card" id="cardAdminsLojaConfig">
           <div class="card-title">Checklists lancados</div>
           <div class="form-row">
             <select id="filtroChecklistFuncionario" onchange="carregarChecklists()">
@@ -4413,7 +4515,7 @@
         <div class="page-title">Itens do Checklist</div>
         <div class="page-sub">Gerencie os itens de cada modelo</div>
 
-        <div class="card">
+        <div class="card" id="cardLembreteLojaConfig">
           <div class="card-title">Selecionar checklist</div>
           <div class="form-row">
             <select id="checklistSelect" onchange="carregarItens()">
@@ -4448,6 +4550,11 @@
         <div class="page-sub">Cadastro e gestão de funcionários</div>
 
         <div class="card">
+          <div class="card-title">Funcionários cadastrados</div>
+          <div id="listaFuncionarios"><div class="empty">Carregando⬦</div></div>
+        </div>
+
+        <div class="card">
           <div class="funcionario-cadastro-header">
             <div>
               <div class="card-title" id="tituloCadastroFuncionario">Novo funcionário</div>
@@ -4467,7 +4574,7 @@
               </div>
               <div class="campo-com-label">
                 <label class="campo-label" for="pinFuncionario" id="labelPinFuncionario">Senha</label>
-                <input id="pinFuncionario" class="campo-curto" type="password" placeholder="PIN" maxlength="6" autocomplete="new-password" name="pin_funcionario_novo" inputmode="numeric" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <input id="pinFuncionario" class="campo-curto" type="password" placeholder="Senha" maxlength="20" autocomplete="new-password" name="pin_funcionario_novo" autocapitalize="off" autocorrect="off" spellcheck="false">
               </div>
               <div class="campo-com-label">
                 <label class="campo-label" for="horarioInicioFuncionario">Hora inicial</label>
@@ -4488,11 +4595,6 @@
             </div>
           </div>
           <div class="msg" id="msgFuncionarios"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Funcionários cadastrados</div>
-          <div id="listaFuncionarios"><div class="empty">Carregando⬦</div></div>
         </div>
       </section>
 
@@ -4599,25 +4701,28 @@
         <div class="page-sub">Defina as abas e funções disponíveis para cada perfil</div>
 
         <div class="card">
-          <div class="card-title">Novo perfil</div>
-          <div class="form-row">
-            <input id="nomePerfil" type="text" placeholder="Nome do perfil">
-            <select id="codigoPerfil" class="campo-curto" style="max-width:180px;flex:0 0 180px !important">
-              <option value="FUNCIONARIO">Funcionário</option>
-              <option value="GERENTE">Gerente</option>
-              <option value="ADM">Administrador</option>
-              <option value="PERSONALIZADO">Personalizado</option>
-            </select>
-            <button class="btn btn-green" id="btnSalvarPerfil" onclick="criarPerfil()">Cadastrar</button>
-            <button class="btn btn-ghost" id="btnCancelarEdicaoPerfil" onclick="cancelarEdicaoPerfil()" style="display:none">Cancelar</button>
-          </div>
-          <div class="permissoes-grid" id="permissoesPerfilGrid"></div>
-          <div class="msg" id="msgPerfis"></div>
+          <div class="card-title">Perfis cadastrados</div>
+          <div id="listaPerfis"><div class="empty">Carregando⬦</div></div>
         </div>
 
         <div class="card">
-          <div class="card-title">Perfis cadastrados</div>
-          <div id="listaPerfis"><div class="empty">Carregando⬦</div></div>
+          <div class="form-row perfil-form-row">
+            <div class="card-title perfil-titulo-inline" id="tituloFormularioPerfil">Novo perfil</div>
+            <input id="nomePerfil" type="text" placeholder="Nome do perfil">
+            <select id="codigoPerfil" class="campo-curto">
+              <option value="FUNCIONARIO">Funcionário</option>
+              <option value="GERENTE">Gerente</option>
+              <option value="VENDEDOR">Vendedor</option>
+              <option value="ADM">Administrador</option>
+              <option value="PERSONALIZADO">Personalizado</option>
+            </select>
+            <input id="filtroPermissoesPerfil" type="text" placeholder="Buscar permissão (contém)" oninput="filtrarPermissoesPerfil()">
+            <button class="btn btn-green" id="btnSalvarPerfil" onclick="criarPerfil()">Cadastrar</button>
+            <button class="btn btn-ghost" id="btnCancelarEdicaoPerfil" onclick="cancelarEdicaoPerfil()" style="display:none">Cancelar</button>
+            <button class="btn btn-ghost btn-sm" id="btnMarcarDesmarcarPermissoesPerfil" type="button" onclick="toggleMarcarPermissoesPerfil()">Marcar todos</button>
+          </div>
+          <div class="permissoes-grid" id="permissoesPerfilGrid"></div>
+          <div class="msg" id="msgPerfis"></div>
         </div>
       </section>
 
@@ -5694,7 +5799,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.0.1-perfis-lojas';
+const APP_VERSION = '3.1.0';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -5705,19 +5810,38 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Sobrescreve sb.from para injetar filtro loja_id automaticamente em admin_loja
 // Apenas tabelas que JÁ TÊM a coluna loja_id no banco atual.
-// Tabelas sem loja_id (checklists, fornecedores, contasapagar, etc.) serão
-// adicionadas aqui após a aplicação das migrations multiempresa.
+// Tabelas sem loja_id (ex.: checklists globais) ficam fora deste filtro.
 const TABELAS_COM_LOJA_ID = new Set([
   'funcionarios',
+  'checklists',
+  'checklist_lancamentos',
   'checklist_execucoes',
   'ponto_registros',
   'tarefas',
-  'usuarios_admin'
+  'usuarios_admin',
+  'fornecedores',
+  'formas_pagamento',
+  'contasapagar',
+  'contas_financeiras',
+  'contas_financeiras_movimentacoes',
+  'contas_financeiras_ajustes_saldo',
+  'recebiveis'
 ]);
+let filtroLojaSuspensoTemporariamente = false;
 function obterLojaIdSessao() {
+  if (filtroLojaSuspensoTemporariamente) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s || s.tipo === 'admin') return null;
   return s.loja_id || null;
+}
+async function executarSemFiltroLojaTemporario(callback) {
+  const estadoAnterior = filtroLojaSuspensoTemporariamente;
+  filtroLojaSuspensoTemporariamente = true;
+  try {
+    return await callback();
+  } finally {
+    filtroLojaSuspensoTemporariamente = estadoAnterior;
+  }
 }
 (function() {
   const _from = sb.from.bind(sb);
@@ -5742,8 +5866,8 @@ function obterLojaIdSessao() {
       const _origInsert = builder.insert.bind(builder);
       builder.insert = function(valores, opts) {
         const comLoja = Array.isArray(valores)
-          ? valores.map(v => ({ loja_id: lojaId, ...v }))
-          : { loja_id: lojaId, ...valores };
+          ? valores.map(v => ({ ...v, loja_id: lojaId }))
+          : { ...valores, loja_id: lojaId };
         return _origInsert(comLoja, opts);
       };
     }
@@ -5752,8 +5876,8 @@ function obterLojaIdSessao() {
       const _origUpsert = builder.upsert.bind(builder);
       builder.upsert = function(valores, opts) {
         const comLoja = Array.isArray(valores)
-          ? valores.map(v => ({ loja_id: lojaId, ...v }))
-          : { loja_id: lojaId, ...valores };
+          ? valores.map(v => ({ ...v, loja_id: lojaId }))
+          : { ...valores, loja_id: lojaId };
         return _origUpsert(comLoja, opts);
       };
     }
@@ -6390,9 +6514,12 @@ const PERFIL_PERMISSOES = [
   { key: 'financeiro_recebiveis', label: 'Financeiro - Recebíveis' },
   { key: 'financeiro_cofre', label: 'Financeiro - Cofre' },
   { key: 'funcionarios', label: 'Funcionarios' },
-  { key: 'solicitacoes', label: 'Solicitacoes de acesso' },
+  { key: 'solicitacoes', label: 'Solicitações de acesso / aprovar e-mail' },
   { key: 'emails', label: 'Envio de e-mail' },
   { key: 'configuracoes', label: 'Informacoes da loja' },
+  { key: 'cadastro_lojas', label: 'Lojas - visualizar/editar' },
+  { key: 'criar_lojas', label: 'Lojas - criar/inativar' },
+  { key: 'cadastro_admins_loja', label: 'Admins por loja - criar/editar/remover' },
   { key: 'perfis', label: 'Perfis' },
   { key: 'tarefas', label: 'Cadastro de Checklist' },
   { key: 'tarefas_rapidas', label: 'Alertas rápidas' },
@@ -6409,6 +6536,43 @@ function obterPermissoesBase(codigo) {
   const codigoNormalizado = normalizarCodigoPerfil(codigo);
   if (codigoNormalizado === 'ADM' || codigoNormalizado === 'MASTER') {
     return Object.fromEntries(PERFIL_PERMISSOES.map(p => [p.key, true]));
+  }
+
+  if (codigoNormalizado === 'VENDEDOR') {
+    return {
+      dashboard: false,
+      checklists: false,
+      bater_ponto: false,
+      relatorio_ponto: false,
+      ponto_ajustes: false,
+      relatorio_lancamentos: false,
+      relatorio_financeiro: false,
+      relatorio_ajuste_saldo: false,
+      financeiro_fornecedores: false,
+      financeiro_formas_pagamento: false,
+      financeiro_contasapagar: false,
+      financeiro_baixar_contas: false,
+      financeiro_conta_financeira: false,
+      financeiro_recebiveis: false,
+      financeiro_cofre: false,
+      funcionarios: false,
+      solicitacoes: true,
+      emails: false,
+      configuracoes: false,
+      cadastro_lojas: true,
+      criar_lojas: false,
+      cadastro_admins_loja: true,
+      perfis: false,
+      tarefas: false,
+      tarefas_rapidas: false,
+      receber_alertas_rapidas: false,
+      confirmar_alertas_rapidas: false,
+      execucoes: false,
+      tarefas_atraso: false,
+      nova_execucao_manual: false,
+      ver_todos_checklists: false,
+      ver_todas_execucoes: false,
+    };
   }
 
   if (codigoNormalizado === 'GERENTE' || codigoNormalizado === 'GESTOR') {
@@ -6432,6 +6596,9 @@ function obterPermissoesBase(codigo) {
       solicitacoes: false,
       emails: false,
       configuracoes: false,
+      cadastro_lojas: false,
+      criar_lojas: false,
+      cadastro_admins_loja: false,
       perfis: false,
       tarefas: false,
       tarefas_rapidas: true,
@@ -6465,6 +6632,9 @@ function obterPermissoesBase(codigo) {
     solicitacoes: false,
     emails: false,
     configuracoes: false,
+    cadastro_lojas: false,
+    criar_lojas: false,
+    cadastro_admins_loja: false,
     perfis: false,
     tarefas: false,
     tarefas_rapidas: false,
@@ -7204,6 +7374,33 @@ function escaparValorLike(valor) {
   return String(valor || '').replace(/[%,]/g, ' ').trim();
 }
 
+function loginAdminLojaCombina(admin = {}, username = '', password = '') {
+  const senha = String(password || '').trim();
+  if (!admin || String(admin.pin ?? '') !== senha) return false;
+
+  const busca = normalizarTextoComparacao(username);
+  if (!busca) return false;
+
+  const usuario = normalizarTextoComparacao(admin.usuario || '');
+  const nome = normalizarTextoComparacao(admin.nome || '');
+  return usuario === busca || nome === busca || usuario.includes(busca) || nome.includes(busca);
+}
+
+function senhaFuncionarioLoginCombina(funcionario = {}, username = '', password = '') {
+  const pinSalvo = String(funcionario?.pin ?? '').trim();
+  const senha = String(password || '').trim();
+  if (!pinSalvo || !senha) return false;
+  if (pinSalvo === senha) return true;
+
+  const login = normalizarTextoComparacao(username);
+  const nome = normalizarTextoComparacao(funcionario?.nome || '');
+  const email = normalizarTextoComparacao(funcionario?.email || '');
+  const loginCombina = nome === login || email === login;
+
+  // Compatibilidade com cadastros feitos quando o campo limitava senha a 6 caracteres.
+  return loginCombina && senha === login && pinSalvo.length === 6 && pinSalvo === senha.slice(0, 6);
+}
+
 async function validarDuplicidadeCadastro({
   nome,
   email,
@@ -7594,6 +7791,14 @@ function obterPermissoesUsuario() {
   if (codigo === 'ADM' || codigo === 'MASTER') {
     const permissoes = { ...obterPermissoesBase(codigo), ...permissoesDoBanco };
     PERFIL_PERMISSOES.forEach(p => { permissoes[p.key] = true; });
+    if (usuarioSistemaLogado?.tipo !== 'admin') {
+      // Perfis ADM antigos não têm estas permissões salvas no banco ainda.
+      // Quando ausentes, mantemos liberado; quando desmarcadas no perfil, bloqueamos.
+      permissoes.solicitacoes = permissoesDoBanco.solicitacoes !== false;
+      permissoes.cadastro_lojas = permissoesDoBanco.cadastro_lojas !== false;
+      permissoes.criar_lojas = permissoesDoBanco.criar_lojas !== false;
+      permissoes.cadastro_admins_loja = permissoesDoBanco.cadastro_admins_loja !== false;
+    }
     permissoes.bater_ponto = true;
     permissoes.ver_todos_checklists = true;
     permissoes.ver_todas_execucoes = true;
@@ -7609,11 +7814,47 @@ function obterPermissoesUsuario() {
 function usuarioPodeAcessar(pageId) {
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
-  return !!obterPermissoesUsuario()[pageId];
+  const permissoes = obterPermissoesUsuario();
+  if (pageId === 'configuracoes') {
+    return !!(permissoes.configuracoes || permissoes.cadastro_lojas || permissoes.cadastro_admins_loja);
+  }
+  return !!permissoes[pageId];
 }
 
 function usuarioEhAdministrador() {
   return usuarioSistemaLogado?.tipo === 'admin' || normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo) === 'ADM';
+}
+
+function usuarioPodeGerenciarLojasGlobais() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
+  return !!obterPermissoesUsuario().cadastro_lojas;
+}
+
+function usuarioPodeCriarLojasGlobais() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  return !!obterPermissoesUsuario().criar_lojas;
+}
+
+function usuarioPodeGerenciarAdminsLojasGlobais() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  return !!obterPermissoesUsuario().cadastro_admins_loja;
+}
+
+function usuarioPodeEditarAdminsDaLojaLogada() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
+  return !!obterPermissoesUsuario().cadastro_admins_loja;
+}
+
+function usuarioPodeCriarAdminsLojasGlobais() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  return !!obterPermissoesUsuario().cadastro_admins_loja;
 }
 
 function usuarioEhContaZuquiOperacional() {
@@ -7643,6 +7884,22 @@ function usuarioDeveVerApenasProprioFuncionario() {
 
 function obterFuncionarioRestritoLogadoId() {
   return usuarioDeveVerApenasProprioFuncionario() ? String(usuarioSistemaLogado.id || '') : '';
+}
+
+function usuarioPodeVisualizarPontoTodosUsuariosLoja() {
+  const permissoes = obterPermissoesUsuario();
+  return usuarioEhAdministrador() || !!(
+    permissoes.relatorio_ponto
+    || permissoes.ponto_ajustes
+    || permissoes.ver_todos_checklists
+    || permissoes.ver_todas_execucoes
+  );
+}
+
+function obterFuncionarioRestritoLogadoIdParaPonto() {
+  if (!usuarioDeveVerApenasProprioFuncionario()) return '';
+  if (usuarioPodeVisualizarPontoTodosUsuariosLoja()) return '';
+  return String(usuarioSistemaLogado?.id || '');
 }
 
 function usuarioPodeVerTodosChecklists() {
@@ -7749,9 +8006,18 @@ async function buscarPerfilPorCodigoEscopoLoja(codigo = 'GERENTE', lojaId = obte
 }
 
 async function obterPerfilAdminLojaSeguro(lojaId = '') {
-  // Admins de loja NÃO entram mais como ADM do sistema inteiro.
-  // Eles usam o perfil GERENTE salvo na tela Perfis, respeitando as permissões marcadas.
-  return buscarPerfilPorCodigoEscopoLoja('GERENTE', lojaId);
+  // Admin de loja entra com permissões de ADM, mas o acesso aos dados segue
+  // limitado pelo loja_id da sessão no wrapper do Supabase.
+  const permissoes = obterPermissoesBase('ADM');
+  permissoes.solicitacoes = false;
+  permissoes.cadastro_lojas = true;
+  permissoes.criar_lojas = false;
+  permissoes.cadastro_admins_loja = false;
+  return normalizarPerfilUsuario({
+    nome: 'Administrador da loja',
+    codigo: 'ADM',
+    permissoes,
+  });
 }
 
 function persistirSessaoSistemaAtual(manterConectado = false) {
@@ -7880,6 +8146,99 @@ function dataLocalISO(valor = new Date()) {
   const partes = obterPartesDataHoraBrasil(valor);
   if (!partes) return '';
   return `${partes.year}-${partes.month}-${partes.day}`;
+}
+
+function obterJanelaUtcDiaBrasil(dataIso = '') {
+  const dataBase = String(dataIso || dataLocalISO()).trim();
+  if (!dataBase) return { inicioUtc: '', fimUtc: '' };
+  const inicio = new Date(`${dataBase}T00:00:00-03:00`);
+  if (Number.isNaN(inicio.getTime())) return { inicioUtc: '', fimUtc: '' };
+  const fim = new Date(inicio.getTime() + (24 * 60 * 60 * 1000));
+  return { inicioUtc: inicio.toISOString(), fimUtc: fim.toISOString() };
+}
+
+function mesclarRegistrosPontoPorId(base = [], complemento = []) {
+  const mapa = new Map();
+  [...(base || []), ...(complemento || [])].forEach(item => {
+    const chave = String(item?.id || '');
+    if (!chave) return;
+    mapa.set(chave, item);
+  });
+  return Array.from(mapa.values());
+}
+
+async function obterIdsFuncionariosVisiveisLojaParaPonto(funcionarioId = '') {
+  const idUnico = String(funcionarioId || '').trim();
+  if (idUnico) return [idUnico];
+
+  const lojaId = String(obterLojaIdSessao() || '').trim();
+  if (!lojaId) return [];
+
+  const { data, error } = await sb.from('funcionarios').select('id');
+  if (error) {
+    console.warn('Não foi possível carregar funcionários visíveis para fallback de ponto:', error);
+    return [];
+  }
+  return [...new Set((data || []).map(item => String(item?.id || '')).filter(Boolean))];
+}
+
+async function complementarRegistrosPontoSemFiltroLoja(rows = [], {
+  inicio = '',
+  fim = '',
+  funcionarioId = '',
+  campos = 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+} = {}) {
+  const lojaIdSessao = String(obterLojaIdSessao() || '').trim();
+  if (!lojaIdSessao) return rows || [];
+
+  const { data: dataFallback, error: errorFallback } = await executarSemFiltroLojaTemporario(() => {
+    let query = sb
+      .from('ponto_registros')
+      .select(`${campos}, funcionarios!inner(loja_id)`)
+      .eq('funcionarios.loja_id', lojaIdSessao);
+    if (funcionarioId) query = query.eq('funcionario_id', String(funcionarioId));
+    if (inicio) query = query.gte('data_ponto', inicio);
+    if (fim) query = query.lte('data_ponto', fim);
+    return query.order('data_ponto', { ascending: false }).order('created_at', { ascending: false });
+  });
+
+  if (errorFallback) {
+    console.warn('Não foi possível aplicar fallback sem filtro de loja para ponto:', errorFallback);
+    return rows || [];
+  }
+
+  return mesclarRegistrosPontoPorId(rows || [], dataFallback || []);
+}
+
+async function complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows = [], {
+  diaIso = '',
+  funcionarioId = '',
+  campos = 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+} = {}) {
+  const lojaIdSessao = String(obterLojaIdSessao() || '').trim();
+  if (!lojaIdSessao) return rows || [];
+
+  const { inicioUtc, fimUtc } = obterJanelaUtcDiaBrasil(diaIso || dataLocalISO());
+  if (!inicioUtc || !fimUtc) return rows || [];
+
+  const { data: dataFallback, error: errorFallback } = await executarSemFiltroLojaTemporario(() => {
+    let query = sb
+      .from('ponto_registros')
+      .select(`${campos}, funcionarios!inner(loja_id)`)
+      .eq('funcionarios.loja_id', lojaIdSessao)
+      .gte('created_at', inicioUtc)
+      .lt('created_at', fimUtc)
+      .order('created_at', { ascending: false });
+    if (funcionarioId) query = query.eq('funcionario_id', String(funcionarioId));
+    return query;
+  });
+
+  if (errorFallback) {
+    console.warn('Não foi possível aplicar fallback por created_at sem filtro de loja para ponto:', errorFallback);
+    return rows || [];
+  }
+
+  return mesclarRegistrosPontoPorId(rows || [], dataFallback || []);
 }
 
 function checklistFoiLancadoHoje(lancadoEm, criadoEm = null) {
@@ -10919,7 +11278,7 @@ function atualizarEstadoCadastroFuncionarioUI() {
     : 'Clique em "Novo cadastro" para abrir o formulário.';
   btnToggle.textContent = cadastroFuncionarioAberto ? 'Fechar cadastro' : 'Novo cadastro';
   if (labelPin) labelPin.textContent = 'Senha';
-  if (campoPin) campoPin.placeholder = 'PIN';
+  if (campoPin) campoPin.placeholder = 'Senha';
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
 }
 
@@ -11120,6 +11479,10 @@ async function toggleFuncionario(id, ativo) {
 async function carregarSolicitacoesAcesso() {
   const lista = document.getElementById('listaSolicitacoesAcesso');
   if (!lista) return;
+  if (!usuarioPodeAcessar('solicitacoes')) {
+    lista.innerHTML = '<div class="empty">Solicitações de acesso disponíveis apenas para perfil autorizado.</div>';
+    return;
+  }
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   const { data, error } = await sb
@@ -14383,6 +14746,23 @@ function obterAtivoRegistroLoja(item = {}) {
   return true;
 }
 
+function atualizarFormularioLojaCadastroPorPermissao() {
+  const criando = !lojaCadastroEmEdicaoId;
+  const podeCriar = usuarioPodeCriarLojasGlobais();
+  const bloqueado = criando && !podeCriar;
+  const nome = document.getElementById('nomeLojaCadastro');
+  const codigo = document.getElementById('codigoLojaCadastro');
+  const ativo = document.getElementById('ativoLojaCadastro');
+  const btnSalvar = document.getElementById('btnSalvarLojaCadastro');
+  if (nome) nome.disabled = bloqueado;
+  if (codigo) codigo.disabled = bloqueado;
+  if (ativo) ativo.disabled = bloqueado || (!criando && !podeCriar);
+  if (btnSalvar) {
+    btnSalvar.disabled = bloqueado;
+    if (bloqueado) btnSalvar.textContent = 'Selecione uma filial';
+  }
+}
+
 function limparFormularioLojaCadastro() {
   lojaCadastroEmEdicaoId = null;
   const nome = document.getElementById('nomeLojaCadastro');
@@ -14395,6 +14775,7 @@ function limparFormularioLojaCadastro() {
   if (ativo) ativo.checked = true;
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar filial';
   if (btnCancelar) btnCancelar.style.display = 'none';
+  atualizarFormularioLojaCadastroPorPermissao();
 }
 
 function renderizarListaLojasCadastro() {
@@ -14428,7 +14809,7 @@ function renderizarListaLojasCadastro() {
         </div>
         <div class="item-actions">
           <button class="btn btn-ghost btn-sm" onclick="editarLojaCadastro('${id}')">Editar</button>
-          <button class="btn btn-ghost btn-sm" onclick="alternarAtivoLojaCadastro('${id}')">${ativa ? 'Inativar' : 'Ativar'}</button>
+          ${usuarioPodeCriarLojasGlobais() ? `<button class="btn btn-ghost btn-sm" onclick="alternarAtivoLojaCadastro('${id}')">${ativa ? 'Inativar' : 'Ativar'}</button>` : ''}
         </div>
       </div>
     `;
@@ -14438,6 +14819,12 @@ function renderizarListaLojasCadastro() {
 async function carregarLojasCadastro() {
   const lista = document.getElementById('listaLojasCadastro');
   if (!lista) return;
+  if (!usuarioPodeGerenciarLojasGlobais()) {
+    lojasCadastroCache = [];
+    atualizarSelectLojasAdminCadastro();
+    lista.innerHTML = '<div class="empty">Cadastro de lojas disponível apenas para perfil autorizado.</div>';
+    return;
+  }
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   const tentativas = [];
@@ -14466,7 +14853,12 @@ async function carregarLojasCadastro() {
   }
 
   tabelaLojasCadastroAtiva = escolhida.tabela;
-  lojasCadastroCache = escolhida.data;
+  const lojaIdSessao = usuarioSistemaLogado?.tipo === 'admin_loja'
+    ? String(usuarioSistemaLogado.loja_id || '').trim()
+    : '';
+  lojasCadastroCache = lojaIdSessao
+    ? escolhida.data.filter(item => String(item.id || '').trim() === lojaIdSessao)
+    : escolhida.data;
   atualizarSelectLojasAdminCadastro();
   renderizarListaLojasCadastro();
   setMsg('msgLojasCadastro', `Tabela ativa: ${tabelaLojasCadastroAtiva}.`, 'ok');
@@ -14516,6 +14908,14 @@ async function persistirLojaComFallback({ id = '', nome = '', codigo = '', ativo
 }
 
 async function salvarLojaCadastro() {
+  if (!usuarioPodeGerenciarLojasGlobais()) {
+    setMsg('msgLojasCadastro', 'Você não tem permissão para cadastrar filiais.', 'err');
+    return;
+  }
+  if (!lojaCadastroEmEdicaoId && !usuarioPodeCriarLojasGlobais()) {
+    setMsg('msgLojasCadastro', 'Você pode editar a loja vinculada, mas não cadastrar novas filiais.', 'err');
+    return;
+  }
   const nome = String(document.getElementById('nomeLojaCadastro')?.value || '').trim();
   const codigo = String(document.getElementById('codigoLojaCadastro')?.value || '').trim();
   const ativo = document.getElementById('ativoLojaCadastro')?.checked !== false;
@@ -14549,6 +14949,10 @@ async function salvarLojaCadastro() {
 }
 
 function editarLojaCadastro(id) {
+  if (!usuarioPodeGerenciarLojasGlobais()) {
+    setMsg('msgLojasCadastro', 'Você não tem permissão para editar filiais.', 'err');
+    return;
+  }
   const item = lojasCadastroCache.find(loja => String(loja.id) === String(id));
   if (!item) {
     setMsg('msgLojasCadastro', 'Filial não encontrada para edição.', 'err');
@@ -14567,6 +14971,7 @@ function editarLojaCadastro(id) {
   if (ativo) ativo.checked = obterAtivoRegistroLoja(item);
   if (btnSalvar) btnSalvar.textContent = 'Salvar filial';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  atualizarFormularioLojaCadastroPorPermissao();
   setMsg('msgLojasCadastro', `Editando filial: ${obterNomeRegistroLoja(item) || '-'}.`, 'ok');
 }
 
@@ -14576,6 +14981,14 @@ function cancelarEdicaoLojaCadastro() {
 }
 
 async function alternarAtivoLojaCadastro(id) {
+  if (!usuarioPodeCriarLojasGlobais()) {
+    setMsg('msgLojasCadastro', 'Você não tem permissão para ativar ou inativar filiais.', 'err');
+    return;
+  }
+  if (!usuarioPodeGerenciarLojasGlobais()) {
+    setMsg('msgLojasCadastro', 'Você não tem permissão para alterar filiais.', 'err');
+    return;
+  }
   const item = lojasCadastroCache.find(loja => String(loja.id) === String(id));
   if (!item) {
     setMsg('msgLojasCadastro', 'Filial não encontrada.', 'err');
@@ -14652,12 +15065,22 @@ function limparFormularioAdminLojaCadastro() {
   const ativo = document.getElementById('ativoAdminCadastro');
   const btnSalvar = document.getElementById('btnSalvarAdminCadastro');
   const btnCancelar = document.getElementById('btnCancelarEdicaoAdminCadastro');
+  const podeCriar = usuarioPodeCriarAdminsLojasGlobais();
+  const criando = !adminLojaCadastroEmEdicaoId;
   if (loja) loja.value = '';
   if (nome) nome.value = '';
   if (usuario) usuario.value = '';
   if (pin) pin.value = '';
   if (ativo) ativo.checked = true;
-  if (btnSalvar) btnSalvar.textContent = 'Cadastrar admin';
+  if (loja) loja.disabled = criando && !podeCriar;
+  if (nome) nome.disabled = criando && !podeCriar;
+  if (usuario) usuario.disabled = criando && !podeCriar;
+  if (pin) pin.disabled = criando && !podeCriar;
+  if (ativo) ativo.disabled = criando && !podeCriar;
+  if (btnSalvar) {
+    btnSalvar.textContent = podeCriar ? 'Cadastrar admin' : 'Selecione um admin';
+    btnSalvar.disabled = criando && !podeCriar;
+  }
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -14669,6 +15092,8 @@ function renderizarListaAdminsLojaCadastro() {
     lista.innerHTML = '<div class="empty">Nenhum admin por loja cadastrado.</div>';
     return;
   }
+
+  const podeEditarAdmins = usuarioPodeEditarAdminsDaLojaLogada();
 
   const ordenados = [...adminsLojaCadastroCache].sort((a, b) =>
     String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' })
@@ -14685,9 +15110,9 @@ function renderizarListaAdminsLojaCadastro() {
           <div class="item-detalhe">Usuário: ${escaparHtmlBasico(item.usuario || '-')} · Loja: ${escaparHtmlBasico(lojaNome || '-')} · Status: ${ativo ? 'Ativo' : 'Inativo'}</div>
         </div>
         <div class="item-actions">
-          <button class="btn btn-ghost btn-sm" onclick="editarAdminLojaCadastro('${id}')">Editar</button>
-          <button class="btn btn-ghost btn-sm" onclick="alternarAtivoAdminLojaCadastro('${id}')">${ativo ? 'Inativar' : 'Ativar'}</button>
-          <button class="btn btn-ghost btn-sm" onclick="excluirAdminLojaCadastro('${id}')" style="color:#e05c5c">Excluir</button>
+          ${podeEditarAdmins ? `<button class="btn btn-ghost btn-sm" onclick="editarAdminLojaCadastro('${id}')">Editar</button>` : ''}
+          ${podeEditarAdmins ? `<button class="btn btn-ghost btn-sm" onclick="alternarAtivoAdminLojaCadastro('${id}')">${ativo ? 'Inativar' : 'Ativar'}</button>` : ''}
+          ${podeEditarAdmins ? `<button class="btn btn-ghost btn-sm" onclick="excluirAdminLojaCadastro('${id}')" style="color:#e05c5c">Excluir</button>` : ''}
         </div>
       </div>
     `;
@@ -14697,12 +15122,20 @@ function renderizarListaAdminsLojaCadastro() {
 async function carregarAdminsLojaCadastro() {
   const lista = document.getElementById('listaAdminsCadastro');
   if (!lista) return;
+  if (!usuarioPodeEditarAdminsDaLojaLogada()) {
+    adminsLojaCadastroCache = [];
+    lista.innerHTML = '<div class="empty">Cadastro de admins por loja disponível apenas para perfil autorizado.</div>';
+    return;
+  }
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
-  const { data, error } = await sb
+  const consultarAdmins = () => sb
     .from('usuarios_admin')
     .select('id, loja_id, nome, usuario, pin, ativo')
     .order('nome', { ascending: true });
+  const { data, error } = usuarioSistemaLogado?.tipo === 'admin'
+    ? await executarSemFiltroLojaTemporario(consultarAdmins)
+    : await consultarAdmins();
 
   if (error) {
     adminsLojaCadastroCache = [];
@@ -14722,6 +15155,14 @@ async function carregarAdminsLojaCadastro() {
 }
 
 async function salvarAdminLojaCadastro() {
+  if (!adminLojaCadastroEmEdicaoId && !usuarioPodeCriarAdminsLojasGlobais()) {
+    setMsg('msgAdminsCadastro', 'Você pode editar/remover admins da loja, mas não cadastrar novos admins.', 'err');
+    return;
+  }
+  if (!usuarioPodeEditarAdminsDaLojaLogada()) {
+    setMsg('msgAdminsCadastro', 'Você não tem permissão para cadastrar admins por loja.', 'err');
+    return;
+  }
   const lojaId = String(document.getElementById('lojaAdminCadastro')?.value || '').trim();
   const nome = String(document.getElementById('nomeAdminCadastro')?.value || '').trim();
   const usuario = String(document.getElementById('usuarioAdminCadastro')?.value || '').trim().toLowerCase();
@@ -14749,11 +15190,12 @@ async function salvarAdminLojaCadastro() {
   }
 
   const payload = { loja_id: lojaId, nome, usuario, pin, ativo };
-  const query = adminLojaCadastroEmEdicaoId
+  const salvarAdmin = () => adminLojaCadastroEmEdicaoId
     ? sb.from('usuarios_admin').update(payload).eq('id', adminLojaCadastroEmEdicaoId)
     : sb.from('usuarios_admin').insert([payload]);
-
-  const { error } = await query;
+  const { error } = usuarioSistemaLogado?.tipo === 'admin'
+    ? await executarSemFiltroLojaTemporario(salvarAdmin)
+    : await salvarAdmin();
   if (error) {
     if (isMissingAdminUsersTableError(error)) {
       setMsg('msgAdminsCadastro', 'Tabela de admins por loja não encontrada. Rode o SQL 8.', 'err');
@@ -14774,6 +15216,10 @@ async function salvarAdminLojaCadastro() {
 }
 
 function editarAdminLojaCadastro(id) {
+  if (!usuarioPodeEditarAdminsDaLojaLogada()) {
+    setMsg('msgAdminsCadastro', 'Você não tem permissão para editar admins por loja.', 'err');
+    return;
+  }
   const item = adminsLojaCadastroCache.find(admin => String(admin.id || '') === String(id));
   if (!item) {
     setMsg('msgAdminsCadastro', 'Admin não encontrado.', 'err');
@@ -14794,7 +15240,13 @@ function editarAdminLojaCadastro(id) {
   if (usuario) usuario.value = String(item.usuario || '');
   if (pin) pin.value = String(item.pin || '');
   if (ativo) ativo.checked = item.ativo !== false;
+  if (loja) loja.disabled = !usuarioPodeCriarAdminsLojasGlobais();
+  if (nome) nome.disabled = false;
+  if (usuario) usuario.disabled = false;
+  if (pin) pin.disabled = false;
+  if (ativo) ativo.disabled = false;
   if (btnSalvar) btnSalvar.textContent = 'Salvar admin';
+  if (btnSalvar) btnSalvar.disabled = false;
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
   setMsg('msgAdminsCadastro', `Editando admin ${item.nome || '-'} (${item.usuario || '-'})`, 'ok');
 }
@@ -14805,10 +15257,17 @@ function cancelarEdicaoAdminLojaCadastro() {
 }
 
 async function excluirAdminLojaCadastro(id) {
+  if (!usuarioPodeEditarAdminsDaLojaLogada()) {
+    setMsg('msgAdminsCadastro', 'Você não tem permissão para excluir admins por loja.', 'err');
+    return;
+  }
   const item = adminsLojaCadastroCache.find(admin => String(admin.id || '') === String(id));
   if (!item) return;
   if (!confirm(`Excluir permanentemente o admin "${item.nome}"?`)) return;
-  const { error } = await sb.from('usuarios_admin').delete().eq('id', id);
+  const excluirAdmin = () => sb.from('usuarios_admin').delete().eq('id', id);
+  const { error } = usuarioSistemaLogado?.tipo === 'admin'
+    ? await executarSemFiltroLojaTemporario(excluirAdmin)
+    : await excluirAdmin();
   if (error) {
     setMsg('msgAdminsCadastro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
@@ -14818,6 +15277,10 @@ async function excluirAdminLojaCadastro(id) {
 }
 
 async function alternarAtivoAdminLojaCadastro(id) {
+  if (!usuarioPodeEditarAdminsDaLojaLogada()) {
+    setMsg('msgAdminsCadastro', 'Você não tem permissão para alterar admins por loja.', 'err');
+    return;
+  }
   const item = adminsLojaCadastroCache.find(admin => String(admin.id || '') === String(id));
   if (!item) {
     setMsg('msgAdminsCadastro', 'Admin não encontrado.', 'err');
@@ -14825,7 +15288,10 @@ async function alternarAtivoAdminLojaCadastro(id) {
   }
 
   const novoAtivo = item.ativo === false;
-  const { error } = await sb.from('usuarios_admin').update({ ativo: novoAtivo }).eq('id', id);
+  const alternarAdmin = () => sb.from('usuarios_admin').update({ ativo: novoAtivo }).eq('id', id);
+  const { error } = usuarioSistemaLogado?.tipo === 'admin'
+    ? await executarSemFiltroLojaTemporario(alternarAdmin)
+    : await alternarAdmin();
   if (error) {
     setMsg('msgAdminsCadastro', `Não foi possível alterar status do admin: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
@@ -14835,7 +15301,26 @@ async function alternarAtivoAdminLojaCadastro(id) {
   await carregarAdminsLojaCadastro();
 }
 
+function aplicarVisibilidadeConfiguracoesLoja() {
+  const permissoes = obterPermissoesUsuario();
+  const podeConfiguracoes = usuarioSistemaLogado?.tipo === 'admin' || !!permissoes.configuracoes;
+  const podeLojas = usuarioPodeGerenciarLojasGlobais();
+  const podeAdmins = usuarioPodeEditarAdminsDaLojaLogada();
+
+  const cardDados = document.getElementById('cardDadosLojaConfig');
+  const cardLembrete = document.getElementById('cardLembreteLojaConfig');
+  const cardLojas = document.getElementById('cardCadastroLojasConfig');
+  const cardAdmins = document.getElementById('cardAdminsLojaConfig');
+
+  if (cardDados) cardDados.style.display = podeConfiguracoes ? '' : 'none';
+  if (cardLembrete) cardLembrete.style.display = podeConfiguracoes ? '' : 'none';
+  if (cardLojas) cardLojas.style.display = podeLojas ? '' : 'none';
+  if (cardAdmins) cardAdmins.style.display = podeAdmins ? '' : 'none';
+  atualizarFormularioLojaCadastroPorPermissao();
+}
+
 async function carregarConfiguracoesLoja() {
+  aplicarVisibilidadeConfiguracoesLoja();
   const resultado = await obterConfiguracoesLoja();
   if (resultado.missing) {
     setMsg('msgConfiguracoes', 'Rode o SQL da tabela configuracoes_loja para salvar estas informações.', 'err');
@@ -14902,17 +15387,59 @@ async function salvarConfiguracoesLoja() {
 // 
 // PERFIS
 // 
+function normalizarTextoFiltroPermissao(valor) {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
 function renderizarPermissoesPerfil(permissoes = null) {
   const grid = document.getElementById('permissoesPerfilGrid');
   if (!grid) return;
   const codigo = document.getElementById('codigoPerfil')?.value || 'FUNCIONARIO';
   const base = permissoes || obterPermissoesBase(codigo);
   grid.innerHTML = PERFIL_PERMISSOES.map(p => `
-    <label class="perm-item">
-      <input type="checkbox" data-permissao="${p.key}" ${base[p.key] ? 'checked' : ''}>
+    <label class="perm-item" data-label="${escaparHtmlBasico(normalizarTextoFiltroPermissao(p.label))}">
+      <input type="checkbox" data-permissao="${p.key}" ${base[p.key] ? 'checked' : ''} onchange="atualizarBotaoMarcarPermissoesPerfil()">
       <span>${p.label}</span>
     </label>
   `).join('');
+  filtrarPermissoesPerfil();
+}
+
+function filtrarPermissoesPerfil() {
+  const termo = normalizarTextoFiltroPermissao(document.getElementById('filtroPermissoesPerfil')?.value || '');
+  document.querySelectorAll('#permissoesPerfilGrid .perm-item').forEach(item => {
+    const texto = String(item.dataset.label || '').trim();
+    item.hidden = !!termo && !texto.includes(termo);
+  });
+  atualizarBotaoMarcarPermissoesPerfil();
+}
+
+function marcarPermissoesPerfil(marcado = true) {
+  document.querySelectorAll('#permissoesPerfilGrid .perm-item:not([hidden]) [data-permissao]').forEach(input => {
+    input.checked = !!marcado;
+  });
+  atualizarBotaoMarcarPermissoesPerfil();
+}
+
+function todasPermissoesVisiveisMarcadas() {
+  const inputs = Array.from(document.querySelectorAll('#permissoesPerfilGrid .perm-item:not([hidden]) [data-permissao]'));
+  if (!inputs.length) return false;
+  return inputs.every(input => input.checked);
+}
+
+function atualizarBotaoMarcarPermissoesPerfil() {
+  const btn = document.getElementById('btnMarcarDesmarcarPermissoesPerfil');
+  if (!btn) return;
+  btn.textContent = todasPermissoesVisiveisMarcadas() ? 'Desmarcar todos' : 'Marcar todos';
+}
+
+function toggleMarcarPermissoesPerfil() {
+  marcarPermissoesPerfil(!todasPermissoesVisiveisMarcadas());
 }
 
 function coletarPermissoesPerfil() {
@@ -14928,17 +15455,7 @@ async function carregarPerfis() {
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
-  let resposta = null;
-  const lojaId = obterLojaIdParaEscopoAtual();
-  if (lojaId) {
-    resposta = await sb.from('perfis').select('*').eq('loja_id', lojaId).order('nome');
-    if (resposta.error && isMissingLojaIdColumnError(resposta.error)) {
-      resposta = null;
-    }
-  }
-  if (!resposta) {
-    resposta = await sb.from('perfis').select('*').order('nome');
-  }
+  const resposta = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('*').order('nome'));
   const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
@@ -14971,17 +15488,7 @@ async function carregarSelectPerfisFuncionario() {
   const sel = document.getElementById('perfilFuncionario');
   if (!sel) return;
   sel.innerHTML = '<option value="">- Selecione o perfil -</option>';
-  let resposta = null;
-  const lojaId = obterLojaIdParaEscopoAtual();
-  if (lojaId) {
-    resposta = await sb.from('perfis').select('id, nome').eq('loja_id', lojaId).order('nome');
-    if (resposta.error && isMissingLojaIdColumnError(resposta.error)) {
-      resposta = null;
-    }
-  }
-  if (!resposta) {
-    resposta = await sb.from('perfis').select('id, nome').order('nome');
-  }
+  const resposta = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome').order('nome'));
   const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
@@ -15002,19 +15509,11 @@ async function criarPerfil() {
   const codigo = document.getElementById('codigoPerfil').value;
   if (!nome) { setMsg('msgPerfis', 'Digite o nome do perfil.', 'err'); return; }
 
-  const lojaId = obterLojaIdParaEscopoAtual();
   const payloadBase = { nome, codigo, permissoes: coletarPermissoesPerfil() };
-  const payload = lojaId ? { ...payloadBase, loja_id: lojaId } : payloadBase;
   const editandoAgora = !!perfilEmEdicaoId;
-  let resposta = editandoAgora
-    ? await sb.from('perfis').update(payload).eq('id', perfilEmEdicaoId)
-    : await sb.from('perfis').insert([payload]);
-
-  if (resposta.error && lojaId && isMissingLojaIdColumnError(resposta.error)) {
-    resposta = editandoAgora
-      ? await sb.from('perfis').update(payloadBase).eq('id', perfilEmEdicaoId)
-      : await sb.from('perfis').insert([payloadBase]);
-  }
+  const resposta = await executarSemFiltroLojaTemporario(() => editandoAgora
+    ? sb.from('perfis').update(payloadBase).eq('id', perfilEmEdicaoId)
+    : sb.from('perfis').insert([payloadBase]));
 
   const { error } = resposta;
   if (error) {
@@ -15042,14 +15541,16 @@ function limparFormularioPerfil() {
   document.getElementById('nomePerfil').value = '';
   document.getElementById('codigoPerfil').value = 'FUNCIONARIO';
   renderizarPermissoesPerfil(obterPermissoesBase('FUNCIONARIO'));
+  const titulo = document.getElementById('tituloFormularioPerfil');
   const btnSalvar = document.getElementById('btnSalvarPerfil');
   const btnCancelar = document.getElementById('btnCancelarEdicaoPerfil');
+  if (titulo) titulo.textContent = 'Novo perfil';
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
 async function editarPerfil(id) {
-  const { data: perfil, error } = await sb.from('perfis').select('*').eq('id', id).single();
+  const { data: perfil, error } = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('*').eq('id', id).single());
   if (error || !perfil) {
     setMsg('msgPerfis', 'Não foi possível carregar o perfil.', 'err');
     return;
@@ -15060,10 +15561,13 @@ async function editarPerfil(id) {
   const codigoPerfilNormalizado = normalizarCodigoPerfil(perfil.codigo || 'FUNCIONARIO');
   document.getElementById('codigoPerfil').value = codigoPerfilNormalizado || 'FUNCIONARIO';
   renderizarPermissoesPerfil({ ...obterPermissoesBase(codigoPerfilNormalizado || 'FUNCIONARIO'), ...(perfil.permissoes || {}) });
+  const titulo = document.getElementById('tituloFormularioPerfil');
   const btnSalvar = document.getElementById('btnSalvarPerfil');
   const btnCancelar = document.getElementById('btnCancelarEdicaoPerfil');
+  if (titulo) titulo.textContent = `Editando perfil: ${perfil.nome || '-'}`;
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  document.getElementById('nomePerfil')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function cancelarEdicaoPerfil() {
@@ -17367,7 +17871,7 @@ async function carregarSelectFuncionariosPonto() {
 
   try {
     let funcionarios = await carregarFuncionariosAtivosPonto();
-    const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+    const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
     if (funcionarioRestritoId) {
       funcionarios = funcionarios.filter(item => String(item.id) === funcionarioRestritoId);
     }
@@ -17445,6 +17949,40 @@ async function carregarRegistrosPontoComIntervalos({ inicio = '', fim = '', func
   if (error) throw error;
 
   let rows = data || [];
+
+  if (inicio && fim && inicio === fim) {
+
+      rows = await complementarRegistrosPontoSemFiltroLoja(rows, {
+        inicio,
+        fim,
+        funcionarioId,
+        campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
+      });
+
+      if (inicio && fim && inicio === fim) {
+        rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
+          diaIso: inicio,
+          funcionarioId,
+          campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
+        });
+      }
+    const { inicioUtc, fimUtc } = obterJanelaUtcDiaBrasil(inicio);
+    if (inicioUtc && fimUtc) {
+      let queryFallback = sb
+        .from('ponto_registros')
+        .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
+        .gte('created_at', inicioUtc)
+        .lt('created_at', fimUtc)
+        .order('created_at', { ascending: false });
+      if (funcionarioId) queryFallback = queryFallback.eq('funcionario_id', funcionarioId);
+      const { data: dataFallback, error: errorFallback } = await queryFallback;
+      if (errorFallback) {
+        console.warn('Não foi possível aplicar fallback por created_at no ponto:', errorFallback);
+      } else {
+        rows = mesclarRegistrosPontoPorId(rows, dataFallback || []);
+      }
+    }
+  }
   const funcionarioIds = [...new Set(rows.map(item => item.funcionario_id).filter(Boolean).map(String))];
   const nomesPorFuncionario = {};
 
@@ -17581,7 +18119,7 @@ async function carregarHorasDashboard() {
   setMsg(msgId, '', '');
   try {
     const { inicio, fim, info } = obterIntervaloDatasPorPeriodo(dashboardHorasPeriodo || 'dia');
-    const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+    const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
     const rows = await carregarRegistrosPontoComIntervalos({ inicio, fim, funcionarioId: funcionarioRestritoId || '' });
     const resumo = calcularResumoHorasPorFuncionario(rows);
 
@@ -17826,6 +18364,36 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   }
 
   let rows = registros || [];
+  const { inicioUtc, fimUtc } = obterJanelaUtcDiaBrasil(hojeLocal);
+  if (inicioUtc && fimUtc) {
+    let queryFallback = sb
+      .from('ponto_registros')
+      .select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at')
+      .gte('created_at', inicioUtc)
+      .lt('created_at', fimUtc)
+      .order('created_at', { ascending: true });
+    if (id) queryFallback = queryFallback.eq('funcionario_id', id);
+
+    const { data: registrosFallback, error: erroFallback } = await queryFallback;
+    if (erroFallback) {
+      console.warn('Não foi possível aplicar fallback de resumo de ponto por created_at:', erroFallback);
+    } else {
+      rows = mesclarRegistrosPontoPorId(rows, registrosFallback || []);
+    }
+  }
+
+  rows = await complementarRegistrosPontoSemFiltroLoja(rows, {
+    inicio: hojeLocal,
+    fim: hojeLocal,
+    funcionarioId: id,
+    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+  });
+  rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
+    diaIso: hojeLocal,
+    funcionarioId: id,
+    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+  });
+
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
   if (!rows.length) {
     container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
@@ -18018,7 +18586,7 @@ async function carregarBaterPonto() {
   configurarSegurancaCampoPinPonto();
   limparCampoPinPonto();
   await carregarSelectFuncionariosPonto();
-  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
   const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
   const restringirPontoAoUsuarioLogado = funcionarioRestritoId && !terminalCompartilhadoPonto;
   const campoPin = document.getElementById('pontoPinInput');
@@ -18160,7 +18728,7 @@ async function registrarAuditoriaBatidaPonto({ pontoRegistroId, funcionarioId, t
 }
 
 async function obterFuncionarioLogadoParaPonto() {
-  if (!obterFuncionarioRestritoLogadoId()) return null;
+  if (!obterFuncionarioRestritoLogadoIdParaPonto()) return null;
   const { data, error } = await sb
     .from('funcionarios')
     .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim')
@@ -18172,7 +18740,7 @@ async function obterFuncionarioLogadoParaPonto() {
 }
 
 async function registrarPontoFuncionario() {
-  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
   const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
   const restringirPontoAoUsuarioLogado = funcionarioRestritoId && !terminalCompartilhadoPonto;
   const pin = String(document.getElementById('pontoPinInput')?.value || '').trim();
@@ -18223,7 +18791,47 @@ async function registrarPontoFuncionario() {
     return;
   }
 
-  const registros = registrosHoje || [];
+  let registros = registrosHoje || [];
+  if (!registros.length) {
+    const { inicioUtc, fimUtc } = obterJanelaUtcDiaBrasil(dataHoje);
+    if (inicioUtc && fimUtc) {
+      const { data: registrosFallback, error: erroBuscaFallback } = await sb
+        .from('ponto_registros')
+        .select('*')
+        .eq('funcionario_id', funcionarioId)
+        .gte('created_at', inicioUtc)
+        .lt('created_at', fimUtc)
+        .order('created_at', { ascending: false });
+
+      if (erroBuscaFallback) {
+        console.warn('Não foi possível aplicar fallback de registro de ponto por created_at:', erroBuscaFallback);
+      } else {
+        registros = registrosFallback || [];
+      }
+    }
+  }
+
+
+  if (!registros.length) {
+    registros = await complementarRegistrosPontoSemFiltroLoja(registros, {
+      inicio: dataHoje,
+      fim: dataHoje,
+      funcionarioId,
+      campos: '*',
+    });
+    registros = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(registros, {
+      diaIso: dataHoje,
+      funcionarioId,
+      campos: '*',
+    });
+  }
+
+  registros = [...registros].sort((a, b) => {
+    const aTime = new Date(a?.created_at || 0).getTime();
+    const bTime = new Date(b?.created_at || 0).getTime();
+    return bTime - aTime;
+  });
+
   const registroHoje = registros[0] || null;
 
   if (!registroHoje) {
@@ -18518,7 +19126,7 @@ async function salvarAjusteManualAdminPonto() {
 
   setMsg('msgPonto', `Ajuste manual aplicado para ${funcionarioNome}. ${resultado.mensagem}`, 'ok');
   fecharModalAjusteManualAdminPonto();
-  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoId() || '');
+  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoIdParaPonto() || '');
   await carregarHorasDashboard();
   if (obterPaginaAtivaAtual() === 'relatorio_ponto') await carregarRelatorioPonto();
   if (obterPaginaAtivaAtual() === 'ponto_ajustes') await carregarAjustesPonto();
@@ -18708,7 +19316,16 @@ async function carregarAjustesPonto() {
     return;
   }
 
-  const itens = data || [];
+  let itens = data || [];
+  if (usuarioSistemaLogado?.tipo === 'admin_loja') {
+    const { data: funcionariosLoja, error: erroFuncionariosLoja } = await sb
+      .from('funcionarios')
+      .select('id');
+    if (!erroFuncionariosLoja) {
+      const idsPermitidos = new Set((funcionariosLoja || []).map(item => String(item.id || '')));
+      itens = itens.filter(item => idsPermitidos.has(String(item.funcionario_id || '')));
+    }
+  }
   if (!itens.length) {
     lista.innerHTML = '<div class="empty">Nenhuma solicitação encontrada para os filtros atuais.</div>';
     return;
@@ -19100,7 +19717,7 @@ async function carregarRelatorioPonto() {
 
   await carregarSelectFuncionariosPonto();
 
-  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
   const funcionarioId = funcionarioRestritoId || String(document.getElementById('filtroPontoFuncionario')?.value || '');
   const dataInicioEl = document.getElementById('filtroPontoDataInicio');
   const dataFimEl = document.getElementById('filtroPontoDataFim');
@@ -19138,9 +19755,23 @@ async function carregarRelatorioPonto() {
   }
 
   let rows = data || [];
+  rows = await complementarRegistrosPontoSemFiltroLoja(rows, {
+    inicio: dataInicio,
+    fim: dataFim,
+    funcionarioId,
+    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+  });
+  if (dataInicio && dataFim && dataInicio === dataFim) {
+    rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
+      diaIso: dataInicio,
+      funcionarioId,
+      campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+    });
+  }
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
+
   const registrosIds = rows.map(item => item.id).filter(Boolean);
-  let intervalosPorRegistro = {};
+  const intervalosPorRegistro = {};
   if (registrosIds.length) {
     const { data: intervalosData, error: intervalosError } = await sb
       .from('ponto_intervalos')
@@ -21318,8 +21949,8 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 3.0</div>
-    <div>Notas da versão 3.0: criação de multilojas, segregação de dados por loja e melhorias de permissões para operação por unidade.</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 3.1</div>
+    <div>Notas da versão 3.1: correção de registros de ponto, isolamento completo de checklists por loja e melhorias de segurança multi-tenant.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
@@ -21535,13 +22166,6 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         ...usuario,
         perfil: normalizarPerfilUsuario(usuario?.perfil),
       };
-      if (usuarioSistemaLogado?.tipo === 'admin_loja' && normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo) === 'ADM') {
-        usuarioSistemaLogado.perfil = normalizarPerfilUsuario({
-          nome: 'Gerente',
-          codigo: 'GERENTE',
-          permissoes: obterPermissoesBase('GERENTE'),
-        });
-      }
       window.__sessaoSistema = () => usuarioSistemaLogado;
       redefinirEstadoAvisoCentralTarefas();
       atualizarUsuarioTopbar();
@@ -21891,8 +22515,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       if (resposta.error) return { funcionario: null, error: resposta.error };
       const buscaNormalizada = normalizarTextoComparacao(username);
       const candidatos = resposta.data || [];
-      const funcionarioEncontrado = candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
-        || candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
+      const funcionarioEncontrado = candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
+        || candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
         || null;
       return { funcionario: funcionarioEncontrado, error: null };
     };
@@ -21918,8 +22542,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       if (resposta.error) return { funcionario: null, error: resposta.error };
       const buscaNormalizada = normalizarTextoComparacao(username);
       const candidatos = resposta.data || [];
-      const funcionarioEncontrado = candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
-        || candidatos.find(item => String(item.pin ?? '') === password && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
+      const funcionarioEncontrado = candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
+        || candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
         || null;
       return { funcionario: funcionarioEncontrado ? { ...funcionarioEncontrado, perfis: null } : null, error: null };
     };
@@ -21940,16 +22564,29 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return;
     }
 
-    if (!funcionario || String(funcionario.pin ?? '') !== password) {
+    if (!funcionario || !senhaFuncionarioLoginCombina(funcionario, username, password)) {
       // Tenta login como admin de loja (usuarios_admin: usuario + pin)
       if (!loginComEmail) {
-        const { data: adminLoja, error: erroAdmin } = await sb
+        const { data: adminsLojaPorLogin, error: erroAdminLogin } = await executarSemFiltroLojaTemporario(() => sb
           .from('usuarios_admin')
           .select('id, nome, usuario, pin, ativo, loja_id')
           .eq('ativo', true)
-          .ilike('usuario', username)
-          .maybeSingle();
-        if (!erroAdmin && adminLoja && String(adminLoja.pin ?? '') === password) {
+          .or(`usuario.ilike.%${escaparValorLike(username)}%,nome.ilike.%${escaparValorLike(username)}%`)
+          .limit(20));
+
+        let adminsLoja = erroAdminLogin ? [] : (adminsLojaPorLogin || []);
+        if (!adminsLoja.length) {
+          const { data: adminsLojaPorSenha, error: erroAdminSenha } = await executarSemFiltroLojaTemporario(() => sb
+            .from('usuarios_admin')
+            .select('id, nome, usuario, pin, ativo, loja_id')
+            .eq('ativo', true)
+            .eq('pin', password)
+            .limit(20));
+          if (!erroAdminSenha) adminsLoja = adminsLojaPorSenha || [];
+        }
+
+        const adminLoja = adminsLoja.find(item => loginAdminLojaCombina(item, username, password)) || null;
+        if (adminLoja) {
           let nomeLojaAdmin = '';
           const lojaIdAdmin = String(adminLoja.loja_id || '').trim();
 
@@ -22332,7 +22969,7 @@ async function salvarAjusteManualAdminPonto() {
 
   setMsg('msgPonto', `${tipo === 'anular' ? 'Batida anulada' : 'Ajuste manual aplicado'} para ${funcionarioNome}. ${resultado.mensagem}`, 'ok');
   fecharModalAjusteManualAdminPonto();
-  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoId() || '');
+  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoIdParaPonto() || '');
   await carregarHorasDashboard();
   if (obterPaginaAtivaAtual() === 'relatorio_ponto') await carregarRelatorioPonto();
   if (obterPaginaAtivaAtual() === 'ponto_ajustes') await carregarAjustesPonto();
@@ -22370,7 +23007,7 @@ async function carregarRelatorioPonto() {
   if (btnToggle) btnToggle.textContent = relatorioPontoRegistrosVisiveis ? 'Ocultar registros' : 'Mostrar registros';
 
   await carregarSelectFuncionariosPonto();
-  const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
   const funcionarioId = funcionarioRestritoId || String(document.getElementById('filtroPontoFuncionario')?.value || '');
   const dataInicioEl = document.getElementById('filtroPontoDataInicio');
   const dataFimEl = document.getElementById('filtroPontoDataFim');
@@ -22399,7 +23036,21 @@ async function carregarRelatorioPonto() {
     setMsg('msgRelatorioPonto', 'Não foi possível carregar o relatório de ponto.', 'err');
     return;
   }
-  let rows = await anexarNomesFuncionariosARegistrosPonto(data || []);
+  let rows = data || [];
+  rows = await complementarRegistrosPontoSemFiltroLoja(rows, {
+    inicio: dataInicio,
+    fim: dataFim,
+    funcionarioId,
+    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+  });
+  if (dataInicio && dataFim && dataInicio === dataFim) {
+    rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
+      diaIso: dataInicio,
+      funcionarioId,
+      campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+    });
+  }
+  rows = await anexarNomesFuncionariosARegistrosPonto(rows);
   const registrosIds = rows.map(item => item.id).filter(Boolean);
   let intervalosPorRegistro = {};
   if (registrosIds.length) {
