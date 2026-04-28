@@ -18596,7 +18596,10 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       item.aberto = item.ultimaEntradaTs > item.ultimaSaidaTs;
       return item;
     })
-    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    .sort((a, b) => {
+      if (a.aberto !== b.aberto) return a.aberto ? -1 : 1;
+      return a.nome.localeCompare(b.nome, 'pt-BR');
+    });
 
   if (!listaStatus.length) {
     container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
