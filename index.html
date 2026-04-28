@@ -5800,7 +5800,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.1.5';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -11360,70 +11360,74 @@ async function resolverTenantParaCadastroFuncionario() {
 }
 
 async function criarFuncionario() {
-  const nome = document.getElementById('nomeFuncionario').value.trim();
-  const email = document.getElementById('emailFuncionario').value.trim().toLowerCase();
-  const pin = document.getElementById('pinFuncionario').value.trim();
-  const horarioInicio = document.getElementById('horarioInicioFuncionario').value || null;
-  const horarioFim = document.getElementById('horarioFimFuncionario').value || null;
-  const perfilId = document.getElementById('perfilFuncionario').value;
-  const emailInformado = !!email;
-  const editandoAgora = !!funcionarioEmEdicaoId;
-  const nomeMantidoComoOriginal = editandoAgora && normalizarTextoComparacao(nome) === normalizarTextoComparacao(funcionarioNomeOriginalEdicao);
-  const emailOriginalNormalizado = String(funcionarioEmailOriginalEdicao || '').trim().toLowerCase();
-  const emailAlterado = !editandoAgora || email !== emailOriginalNormalizado;
-  if (!nome) { setMsg('msgFuncionarios', 'Digite o nome do funcionario.', 'err'); return; }
-  if (!nomePareceCompleto(nome) && !nomeMantidoComoOriginal) { setMsg('msgFuncionarios', 'Informe um nome com pelo menos 4 caracteres.', 'err'); return; }
-  if (emailInformado && !emailPareceValido(email)) { setMsg('msgFuncionarios', 'Informe um e-mail valido e real do funcionario.', 'err'); return; }
-  if (!perfilId) { setMsg('msgFuncionarios', 'Selecione o perfil.', 'err'); return; }
-  const mensagemDuplicidade = await validarDuplicidadeCadastro({
-    nome,
-    email: emailInformado ? email : null,
-    pin,
-    funcionarioIdIgnorar: funcionarioEmEdicaoId || null,
-    verificarSolicitacoesPendentes: false,
-  });
-  if (mensagemDuplicidade) { setMsg('msgFuncionarios', mensagemDuplicidade, 'err'); return; }
-  const tenantCadastro = await resolverTenantParaCadastroFuncionario();
-  if (!tenantCadastro.loja_id || !tenantCadastro.empresa_id) {
-    setMsg('msgFuncionarios', 'Não foi possível identificar loja/empresa para o cadastro. Verifique se existe ao menos uma loja ativa.', 'err');
-    return;
-  }
-  const payload = editandoAgora
-    ? {
-        nome,
-        email: emailInformado ? email : null,
-        ...(pin ? { pin } : {}),
-        perfil_id: perfilId,
-        horario_trabalho_inicio: horarioInicio,
-        horario_trabalho_fim: horarioFim,
-        ...(emailAlterado ? { email_verificado: false } : {}),
-      }
-    : {
-        nome,
-        email: emailInformado ? email : null,
-        pin: pin || null,
-      loja_id: tenantCadastro.loja_id,
-      empresa_id: tenantCadastro.empresa_id,
-        perfil_id: perfilId,
-        horario_trabalho_inicio: horarioInicio,
-        horario_trabalho_fim: horarioFim,
-        email_verificado: false,
-      };
-  const query = editandoAgora
-    ? sb.from('funcionarios').update(payload).eq('id', funcionarioEmEdicaoId)
-    : sb.from('funcionarios').insert([{ ...payload, ativo: true }]);
-  const { error } = await query;
-  if (error) {
-    if (isMissingWorkShiftColumnsError(error)) {
-      setMsg('msgFuncionarios', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
+  try {
+    const nome = document.getElementById('nomeFuncionario').value.trim();
+    const email = document.getElementById('emailFuncionario').value.trim().toLowerCase();
+    const pin = document.getElementById('pinFuncionario').value.trim();
+    const horarioInicio = document.getElementById('horarioInicioFuncionario').value || null;
+    const horarioFim = document.getElementById('horarioFimFuncionario').value || null;
+    const perfilId = document.getElementById('perfilFuncionario').value;
+    const emailInformado = !!email;
+    const editandoAgora = !!funcionarioEmEdicaoId;
+    const nomeMantidoComoOriginal = editandoAgora && normalizarTextoComparacao(nome) === normalizarTextoComparacao(funcionarioNomeOriginalEdicao);
+    const emailOriginalNormalizado = String(funcionarioEmailOriginalEdicao || '').trim().toLowerCase();
+    const emailAlterado = !editandoAgora || email !== emailOriginalNormalizado;
+    if (!nome) { setMsg('msgFuncionarios', 'Digite o nome do funcionario.', 'err'); return; }
+    if (!nomePareceCompleto(nome) && !nomeMantidoComoOriginal) { setMsg('msgFuncionarios', 'Informe um nome com pelo menos 4 caracteres.', 'err'); return; }
+    if (emailInformado && !emailPareceValido(email)) { setMsg('msgFuncionarios', 'Informe um e-mail valido e real do funcionario.', 'err'); return; }
+    if (!perfilId) { setMsg('msgFuncionarios', 'Selecione o perfil.', 'err'); return; }
+    const mensagemDuplicidade = await validarDuplicidadeCadastro({
+      nome,
+      email: emailInformado ? email : null,
+      pin,
+      funcionarioIdIgnorar: funcionarioEmEdicaoId || null,
+      verificarSolicitacoesPendentes: false,
+    });
+    if (mensagemDuplicidade) { setMsg('msgFuncionarios', mensagemDuplicidade, 'err'); return; }
+    const tenantCadastro = await resolverTenantParaCadastroFuncionario();
+    if (!tenantCadastro.loja_id || !tenantCadastro.empresa_id) {
+      setMsg('msgFuncionarios', 'Não foi possível identificar loja/empresa para o cadastro. Verifique se existe ao menos uma loja ativa.', 'err');
       return;
     }
-    setMsg('msgFuncionarios', `${editandoAgora ? 'Erro ao salvar alterações' : 'Erro ao cadastrar'}: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
-    return;
+    const payload = editandoAgora
+      ? {
+          nome,
+          email: emailInformado ? email : null,
+          ...(pin ? { pin } : {}),
+          perfil_id: perfilId,
+          horario_trabalho_inicio: horarioInicio,
+          horario_trabalho_fim: horarioFim,
+          ...(emailAlterado ? { email_verificado: false } : {}),
+        }
+      : {
+          nome,
+          email: emailInformado ? email : null,
+          pin: pin || null,
+          loja_id: tenantCadastro.loja_id,
+          empresa_id: tenantCadastro.empresa_id,
+          perfil_id: perfilId,
+          horario_trabalho_inicio: horarioInicio,
+          horario_trabalho_fim: horarioFim,
+          email_verificado: false,
+        };
+    const query = editandoAgora
+      ? sb.from('funcionarios').update(payload).eq('id', funcionarioEmEdicaoId)
+      : sb.from('funcionarios').insert([{ ...payload, ativo: true }]);
+    const { error } = await query;
+    if (error) {
+      if (isMissingWorkShiftColumnsError(error)) {
+        setMsg('msgFuncionarios', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
+        return;
+      }
+      setMsg('msgFuncionarios', `${editandoAgora ? 'Erro ao salvar alterações' : 'Erro ao cadastrar'}: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+      return;
+    }
+    limparFormularioFuncionario();
+    carregarFuncionarios();
+    setMsg('msgFuncionarios', editandoAgora ? 'Funcionário atualizado.' : 'Funcionário cadastrado.', 'ok');
+  } catch (error) {
+    setMsg('msgFuncionarios', `Erro ao cadastrar: ${mensagemErroSupabase(error, 'erro inesperado no formulário')}`, 'err');
   }
-  limparFormularioFuncionario();
-  carregarFuncionarios();
-  setMsg('msgFuncionarios', editandoAgora ? 'Funcionário atualizado.' : 'Funcionário cadastrado.', 'ok');
 }
 
 function limparFormularioFuncionario() {
