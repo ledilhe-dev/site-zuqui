@@ -5835,6 +5835,12 @@ function obterLojaIdSessao() {
   if (!s || s.tipo === 'admin') return null;
   return s.loja_id || null;
 }
+function obterEmpresaIdSessao() {
+  if (filtroLojaSuspensoTemporariamente) return null;
+  const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
+  if (!s || s.tipo === 'admin') return null;
+  return s.empresa_id || null;
+}
 async function executarSemFiltroLojaTemporario(callback) {
   const estadoAnterior = filtroLojaSuspensoTemporariamente;
   filtroLojaSuspensoTemporariamente = true;
@@ -5849,6 +5855,7 @@ async function executarSemFiltroLojaTemporario(callback) {
   sb.from = function(tabela) {
     const builder = _from(tabela);
     const lojaId = obterLojaIdSessao();
+    const empresaId = obterEmpresaIdSessao();
     if (!lojaId || !TABELAS_COM_LOJA_ID.has(tabela)) return builder;
     // Filtro em leitura/atualização/exclusão
     ['select', 'update', 'delete'].forEach(metodo => {
@@ -5866,20 +5873,30 @@ async function executarSemFiltroLojaTemporario(callback) {
     if (typeof builder.insert === 'function') {
       const _origInsert = builder.insert.bind(builder);
       builder.insert = function(valores, opts) {
-        const comLoja = Array.isArray(valores)
-          ? valores.map(v => ({ ...v, loja_id: lojaId }))
-          : { ...valores, loja_id: lojaId };
-        return _origInsert(comLoja, opts);
+        const enriquecerTenant = (v) => ({
+          ...v,
+          loja_id: lojaId,
+          ...(empresaId ? { empresa_id: empresaId } : {}),
+        });
+        const comTenant = Array.isArray(valores)
+          ? valores.map(enriquecerTenant)
+          : enriquecerTenant(valores);
+        return _origInsert(comTenant, opts);
       };
     }
     // Injeta loja_id nos upserts
     if (typeof builder.upsert === 'function') {
       const _origUpsert = builder.upsert.bind(builder);
       builder.upsert = function(valores, opts) {
-        const comLoja = Array.isArray(valores)
-          ? valores.map(v => ({ ...v, loja_id: lojaId }))
-          : { ...valores, loja_id: lojaId };
-        return _origUpsert(comLoja, opts);
+        const enriquecerTenant = (v) => ({
+          ...v,
+          loja_id: lojaId,
+          ...(empresaId ? { empresa_id: empresaId } : {}),
+        });
+        const comTenant = Array.isArray(valores)
+          ? valores.map(enriquecerTenant)
+          : enriquecerTenant(valores);
+        return _origUpsert(comTenant, opts);
       };
     }
     return builder;
@@ -22570,7 +22587,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       if (!loginComEmail) {
         const { data: adminsLojaPorLogin, error: erroAdminLogin } = await executarSemFiltroLojaTemporario(() => sb
           .from('usuarios_admin')
-          .select('id, nome, usuario, pin, ativo, loja_id')
+          .select('id, nome, usuario, pin, ativo, loja_id, empresa_id')
           .eq('ativo', true)
           .or(`usuario.ilike.%${escaparValorLike(username)}%,nome.ilike.%${escaparValorLike(username)}%`)
           .limit(20));
@@ -22579,7 +22596,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         if (!adminsLoja.length) {
           const { data: adminsLojaPorSenha, error: erroAdminSenha } = await executarSemFiltroLojaTemporario(() => sb
             .from('usuarios_admin')
-            .select('id, nome, usuario, pin, ativo, loja_id')
+            .select('id, nome, usuario, pin, ativo, loja_id, empresa_id')
             .eq('ativo', true)
             .eq('pin', password)
             .limit(20));
@@ -22590,6 +22607,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         if (adminLoja) {
           let nomeLojaAdmin = '';
           const lojaIdAdmin = String(adminLoja.loja_id || '').trim();
+          let empresaIdAdmin = String(adminLoja.empresa_id || '').trim();
 
           if (lojaIdAdmin) {
             try {
@@ -22601,6 +22619,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
               if (!lojaRes.error && lojaRes.data) {
                 const loja = lojaRes.data;
                 nomeLojaAdmin = String(loja.nome || loja.nome_loja || loja.descricao || loja.codigo || '').trim();
+                if (!empresaIdAdmin) empresaIdAdmin = String(loja.empresa_id || '').trim();
               }
             } catch (_) {}
 
@@ -22627,6 +22646,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
             nome: adminLoja.nome,
             usuario: adminLoja.usuario,
             loja_id: adminLoja.loja_id,
+            empresa_id: empresaIdAdmin || null,
             loja_nome: nomeLojaAdmin || 'Loja vinculada',
             perfil: perfilAdminLoja
           }, { manterConectado });
@@ -22663,6 +22683,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       nome: funcionario.nome,
       perfil_id: funcionario.perfil_id,
       loja_id: funcionario.loja_id || null,
+      empresa_id: funcionario.empresa_id || null,
       perfil: perfilFuncionario
     }, { manterConectado });
     setSistemaLogado(true);
