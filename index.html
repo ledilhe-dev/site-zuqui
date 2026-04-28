@@ -20,7 +20,8 @@
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
     - Dashboard: card de checklists exibe apenas os modelos da loja logada.
-    - Banco de dados: NOT NULL + trigger em ponto_registros e checklists para loja_id.
+    - Financeiro: isolamento completo por loja (fornecedores, formas de pagamento, contas, recebíveis).
+    - Banco de dados: NOT NULL + trigger em ponto_registros, checklists e tabelas financeiras para loja_id.
     - Segurança: fallback de consulta de ponto usa inner join (funcionarios.loja_id) para evitar vazamento entre lojas.
   -->
   <link rel="manifest" href="./manifest.webmanifest">
