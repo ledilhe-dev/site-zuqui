@@ -11320,6 +11320,45 @@ function toggleCadastroFuncionario(forcarAberto = null) {
   }
 }
 
+async function resolverTenantParaCadastroFuncionario() {
+  const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  let empresaSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+
+  if (lojaSessao && empresaSessao) {
+    return { loja_id: lojaSessao, empresa_id: empresaSessao };
+  }
+
+  if (lojaSessao && !empresaSessao) {
+    const { data: lojaAtual, error: erroLojaAtual } = await executarSemFiltroLojaTemporario(() => sb
+      .from('lojas')
+      .select('id, empresa_id')
+      .eq('id', lojaSessao)
+      .maybeSingle());
+    if (!erroLojaAtual && lojaAtual?.empresa_id) {
+      empresaSessao = String(lojaAtual.empresa_id || '').trim();
+      if (empresaSessao) {
+        return { loja_id: lojaSessao, empresa_id: empresaSessao };
+      }
+    }
+  }
+
+  const { data: lojaPadrao, error: erroLojaPadrao } = await executarSemFiltroLojaTemporario(() => sb
+    .from('lojas')
+    .select('id, empresa_id')
+    .order('criado_em', { ascending: true })
+    .limit(1)
+    .maybeSingle());
+
+  if (erroLojaPadrao || !lojaPadrao?.id || !lojaPadrao?.empresa_id) {
+    return { loja_id: null, empresa_id: null };
+  }
+
+  return {
+    loja_id: String(lojaPadrao.id || '').trim() || null,
+    empresa_id: String(lojaPadrao.empresa_id || '').trim() || null,
+  };
+}
+
 async function criarFuncionario() {
   const nome = document.getElementById('nomeFuncionario').value.trim();
   const email = document.getElementById('emailFuncionario').value.trim().toLowerCase();
@@ -11344,6 +11383,11 @@ async function criarFuncionario() {
     verificarSolicitacoesPendentes: false,
   });
   if (mensagemDuplicidade) { setMsg('msgFuncionarios', mensagemDuplicidade, 'err'); return; }
+  const tenantCadastro = await resolverTenantParaCadastroFuncionario();
+  if (!tenantCadastro.loja_id || !tenantCadastro.empresa_id) {
+    setMsg('msgFuncionarios', 'Não foi possível identificar loja/empresa para o cadastro. Verifique se existe ao menos uma loja ativa.', 'err');
+    return;
+  }
   const payload = editandoAgora
     ? {
         nome,
@@ -11358,6 +11402,8 @@ async function criarFuncionario() {
         nome,
         email: emailInformado ? email : null,
         pin: pin || null,
+      loja_id: tenantCadastro.loja_id,
+      empresa_id: tenantCadastro.empresa_id,
         perfil_id: perfilId,
         horario_trabalho_inicio: horarioInicio,
         horario_trabalho_fim: horarioFim,
@@ -11372,7 +11418,7 @@ async function criarFuncionario() {
       setMsg('msgFuncionarios', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
       return;
     }
-    setMsg('msgFuncionarios', editandoAgora ? 'Erro ao salvar alterações.' : 'Erro ao cadastrar.', 'err');
+    setMsg('msgFuncionarios', `${editandoAgora ? 'Erro ao salvar alterações' : 'Erro ao cadastrar'}: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
   limparFormularioFuncionario();
@@ -11613,17 +11659,25 @@ async function aprovarSolicitacaoAcesso(id) {
     return;
   }
 
+  const tenantCadastro = await resolverTenantParaCadastroFuncionario();
+  if (!tenantCadastro.loja_id || !tenantCadastro.empresa_id) {
+    setMsg('msgSolicitacoes', 'Não foi possível identificar loja/empresa para criar o funcionário aprovado.', 'err');
+    return;
+  }
+
   const { error: errInsert } = await sb.from('funcionarios').insert([{
     nome: solicitacao.nome,
     email: solicitacao.email.toLowerCase(),
     pin: solicitacao.pin,
+    loja_id: tenantCadastro.loja_id,
+    empresa_id: tenantCadastro.empresa_id,
     perfil_id: null,
     ativo: true,
     email_verificado: false,
   }]);
 
   if (errInsert) {
-    setMsg('msgSolicitacoes', 'Erro ao criar o funcionário aprovado.', 'err');
+    setMsg('msgSolicitacoes', `Erro ao criar o funcionário aprovado: ${mensagemErroSupabase(errInsert, 'erro desconhecido')}`, 'err');
     return;
   }
 
