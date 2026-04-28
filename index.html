@@ -5818,6 +5818,7 @@ const TABELAS_COM_LOJA_ID = new Set([
   'checklist_lancamentos',
   'checklist_execucoes',
   'ponto_registros',
+  'ponto_intervalos',
   'ponto_ajustes_solicitacoes',
   'tarefas',
   'usuarios_admin',
@@ -19394,6 +19395,8 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   const funcionarioId = solicitacao?.funcionario_id;
   const dataAjuste = solicitacao?.data_ajuste;
   const horarioIso = montarIsoAjustePonto(dataAjuste, solicitacao?.horario_ajuste);
+  const tenantLojaId = solicitacao?.loja_id || null;
+  const tenantEmpresaId = solicitacao?.empresa_id || null;
   if (!funcionarioId || !dataAjuste || !horarioIso) {
     return { ok: false, mensagem: 'Solicitação sem funcionário, data ou horário válidos.' };
   }
@@ -19436,10 +19439,15 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
         data_ponto: dataAjuste,
         entrada_em: horarioIso,
         saida_em: null,
+        ...(tenantLojaId ? { loja_id: tenantLojaId } : {}),
+        ...(tenantEmpresaId ? { empresa_id: tenantEmpresaId } : {}),
       }]);
     if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
     return { ok: true, mensagem: 'Criado registro de entrada com o horário aprovado. O ponto ficou aberto até a próxima saída.' };
   }
+
+  const registroLojaId = registro?.loja_id || tenantLojaId || null;
+  const registroEmpresaId = registro?.empresa_id || tenantEmpresaId || null;
 
   const registrosExtras = (registros || []).filter(item => item.id !== registro.id);
   if (registrosExtras.length) {
@@ -19505,6 +19513,8 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       ordem: novosIntervalos.length + 1,
       inicio_em: batidas[i],
       retorno_em: batidas[i + 1],
+      ...(registroLojaId ? { loja_id: registroLojaId } : {}),
+      ...(registroEmpresaId ? { empresa_id: registroEmpresaId } : {}),
     });
   }
 
