@@ -5694,7 +5694,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '2.2';
+const APP_VERSION = '3.0.1-perfis-lojas';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -5711,11 +5711,13 @@ const TABELAS_COM_LOJA_ID = new Set([
   'funcionarios',
   'checklist_execucoes',
   'ponto_registros',
-  'tarefas'
+  'tarefas',
+  'usuarios_admin'
 ]);
 function obterLojaIdSessao() {
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
-  return s && s.tipo === 'admin_loja' ? (s.loja_id || null) : null;
+  if (!s || s.tipo === 'admin') return null;
+  return s.loja_id || null;
 }
 (function() {
   const _from = sb.from.bind(sb);
@@ -5990,10 +5992,20 @@ function obterStorageNotificacoesMasterDispensadas() {
 
 function usuarioEhMasterNotificacoes() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
-  const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
-  return codigo === 'MASTER' || codigo === 'ADM' || codigo === 'GERENTE' || codigo === 'GESTOR' || usuarioEhContaZuquiOperacional();
+
+  const codigo = normalizarCodigoPerfil(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '');
+  if (codigo === 'ADM' || codigo === 'MASTER') return true;
+
+  const permissoes = obterPermissoesUsuario();
+  return !!(
+    permissoes.tarefas_atraso ||
+    permissoes.tarefas_rapidas ||
+    permissoes.relatorio_lancamentos ||
+    permissoes.ponto_ajustes ||
+    permissoes.ver_todos_checklists ||
+    permissoes.ver_todas_execucoes
+  );
 }
 
 function carregarHistoricoNotificacoesMaster() {
@@ -6340,27 +6352,25 @@ function usuarioPodeVerNotificacaoExecucao() {
 
 function usuarioPodeReceberAlertaRapido() {
   if (!usuarioRecebeAlertaOperacional()) return false;
-  const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
-  const codigo = String(perfil?.codigo || '').toUpperCase();
-  if (codigo === 'GERENTE' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
   return !!obterPermissoesUsuario().receber_alertas_rapidas;
 }
 
 function usuarioPodeConfirmarAlertaRapido() {
-  const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
-  const codigo = String(perfil?.codigo || '').toUpperCase();
-  if (codigo === 'GERENTE' || codigo === 'GESTOR' || codigo === 'MASTER') return true;
+  if (!usuarioRecebeAlertaOperacional()) return false;
   return !!obterPermissoesUsuario().confirmar_alertas_rapidas;
 }
 
 function usuarioPodeGerenciarAlertasRapidos() {
-  return usuarioEhMasterNotificacoes();
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  return !!obterPermissoesUsuario().tarefas_rapidas;
 }
 
 function usuarioEhPerfilGerencialNotificacoes() {
   if (!usuarioSistemaLogado) return false;
-  const codigo = String(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '').toUpperCase();
-  return codigo === 'GERENTE' || codigo === 'GESTOR' || codigo === 'MASTER';
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  const permissoes = obterPermissoesUsuario();
+  return !!(permissoes.tarefas_rapidas || permissoes.ponto_ajustes || permissoes.tarefas_atraso || permissoes.ver_todos_checklists || permissoes.ver_todas_execucoes);
 }
 
 const PERFIL_PERMISSOES = [
@@ -7579,9 +7589,10 @@ function obterPermissoesUsuario() {
   }
 
   const codigo = normalizarCodigoPerfil(perfilNormalizado.codigo);
+  const permissoesDoBanco = normalizarPermissoesPerfil(perfilNormalizado.permissoes);
 
   if (codigo === 'ADM' || codigo === 'MASTER') {
-    const permissoes = { ...obterPermissoesBase(codigo), ...normalizarPermissoesPerfil(perfilNormalizado.permissoes) };
+    const permissoes = { ...obterPermissoesBase(codigo), ...permissoesDoBanco };
     PERFIL_PERMISSOES.forEach(p => { permissoes[p.key] = true; });
     permissoes.bater_ponto = true;
     permissoes.ver_todos_checklists = true;
@@ -7589,42 +7600,10 @@ function obterPermissoesUsuario() {
     return permissoes;
   }
 
-  if (codigo === 'FUNCIONARIO') {
-    return {
-      ...obterPermissoesBase('FUNCIONARIO'),
-      checklists: true,
-      bater_ponto: true,
-      execucoes: true,
-      receber_alertas_rapidas: true,
-      confirmar_alertas_rapidas: true,
-      ver_todos_checklists: false,
-      ver_todas_execucoes: false,
-      ponto_ajustes: false,
-      relatorio_ponto: false,
-      dashboard: false,
-      funcionarios: false,
-      perfis: false,
-      tarefas: false,
-      tarefas_rapidas: false,
-      financeiro_fornecedores: false,
-      financeiro_formas_pagamento: false,
-      financeiro_contasapagar: false,
-      financeiro_baixar_contas: false,
-      financeiro_conta_financeira: false,
-      financeiro_recebiveis: false,
-      financeiro_cofre: false,
-      relatorio_lancamentos: false,
-      relatorio_financeiro: false,
-      relatorio_ajuste_saldo: false,
-      solicitacoes: false,
-      emails: false,
-      configuracoes: false,
-      tarefas_atraso: false,
-      nova_execucao_manual: false,
-    };
-  }
-
-  return { ...obterPermissoesBase(codigo), ...normalizarPermissoesPerfil(perfilNormalizado.permissoes) };
+  // Regra principal: qualquer perfil que venha do banco manda nas permissões.
+  // Antes o código forçava acessos por nome/código do perfil, e isso fazia o Gerente
+  // ou o Funcionário enxergarem funções que estavam desmarcadas na tela Perfis.
+  return { ...obterPermissoesBase(codigo), ...permissoesDoBanco };
 }
 
 function usuarioPodeAcessar(pageId) {
@@ -7646,7 +7625,6 @@ function usuarioEhContaZuquiOperacional() {
 function usuarioEhPerfilOperacionalGeral() {
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return true;
-  if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
   const codigo = normalizarCodigoPerfil(normalizarPerfilUsuario(usuarioSistemaLogado?.perfil)?.codigo || '');
   return codigo === 'ADM' || codigo === 'MASTER' || usuarioEhContaZuquiOperacional();
 }
@@ -7668,11 +7646,11 @@ function obterFuncionarioRestritoLogadoId() {
 }
 
 function usuarioPodeVerTodosChecklists() {
-  return usuarioEhPerfilOperacionalGeral() || !!obterPermissoesUsuario().ver_todos_checklists;
+  return usuarioEhAdministrador() || !!obterPermissoesUsuario().ver_todos_checklists;
 }
 
 function usuarioPodeVerTodasExecucoes() {
-  return usuarioEhPerfilOperacionalGeral() || !!obterPermissoesUsuario().ver_todas_execucoes;
+  return usuarioEhAdministrador() || !!obterPermissoesUsuario().ver_todas_execucoes;
 }
 
 function normalizarCodigoPerfil(codigo) {
@@ -7712,6 +7690,97 @@ function normalizarPerfilUsuario(perfil) {
     codigo,
     permissoes: normalizarPermissoesPerfil(perfilBase.permissoes),
   };
+}
+
+
+function isMissingLojaIdColumnError(error) {
+  const msg = String(error?.message || '').toLowerCase();
+  const details = String(error?.details || '').toLowerCase();
+  const hint = String(error?.hint || '').toLowerCase();
+  return msg.includes('loja_id') || details.includes('loja_id') || hint.includes('loja_id');
+}
+
+function obterLojaIdParaEscopoAtual() {
+  if (!usuarioSistemaLogado || usuarioSistemaLogado.tipo === 'admin') return '';
+  return String(usuarioSistemaLogado.loja_id || '').trim();
+}
+
+async function buscarPerfilPorCodigoEscopoLoja(codigo = 'GERENTE', lojaId = obterLojaIdParaEscopoAtual()) {
+  const codigoNormalizado = normalizarCodigoPerfil(codigo || 'GERENTE') || 'GERENTE';
+  const lojaIdNormalizado = String(lojaId || '').trim();
+
+  if (lojaIdNormalizado) {
+    try {
+      const respostaLoja = await sb
+        .from('perfis')
+        .select('*')
+        .eq('codigo', codigoNormalizado)
+        .eq('loja_id', lojaIdNormalizado)
+        .limit(1);
+      if (!respostaLoja.error && respostaLoja.data?.[0]) {
+        return normalizarPerfilUsuario(respostaLoja.data[0]);
+      }
+      if (respostaLoja.error && !isMissingLojaIdColumnError(respostaLoja.error) && !isMissingProfilesTableError(respostaLoja.error)) {
+        console.warn('Falha ao buscar perfil por loja:', respostaLoja.error);
+      }
+    } catch (error) {
+      console.warn('Falha ao buscar perfil por loja:', error);
+    }
+  }
+
+  try {
+    const respostaGlobal = await sb
+      .from('perfis')
+      .select('*')
+      .eq('codigo', codigoNormalizado)
+      .limit(1);
+    if (!respostaGlobal.error && respostaGlobal.data?.[0]) {
+      return normalizarPerfilUsuario(respostaGlobal.data[0]);
+    }
+  } catch (error) {
+    console.warn('Falha ao buscar perfil global:', error);
+  }
+
+  return normalizarPerfilUsuario({
+    nome: codigoNormalizado === 'FUNCIONARIO' ? 'Funcionário' : 'Gerente',
+    codigo: codigoNormalizado,
+    permissoes: obterPermissoesBase(codigoNormalizado),
+  });
+}
+
+async function obterPerfilAdminLojaSeguro(lojaId = '') {
+  // Admins de loja NÃO entram mais como ADM do sistema inteiro.
+  // Eles usam o perfil GERENTE salvo na tela Perfis, respeitando as permissões marcadas.
+  return buscarPerfilPorCodigoEscopoLoja('GERENTE', lojaId);
+}
+
+function persistirSessaoSistemaAtual(manterConectado = false) {
+  if (!usuarioSistemaLogado) return;
+  const payload = JSON.stringify({
+    ...usuarioSistemaLogado,
+    perfil: normalizarPerfilUsuario(usuarioSistemaLogado.perfil),
+  });
+  if (manterConectado) {
+    localStorage.setItem('zuqui_auth', payload);
+    sessionStorage.removeItem('zuqui_auth');
+  } else {
+    sessionStorage.setItem('zuqui_auth', payload);
+    localStorage.removeItem('zuqui_auth');
+  }
+}
+
+async function atualizarSessaoAdminLojaComPerfilCorreto(manterConectado = false) {
+  if (usuarioSistemaLogado?.tipo !== 'admin_loja') return;
+  const perfilCorreto = await obterPerfilAdminLojaSeguro(usuarioSistemaLogado.loja_id || '');
+  usuarioSistemaLogado = {
+    ...usuarioSistemaLogado,
+    perfil: perfilCorreto,
+  };
+  window.__sessaoSistema = () => usuarioSistemaLogado;
+  persistirSessaoSistemaAtual(manterConectado);
+  atualizarUsuarioTopbar();
+  aplicarPermissoesSistema();
+  carregarNotificacoes();
 }
 
 function aplicarPermissoesSistema() {
@@ -10528,6 +10597,8 @@ async function carregarChecklists() {
   const funcionarioRestritoChecklistId = obterFuncionarioRestritoLogadoId();
   if (funcionarioRestritoChecklistId) {
     rows = rows.filter(t => String(t.funcionario_id || '') === funcionarioRestritoChecklistId);
+  } else if (!usuarioPodeVerTodosChecklists() && usuarioSistemaLogado?.id) {
+    rows = rows.filter(t => String(t.funcionario_id || '') === String(usuarioSistemaLogado.id || ''));
   }
   rows.sort((a, b) => {
     const dataA = String(obterDataProgramadaLancamento(a) || '').trim();
@@ -10628,10 +10699,12 @@ async function carregarOpcoesFiltroChecklists() {
   ]);
 
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
-  selFuncionario.innerHTML = funcionarioRestritoId ? '' : '<option value="">- Todos os funcionarios -</option>';
+  const restringirAoUsuarioLogado = !funcionarioRestritoId && !usuarioPodeVerTodosChecklists() && usuarioSistemaLogado?.id;
+  const funcionarioFiltroId = funcionarioRestritoId || (restringirAoUsuarioLogado ? String(usuarioSistemaLogado.id || '') : '');
+  selFuncionario.innerHTML = funcionarioFiltroId ? '' : '<option value="">- Todos os funcionarios -</option>';
   if (!funcionariosRes.error) {
     (funcionariosRes.data || [])
-      .filter(item => !funcionarioRestritoId || String(item.id) === funcionarioRestritoId)
+      .filter(item => !funcionarioFiltroId || String(item.id) === funcionarioFiltroId)
       .forEach(item => {
         const opt = document.createElement('option');
         opt.value = String(item.id);
@@ -10639,8 +10712,8 @@ async function carregarOpcoesFiltroChecklists() {
         selFuncionario.appendChild(opt);
       });
   }
-  if (funcionarioRestritoId) {
-    selFuncionario.value = funcionarioRestritoId;
+  if (funcionarioFiltroId) {
+    selFuncionario.value = funcionarioFiltroId;
     selFuncionario.disabled = true;
   } else {
     selFuncionario.disabled = false;
@@ -10663,7 +10736,8 @@ function limparFiltrosChecklists() {
   const campoFuncionario = document.getElementById('filtroChecklistFuncionario');
   const campoTarefa = document.getElementById('filtroChecklistTarefa');
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
-  if (campoFuncionario) campoFuncionario.value = funcionarioRestritoId || '';
+  const funcionarioFiltroId = funcionarioRestritoId || (!usuarioPodeVerTodosChecklists() && usuarioSistemaLogado?.id ? String(usuarioSistemaLogado.id || '') : '');
+  if (campoFuncionario) campoFuncionario.value = funcionarioFiltroId || '';
   if (campoTarefa) campoTarefa.value = '';
   carregarChecklists();
 }
@@ -14854,7 +14928,18 @@ async function carregarPerfis() {
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
-  const { data, error } = await sb.from('perfis').select('*').order('nome');
+  let resposta = null;
+  const lojaId = obterLojaIdParaEscopoAtual();
+  if (lojaId) {
+    resposta = await sb.from('perfis').select('*').eq('loja_id', lojaId).order('nome');
+    if (resposta.error && isMissingLojaIdColumnError(resposta.error)) {
+      resposta = null;
+    }
+  }
+  if (!resposta) {
+    resposta = await sb.from('perfis').select('*').order('nome');
+  }
+  const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
       lista.innerHTML = '<div class="empty">Rode o SQL da tabela perfis para habilitar este recurso.</div>';
@@ -14886,7 +14971,18 @@ async function carregarSelectPerfisFuncionario() {
   const sel = document.getElementById('perfilFuncionario');
   if (!sel) return;
   sel.innerHTML = '<option value="">- Selecione o perfil -</option>';
-  const { data, error } = await sb.from('perfis').select('id, nome').order('nome');
+  let resposta = null;
+  const lojaId = obterLojaIdParaEscopoAtual();
+  if (lojaId) {
+    resposta = await sb.from('perfis').select('id, nome').eq('loja_id', lojaId).order('nome');
+    if (resposta.error && isMissingLojaIdColumnError(resposta.error)) {
+      resposta = null;
+    }
+  }
+  if (!resposta) {
+    resposta = await sb.from('perfis').select('id, nome').order('nome');
+  }
+  const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
       setMsg('msgFuncionarios', 'Rode o SQL da tabela perfis antes de cadastrar funcionarios.', 'err');
@@ -14906,13 +15002,21 @@ async function criarPerfil() {
   const codigo = document.getElementById('codigoPerfil').value;
   if (!nome) { setMsg('msgPerfis', 'Digite o nome do perfil.', 'err'); return; }
 
-  const payload = { nome, codigo, permissoes: coletarPermissoesPerfil() };
+  const lojaId = obterLojaIdParaEscopoAtual();
+  const payloadBase = { nome, codigo, permissoes: coletarPermissoesPerfil() };
+  const payload = lojaId ? { ...payloadBase, loja_id: lojaId } : payloadBase;
   const editandoAgora = !!perfilEmEdicaoId;
-  const query = editandoAgora
-    ? sb.from('perfis').update(payload).eq('id', perfilEmEdicaoId)
-    : sb.from('perfis').insert([payload]);
+  let resposta = editandoAgora
+    ? await sb.from('perfis').update(payload).eq('id', perfilEmEdicaoId)
+    : await sb.from('perfis').insert([payload]);
 
-  const { error } = await query;
+  if (resposta.error && lojaId && isMissingLojaIdColumnError(resposta.error)) {
+    resposta = editandoAgora
+      ? await sb.from('perfis').update(payloadBase).eq('id', perfilEmEdicaoId)
+      : await sb.from('perfis').insert([payloadBase]);
+  }
+
+  const { error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
       setMsg('msgPerfis', 'Rode o SQL da tabela perfis antes de usar esta tela.', 'err');
@@ -14926,6 +15030,11 @@ async function criarPerfil() {
   setMsg('msgPerfis', editandoAgora ? 'Perfil atualizado.' : 'Perfil cadastrado.', 'ok');
   carregarPerfis();
   carregarSelectPerfisFuncionario();
+  if (usuarioSistemaLogado?.tipo === 'admin_loja') {
+    atualizarSessaoAdminLojaComPerfilCorreto(localStorage.getItem('zuqui_auth') != null);
+  } else {
+    aplicarPermissoesSistema();
+  }
 }
 
 function limparFormularioPerfil() {
@@ -17894,19 +18003,32 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   }).join('') + '</div>';
 }
 
+
+function usuarioLogadoEhTerminalCompartilhadoPonto() {
+  const valores = [
+    usuarioSistemaLogado?.nome,
+    usuarioSistemaLogado?.username,
+    usuarioSistemaLogado?.email,
+    usuarioSistemaLogado?.funcionario_nome,
+  ].map(v => String(v || '').trim().toLowerCase());
+  return valores.some(v => v === 'zuqui' || v.includes('zuqui'));
+}
+
 async function carregarBaterPonto() {
   configurarSegurancaCampoPinPonto();
   limparCampoPinPonto();
   await carregarSelectFuncionariosPonto();
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
+  const restringirPontoAoUsuarioLogado = funcionarioRestritoId && !terminalCompartilhadoPonto;
   const campoPin = document.getElementById('pontoPinInput');
   if (campoPin) {
-    campoPin.style.display = funcionarioRestritoId ? 'none' : '';
-    campoPin.required = !funcionarioRestritoId;
+    campoPin.style.display = restringirPontoAoUsuarioLogado ? 'none' : '';
+    campoPin.required = !restringirPontoAoUsuarioLogado;
   }
   const btnAjusteManualAdmin = document.getElementById('btnAjusteManualAdminPonto');
   if (btnAjusteManualAdmin) btnAjusteManualAdmin.hidden = !usuarioEhAdministrador();
-  await carregarResumoPontoHoje(funcionarioRestritoId || '');
+  await carregarResumoPontoHoje(restringirPontoAoUsuarioLogado ? funcionarioRestritoId : '');
   await carregarHorasDashboard();
 }
 
@@ -18051,10 +18173,12 @@ async function obterFuncionarioLogadoParaPonto() {
 
 async function registrarPontoFuncionario() {
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
+  const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
+  const restringirPontoAoUsuarioLogado = funcionarioRestritoId && !terminalCompartilhadoPonto;
   const pin = String(document.getElementById('pontoPinInput')?.value || '').trim();
 
   let funcionario = null;
-  if (funcionarioRestritoId) {
+  if (restringirPontoAoUsuarioLogado) {
     try {
       funcionario = await obterFuncionarioLogadoParaPonto();
     } catch (error) {
@@ -18070,7 +18194,7 @@ async function registrarPontoFuncionario() {
   }
 
   if (!funcionario?.id) {
-    setMsg('msgPonto', funcionarioRestritoId ? 'Usuário não encontrado ou inativo.' : 'PIN inválido.', 'err');
+    setMsg('msgPonto', restringirPontoAoUsuarioLogado ? 'Usuário não encontrado ou inativo.' : 'PIN inválido.', 'err');
     return;
   }
 
@@ -18266,7 +18390,7 @@ async function registrarPontoFuncionario() {
     clearTimeout(timeoutLimpezaPinPonto);
     timeoutLimpezaPinPonto = null;
   }
-  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoId() || '');
+  await carregarResumoPontoHoje(restringirPontoAoUsuarioLogado ? funcionarioRestritoId : '');
   await carregarHorasDashboard();
   if (obterPaginaAtivaAtual() === 'relatorio_ponto') {
     await carregarRelatorioPonto();
@@ -21321,7 +21445,7 @@ window.setTimeout(() => {
     lojaContainer.style.display = 'inline-flex';
 
     const lojaId = String(usuarioSistemaLogado?.loja_id || '').trim();
-    if (usuarioSistemaLogado?.tipo === 'admin_loja' && lojaId) {
+    if (lojaId) {
       preencherNomeLojaTopbarPorId(lojaId).then(nome => {
         if (!nome && lojaNameEl.textContent === '-') lojaNameEl.textContent = 'Loja vinculada';
       });
@@ -21411,6 +21535,13 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         ...usuario,
         perfil: normalizarPerfilUsuario(usuario?.perfil),
       };
+      if (usuarioSistemaLogado?.tipo === 'admin_loja' && normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo) === 'ADM') {
+        usuarioSistemaLogado.perfil = normalizarPerfilUsuario({
+          nome: 'Gerente',
+          codigo: 'GERENTE',
+          permissoes: obterPermissoesBase('GERENTE'),
+        });
+      }
       window.__sessaoSistema = () => usuarioSistemaLogado;
       redefinirEstadoAvisoCentralTarefas();
       atualizarUsuarioTopbar();
@@ -21424,6 +21555,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         restaurarPaginaAtivaSalvaOuPadrao();
       }, 0);
       reiniciarAssinaturaRealtimeNotificacoes();
+      if (usuarioSistemaLogado?.tipo === 'admin_loja') {
+        atualizarSessaoAdminLojaComPerfilCorreto(!!salvoLocal);
+      }
       return !!usuario;
     } catch (e) {
       localStorage.removeItem('zuqui_auth');
@@ -21740,7 +21874,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       if (username.includes('@')) {
         const resposta = await sb
           .from('funcionarios')
-          .select('id, nome, email, pin, ativo, email_verificado, perfil_id, perfis(nome, codigo, permissoes)')
+          .select('*, perfis(nome, codigo, permissoes)')
           .eq('ativo', true)
           .eq('email', username.toLowerCase())
           .maybeSingle();
@@ -21749,7 +21883,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
       const resposta = await sb
         .from('funcionarios')
-        .select('id, nome, email, pin, ativo, email_verificado, perfil_id, perfis(nome, codigo, permissoes)')
+        .select('*, perfis(nome, codigo, permissoes)')
         .eq('ativo', true)
         .ilike('nome', `%${escaparValorLike(username)}%`)
         .limit(20);
@@ -21767,7 +21901,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       if (username.includes('@')) {
         const resposta = await sb
           .from('funcionarios')
-          .select('id, nome, email, pin, ativo, email_verificado, perfil_id')
+          .select('*')
           .eq('ativo', true)
           .eq('email', username.toLowerCase())
           .maybeSingle();
@@ -21776,7 +21910,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
       const resposta = await sb
         .from('funcionarios')
-        .select('id, nome, email, pin, ativo, email_verificado, perfil_id')
+        .select('*')
         .eq('ativo', true)
         .ilike('nome', `%${escaparValorLike(username)}%`)
         .limit(20);
@@ -21847,6 +21981,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
             }
           }
 
+          const perfilAdminLoja = await obterPerfilAdminLojaSeguro(lojaIdAdmin);
           salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
           salvarSessaoSistema({
             tipo: 'admin_loja',
@@ -21855,7 +21990,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
             usuario: adminLoja.usuario,
             loja_id: adminLoja.loja_id,
             loja_nome: nomeLojaAdmin || 'Loja vinculada',
-            perfil: { codigo: 'ADM', permissoes: obterPermissoesBase('ADM') }
+            perfil: perfilAdminLoja
           }, { manterConectado });
           setSistemaLogado(true);
           aplicarPermissoesSistema();
@@ -21884,7 +22019,14 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     }
 
     salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
-    salvarSessaoSistema({ tipo: 'funcionario', id: funcionario.id, nome: funcionario.nome, perfil_id: funcionario.perfil_id, perfil: perfilFuncionario }, { manterConectado });
+    salvarSessaoSistema({
+      tipo: 'funcionario',
+      id: funcionario.id,
+      nome: funcionario.nome,
+      perfil_id: funcionario.perfil_id,
+      loja_id: funcionario.loja_id || null,
+      perfil: perfilFuncionario
+    }, { manterConectado });
     setSistemaLogado(true);
     aplicarPermissoesSistema();
     carregarNotificacoes();
