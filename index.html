@@ -3665,6 +3665,44 @@
       background: var(--green-glow);
       color: var(--green);
     }
+    /* Blindagem visual da seção de horas no Bater ponto */
+    #bater_ponto .ponto-horas-card {
+      overflow: hidden;
+    }
+    #bater_ponto .ponto-horas-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    #bater_ponto .ponto-horas-tabs .dashboard-period-btn {
+      min-height: 34px;
+      min-width: 72px;
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1;
+      text-align: center;
+    }
+    #bater_ponto .ponto-horas-grid {
+      display: grid;
+      grid-template-columns: minmax(170px, 210px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    #horasPieDashboard.ponto-horas-pie {
+      width: clamp(156px, 18vw, 190px);
+      height: clamp(156px, 18vw, 190px);
+      border-radius: 50%;
+      aspect-ratio: 1 / 1;
+      justify-self: center;
+    }
+    #bater_ponto .ponto-horas-card .prod-stats {
+      margin-bottom: 10px;
+    }
+    #bater_ponto .ponto-horas-card .prod-func-list {
+      margin-top: 10px;
+    }
     .prod-pie {
       width: 200px;
       height: 200px;
@@ -4078,6 +4116,13 @@
       .dashboard-kpi-pies-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
       .dashboard-kpi-pie { width: 142px; height: 142px; }
       .dashboard-kpi-pie .prod-pie-center { width: 92px; height: 92px; }
+      #bater_ponto .ponto-horas-grid {
+        grid-template-columns: 1fr;
+      }
+      #horasPieDashboard.ponto-horas-pie {
+        width: 166px;
+        height: 166px;
+      }
     }
 
     @media (max-width: 600px) {
@@ -5110,17 +5155,17 @@
           <div class="msg" id="msgPonto"></div>
         </div>
 
-        <div class="card">
+        <div class="card ponto-horas-card">
           <div class="card-title">Horas trabalhadas por colaborador</div>
-          <div class="dashboard-period-tabs">
+          <div class="dashboard-period-tabs ponto-horas-tabs">
             <button class="dashboard-period-btn active" data-horas-periodo="dia" onclick="trocarPeriodoHorasDashboard('dia', this)">Hoje</button>
             <button class="dashboard-period-btn" data-horas-periodo="semana" onclick="trocarPeriodoHorasDashboard('semana', this)">Semana</button>
             <button class="dashboard-period-btn" data-horas-periodo="mes" onclick="trocarPeriodoHorasDashboard('mes', this)">Mês</button>
             <button class="dashboard-period-btn" data-horas-periodo="ano" onclick="trocarPeriodoHorasDashboard('ano', this)">Ano</button>
           </div>
           <div id="dash-horas-msg" class="msg" style="margin-top:0"></div>
-          <div class="dashboard-prod-grid">
-            <div class="prod-pie" id="horasPieDashboard">
+          <div class="dashboard-prod-grid ponto-horas-grid">
+            <div class="prod-pie ponto-horas-pie" id="horasPieDashboard">
               <div class="prod-pie-center">
                 <div class="prod-pie-value" id="horasPieValorDashboard">0h</div>
                 <div class="prod-pie-label" id="horasPieLabelDashboard">Total</div>
