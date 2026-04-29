@@ -3382,30 +3382,24 @@
       font-size: 13px;
     }
     .confirmacao-destaque-box strong {
-        grid-template-columns: minmax(0, 1.90fr) minmax(146px, 0.60fr) minmax(176px, 0.50fr) minmax(104px, 0.28fr);
+      color: var(--text);
       font-size: 15px;
-        align-items: end;
     }
     .confirmacao-destaque-box span {
-        max-width: 178px;
-        margin-left: 0;
+      color: var(--text-muted);
+    }
     .forma-pagamento-modal-intro {
       font-size: 13px;
-        min-width: 148px;
+      color: var(--text-muted);
       line-height: 1.5;
     }
     .forma-pagamento-modal-select {
       width: 100%;
-        width: 152px;
-        min-width: 152px;
+      padding: 10px 12px;
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       color: var(--text);
-      #tarefas .tarefa-lancamento-bloco-funcionarios,
-      #tarefas .tarefa-lancamento-bloco-lancar,
-      #tarefas .tarefa-lancamento-bloco-horario {
-        align-self: end;
-      }
       font-size: 14px;
       font-family: inherit;
       outline: none;
@@ -4706,11 +4700,11 @@
           <div class="card-title">Painel de indicadores</div>
           <div class="dashboard-kpi-pies-grid">
             <div class="dashboard-kpi-card">
-              <div class="dashboard-kpi-title">Financeiro: saldo positivo x negativo</div>
+              <div class="dashboard-kpi-title">Financeiro: contas a pagar x saldo em conta</div>
               <div class="prod-pie dashboard-kpi-pie" id="dashPieFinanceiro">
                 <div class="prod-pie-center">
                   <div class="prod-pie-value" id="dashPieFinanceiroValor">R$ 0</div>
-                  <div class="prod-pie-label" id="dashPieFinanceiroLabel">Saldo líquido</div>
+                  <div class="prod-pie-label" id="dashPieFinanceiroLabel">Contas a pagar</div>
                 </div>
               </div>
               <div class="dashboard-kpi-meta" id="dashPieFinanceiroMeta">Sem dados.</div>
@@ -10993,9 +10987,10 @@ async function carregarDashboard() {
   const execAbertasHoje = execucoesHoje.filter(item => String(item.status || '').toLowerCase() === 'aberto').length;
   const execPausadasHoje = execucoesHoje.filter(item => String(item.status || '').toLowerCase() === 'pausado').length;
 
-  // 1) Financeiro: saldo positivo x negativo
+  // 1) Financeiro: contas a pagar x saldo em conta
   let totalPositivo = 0;
   let totalNegativoAbs = 0;
+  let totalContasAPagar = 0;
   try {
     const { data: contas, error: contasError } = await sb
       .from('contas_financeiras')
@@ -11007,22 +11002,37 @@ async function carregarDashboard() {
       if (saldo >= 0) totalPositivo += saldo;
       else totalNegativoAbs += Math.abs(saldo);
     });
+
+    const { data: contasAPagar, error: contasAPagarError } = await sb
+      .from('contasapagar')
+      .select('valor_compra, valor_pago, pago_em, excluido_em');
+    if (contasAPagarError && !isMissingContasAPagarTableError(contasAPagarError)) throw contasAPagarError;
+    (contasAPagar || []).forEach(item => {
+      if (item?.excluido_em) return;
+      if (item?.pago_em) return;
+      const valorCompra = Number(item?.valor_compra || 0);
+      const valorPago = Number(item?.valor_pago || 0);
+      const saldoPendente = Math.max(0, valorCompra - valorPago);
+      totalContasAPagar += saldoPendente;
+    });
   } catch (error) {
     totalPositivo = 0;
     totalNegativoAbs = 0;
+    totalContasAPagar = 0;
   }
   const saldoLiquido = totalPositivo - totalNegativoAbs;
+  const saldoDisponivel = Math.max(0, saldoLiquido);
   montarPizzaDashboard({
     pieId: 'dashPieFinanceiro',
     valueId: 'dashPieFinanceiroValor',
     labelId: 'dashPieFinanceiroLabel',
     metaId: 'dashPieFinanceiroMeta',
-    valorTexto: formatarMoedaBRFinanceiro(saldoLiquido),
-    labelTexto: 'Saldo líquido',
-    metaTexto: `Positivo: ${formatarMoedaBRFinanceiro(totalPositivo)} · Negativo: ${formatarMoedaBRFinanceiro(totalNegativoAbs)}`,
+    valorTexto: formatarMoedaBRFinanceiro(totalContasAPagar),
+    labelTexto: 'Contas a pagar',
+    metaTexto: `Saldo em conta: ${formatarMoedaBRFinanceiro(saldoLiquido)} · Contas a pagar: ${formatarMoedaBRFinanceiro(totalContasAPagar)}`,
     partes: [
-      { valor: totalPositivo, cor: '#22c55e' },
-      { valor: totalNegativoAbs, cor: '#ef4444' },
+      { valor: totalContasAPagar, cor: '#ef4444' },
+      { valor: saldoDisponivel, cor: '#22c55e' },
     ],
   });
 
