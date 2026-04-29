@@ -2504,10 +2504,14 @@
     }
     .tarefas-consulta-item-descricao {
       font-size: 11px;
-      color: var(--text-dim);
+      color: var(--text-muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .tarefas-consulta-item-descricao.vazia {
+      color: rgba(133, 159, 141, 0.78);
+      font-style: italic;
     }
     .tarefas-consulta-item-acoes {
       display: flex;
@@ -2905,6 +2909,19 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .btn-excluir-x {
+      min-width: 30px;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      border-radius: 8px;
     }
     .tarefa-modal-funcionarios-busca {
       width: 100%;
@@ -16412,6 +16429,7 @@ function renderizarListaConsultaTarefas() {
     const favorita = tarefasFavoritasIds.has(id);
     const configuracaoAberta = tarefasConfigLancamentoAbertasIds.has(id);
     const descricaoCurta = String(item.descricao || '').trim();
+    const descricaoExibicao = descricaoCurta || 'Sem descrição';
     return `
       <div class="tarefas-consulta-item">
         <div class="tarefas-consulta-item-main">
@@ -16420,14 +16438,14 @@ function renderizarListaConsultaTarefas() {
             <div class="tarefas-consulta-item-nome" title="${escaparHtmlBasico(item.nome || '')}">
               ${escaparHtmlBasico(item.nome || 'Tarefa sem nome')}
             </div>
-            ${descricaoCurta ? `<div class="tarefas-consulta-item-descricao" title="${escaparHtmlBasico(descricaoCurta)}">${escaparHtmlBasico(descricaoCurta)}</div>` : ''}
+            <div class="tarefas-consulta-item-descricao ${descricaoCurta ? '' : 'vazia'}" title="${escaparHtmlBasico(descricaoExibicao)}">${escaparHtmlBasico(descricaoExibicao)}</div>
           </div>
           <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${id}')">${favorita ? '★' : '☆'}</button>
         </div>
         <div class="tarefas-consulta-item-acoes">
           <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar opções' : 'Opções de lançamento'}</button>
           <button class="btn btn-ghost btn-sm" type="button" title="Editar tarefa" onclick="editarTarefa('${id}')">Editar</button>
-          <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
+          <button class="btn btn-red btn-sm btn-excluir-x" type="button" title="Excluir tarefa" aria-label="Excluir tarefa" onclick="excluirTarefa('${id}')">×</button>
         </div>
         ${configuracaoAberta ? `<div class="tarefas-consulta-item-config">${renderizarSelecaoFuncionariosLancamento(item)}</div>` : ''}
       </div>
@@ -16519,7 +16537,7 @@ function renderizarCardTarefaCadastrada(t) {
         <div class="item-actions tarefa-cadastrada-actions">
           <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${t.id}')">${favorita ? '★' : '☆'}</button>
           ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', ''), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
-          <button class="btn btn-red btn-sm" title="Excluir tarefa" onclick="excluirTarefa('${t.id}')">Excluir</button>
+          <button class="btn btn-red btn-sm btn-excluir-x" title="Excluir tarefa" aria-label="Excluir tarefa" onclick="excluirTarefa('${t.id}')">×</button>
         </div>
       </div>
     </div>`;
