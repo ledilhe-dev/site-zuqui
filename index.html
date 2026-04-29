@@ -2720,9 +2720,9 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.42fr) minmax(190px, 0.88fr) minmax(210px, 0.66fr) minmax(122px, 0.38fr);
+      grid-template-columns: minmax(0, 1.72fr) minmax(168px, 0.70fr) minmax(196px, 0.60fr) minmax(116px, 0.34fr);
       grid-template-areas: "dias func horario lancar";
-        gap: 6px 10px;
+        gap: 6px 8px;
         align-items: center;
         padding: 6px 6px;
     }
@@ -2755,8 +2755,9 @@
     }
     .tarefa-lancamento-bloco-funcionarios {
       grid-area: func;
-      padding-left: 10px;
-      align-self: center;
+      padding-left: 6px;
+      align-self: start;
+      padding-top: 2px;
     }
     .tarefa-lancamento-topo {
       display: flex;
@@ -2785,21 +2786,21 @@
     .tarefa-dias-checks,
     #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       min-width: 0;
-      overflow: visible;
+      overflow: hidden;
       margin-top: 3px;
     }
     .tarefa-dia-option,
     #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option {
-      min-height: 32px;
+      min-height: 30px;
       justify-content: flex-start;
       align-items: center;
-      gap: 4px;
-      padding: 5px 8px !important;
-      font-size: 13px;
+      gap: 3px;
+      padding: 4px 6px !important;
+      font-size: 12px;
       line-height: 1;
       white-space: nowrap;
       flex: 0 0 auto;
@@ -2808,7 +2809,7 @@
     #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option span {
       min-width: auto;
       text-align: left;
-      font-size: 13px;
+      font-size: 12px;
     }
     .tarefa-lancamento-horario {
       display: inline-flex;
