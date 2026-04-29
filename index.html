@@ -2511,6 +2511,20 @@
       margin-top: 2px;
       grid-column: 1 / -1;
     }
+    .tarefa-lancar-mobile-wrap {
+      display: none;
+    }
+    .btn-lancar-mobile-destaque {
+      display: none;
+      background: #0e3a8a;
+      color: #e6efff;
+      border: 1px solid #1e40af;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(14, 58, 138, 0.32);
+    }
+    .btn-lancar-mobile-destaque:hover {
+      background: #1e3a8a;
+    }
     @media (max-width: 900px) {
       .tarefas-consulta-item {
         grid-template-columns: 1fr;
@@ -2518,6 +2532,25 @@
       .tarefas-consulta-item-acoes {
         justify-content: flex-start;
         margin-left: 0;
+      }
+      #tarefas .tarefas-consulta-item-acoes .btn-lancar-topo {
+        display: none;
+      }
+      #tarefas .tarefa-lancar-mobile-wrap {
+        display: block;
+        position: sticky;
+        bottom: 0;
+        margin-top: 8px;
+        padding-top: 8px;
+        background: linear-gradient(180deg, rgba(7, 15, 12, 0), rgba(7, 15, 12, 0.95) 38%);
+        z-index: 2;
+      }
+      #tarefas .tarefa-lancar-mobile-wrap .btn-lancar-mobile-destaque {
+        display: block;
+        width: 100%;
+        min-height: 44px;
+        font-size: 16px;
+        border-radius: 12px;
       }
     }
     .btn-fav-star {
@@ -6088,6 +6121,9 @@ let tarefasConfigLancamentoAbertasIds = new Set();
 let mostrarSomenteFavoritasTarefas = false;
 let favoritosTarefasMinimizados = false;
 let itensCadastroTarefaExpandidos = false;
+let checklistsFuturosExpandido = false;
+const lancamentosManuaisEmAndamento = new Set();
+const STORAGE_CHECKLISTS_FUTUROS_OPEN = 'zuqui_checklists_futuros_open';
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
 const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
@@ -6100,6 +6136,7 @@ const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 15 * 60 * 1000;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
 // Horizonte de agendamento ao clicar em "Lançar tarefa" (ex.: 7, 14, 30).
 const HORIZONTE_AGENDAMENTO_MANUAL_DIAS = 7;
+const LANCAMENTO_MANUAL_APENAS_UM_POR_ACAO = true;
 let checklistLancamentosSuportaColunasAgendamento = null;
 
 function redefinirEstadoAvisoCentralTarefas() {
@@ -10936,6 +10973,15 @@ function obterAvisoDiscretoChecklist(lancamento = {}) {
 
 async function carregarChecklists() {
   const lista = document.getElementById('listaChecklists');
+  try {
+    const valorSalvo = localStorage.getItem(STORAGE_CHECKLISTS_FUTUROS_OPEN);
+    if (valorSalvo === '1') checklistsFuturosExpandido = true;
+    if (valorSalvo === '0') checklistsFuturosExpandido = false;
+  } catch (e) {}
+  const futurosElAnterior = lista?.querySelector('.checklists-futuros-box');
+  if (futurosElAnterior) {
+    checklistsFuturosExpandido = !!futurosElAnterior.open;
+  }
   lista.innerHTML = '<div class="empty">Carregando...</div>';
   await carregarOpcoesFiltroChecklists();
 
@@ -11055,13 +11101,24 @@ async function carregarChecklists() {
     : `<div class="empty">${usandoFiltros ? 'Nenhum checklist de hoje encontrado com os filtros informados.' : 'Nenhum checklist lancado para hoje.'}</div>`;
 
   const htmlFuturos = rowsFuturos.length
-    ? `<details class="checklists-futuros-box">
+    ? `<details class="checklists-futuros-box"${checklistsFuturosExpandido ? ' open' : ''}>
         <summary>Próxima semana (${rowsFuturos.length})</summary>
         <div class="checklists-futuros-conteudo">${renderizarCardsChecklist(rowsFuturos)}</div>
       </details>`
     : '';
 
   lista.innerHTML = htmlHoje + htmlFuturos;
+
+  const futurosElAtual = lista.querySelector('.checklists-futuros-box');
+  if (futurosElAtual) {
+    futurosElAtual.open = !!checklistsFuturosExpandido;
+    futurosElAtual.addEventListener('toggle', () => {
+      checklistsFuturosExpandido = !!futurosElAtual.open;
+      try {
+        localStorage.setItem(STORAGE_CHECKLISTS_FUTUROS_OPEN, checklistsFuturosExpandido ? '1' : '0');
+      } catch (e) {}
+    });
+  }
 }
 
 async function carregarOpcoesFiltroChecklists() {
@@ -16029,6 +16086,11 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
   const resumoSelecionado = escaparHtmlBasico(obterResumoSelecaoFuncionarioLancamento(tarefa.id));
 
   const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
+  const botaoLancarMobile = tarefa.ativo
+    ? `<div class="tarefa-lancar-mobile-wrap">
+         <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+       </div>`
+    : '';
   return `
     <div class="tarefa-funcionarios-inline tarefa-cadastrada-launch">
       <div class="tarefa-lancamento-grid">
@@ -16060,6 +16122,7 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
           </div>
         </div>
       </div>
+      ${botaoLancarMobile}
       <div class="msg" id="${gerarIdMsgLancamentoTarefa(tarefa.id)}"></div>
     </div>
   `;
@@ -16212,7 +16275,7 @@ function renderizarListaConsultaTarefas() {
         </div>
         <div class="tarefas-consulta-item-acoes">
           <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar opções' : 'Opções de lançamento'}</button>
-          ${item.ativo ? `<button class="btn btn-amber btn-sm" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          ${item.ativo ? `<button class="btn btn-amber btn-sm btn-lancar-topo" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
         </div>
         ${configuracaoAberta ? `<div class="tarefas-consulta-item-config">${renderizarSelecaoFuncionariosLancamento(item)}</div>` : ''}
@@ -17038,6 +17101,20 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     return;
   }
 
+  const tarefaIdChave = String(id || '').trim();
+  if (!tarefaIdChave) {
+    setMsg('msgTarefas', 'Tarefa inválida para lançamento.', 'err');
+    return;
+  }
+  if (lancamentosManuaisEmAndamento.has(tarefaIdChave)) {
+    setMsg('msgTarefas', 'Lançamento já em andamento para esta tarefa. Aguarde alguns segundos.', 'ok');
+    setMsgLancamentoTarefa(tarefaIdChave, 'Lançamento em andamento. Aguarde concluir para evitar duplicidade.', 'ok');
+    return;
+  }
+  lancamentosManuaisEmAndamento.add(tarefaIdChave);
+
+  try {
+
   setMsgLancamentoTarefa(id, '', '');
 
   const { data: tarefa, error: errTarefa } = await sb
@@ -17182,6 +17259,10 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
           : 'Lançamento manual registrado no painel.',
       status: 'pendente',
     });
+
+    if (LANCAMENTO_MANUAL_APENAS_UM_POR_ACAO) {
+      break;
+    }
   }
 
   if (pulouHojePorHorario || pulouHojePorTurno) {
@@ -17280,6 +17361,9 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   carregarChecklistsTarefas();
   carregarChecklists();
   carregarNotificacoes();
+  } finally {
+    lancamentosManuaisEmAndamento.delete(tarefaIdChave);
+  }
 }
 
 async function excluirTarefa(id) {
