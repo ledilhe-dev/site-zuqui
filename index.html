@@ -2525,6 +2525,9 @@
     .btn-lancar-mobile-destaque:hover {
       background: #1e3a8a;
     }
+    .btn-lancar-topo.is-hidden {
+      display: none;
+    }
     @media (max-width: 900px) {
       .tarefas-consulta-item {
         grid-template-columns: 1fr;
@@ -2551,6 +2554,9 @@
         min-height: 44px;
         font-size: 16px;
         border-radius: 12px;
+      }
+      #tarefas .tarefa-lancamento-bloco-lancar {
+        display: none;
       }
     }
     .btn-fav-star {
@@ -2696,8 +2702,8 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-        grid-template-columns: minmax(0, 1.55fr) minmax(190px, 0.8fr) minmax(104px, 0.38fr);
-      grid-template-areas: "dias func horario";
+      grid-template-columns: minmax(0, 1.45fr) minmax(210px, 0.95fr) minmax(160px, 0.52fr) minmax(130px, 0.45fr);
+      grid-template-areas: "dias func horario lancar";
         gap: 6px 10px;
         align-items: center;
         padding: 6px 6px;
@@ -2714,10 +2720,17 @@
       }
     .tarefa-lancamento-bloco-horario {
       grid-area: horario;
+      justify-self: start;
+      align-self: center;
+      width: 100%;
+      max-width: 160px;
+    }
+    .tarefa-lancamento-bloco-lancar {
+      grid-area: lancar;
       justify-self: end;
       align-self: center;
       width: 100%;
-      max-width: 108px;
+      max-width: 130px;
     }
     .tarefa-lancamento-bloco-funcionarios {
       grid-area: func;
@@ -2798,17 +2811,29 @@
       white-space: nowrap;
     }
     .tarefa-lancamento-horario input[type="time"] {
-      width: 90px;
-      min-width: 90px;
+      width: 132px;
+      min-width: 132px;
       height: 26px;
       padding: 3px 6px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      font-size: 11px;
+      font-size: 13px;
       font-family: inherit;
       outline: none;
+    }
+    .btn-lancar-desktop-destaque {
+      width: 100%;
+      min-height: 36px;
+      background: #0e3a8a;
+      color: #e6efff;
+      border: 1px solid #1e40af;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(14, 58, 138, 0.30);
+    }
+    .btn-lancar-desktop-destaque:hover {
+      background: #1e3a8a;
     }
     .tarefa-lancamento-horario input[type="time"]:focus {
       border-color: var(--green);
@@ -8377,6 +8402,13 @@ function lancamentoProgramadoHoje(item = {}) {
   return lancamentoProgramadoNaData(item, hoje());
 }
 
+function lancamentoAtendeFiltroDiaSemana(item = {}, dataRef = '') {
+  const dataProgramada = String(item?.data_programada || '').trim();
+  if (dataProgramada) return true;
+  const referencia = String(dataRef || obterDataProgramadaLancamento(item) || hoje()).trim() || hoje();
+  return tarefaDisponivelHoje(item?.dias_semana, referencia);
+}
+
 function lancamentoContaComoExistenteParaAgenda(item = {}) {
   const status = String(item?.status || '').trim().toLowerCase();
   if (['cancelado', 'cancelada', 'excluido', 'excluida'].includes(status)) return false;
@@ -10452,7 +10484,7 @@ async function carregarNotificacoes() {
     };
 
     const lancamentosPendentesHoje = (lancamentosPendentes || []).filter(item => {
-      if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
+      if (!lancamentoEhDoDiaOuSemData(item) || !lancamentoAtendeFiltroDiaSemana(item, hoje())) {
         return false;
       }
       if (lancamentoJaPossuiExecucaoAtiva(item)) return false;
@@ -10462,7 +10494,7 @@ async function carregarNotificacoes() {
     });
 
     const lancamentosAtrasados = (lancamentosPendentes || []).filter(item => {
-      if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
+      if (!lancamentoEhDoDiaOuSemData(item) || !lancamentoAtendeFiltroDiaSemana(item, hoje())) {
         return false;
       }
       if (lancamentoJaPossuiExecucaoAtiva(item)) return false;
@@ -10472,7 +10504,7 @@ async function carregarNotificacoes() {
     });
 
     const lancamentosAgendadosParaProximoCiclo = (lancamentosPendentes || []).filter(item => {
-      if (!lancamentoEhDoDiaOuSemData(item) || !tarefaDisponivelHoje(item.dias_semana)) {
+      if (!lancamentoEhDoDiaOuSemData(item) || !lancamentoAtendeFiltroDiaSemana(item, hoje())) {
         return false;
       }
       return lancamentoFoiCriadoAposHorarioNoMesmoDia(item);
@@ -11082,7 +11114,7 @@ async function carregarChecklists(opcoes = {}) {
   let rows = (data || []).filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
     if (dataReferencia < dataHoje) return false;
-    return tarefaDisponivelHoje(t.dias_semana, dataReferencia);
+    return lancamentoAtendeFiltroDiaSemana(t, dataReferencia);
   });
 
   const funcionarioRestritoChecklistId = obterFuncionarioRestritoLogadoId();
@@ -16162,6 +16194,11 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
   const resumoSelecionado = escaparHtmlBasico(obterResumoSelecaoFuncionarioLancamento(tarefa.id));
 
   const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
+  const botaoLancarDesktop = tarefa.ativo
+    ? `<div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-lancar">
+         <button class="btn btn-sm btn-lancar-desktop-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+       </div>`
+    : '';
   const botaoLancarMobile = tarefa.ativo
     ? `<div class="tarefa-lancar-mobile-wrap">
          <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
@@ -16197,6 +16234,7 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
             <button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalFuncionariosLancamentoTarefa('${tarefaIdEscapado}')">Selecionar funcionário(s)</button>
           </div>
         </div>
+        ${botaoLancarDesktop}
       </div>
       ${botaoLancarMobile}
       <div class="msg" id="${gerarIdMsgLancamentoTarefa(tarefa.id)}"></div>
@@ -16351,7 +16389,7 @@ function renderizarListaConsultaTarefas() {
         </div>
         <div class="tarefas-consulta-item-acoes">
           <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar opções' : 'Opções de lançamento'}</button>
-          ${item.ativo ? `<button class="btn btn-amber btn-sm btn-lancar-topo" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          ${item.ativo ? `<button class="btn btn-amber btn-sm btn-lancar-topo ${configuracaoAberta ? 'is-hidden' : ''}" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
         </div>
         ${configuracaoAberta ? `<div class="tarefas-consulta-item-config">${renderizarSelecaoFuncionariosLancamento(item)}</div>` : ''}
