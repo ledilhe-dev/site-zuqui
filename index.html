@@ -3168,13 +3168,15 @@
       width: 24px;
       height: 24px;
       border-radius: 999px;
-      border: 1px solid rgba(34, 197, 94, 0.42);
-      background: rgba(34, 197, 94, 0.10);
-      color: var(--green);
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--amber);
       font-size: 14px;
       font-weight: 900;
       cursor: pointer;
       user-select: none;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
     }
     .checklist-info-pin summary::-webkit-details-marker { display: none; }
     .checklist-info-pin-texto {
@@ -3183,7 +3185,7 @@
       max-width: min(440px, 100%);
       margin-top: 7px;
       padding: 8px 10px;
-      border: 1px solid rgba(34, 197, 94, 0.24);
+      border: 1px solid rgba(245, 158, 11, 0.30);
       border-radius: 8px;
       background: rgba(7, 16, 11, 0.96);
       color: var(--text-muted);
@@ -3191,6 +3193,10 @@
       line-height: 1.35;
     }
     .checklist-info-pin[open] .checklist-info-pin-texto {
+      display: block;
+    }
+    .checklist-info-pin:hover .checklist-info-pin-texto,
+    .checklist-info-pin:focus-within .checklist-info-pin-texto {
       display: block;
     }
     .checklists-futuros-box {
@@ -3228,7 +3234,7 @@
       padding: 4px 9px;
       flex-shrink: 0;
     }
-    .checklists-futuros-box[open] summary::after { content: 'Fechar'; }
+    .checklists-futuros-box[open] summary::after { display: none; }
     .checklists-futuros-conteudo { padding: 10px; }
     #perfis .perfil-form-row {
       display: flex;
