@@ -3095,7 +3095,12 @@
       margin-top: 0;
       line-height: 1.2;
     }
-    .checklist-item .item-nome { font-size: 13px; }
+    .checklist-item .item-nome {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
     .checklist-item .item-detalhe { font-size: 11px; line-height: 1.25; }
     .checklist-item {
       display: grid;
@@ -3151,6 +3156,43 @@
     }
     .checklist-meta { margin: 4px 0 0; padding-left: 18px; color: var(--text-muted); }
     .checklist-meta li { margin: 2px 0; }
+    .checklist-info-pin {
+      position: relative;
+      margin-top: 7px;
+    }
+    .checklist-info-pin summary {
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.42);
+      background: rgba(34, 197, 94, 0.10);
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      user-select: none;
+    }
+    .checklist-info-pin summary::-webkit-details-marker { display: none; }
+    .checklist-info-pin-texto {
+      display: none;
+      width: fit-content;
+      max-width: min(440px, 100%);
+      margin-top: 7px;
+      padding: 8px 10px;
+      border: 1px solid rgba(34, 197, 94, 0.24);
+      border-radius: 8px;
+      background: rgba(7, 16, 11, 0.96);
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .checklist-info-pin[open] .checklist-info-pin-texto {
+      display: block;
+    }
     .checklists-futuros-box {
       margin-top: 12px;
       border: 1px solid var(--border);
@@ -11645,8 +11687,11 @@ async function carregarChecklists(opcoes = {}) {
         <div class="item-nome">${t.nome}</div>
         ${aviso ? `<div class="checklist-card-aviso ${aviso.classe}">${aviso.texto}</div>` : ''}
         ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
+        <details class="checklist-info-pin">
+          <summary title="Informação sobre aceite por PIN" aria-label="Informação sobre aceite por PIN">i</summary>
+          <div class="checklist-info-pin-texto">Qualquer funcionário pode aceitar com o próprio PIN.</div>
+        </details>
         <ul class="checklist-meta">
-          <li>Qualquer funcionário pode aceitar com o próprio PIN.</li>
           <li>Data programada: ${formatarDataProgramadaBr(obterDataProgramadaLancamento(t))}</li>
           ${t.horario_limite ? `<li style="color:var(--amber)">Prazo máximo: ${t.horario_limite}</li>` : ''}
         </ul>
