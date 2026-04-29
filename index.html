@@ -3326,6 +3326,23 @@
       padding: 0 10px;
       font-size: 12px;
     }
+    .funcionario-email-verificacao-box {
+      display: none;
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid rgba(34,197,94,0.24);
+      border-radius: var(--radius-sm);
+      background: rgba(34,197,94,0.08);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .funcionario-email-verificacao-box.is-error {
+      border-color: rgba(239,68,68,0.3);
+      background: rgba(127,29,29,0.16);
+    }
+    .funcionario-email-verificacao-box .item-detalhe {
+      margin-top: 3px;
+    }
     #listaPerfis .item,
     #listaFuncionarios .item {
       padding: 7px 10px;
@@ -4977,6 +4994,13 @@
               <button class="btn btn-ghost" id="btnCancelarEdicaoFuncionario" onclick="cancelarEdicaoFuncionario()" style="display:none">Cancelar</button>
             </div>
           </div>
+          <div id="avisoVerificacaoFuncionarioEmail" class="funcionario-email-verificacao-box">
+            <strong id="avisoVerificacaoFuncionarioTitulo">Favor verificar sua caixa de entrada.</strong>
+            <div class="item-detalhe" id="avisoVerificacaoFuncionarioTexto">Enviamos o link de validação para o e-mail cadastrado.</div>
+            <div class="form-row" style="margin-top:10px">
+              <button class="btn btn-ghost btn-sm" type="button" onclick="reenviarVerificacaoFuncionarioCadastro()">Reenviar e-mail</button>
+            </div>
+          </div>
           <div class="msg" id="msgFuncionarios"></div>
         </div>
       </section>
@@ -6384,6 +6408,7 @@ let adminLojaCadastroEmEdicaoId = null;
 let funcionarioEmEdicaoId = null;
 let funcionarioNomeOriginalEdicao = '';
 let funcionarioEmailOriginalEdicao = '';
+let funcionarioEmailVerificacaoPendente = { id: '', nome: '', email: '' };
 let cadastroFuncionarioAberto = false;
 let perfilEmEdicaoId = null;
 let destinatarioEmailEmEdicaoId = null;
@@ -8038,7 +8063,7 @@ async function chamarFuncaoAutenticacao(payload) {
   return data || {};
 }
 
-async function enviarVerificacaoEmailFuncionario(email) {
+async function enviarVerificacaoEmailFuncionario(email, opcoes = {}) {
   const emailNormalizado = String(email || '').trim().toLowerCase();
   if (!emailNormalizado || !emailPareceValido(emailNormalizado)) {
     throw new Error('E-mail inválido para verificação.');
@@ -8047,6 +8072,7 @@ async function enviarVerificacaoEmailFuncionario(email) {
   return chamarFuncaoAutenticacao({
     action: 'send_verification',
     email: emailNormalizado,
+    funcionarioId: String(opcoes.funcionarioId || '').trim() || undefined,
     redirectUrl: obterUrlBaseAutenticacao(),
   });
 }
@@ -12081,6 +12107,67 @@ function toggleCadastroFuncionario(forcarAberto = null) {
   }
 }
 
+function atualizarAvisoVerificacaoFuncionarioEmail({
+  visivel = false,
+  email = '',
+  nome = '',
+  funcionarioId = '',
+  erro = false,
+  detalhe = '',
+} = {}) {
+  const box = document.getElementById('avisoVerificacaoFuncionarioEmail');
+  const titulo = document.getElementById('avisoVerificacaoFuncionarioTitulo');
+  const texto = document.getElementById('avisoVerificacaoFuncionarioTexto');
+  if (!box || !titulo || !texto) return;
+
+  const emailNormalizado = String(email || '').trim().toLowerCase();
+  if (visivel && emailNormalizado) {
+    funcionarioEmailVerificacaoPendente = {
+      id: String(funcionarioId || '').trim(),
+      nome: String(nome || '').trim(),
+      email: emailNormalizado,
+    };
+  }
+
+  box.style.display = visivel ? 'block' : 'none';
+  box.classList.toggle('is-error', !!erro);
+  titulo.textContent = erro
+    ? 'Não foi possível enviar o e-mail de validação.'
+    : 'Favor verificar sua caixa de entrada.';
+  texto.textContent = detalhe || (emailNormalizado
+    ? `Enviamos o link de validação para ${emailNormalizado}.`
+    : 'Enviamos o link de validação para o e-mail cadastrado.');
+}
+
+async function reenviarVerificacaoFuncionarioCadastro() {
+  const email = String(funcionarioEmailVerificacaoPendente.email || document.getElementById('emailFuncionario')?.value || '').trim().toLowerCase();
+  const funcionarioId = String(funcionarioEmailVerificacaoPendente.id || funcionarioEmEdicaoId || '').trim();
+  const nome = String(funcionarioEmailVerificacaoPendente.nome || document.getElementById('nomeFuncionario')?.value || '').trim();
+
+  if (!email || !emailPareceValido(email)) {
+    setMsg('msgFuncionarios', 'Informe um e-mail válido para reenviar a validação.', 'err');
+    atualizarAvisoVerificacaoFuncionarioEmail({ visivel: true, email, nome, funcionarioId, erro: true, detalhe: 'Não há e-mail válido selecionado para reenvio.' });
+    return;
+  }
+
+  try {
+    setMsg('msgFuncionarios', 'Reenviando e-mail de validação...', 'ok');
+    await enviarVerificacaoEmailFuncionario(email, { funcionarioId });
+    atualizarAvisoVerificacaoFuncionarioEmail({ visivel: true, email, nome, funcionarioId });
+    setMsg('msgFuncionarios', `E-mail de validação reenviado para ${email}.`, 'ok');
+  } catch (error) {
+    atualizarAvisoVerificacaoFuncionarioEmail({
+      visivel: true,
+      email,
+      nome,
+      funcionarioId,
+      erro: true,
+      detalhe: error.message || 'Verifique as configurações da API de e-mail e tente novamente.',
+    });
+    setMsg('msgFuncionarios', error.message || 'Não foi possível reenviar o e-mail de validação.', 'err');
+  }
+}
+
 async function resolverTenantParaCadastroFuncionario() {
   const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
   let empresaSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
@@ -12171,10 +12258,11 @@ async function criarFuncionario() {
           horario_trabalho_fim: horarioFim,
           email_verificado: false,
         };
+    const funcionarioIdAtual = funcionarioEmEdicaoId;
     const query = editandoAgora
-      ? sb.from('funcionarios').update(payload).eq('id', funcionarioEmEdicaoId)
-      : sb.from('funcionarios').insert([{ ...payload, ativo: true }]);
-    const { error } = await query;
+      ? sb.from('funcionarios').update(payload).eq('id', funcionarioIdAtual).select('id, nome, email').maybeSingle()
+      : sb.from('funcionarios').insert([{ ...payload, ativo: true }]).select('id, nome, email').single();
+    const { data: funcionarioSalvo, error } = await query;
     if (error) {
       if (isMissingWorkShiftColumnsError(error)) {
         setMsg('msgFuncionarios', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
@@ -12183,19 +12271,31 @@ async function criarFuncionario() {
       setMsg('msgFuncionarios', `${editandoAgora ? 'Erro ao salvar alterações' : 'Erro ao cadastrar'}: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
       return;
     }
+    const funcionarioIdParaEmail = funcionarioSalvo?.id || funcionarioIdAtual || '';
+    const funcionarioNomeParaEmail = funcionarioSalvo?.nome || nome;
     limparFormularioFuncionario();
     carregarFuncionarios();
     if (emailInformado && emailAlterado) {
       try {
-        await enviarVerificacaoEmailFuncionario(email);
+        await enviarVerificacaoEmailFuncionario(email, { funcionarioId: funcionarioIdParaEmail });
+        atualizarAvisoVerificacaoFuncionarioEmail({ visivel: true, email, nome: funcionarioNomeParaEmail, funcionarioId: funcionarioIdParaEmail });
         setMsg('msgFuncionarios', editandoAgora
-          ? 'Funcionário atualizado. Enviamos um e-mail de validação para confirmar o novo endereço.'
-          : 'Funcionário cadastrado. Enviamos um e-mail de validação para confirmar o endereço e liberar o acesso por e-mail.', 'ok');
+          ? 'Funcionário atualizado. Favor verificar sua caixa de entrada para confirmar o novo endereço.'
+          : 'Funcionário cadastrado. Favor verificar sua caixa de entrada para confirmar o endereço e liberar o acesso por e-mail.', 'ok');
       } catch (emailError) {
+        atualizarAvisoVerificacaoFuncionarioEmail({
+          visivel: true,
+          email,
+          nome: funcionarioNomeParaEmail,
+          funcionarioId: funcionarioIdParaEmail,
+          erro: true,
+          detalhe: `${emailError.message || 'Falha no envio.'} Confira o vínculo/configuração da API de e-mail e use Reenviar e-mail.`,
+        });
         setMsg('msgFuncionarios', `${editandoAgora ? 'Funcionário atualizado' : 'Funcionário cadastrado'}, mas não foi possível enviar o e-mail de validação: ${emailError.message}`, 'err');
       }
       return;
     }
+    atualizarAvisoVerificacaoFuncionarioEmail({ visivel: false });
     setMsg('msgFuncionarios', editandoAgora ? 'Funcionário atualizado.' : 'Funcionário cadastrado.', 'ok');
   } catch (error) {
     setMsg('msgFuncionarios', `Erro ao cadastrar: ${mensagemErroSupabase(error, 'erro inesperado no formulário')}`, 'err');
@@ -12219,6 +12319,7 @@ function limparFormularioFuncionario() {
 }
 
 async function editarFuncionario(id) {
+  atualizarAvisoVerificacaoFuncionarioEmail({ visivel: false });
   let funcionario = null;
   let error = null;
 
@@ -12261,6 +12362,7 @@ async function editarFuncionario(id) {
 
 function cancelarEdicaoFuncionario() {
   limparFormularioFuncionario();
+  atualizarAvisoVerificacaoFuncionarioEmail({ visivel: false });
   setMsg('msgFuncionarios', 'Edição cancelada.', 'ok');
 }
 
