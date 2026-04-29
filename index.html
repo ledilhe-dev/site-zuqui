@@ -3601,6 +3601,44 @@
       gap: 18px;
       align-items: center;
     }
+    .dashboard-kpi-pies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px;
+    }
+    .dashboard-kpi-card {
+      border: 1px solid var(--border);
+      background: rgba(8, 14, 11, 0.75);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dashboard-kpi-title {
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 700;
+      line-height: 1.3;
+      min-height: 30px;
+    }
+    .dashboard-kpi-pie {
+      width: 154px;
+      height: 154px;
+    }
+    .dashboard-kpi-pie .prod-pie-center {
+      width: 98px;
+      height: 98px;
+    }
+    .dashboard-kpi-pie .prod-pie-value {
+      font-size: 20px;
+    }
+    .dashboard-kpi-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.4;
+      min-height: 30px;
+    }
     .dashboard-period-tabs {
       display: inline-flex;
       gap: 8px;
@@ -4037,6 +4075,9 @@
       .dashboard-prod-grid { grid-template-columns: 1fr; }
       .prod-pie { width: 170px; height: 170px; }
       .prod-pie-center { width: 110px; height: 110px; }
+      .dashboard-kpi-pies-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+      .dashboard-kpi-pie { width: 142px; height: 142px; }
+      .dashboard-kpi-pie .prod-pie-center { width: 92px; height: 92px; }
     }
 
     @media (max-width: 600px) {
@@ -4616,73 +4657,63 @@
 
       <!--  DASHBOARD  -->
       <section id="dashboard" class="pagina ativa">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="s-label">Checklists</div>
-            <div class="s-value" id="stat-checklists">-</div>
-            <div class="s-desc">modelos ativos</div>
-          </div>
-          <div class="stat-card">
-            <div class="s-label">Funcionários</div>
-            <div class="s-value" id="stat-funcionarios">-</div>
-            <div class="s-desc">cadastrados</div>
-          </div>
-          <div class="stat-card">
-            <div class="s-label">Execuções hoje</div>
-            <div class="s-value" id="stat-execucoes-hoje">-</div>
-            <div class="s-desc">em andamento / finalizadas</div>
-          </div>
-          <div class="stat-card">
-            <div class="s-label">Tarefas</div>
-            <div class="s-value" id="stat-tarefas">-</div>
-            <div class="s-desc">cadastradas</div>
-          </div>
-        </div>
-
-        <div class="card" id="cardDadosLojaConfig">
-          <div class="card-title">Produtividade (Etapa 1 de 3)</div>
-          <div class="dashboard-period-tabs">
-            <button class="dashboard-period-btn active" data-prod-periodo="dia" onclick="trocarPeriodoProdutividade('dia', this)">Dia</button>
-            <button class="dashboard-period-btn" data-prod-periodo="semana" onclick="trocarPeriodoProdutividade('semana', this)">Semana</button>
-            <button class="dashboard-period-btn" data-prod-periodo="mes" onclick="trocarPeriodoProdutividade('mes', this)">Mes</button>
-          </div>
-          <div id="dash-produtividade-msg" class="msg" style="margin-top:0"></div>
-          <div class="dashboard-prod-grid">
-            <div class="prod-pie" id="prodPieDia">
-              <div class="prod-pie-center">
-                <div class="prod-pie-value" id="prodPieValorDia">0%</div>
-                <div class="prod-pie-label" id="prodPieLabelDia">Finalizadas</div>
+        <div class="card" id="cardDashboardPizzas">
+          <div class="card-title">Painel de indicadores</div>
+          <div class="dashboard-kpi-pies-grid">
+            <div class="dashboard-kpi-card">
+              <div class="dashboard-kpi-title">Financeiro: saldo positivo x negativo</div>
+              <div class="prod-pie dashboard-kpi-pie" id="dashPieFinanceiro">
+                <div class="prod-pie-center">
+                  <div class="prod-pie-value" id="dashPieFinanceiroValor">R$ 0</div>
+                  <div class="prod-pie-label" id="dashPieFinanceiroLabel">Saldo líquido</div>
+                </div>
               </div>
+              <div class="dashboard-kpi-meta" id="dashPieFinanceiroMeta">Sem dados.</div>
             </div>
-            <div>
-              <div class="prod-stats">
-                <div class="prod-stat">
-                  <div class="prod-stat-label" id="prodTotalLabel">Total no dia</div>
-                  <div class="prod-stat-value" id="prodDiaTotal">0</div>
-                </div>
-                <div class="prod-stat">
-                  <div class="prod-stat-label">Finalizadas</div>
-                  <div class="prod-stat-value" id="prodDiaFinalizadas">0</div>
-                </div>
-                <div class="prod-stat">
-                  <div class="prod-stat-label">Em andamento</div>
-                  <div class="prod-stat-value" id="prodDiaAbertas">0</div>
-                </div>
-                <div class="prod-stat">
-                  <div class="prod-stat-label">Pausadas</div>
-                  <div class="prod-stat-value" id="prodDiaPausadas">0</div>
+            <div class="dashboard-kpi-card">
+              <div class="dashboard-kpi-title">Tempo de trabalho dos funcionários</div>
+              <div class="prod-pie dashboard-kpi-pie" id="dashPieHoras">
+                <div class="prod-pie-center">
+                  <div class="prod-pie-value" id="dashPieHorasValor">00:00</div>
+                  <div class="prod-pie-label" id="dashPieHorasLabel">Horas hoje</div>
                 </div>
               </div>
-              <div class="prod-period-info" id="prodDiaInfo">Periodo: hoje.</div>
-              <div class="prod-func-list">
-                <div class="prod-func-title">Participacao por funcionario (finalizadas)</div>
-                <div id="prodFuncionariosLista"><div class="empty">Sem dados para o periodo.</div></div>
+              <div class="dashboard-kpi-meta" id="dashPieHorasMeta">Sem dados.</div>
+            </div>
+            <div class="dashboard-kpi-card">
+              <div class="dashboard-kpi-title">Tarefas concluídas por funcionário</div>
+              <div class="prod-pie dashboard-kpi-pie" id="dashPieConcluidasFuncionario">
+                <div class="prod-pie-center">
+                  <div class="prod-pie-value" id="dashPieConcluidasFuncionarioValor">0</div>
+                  <div class="prod-pie-label" id="dashPieConcluidasFuncionarioLabel">Concluídas hoje</div>
+                </div>
               </div>
+              <div class="dashboard-kpi-meta" id="dashPieConcluidasFuncionarioMeta">Sem dados.</div>
+            </div>
+            <div class="dashboard-kpi-card">
+              <div class="dashboard-kpi-title">Execuções no prazo x fora do prazo</div>
+              <div class="prod-pie dashboard-kpi-pie" id="dashPiePrazo">
+                <div class="prod-pie-center">
+                  <div class="prod-pie-value" id="dashPiePrazoValor">0%</div>
+                  <div class="prod-pie-label" id="dashPiePrazoLabel">Dentro do prazo</div>
+                </div>
+              </div>
+              <div class="dashboard-kpi-meta" id="dashPiePrazoMeta">Sem dados.</div>
+            </div>
+            <div class="dashboard-kpi-card">
+              <div class="dashboard-kpi-title">Status das execuções hoje</div>
+              <div class="prod-pie dashboard-kpi-pie" id="dashPieStatusExecucao">
+                <div class="prod-pie-center">
+                  <div class="prod-pie-value" id="dashPieStatusExecucaoValor">0</div>
+                  <div class="prod-pie-label" id="dashPieStatusExecucaoLabel">Execuções hoje</div>
+                </div>
+              </div>
+              <div class="dashboard-kpi-meta" id="dashPieStatusExecucaoMeta">Sem dados.</div>
             </div>
           </div>
         </div>
 
-        <div class="card" id="cardCadastroLojasConfig">
+        <div class="card" id="cardDashboardExecucoesRecentes">
           <div class="card-title">Execuções recentes</div>
           <div id="dash-execucoes">
             <div class="empty">Carregando⬦</div>
@@ -10840,55 +10871,244 @@ async function carregarNotificacoes() {
 // 
 async function carregarDashboard() {
   carregarNotificacoes();
-  // Stats
-  const [{ count: cCheck }, { count: cFunc }, { count: cExec }, cTar] = await Promise.all([
-    sb.from('checklists').select('*', { count: 'exact', head: true }).eq('ativo', true),
-    sb.from('funcionarios').select('*', { count: 'exact', head: true }).eq('ativo', true),
-    sb.from('checklist_execucoes').select('*', { count: 'exact', head: true }).eq('data_execucao', hoje()),
+
+  const montarPizzaDashboard = ({ pieId, valueId, labelId, metaId, valorTexto = '0', labelTexto = 'Sem dados', metaTexto = 'Sem dados.', partes = [] }) => {
+    const pie = document.getElementById(pieId);
+    const value = document.getElementById(valueId);
+    const label = document.getElementById(labelId);
+    const meta = document.getElementById(metaId);
+    if (!pie || !value || !label || !meta) return;
+
+    const total = partes.reduce((acc, item) => acc + Math.max(0, Number(item?.valor || 0)), 0);
+    if (!total) {
+      pie.style.background = 'conic-gradient(rgba(107,143,112,0.25) 0deg 360deg)';
+      value.textContent = valorTexto;
+      label.textContent = labelTexto;
+      meta.textContent = metaTexto;
+      return;
+    }
+
+    let acumulado = 0;
+    const fatias = partes
+      .filter(item => Number(item?.valor || 0) > 0)
+      .map((item, idx, arr) => {
+        const inicio = acumulado;
+        acumulado += (Number(item.valor || 0) / total) * 100;
+        const fim = idx === arr.length - 1 ? 100 : acumulado;
+        return `${item.cor || '#22c55e'} ${inicio}% ${fim}%`;
+      });
+
+    pie.style.background = `conic-gradient(${fatias.join(', ')})`;
+    value.textContent = valorTexto;
+    label.textContent = labelTexto;
+    meta.textContent = metaTexto;
+  };
+
+  const extrairMinutosLimite = (horario = '') => {
+    const texto = String(horario || '').trim();
+    if (!texto) return null;
+    const partes = texto.split(':');
+    if (partes.length < 2) return null;
+    const hora = Number(partes[0]);
+    const minuto = Number(partes[1]);
+    if (Number.isNaN(hora) || Number.isNaN(minuto)) return null;
+    return (hora * 60) + minuto;
+  };
+
+  const horarioExecucaoNoPrazo = (execucao = {}) => {
+    const limiteMin = extrairMinutosLimite(execucao?.tarefas?.horario_limite || '');
+    const fim = execucao?.finalizacao_confirmada_em || execucao?.finalizado_em || null;
+    if (!fim || limiteMin === null) return null;
+    const dataFim = new Date(fim);
+    if (Number.isNaN(dataFim.getTime())) return null;
+    const minutosFim = (dataFim.getHours() * 60) + dataFim.getMinutes();
+    return minutosFim <= limiteMin;
+  };
+
+  const [funcionariosRes, tarefasCount, execucoesHojeRes, execucoesRecentesRes] = await Promise.all([
+    sb.from('funcionarios').select('id, nome').eq('ativo', true),
     countTable('tarefas'),
+    sb
+      .from('checklist_execucoes')
+      .select('id, funcionario_id, status, data_execucao, finalizado_em, finalizacao_confirmada_em, inicio_confirmado_em, iniciado_em, tarefas(horario_limite)')
+      .eq('data_execucao', hoje()),
+    sb
+      .from('checklist_execucoes')
+      .select('id, status, funcionario_id, iniciado_em, inicio_confirmado_em, finalizado_em, finalizacao_confirmada_em, tarefas(nome, descricao, horario_limite), checklists(nome)')
+      .order('iniciado_em', { ascending: false })
+      .limit(12),
   ]);
-  document.getElementById('stat-checklists').textContent = cCheck ?? '-';
-  document.getElementById('stat-funcionarios').textContent = cFunc ?? '-';
-  document.getElementById('stat-execucoes-hoje').textContent = cExec ?? '-';
-  document.getElementById('stat-tarefas').textContent = cTar ?? '-';
-  await carregarProdutividadeDashboard();
-  await carregarHorasDashboard();
 
-  // Execuções recentes
-  const { data, error } = await sb
-    .from('checklist_execucoes')
-    .select('*, tarefas(nome, descricao, horario_limite), checklists(nome)')
-    .order('iniciado_em', { ascending: false })
-    .limit(10);
+  const funcionariosAtivos = funcionariosRes?.data || [];
+  const funcionariosMap = Object.fromEntries(funcionariosAtivos.map(item => [String(item.id), item.nome || 'Funcionário']));
+  const totalFuncionarios = funcionariosAtivos.length;
 
+  const execucoesHoje = execucoesHojeRes?.data || [];
+  const execFinalizadasHoje = execucoesHoje.filter(item => String(item.status || '').toLowerCase() === 'finalizado');
+  const execAbertasHoje = execucoesHoje.filter(item => String(item.status || '').toLowerCase() === 'aberto').length;
+  const execPausadasHoje = execucoesHoje.filter(item => String(item.status || '').toLowerCase() === 'pausado').length;
+
+  // 1) Financeiro: saldo positivo x negativo
+  let totalPositivo = 0;
+  let totalNegativoAbs = 0;
+  try {
+    const { data: contas, error: contasError } = await sb
+      .from('contas_financeiras')
+      .select('saldo_atual, ativo');
+    if (contasError && !isMissingFinanceAccountsTableError(contasError)) throw contasError;
+    (contas || []).forEach(item => {
+      if (item?.ativo === false) return;
+      const saldo = Number(item?.saldo_atual || 0);
+      if (saldo >= 0) totalPositivo += saldo;
+      else totalNegativoAbs += Math.abs(saldo);
+    });
+  } catch (error) {
+    totalPositivo = 0;
+    totalNegativoAbs = 0;
+  }
+  const saldoLiquido = totalPositivo - totalNegativoAbs;
+  montarPizzaDashboard({
+    pieId: 'dashPieFinanceiro',
+    valueId: 'dashPieFinanceiroValor',
+    labelId: 'dashPieFinanceiroLabel',
+    metaId: 'dashPieFinanceiroMeta',
+    valorTexto: formatarMoedaBRFinanceiro(saldoLiquido),
+    labelTexto: 'Saldo líquido',
+    metaTexto: `Positivo: ${formatarMoedaBRFinanceiro(totalPositivo)} · Negativo: ${formatarMoedaBRFinanceiro(totalNegativoAbs)}`,
+    partes: [
+      { valor: totalPositivo, cor: '#22c55e' },
+      { valor: totalNegativoAbs, cor: '#ef4444' },
+    ],
+  });
+
+  // 2) Tempo de trabalho dos funcionários
+  let totalMinutosHoje = 0;
+  let funcionariosComRegistro = 0;
+  try {
+    const { inicio, fim } = obterIntervaloDatasPorPeriodo('dia');
+    const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
+    const rowsPonto = await carregarRegistrosPontoComIntervalos({ inicio, fim, funcionarioId: funcionarioRestritoId || '' });
+    const resumoHoras = calcularResumoHorasPorFuncionario(rowsPonto);
+    totalMinutosHoje = resumoHoras.totalMinutos || 0;
+    funcionariosComRegistro = resumoHoras.colaboradores || 0;
+  } catch (error) {
+    totalMinutosHoje = 0;
+    funcionariosComRegistro = 0;
+  }
+  const funcionariosSemRegistro = Math.max(0, totalFuncionarios - funcionariosComRegistro);
+  montarPizzaDashboard({
+    pieId: 'dashPieHoras',
+    valueId: 'dashPieHorasValor',
+    labelId: 'dashPieHorasLabel',
+    metaId: 'dashPieHorasMeta',
+    valorTexto: formatarDuracaoMinutos(totalMinutosHoje),
+    labelTexto: 'Horas hoje',
+    metaTexto: `${funcionariosComRegistro} com registro · ${funcionariosSemRegistro} sem registro`,
+    partes: [
+      { valor: funcionariosComRegistro, cor: '#0ea5e9' },
+      { valor: funcionariosSemRegistro, cor: '#64748b' },
+    ],
+  });
+
+  // 3) Tarefas por funcionários concluídas
+  const concluidasPorFuncionario = execFinalizadasHoje.reduce((acc, item) => {
+    const chave = String(item?.funcionario_id || 'sem-funcionario');
+    acc[chave] = (acc[chave] || 0) + 1;
+    return acc;
+  }, {});
+  const rankingConcluidas = Object.entries(concluidasPorFuncionario)
+    .map(([funcionarioId, total]) => ({
+      nome: funcionariosMap[funcionarioId] || 'Sem funcionário',
+      total: Number(total || 0),
+    }))
+    .sort((a, b) => b.total - a.total);
+  const coresRanking = ['#22c55e', '#84cc16', '#0ea5e9', '#f59e0b', '#a78bfa'];
+  const partesConcluidas = rankingConcluidas.slice(0, 5).map((item, idx) => ({ valor: item.total, cor: coresRanking[idx % coresRanking.length] }));
+  montarPizzaDashboard({
+    pieId: 'dashPieConcluidasFuncionario',
+    valueId: 'dashPieConcluidasFuncionarioValor',
+    labelId: 'dashPieConcluidasFuncionarioLabel',
+    metaId: 'dashPieConcluidasFuncionarioMeta',
+    valorTexto: String(execFinalizadasHoje.length),
+    labelTexto: 'Concluídas hoje',
+    metaTexto: rankingConcluidas.length
+      ? `Top: ${rankingConcluidas[0].nome} (${rankingConcluidas[0].total})`
+      : 'Sem finalizações no período.',
+    partes: partesConcluidas,
+  });
+
+  // 4) Dentro do prazo x fora do prazo
+  let dentroPrazo = 0;
+  let foraPrazo = 0;
+  let semPrazo = 0;
+  execFinalizadasHoje.forEach(item => {
+    const noPrazo = horarioExecucaoNoPrazo(item);
+    if (noPrazo === true) dentroPrazo += 1;
+    else if (noPrazo === false) foraPrazo += 1;
+    else semPrazo += 1;
+  });
+  const totalComPrazo = dentroPrazo + foraPrazo;
+  const percentualDentro = totalComPrazo ? Math.round((dentroPrazo / totalComPrazo) * 100) : 0;
+  montarPizzaDashboard({
+    pieId: 'dashPiePrazo',
+    valueId: 'dashPiePrazoValor',
+    labelId: 'dashPiePrazoLabel',
+    metaId: 'dashPiePrazoMeta',
+    valorTexto: `${percentualDentro}%`,
+    labelTexto: 'Dentro do prazo',
+    metaTexto: `${dentroPrazo} dentro · ${foraPrazo} fora${semPrazo ? ` · ${semPrazo} sem horário` : ''}`,
+    partes: [
+      { valor: dentroPrazo, cor: '#22c55e' },
+      { valor: foraPrazo, cor: '#ef4444' },
+      { valor: semPrazo, cor: '#64748b' },
+    ],
+  });
+
+  // 5) Status das execuções (extra importante)
+  montarPizzaDashboard({
+    pieId: 'dashPieStatusExecucao',
+    valueId: 'dashPieStatusExecucaoValor',
+    labelId: 'dashPieStatusExecucaoLabel',
+    metaId: 'dashPieStatusExecucaoMeta',
+    valorTexto: String(execucoesHoje.length),
+    labelTexto: 'Execuções hoje',
+    metaTexto: `Finalizadas: ${execFinalizadasHoje.length} · Abertas: ${execAbertasHoje} · Pausadas: ${execPausadasHoje} · Tarefas cadastradas: ${tarefasCount ?? 0}`,
+    partes: [
+      { valor: execFinalizadasHoje.length, cor: '#22c55e' },
+      { valor: execAbertasHoje, cor: '#f59e0b' },
+      { valor: execPausadasHoje, cor: '#64748b' },
+    ],
+  });
+
+  // Execuções recentes com início/fim
   const el = document.getElementById('dash-execucoes');
-  if (error || !data?.length) {
+  const execucoesRecentes = execucoesRecentesRes?.data || [];
+  if (!el) return;
+
+  if (execucoesRecentesRes?.error || !execucoesRecentes.length) {
     el.innerHTML = '<div class="empty">Nenhuma execução encontrada</div>';
     return;
   }
 
-  const funcionariosIds = [...new Set((data || []).map(item => item.funcionario_id).filter(Boolean).map(item => String(item)))];
-  let funcionariosMap = {};
-  if (funcionariosIds.length) {
-    const { data: funcionariosData } = await sb
-      .from('funcionarios')
-      .select('id, nome')
-      .in('id', funcionariosIds);
-    funcionariosMap = Object.fromEntries((funcionariosData || []).map(item => [String(item.id), item.nome]));
-  }
-
   el.innerHTML = `<table class="recent-table">
     <thead><tr>
-      <th>Checklist</th><th>Funcionário</th><th>Data</th><th>Status</th><th></th>
+      <th>Tarefa</th><th>Funcionário</th><th>Início</th><th>Fim</th><th>Status</th><th></th>
     </tr></thead>
     <tbody>
-      ${data.map(e => `<tr>
-        <td>${e.tarefas?.nome ?? e.checklists?.nome ?? '-'}</td>
-        <td>${funcionariosMap[String(e.funcionario_id)] ?? '-'}</td>
-        <td>${fmtDate(e.iniciado_em)}</td>
-        <td>${tagStatus(e.status)}</td>
-        <td>${e.status === 'aberto' ? `<button class="btn btn-amber btn-sm" onclick="abrirModal('${e.id}')">Abrir</button>` : ''}</td>
-      </tr>`).join('')}
+      ${execucoesRecentes.map(e => {
+        const inicio = e.inicio_confirmado_em || e.iniciado_em || null;
+        const fim = e.finalizacao_confirmada_em || e.finalizado_em || null;
+        const nomeTarefa = e.tarefas?.nome ?? e.checklists?.nome ?? '-';
+        const nomeFuncionario = funcionariosMap[String(e.funcionario_id)] ?? '-';
+        return `<tr>
+          <td>${nomeTarefa}</td>
+          <td>${nomeFuncionario}</td>
+          <td>${fmtDate(inicio)}</td>
+          <td>${fmtDate(fim)}</td>
+          <td>${tagStatus(e.status)}</td>
+          <td>${e.status === 'aberto' || e.status === 'pausado' ? `<button class="btn btn-amber btn-sm" onclick="abrirModal('${e.id}')">Abrir</button>` : ''}</td>
+        </tr>`;
+      }).join('')}
     </tbody>
   </table>`;
 }
