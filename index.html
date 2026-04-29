@@ -2883,6 +2883,12 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    .tarefa-funcionario-acoes .btn {
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .tarefa-modal-funcionarios-busca {
       width: 100%;
     }
@@ -3856,23 +3862,24 @@
       #tarefas .tarefa-funcionario-acoes .btn {
         width: 100%;
         min-height: 34px;
-        font-size: 12px;
+        font-size: 11px;
+        padding: 5px 8px;
       }
       #tarefas .tarefa-lancamento-horario {
         box-sizing: border-box;
         min-width: 0;
         width: 100%;
-        min-height: 44px;
+        min-height: 40px;
         padding: 6px 8px;
         align-items: flex-start;
       }
       #tarefas .tarefa-lancamento-horario input[type="time"] {
         box-sizing: border-box;
-        width: 100%;
+        width: 96%;
         min-width: 0;
-        min-height: 30px;
+        min-height: 28px;
         padding: 4px 6px;
-        font-size: 12px;
+        font-size: 11px;
       }
       #tarefas .tarefa-funcionario-option {
         min-width: 0;
@@ -3891,6 +3898,17 @@
       #tarefas .tarefa-lancar-mobile-wrap .btn-lancar-mobile-destaque {
         min-height: 40px;
         font-size: 14px;
+      }
+      #tarefas .tarefas-consulta-item-config {
+        border: 0;
+        background: transparent;
+        padding: 6px 0 0;
+      }
+      #tarefas .tarefa-cadastrada-launch {
+        border: 0;
+        background: transparent;
+        border-radius: 0;
+        padding: 6px 0;
       }
       .funcionario-form-row {
         display: flex;
@@ -16190,9 +16208,6 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
       </label>
     `).join('');
 
-  const selecionado = obterFuncionarioLancamentoSelecionado(tarefa.id, '');
-  const resumoSelecionado = escaparHtmlBasico(obterResumoSelecaoFuncionarioLancamento(tarefa.id));
-
   const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
   const botaoLancarDesktop = tarefa.ativo
     ? `<div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-lancar">
@@ -16228,8 +16243,6 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
           </label>
         </div>
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-funcionarios">
-          <span class="tarefa-funcionarios-label">Funcionário</span>
-          <div class="item-detalhe tarefa-funcionario-resumo" id="resumoFuncionarioLancamento_${tarefaIdEscapado}"><strong>${resumoSelecionado}</strong></div>
           <div class="tarefa-funcionario-acoes">
             <button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalFuncionariosLancamentoTarefa('${tarefaIdEscapado}')">Selecionar funcionário(s)</button>
           </div>
