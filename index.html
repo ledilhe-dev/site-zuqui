@@ -2702,7 +2702,7 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.45fr) minmax(210px, 0.95fr) minmax(160px, 0.52fr) minmax(130px, 0.45fr);
+      grid-template-columns: minmax(0, 1.38fr) minmax(210px, 0.95fr) minmax(196px, 0.64fr) minmax(126px, 0.42fr);
       grid-template-areas: "dias func horario lancar";
         gap: 6px 10px;
         align-items: center;
@@ -2723,14 +2723,16 @@
       justify-self: start;
       align-self: center;
       width: 100%;
-      max-width: 160px;
+      max-width: 196px;
+      margin-left: -4px;
     }
     .tarefa-lancamento-bloco-lancar {
       grid-area: lancar;
-      justify-self: end;
+      justify-self: start;
       align-self: center;
       width: 100%;
-      max-width: 130px;
+      max-width: 126px;
+      margin-left: -4px;
     }
     .tarefa-lancamento-bloco-funcionarios {
       grid-area: func;
@@ -2811,8 +2813,8 @@
       white-space: nowrap;
     }
     .tarefa-lancamento-horario input[type="time"] {
-      width: 132px;
-      min-width: 132px;
+      width: 160px;
+      min-width: 160px;
       height: 26px;
       padding: 3px 6px;
       border-radius: 8px;
@@ -16402,7 +16404,6 @@ function renderizarListaConsultaTarefas() {
         </div>
         <div class="tarefas-consulta-item-acoes">
           <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar opções' : 'Opções de lançamento'}</button>
-          ${item.ativo ? `<button class="btn btn-amber btn-sm btn-lancar-topo ${configuracaoAberta ? 'is-hidden' : ''}" type="button" title="${item.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${id}', obterFuncionarioLancamentoSelecionado('${id}', ''), obterHorarioLancamentoSelecionado('${id}', '${item.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${id}', '${item.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
         </div>
         ${configuracaoAberta ? `<div class="tarefas-consulta-item-config">${renderizarSelecaoFuncionariosLancamento(item)}</div>` : ''}
