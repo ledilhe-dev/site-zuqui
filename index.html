@@ -3781,10 +3781,11 @@
         gap: 10px 14px;
       }
       #tarefas .tarefa-lancamento-grid {
-        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
         grid-template-areas:
           "dias func"
-          "horario func";
+          "dias func"
+          "dias horario";
         gap: 8px;
         align-items: start;
       }
@@ -3794,6 +3795,12 @@
       #tarefas .tarefa-lancamento-bloco-funcionarios {
         padding-left: 6px;
         align-self: start;
+      }
+      #tarefas .tarefa-lancamento-bloco-horario {
+        justify-self: stretch;
+        align-self: start;
+        width: 100%;
+        max-width: none;
       }
       .tarefa-dias-checks,
       #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid,
@@ -3811,11 +3818,15 @@
       #tarefas .tarefa-lancamento-horario {
         min-width: 0;
         width: 100%;
+        min-height: 50px;
+        padding: 8px 10px;
         align-items: flex-start;
       }
       #tarefas .tarefa-lancamento-horario input[type="time"] {
-        width: 92px;
-        min-width: 92px;
+        width: 100%;
+        min-width: 0;
+        min-height: 34px;
+        font-size: 13px;
       }
       #tarefas .tarefa-funcionario-acoes .btn {
         width: 100%;
