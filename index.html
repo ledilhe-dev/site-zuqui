@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.0">
+  <meta name="app-version" content="3.1.6">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4970,7 +4970,7 @@
               </div>
               <div class="campo-com-label">
                 <label class="campo-label" for="emailFuncionario">E-mail</label>
-                <input id="emailFuncionario" type="email" placeholder="E-mail (opcional)">
+                <input id="emailFuncionario" type="email" placeholder="E-mail (opcional)" oninput="atualizarAvisoEmailFuncionarioDigitado()">
               </div>
               <div class="campo-com-label">
                 <label class="campo-label" for="pinFuncionario" id="labelPinFuncionario">Senha</label>
@@ -6206,7 +6206,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.5';
+const APP_VERSION = '3.1.6';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -12045,6 +12045,7 @@ async function carregarFuncionarios() {
         <div class="item-actions">
           ${f.ativo ? '' : '<span class="tag tag-gray">Inativo</span>'}
           ${!f.email ? '<span class="tag tag-gray">Sem e-mail</span>' : f.email_verificado === true ? '<span class="tag tag-green">E-mail ok</span>' : '<span class="tag tag-amber">E-mail pendente</span>'}
+          ${f.email && f.email_verificado !== true ? `<button class="btn btn-ghost btn-sm" onclick="reenviarVerificacaoFuncionarioLista('${f.id}', '${String(f.email || '').replace(/'/g, "\\'")}', '${String(f.nome || '').replace(/'/g, "\\'")}')">Reenviar e-mail</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="editarFuncionario('${f.id}')">Editar</button>
           <button class="btn btn-amber btn-sm" onclick="toggleFuncionario('${f.id}', ${f.ativo})">${f.ativo ? 'Desativar' : 'Ativar'}</button>
           <button class="btn btn-red" onclick="excluirFuncionario('${f.id}')">Excluir</button>
@@ -12139,10 +12140,37 @@ function atualizarAvisoVerificacaoFuncionarioEmail({
     : 'Enviamos o link de validação para o e-mail cadastrado.');
 }
 
+function atualizarAvisoEmailFuncionarioDigitado() {
+  const email = String(document.getElementById('emailFuncionario')?.value || '').trim().toLowerCase();
+  if (!email) {
+    if (!funcionarioEmailVerificacaoPendente.email) {
+      atualizarAvisoVerificacaoFuncionarioEmail({ visivel: false });
+    }
+    return;
+  }
+  if (!emailPareceValido(email)) return;
+
+  atualizarAvisoVerificacaoFuncionarioEmail({
+    visivel: true,
+    email,
+    nome: String(document.getElementById('nomeFuncionario')?.value || '').trim(),
+    funcionarioId: funcionarioEmEdicaoId || '',
+    detalhe: funcionarioEmEdicaoId
+      ? 'Ao salvar, enviaremos um link de validação para este e-mail. Depois confira a caixa de entrada.'
+      : 'Ao cadastrar, enviaremos um link de validação para este e-mail. Depois confira a caixa de entrada.',
+  });
+}
+
 async function reenviarVerificacaoFuncionarioCadastro() {
   const email = String(funcionarioEmailVerificacaoPendente.email || document.getElementById('emailFuncionario')?.value || '').trim().toLowerCase();
   const funcionarioId = String(funcionarioEmailVerificacaoPendente.id || funcionarioEmEdicaoId || '').trim();
   const nome = String(funcionarioEmailVerificacaoPendente.nome || document.getElementById('nomeFuncionario')?.value || '').trim();
+
+  if (!funcionarioId) {
+    setMsg('msgFuncionarios', 'Salve o cadastro do funcionário antes de reenviar o e-mail de validação.', 'err');
+    atualizarAvisoVerificacaoFuncionarioEmail({ visivel: true, email, nome, funcionarioId, erro: true, detalhe: 'Salve o funcionário primeiro. Depois o botão de reenviar ficará vinculado ao cadastro salvo.' });
+    return;
+  }
 
   if (!email || !emailPareceValido(email)) {
     setMsg('msgFuncionarios', 'Informe um e-mail válido para reenviar a validação.', 'err');
@@ -12166,6 +12194,21 @@ async function reenviarVerificacaoFuncionarioCadastro() {
     });
     setMsg('msgFuncionarios', error.message || 'Não foi possível reenviar o e-mail de validação.', 'err');
   }
+}
+
+async function reenviarVerificacaoFuncionarioLista(funcionarioId, email, nome = '') {
+  funcionarioEmailVerificacaoPendente = {
+    id: String(funcionarioId || '').trim(),
+    email: String(email || '').trim().toLowerCase(),
+    nome: String(nome || '').trim(),
+  };
+  atualizarAvisoVerificacaoFuncionarioEmail({
+    visivel: true,
+    email: funcionarioEmailVerificacaoPendente.email,
+    nome: funcionarioEmailVerificacaoPendente.nome,
+    funcionarioId: funcionarioEmailVerificacaoPendente.id,
+  });
+  await reenviarVerificacaoFuncionarioCadastro();
 }
 
 async function resolverTenantParaCadastroFuncionario() {
