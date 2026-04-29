@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -3633,6 +3633,14 @@
       line-height: 1.4;
       min-height: 30px;
     }
+    .dashboard-kpi-card .dashboard-period-tabs {
+      margin-bottom: 0;
+      gap: 6px;
+    }
+    .dashboard-kpi-card .dashboard-period-btn {
+      padding: 5px 8px;
+      font-size: 11px;
+    }
     .dashboard-period-tabs {
       display: inline-flex;
       gap: 8px;
@@ -4701,6 +4709,12 @@
           <div class="dashboard-kpi-pies-grid">
             <div class="dashboard-kpi-card">
               <div class="dashboard-kpi-title">Financeiro: contas a pagar x saldo em conta</div>
+              <div class="dashboard-period-tabs" aria-label="Período das contas a pagar">
+                <button class="dashboard-period-btn active" type="button" data-financeiro-dias="0" onclick="trocarPeriodoFinanceiroDashboard(0, this)">Hoje</button>
+                <button class="dashboard-period-btn" type="button" data-financeiro-dias="7" onclick="trocarPeriodoFinanceiroDashboard(7, this)">7 dias</button>
+                <button class="dashboard-period-btn" type="button" data-financeiro-dias="15" onclick="trocarPeriodoFinanceiroDashboard(15, this)">15 dias</button>
+                <button class="dashboard-period-btn" type="button" data-financeiro-dias="30" onclick="trocarPeriodoFinanceiroDashboard(30, this)">30 dias</button>
+              </div>
               <div class="prod-pie dashboard-kpi-pie" id="dashPieFinanceiro">
                 <div class="prod-pie-center">
                   <div class="prod-pie-value" id="dashPieFinanceiroValor">R$ 0</div>
@@ -6279,6 +6293,7 @@ let formaPagamentoFinanceiroEmEdicaoId = null;
 let contaAPagarFinanceiroEmEdicaoId = null;
 let contasAPagarListaVisivel = false;
 let contaFinanceiraEmEdicaoId = null;
+let dashboardFinanceiroDias = 0;
 let recebivelFinanceiroEmEdicaoId = null;
 let ajusteSaldoCofreTipo = 'entrada';
 let fornecedoresFinanceiroCache = [];
@@ -10988,40 +11003,62 @@ async function carregarDashboard() {
   const execPausadasHoje = execucoesHoje.filter(item => String(item.status || '').toLowerCase() === 'pausado').length;
 
   // 1) Financeiro: contas a pagar x saldo em conta
-  let totalPositivo = 0;
-  let totalNegativoAbs = 0;
+  let saldoLiquido = 0;
   let totalContasAPagar = 0;
+  const hojeFinanceiro = hoje();
+  const diasFinanceiro = Math.max(0, Number(dashboardFinanceiroDias || 0));
+  const fimFinanceiro = somarDiasDataLocal(hojeFinanceiro, diasFinanceiro);
   try {
     const { data: contas, error: contasError } = await sb
       .from('contas_financeiras')
-      .select('saldo_atual, ativo');
+      .select('id, saldo_atual, ativo');
     if (contasError && !isMissingFinanceAccountsTableError(contasError)) throw contasError;
+
+    const saldosPorConta = new Map();
     (contas || []).forEach(item => {
       if (item?.ativo === false) return;
-      const saldo = Number(item?.saldo_atual || 0);
-      if (saldo >= 0) totalPositivo += saldo;
-      else totalNegativoAbs += Math.abs(saldo);
+      saldosPorConta.set(String(item.id), Number(item?.saldo_atual || 0));
     });
+
+    const idsContasAtivas = Array.from(saldosPorConta.keys());
+    if (idsContasAtivas.length) {
+      const { data: movimentacoes, error: movimentacoesError } = await sb
+        .from('contas_financeiras_movimentacoes')
+        .select('conta_financeira_id, saldo_apos, created_at')
+        .in('conta_financeira_id', idsContasAtivas)
+        .order('created_at', { ascending: false });
+      if (movimentacoesError && !isMissingContasFinanceirasMovimentacoesTableError(movimentacoesError)) throw movimentacoesError;
+      const saldosAtualizadosPorMovimentacao = new Set();
+      (movimentacoes || []).forEach(item => {
+        const contaId = String(item?.conta_financeira_id || '');
+        if (!contaId || !saldosPorConta.has(contaId) || saldosAtualizadosPorMovimentacao.has(contaId) || item?.saldo_apos == null) return;
+        saldosPorConta.set(contaId, Number(item.saldo_apos || 0));
+        saldosAtualizadosPorMovimentacao.add(contaId);
+      });
+    }
+
+    saldoLiquido = Array.from(saldosPorConta.values()).reduce((acc, saldo) => acc + (Number(saldo || 0) || 0), 0);
 
     const { data: contasAPagar, error: contasAPagarError } = await sb
       .from('contasapagar')
-      .select('valor_compra, valor_pago, pago_em, excluido_em');
+      .select('valor_compra, valor_pago, data_vencimento, pago_confirmado_em, excluido_em');
     if (contasAPagarError && !isMissingContasAPagarTableError(contasAPagarError)) throw contasAPagarError;
     (contasAPagar || []).forEach(item => {
       if (item?.excluido_em) return;
-      if (item?.pago_em) return;
+      if (item?.pago_confirmado_em) return;
+      const vencimento = String(item?.data_vencimento || '').slice(0, 10);
+      if (vencimento && (vencimento < hojeFinanceiro || vencimento > fimFinanceiro)) return;
       const valorCompra = Number(item?.valor_compra || 0);
       const valorPago = Number(item?.valor_pago || 0);
       const saldoPendente = Math.max(0, valorCompra - valorPago);
       totalContasAPagar += saldoPendente;
     });
   } catch (error) {
-    totalPositivo = 0;
-    totalNegativoAbs = 0;
+    saldoLiquido = 0;
     totalContasAPagar = 0;
   }
-  const saldoLiquido = totalPositivo - totalNegativoAbs;
   const saldoDisponivel = Math.max(0, saldoLiquido);
+  const periodoFinanceiroTexto = diasFinanceiro === 0 ? 'hoje' : `próximos ${diasFinanceiro} dias`;
   montarPizzaDashboard({
     pieId: 'dashPieFinanceiro',
     valueId: 'dashPieFinanceiroValor',
@@ -11029,7 +11066,7 @@ async function carregarDashboard() {
     metaId: 'dashPieFinanceiroMeta',
     valorTexto: formatarMoedaBRFinanceiro(totalContasAPagar),
     labelTexto: 'Contas a pagar',
-    metaTexto: `Saldo em conta: ${formatarMoedaBRFinanceiro(saldoLiquido)} · Contas a pagar: ${formatarMoedaBRFinanceiro(totalContasAPagar)}`,
+    metaTexto: `Período: ${periodoFinanceiroTexto} · Saldo em conta: ${formatarMoedaBRFinanceiro(saldoLiquido)} · Contas a pagar: ${formatarMoedaBRFinanceiro(totalContasAPagar)}`,
     partes: [
       { valor: totalContasAPagar, cor: '#ef4444' },
       { valor: saldoDisponivel, cor: '#22c55e' },
@@ -11175,6 +11212,15 @@ function trocarPeriodoProdutividade(periodo, botao = null) {
   });
   if (botao) botao.classList.add('active');
   carregarProdutividadeDashboard();
+}
+
+function trocarPeriodoFinanceiroDashboard(dias = 0, botao = null) {
+  dashboardFinanceiroDias = Math.max(0, Number(dias || 0));
+  document.querySelectorAll('.dashboard-period-btn[data-financeiro-dias]').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.financeiroDias || 0) === dashboardFinanceiroDias);
+  });
+  if (botao) botao.classList.add('active');
+  carregarDashboard();
 }
 
 const PRODUTIVIDADE_PIE_CORES = [
