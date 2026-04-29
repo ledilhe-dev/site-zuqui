@@ -2480,6 +2480,13 @@
       gap: 8px;
       min-width: 0;
     }
+    .tarefas-consulta-item-main-texto {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
     .tarefas-consulta-item input[type="checkbox"] {
       width: 16px;
       height: 16px;
@@ -2491,6 +2498,13 @@
       font-size: 12px;
       font-weight: 600;
       color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tarefas-consulta-item-descricao {
+      font-size: 11px;
+      color: var(--text-dim);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2702,7 +2716,7 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.38fr) minmax(210px, 0.95fr) minmax(196px, 0.64fr) minmax(126px, 0.42fr);
+      grid-template-columns: minmax(0, 1.28fr) minmax(210px, 0.95fr) minmax(226px, 0.74fr) minmax(126px, 0.40fr);
       grid-template-areas: "dias func horario lancar";
         gap: 6px 10px;
         align-items: center;
@@ -2723,7 +2737,7 @@
       justify-self: start;
       align-self: center;
       width: 100%;
-      max-width: 196px;
+      max-width: 226px;
       margin-left: -4px;
     }
     .tarefa-lancamento-bloco-lancar {
@@ -2800,9 +2814,10 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 4px 8px;
-      min-width: 100px;
+      padding: 6px 10px;
+      min-width: 180px;
       width: 100%;
+      min-height: 50px;
     }
     .tarefa-lancamento-horario span {
       font-size: 10px;
@@ -2813,15 +2828,15 @@
       white-space: nowrap;
     }
     .tarefa-lancamento-horario input[type="time"] {
-      width: 160px;
-      min-width: 160px;
-      height: 26px;
-      padding: 3px 6px;
+      width: 186px;
+      min-width: 186px;
+      height: 34px;
+      padding: 5px 8px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      font-size: 13px;
+      font-size: 15px;
       font-family: inherit;
       outline: none;
     }
@@ -3900,6 +3915,9 @@
       #tarefas .tarefa-lancar-mobile-wrap .btn-lancar-mobile-destaque {
         min-height: 40px;
         font-size: 14px;
+      }
+      #tarefas .tarefas-consulta-item-descricao {
+        font-size: 10px;
       }
       #tarefas .tarefas-consulta-item-config {
         border: 0;
@@ -16393,17 +16411,22 @@ function renderizarListaConsultaTarefas() {
     const marcada = tarefasConsultaMarcadasIds.has(id);
     const favorita = tarefasFavoritasIds.has(id);
     const configuracaoAberta = tarefasConfigLancamentoAbertasIds.has(id);
+    const descricaoCurta = String(item.descricao || '').trim();
     return `
       <div class="tarefas-consulta-item">
         <div class="tarefas-consulta-item-main">
           <input type="checkbox" ${marcada ? 'checked' : ''} onchange="marcarConsultaTarefa('${id}', this.checked)">
-          <div class="tarefas-consulta-item-nome" title="${escaparHtmlBasico(item.nome || '')}">
-            ${escaparHtmlBasico(item.nome || 'Tarefa sem nome')}
+          <div class="tarefas-consulta-item-main-texto">
+            <div class="tarefas-consulta-item-nome" title="${escaparHtmlBasico(item.nome || '')}">
+              ${escaparHtmlBasico(item.nome || 'Tarefa sem nome')}
+            </div>
+            ${descricaoCurta ? `<div class="tarefas-consulta-item-descricao" title="${escaparHtmlBasico(descricaoCurta)}">${escaparHtmlBasico(descricaoCurta)}</div>` : ''}
           </div>
           <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${id}')">${favorita ? '★' : '☆'}</button>
         </div>
         <div class="tarefas-consulta-item-acoes">
           <button class="btn btn-ghost btn-sm" type="button" onclick="toggleConfigLancamentoTarefa('${id}')">${configuracaoAberta ? 'Ocultar opções' : 'Opções de lançamento'}</button>
+          <button class="btn btn-ghost btn-sm" type="button" title="Editar tarefa" onclick="editarTarefa('${id}')">Editar</button>
           <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefa('${id}')">Excluir</button>
         </div>
         ${configuracaoAberta ? `<div class="tarefas-consulta-item-config">${renderizarSelecaoFuncionariosLancamento(item)}</div>` : ''}
