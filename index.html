@@ -2720,7 +2720,7 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.28fr) minmax(210px, 0.95fr) minmax(226px, 0.74fr) minmax(126px, 0.40fr);
+      grid-template-columns: minmax(0, 1.42fr) minmax(190px, 0.88fr) minmax(210px, 0.66fr) minmax(122px, 0.38fr);
       grid-template-areas: "dias func horario lancar";
         gap: 6px 10px;
         align-items: center;
@@ -2735,13 +2735,14 @@
       .tarefa-lancamento-bloco-dias {
         grid-area: dias;
         min-width: 0;
+        padding-top: 3px;
       }
     .tarefa-lancamento-bloco-horario {
       grid-area: horario;
       justify-self: start;
       align-self: center;
       width: 100%;
-      max-width: 226px;
+      max-width: 210px;
       margin-left: -4px;
     }
     .tarefa-lancamento-bloco-lancar {
@@ -2750,7 +2751,7 @@
       align-self: center;
       width: 100%;
       max-width: 126px;
-      margin-left: -4px;
+      margin-left: -2px;
     }
     .tarefa-lancamento-bloco-funcionarios {
       grid-area: func;
@@ -2784,20 +2785,21 @@
     .tarefa-dias-checks,
     #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       min-width: 0;
-      overflow: hidden;
+      overflow: visible;
+      margin-top: 3px;
     }
     .tarefa-dia-option,
     #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option {
-      min-height: 30px;
+      min-height: 32px;
       justify-content: flex-start;
       align-items: center;
       gap: 4px;
-      padding: 4px 8px !important;
-      font-size: 12px;
+      padding: 5px 8px !important;
+      font-size: 13px;
       line-height: 1;
       white-space: nowrap;
       flex: 0 0 auto;
@@ -2806,7 +2808,7 @@
     #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option span {
       min-width: auto;
       text-align: left;
-      font-size: 12px;
+      font-size: 13px;
     }
     .tarefa-lancamento-horario {
       display: inline-flex;
@@ -2819,9 +2821,9 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 6px 10px;
-      min-width: 180px;
+      min-width: 168px;
       width: 100%;
-      min-height: 50px;
+      min-height: 48px;
     }
     .tarefa-lancamento-horario span {
       font-size: 10px;
@@ -2832,15 +2834,15 @@
       white-space: nowrap;
     }
     .tarefa-lancamento-horario input[type="time"] {
-      width: 186px;
-      min-width: 186px;
-      height: 34px;
+      width: 172px;
+      min-width: 172px;
+      height: 32px;
       padding: 5px 8px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      font-size: 15px;
+      font-size: 14px;
       font-family: inherit;
       outline: none;
     }
