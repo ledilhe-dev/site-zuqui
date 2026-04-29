@@ -2543,6 +2543,40 @@
     .btn-lancar-mobile-destaque:hover {
       background: #1e3a8a;
     }
+    @media (max-width: 1280px) and (min-width: 901px) {
+      #tarefas .tarefa-lancamento-grid {
+        grid-template-columns: minmax(0, 1.84fr) minmax(152px, 0.64fr) minmax(184px, 0.54fr) minmax(110px, 0.30fr);
+        gap: 6px;
+      }
+      #tarefas .tarefa-dias-checks,
+      #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid {
+        gap: 3px;
+        overflow: hidden;
+      }
+      #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option {
+        min-height: 28px;
+        padding: 3px 5px !important;
+        font-size: 11px;
+      }
+      #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option span {
+        font-size: 11px;
+      }
+      #tarefas .tarefa-lancamento-bloco-horario {
+        max-width: 186px;
+        margin-left: -2px;
+      }
+      #tarefas .tarefa-lancamento-horario {
+        min-width: 156px;
+        min-height: 44px;
+        padding: 5px 8px;
+      }
+      #tarefas .tarefa-lancamento-horario input[type="time"] {
+        width: 160px;
+        min-width: 160px;
+        height: 30px;
+        font-size: 13px;
+      }
+    }
     .btn-lancar-topo.is-hidden {
       display: none;
     }
@@ -17539,6 +17573,23 @@ async function excluirTarefa(id) {
     setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
     return;
   }
+  const confirmacaoSenha = await abrirModalPin({
+    titulo: 'Confirmação de exclusão',
+    subtitulo: 'Digite a senha master para excluir a tarefa cadastrada.',
+    textoAcao: 'Validar senha',
+    exibirUsuario: false,
+    placeholderInput: 'Digite a senha master'
+  });
+  if (!confirmacaoSenha?.pin) {
+    setMsg('msgTarefas', 'Exclusão cancelada.', 'err');
+    return;
+  }
+
+  if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
+    setMsg('msgTarefas', 'Senha master inválida. Exclusão cancelada.', 'err');
+    return;
+  }
+
   if (!confirm('Excluir esta tarefa?')) return;
 
   try {
