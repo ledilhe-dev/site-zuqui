@@ -3784,16 +3784,15 @@
         grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
         grid-template-areas:
           "dias func"
-          "dias func"
           "dias horario";
-        gap: 8px;
+        gap: 6px;
         align-items: start;
       }
       #tarefas .tarefa-lancamento-bloco {
-        gap: 6px;
+        gap: 4px;
       }
       #tarefas .tarefa-lancamento-bloco-funcionarios {
-        padding-left: 6px;
+        padding-left: 4px;
         align-self: start;
       }
       #tarefas .tarefa-lancamento-bloco-horario {
@@ -3802,34 +3801,53 @@
         width: 100%;
         max-width: none;
       }
+      #tarefas .tarefa-funcionarios-label {
+        font-size: 9px;
+        letter-spacing: 0.3px;
+      }
       .tarefa-dias-checks,
       #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid,
       #tarefas .tarefa-lancamento-bloco-funcionarios .tarefa-funcionarios-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
+        gap: 6px;
         align-items: start;
       }
       .tarefa-dia-option,
       #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option {
-        min-height: 34px;
+        min-height: 30px;
+        font-size: 11px;
+        padding: 3px 6px !important;
         white-space: normal;
       }
-      #tarefas .tarefa-lancamento-horario {
-        min-width: 0;
-        width: 100%;
-        min-height: 50px;
-        padding: 8px 10px;
-        align-items: flex-start;
+      #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionario-option input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
       }
-      #tarefas .tarefa-lancamento-horario input[type="time"] {
-        width: 100%;
-        min-width: 0;
-        min-height: 34px;
-        font-size: 13px;
+      #tarefas .tarefa-funcionario-resumo {
+        font-size: 11px;
+        margin-bottom: 3px;
       }
       #tarefas .tarefa-funcionario-acoes .btn {
         width: 100%;
+        min-height: 34px;
+        font-size: 12px;
+      }
+      #tarefas .tarefa-lancamento-horario {
+        box-sizing: border-box;
+        min-width: 0;
+        width: 100%;
+        min-height: 44px;
+        padding: 6px 8px;
+        align-items: flex-start;
+      }
+      #tarefas .tarefa-lancamento-horario input[type="time"] {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        min-height: 30px;
+        padding: 4px 6px;
+        font-size: 12px;
       }
       #tarefas .tarefa-funcionario-option {
         min-width: 0;
@@ -3840,6 +3858,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      #tarefas .tarefa-lancar-mobile-wrap {
+        margin-top: 6px;
+        padding-top: 6px;
+      }
+      #tarefas .tarefa-lancar-mobile-wrap .btn-lancar-mobile-destaque {
+        min-height: 40px;
+        font-size: 14px;
       }
       .funcionario-form-row {
         display: flex;
