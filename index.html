@@ -6122,6 +6122,9 @@ let mostrarSomenteFavoritasTarefas = false;
 let favoritosTarefasMinimizados = false;
 let itensCadastroTarefaExpandidos = false;
 let checklistsFuturosExpandido = false;
+let assinaturaRenderChecklists = '';
+let tokenRequisicaoChecklists = 0;
+let timeoutAtualizacaoChecklistsRealtime = null;
 const lancamentosManuaisEmAndamento = new Set();
 const STORAGE_CHECKLISTS_FUTUROS_OPEN = 'zuqui_checklists_futuros_open';
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
@@ -7173,6 +7176,18 @@ function injetarAlertaChecklistTempoReal(lancamento = null) {
   sincronizarAvisoNotificacoes();
 }
 
+function agendarAtualizacaoChecklistsTempoReal() {
+  if (obterPaginaAtivaAtual() !== 'checklists') return;
+  if (timeoutAtualizacaoChecklistsRealtime) {
+    clearTimeout(timeoutAtualizacaoChecklistsRealtime);
+  }
+  timeoutAtualizacaoChecklistsRealtime = window.setTimeout(() => {
+    carregarChecklists({ silencioso: true }).catch(error => {
+      console.warn('Falha ao atualizar checklists via Realtime:', error);
+    });
+  }, 140);
+}
+
 function reiniciarAssinaturaRealtimeNotificacoes() {
   try {
     if (canalNotificacoesRealtime) {
@@ -7201,9 +7216,16 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checklist_lancamentos' }, (payload) => {
       injetarAlertaChecklistTempoReal(payload?.new || null);
       atualizarNotificacoes();
+      agendarAtualizacaoChecklistsTempoReal();
     })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, atualizarNotificacoes)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, () => {
+      atualizarNotificacoes();
+      agendarAtualizacaoChecklistsTempoReal();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, () => {
+      atualizarNotificacoes();
+      agendarAtualizacaoChecklistsTempoReal();
+    })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_rapidos' }, atualizarNotificacoes)
     .subscribe((status) => {
@@ -10971,8 +10993,12 @@ function obterAvisoDiscretoChecklist(lancamento = {}) {
   return null;
 }
 
-async function carregarChecklists() {
+async function carregarChecklists(opcoes = {}) {
+  const silencioso = !!opcoes?.silencioso;
+  const forcarRender = !!opcoes?.forcarRender;
   const lista = document.getElementById('listaChecklists');
+  if (!lista) return;
+  const tokenAtual = ++tokenRequisicaoChecklists;
   try {
     const valorSalvo = localStorage.getItem(STORAGE_CHECKLISTS_FUTUROS_OPEN);
     if (valorSalvo === '1') checklistsFuturosExpandido = true;
@@ -10982,7 +11008,10 @@ async function carregarChecklists() {
   if (futurosElAnterior) {
     checklistsFuturosExpandido = !!futurosElAnterior.open;
   }
-  lista.innerHTML = '<div class="empty">Carregando...</div>';
+  const listaTemConteudo = !!lista.querySelector('.lista, .checklists-futuros-box, .empty');
+  if (!silencioso && !listaTemConteudo) {
+    lista.innerHTML = '<div class="empty">Carregando...</div>';
+  }
   await carregarOpcoesFiltroChecklists();
 
   try {
@@ -11001,6 +11030,7 @@ async function carregarChecklists() {
     .order('lancado_em', { ascending: false });
 
   const { data, error } = await query;
+  if (tokenAtual !== tokenRequisicaoChecklists) return;
 
   if (error) {
     if (isMissingLancamentosTableError(error)) {
@@ -11107,7 +11137,17 @@ async function carregarChecklists() {
       </details>`
     : '';
 
-  lista.innerHTML = htmlHoje + htmlFuturos;
+  const htmlFinal = htmlHoje + htmlFuturos;
+  if (!forcarRender && assinaturaRenderChecklists === htmlFinal) {
+    const futurosElExistente = lista.querySelector('.checklists-futuros-box');
+    if (futurosElExistente) {
+      futurosElExistente.open = !!checklistsFuturosExpandido;
+    }
+    return;
+  }
+
+  assinaturaRenderChecklists = htmlFinal;
+  lista.innerHTML = htmlFinal;
 
   const futurosElAtual = lista.querySelector('.checklists-futuros-box');
   if (futurosElAtual) {
