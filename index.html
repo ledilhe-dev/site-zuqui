@@ -3097,6 +3097,37 @@
     }
     .checklist-item .item-nome { font-size: 13px; }
     .checklist-item .item-detalhe { font-size: 11px; line-height: 1.25; }
+    .checklist-item {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.15fr) auto;
+      align-items: center;
+      column-gap: 18px;
+    }
+    .checklist-responsavel-destaque {
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8px 14px;
+      border-left: 4px solid #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+    }
+    .checklist-responsavel-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: #fca5a5;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+    }
+    .checklist-responsavel-nome {
+      color: #ff1f1f;
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 900;
+      line-height: 0.95;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
     .checklist-item.checklist-alerta-discreto {
       border-color: rgba(245, 158, 11, 0.35);
       background: rgba(245, 158, 11, 0.06);
@@ -4101,6 +4132,14 @@
       .item {
         align-items: flex-start;
         flex-direction: column;
+      }
+      .checklist-item {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+      .checklist-responsavel-destaque {
+        min-height: 0;
       }
       .item-actions {
         width: 100%;
@@ -11589,6 +11628,7 @@ async function carregarChecklists(opcoes = {}) {
 
   const renderizarCardsChecklist = (itens) => '<div class="lista">' + itens.map(t => {
     const aviso = obterAvisoDiscretoChecklist(t);
+    const nomeFuncionario = funcionariosMap[String(t.funcionario_id)] ?? '-';
     return `
     <div class="item checklist-item${aviso ? ' checklist-alerta-discreto' : ''}">
       <div class="item-info">
@@ -11596,11 +11636,14 @@ async function carregarChecklists(opcoes = {}) {
         ${aviso ? `<div class="checklist-card-aviso ${aviso.classe}">${aviso.texto}</div>` : ''}
         ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
         <ul class="checklist-meta">
-          <li>Funcionário responsável: ${funcionariosMap[String(t.funcionario_id)] ?? '-'}</li>
           <li>Qualquer funcionário pode aceitar com o próprio PIN.</li>
           <li>Data programada: ${formatarDataProgramadaBr(obterDataProgramadaLancamento(t))}</li>
           ${t.horario_limite ? `<li style="color:var(--amber)">Prazo máximo: ${t.horario_limite}</li>` : ''}
         </ul>
+      </div>
+      <div class="checklist-responsavel-destaque">
+        <div class="checklist-responsavel-label">Funcionário responsável</div>
+        <div class="checklist-responsavel-nome">${nomeFuncionario}</div>
       </div>
       <div class="item-actions">
         <button class="btn btn-green" onclick="iniciarChecklistDireto('${t.id}')">Iniciar</button>
