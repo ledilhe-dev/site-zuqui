@@ -4499,7 +4499,7 @@
           <span class="nav-caret">▾</span>
         </button>
         <div class="nav-submenu">
-          <button class="nav-btn nav-sub-btn" data-page="checklists" onclick="abrirPagina('checklists', this)">
+          <button class="nav-btn nav-sub-btn ativo" data-page="checklists" onclick="abrirPagina('checklists', this)">
             <span class="nav-copy">
               <span class="nav-title">Iniciar checklist</span>
             </span>
@@ -4529,7 +4529,7 @@
           <span class="nav-hint">Avisos pontuais para equipe</span>
         </span>
       </button>
-      <button class="nav-btn ativo" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
+      <button class="nav-btn" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
         <span class="icon">DB</span>
         <span class="nav-copy">
           <span class="nav-title">Dashboard</span>
@@ -4695,8 +4695,8 @@
       <div class="topbar-main">
         <button class="btn btn-ghost mobile-menu-btn" type="button" onclick="toggleMobileMenu()" aria-label="Abrir menu">☰</button>
         <div id="topbarTitleWrap">
-          <h1 id="topbar-title">Dashboard</h1>
-          <div class="sub" id="topbar-sub">Visao geral do sistema</div>
+          <h1 id="topbar-title">Checklists</h1>
+          <div class="sub" id="topbar-sub">Modelos prontos para iniciar tarefa</div>
         </div>
       </div>
       <div class="topbar-store" id="topbarStoreInfo" hidden>
@@ -4742,7 +4742,7 @@
     <div class="content">
 
       <!--  DASHBOARD  -->
-      <section id="dashboard" class="pagina ativa">
+      <section id="dashboard" class="pagina">
         <div class="card" id="cardDashboardPizzas">
           <div class="card-title">Painel de indicadores</div>
           <div class="dashboard-kpi-pies-grid">
@@ -4814,7 +4814,7 @@
       </section>
 
       <!--  CHECKLISTS  -->
-      <section id="checklists" class="pagina">
+      <section id="checklists" class="pagina ativa">
         <div class="page-title">Checklists</div>
         <div class="page-sub">Modelos prontos para iniciar tarefa</div>
 
@@ -6587,6 +6587,13 @@ function obterPaginaAtivaSalva() {
 
 function restaurarPaginaAtivaSalvaOuPadrao() {
   fecharMenusLaterais();
+  const paginaPrincipal = 'checklists';
+  if (document.getElementById(paginaPrincipal) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaPrincipal))) {
+    const botaoPrincipal = document.querySelector(`.nav-btn[data-page="${paginaPrincipal}"]`);
+    abrirPagina(paginaPrincipal, botaoPrincipal);
+    return true;
+  }
+
   let paginaSalva = obterPaginaAtivaSalva();
   if (paginaSalva === 'itens') {
     paginaSalva = 'tarefas';
@@ -11587,7 +11594,7 @@ async function carregarChecklists(opcoes = {}) {
   } else if (!usuarioPodeVerTodosChecklists() && usuarioSistemaLogado?.id) {
     rows = rows.filter(t => String(t.funcionario_id || '') === String(usuarioSistemaLogado.id || ''));
   }
-  rows.sort((a, b) => {
+  const compararLancamentosChecklist = (a, b) => {
     const dataA = String(obterDataProgramadaLancamento(a) || '').trim();
     const dataB = String(obterDataProgramadaLancamento(b) || '').trim();
     if (dataA !== dataB) return dataA.localeCompare(dataB);
@@ -11595,7 +11602,8 @@ async function carregarChecklists(opcoes = {}) {
     const horaB = String(horaCurta(b?.horario_limite || '') || '99:99');
     if (horaA !== horaB) return horaA.localeCompare(horaB);
     return String(a?.nome || '').localeCompare(String(b?.nome || ''), 'pt-BR');
-  });
+  };
+  rows.sort(compararLancamentosChecklist);
 
   const funcionarioIds = [...new Set(rows.map(t => t.funcionario_id).filter(Boolean))];
   let funcionariosMap = {};
@@ -11625,6 +11633,8 @@ async function carregarChecklists(opcoes = {}) {
       : '<div class="empty">Nenhum checklist lancado para hoje.</div>';
     return;
   }
+
+  rows.sort(compararLancamentosChecklist);
 
   const renderizarCardsChecklist = (itens) => '<div class="lista">' + itens.map(t => {
     const aviso = obterAvisoDiscretoChecklist(t);
@@ -11668,7 +11678,7 @@ async function carregarChecklists(opcoes = {}) {
 
   const htmlFuturos = rowsFuturos.length
     ? `<details class="checklists-futuros-box"${checklistsFuturosExpandido ? ' open' : ''}>
-        <summary>Próxima semana (${rowsFuturos.length})</summary>
+        <summary>Próxima tarefa (${rowsFuturos.length})</summary>
         <div class="checklists-futuros-conteudo">${renderizarCardsChecklist(rowsFuturos)}</div>
       </details>`
     : '';
