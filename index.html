@@ -2545,8 +2545,9 @@
     }
     @media (max-width: 1280px) and (min-width: 901px) {
       #tarefas .tarefa-lancamento-grid {
-        grid-template-columns: minmax(0, 1.84fr) minmax(152px, 0.64fr) minmax(184px, 0.54fr) minmax(110px, 0.30fr);
+        grid-template-columns: minmax(0, 1.90fr) minmax(146px, 0.60fr) minmax(176px, 0.50fr) minmax(104px, 0.28fr);
         gap: 6px;
+        align-items: end;
       }
       #tarefas .tarefa-dias-checks,
       #tarefas .tarefa-lancamento-bloco-dias .tarefa-funcionarios-grid {
@@ -2562,19 +2563,24 @@
         font-size: 11px;
       }
       #tarefas .tarefa-lancamento-bloco-horario {
-        max-width: 186px;
-        margin-left: -2px;
+        max-width: 178px;
+        margin-left: 0;
       }
       #tarefas .tarefa-lancamento-horario {
-        min-width: 156px;
+        min-width: 148px;
         min-height: 44px;
         padding: 5px 8px;
       }
       #tarefas .tarefa-lancamento-horario input[type="time"] {
-        width: 160px;
-        min-width: 160px;
+        width: 152px;
+        min-width: 152px;
         height: 30px;
         font-size: 13px;
+      }
+      #tarefas .tarefa-lancamento-bloco-funcionarios,
+      #tarefas .tarefa-lancamento-bloco-lancar,
+      #tarefas .tarefa-lancamento-bloco-horario {
+        align-self: end;
       }
     }
     .btn-lancar-topo.is-hidden {
@@ -2754,44 +2760,44 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.72fr) minmax(168px, 0.70fr) minmax(196px, 0.60fr) minmax(116px, 0.34fr);
+      grid-template-columns: minmax(0, 1.78fr) minmax(164px, 0.66fr) minmax(186px, 0.55fr) minmax(114px, 0.32fr);
       grid-template-areas: "dias func horario lancar";
-        gap: 6px 8px;
-        align-items: center;
-        padding: 6px 6px;
+      gap: 6px 8px;
+      align-items: end;
+      padding: 6px 6px;
     }
     .tarefa-lancamento-bloco {
       display: flex;
       flex-direction: column;
-        gap: 3px;
+      gap: 3px;
       min-width: 0;
     }
-      .tarefa-lancamento-bloco-dias {
-        grid-area: dias;
-        min-width: 0;
-        padding-top: 3px;
-      }
+    .tarefa-lancamento-bloco-dias {
+      grid-area: dias;
+      min-width: 0;
+      padding-top: 3px;
+    }
     .tarefa-lancamento-bloco-horario {
       grid-area: horario;
       justify-self: start;
-      align-self: center;
+      align-self: end;
       width: 100%;
-      max-width: 210px;
-      margin-left: -4px;
+      max-width: 198px;
+      margin-left: -2px;
     }
     .tarefa-lancamento-bloco-lancar {
       grid-area: lancar;
       justify-self: start;
-      align-self: center;
+      align-self: end;
       width: 100%;
       max-width: 126px;
-      margin-left: -2px;
+      margin-left: 0;
     }
     .tarefa-lancamento-bloco-funcionarios {
       grid-area: func;
-      padding-left: 6px;
-      align-self: start;
-      padding-top: 2px;
+      padding-left: 4px;
+      align-self: end;
+      padding-top: 0;
     }
     .tarefa-lancamento-topo {
       display: flex;
@@ -2856,7 +2862,7 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 6px 10px;
-      min-width: 168px;
+      min-width: 160px;
       width: 100%;
       min-height: 48px;
     }
@@ -2869,8 +2875,8 @@
       white-space: nowrap;
     }
     .tarefa-lancamento-horario input[type="time"] {
-      width: 172px;
-      min-width: 172px;
+      width: 164px;
+      min-width: 164px;
       height: 32px;
       padding: 5px 8px;
       border-radius: 8px;
@@ -3334,7 +3340,7 @@
     .ajuste-saldo-field {
       width: 100%;
       min-height: 38px;
-      padding: 8px 12px;
+      min-width: 160px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -3371,29 +3377,35 @@
       background: rgba(34, 197, 94, 0.07);
       padding: 12px;
       display: grid;
-      gap: 7px;
-      color: var(--text);
+      width: 164px;
+      min-width: 164px;
       font-size: 13px;
     }
     .confirmacao-destaque-box strong {
-      color: var(--text);
+        grid-template-columns: minmax(0, 1.90fr) minmax(146px, 0.60fr) minmax(176px, 0.50fr) minmax(104px, 0.28fr);
       font-size: 15px;
+        align-items: end;
     }
     .confirmacao-destaque-box span {
-      color: var(--text-muted);
-    }
+        max-width: 178px;
+        margin-left: 0;
     .forma-pagamento-modal-intro {
       font-size: 13px;
-      color: var(--text-muted);
+        min-width: 148px;
       line-height: 1.5;
     }
     .forma-pagamento-modal-select {
       width: 100%;
-      padding: 10px 12px;
-      background: var(--bg);
+        width: 152px;
+        min-width: 152px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       color: var(--text);
+      #tarefas .tarefa-lancamento-bloco-funcionarios,
+      #tarefas .tarefa-lancamento-bloco-lancar,
+      #tarefas .tarefa-lancamento-bloco-horario {
+        align-self: end;
+      }
       font-size: 14px;
       font-family: inherit;
       outline: none;
