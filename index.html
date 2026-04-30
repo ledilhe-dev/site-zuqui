@@ -490,6 +490,9 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    #topbar-sub {
+      display: none;
+    }
     .topbar-user {
       display: inline-flex;
       flex-direction: column;
@@ -509,14 +512,18 @@
       align-items: flex-start;
       justify-content: center;
       gap: 1px;
-      min-width: 170px;
-      max-width: 260px;
-      min-height: 30px;
-      padding: 5px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(107,143,112,0.18);
-      background: rgba(17,26,20,0.92);
+      min-width: 210px;
+      max-width: 320px;
+      min-height: 42px;
+      padding: 7px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(56,189,248,0.78);
+      background: linear-gradient(135deg, rgba(14,116,144,0.96), rgba(37,99,235,0.95));
+      box-shadow: 0 0 0 1px rgba(125,211,252,0.18), 0 10px 26px rgba(37,99,235,0.28);
       flex-shrink: 0;
+    }
+    .topbar-store .topbar-user-label {
+      color: rgba(219,234,254,0.9);
     }
     .topbar-user-label {
       font-size: 10px;
@@ -534,10 +541,10 @@
       word-break: break-word;
     }
     .topbar-store-name {
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 800;
       line-height: 1.15;
-      color: var(--text);
+      color: #ffffff;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1837,11 +1844,12 @@
     .funcionario-form-row > :nth-child(5) {
       min-width: 0;
     }
-    .funcionario-form-row > :nth-child(6) {
+    .funcionario-form-row > :nth-child(6),
+    .funcionario-form-row > :nth-child(7) {
       min-width: 0;
     }
-    .funcionario-form-row > :nth-child(7),
-    .funcionario-form-row > :nth-child(8) {
+    .funcionario-form-row > :nth-child(8),
+    .funcionario-form-row > :nth-child(9) {
       min-width: 0;
     }
     .funcionario-form-row > :nth-child(1) { grid-column: 1 / span 7; }
@@ -1849,9 +1857,10 @@
     .funcionario-form-row > :nth-child(3) { grid-column: 1 / span 2; }
     .funcionario-form-row > :nth-child(4) { grid-column: 3 / span 2; }
     .funcionario-form-row > :nth-child(5) { grid-column: 5 / span 2; }
-    .funcionario-form-row > :nth-child(6) { grid-column: 7 / span 4; }
-    .funcionario-form-row > :nth-child(7) { grid-column: 11 / span 2; }
-    .funcionario-form-row > :nth-child(8) { grid-column: 13 / span 2; }
+    .funcionario-form-row > :nth-child(6) { grid-column: 7 / span 2; }
+    .funcionario-form-row > :nth-child(7) { grid-column: 9 / span 4; }
+    .funcionario-form-row > :nth-child(8) { grid-column: 13 / span 1; }
+    .funcionario-form-row > :nth-child(9) { grid-column: 14 / span 1; }
     .funcionario-form-row .campo-com-label {
       position: static;
       padding-top: 0;
@@ -1888,6 +1897,56 @@
       padding: 0 12px;
       align-self: end;
       white-space: nowrap;
+    }
+    .funcionario-intervalos-card {
+      grid-column: 1 / -1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(8, 14, 11, 0.72);
+      padding: 8px;
+    }
+    .funcionario-intervalos-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(120px, 1fr));
+      gap: 7px;
+      margin-top: 6px;
+    }
+    .funcionario-intervalo-dia {
+      border: 1px solid rgba(107,143,112,0.18);
+      border-radius: 8px;
+      padding: 7px;
+      background: rgba(17,26,20,0.72);
+      min-width: 0;
+    }
+    .funcionario-intervalo-dia-titulo {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .funcionario-intervalo-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .funcionario-intervalo-input-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .funcionario-intervalo-input-row input {
+      min-width: 0;
+      height: 30px !important;
+      min-height: 30px !important;
+      padding: 5px 7px !important;
+    }
+    .funcionario-intervalo-input-row .btn {
+      width: 30px;
+      min-width: 30px;
+      height: 30px;
+      min-height: 30px;
+      padding: 0;
     }
     .funcionario-cadastro-header {
       display: flex;
@@ -3110,9 +3169,26 @@
     .checklist-item .item-detalhe { font-size: 11px; line-height: 1.25; }
     .checklist-item {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.15fr) auto;
+      grid-template-columns: minmax(220px, 1fr) minmax(170px, 0.55fr) minmax(260px, 1.15fr) auto;
       align-items: center;
       column-gap: 18px;
+    }
+    .checklist-dia-semana-destaque {
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(245, 158, 11, 0.42);
+      background: rgba(245, 158, 11, 0.1);
+      color: #fbbf24;
+      font-size: clamp(18px, 2vw, 34px);
+      font-weight: 900;
+      line-height: 1;
+      text-align: center;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
     }
     .checklist-responsavel-destaque {
       min-height: 60px;
@@ -4882,7 +4958,7 @@
         <button class="btn btn-ghost mobile-menu-btn" type="button" onclick="toggleMobileMenu()" aria-label="Abrir menu">☰</button>
         <div id="topbarTitleWrap">
           <h1 id="topbar-title">Checklists</h1>
-          <div class="sub" id="topbar-sub">Modelos prontos para iniciar tarefa</div>
+          <div class="sub" id="topbar-sub"></div>
         </div>
       </div>
       <div class="topbar-store" id="topbarStoreInfo" hidden>
@@ -4890,13 +4966,6 @@
         <div class="topbar-store-name" id="topbar-store-name">-</div>
       </div>
       <div class="topbar-actions">
-        <div class="sync-status is-idle" id="syncStatus" aria-live="polite" title="Sincronização automática ativa">
-          <span class="sync-dot"></span>
-          <span class="sync-status-copy">
-            <span class="sync-status-title">Sincronização</span>
-            <span class="sync-status-text" id="syncStatusText">Aguardando sessão ativa</span>
-          </span>
-        </div>
         <div class="topbar-user" id="topbarUserInfo" hidden>
           <div class="topbar-user-label">Usuário logado</div>
           <div class="topbar-user-name" id="topbar-user-name">-</div>
@@ -5002,7 +5071,6 @@
       <!--  CHECKLISTS  -->
       <section id="checklists" class="pagina ativa">
         <div class="page-title">Checklists</div>
-        <div class="page-sub">Modelos prontos para iniciar tarefa</div>
 
         <div class="card" id="cardAdminsLojaConfig">
           <div class="card-title">Checklists lancados</div>
@@ -5022,7 +5090,6 @@
       <!--  ITENS  -->
       <section id="itens" class="pagina">
         <div class="page-title">Itens do Checklist</div>
-        <div class="page-sub">Gerencie os itens de cada modelo</div>
 
         <div class="card" id="cardLembreteLojaConfig">
           <div class="card-title">Selecionar checklist</div>
@@ -5056,7 +5123,6 @@
       <!--  FUNCIONÁRIOS  -->
       <section id="funcionarios" class="pagina">
         <div class="page-title">Funcionários</div>
-        <div class="page-sub">Cadastro e gestão de funcionários</div>
 
         <div class="card">
           <div class="card-title">Funcionários cadastrados</div>
@@ -5094,6 +5160,10 @@
                 <input id="horarioFimFuncionario" class="campo-curto" type="time" placeholder="Fim turno">
               </div>
               <div class="campo-com-label">
+                <label class="campo-label" for="tempoIntervaloFuncionario">Tempo de intervalo</label>
+                <input id="tempoIntervaloFuncionario" class="campo-curto" type="number" min="0" step="1" placeholder="Min">
+              </div>
+              <div class="campo-com-label">
                 <label class="campo-label" for="perfilFuncionario">Perfil</label>
                 <select id="perfilFuncionario">
                   <option value="">- Selecione o perfil -</option>
@@ -5101,6 +5171,10 @@
               </div>
               <button class="btn btn-green" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
               <button class="btn btn-ghost" id="btnCancelarEdicaoFuncionario" onclick="cancelarEdicaoFuncionario()" style="display:none">Cancelar</button>
+              <div class="funcionario-intervalos-card">
+                <div class="campo-label">Intervalos por dia da semana</div>
+                <div id="intervalosSemanaFuncionario" class="funcionario-intervalos-grid"></div>
+              </div>
             </div>
           </div>
           <div id="avisoVerificacaoFuncionarioEmail" class="funcionario-email-verificacao-box">
@@ -5116,7 +5190,6 @@
 
       <section id="solicitacoes" class="pagina">
         <div class="page-title">Solicitações de acesso</div>
-        <div class="page-sub">Aprove ou rejeite quem pediu acesso ao sistema</div>
 
         <div class="card">
           <div class="card-title">Pendentes de aprovação</div>
@@ -5127,7 +5200,6 @@
 
       <section id="emails" class="pagina">
         <div class="page-title">Cadastro de envio de e-mail</div>
-        <div class="page-sub">Destinatários que receberão notificações de atraso</div>
 
         <div class="card">
           <div class="card-title">Novo destinatário</div>
@@ -5148,7 +5220,6 @@
 
       <section id="configuracoes" class="pagina">
         <div class="page-title">Informações da Loja</div>
-        <div class="page-sub">Dados básicos da operação e lembretes do checklist</div>
 
         <div class="card">
           <div class="card-title">Dados da loja</div>
@@ -5214,7 +5285,6 @@
 
       <section id="perfis" class="pagina">
         <div class="page-title">Perfis</div>
-        <div class="page-sub">Defina as abas e funções disponíveis para cada perfil</div>
 
         <div class="card">
           <div class="card-title">Perfis cadastrados</div>
@@ -5245,7 +5315,6 @@
       <!--  TAREFAS  -->
       <section id="tarefas" class="pagina">
         <div class="page-title">Cadastro de Checklist</div>
-        <div class="page-sub">Cadastre modelos e lance checklists manualmente</div>
 
         <div class="card">
           <div class="card-title">Nova tarefa</div>
@@ -5305,7 +5374,6 @@
 
       <section id="tarefas_rapidas" class="pagina">
         <div class="page-title">Alertas rápidas</div>
-        <div class="page-sub">Avisos esporádicos com confirmação por PIN do funcionário</div>
 
         <div class="card" id="cardAlertaRapidoEnvio">
           <div class="card-title">Enviar alerta rápido</div>
@@ -5335,7 +5403,6 @@
       <!--  EXECU-!-"ES  -->
       <section id="execucoes" class="pagina">
         <div class="page-title">Checklist em andamento</div>
-        <div class="page-sub">Acompanhe tarefas em andamento, pausadas e finalizadas</div>
 
         <div class="card" id="cardFiltrosExecucao">
           <div class="card-title">Filtros de execução</div>
@@ -5373,7 +5440,6 @@
 
       <section id="tarefas_atraso" class="pagina">
         <div class="page-title">Checklist em atraso</div>
-        <div class="page-sub">Não iniciadas no prazo e execuções sem finalização</div>
 
         <div class="card">
           <div class="card-title">Pendências críticas de hoje</div>
@@ -5440,7 +5506,6 @@
       <!--  RELATÓRIO PONTO  -->
       <section id="relatorio_ponto" class="pagina">
         <div class="page-title">Relatório ponto</div>
-        <div class="page-sub">Acompanhe a jornada por funcionário, data e horário</div>
 
         <div class="card">
           <div class="card-title">Dashboard de horas</div>
@@ -5515,7 +5580,6 @@
       <!--  AJUSTES DE PONTO  -->
       <section id="ponto_ajustes" class="pagina">
         <div class="page-title">Solicitações de ajuste de ponto</div>
-        <div class="page-sub">Aprove ou recuse pedidos de correção de batida feitos pelos funcionários</div>
 
         <div class="card">
           <div class="card-title">Filtros</div>
@@ -5542,7 +5606,6 @@
 
       <section id="relatorio_lancamentos" class="pagina">
         <div class="page-title">Relatório de tarefas</div>
-        <div class="page-sub">Auditoria de lançamentos, ignorados, inícios e finalizações</div>
 
         <div class="card">
           <div class="card-title">Filtros do relatório</div>
@@ -5679,7 +5742,6 @@
 
       <section id="relatorio_ajuste_saldo" class="pagina">
         <div class="page-title">Relatório ajuste de saldo</div>
-        <div class="page-sub">Consulte os ajustes manuais feitos no saldo das contas financeiras.</div>
 
         <div class="card">
           <div class="relatorio-financeiro-filtros">
@@ -5776,7 +5838,6 @@
 
       <section id="financeiro_fornecedores" class="pagina">
         <div class="page-title">Cadastro de fornecedor</div>
-        <div class="page-sub">Cadastre e mantenha a base de fornecedores</div>
 
         <div class="card">
           <div class="card-title">Novo fornecedor</div>
@@ -5799,7 +5860,6 @@
 
       <section id="financeiro_formas_pagamento" class="pagina">
         <div class="page-title">Formas de pagamento</div>
-        <div class="page-sub">Cadastre, edite e organize as formas usadas na baixa de títulos</div>
 
         <div class="card">
           <div class="card-title">Nova forma de pagamento</div>
@@ -5819,7 +5879,6 @@
 
       <section id="financeiro_contasapagar" class="pagina">
         <div class="page-title">Cadastro de contas a pagar</div>
-        <div class="page-sub">Registre compras e vencimentos por fornecedor</div>
 
         <div class="card card-compact">
           <div class="card-title" id="tituloContaAPagarFinanceiro">Nova conta</div>
@@ -5887,7 +5946,6 @@
 
       <section id="financeiro_baixar_contas" class="pagina">
         <div class="page-title">Baixar contas</div>
-        <div class="page-sub">Confirme pagamentos e ajuste valor, data e forma de pagamento</div>
 
         <div class="card">
           <div class="card-title">Filtros</div>
@@ -5911,7 +5969,6 @@
 
       <section id="financeiro_conta_financeira" class="pagina">
         <div class="page-title">Conta financeira</div>
-        <div class="page-sub">Cadastre contas financeiras e acompanhe entradas como extrato bancário</div>
 
         <div class="card card-compact">
           <div class="card-title">Nova conta financeira</div>
@@ -5950,7 +6007,6 @@
 
       <section id="financeiro_recebiveis" class="pagina">
         <div class="page-title">Recebíveis</div>
-        <div class="page-sub">Cadastre recebíveis por pagador e forma de pagamento</div>
 
         <div class="card card-compact">
           <div class="card-title">Novo recebível</div>
@@ -5995,7 +6051,6 @@
 
       <section id="financeiro_cofre" class="pagina">
         <div class="page-title">Cofre</div>
-        <div class="page-sub">Saldo atual de cada conta financeira</div>
 
         <div class="cofre-overview">
           <div class="stats-grid">
@@ -6317,6 +6372,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" type="button" id="confirmacaoSistemaCancelar" onclick="resolverConfirmacaoSistema(false)">Cancelar</button>
+      <button class="btn btn-amber" type="button" id="confirmacaoSistemaNeutro" onclick="resolverConfirmacaoSistema('neutro')" style="display:none">Não</button>
       <button class="btn btn-green" type="button" id="confirmacaoSistemaConfirmar" onclick="resolverConfirmacaoSistema(true)">Confirmar</button>
     </div>
   </div>
@@ -6447,6 +6503,7 @@ function abrirConfirmacaoSistema(opcoes = {}) {
   const input = document.getElementById('confirmacaoSistemaInput');
   const msg = document.getElementById('confirmacaoSistemaMsg');
   const btnCancelar = document.getElementById('confirmacaoSistemaCancelar');
+  const btnNeutro = document.getElementById('confirmacaoSistemaNeutro');
   const btnConfirmar = document.getElementById('confirmacaoSistemaConfirmar');
 
   confirmacaoSistemaOpcaoAtual = {
@@ -6457,7 +6514,15 @@ function abrirConfirmacaoSistema(opcoes = {}) {
   if (subtitle) subtitle.textContent = opcoes.subtitle || '';
   if (body) body.innerHTML = opcoes.body || '';
   if (msg) msg.textContent = '';
-  if (btnCancelar) btnCancelar.textContent = opcoes.cancelText || 'Cancelar';
+  if (btnCancelar) {
+    btnCancelar.textContent = opcoes.cancelText || 'Cancelar';
+    btnCancelar.className = `btn ${opcoes.cancelClass || 'btn-ghost'}`;
+  }
+  if (btnNeutro) {
+    btnNeutro.textContent = opcoes.neutralText || 'Não';
+    btnNeutro.className = `btn ${opcoes.neutralClass || 'btn-amber'}`;
+    btnNeutro.style.display = opcoes.neutralText ? '' : 'none';
+  }
   if (btnConfirmar) {
     btnConfirmar.textContent = opcoes.confirmText || 'Confirmar';
     btnConfirmar.className = `btn ${opcoes.confirmClass || 'btn-green'}`;
@@ -6488,7 +6553,7 @@ function resolverConfirmacaoSistema(confirmado) {
   const msg = document.getElementById('confirmacaoSistemaMsg');
   const valor = input ? input.value.trim() : '';
 
-  if (confirmado && confirmacaoSistemaOpcaoAtual?.exigeTexto && !valor) {
+  if (confirmado === true && confirmacaoSistemaOpcaoAtual?.exigeTexto && !valor) {
     if (msg) msg.textContent = 'Informe o motivo antes de confirmar.';
     if (input) input.focus();
     return;
@@ -6502,7 +6567,8 @@ function resolverConfirmacaoSistema(confirmado) {
   const resolver = confirmacaoSistemaResolver;
   confirmacaoSistemaResolver = null;
   confirmacaoSistemaOpcaoAtual = null;
-  if (resolver) resolver({ confirmado: Boolean(confirmado), valor });
+  const acao = confirmado === true ? 'confirmar' : confirmado === 'neutro' ? 'neutro' : 'cancelar';
+  if (resolver) resolver({ confirmado: confirmado === true, acao, valor });
 }
 
 // ---- STATE ----
@@ -6516,6 +6582,15 @@ let funcionariosAtivosTarefa = [];
 let selecaoFuncionarioLancamentoPorTarefa = {};
 let horarioLancamentoPorTarefa = {};
 let diasLancamentoPorTarefa = {};
+const DIAS_SEMANA_INTERVALO_FUNCIONARIO = [
+  ['dom', 'Domingo'],
+  ['seg', 'Segunda-feira'],
+  ['ter', 'Terça-feira'],
+  ['qua', 'Quarta-feira'],
+  ['qui', 'Quinta-feira'],
+  ['sex', 'Sexta-feira'],
+  ['sab', 'Sábado'],
+];
 let tarefaModalFuncionariosTarefaId = '';
 let tarefaModalFuncionariosSelecionadoId = '';
 let usuarioSistemaLogado = null;
@@ -6582,6 +6657,7 @@ let resolverModalPontoPendente = null;
 let intervaloAtualizacaoPaginaAtiva = null;
 let intervaloAtualizacaoNotificacoes = null;
 let intervaloStatusSincronizacao = null;
+let intervaloContadorRetornoPonto = null;
 let canalNotificacoesRealtime = null;
 let ultimoSucessoSincronizacaoEm = null;
 let ultimosLembretesExecucaoEm = {};
@@ -6621,6 +6697,7 @@ let checklistsFuturosExpandido = false;
 let assinaturaRenderChecklists = '';
 let tokenRequisicaoChecklists = 0;
 let timeoutAtualizacaoChecklistsRealtime = null;
+let timeoutAtualizacaoPaginaRealtime = null;
 const lancamentosManuaisEmAndamento = new Set();
 const STORAGE_CHECKLISTS_FUTUROS_OPEN = 'zuqui_checklists_futuros_open';
 const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
@@ -6631,6 +6708,7 @@ const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
 const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
 const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 10 * 60 * 1000;
 const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
+const JANELA_CONFLITO_LANCAMENTO_MANUAL_MINUTOS = 20;
 const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 15 * 60 * 1000;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
 // Horizonte de agendamento ao clicar em "Lançar tarefa" (ex.: 7, 14, 30).
@@ -7437,11 +7515,10 @@ function abrirPagina(id, botao) {
   }
   paginaAtual.classList.add('ativa');
   if (botao) botao.classList.add('ativo');
-  const [tituloFallback, subtituloFallback] = topTitles[id] || ['', ''];
+  const [tituloFallback] = topTitles[id] || ['', ''];
   const tituloPagina = paginaAtual.querySelector(':scope > .page-title')?.textContent?.trim() || tituloFallback;
-  const subtituloPagina = paginaAtual.querySelector(':scope > .page-sub')?.textContent?.trim() || subtituloFallback;
   document.getElementById('topbar-title').textContent = tituloPagina;
-  document.getElementById('topbar-sub').textContent = subtituloPagina;
+  document.getElementById('topbar-sub').textContent = '';
   salvarPaginaAtiva(id);
   if (id === 'dashboard') carregarDashboard();
   if (id === 'checklists') { carregarChecklists(); }
@@ -7541,6 +7618,17 @@ function atualizarIndicadorSincronizacao(estado = 'idle', texto = '') {
   }
 
   text.textContent = texto;
+}
+
+function agendarAtualizacaoPaginaAtivaTempoReal() {
+  if (!existeSessaoAtivaParaAtualizacao()) return;
+  if (!paginaExigeAtualizacaoVisualAutomatica(obterPaginaAtivaAtual())) return;
+  if (timeoutAtualizacaoPaginaRealtime) {
+    clearTimeout(timeoutAtualizacaoPaginaRealtime);
+  }
+  timeoutAtualizacaoPaginaRealtime = window.setTimeout(() => {
+    atualizarPaginaAtivaAutomaticamente();
+  }, 180);
 }
 
 function formatarTempoSincronizacao() {
@@ -7727,6 +7815,7 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
         console.warn('Falha ao atualizar alertas rápidos via Realtime:', error);
       });
     }
+    agendarAtualizacaoPaginaAtivaTempoReal();
   };
 
   canalNotificacoesRealtime = sb
@@ -7735,14 +7824,17 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
       injetarAlertaChecklistTempoReal(payload?.new || null);
       atualizarNotificacoes();
       agendarAtualizacaoChecklistsTempoReal();
+      agendarAtualizacaoPaginaAtivaTempoReal();
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, () => {
       atualizarNotificacoes();
       agendarAtualizacaoChecklistsTempoReal();
+      agendarAtualizacaoPaginaAtivaTempoReal();
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, () => {
       atualizarNotificacoes();
       agendarAtualizacaoChecklistsTempoReal();
+      agendarAtualizacaoPaginaAtivaTempoReal();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_rapidos' }, atualizarNotificacoes)
@@ -8972,6 +9064,13 @@ function formatarDataProgramadaBr(valor) {
   const data = new Date(`${valor}T00:00:00`);
   if (Number.isNaN(data.getTime())) return valor;
   return data.toLocaleDateString('pt-BR');
+}
+
+function formatarDiaSemanaExtenso(valor) {
+  if (!valor) return '-';
+  const data = new Date(`${valor}T00:00:00`);
+  if (Number.isNaN(data.getTime())) return '-';
+  return data.toLocaleDateString('pt-BR', { weekday: 'long' });
 }
 
 function obterAtorAuditoriaAtual() {
@@ -11920,6 +12019,8 @@ async function carregarChecklists(opcoes = {}) {
   const renderizarCardsChecklist = (itens) => '<div class="lista">' + itens.map(t => {
     const aviso = obterAvisoDiscretoChecklist(t);
     const nomeFuncionario = funcionariosMap[String(t.funcionario_id)] ?? '-';
+    const dataProgramada = String(obterDataProgramadaLancamento(t) || '').trim();
+    const diaSemanaProgramado = formatarDiaSemanaExtenso(dataProgramada);
     return `
     <div class="item checklist-item${aviso ? ' checklist-alerta-discreto' : ''}">
       <div class="item-info">
@@ -11933,10 +12034,11 @@ async function carregarChecklists(opcoes = {}) {
         ${aviso ? `<div class="checklist-card-aviso ${aviso.classe}">${aviso.texto}</div>` : ''}
         ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
         <ul class="checklist-meta">
-          <li>Data programada: ${formatarDataProgramadaBr(obterDataProgramadaLancamento(t))}</li>
+          <li>Data programada: ${formatarDataProgramadaBr(dataProgramada)}</li>
           ${t.horario_limite ? `<li style="color:var(--amber)">Prazo máximo: ${t.horario_limite}</li>` : ''}
         </ul>
       </div>
+      <div class="checklist-dia-semana-destaque">${escaparHtmlBasico(diaSemanaProgramado)}</div>
       <div class="checklist-responsavel-destaque">
         <div class="checklist-responsavel-label">Funcionário responsável</div>
         <div class="checklist-responsavel-nome">${nomeFuncionario}</div>
@@ -12217,7 +12319,7 @@ async function carregarFuncionarios() {
         <div class="item-info">
           <div class="item-nome">${f.nome}</div>
           <div class="item-detalhe">E-mail: ${f.email || '-'} · Senha: ${f.pin ? '••••••' : '-'}${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
-          <div class="item-detalhe">Turno: ${f.horario_trabalho_inicio || '--:--'} às ${f.horario_trabalho_fim || '--:--'}</div>
+          <div class="item-detalhe">Turno: ${f.horario_trabalho_inicio || '--:--'} às ${f.horario_trabalho_fim || '--:--'} · Intervalos: ${resumirIntervalosSemanaFuncionario(f.intervalos_semana, f.tempo_intervalo_minutos)}</div>
         </div>
         <div class="item-actions">
           ${f.ativo ? '' : '<span class="tag tag-gray">Inativo</span>'}
@@ -12276,6 +12378,7 @@ function toggleCadastroFuncionario(forcarAberto = null) {
   atualizarEstadoCadastroFuncionarioUI();
 
   if (cadastroFuncionarioAberto) {
+    renderizarIntervalosSemanaFuncionario(obterIntervalosSemanaFuncionarioCadastro());
     window.setTimeout(() => {
       const alvo = funcionarioEmEdicaoId
         ? document.getElementById('pinFuncionario')
@@ -12283,6 +12386,88 @@ function toggleCadastroFuncionario(forcarAberto = null) {
       alvo?.focus();
     }, 0);
   }
+}
+
+function normalizarIntervalosSemanaFuncionario(valor = null, padraoMinutos = null) {
+  const base = {};
+  DIAS_SEMANA_INTERVALO_FUNCIONARIO.forEach(([token]) => { base[token] = []; });
+  let origem = valor || {};
+  if (typeof origem === 'string') {
+    try { origem = JSON.parse(origem); } catch (_) { origem = {}; }
+  }
+  DIAS_SEMANA_INTERVALO_FUNCIONARIO.forEach(([token]) => {
+    const lista = Array.isArray(origem?.[token]) ? origem[token] : [];
+    base[token] = lista
+      .map(item => Number(item || 0))
+      .filter(item => Number.isFinite(item) && item > 0)
+      .map(item => Math.round(item));
+  });
+  const padrao = Number(padraoMinutos || 0);
+  if (padrao > 0 && !Object.values(base).some(lista => lista.length)) {
+    DIAS_SEMANA_INTERVALO_FUNCIONARIO.forEach(([token]) => { base[token] = [Math.round(padrao)]; });
+  }
+  return base;
+}
+
+function resumirIntervalosSemanaFuncionario(valor = null, padraoMinutos = null) {
+  const config = normalizarIntervalosSemanaFuncionario(valor, padraoMinutos);
+  const partes = DIAS_SEMANA_INTERVALO_FUNCIONARIO
+    .map(([token, rotulo]) => {
+      const lista = config[token] || [];
+      if (!lista.length) return '';
+      return `${rotulo.slice(0, 3)} ${lista.join('+')} min`;
+    })
+    .filter(Boolean);
+  return partes.length ? partes.join(' · ') : '-';
+}
+
+function renderizarIntervalosSemanaFuncionario(valor = null) {
+  const container = document.getElementById('intervalosSemanaFuncionario');
+  if (!container) return;
+  const config = normalizarIntervalosSemanaFuncionario(valor);
+  container.innerHTML = DIAS_SEMANA_INTERVALO_FUNCIONARIO.map(([token, rotulo]) => {
+    const intervalos = config[token]?.length ? config[token] : [''];
+    return `
+      <div class="funcionario-intervalo-dia" data-dia="${token}">
+        <div class="funcionario-intervalo-dia-titulo">${rotulo}</div>
+        <div class="funcionario-intervalo-inputs">
+          ${intervalos.map((minutos, idx) => `
+            <div class="funcionario-intervalo-input-row">
+              <input class="intervalo-dia-funcionario" data-dia="${token}" type="number" min="0" step="1" placeholder="${idx + 1}º min" value="${minutos || ''}">
+              <button class="btn btn-red" type="button" title="Remover intervalo" onclick="removerIntervaloDiaFuncionario('${token}', ${idx})">×</button>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-ghost btn-sm" type="button" style="margin-top:6px;width:100%" onclick="adicionarIntervaloDiaFuncionario('${token}')">+ intervalo</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function obterIntervalosSemanaFuncionarioCadastro() {
+  const config = {};
+  DIAS_SEMANA_INTERVALO_FUNCIONARIO.forEach(([token]) => { config[token] = []; });
+  document.querySelectorAll('.intervalo-dia-funcionario').forEach(input => {
+    const token = input.getAttribute('data-dia');
+    if (!config[token]) config[token] = [];
+    const valor = Number(String(input.value || '').trim());
+    if (Number.isFinite(valor) && valor > 0) config[token].push(Math.round(valor));
+  });
+  return config;
+}
+
+function adicionarIntervaloDiaFuncionario(token) {
+  const config = obterIntervalosSemanaFuncionarioCadastro();
+  if (!config[token]) config[token] = [];
+  config[token].push('');
+  renderizarIntervalosSemanaFuncionario(config);
+}
+
+function removerIntervaloDiaFuncionario(token, index) {
+  const config = obterIntervalosSemanaFuncionarioCadastro();
+  if (!config[token]) config[token] = [];
+  config[token].splice(index, 1);
+  renderizarIntervalosSemanaFuncionario(config);
 }
 
 function atualizarAvisoVerificacaoFuncionarioEmail({
@@ -12434,6 +12619,10 @@ async function criarFuncionario() {
     const pin = document.getElementById('pinFuncionario').value.trim();
     const horarioInicio = document.getElementById('horarioInicioFuncionario').value || null;
     const horarioFim = document.getElementById('horarioFimFuncionario').value || null;
+    const tempoIntervaloRaw = String(document.getElementById('tempoIntervaloFuncionario')?.value || '').trim();
+    const tempoIntervaloMinutos = tempoIntervaloRaw ? Number(tempoIntervaloRaw) : null;
+    const intervalosSemana = obterIntervalosSemanaFuncionarioCadastro();
+    const temIntervalosSemanaPreenchidos = Object.values(intervalosSemana).some(lista => (lista || []).length);
     const perfilId = document.getElementById('perfilFuncionario').value;
     const emailInformado = !!email;
     const editandoAgora = !!funcionarioEmEdicaoId;
@@ -12443,6 +12632,10 @@ async function criarFuncionario() {
     if (!nome) { setMsg('msgFuncionarios', 'Digite o nome do funcionario.', 'err'); return; }
     if (!nomePareceCompleto(nome) && !nomeMantidoComoOriginal) { setMsg('msgFuncionarios', 'Informe um nome com pelo menos 4 caracteres.', 'err'); return; }
     if (emailInformado && !emailPareceValido(email)) { setMsg('msgFuncionarios', 'Informe um e-mail valido e real do funcionario.', 'err'); return; }
+    if (tempoIntervaloRaw && (!Number.isFinite(tempoIntervaloMinutos) || tempoIntervaloMinutos < 0 || !Number.isInteger(tempoIntervaloMinutos))) {
+      setMsg('msgFuncionarios', 'Informe o tempo de intervalo em minutos inteiros.', 'err');
+      return;
+    }
     if (!perfilId) { setMsg('msgFuncionarios', 'Selecione o perfil.', 'err'); return; }
     const mensagemDuplicidade = await validarDuplicidadeCadastro({
       nome,
@@ -12465,6 +12658,8 @@ async function criarFuncionario() {
           perfil_id: perfilId,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,
+          tempo_intervalo_minutos: tempoIntervaloMinutos,
+          intervalos_semana: intervalosSemana,
           ...(emailAlterado ? { email_verificado: false } : {}),
         }
       : {
@@ -12476,16 +12671,34 @@ async function criarFuncionario() {
           perfil_id: perfilId,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,
+          tempo_intervalo_minutos: tempoIntervaloMinutos,
+          intervalos_semana: intervalosSemana,
           email_verificado: false,
         };
     const funcionarioIdAtual = funcionarioEmEdicaoId;
-    const query = editandoAgora
-      ? sb.from('funcionarios').update(payload).eq('id', funcionarioIdAtual).select('id, nome, email').maybeSingle()
-      : sb.from('funcionarios').insert([{ ...payload, ativo: true }]).select('id, nome, email').single();
-    const { data: funcionarioSalvo, error } = await query;
+    const salvarFuncionarioPayload = (payloadSalvar) => editandoAgora
+      ? sb.from('funcionarios').update(payloadSalvar).eq('id', funcionarioIdAtual).select('id, nome, email').maybeSingle()
+      : sb.from('funcionarios').insert([{ ...payloadSalvar, ativo: true }]).select('id, nome, email').single();
+    let { data: funcionarioSalvo, error } = await salvarFuncionarioPayload(payload);
+    if (error && String(error.message || '').toLowerCase().includes('tempo_intervalo_minutos') && tempoIntervaloMinutos === null) {
+      const { tempo_intervalo_minutos, intervalos_semana, ...payloadSemTempoIntervalo } = payload;
+      ({ data: funcionarioSalvo, error } = await salvarFuncionarioPayload(payloadSemTempoIntervalo));
+    }
+    if (error && String(error.message || '').toLowerCase().includes('intervalos_semana') && !temIntervalosSemanaPreenchidos) {
+      const { intervalos_semana, ...payloadSemTempoIntervalo } = payload;
+      ({ data: funcionarioSalvo, error } = await salvarFuncionarioPayload(payloadSemTempoIntervalo));
+    }
     if (error) {
       if (isMissingWorkShiftColumnsError(error)) {
         setMsg('msgFuncionarios', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
+        return;
+      }
+      if (String(error.message || '').toLowerCase().includes('tempo_intervalo_minutos')) {
+        setMsg('msgFuncionarios', 'Falta aplicar a coluna tempo_intervalo_minutos no banco. Rode a nova migration antes de salvar o tempo de intervalo.', 'err');
+        return;
+      }
+      if (String(error.message || '').toLowerCase().includes('intervalos_semana')) {
+        setMsg('msgFuncionarios', 'Falta aplicar a coluna intervalos_semana no banco. Rode a nova migration antes de salvar os intervalos por dia.', 'err');
         return;
       }
       setMsg('msgFuncionarios', `${editandoAgora ? 'Erro ao salvar alterações' : 'Erro ao cadastrar'}: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
@@ -12531,6 +12744,8 @@ function limparFormularioFuncionario() {
   document.getElementById('pinFuncionario').value = '';
   document.getElementById('horarioInicioFuncionario').value = '';
   document.getElementById('horarioFimFuncionario').value = '';
+  document.getElementById('tempoIntervaloFuncionario').value = '';
+  renderizarIntervalosSemanaFuncionario();
   document.getElementById('perfilFuncionario').value = '';
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
   if (btnCancelar) btnCancelar.style.display = 'none';
@@ -12569,6 +12784,8 @@ async function editarFuncionario(id) {
   document.getElementById('pinFuncionario').value = '';
   document.getElementById('horarioInicioFuncionario').value = String(funcionario.horario_trabalho_inicio || '').slice(0, 5);
   document.getElementById('horarioFimFuncionario').value = String(funcionario.horario_trabalho_fim || '').slice(0, 5);
+  document.getElementById('tempoIntervaloFuncionario').value = funcionario.tempo_intervalo_minutos ?? '';
+  renderizarIntervalosSemanaFuncionario(funcionario.intervalos_semana || normalizarIntervalosSemanaFuncionario(null, funcionario.tempo_intervalo_minutos));
   document.getElementById('perfilFuncionario').value = funcionario.perfil_id || '';
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
@@ -18134,6 +18351,78 @@ function cancelarEdicaoTarefa() {
   setMsg('msgTarefas', 'Edição cancelada.', 'ok');
 }
 
+function fecharConfigLancamentoTarefa(id = '') {
+  const chave = String(id || '').trim();
+  if (chave) tarefasConfigLancamentoAbertasIds.delete(chave);
+  else tarefasConfigLancamentoAbertasIds.clear();
+  renderizarListaConsultaTarefas();
+  renderizarListaTarefas();
+}
+
+async function localizarConflitosLancamentoManual({ funcionarioId = '', lancamentosParaCriar = [] } = {}) {
+  const funcionario = String(funcionarioId || '').trim();
+  const datas = [...new Set((lancamentosParaCriar || []).map(item => String(item.data_programada || '').trim()).filter(Boolean))];
+  if (!funcionario || !datas.length) return [];
+
+  const { data, error } = await sb
+    .from('checklist_lancamentos')
+    .select('id, nome, horario_limite, data_programada, lancado_em, created_at, status')
+    .eq('funcionario_id', funcionario)
+    .in('data_programada', datas)
+    .limit(500);
+
+  if (error) throw error;
+
+  const existentes = (data || []).filter(item => lancamentoContaComoExistenteParaAgenda(item));
+  const conflitos = [];
+
+  lancamentosParaCriar.forEach(novo => {
+    const dataNovo = String(novo.data_programada || '').trim();
+    const horaNovo = horaCurta(novo.horario_limite || '');
+    const minutosNovo = horarioParaMinutos(horaNovo);
+    if (!dataNovo || minutosNovo === null) return;
+
+    existentes.forEach(existente => {
+      const dataExistente = String(obterDataProgramadaLancamento(existente) || '').trim();
+      const horaExistente = horaCurta(existente.horario_limite || '');
+      const minutosExistente = horarioParaMinutos(horaExistente);
+      if (dataExistente !== dataNovo || minutosExistente === null) return;
+
+      const diferenca = Math.abs(minutosNovo - minutosExistente);
+      if (diferenca <= JANELA_CONFLITO_LANCAMENTO_MANUAL_MINUTOS) {
+        conflitos.push({
+          novaTarefa: novo.nome || 'Nova tarefa',
+          novaData: dataNovo,
+          novaHora: horaNovo,
+          tarefaExistente: existente.nome || 'Tarefa já lançada',
+          horaExistente,
+          diferenca,
+        });
+      }
+    });
+  });
+
+  return conflitos;
+}
+
+function montarHtmlConflitosLancamentoManual(conflitos = [], funcionarioNome = '') {
+  const itens = conflitos.slice(0, 5).map(item => `
+    <li>
+      <strong>${escaparHtmlBasico(formatarDataProgramadaBr(item.novaData))}</strong>:
+      ${escaparHtmlBasico(item.novaTarefa)} às ${escaparHtmlBasico(item.novaHora)}
+      conflita com ${escaparHtmlBasico(item.tarefaExistente)} às ${escaparHtmlBasico(item.horaExistente)}
+      (${item.diferenca} min de diferença).
+    </li>
+  `).join('');
+  const restante = conflitos.length > 5 ? `<p>Há mais ${conflitos.length - 5} conflito(s) além dos listados.</p>` : '';
+  return `
+    <p>Já existe tarefa lançada para ${escaparHtmlBasico(funcionarioNome || 'este funcionário')} até ${JANELA_CONFLITO_LANCAMENTO_MANUAL_MINUTOS} minutos antes ou depois do horário escolhido.</p>
+    <ul style="margin:8px 0 0 18px;padding:0">${itens}</ul>
+    ${restante}
+    <p style="margin-top:10px"><strong>Deseja lançar mesmo assim?</strong></p>
+  `;
+}
+
 async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '', diasSemanaOverride = '') {
   if (!tarefasDisponiveis) {
     setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
@@ -18342,6 +18631,47 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     setMsg('msgTarefas', mensagemSemNovoLancamento, 'ok');
     setMsgLancamentoTarefa(id, mensagemSemNovoLancamento, 'ok');
     return;
+  }
+
+  let conflitosLancamento = [];
+  try {
+    conflitosLancamento = await localizarConflitosLancamentoManual({
+      funcionarioId: funcionarioSelecionado,
+      lancamentosParaCriar,
+    });
+  } catch (erroConflitos) {
+    console.error('Erro ao validar janela de 20 minutos para lançamento:', erroConflitos);
+    setMsg('msgTarefas', `Não foi possível validar conflitos de horário: ${mensagemErroSupabase(erroConflitos, 'erro desconhecido')}`, 'err');
+    setMsgLancamentoTarefa(id, 'Erro ao validar conflitos de horário antes do lançamento.', 'err');
+    return;
+  }
+
+  if (conflitosLancamento.length) {
+    const confirmacaoConflito = await abrirConfirmacaoSistema({
+      title: 'Tarefa próxima já lançada',
+      subtitle: 'Conflito de horário para o funcionário',
+      body: montarHtmlConflitosLancamentoManual(conflitosLancamento, funcionarioTurno?.nome || ''),
+      confirmText: 'Sim, lançar',
+      confirmClass: 'btn-green',
+      neutralText: 'Não, ajustar',
+      neutralClass: 'btn-amber',
+      cancelText: 'Cancelar',
+      cancelClass: 'btn-red',
+    });
+
+    if (confirmacaoConflito?.acao === 'neutro') {
+      abrirConfigLancamentoTarefa(id);
+      setMsg('msgTarefas', 'Ajuste a data, horário ou funcionário antes de lançar.', 'err');
+      setMsgLancamentoTarefa(id, 'Existe tarefa lançada dentro da janela de 20 minutos. Ajuste as opções antes de lançar.', 'err');
+      return;
+    }
+
+    if (!confirmacaoConflito?.confirmado) {
+      fecharConfigLancamentoTarefa(id);
+      setMsg('msgTarefas', 'Lançamento cancelado.', 'ok');
+      setMsgLancamentoTarefa(id, '', '');
+      return;
+    }
   }
 
   const { data: lancamentosCriados, error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite');
@@ -19445,6 +19775,55 @@ function formatarDuracaoMinutos(totalMinutos = 0) {
   return `${String(horas).padStart(2, '0')}:${String(resto).padStart(2, '0')}`;
 }
 
+function formatarMinutosIntervaloPonto(totalMinutos = 0) {
+  const minutos = Math.max(0, Math.ceil(Number(totalMinutos || 0)));
+  if (minutos < 60) return `${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+  return resto ? `${horas}h ${resto}min` : `${horas}h`;
+}
+
+function obterResumoRetornoIntervaloPonto(intervaloAberto = null, tempoMinimoMinutos = 0) {
+  const tempo = Number(tempoMinimoMinutos || 0);
+  if (!intervaloAberto?.inicio_em || !tempo || tempo <= 0) return null;
+  const inicioMs = new Date(intervaloAberto.inicio_em).getTime();
+  if (Number.isNaN(inicioMs)) return null;
+  const retornoPrevistoMs = inicioMs + (tempo * 60000);
+  const diffMin = Math.ceil((retornoPrevistoMs - Date.now()) / 60000);
+  return {
+    tempoMinimo: tempo,
+    retornoPrevisto: new Date(retornoPrevistoMs).toISOString(),
+    minutosRestantes: diffMin,
+    texto: diffMin > 0
+      ? `Falta ${formatarMinutosIntervaloPonto(diffMin)} para retorno`
+      : `-${formatarMinutosIntervaloPonto(Math.abs(diffMin))} do retorno`,
+    atrasado: diffMin <= 0,
+  };
+}
+
+function atualizarContadoresRetornoIntervaloPonto() {
+  document.querySelectorAll('[data-retorno-intervalo-ms]').forEach(el => {
+    const retornoMs = Number(el.getAttribute('data-retorno-intervalo-ms') || 0);
+    if (!retornoMs) return;
+    const diffMin = Math.ceil((retornoMs - Date.now()) / 60000);
+    const texto = diffMin > 0
+      ? `Falta ${formatarMinutosIntervaloPonto(diffMin)} para retorno`
+      : `-${formatarMinutosIntervaloPonto(Math.abs(diffMin))} do retorno`;
+    el.textContent = texto;
+    el.style.color = diffMin <= 0 ? 'var(--red)' : 'var(--amber)';
+  });
+}
+
+function iniciarContadorRetornoIntervaloPonto() {
+  if (intervaloContadorRetornoPonto) {
+    clearInterval(intervaloContadorRetornoPonto);
+    intervaloContadorRetornoPonto = null;
+  }
+  atualizarContadoresRetornoIntervaloPonto();
+  if (!document.querySelector('[data-retorno-intervalo-ms]')) return;
+  intervaloContadorRetornoPonto = window.setInterval(atualizarContadoresRetornoIntervaloPonto, 30000);
+}
+
 function obterResumoJornadaPonto(registro, intervalos = []) {
   if (!registro?.entrada_em) {
     return {
@@ -19550,6 +19929,36 @@ async function anexarNomesFuncionariosARegistrosPonto(rows = []) {
   });
 }
 
+async function carregarTempoIntervaloMinimoFuncionarios(ids = []) {
+  const listaIds = [...new Set((ids || []).filter(Boolean).map(String))];
+  if (!listaIds.length) return {};
+  try {
+    const { data, error } = await sb
+      .from('funcionarios')
+      .select('id, tempo_intervalo_minutos, intervalos_semana')
+      .in('id', listaIds);
+    if (error) {
+      const msg = String(error.message || '').toLowerCase();
+      if (msg.includes('tempo_intervalo_minutos') || msg.includes('intervalos_semana')) return {};
+      throw error;
+    }
+    return Object.fromEntries((data || []).map(item => [String(item.id), {
+      padrao: Number(item.tempo_intervalo_minutos || 0),
+      semana: normalizarIntervalosSemanaFuncionario(item.intervalos_semana, item.tempo_intervalo_minutos),
+    }]));
+  } catch (error) {
+    console.warn('Não foi possível carregar tempo mínimo de intervalo dos funcionários:', error);
+    return {};
+  }
+}
+
+function obterIntervalosMinimosFuncionarioData(config = {}, dataIso = dataLocalISO()) {
+  const token = diaSemanaTokenDaData(new Date(`${dataIso}T00:00:00`));
+  const lista = Array.isArray(config?.semana?.[token]) ? config.semana[token] : [];
+  if (lista.length) return lista;
+  return Number(config?.padrao || 0) > 0 ? [Number(config.padrao)] : [];
+}
+
 async function carregarResumoPontoHoje(funcionarioId = '') {
   const container = document.getElementById('pontoResumoHoje');
   if (!container) return;
@@ -19634,6 +20043,10 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     });
   }
 
+  const temposIntervaloMinimo = await carregarTempoIntervaloMinimoFuncionarios(
+    rows.map(item => item.funcionario_id)
+  );
+
   const escapeHtml = (valor) => String(valor ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -19705,11 +20118,22 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
         ultimaSaidaTs: 0,
         ultimaEntrada: null,
         ultimaSaida: null,
+        intervaloAbertoInicio: null,
+        tempoIntervaloMinimo: 0,
+        intervalosMinimosDia: obterIntervalosMinimosFuncionarioData(temposIntervaloMinimo[funcionarioIdAtual] || {}, hojeLocal),
       });
     }
 
     const item = porFuncionario.get(funcionarioIdAtual);
     item.totalMinutos += Number(resumo?.totalMinutos || 0);
+    const intervaloAbertoAtual = obterIntervaloAberto(intervalos);
+    const intervalosConcluidos = (intervalos || []).filter(intervalo => intervalo.inicio_em && intervalo.retorno_em).length;
+    const saidaPodeSerIntervalo = registro.saida_em && intervalosConcluidos < item.intervalosMinimosDia.length;
+    const inicioIntervaloAberto = intervaloAbertoAtual?.inicio_em || (saidaPodeSerIntervalo ? registro.saida_em : null);
+    if (inicioIntervaloAberto && ts(inicioIntervaloAberto) > ts(item.intervaloAbertoInicio)) {
+      item.intervaloAbertoInicio = inicioIntervaloAberto;
+      item.tempoIntervaloMinimo = item.intervalosMinimosDia[intervalosConcluidos] || 0;
+    }
 
     periodos.forEach(periodo => {
       item.periodos.push(periodo);
@@ -19765,8 +20189,19 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
           }).join('')
       : '<span class="ponto-periodo-chip">Sem batidas detalhadas</span>';
 
-    const statusClasse = item.aberto ? 'tag tag-amber' : 'tag tag-green';
-    const statusTexto = item.aberto ? 'Aberto agora' : 'Fechado';
+    const resumoRetorno = obterResumoRetornoIntervaloPonto(
+      item.intervaloAbertoInicio ? { inicio_em: item.intervaloAbertoInicio } : null,
+      item.tempoIntervaloMinimo
+    );
+    const statusClasse = item.intervaloAbertoInicio ? 'tag tag-amber' : item.aberto ? 'tag tag-amber' : 'tag tag-green';
+    const statusTexto = item.intervaloAbertoInicio ? 'Em intervalo' : item.aberto ? 'Aberto agora' : 'Fechado';
+    const retornoHtml = resumoRetorno
+      ? `<div>Intervalo: <strong data-retorno-intervalo-ms="${new Date(resumoRetorno.retornoPrevisto).getTime()}" style="color:${resumoRetorno.atrasado ? 'var(--red)' : 'var(--amber)'}">${escapeHtml(resumoRetorno.texto)}</strong></div>`
+      : item.tempoIntervaloMinimo
+        ? `<div>Intervalo mínimo: <strong>${formatarMinutosIntervaloPonto(item.tempoIntervaloMinimo)}</strong></div>`
+        : item.intervalosMinimosDia.length
+          ? `<div>Intervalos previstos: <strong>${item.intervalosMinimosDia.map(formatarMinutosIntervaloPonto).join(' + ')}</strong></div>`
+        : '';
 
     const acaoAdmin = usuarioEhAdministrador()
       ? `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalAjusteManualAdminPonto('${item.id}')">Ajustar</button>
@@ -19781,11 +20216,13 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
           <div>Total: <strong>${formatarDuracaoMinutos(item.totalMinutos)}</strong></div>
           <div>Última entrada: ${formatarHora(item.ultimaEntrada)}</div>
           <div>Última saída: ${item.ultimaSaida ? formatarHora(item.ultimaSaida) : '-'}</div>
+          ${retornoHtml}
         </div>
         <div class="ponto-resumo-tag" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap"><span class="${statusClasse}">${statusTexto}</span>${acaoAdmin}</div>
       </div>
     `;
   }).join('') + '</div>';
+  iniciarContadorRetornoIntervaloPonto();
 }
 
 
