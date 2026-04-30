@@ -484,6 +484,55 @@
       display: block !important;
       min-width: 0;
     }
+    .topbar-clock,
+    .topbar-business-day {
+      display: inline-flex !important;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      width: 190px;
+      min-width: 180px;
+      min-height: 42px;
+      padding: 7px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(34,197,94,0.35);
+      background: rgba(5,16,10,0.86);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      flex-shrink: 0;
+    }
+    .topbar-info-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+    .topbar-clock-time,
+    .topbar-business-day-date {
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+    .topbar-clock-time {
+      color: var(--green);
+    }
+    .topbar-business-day-date {
+      color: #ffffff;
+    }
+    .topbar-business-day-date.status-3 {
+      color: var(--green);
+    }
+    .topbar-business-day-date.status-2 {
+      color: var(--amber);
+    }
+    .topbar-business-day-date.status-1 {
+      color: var(--green);
+    }
     #topbar-title,
     #topbar-sub {
       overflow: hidden;
@@ -513,7 +562,8 @@
       justify-content: center;
       gap: 1px;
       min-width: 210px;
-      max-width: 320px;
+      width: 230px;
+      max-width: 230px;
       min-height: 42px;
       padding: 7px 14px;
       border-radius: 12px;
@@ -555,7 +605,8 @@
       align-items: center;
       justify-content: center;
       min-width: 130px;
-      max-width: 220px;
+      width: 150px;
+      max-width: 150px;
     }
     .mobile-menu-btn {
       display: none;
@@ -991,6 +1042,43 @@
       gap: 10px;
       justify-content: flex-end;
       flex-wrap: wrap;
+    }
+    .ponto-entrada-alerta-card {
+      width: min(520px, calc(100vw - 32px));
+      background: linear-gradient(180deg, rgba(127, 29, 29, 0.99), rgba(69, 10, 10, 0.99));
+      border: 1px solid rgba(248, 113, 113, 0.72);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(239, 68, 68, 0.22);
+      border-radius: 18px;
+      padding: 24px;
+      color: #fff1f2;
+      pointer-events: auto;
+    }
+    .ponto-entrada-alerta-title {
+      font-size: 30px;
+      line-height: 1.05;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .ponto-entrada-alerta-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 14px 0 18px;
+    }
+    .ponto-entrada-alerta-item {
+      border: 1px solid rgba(254, 202, 202, 0.2);
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .ponto-entrada-alerta-texto {
+      color: #fecaca;
+      font-size: 14px;
+      line-height: 1.45;
     }
     .ponto-feedback-overlay {
       position: fixed;
@@ -1903,18 +1991,42 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       background: rgba(8, 14, 11, 0.72);
-      padding: 8px;
+      padding: 10px;
+    }
+    .funcionario-intervalos-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .funcionario-intervalos-ajuda {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin-top: 3px;
+    }
+    .funcionario-intervalos-resumo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      min-height: 22px;
+    }
+    .funcionario-intervalos-resumo .tag {
+      font-size: 11px;
+      padding: 4px 7px;
     }
     .funcionario-intervalos-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(120px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 7px;
-      margin-top: 6px;
+      margin-top: 10px;
     }
     .funcionario-intervalo-dia {
       border: 1px solid rgba(107,143,112,0.18);
       border-radius: 8px;
-      padding: 7px;
+      padding: 9px;
       background: rgba(17,26,20,0.72);
       min-width: 0;
     }
@@ -1925,15 +2037,32 @@
       color: var(--text-muted);
       margin-bottom: 5px;
     }
+    .funcionario-intervalo-dia-vazio {
+      font-size: 12px;
+      color: var(--text-dim);
+      padding: 6px 0;
+    }
     .funcionario-intervalo-inputs {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
     }
     .funcionario-intervalo-input-row {
-      display: flex;
-      gap: 4px;
-      align-items: center;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: end;
+    }
+    .funcionario-intervalo-input-wrap {
+      min-width: 0;
+    }
+    .funcionario-intervalo-input-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 3px 2px;
     }
     .funcionario-intervalo-input-row input {
       min-width: 0;
@@ -1942,11 +2071,12 @@
       padding: 5px 7px !important;
     }
     .funcionario-intervalo-input-row .btn {
-      width: 30px;
-      min-width: 30px;
+      width: auto;
+      min-width: 62px;
       height: 30px;
       min-height: 30px;
-      padding: 0;
+      padding: 0 8px;
+      font-size: 11px;
     }
     .funcionario-cadastro-header {
       display: flex;
@@ -4456,7 +4586,21 @@
         align-items: stretch;
         gap: 8px;
       }
-      .topbar-main { align-items: flex-start; }
+      .topbar-main {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .topbar-clock {
+        width: 100%;
+        min-width: 0;
+        align-items: flex-start;
+        justify-content: flex-start;
+      }
+      .topbar-business-day {
+        width: 100%;
+        min-width: 0;
+        align-items: flex-start;
+      }
       .topbar-actions {
         width: 100%;
         justify-content: space-between;
@@ -4960,6 +5104,14 @@
           <h1 id="topbar-title">Checklists</h1>
           <div class="sub" id="topbar-sub"></div>
         </div>
+        <div class="topbar-clock" aria-label="Horário atual">
+          <span class="topbar-info-label">Hora atual</span>
+          <span class="topbar-clock-time" id="topbar-clock-time">--:--:--</span>
+        </div>
+        <div class="topbar-business-day" aria-label="Próximo quinto dia útil">
+          <span class="topbar-info-label">5º dia útil</span>
+          <span class="topbar-business-day-date" id="topbar-business-day-date">--/--</span>
+        </div>
       </div>
       <div class="topbar-store" id="topbarStoreInfo" hidden>
         <div class="topbar-user-label">Loja logada</div>
@@ -5160,7 +5312,7 @@
                 <input id="horarioFimFuncionario" class="campo-curto" type="time" placeholder="Fim turno">
               </div>
               <div class="campo-com-label">
-                <label class="campo-label" for="tempoIntervaloFuncionario">Tempo de intervalo</label>
+                <label class="campo-label" for="tempoIntervaloFuncionario">Intervalo padrão</label>
                 <input id="tempoIntervaloFuncionario" class="campo-curto" type="number" min="0" step="1" placeholder="Min">
               </div>
               <div class="campo-com-label">
@@ -5172,7 +5324,14 @@
               <button class="btn btn-green" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
               <button class="btn btn-ghost" id="btnCancelarEdicaoFuncionario" onclick="cancelarEdicaoFuncionario()" style="display:none">Cancelar</button>
               <div class="funcionario-intervalos-card">
-                <div class="campo-label">Intervalos por dia da semana</div>
+                <div class="funcionario-intervalos-header">
+                  <div>
+                    <div class="campo-label">Intervalos por dia da semana</div>
+                    <div class="funcionario-intervalos-ajuda">Cadastre quantos intervalos forem necessários no mesmo dia. Ex.: 30 min, depois 120 min.</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" type="button" onclick="copiarIntervaloPadraoParaSemanaFuncionario()">Usar padrão na semana</button>
+                </div>
+                <div id="resumoIntervalosSemanaFuncionario" class="funcionario-intervalos-resumo"></div>
                 <div id="intervalosSemanaFuncionario" class="funcionario-intervalos-grid"></div>
               </div>
             </div>
@@ -6187,6 +6346,18 @@
     </div>
   </div>
 
+  <div class="ponto-pendente-overlay" id="pontoEntradaAlertaOverlay" hidden>
+    <div class="ponto-entrada-alerta-card">
+      <div class="ponto-pendente-eyebrow">Alerta de entrada</div>
+      <div class="ponto-entrada-alerta-title">Bater ponto</div>
+      <div class="ponto-entrada-alerta-texto">Funcionário com jornada iniciando em até 5 minutos ou já iniciada, sem entrada registrada hoje.</div>
+      <div class="ponto-entrada-alerta-lista" id="pontoEntradaAlertaLista"></div>
+      <div class="ponto-pendente-acoes">
+        <button class="btn btn-green" type="button" onclick="fecharAlertaEntradaPonto()">OK</button>
+      </div>
+    </div>
+  </div>
+
 <!--  MODAL EXECU-!ÒO  -->
 <div class="overlay" id="modalOverlay">
   <div class="modal">
@@ -6646,6 +6817,7 @@ let assinaturaAvisoCentralTarefas = '';
 let assinaturaSomAlertaRapidoLista = '';
 let alertasCriticosSilenciadosNaSessao = false;
 let assinaturaUltimoRedirecionamentoChecklist = '';
+let assinaturaUltimoRedirecionamentoAlertaRapido = '';
 let resolverModalPinPendente = null;
 let resolverModalFormaPagamentoPendente = null;
 let formasModalPagamentoFinanceiro = [];
@@ -6673,6 +6845,7 @@ let timeoutLimpezaPinPonto = null;
 let segurancaPinPontoConfigurada = false;
 let ultimoToquePinPontoEm = 0;
 let intervaloVigilanciaPinPonto = null;
+let alertasEntradaPontoPendentesAtuais = [];
 let notificacoesHistoricoMaster = [];
 let filtroChecklistLancadoBuscaEditado = false;
 let filtroTarefasNomeEditado = false;
@@ -6720,6 +6893,7 @@ function redefinirEstadoAvisoCentralTarefas() {
   assinaturaAvisoCentralTarefas = '';
   assinaturaAlertasCriticosAnterior = '';
   assinaturaUltimoRedirecionamentoChecklist = '';
+  assinaturaUltimoRedirecionamentoAlertaRapido = '';
   quantidadeNotificacoesAnterior = null;
   quantidadeAlertasCriticosAnterior = null;
   alertasCriticosSilenciadosNaSessao = obterSilenciamentoAlertasCriticosDaSessao();
@@ -7098,7 +7272,44 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
     throw consulta.error;
   }
 
-  const filtradosPorDestino = (consulta.data || []).filter(item => {
+  let dadosConsulta = consulta.data || [];
+  if (destinoId && String(obterLojaIdSessao() || '').trim()) {
+    const consultarPendentesSemFiltroLoja = async (campoData = 'criado_em') => executarSemFiltroLojaTemporario(async () => {
+      const { data, error } = await sb
+        .from('alertas_rapidos')
+        .select(`id, grupo_id, mensagem, funcionario_destino_id, funcionario_destino_nome, ${campoData}, status`)
+        .eq('status', 'pendente')
+        .eq('funcionario_destino_id', destinoId)
+        .order(campoData, { ascending: false })
+        .limit(100);
+      if (error) return { data: null, error };
+      return {
+        data: (data || []).map(item => ({
+          ...item,
+          criado_em: item.criado_em || item.created_at || null,
+          created_at: item.created_at || item.criado_em || null,
+        })),
+        error: null,
+      };
+    });
+
+    let fallback = await consultarPendentesSemFiltroLoja('criado_em');
+    if (fallback.error && String(fallback.error?.message || '').toLowerCase().includes('criado_em')) {
+      fallback = await consultarPendentesSemFiltroLoja('created_at');
+    }
+    if (!fallback.error && fallback.data?.length) {
+      const porId = new Map();
+      [...dadosConsulta, ...fallback.data].forEach(item => {
+        const chave = String(item?.id || '');
+        if (chave) porId.set(chave, item);
+      });
+      dadosConsulta = Array.from(porId.values());
+    } else if (fallback.error && !isMissingQuickAlertsTableError(fallback.error)) {
+      console.warn('Falha no fallback sem filtro de loja para alertas rápidos:', fallback.error);
+    }
+  }
+
+  const filtradosPorDestino = (dadosConsulta || []).filter(item => {
     if (destinoId) return String(item.funcionario_destino_id || '') === destinoId;
     if (destinoNomeNormalizado) return normalizarTextoComparacao(item.funcionario_destino_nome || '') === destinoNomeNormalizado;
     return false;
@@ -7140,10 +7351,21 @@ function usuarioPodeConfirmarAlertaRapido() {
   return !!obterPermissoesUsuario().confirmar_alertas_rapidas;
 }
 
-function usuarioPodeGerenciarAlertasRapidos() {
+function usuarioPodeEnviarAlertasRapidos() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
-  return !!obterPermissoesUsuario().tarefas_rapidas;
+  if (!usuarioEhAdministrador()) return false;
+  return !!obterPermissoesUsuario().enviar_alertas_rapidas;
+}
+
+function usuarioPodeGerenciarAlertasRapidos() {
+  return usuarioPodeEnviarAlertasRapidos();
+}
+
+function usuarioPodeAcessarAlertasRapidos() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioPodeEnviarAlertasRapidos()) return true;
+  const permissoes = obterPermissoesUsuario();
+  return !!(permissoes.tarefas_rapidas || permissoes.receber_alertas_rapidas || permissoes.confirmar_alertas_rapidas);
 }
 
 function usuarioEhPerfilGerencialNotificacoes() {
@@ -7179,6 +7401,7 @@ const PERFIL_PERMISSOES = [
   { key: 'perfis', label: 'Perfis' },
   { key: 'tarefas', label: 'Cadastro de Checklist' },
   { key: 'tarefas_rapidas', label: 'Alertas rápidas' },
+  { key: 'enviar_alertas_rapidas', label: 'Enviar alertas rápidos' },
   { key: 'receber_alertas_rapidas', label: 'Receber alertas rápidos' },
   { key: 'confirmar_alertas_rapidas', label: 'Confirmar alertas rápidos' },
   { key: 'execucoes', label: 'Em andamento' },
@@ -7221,6 +7444,7 @@ function obterPermissoesBase(codigo) {
       perfis: false,
       tarefas: false,
       tarefas_rapidas: false,
+      enviar_alertas_rapidas: false,
       receber_alertas_rapidas: false,
       confirmar_alertas_rapidas: false,
       execucoes: false,
@@ -7258,6 +7482,7 @@ function obterPermissoesBase(codigo) {
       perfis: false,
       tarefas: false,
       tarefas_rapidas: true,
+      enviar_alertas_rapidas: false,
       receber_alertas_rapidas: true,
       confirmar_alertas_rapidas: true,
       execucoes: true,
@@ -7294,6 +7519,7 @@ function obterPermissoesBase(codigo) {
     perfis: false,
     tarefas: false,
     tarefas_rapidas: false,
+    enviar_alertas_rapidas: false,
     receber_alertas_rapidas: true,
     confirmar_alertas_rapidas: true,
     execucoes: true,
@@ -7590,7 +7816,7 @@ function existeSessaoAtivaParaAtualizacao() {
 }
 
 function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
-  return ['checklists', 'execucoes', 'tarefas_rapidas', 'ponto_ajustes', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
+  return ['checklists', 'bater_ponto', 'execucoes', 'tarefas_rapidas', 'ponto_ajustes', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
 }
 
 function obterIntervaloAtualizacaoMs(pageId = obterPaginaAtivaAtual()) {
@@ -8560,6 +8786,9 @@ function usuarioPodeAcessar(pageId) {
   const permissoes = obterPermissoesUsuario();
   if (pageId === 'configuracoes') {
     return !!(permissoes.configuracoes || permissoes.cadastro_lojas || permissoes.cadastro_admins_loja);
+  }
+  if (pageId === 'tarefas_rapidas') {
+    return usuarioPodeAcessarAlertasRapidos();
   }
   return !!permissoes[pageId];
 }
@@ -10717,8 +10946,11 @@ function sincronizarAvisoNotificacoes() {
   const chavesCriticasAnteriores = new Set(String(assinaturaAlertasCriticosAnterior || '').split('|').filter(Boolean));
   const notificacoesCriticasNovas = notificacoesCriticas.filter(item => !chavesCriticasAnteriores.has(String(item?.chave || '')));
   const novasTarefasChecklist = notificacoesCriticasNovas.filter(item => item?.tipo === 'checklist_pendente' || item?.tipo === 'lancamento_atrasado');
+  const novosAlertasRapidos = notificacoesCriticasNovas.filter(item => item?.tipo === 'alerta_rapido');
   const possuiNovaTarefaChecklist = novasTarefasChecklist.length > 0;
+  const possuiNovoAlertaRapido = novosAlertasRapidos.length > 0;
   const podeAlertarNovaTarefaChecklist = possuiNovaTarefaChecklist && existeSessaoAtivaParaAtualizacao();
+  const podeAlertarNovoAlertaRapido = possuiNovoAlertaRapido && existeSessaoAtivaParaAtualizacao();
 
   const redirecionarParaChecklistSeNecessario = () => {
     if (!possuiNovaTarefaChecklist) return;
@@ -10736,6 +10968,24 @@ function sincronizarAvisoNotificacoes() {
 
     const botaoChecklist = document.querySelector('.nav-btn[data-page="checklists"]');
     abrirPagina('checklists', botaoChecklist);
+  };
+
+  const redirecionarParaAlertaRapidoSeNecessario = () => {
+    if (!possuiNovoAlertaRapido) return;
+    if (!usuarioPodeReceberAlertaRapido()) return;
+    if (!usuarioPodeAcessar('tarefas_rapidas')) return;
+
+    const assinaturaNovoAlerta = novosAlertasRapidos
+      .map(item => String(item?.chave || ''))
+      .filter(Boolean)
+      .sort()
+      .join('|');
+
+    if (!assinaturaNovoAlerta || assinaturaNovoAlerta === assinaturaUltimoRedirecionamentoAlertaRapido) return;
+    assinaturaUltimoRedirecionamentoAlertaRapido = assinaturaNovoAlerta;
+
+    const botaoAlertasRapidos = document.querySelector('.nav-btn[data-page="tarefas_rapidas"]');
+    abrirPagina('tarefas_rapidas', botaoAlertasRapidos);
   };
 
   renderizarAvisoCentralTarefas();
@@ -10759,7 +11009,7 @@ function sincronizarAvisoNotificacoes() {
   };
 
   if (quantidadeNotificacoesAnterior === null) {
-    if (totalCriticoAtual > 0 && existeSessaoAtivaParaAtualizacao() && (alertaFortePermitido || podeAlertarNovaTarefaChecklist)) {
+    if (totalCriticoAtual > 0 && existeSessaoAtivaParaAtualizacao() && (alertaFortePermitido || podeAlertarNovaTarefaChecklist || podeAlertarNovoAlertaRapido)) {
       destacarNovasNotificacoes();
       avisoCentralTarefasFechado = false;
       renderizarAvisoCentralTarefas();
@@ -10774,6 +11024,7 @@ function sincronizarAvisoNotificacoes() {
       if (!painelNotificacoesAberto) {
         togglePainelNotificacoes(true);
       }
+      redirecionarParaAlertaRapidoSeNecessario();
       redirecionarParaChecklistSeNecessario();
     }
     quantidadeNotificacoesAnterior = totalAtual;
@@ -10782,7 +11033,7 @@ function sincronizarAvisoNotificacoes() {
     return;
   }
 
-  if (totalCriticoAtual > 0 && assinaturaCriticaAtual !== assinaturaAlertasCriticosAnterior && (alertaFortePermitido || podeAlertarNovaTarefaChecklist)) {
+  if (totalCriticoAtual > 0 && assinaturaCriticaAtual !== assinaturaAlertasCriticosAnterior && (alertaFortePermitido || podeAlertarNovaTarefaChecklist || podeAlertarNovoAlertaRapido)) {
     destacarNovasNotificacoes();
     avisoCentralTarefasFechado = false;
     renderizarAvisoCentralTarefas();
@@ -10797,8 +11048,9 @@ function sincronizarAvisoNotificacoes() {
     if (!painelNotificacoesAberto) {
       togglePainelNotificacoes(true);
     }
+    redirecionarParaAlertaRapidoSeNecessario();
     redirecionarParaChecklistSeNecessario();
-  } else if (totalAtual > quantidadeNotificacoesAnterior && (alertaFortePermitido || podeAlertarNovaTarefaChecklist)) {
+  } else if (totalAtual > quantidadeNotificacoesAnterior && (alertaFortePermitido || podeAlertarNovaTarefaChecklist || podeAlertarNovoAlertaRapido)) {
     destacarNovasNotificacoes();
     const notificacaoMaisRecente = notificacoesAtuais[0] || null;
     const notificacaoSilenciosa = notificacaoMaisRecente?.tipo === 'checklist_agendado';
@@ -10812,6 +11064,7 @@ function sincronizarAvisoNotificacoes() {
     if (!painelNotificacoesAberto) {
       togglePainelNotificacoes(true);
     }
+    redirecionarParaAlertaRapidoSeNecessario();
     redirecionarParaChecklistSeNecessario();
   }
 
@@ -12409,6 +12662,22 @@ function normalizarIntervalosSemanaFuncionario(valor = null, padraoMinutos = nul
   return base;
 }
 
+function prepararIntervalosSemanaFuncionarioParaRender(valor = null) {
+  const base = {};
+  DIAS_SEMANA_INTERVALO_FUNCIONARIO.forEach(([token]) => { base[token] = []; });
+  let origem = valor || {};
+  if (typeof origem === 'string') {
+    try { origem = JSON.parse(origem); } catch (_) { origem = {}; }
+  }
+  DIAS_SEMANA_INTERVALO_FUNCIONARIO.forEach(([token]) => {
+    const lista = Array.isArray(origem?.[token]) ? origem[token] : [];
+    base[token] = lista
+      .map(item => String(item ?? '').trim())
+      .filter(item => item === '' || (Number.isFinite(Number(item)) && Number(item) > 0));
+  });
+  return base;
+}
+
 function resumirIntervalosSemanaFuncionario(valor = null, padraoMinutos = null) {
   const config = normalizarIntervalosSemanaFuncionario(valor, padraoMinutos);
   const partes = DIAS_SEMANA_INTERVALO_FUNCIONARIO
@@ -12421,27 +12690,51 @@ function resumirIntervalosSemanaFuncionario(valor = null, padraoMinutos = null) 
   return partes.length ? partes.join(' · ') : '-';
 }
 
+function atualizarResumoIntervalosSemanaFuncionario(config = null) {
+  const resumo = document.getElementById('resumoIntervalosSemanaFuncionario');
+  if (!resumo) return;
+  const dados = normalizarIntervalosSemanaFuncionario(config || obterIntervalosSemanaFuncionarioCadastro());
+  const partes = DIAS_SEMANA_INTERVALO_FUNCIONARIO
+    .map(([token, rotulo]) => {
+      const lista = dados[token] || [];
+      if (!lista.length) return '';
+      const total = lista.reduce((acc, item) => acc + Number(item || 0), 0);
+      return `<span class="tag tag-green">${rotulo}: ${lista.join(' + ')} min (${total} min)</span>`;
+    })
+    .filter(Boolean);
+  resumo.innerHTML = partes.length
+    ? partes.join('')
+    : '<span class="tag tag-gray">Nenhum intervalo cadastrado por dia.</span>';
+}
+
 function renderizarIntervalosSemanaFuncionario(valor = null) {
   const container = document.getElementById('intervalosSemanaFuncionario');
   if (!container) return;
-  const config = normalizarIntervalosSemanaFuncionario(valor);
+  const config = prepararIntervalosSemanaFuncionarioParaRender(valor);
   container.innerHTML = DIAS_SEMANA_INTERVALO_FUNCIONARIO.map(([token, rotulo]) => {
-    const intervalos = config[token]?.length ? config[token] : [''];
+    const intervalos = config[token] || [];
     return `
       <div class="funcionario-intervalo-dia" data-dia="${token}">
         <div class="funcionario-intervalo-dia-titulo">${rotulo}</div>
         <div class="funcionario-intervalo-inputs">
-          ${intervalos.map((minutos, idx) => `
+          ${intervalos.length ? intervalos.map((minutos, idx) => `
             <div class="funcionario-intervalo-input-row">
-              <input class="intervalo-dia-funcionario" data-dia="${token}" type="number" min="0" step="1" placeholder="${idx + 1}º min" value="${minutos || ''}">
-              <button class="btn btn-red" type="button" title="Remover intervalo" onclick="removerIntervaloDiaFuncionario('${token}', ${idx})">×</button>
+              <div class="funcionario-intervalo-input-wrap">
+                <label class="funcionario-intervalo-input-label">${idx + 1}º intervalo</label>
+                <input class="intervalo-dia-funcionario" data-dia="${token}" type="number" min="0" step="1" placeholder="Minutos" value="${minutos || ''}" oninput="atualizarResumoIntervalosSemanaFuncionario()">
+              </div>
+              <button class="btn btn-red btn-sm" type="button" title="Excluir este intervalo" onclick="removerIntervaloDiaFuncionario('${token}', ${idx})">Excluir</button>
             </div>
-          `).join('')}
+          `).join('') : '<div class="funcionario-intervalo-dia-vazio">Sem intervalo neste dia.</div>'}
         </div>
-        <button class="btn btn-ghost btn-sm" type="button" style="margin-top:6px;width:100%" onclick="adicionarIntervaloDiaFuncionario('${token}')">+ intervalo</button>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="adicionarIntervaloDiaFuncionario('${token}')">+ intervalo</button>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="limparIntervalosDiaFuncionario('${token}')">Limpar</button>
+        </div>
       </div>
     `;
   }).join('');
+  atualizarResumoIntervalosSemanaFuncionario(config);
 }
 
 function obterIntervalosSemanaFuncionarioCadastro() {
@@ -12468,6 +12761,26 @@ function removerIntervaloDiaFuncionario(token, index) {
   if (!config[token]) config[token] = [];
   config[token].splice(index, 1);
   renderizarIntervalosSemanaFuncionario(config);
+}
+
+function limparIntervalosDiaFuncionario(token) {
+  const config = obterIntervalosSemanaFuncionarioCadastro();
+  config[token] = [];
+  renderizarIntervalosSemanaFuncionario(config);
+}
+
+function copiarIntervaloPadraoParaSemanaFuncionario() {
+  const padrao = Number(String(document.getElementById('tempoIntervaloFuncionario')?.value || '').trim());
+  if (!Number.isFinite(padrao) || padrao <= 0) {
+    setMsg('msgFuncionarios', 'Informe um intervalo padrão em minutos antes de aplicar na semana.', 'err');
+    return;
+  }
+  const config = {};
+  DIAS_SEMANA_INTERVALO_FUNCIONARIO.forEach(([token]) => {
+    config[token] = [Math.round(padrao)];
+  });
+  renderizarIntervalosSemanaFuncionario(config);
+  setMsg('msgFuncionarios', `Intervalo padrão de ${Math.round(padrao)} min aplicado em todos os dias.`, 'ok');
 }
 
 function atualizarAvisoVerificacaoFuncionarioEmail({
@@ -18805,7 +19118,7 @@ async function carregarFuncionariosAlertaRapido() {
   try {
     const { data, error } = await sb
       .from('funcionarios')
-      .select('id, nome')
+      .select('id, nome, loja_id, empresa_id')
       .eq('ativo', true)
       .order('nome');
 
@@ -18818,7 +19131,7 @@ async function carregarFuncionariosAlertaRapido() {
 
     container.innerHTML = data.map(item => `
       <label class="alerta-rapido-check-item">
-        <input type="checkbox" checked data-alerta-funcionario-id="${item.id}" data-alerta-funcionario-nome="${String(item.nome || '').replace(/"/g, '&quot;')}" onchange="atualizarResumoDestinatariosAlertaRapido()">
+        <input type="checkbox" checked data-alerta-funcionario-id="${item.id}" data-alerta-funcionario-nome="${String(item.nome || '').replace(/"/g, '&quot;')}" data-alerta-funcionario-loja-id="${String(item.loja_id || '').replace(/"/g, '&quot;')}" data-alerta-funcionario-empresa-id="${String(item.empresa_id || '').replace(/"/g, '&quot;')}" onchange="atualizarResumoDestinatariosAlertaRapido()">
         <span>${item.nome}</span>
       </label>
     `).join('');
@@ -18833,6 +19146,8 @@ function coletarFuncionariosSelecionadosAlertaRapido() {
   return Array.from(document.querySelectorAll('[data-alerta-funcionario-id]:checked')).map(input => ({
     id: String(input.getAttribute('data-alerta-funcionario-id') || ''),
     nome: String(input.getAttribute('data-alerta-funcionario-nome') || ''),
+    loja_id: String(input.getAttribute('data-alerta-funcionario-loja-id') || '').trim() || null,
+    empresa_id: String(input.getAttribute('data-alerta-funcionario-empresa-id') || '').trim() || null,
   })).filter(item => item.id);
 }
 
@@ -18856,6 +19171,11 @@ function atualizarResumoDestinatariosAlertaRapido() {
 }
 
 async function enviarAlertaRapido() {
+  if (!usuarioPodeEnviarAlertasRapidos()) {
+    setMsg('msgAlertasRapidos', 'Somente o perfil administrativo pode enviar alertas rápidos.', 'err');
+    return;
+  }
+
   const mensagem = String(document.getElementById('mensagemAlertaRapido')?.value || '').trim();
   const selecionados = coletarFuncionariosSelecionadosAlertaRapido();
 
@@ -18885,6 +19205,8 @@ async function enviarAlertaRapido() {
     funcionario_destino_nome: item.nome || null,
     criado_por_nome: criadoPorNome || 'Administrador',
     criado_por_id: criadoPorId || null,
+    ...(item.loja_id ? { loja_id: item.loja_id } : {}),
+    ...(item.empresa_id ? { empresa_id: item.empresa_id } : {}),
     status: 'pendente',
   }));
 
@@ -19147,11 +19469,11 @@ async function excluirAlertaRapido(id) {
 }
 
 async function carregarTarefasRapidas() {
-  if (!usuarioSistemaLogado || !usuarioPodeAcessar('tarefas_rapidas')) return;
+  if (!usuarioSistemaLogado || !usuarioPodeAcessarAlertasRapidos()) return;
   const cardEnvio = document.getElementById('cardAlertaRapidoEnvio');
   const controlesAdmin = document.getElementById('alertasRapidosAdminControles');
   const tituloLista = document.getElementById('tituloListaAlertaRapido');
-  const modoGestao = usuarioPodeGerenciarAlertasRapidos();
+  const modoGestao = usuarioPodeEnviarAlertasRapidos();
 
   if (cardEnvio) cardEnvio.style.display = modoGestao ? '' : 'none';
   if (controlesAdmin) controlesAdmin.style.display = modoGestao ? '' : 'none';
@@ -19174,6 +19496,7 @@ async function confirmarAlertaRapidoNotificacao(item, index) {
   }
   const alertaId = item?.meta?.alertaRapidoId || item?.meta?.alertaId || null;
   const grupoId = String(item?.meta?.alertaRapidoGrupoId || '');
+  const funcionarioDestinoId = String(item?.meta?.funcionarioDestinoId || '');
   const mensagem = String(item?.meta?.mensagem || item?.descricao || 'Alerta rápido');
   if (!alertaId) return;
 
@@ -19186,19 +19509,33 @@ async function confirmarAlertaRapidoNotificacao(item, index) {
 
   if (!confirmacao) return;
 
+  const payloadConfirmacao = {
+    status: 'confirmado',
+    confirmado_por_id: confirmacao.funcionarioId,
+    confirmado_por_nome: confirmacao.nomeFuncionario,
+    confirmado_em: confirmacao.confirmadoEm,
+  };
+
   let query = sb
     .from('alertas_rapidos')
-    .update({
-      status: 'confirmado',
-      confirmado_por_id: confirmacao.funcionarioId,
-      confirmado_por_nome: confirmacao.nomeFuncionario,
-      confirmado_em: confirmacao.confirmadoEm,
-    })
+    .update(payloadConfirmacao)
     .eq('status', 'pendente');
 
   query = grupoId ? query.eq('grupo_id', grupoId) : query.eq('id', alertaId);
 
-  const { error } = await query;
+  let { data: confirmados, error } = await query.select('id');
+
+  if (!error && !confirmados?.length && funcionarioDestinoId) {
+    const fallback = await executarSemFiltroLojaTemporario(() => sb
+      .from('alertas_rapidos')
+      .update(payloadConfirmacao)
+      .eq('status', 'pendente')
+      .eq('id', alertaId)
+      .eq('funcionario_destino_id', funcionarioDestinoId)
+      .select('id'));
+    confirmados = fallback.data || [];
+    error = fallback.error || null;
+  }
 
   if (error) {
     alert(`Não foi possível confirmar o alerta: ${mensagemErroSupabase(error, 'erro desconhecido')}`);
@@ -19380,6 +19717,105 @@ async function carregarFuncionariosAtivosPonto() {
   const funcionarios = data || [];
   relatorioPontoFuncionarioCache = Object.fromEntries(funcionarios.map(item => [String(item.id), item.nome]));
   return funcionarios;
+}
+
+function obterChaveAlertaEntradaPonto(funcionarioId = '', dataIso = hoje()) {
+  return `zuqui_alerta_entrada_ponto:${dataIso}:${String(funcionarioId || '').trim()}`;
+}
+
+function alertaEntradaPontoFoiFechado(funcionarioId = '', dataIso = hoje()) {
+  try {
+    return sessionStorage.getItem(obterChaveAlertaEntradaPonto(funcionarioId, dataIso)) === '1';
+  } catch (_) {
+    return false;
+  }
+}
+
+function marcarAlertaEntradaPontoFechado(funcionarioId = '', dataIso = hoje()) {
+  try {
+    sessionStorage.setItem(obterChaveAlertaEntradaPonto(funcionarioId, dataIso), '1');
+  } catch (_) {}
+}
+
+function abrirAlertaEntradaPonto(pendentes = []) {
+  const overlay = document.getElementById('pontoEntradaAlertaOverlay');
+  const lista = document.getElementById('pontoEntradaAlertaLista');
+  if (!overlay || !lista || !pendentes.length) return;
+
+  alertasEntradaPontoPendentesAtuais = pendentes;
+  lista.innerHTML = pendentes.map(item => {
+    const nome = escaparHtmlBasico(item.nome || 'Funcionário').toUpperCase();
+    const horario = escaparHtmlBasico(horaCurta(item.horario_trabalho_inicio || '') || '--:--');
+    return `<div class="ponto-entrada-alerta-item">${nome} BATER PONTO <span style="font-size:13px;font-weight:700;color:#fecaca">(${horario})</span></div>`;
+  }).join('');
+  overlay.hidden = false;
+}
+
+function fecharAlertaEntradaPonto() {
+  const dataHoje = hoje();
+  alertasEntradaPontoPendentesAtuais.forEach(item => {
+    if (item?.id) marcarAlertaEntradaPontoFechado(item.id, dataHoje);
+  });
+  alertasEntradaPontoPendentesAtuais = [];
+  const overlay = document.getElementById('pontoEntradaAlertaOverlay');
+  if (overlay) overlay.hidden = true;
+}
+
+async function verificarAlertaEntradaPonto() {
+  if (!usuarioSistemaLogado || obterPaginaAtivaAtual() !== 'bater_ponto') return;
+
+  const agoraMinutos = horarioParaMinutos(agoraHoraMinuto());
+  if (agoraMinutos === null) return;
+
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
+  let queryFuncionarios = sb
+    .from('funcionarios')
+    .select('id, nome, horario_trabalho_inicio')
+    .eq('ativo', true)
+    .not('horario_trabalho_inicio', 'is', null);
+
+  if (funcionarioRestritoId) {
+    queryFuncionarios = queryFuncionarios.eq('id', funcionarioRestritoId);
+  }
+
+  const { data: funcionarios, error: erroFuncionarios } = await queryFuncionarios.order('nome');
+  if (erroFuncionarios) {
+    if (!isMissingWorkShiftColumnsError(erroFuncionarios)) {
+      console.warn('Não foi possível verificar alerta de entrada do ponto:', erroFuncionarios);
+    }
+    return;
+  }
+
+  const candidatos = (funcionarios || []).filter(funcionario => {
+    const inicio = horarioParaMinutos(funcionario.horario_trabalho_inicio);
+    if (inicio === null) return false;
+    if (agoraMinutos < Math.max(0, inicio - 5)) return false;
+    return !alertaEntradaPontoFoiFechado(funcionario.id);
+  });
+  if (!candidatos.length) return;
+
+  const dataHoje = hoje();
+  const { data: registros, error: erroRegistros } = await sb
+    .from('ponto_registros')
+    .select('funcionario_id, entrada_em')
+    .eq('data_ponto', dataHoje)
+    .in('funcionario_id', candidatos.map(item => item.id));
+
+  if (erroRegistros) {
+    if (!isMissingTimeClockTableError(erroRegistros)) {
+      console.warn('Não foi possível verificar entradas registradas no ponto:', erroRegistros);
+    }
+    return;
+  }
+
+  const comEntrada = new Set((registros || [])
+    .filter(item => item.entrada_em)
+    .map(item => String(item.funcionario_id || '')));
+  const pendentes = candidatos.filter(item => !comEntrada.has(String(item.id)));
+
+  if (pendentes.length) {
+    abrirAlertaEntradaPonto(pendentes);
+  }
 }
 
 function preencherSelectFuncionariosPonto(selectEl, funcionarios = [], {
@@ -19763,9 +20199,29 @@ function montarResumoIntervalos(intervalos = []) {
   if (!intervalos.length) return 'Intervalos: nenhum registrado';
   const texto = intervalos.map(item => {
     const n = item.ordem || '-';
-    return `#${n} ${formatarHoraPonto(item.inicio_em)} - ${formatarHoraPonto(item.retorno_em)}`;
+    const duracao = calcularDuracaoIntervaloPonto(item);
+    const duracaoTexto = duracao !== null ? ` (${formatarDuracaoMinutos(duracao)})` : '';
+    return `#${n} ${formatarHoraPonto(item.inicio_em)} - ${formatarHoraPonto(item.retorno_em)}${duracaoTexto}`;
   }).join(' · ');
   return `Intervalos: ${texto}`;
+}
+
+function calcularDuracaoIntervaloPonto(intervalo = {}) {
+  if (!intervalo?.inicio_em || !intervalo?.retorno_em) return null;
+  const inicioMs = new Date(intervalo.inicio_em).getTime();
+  const retornoMs = new Date(intervalo.retorno_em).getTime();
+  if (Number.isNaN(inicioMs) || Number.isNaN(retornoMs) || retornoMs <= inicioMs) return null;
+  return Math.floor((retornoMs - inicioMs) / 60000);
+}
+
+function obterIntervalosOrdenadosPonto(intervalos = []) {
+  return [...(intervalos || [])].sort((a, b) => {
+    const ordemA = Number(a.ordem || 0);
+    const ordemB = Number(b.ordem || 0);
+    const inicioA = new Date(a.inicio_em || 0).getTime();
+    const inicioB = new Date(b.inicio_em || 0).getTime();
+    return (ordemA - ordemB) || (inicioA - inicioB);
+  });
 }
 
 function formatarDuracaoMinutos(totalMinutos = 0) {
@@ -20251,6 +20707,7 @@ async function carregarBaterPonto() {
   const btnAjusteManualAdmin = document.getElementById('btnAjusteManualAdminPonto');
   if (btnAjusteManualAdmin) btnAjusteManualAdmin.hidden = !usuarioEhAdministrador();
   await carregarResumoPontoHoje(restringirPontoAoUsuarioLogado ? funcionarioRestritoId : '');
+  await verificarAlertaEntradaPonto();
   await carregarHorasDashboard();
 }
 
@@ -23731,6 +24188,121 @@ window.addEventListener('pageshow', function() {
   redefinirCampoBuscaTarefas();
 });
 
+function atualizarRelogioTopbar() {
+  const el = document.getElementById('topbar-clock-time');
+  if (!el) return;
+  el.textContent = new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(new Date());
+}
+
+function criarDataLocal(year, monthIndex, day) {
+  return new Date(year, monthIndex, day, 12, 0, 0, 0);
+}
+
+function chaveDataLocal(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function somarDiasLocal(data, dias) {
+  return criarDataLocal(data.getFullYear(), data.getMonth(), data.getDate() + dias);
+}
+
+function calcularPascoaGregoriana(ano) {
+  const a = ano % 19;
+  const b = Math.floor(ano / 100);
+  const c = ano % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mes = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const dia = ((h + l - 7 * m + 114) % 31) + 1;
+  return criarDataLocal(ano, mes, dia);
+}
+
+function obterFeriadosNacionaisBrasil(ano) {
+  const feriados = new Set([
+    chaveDataLocal(criarDataLocal(ano, 0, 1)),
+    chaveDataLocal(criarDataLocal(ano, 3, 21)),
+    chaveDataLocal(criarDataLocal(ano, 4, 1)),
+    chaveDataLocal(criarDataLocal(ano, 8, 7)),
+    chaveDataLocal(criarDataLocal(ano, 9, 12)),
+    chaveDataLocal(criarDataLocal(ano, 10, 2)),
+    chaveDataLocal(criarDataLocal(ano, 10, 15)),
+    chaveDataLocal(criarDataLocal(ano, 10, 20)),
+    chaveDataLocal(criarDataLocal(ano, 11, 25)),
+  ]);
+
+  const pascoa = calcularPascoaGregoriana(ano);
+  [
+    somarDiasLocal(pascoa, -48),
+    somarDiasLocal(pascoa, -47),
+    somarDiasLocal(pascoa, -2),
+    somarDiasLocal(pascoa, 60),
+  ].forEach(data => feriados.add(chaveDataLocal(data)));
+
+  return feriados;
+}
+
+function dataEhDiaUtilBrasil(data) {
+  const diaSemana = data.getDay();
+  if (diaSemana === 0 || diaSemana === 6) return false;
+  return !obterFeriadosNacionaisBrasil(data.getFullYear()).has(chaveDataLocal(data));
+}
+
+function calcularQuintoDiaUtilMes(ano, mesIndex) {
+  let uteis = 0;
+  let data = criarDataLocal(ano, mesIndex, 1);
+  while (data.getMonth() === mesIndex) {
+    if (dataEhDiaUtilBrasil(data)) {
+      uteis += 1;
+      if (uteis === 5) return data;
+    }
+    data = somarDiasLocal(data, 1);
+  }
+  return null;
+}
+
+function obterProximoQuintoDiaUtil(referencia = new Date()) {
+  const hojeLocal = criarDataLocal(referencia.getFullYear(), referencia.getMonth(), referencia.getDate());
+  let alvo = calcularQuintoDiaUtilMes(hojeLocal.getFullYear(), hojeLocal.getMonth());
+  if (!alvo || hojeLocal.getTime() > alvo.getTime()) {
+    alvo = calcularQuintoDiaUtilMes(hojeLocal.getFullYear(), hojeLocal.getMonth() + 1);
+  }
+  return { alvo, hojeLocal };
+}
+
+function atualizarQuintoDiaUtilTopbar() {
+  const el = document.getElementById('topbar-business-day-date');
+  if (!el) return;
+
+  const { alvo, hojeLocal } = obterProximoQuintoDiaUtil();
+  if (!alvo) {
+    el.textContent = '--/--';
+    el.className = 'topbar-business-day-date';
+    return;
+  }
+
+  el.textContent = `${String(alvo.getDate()).padStart(2, '0')}/${String(alvo.getMonth() + 1).padStart(2, '0')}`;
+  const diasRestantes = Math.round((alvo.getTime() - hojeLocal.getTime()) / 86400000);
+  el.className = 'topbar-business-day-date';
+  if ([1, 2, 3].includes(diasRestantes)) {
+    el.classList.add(`status-${diasRestantes}`);
+  }
+}
+
 function registrarServiceWorkerPwa() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
@@ -23747,6 +24319,10 @@ function registrarServiceWorkerPwa() {
 
 // ---- INIT ----
 registrarServiceWorkerPwa();
+atualizarRelogioTopbar();
+atualizarQuintoDiaUtilTopbar();
+window.setInterval(atualizarRelogioTopbar, 1000);
+window.setInterval(atualizarQuintoDiaUtilTopbar, 60 * 60 * 1000);
 carregarDashboard();
 carregarNotificacoes();
 iniciarAtualizacaoAutomatica();
