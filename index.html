@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1 - Produção
+    Versão 3.1.10 - Produção
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -3154,6 +3154,18 @@
       font-weight: 700;
       line-height: 1;
       border-radius: 8px;
+    }
+
+    .tarefa-funcionarios-modal .modal-header { padding-bottom: 14px; }
+    .tarefa-funcionarios-modal-body {
+      flex: 0 1 auto;
+      overflow-y: hidden;
+      padding-top: 14px;
+    }
+    .tarefa-funcionarios-modal-body #tarefaFuncionariosResumo {
+      min-height: 0;
+      margin: 0;
+      line-height: 1.3;
     }
     .tarefa-modal-funcionarios-busca {
       width: 100%;
@@ -6449,7 +6461,7 @@
 </div>
 
 <div class="overlay" id="tarefaFuncionariosOverlay">
-  <div class="modal" style="max-width:560px">
+  <div class="modal tarefa-funcionarios-modal" style="max-width:560px">
     <div class="modal-header">
       <div>
         <h3>Selecionar funcionário(s)</h3>
@@ -6457,7 +6469,7 @@
       </div>
       <button class="btn btn-ghost btn-sm" type="button" onclick="cancelarModalFuncionariosLancamentoTarefa()">X Fechar</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+    <div class="modal-body tarefa-funcionarios-modal-body" style="display:flex;flex-direction:column;gap:10px">
       <input id="tarefaFuncionariosBusca" class="tarefa-modal-funcionarios-busca" type="text" placeholder="Buscar funcionário por nome" oninput="renderizarListaModalFuncionariosLancamentoTarefa()">
       <div id="tarefaFuncionariosResumo" class="item-detalhe" style="margin-top:0"></div>
       <div id="tarefaFuncionariosLista" class="tarefa-modal-funcionarios-lista"><div class="empty">Carregando...</div></div>
@@ -6586,6 +6598,10 @@ const TABELAS_COM_EMPRESA_ID = new Set([
   'recebiveis'
 ]);
 
+const TABELAS_COM_LOJA_ID = new Set([
+  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis'
+]);
+
 let filtroLojaSuspensoTemporariamente = false;
 
 function obterEmpresaIdSessao() {
@@ -6600,6 +6616,20 @@ function obterLojaIdSessao() {
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s || s.tipo === 'admin') return null;
   return s.loja_id || null;
+}
+
+function aplicarFiltroLojaFuncionariosQuery(query) {
+  // Corrige vazamento multi-loja na listagem/seleção de funcionários.
+  // empresa_id já é aplicado automaticamente; aqui restringimos também pela loja logada.
+  try {
+    const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    if (lojaId && query && typeof query.eq === 'function') {
+      return query.eq('loja_id', lojaId);
+    }
+  } catch (e) {
+    console.warn('Filtro de loja dos funcionários não aplicado:', e);
+  }
+  return query;
 }
 
 async function executarSemFiltroLojaTemporario(callback) {
@@ -6629,6 +6659,7 @@ async function aplicarEmpresaRLS() {
   sb.from = function(tabela) {
     const builder = _from(tabela);
     const empresaId = obterEmpresaIdSessao();
+    const lojaId = obterLojaIdSessao();
 
     if (!empresaId || !TABELAS_COM_EMPRESA_ID.has(tabela)) return builder;
 
@@ -6636,9 +6667,12 @@ async function aplicarEmpresaRLS() {
       if (typeof builder[metodo] !== 'function') return;
       const _orig = builder[metodo].bind(builder);
       builder[metodo] = function(...args) {
-        const result = _orig(...args);
+        let result = _orig(...args);
         if (result && typeof result.eq === 'function') {
-          return result.eq('empresa_id', empresaId);
+          result = result.eq('empresa_id', empresaId);
+          if (lojaId && TABELAS_COM_LOJA_ID.has(tabela)) {
+            result = result.eq('loja_id', lojaId);
+          }
         }
         return result;
       };
@@ -6650,6 +6684,7 @@ async function aplicarEmpresaRLS() {
         const enriquecerTenant = (v) => ({
           ...v,
           empresa_id: v?.empresa_id || empresaId,
+          ...(lojaId && TABELAS_COM_LOJA_ID.has(tabela) ? { loja_id: v?.loja_id || lojaId } : {}),
         });
         const comTenant = Array.isArray(valores)
           ? valores.map(enriquecerTenant)
@@ -6664,6 +6699,7 @@ async function aplicarEmpresaRLS() {
         const enriquecerTenant = (v) => ({
           ...v,
           empresa_id: v?.empresa_id || empresaId,
+          ...(lojaId && TABELAS_COM_LOJA_ID.has(tabela) ? { loja_id: v?.loja_id || lojaId } : {}),
         });
         const comTenant = Array.isArray(valores)
           ? valores.map(enriquecerTenant)
@@ -10003,7 +10039,7 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
     const [tarefasResultado, lancamentosPrimeiraTentativa, execucoesResultado] = await Promise.all([
       sb
         .from('tarefas')
-        .select('id, nome, descricao, funcionario_id, checklist_id, horario_limite, dias_semana')
+        .select('id, nome, descricao, funcionario_id, checklist_id, horario_limite, dias_semana, loja_id, empresa_id')
         .eq('ativo', true),
       consultarLancamentosAutomaticos(true, true),
       sb
@@ -10086,6 +10122,8 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
         criado_por_nome: 'Automático',
         origem_lancamento: 'automatico',
         observacao_lancamento: 'Lançamento automático do dia.',
+        empresa_id: item.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null,
+        loja_id: item.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null,
         status: 'pendente',
       }));
 
@@ -12396,8 +12434,11 @@ async function carregarOpcoesFiltroChecklists() {
   const valorFuncionarioAtual = String(selFuncionario.value || '');
   const valorTarefaAtual = String(selTarefa.value || '');
 
+  let queryFuncionariosFiltroChecklists = sb.from('funcionarios').select('id, nome, loja_id, empresa_id').eq('ativo', true);
+  queryFuncionariosFiltroChecklists = aplicarFiltroLojaFuncionariosQuery(queryFuncionariosFiltroChecklists).order('nome');
+
   const [funcionariosRes, tarefasRes] = await Promise.all([
-    sb.from('funcionarios').select('id, nome').eq('ativo', true).order('nome'),
+    queryFuncionariosFiltroChecklists,
     sb.from('tarefas').select('id, nome').order('nome'),
   ]);
 
@@ -17345,7 +17386,9 @@ async function carregarSelectFuncionariosTarefa() {
   const sel = document.getElementById('funcionarioTarefa');
   if (!sel) return;
   sel.innerHTML = '<option value=""></option>';
-  const { data } = await sb.from('funcionarios').select('id, nome').eq('ativo', true).order('nome');
+  let queryFuncionariosTarefa = sb.from('funcionarios').select('id, nome, loja_id, empresa_id').eq('ativo', true);
+  queryFuncionariosTarefa = aplicarFiltroLojaFuncionariosQuery(queryFuncionariosTarefa).order('nome');
+  const { data } = await queryFuncionariosTarefa;
   funcionariosAtivosTarefa = data || [];
   (data || []).forEach(f => {
     const o = document.createElement('option');
@@ -18176,11 +18219,12 @@ async function carregarTarefas() {
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   try {
-    const { data: funcionariosAtivos } = await sb
+    let queryFuncionariosAtivosTarefas = sb
       .from('funcionarios')
-      .select('id, nome')
-      .eq('ativo', true)
-      .order('nome');
+      .select('id, nome, loja_id, empresa_id')
+      .eq('ativo', true);
+    queryFuncionariosAtivosTarefas = aplicarFiltroLojaFuncionariosQuery(queryFuncionariosAtivosTarefas).order('nome');
+    const { data: funcionariosAtivos } = await queryFuncionariosAtivosTarefas;
     funcionariosAtivosTarefa = funcionariosAtivos || [];
 
     const { data, error } = await sb.from('tarefas').select('*, funcionarios(nome), checklists(nome)').order('nome');
@@ -18765,7 +18809,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const { data: tarefa, error: errTarefa } = await sb
     .from('tarefas')
-    .select('id, nome, descricao, funcionario_id, checklist_id, horario_limite, dias_semana, ativo')
+    .select('id, nome, descricao, funcionario_id, checklist_id, horario_limite, dias_semana, ativo, loja_id, empresa_id')
     .eq('id', id)
     .single();
 
@@ -18903,6 +18947,8 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
         : pulouHojePorHorario && dataIsoLocal !== hoje()
           ? `Hoje foi ignorado porque o horário ${horarioSelecionado} já havia passado.`
           : null,
+      empresa_id: tarefa.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null,
+      loja_id: tarefa.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null,
       status: 'pendente',
     });
   }
@@ -19136,6 +19182,7 @@ async function carregarFuncionariosAlertaRapido(silencioso = false) {
     if (empresaId) {
       query = query.eq('empresa_id', empresaId);
     }
+    query = aplicarFiltroLojaFuncionariosQuery(query);
 
     const { data, error } = await query;
 
