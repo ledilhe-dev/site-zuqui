@@ -5546,7 +5546,10 @@
         </div>
 
         <div class="card" id="cardAlertaRapidoLista">
-          <div class="card-title" id="tituloListaAlertaRapido">Alertas enviados</div>
+          <div class="financeiro-card-title-row">
+            <div class="card-title" id="tituloListaAlertaRapido">Alertas enviados</div>
+            <button class="btn btn-ghost btn-sm" id="btnToggleAlertasRapidosEnviados" type="button" onclick="toggleAlertasRapidosEnviados()">Mostrar todos</button>
+          </div>
           <div class="form-row" id="alertasRapidosAdminControles" style="margin-top:0;margin-bottom:8px">
             <select id="filtroStatusAlertaRapido" class="campo-curto" style="max-width:170px;flex:0 0 170px !important" onchange="carregarAlertasRapidos()">
               <option value="">Todos</option>
@@ -6586,7 +6589,8 @@ let filtroLojaSuspensoTemporariamente = false;
 function obterLojaIdSessao() {
   if (filtroLojaSuspensoTemporariamente) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
-  if (!s || s.tipo === 'admin') return null;
+  // Não aplica filtro para tipo admin nem para perfil ADM
+  if (!s || s.tipo === 'admin' || normalizarCodigoPerfil(s?.perfil?.codigo) === 'ADM') return null;
   return s.loja_id || null;
 }
 function obterEmpresaIdSessao() {
@@ -6846,6 +6850,7 @@ let segurancaPinPontoConfigurada = false;
 let ultimoToquePinPontoEm = 0;
 let intervaloVigilanciaPinPonto = null;
 let alertasEntradaPontoPendentesAtuais = [];
+let alertasRapidosListaEnviadosVisivel = false;
 let notificacoesHistoricoMaster = [];
 let filtroChecklistLancadoBuscaEditado = false;
 let filtroTarefasNomeEditado = false;
@@ -7184,9 +7189,7 @@ function obterNotificacoesCriticas() {
 
 function obterFuncionarioDestinoAlertaRapidoAtual() {
   if (usuarioSistemaLogado?.id) {
-    const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
-    const codigo = String(perfil?.codigo || '').toUpperCase();
-    const ehAdminSistema = usuarioSistemaLogado?.tipo === 'admin' || codigo === 'ADM';
+    const ehAdminSistema = usuarioSistemaLogado?.tipo === 'admin' || usuarioSistemaLogado?.tipo === 'admin_loja';
     if (!ehAdminSistema) {
       return { id: String(usuarioSistemaLogado.id), nome: usuarioSistemaLogado.nome || '' };
     }
@@ -7321,10 +7324,7 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
 function usuarioRecebeAlertaOperacional() {
   if (!usuarioSistemaLogado) return false;
   if (usuarioSistemaLogado.tipo === 'admin') return false;
-
-  const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil);
-  const codigo = String(perfil?.codigo || '').toUpperCase();
-  if (codigo === 'ADM') return false;
+  if (usuarioSistemaLogado.tipo === 'admin_loja') return false;
 
   return true;
 }
@@ -7358,7 +7358,9 @@ function usuarioPodeEnviarAlertasRapidos() {
 }
 
 function usuarioPodeGerenciarAlertasRapidos() {
-  return usuarioPodeEnviarAlertasRapidos();
+  // Permite se for admin OU se o perfil tiver a permissão 'excluir_alertas_rapidas'
+  if (usuarioEhAdministrador()) return true;
+  return !!obterPermissoesUsuario().excluir_alertas_rapidas;
 }
 
 function usuarioPodeAcessarAlertasRapidos() {
@@ -7402,6 +7404,7 @@ const PERFIL_PERMISSOES = [
   { key: 'tarefas', label: 'Cadastro de Checklist' },
   { key: 'tarefas_rapidas', label: 'Alertas rápidas' },
   { key: 'enviar_alertas_rapidas', label: 'Enviar alertas rápidos' },
+  { key: 'excluir_alertas_rapidas', label: 'Excluir alertas rápidos' },
   { key: 'receber_alertas_rapidas', label: 'Receber alertas rápidos' },
   { key: 'confirmar_alertas_rapidas', label: 'Confirmar alertas rápidos' },
   { key: 'execucoes', label: 'Em andamento' },
@@ -7816,7 +7819,7 @@ function existeSessaoAtivaParaAtualizacao() {
 }
 
 function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
-  return ['checklists', 'bater_ponto', 'execucoes', 'tarefas_rapidas', 'ponto_ajustes', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
+  return ['checklists', 'bater_ponto', 'execucoes', 'ponto_ajustes', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
 }
 
 function obterIntervaloAtualizacaoMs(pageId = obterPaginaAtivaAtual()) {
@@ -8037,7 +8040,7 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
       console.warn('Falha ao atualizar notificações via Realtime:', error);
     });
     if (obterPaginaAtivaAtual() === 'tarefas_rapidas') {
-      carregarTarefasRapidas().catch(error => {
+      carregarTarefasRapidas(true).catch(error => {
         console.warn('Falha ao atualizar alertas rápidos via Realtime:', error);
       });
     }
@@ -19110,17 +19113,29 @@ async function toggleTarefa(id, ativo) {
 // 
 // TAREFAS RÁPIDAS
 // 
-async function carregarFuncionariosAlertaRapido() {
+async function carregarFuncionariosAlertaRapido(silencioso = false) {
   const container = document.getElementById('alertaRapidoFuncionarios');
   if (!container) return;
-  container.innerHTML = '<div class="empty">Carregando⬦</div>';
+  if (silencioso && container.querySelector('[data-alerta-funcionario-id]')) {
+    return;
+  }
+  if (!silencioso || !container.querySelector('[data-alerta-funcionario-id]')) {
+    container.innerHTML = '<div class="empty">Carregando⬦</div>';
+  }
 
   try {
-    const { data, error } = await sb
+    const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    let query = sb
       .from('funcionarios')
       .select('id, nome, loja_id, empresa_id')
       .eq('ativo', true)
       .order('nome');
+
+    if (lojaId) {
+      query = query.eq('loja_id', lojaId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -19131,11 +19146,10 @@ async function carregarFuncionariosAlertaRapido() {
 
     container.innerHTML = data.map(item => `
       <label class="alerta-rapido-check-item">
-        <input type="checkbox" checked data-alerta-funcionario-id="${item.id}" data-alerta-funcionario-nome="${String(item.nome || '').replace(/"/g, '&quot;')}" data-alerta-funcionario-loja-id="${String(item.loja_id || '').replace(/"/g, '&quot;')}" data-alerta-funcionario-empresa-id="${String(item.empresa_id || '').replace(/"/g, '&quot;')}" onchange="atualizarResumoDestinatariosAlertaRapido()">
+        <input type="checkbox" data-alerta-funcionario-id="${item.id}" data-alerta-funcionario-nome="${String(item.nome || '').replace(/"/g, '&quot;')}" data-alerta-funcionario-loja-id="${String(item.loja_id || '').replace(/"/g, '&quot;')}" data-alerta-funcionario-empresa-id="${String(item.empresa_id || '').replace(/"/g, '&quot;')}">
         <span>${item.nome}</span>
       </label>
     `).join('');
-    atualizarResumoDestinatariosAlertaRapido();
   } catch (error) {
     console.error('Erro ao carregar funcionários para alerta rápido:', error);
     container.innerHTML = '<div class="empty">Erro ao carregar funcionários.</div>';
@@ -19149,25 +19163,6 @@ function coletarFuncionariosSelecionadosAlertaRapido() {
     loja_id: String(input.getAttribute('data-alerta-funcionario-loja-id') || '').trim() || null,
     empresa_id: String(input.getAttribute('data-alerta-funcionario-empresa-id') || '').trim() || null,
   })).filter(item => item.id);
-}
-
-function atualizarResumoDestinatariosAlertaRapido() {
-  const resumo = document.getElementById('alertaRapidoDestinatariosResumo');
-  if (!resumo) return;
-
-  const selecionados = coletarFuncionariosSelecionadosAlertaRapido();
-  const totalFuncionarios = document.querySelectorAll('[data-alerta-funcionario-id]').length;
-  if (!selecionados.length) {
-    resumo.textContent = 'Nenhum funcionário selecionado.';
-    resumo.className = 'msg';
-    return;
-  }
-
-  const descricoes = selecionados.map(item => `${item.nome || 'Sem nome'} (${String(item.id || '').slice(0, 8)})`);
-  resumo.textContent = selecionados.length === totalFuncionarios
-    ? `Destino atual: todos os funcionários ativos (${selecionados.length}) - ${descricoes.join(', ')}`
-    : `Destino atual: ${selecionados.length} funcionário(s) selecionado(s) - ${descricoes.join(', ')}`;
-  resumo.className = 'msg ok';
 }
 
 async function enviarAlertaRapido() {
@@ -19222,8 +19217,7 @@ async function enviarAlertaRapido() {
 
   const campoMensagem = document.getElementById('mensagemAlertaRapido');
   if (campoMensagem) campoMensagem.value = '';
-  document.querySelectorAll('[data-alerta-funcionario-id]').forEach(input => { input.checked = true; });
-  atualizarResumoDestinatariosAlertaRapido();
+  document.querySelectorAll('[data-alerta-funcionario-id]').forEach(input => { input.checked = false; });
 
   setMsg('msgAlertasRapidos', selecionados.length === document.querySelectorAll('[data-alerta-funcionario-id]').length
     ? `Alerta enviado para todos os funcionários ativos (${selecionados.length}).`
@@ -19232,11 +19226,11 @@ async function enviarAlertaRapido() {
   await carregarNotificacoes();
 }
 
-async function carregarAlertasRapidos(apenasFuncionario = false) {
+async function carregarAlertasRapidos(apenasFuncionario = false, silencioso = false) {
   const lista = document.getElementById('listaAlertasRapidos');
   const tituloLista = document.getElementById('tituloListaAlertaRapido');
   if (!lista) return;
-  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+  if (!silencioso) lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   try {
     if (apenasFuncionario) {
@@ -19298,13 +19292,24 @@ async function carregarAlertasRapidos(apenasFuncionario = false) {
       tituloLista.textContent = 'Alertas enviados';
     }
 
+    atualizarVisibilidadeAlertasRapidosEnviados();
+    if (!alertasRapidosListaEnviadosVisivel) {
+      lista.innerHTML = '<div class="empty">Alertas enviados ocultos.</div>';
+      return;
+    }
+
     const filtroStatus = String(document.getElementById('filtroStatusAlertaRapido')?.value || '').trim().toLowerCase();
+    const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     const consultarListaAdmin = async (campoData = 'criado_em') => {
       let query = sb
         .from('alertas_rapidos')
         .select(`id, grupo_id, mensagem, funcionario_destino_nome, status, ${campoData}, criado_por_nome, confirmado_em, confirmado_por_nome`)
         .order(campoData, { ascending: false })
         .limit(200);
+
+      if (lojaId) {
+        query = query.eq('loja_id', lojaId);
+      }
 
       if (filtroStatus === 'pendente' || filtroStatus === 'confirmado') {
         query = query.eq('status', filtroStatus);
@@ -19381,7 +19386,7 @@ async function carregarAlertasRapidos(apenasFuncionario = false) {
             ? '<span class="tag tag-green">Confirmado</span>'
             : '<span class="tag tag-amber">Pendente</span>'
           }
-          <button class="btn btn-red btn-sm" type="button" onclick="excluirAlertaRapido('${item.id}')">Excluir</button>
+          <button class="btn btn-red btn-sm" type="button" onclick="excluirAlertaRapido('${item.id}', '${String(item.grupo_id || '').replace(/'/g, "\\'")}')">Excluir</button>
         </div>
       </div>
     `).join('') + '</div>';
@@ -19441,7 +19446,7 @@ async function limparAlertasRapidosConfirmados() {
   await carregarAlertasRapidos();
 }
 
-async function excluirAlertaRapido(id) {
+async function excluirAlertaRapido(id, grupoId = '') {
   if (!id) return;
   if (!usuarioPodeGerenciarAlertasRapidos()) {
     setMsg('msgAlertasRapidos', 'Somente usuários ADM podem excluir alertas rápidos.', 'err');
@@ -19449,10 +19454,20 @@ async function excluirAlertaRapido(id) {
   }
   if (!confirm('Excluir este alerta rápido?')) return;
 
-  const { error } = await sb
-    .from('alertas_rapidos')
-    .delete()
-    .eq('id', id);
+  const executarExclusao = () => {
+    let query = sb.from('alertas_rapidos').delete();
+    const grupo = String(grupoId || '').trim();
+    query = grupo ? query.eq('grupo_id', grupo) : query.eq('id', id);
+    return query.select('id');
+  };
+
+  let { data: excluidos, error } = await executarExclusao();
+
+  if (!error && !excluidos?.length) {
+    const fallback = await executarSemFiltroLojaTemporario(executarExclusao);
+    excluidos = fallback.data || [];
+    error = fallback.error || null;
+  }
 
   if (error) {
     if (isMissingQuickAlertsTableError(error)) {
@@ -19463,29 +19478,56 @@ async function excluirAlertaRapido(id) {
     return;
   }
 
-  setMsg('msgAlertasRapidos', 'Alerta excluído.', 'ok');
+  if (!excluidos?.length) {
+    setMsg('msgAlertasRapidos', 'Nenhum alerta foi excluído. Atualize a lista e tente novamente.', 'err');
+    await carregarAlertasRapidos();
+    return;
+  }
+
+  setMsg('msgAlertasRapidos', `Alerta excluído (${excluidos.length} destino(s)).`, 'ok');
   await carregarAlertasRapidos();
   await carregarNotificacoes();
 }
 
-async function carregarTarefasRapidas() {
+function atualizarVisibilidadeAlertasRapidosEnviados() {
+  const controles = document.getElementById('alertasRapidosAdminControles');
+  const botao = document.getElementById('btnToggleAlertasRapidosEnviados');
+  if (controles) controles.style.display = alertasRapidosListaEnviadosVisivel ? '' : 'none';
+  if (botao) botao.textContent = alertasRapidosListaEnviadosVisivel ? 'Ocultar' : 'Mostrar todos';
+}
+
+function toggleAlertasRapidosEnviados() {
+  alertasRapidosListaEnviadosVisivel = !alertasRapidosListaEnviadosVisivel;
+  atualizarVisibilidadeAlertasRapidosEnviados();
+  if (alertasRapidosListaEnviadosVisivel) {
+    carregarAlertasRapidos(false);
+  } else {
+    const lista = document.getElementById('listaAlertasRapidos');
+    if (lista) lista.innerHTML = '<div class="empty">Alertas enviados ocultos.</div>';
+  }
+}
+
+async function carregarTarefasRapidas(silencioso = false) {
   if (!usuarioSistemaLogado || !usuarioPodeAcessarAlertasRapidos()) return;
   const cardEnvio = document.getElementById('cardAlertaRapidoEnvio');
   const controlesAdmin = document.getElementById('alertasRapidosAdminControles');
   const tituloLista = document.getElementById('tituloListaAlertaRapido');
+  const botaoToggleEnviados = document.getElementById('btnToggleAlertasRapidosEnviados');
   const modoGestao = usuarioPodeEnviarAlertasRapidos();
 
   if (cardEnvio) cardEnvio.style.display = modoGestao ? '' : 'none';
-  if (controlesAdmin) controlesAdmin.style.display = modoGestao ? '' : 'none';
+  if (botaoToggleEnviados) botaoToggleEnviados.style.display = modoGestao ? '' : 'none';
   if (tituloLista) tituloLista.textContent = modoGestao ? 'Alertas enviados' : 'Meus alertas rápidos pendentes';
 
   if (modoGestao) {
+    atualizarVisibilidadeAlertasRapidosEnviados();
     await Promise.all([
-      carregarFuncionariosAlertaRapido(),
-      carregarAlertasRapidos(false),
+      carregarFuncionariosAlertaRapido(silencioso),
+      carregarAlertasRapidos(false, silencioso),
     ]);
   } else {
-    await carregarAlertasRapidos(true);
+    if (controlesAdmin) controlesAdmin.style.display = 'none';
+    await carregarAlertasRapidos(true, silencioso);
   }
 }
 
