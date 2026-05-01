@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.7">
+  <meta name="app-version" content="3.1.9-consumo">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -6563,10 +6563,10 @@ const AUTH_REDIRECT_URL = 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Sobrescreve sb.from para injetar filtro loja_id automaticamente em admin_loja
-// Apenas tabelas que JÁ TÊM a coluna loja_id no banco atual.
-// Tabelas sem loja_id (ex.: checklists globais) ficam fora deste filtro.
-const TABELAS_COM_LOJA_ID = new Set([
+// Sobrescreve sb.from para injetar filtro empresa_id automaticamente.
+// PADRÃO SAAS: empresa_id é o campo oficial de isolamento.
+// Importante: admin master continua sem filtro para conseguir gerenciar todas as empresas.
+const TABELAS_COM_EMPRESA_ID = new Set([
   'funcionarios',
   'checklists',
   'checklist_lancamentos',
@@ -6585,20 +6585,23 @@ const TABELAS_COM_LOJA_ID = new Set([
   'contas_financeiras_ajustes_saldo',
   'recebiveis'
 ]);
+
 let filtroLojaSuspensoTemporariamente = false;
-function obterLojaIdSessao() {
-  if (filtroLojaSuspensoTemporariamente) return null;
-  const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
-  // Não aplica filtro para tipo admin nem para perfil ADM
-  if (!s || s.tipo === 'admin' || normalizarCodigoPerfil(s?.perfil?.codigo) === 'ADM') return null;
-  return s.loja_id || null;
-}
+
 function obterEmpresaIdSessao() {
   if (filtroLojaSuspensoTemporariamente) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s || s.tipo === 'admin') return null;
   return s.empresa_id || null;
 }
+
+function obterLojaIdSessao() {
+  if (filtroLojaSuspensoTemporariamente) return null;
+  const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
+  if (!s || s.tipo === 'admin') return null;
+  return s.loja_id || null;
+}
+
 async function executarSemFiltroLojaTemporario(callback) {
   const estadoAnterior = filtroLojaSuspensoTemporariamente;
   filtroLojaSuspensoTemporariamente = true;
@@ -6608,55 +6611,67 @@ async function executarSemFiltroLojaTemporario(callback) {
     filtroLojaSuspensoTemporariamente = estadoAnterior;
   }
 }
+
+async function aplicarEmpresaRLS() {
+  // Esta chamada só funciona se existir uma RPC própria no Supabase.
+  // O index não depende dela para filtrar: o filtro por empresa_id já é aplicado no sb.from abaixo.
+  try {
+    const empresaId = obterEmpresaIdSessao();
+    if (!empresaId || typeof sb?.rpc !== 'function') return;
+    await sb.rpc('set_app_empresa_id', { p_empresa_id: empresaId });
+  } catch (erro) {
+    console.warn('RLS por RPC não aplicado; seguindo com filtro frontend por empresa_id:', erro);
+  }
+}
+
 (function() {
   const _from = sb.from.bind(sb);
   sb.from = function(tabela) {
     const builder = _from(tabela);
-    const lojaId = obterLojaIdSessao();
     const empresaId = obterEmpresaIdSessao();
-    if (!lojaId || !TABELAS_COM_LOJA_ID.has(tabela)) return builder;
-    // Filtro em leitura/atualização/exclusão
+
+    if (!empresaId || !TABELAS_COM_EMPRESA_ID.has(tabela)) return builder;
+
     ['select', 'update', 'delete'].forEach(metodo => {
       if (typeof builder[metodo] !== 'function') return;
       const _orig = builder[metodo].bind(builder);
       builder[metodo] = function(...args) {
         const result = _orig(...args);
         if (result && typeof result.eq === 'function') {
-          return result.eq('loja_id', lojaId);
+          return result.eq('empresa_id', empresaId);
         }
         return result;
       };
     });
-    // Injeta loja_id automaticamente nos inserts
+
     if (typeof builder.insert === 'function') {
       const _origInsert = builder.insert.bind(builder);
       builder.insert = function(valores, opts) {
         const enriquecerTenant = (v) => ({
           ...v,
-          loja_id: lojaId,
-          ...(empresaId ? { empresa_id: empresaId } : {}),
+          empresa_id: v?.empresa_id || empresaId,
         });
         const comTenant = Array.isArray(valores)
           ? valores.map(enriquecerTenant)
-          : enriquecerTenant(valores);
+          : enriquecerTenant(valores || {});
         return _origInsert(comTenant, opts);
       };
     }
-    // Injeta loja_id nos upserts
+
     if (typeof builder.upsert === 'function') {
       const _origUpsert = builder.upsert.bind(builder);
       builder.upsert = function(valores, opts) {
         const enriquecerTenant = (v) => ({
           ...v,
-          loja_id: lojaId,
-          ...(empresaId ? { empresa_id: empresaId } : {}),
+          empresa_id: v?.empresa_id || empresaId,
         });
         const comTenant = Array.isArray(valores)
           ? valores.map(enriquecerTenant)
-          : enriquecerTenant(valores);
+          : enriquecerTenant(valores || {});
         return _origUpsert(comTenant, opts);
       };
     }
+
     return builder;
   };
 })();
@@ -6878,9 +6893,9 @@ let timeoutAtualizacaoChecklistsRealtime = null;
 let timeoutAtualizacaoPaginaRealtime = null;
 const lancamentosManuaisEmAndamento = new Set();
 const STORAGE_CHECKLISTS_FUTUROS_OPEN = 'zuqui_checklists_futuros_open';
-const INTERVALO_ATUALIZACAO_PADRAO_MS = 20000;
-const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10000;
-const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5000;
+const INTERVALO_ATUALIZACAO_PADRAO_MS = 5 * 60 * 1000; // Consumo otimizado: sem polling visual pesado
+const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 5 * 60 * 1000; // Consumo otimizado: checklists atualizam por ação/Realtime
+const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5 * 60 * 1000; // Consumo otimizado: sem consulta a cada 5s
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
 const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
 const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
@@ -7931,40 +7946,27 @@ async function atualizarPaginaAtivaAutomaticamente() {
 }
 
 function iniciarAtualizacaoAutomatica() {
+  // Consumo otimizado: não cria polling de tela nem consulta de notificações por intervalo.
+  // Antes havia notificações a cada 5s e telas a cada 10/20s.
+  // Agora a atualização ocorre ao abrir a tela, ao executar uma ação e pelos canais Realtime já configurados.
   if (intervaloAtualizacaoPaginaAtiva) {
     clearInterval(intervaloAtualizacaoPaginaAtiva);
+    intervaloAtualizacaoPaginaAtiva = null;
   }
   if (intervaloAtualizacaoNotificacoes) {
     clearInterval(intervaloAtualizacaoNotificacoes);
+    intervaloAtualizacaoNotificacoes = null;
   }
   if (intervaloStatusSincronizacao) {
     clearInterval(intervaloStatusSincronizacao);
+    intervaloStatusSincronizacao = null;
   }
 
-  if (!existeSessaoAtivaParaAtualizacao()) {
-    atualizarIndicadorSincronizacao('idle', 'Aguardando sessão ativa');
-  } else {
-    atualizarIndicadorSincronizacao('idle', formatarTempoSincronizacao());
-  }
-
+  atualizarIndicadorSincronizacao(
+    'idle',
+    existeSessaoAtivaParaAtualizacao() ? 'Atualização sob demanda/Realtime' : 'Aguardando sessão ativa'
+  );
   iniciarRelogioSincronizacao();
-
-  const paginaAtiva = obterPaginaAtivaAtual();
-  if (paginaExigeAtualizacaoVisualAutomatica(paginaAtiva)) {
-    const intervaloAtual = obterIntervaloAtualizacaoMs(paginaAtiva);
-    intervaloAtualizacaoPaginaAtiva = window.setInterval(() => {
-      atualizarPaginaAtivaAutomaticamente();
-    }, intervaloAtual);
-  } else {
-    intervaloAtualizacaoPaginaAtiva = null;
-  }
-
-  intervaloAtualizacaoNotificacoes = window.setInterval(() => {
-    if (!existeSessaoAtivaParaAtualizacao()) return;
-    carregarNotificacoes().catch(error => {
-      console.warn('Falha na atualização automática das notificações:', error);
-    });
-  }, INTERVALO_ATUALIZACAO_NOTIFICACOES_MS);
 }
 
 function lancamentoPodeGerarAlertaTempoReal(lancamento = null) {
@@ -9163,14 +9165,14 @@ async function complementarRegistrosPontoSemFiltroLoja(rows = [], {
   funcionarioId = '',
   campos = 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
 } = {}) {
-  const lojaIdSessao = String(obterLojaIdSessao() || '').trim();
-  if (!lojaIdSessao) return rows || [];
+  const empresaIdSessao = String(obterEmpresaIdSessao() || '').trim();
+  if (!empresaIdSessao) return rows || [];
 
   const { data: dataFallback, error: errorFallback } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('ponto_registros')
-      .select(`${campos}, funcionarios!inner(loja_id)`)
-      .eq('funcionarios.loja_id', lojaIdSessao);
+      .select(`${campos}, funcionarios!inner(empresa_id)`)
+      .eq('funcionarios.empresa_id', empresaIdSessao);
     if (funcionarioId) query = query.eq('funcionario_id', String(funcionarioId));
     if (inicio) query = query.gte('data_ponto', inicio);
     if (fim) query = query.lte('data_ponto', fim);
@@ -9190,8 +9192,8 @@ async function complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows = [],
   funcionarioId = '',
   campos = 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
 } = {}) {
-  const lojaIdSessao = String(obterLojaIdSessao() || '').trim();
-  if (!lojaIdSessao) return rows || [];
+  const empresaIdSessao = String(obterEmpresaIdSessao() || '').trim();
+  if (!empresaIdSessao) return rows || [];
 
   const { inicioUtc, fimUtc } = obterJanelaUtcDiaBrasil(diaIso || dataLocalISO());
   if (!inicioUtc || !fimUtc) return rows || [];
@@ -9199,8 +9201,8 @@ async function complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows = [],
   const { data: dataFallback, error: errorFallback } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('ponto_registros')
-      .select(`${campos}, funcionarios!inner(loja_id)`)
-      .eq('funcionarios.loja_id', lojaIdSessao)
+      .select(`${campos}, funcionarios!inner(empresa_id)`)
+      .eq('funcionarios.empresa_id', empresaIdSessao)
       .gte('created_at', inicioUtc)
       .lt('created_at', fimUtc)
       .order('created_at', { ascending: false });
@@ -19124,15 +19126,15 @@ async function carregarFuncionariosAlertaRapido(silencioso = false) {
   }
 
   try {
-    const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    const empresaId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
     let query = sb
       .from('funcionarios')
       .select('id, nome, loja_id, empresa_id')
       .eq('ativo', true)
       .order('nome');
 
-    if (lojaId) {
-      query = query.eq('loja_id', lojaId);
+    if (empresaId) {
+      query = query.eq('empresa_id', empresaId);
     }
 
     const { data, error } = await query;
@@ -24365,8 +24367,7 @@ atualizarRelogioTopbar();
 atualizarQuintoDiaUtilTopbar();
 window.setInterval(atualizarRelogioTopbar, 1000);
 window.setInterval(atualizarQuintoDiaUtilTopbar, 60 * 60 * 1000);
-carregarDashboard();
-carregarNotificacoes();
+// Consumo otimizado: não carregar dashboard/notificações antes de haver login.
 iniciarAtualizacaoAutomatica();
 window.setTimeout(() => {
   forcarCampoObservacaoTarefaEmBranco();
@@ -24663,6 +24664,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   const chk = document.getElementById('keepLoggedIn');
   if (chk) chk.checked = !!manterConectado;
   reiniciarAssinaturaRealtimeNotificacoes();
+  aplicarEmpresaRLS();
 }
 
   function restaurarSessaoSistema() {
@@ -24698,6 +24700,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         restaurarPaginaAtivaSalvaOuPadrao();
       }, 0);
       reiniciarAssinaturaRealtimeNotificacoes();
+      aplicarEmpresaRLS();
       if (usuarioSistemaLogado?.tipo === 'admin_loja') {
         atualizarSessaoAdminLojaComPerfilCorreto(!!salvoLocal);
       }
