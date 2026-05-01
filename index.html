@@ -6099,7 +6099,7 @@
             <button class="btn btn-ghost btn-sm" id="btnToggleContasAPagarLista" type="button" onclick="toggleListaContasAPagarFinanceiro()">Exibir contas</button>
           </div>
           <div class="form-row financeiro-filtros-row">
-            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, valor, data, observação ou parcela" oninput="carregarContasAPagarFinanceiro()">
+            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, valor, data, observação ou parcela" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)">
             <input id="filtroContaAPagarCadastroInicio" class="campo-curto" type="date" title="Cadastro início" aria-label="Cadastro início" onchange="carregarContasAPagarFinanceiro()">
             <input id="filtroContaAPagarCadastroFim" class="campo-curto" type="date" title="Cadastro fim" aria-label="Cadastro fim" onchange="carregarContasAPagarFinanceiro()">
             <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
@@ -6124,7 +6124,7 @@
         <div class="card">
           <div class="card-title">Filtros</div>
           <div class="form-row financeiro-filtros-row">
-            <input id="filtroBaixarContaBusca" type="text" placeholder="Buscar por fornecedor" oninput="carregarBaixarContasFinanceiro()">
+            <input id="filtroBaixarContaBusca" type="text" placeholder="Buscar por fornecedor" oninput="debounceConsumo('filtro_baixar_contas', () => carregarBaixarContasFinanceiro(), 700)">
             <select id="filtroBaixarContaStatus" class="campo-curto" onchange="carregarBaixarContasFinanceiro()">
               <option value="pendente">Pendentes</option>
               <option value="pago">Pagas</option>
@@ -6172,7 +6172,7 @@
             <select id="filtroExtratoContaFinanceira" class="campo-curto" onchange="carregarExtratoContaFinanceira()">
               <option value="">- Todas as contas -</option>
             </select>
-            <input id="filtroExtratoContaBusca" type="text" placeholder="Buscar no extrato" oninput="carregarExtratoContaFinanceira()">
+            <input id="filtroExtratoContaBusca" type="text" placeholder="Buscar no extrato" oninput="debounceConsumo('filtro_extrato_conta', () => carregarExtratoContaFinanceira(), 700)">
             <button class="btn btn-ghost" type="button" onclick="carregarExtratoContaFinanceira()">Atualizar</button>
           </div>
           <div id="listaExtratoContaFinanceira"><div class="empty">Carregando...</div></div>
@@ -6216,7 +6216,7 @@
         <div class="card">
           <div class="card-title">Recebíveis cadastrados</div>
           <div class="form-row financeiro-filtros-row">
-            <input id="filtroRecebivelBusca" type="text" placeholder="Filtrar por pagador, forma ou valor" oninput="carregarRecebiveisFinanceiro()">
+            <input id="filtroRecebivelBusca" type="text" placeholder="Filtrar por pagador, forma ou valor" oninput="debounceConsumo('filtro_recebiveis', () => carregarRecebiveisFinanceiro(), 700)">
             <button class="btn btn-ghost" type="button" onclick="carregarRecebiveisFinanceiro()">Atualizar</button>
           </div>
           <div id="listaRecebiveisFinanceiro"><div class="empty">Carregando...</div></div>
@@ -6566,7 +6566,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.7';
+const APP_VERSION = '3.1.12';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -6574,6 +6574,27 @@ const AUTH_EMAIL_FUNCTION_NAME = 'autenticacao-email';
 const AUTH_REDIRECT_URL = 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+// Controle de consumo: evita uma consulta ao Supabase a cada tecla digitada em filtros.
+const __consumoDebounceTimers = {};
+function debounceConsumo(chave, callback, atraso = 650) {
+  try {
+    if (__consumoDebounceTimers[chave]) {
+      clearTimeout(__consumoDebounceTimers[chave]);
+    }
+    __consumoDebounceTimers[chave] = setTimeout(() => {
+      delete __consumoDebounceTimers[chave];
+      try {
+        callback();
+      } catch (erro) {
+        console.warn('Falha ao executar ação com debounce:', chave, erro);
+      }
+    }, atraso);
+  } catch (erro) {
+    console.warn('Falha no debounce de consumo:', chave, erro);
+  }
+}
 
 // Sobrescreve sb.from para injetar filtro empresa_id automaticamente.
 // PADRÃO SAAS: empresa_id é o campo oficial de isolamento.
@@ -7870,7 +7891,7 @@ function existeSessaoAtivaParaAtualizacao() {
 }
 
 function paginaExigeAtualizacaoVisualAutomatica(pageId = obterPaginaAtivaAtual()) {
-  return ['checklists', 'bater_ponto', 'execucoes', 'ponto_ajustes', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(pageId);
+  return ['checklists', 'execucoes', 'tarefas_rapidas', 'tarefas_atraso'].includes(pageId);
 }
 
 function obterIntervaloAtualizacaoMs(pageId = obterPaginaAtivaAtual()) {
@@ -7938,7 +7959,7 @@ function iniciarRelogioSincronizacao() {
     }
 
     atualizarIndicadorSincronizacao('idle', formatarTempoSincronizacao());
-  }, 1000);
+  }, 30000);
 }
 
 async function atualizarPaginaAtivaAutomaticamente() {
@@ -8061,6 +8082,42 @@ function agendarAtualizacaoChecklistsTempoReal() {
   }, 140);
 }
 
+
+let timeoutAtualizacaoNotificacoesRealtime = null;
+
+function montarOpcoesRealtimeTenant(evento, tabela) {
+  const opcoes = { event: evento, schema: 'public', table: tabela };
+  try {
+    const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    const empresaId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+    if (lojaId && TABELAS_COM_LOJA_ID.has(tabela)) {
+      opcoes.filter = `loja_id=eq.${lojaId}`;
+    } else if (empresaId && TABELAS_COM_EMPRESA_ID.has(tabela)) {
+      opcoes.filter = `empresa_id=eq.${empresaId}`;
+    }
+  } catch (erro) {
+    console.warn('Filtro Realtime por tenant não aplicado:', tabela, erro);
+  }
+  return opcoes;
+}
+
+function agendarAtualizacaoNotificacoesRealtime() {
+  if (!existeSessaoAtivaParaAtualizacao()) return;
+  if (timeoutAtualizacaoNotificacoesRealtime) {
+    clearTimeout(timeoutAtualizacaoNotificacoesRealtime);
+  }
+  timeoutAtualizacaoNotificacoesRealtime = window.setTimeout(() => {
+    carregarNotificacoes().catch(error => {
+      console.warn('Falha ao atualizar notificações via Realtime:', error);
+    });
+    if (obterPaginaAtivaAtual() === 'tarefas_rapidas') {
+      carregarTarefasRapidas(true).catch(error => {
+        console.warn('Falha ao atualizar alertas rápidos via Realtime:', error);
+      });
+    }
+  }, 900);
+}
+
 function reiniciarAssinaturaRealtimeNotificacoes() {
   try {
     if (canalNotificacoesRealtime) {
@@ -8074,40 +8131,29 @@ function reiniciarAssinaturaRealtimeNotificacoes() {
   const canalNome = `zuqui-notificacoes-${obterChaveUsuarioNotificacoes()}`;
   const atualizarNotificacoes = () => {
     if (!existeSessaoAtivaParaAtualizacao()) return;
-    carregarNotificacoes().catch(error => {
-      console.warn('Falha ao atualizar notificações via Realtime:', error);
-    });
-    if (obterPaginaAtivaAtual() === 'tarefas_rapidas') {
-      carregarTarefasRapidas(true).catch(error => {
-        console.warn('Falha ao atualizar alertas rápidos via Realtime:', error);
-      });
-    }
-    agendarAtualizacaoPaginaAtivaTempoReal();
+    agendarAtualizacaoNotificacoesRealtime();
   };
 
   canalNotificacoesRealtime = sb
     .channel(canalNome)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checklist_lancamentos' }, (payload) => {
+    .on('postgres_changes', montarOpcoesRealtimeTenant('INSERT', 'checklist_lancamentos'), (payload) => {
       injetarAlertaChecklistTempoReal(payload?.new || null);
       atualizarNotificacoes();
       agendarAtualizacaoChecklistsTempoReal();
-      agendarAtualizacaoPaginaAtivaTempoReal();
     })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'checklist_lancamentos' }, () => {
+    .on('postgres_changes', montarOpcoesRealtimeTenant('UPDATE', 'checklist_lancamentos'), () => {
       atualizarNotificacoes();
       agendarAtualizacaoChecklistsTempoReal();
-      agendarAtualizacaoPaginaAtivaTempoReal();
     })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'checklist_lancamentos' }, () => {
+    .on('postgres_changes', montarOpcoesRealtimeTenant('DELETE', 'checklist_lancamentos'), () => {
       atualizarNotificacoes();
       agendarAtualizacaoChecklistsTempoReal();
-      agendarAtualizacaoPaginaAtivaTempoReal();
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'checklist_execucoes' }, atualizarNotificacoes)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_rapidos' }, atualizarNotificacoes)
+    .on('postgres_changes', montarOpcoesRealtimeTenant('*', 'checklist_execucoes'), atualizarNotificacoes)
+    .on('postgres_changes', montarOpcoesRealtimeTenant('*', 'alertas_rapidos'), atualizarNotificacoes)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        atualizarNotificacoes();
+        agendarAtualizacaoNotificacoesRealtime();
       }
     });
 }
@@ -12382,7 +12428,7 @@ async function carregarChecklists(opcoes = {}) {
       <input id="filtroProximaTarefaData" type="date" value="${escaparHtmlBasico(filtroProximaData)}" onclick="this.showPicker?.()" onchange="carregarChecklists({ forcarRender: true })">
       <input id="filtroProximaTarefaHoraInicio" type="time" value="${escaparHtmlBasico(filtroProximaHoraInicio)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário inicial">
       <input id="filtroProximaTarefaHoraFim" type="time" value="${escaparHtmlBasico(filtroProximaHoraFim)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário final">
-      <input id="filtroProximaTarefaFuncionario" type="text" value="${escaparHtmlBasico(campoProximaFuncionario?.value || '')}" placeholder="Buscar por funcionário" oninput="carregarChecklists({ forcarRender: true })">
+      <input id="filtroProximaTarefaFuncionario" type="text" value="${escaparHtmlBasico(campoProximaFuncionario?.value || '')}" placeholder="Buscar por funcionário" oninput="debounceConsumo('filtro_checklist_funcionario', () => carregarChecklists({ forcarRender: true }), 500)">
       <span class="checklists-futuros-total">Total: ${totalFiltrado}${proximaTarefaTemFiltro ? ` de ${totalGeral}` : ''}</span>
     </div>`;
 
@@ -24414,7 +24460,7 @@ atualizarRelogioTopbar();
 atualizarQuintoDiaUtilTopbar();
 window.setInterval(atualizarRelogioTopbar, 1000);
 window.setInterval(atualizarQuintoDiaUtilTopbar, 60 * 60 * 1000);
-// Consumo otimizado: não carregar dashboard/notificações antes de haver login.
+// Consumo otimizado: sem polling pesado; carregamento por tela, ação do usuário e Realtime filtrado por loja/empresa.
 iniciarAtualizacaoAutomatica();
 window.setTimeout(() => {
   forcarCampoObservacaoTarefaEmBranco();
