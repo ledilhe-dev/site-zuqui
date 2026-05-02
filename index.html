@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.9-consumo">
+  <meta name="app-version" content="3.1.27-layout-tempo-aviso">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.10 - Produção
+    Versão 3.1.18 - Produção
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -277,7 +277,8 @@
     .nav-group-relatorios .nav-submenu,
     .nav-group-financeiro .nav-submenu,
     .nav-group-funcionarios .nav-submenu,
-    .nav-group-configuracao .nav-submenu {
+    .nav-group-configuracao .nav-submenu,
+    .nav-group-saas .nav-submenu {
       display: none;
       flex-direction: column;
       gap: 2px;
@@ -288,7 +289,8 @@
     .nav-group-relatorios.open .nav-submenu,
     .nav-group-financeiro.open .nav-submenu,
     .nav-group-funcionarios.open .nav-submenu,
-    .nav-group-configuracao.open .nav-submenu {
+    .nav-group-configuracao.open .nav-submenu,
+    .nav-group-saas.open .nav-submenu {
       display: flex;
     }
     .nav-btn-parent {
@@ -304,7 +306,8 @@
     .nav-group-relatorios.open .nav-caret,
     .nav-group-financeiro.open .nav-caret,
     .nav-group-funcionarios.open .nav-caret,
-    .nav-group-configuracao.open .nav-caret {
+    .nav-group-configuracao.open .nav-caret,
+    .nav-group-saas.open .nav-caret {
       transform: rotate(180deg);
     }
     .nav-sub-btn {
@@ -2373,6 +2376,150 @@
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
+    }
+    #bater_ponto .ponto-topo-grid {
+      display: grid;
+      grid-template-columns: minmax(420px, 1fr) minmax(320px, 420px);
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 10px;
+    }
+    #bater_ponto .ponto-topo-grid > .card {
+      margin-bottom: 0;
+    }
+    #bater_ponto .ponto-topo-grid .ponto-tempo-aviso-card {
+      min-height: 100%;
+    }
+    #bater_ponto .ponto-tempo-aviso-card {
+      border-color: rgba(245, 158, 11, 0.28);
+      background: rgba(245, 158, 11, 0.045);
+    }
+    #bater_ponto .ponto-tempo-aviso-card[hidden] {
+      display: none !important;
+    }
+    #bater_ponto .ponto-tempo-aviso-card {
+      padding: 12px 14px;
+    }
+    #bater_ponto .ponto-tempo-aviso-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 230px) auto auto minmax(120px, 1fr);
+      gap: 8px;
+      align-items: end;
+      justify-content: start;
+    }
+    #bater_ponto .ponto-tempo-aviso-row select,
+    #bater_ponto .ponto-tempo-aviso-row input {
+      width: 100%;
+      min-height: 38px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      padding: 8px 10px;
+      font-family: inherit;
+      outline: none;
+    }
+    #bater_ponto .ponto-tempo-aviso-row select:focus,
+    #bater_ponto .ponto-tempo-aviso-row input:focus {
+      border-color: var(--green);
+    }
+    #bater_ponto .ponto-tempo-aviso-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      min-height: 38px;
+      color: var(--text-muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    #bater_ponto .ponto-tempo-aviso-valor {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.22);
+      background: rgba(34, 197, 94, 0.08);
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    #bater_ponto .ponto-tempo-aviso-valor strong {
+      color: var(--green);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+    }
+    #bater_ponto .ponto-tempo-info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.95);
+      color: #1f1300;
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      font-weight: 900;
+      font-size: 12px;
+      cursor: help;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+    }
+    #bater_ponto .ponto-tempo-aviso-help {
+      display: none;
+    }
+    .ponto-resumo-linha.em-intervalo-destaque {
+      border-color: rgba(245, 158, 11, 0.55);
+      background: rgba(245, 158, 11, 0.075);
+      box-shadow: inset 4px 0 0 rgba(245, 158, 11, 0.9);
+    }
+    .ponto-retorno-destaque {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border: 1px solid rgba(239, 68, 68, 0.62);
+      border-radius: 12px;
+      background: rgba(127, 29, 29, 0.18);
+      display: grid;
+      gap: 5px;
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.10), 0 10px 24px rgba(239, 68, 68, 0.10);
+    }
+    .ponto-retorno-destaque .retorno-label {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: #fecaca;
+    }
+    .ponto-retorno-destaque .retorno-contador {
+      font-size: clamp(24px, 2.7vw, 38px);
+      line-height: 1;
+      font-weight: 950;
+      font-family: 'DM Mono', monospace;
+      color: #ef4444;
+      text-shadow: 0 0 18px rgba(239, 68, 68, 0.28);
+    }
+    .ponto-retorno-destaque.atrasado {
+      border-color: rgba(239, 68, 68, 0.86);
+      background: rgba(127, 29, 29, 0.28);
+      animation: rfPulseRed 1.05s ease-in-out infinite;
+    }
+    .ponto-retorno-destaque.atrasado .retorno-label,
+    .ponto-retorno-destaque.atrasado .retorno-contador {
+      color: #fca5a5;
+    }
+    .ponto-retorno-detalhe {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    @media (max-width: 980px) {
+      #bater_ponto .ponto-topo-grid {
+        grid-template-columns: 1fr;
+      }
+      #bater_ponto .ponto-tempo-aviso-row {
+        grid-template-columns: 1fr;
+      }
+      #bater_ponto .ponto-tempo-aviso-row .btn {
+        width: 100%;
+      }
     }
     #pontoPinInput {
       flex: 0 1 240px !important;
@@ -5102,6 +5249,36 @@
               <span class="nav-title">Loja</span>
             </span>
           </button>
+          <button class="nav-btn nav-sub-btn" id="btnForcarAtualizacaoGeral" data-page="forcar_atualizacao_geral" type="button" onclick="forcarAtualizacaoGeralUsuarios()">
+            <span class="nav-copy">
+              <span class="nav-title">Forçar atualização geral</span>
+              <span class="nav-hint">Desloga usuários e recarrega o sistema</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="nav-group-saas" id="menuSaasGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuSaas" type="button" onclick="toggleMenuSaasSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="icon">SA</span>
+            <span class="nav-copy">
+              <span class="nav-title">Administração SaaS</span>
+              <span class="nav-hint">Clientes, empresas e lojas</span>
+            </span>
+          </span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="empresas_saas" onclick="abrirPagina('empresas_saas', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Empresas / Clientes</span>
+            </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="lojas_saas" onclick="abrirPagina('lojas_saas', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Lojas</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
@@ -5454,6 +5631,56 @@
         </div>
       </section>
 
+      <section id="empresas_saas" class="pagina">
+        <div class="page-title">Empresas / Clientes</div>
+
+        <div class="card">
+          <div class="card-title">Nova empresa / cliente</div>
+          <div class="form-row">
+            <input id="saasNomeEmpresa" type="text" placeholder="Nome da empresa / cliente">
+            <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
+              <input id="saasAtivoEmpresa" type="checkbox" checked>
+              <span>Ativa</span>
+            </label>
+            <button class="btn btn-green" id="btnSalvarEmpresaSaas" onclick="salvarEmpresaSaas()">Cadastrar empresa</button>
+            <button class="btn btn-ghost" id="btnCancelarEmpresaSaas" onclick="cancelarEdicaoEmpresaSaas()" style="display:none">Cancelar</button>
+          </div>
+          <div class="msg" id="msgEmpresasSaas"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Empresas cadastradas</div>
+          <div id="listaEmpresasSaas"><div class="empty">Carregando⬦</div></div>
+        </div>
+      </section>
+
+      <section id="lojas_saas" class="pagina">
+        <div class="page-title">Lojas por empresa</div>
+
+        <div class="card">
+          <div class="card-title">Nova loja</div>
+          <div class="form-row">
+            <select id="saasEmpresaLoja" style="min-width:220px">
+              <option value="">- Selecione a empresa -</option>
+            </select>
+            <input id="saasNomeLoja" type="text" placeholder="Nome da loja">
+            <input id="saasCodigoLoja" class="campo-curto" type="text" placeholder="Código">
+            <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
+              <input id="saasAtivoLoja" type="checkbox" checked>
+              <span>Ativa</span>
+            </label>
+            <button class="btn btn-green" id="btnSalvarLojaSaas" onclick="salvarLojaSaas()">Cadastrar loja</button>
+            <button class="btn btn-ghost" id="btnCancelarLojaSaas" onclick="cancelarEdicaoLojaSaas()" style="display:none">Cancelar</button>
+          </div>
+          <div class="msg" id="msgLojasSaas"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Lojas cadastradas</div>
+          <div id="listaLojasSaas"><div class="empty">Carregando⬦</div></div>
+        </div>
+      </section>
+
       <section id="perfis" class="pagina">
         <div class="page-title">Perfis</div>
 
@@ -5624,6 +5851,7 @@
 
       <!--  BATER PONTO  -->
       <section id="bater_ponto" class="pagina">
+        <div class="ponto-topo-grid">
         <div class="card">
           <div class="card-title">Registrar ponto</div>
           <div class="ponto-registro-row">
@@ -5633,6 +5861,26 @@
             <button class="btn btn-ghost" id="btnAjusteManualAdminPonto" type="button" onclick="abrirModalAjusteManualAdminPonto()" hidden>Ajuste manual ADM</button>
           </div>
           <div class="msg" id="msgPonto"></div>
+        </div>
+
+        <div class="card ponto-tempo-aviso-card" id="pontoTempoAvisoCard" hidden>
+          <div class="card-title">Tempo para aviso de retorno</div>
+          <div class="ponto-tempo-aviso-row">
+            <label>Avisar antes do fim do intervalo
+              <input id="tempoAvisoPontoMinutos" type="number" min="1" max="240" step="1" placeholder="Ex: 10">
+            </label>
+            <button class="btn btn-green" type="button" onclick="salvarTempoAvisoManualPonto()">Salvar aviso</button>
+            <button class="btn btn-ghost" type="button" onclick="limparTempoAvisoManualPonto()">Usar padrão</button>
+            <div class="ponto-tempo-aviso-status" aria-label="Tempo de aviso configurado">
+              <span class="ponto-tempo-aviso-valor">Aviso: <strong id="tempoAvisoPontoAtual">--</strong> min</span>
+              <span class="ponto-tempo-info-icon" id="tempoAvisoPontoInfo" title="Este tempo vale para todos os funcionários desta loja. O intervalo de cada funcionário continua vindo do cadastro dele. Quando não houver aviso manual, o sistema apenas mostra o contador com base no intervalo cadastrado.">i</span>
+            </div>
+          </div>
+          <div class="ponto-tempo-aviso-help" id="tempoAvisoPontoAjuda">
+            Este tempo vale para todos os funcionários desta loja. O intervalo de cada funcionário continua vindo do cadastro dele.
+          </div>
+          <div class="msg" id="msgTempoAvisoPonto"></div>
+        </div>
         </div>
 
         <div class="card ponto-horas-card">
@@ -6566,7 +6814,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.12';
+const APP_VERSION = '3.1.27';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -6818,6 +7066,217 @@ function resolverConfirmacaoSistema(confirmado) {
   if (resolver) resolver({ confirmado: confirmado === true, acao, valor });
 }
 
+
+// ---- CONTROLE DE VERSAO / FORCAR ATUALIZACAO ----
+let canalControleVersaoSistema = null;
+let controleVersaoSistemaInicializado = false;
+let controleVersaoUltimoTokenRecebido = '';
+let controleVersaoIgnorarProximoToken = '';
+
+function obterChaveTokenControleVersaoSistema() {
+  const empresaId = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || 'global';
+  const lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || 'global';
+  return `checkdiario:controle_versao:${empresaId}:${lojaId}`;
+}
+
+function usuarioPodeForcarAtualizacaoGeral() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioEhAdministrador()) return true;
+  const permissoes = obterPermissoesUsuario();
+  return permissoes?.forcar_atualizacao_geral === true;
+}
+
+function atualizarBotaoForcarAtualizacaoGeral() {
+  const btn = document.getElementById('btnForcarAtualizacaoGeral');
+  if (!btn) return;
+  btn.style.display = usuarioPodeForcarAtualizacaoGeral() ? '' : 'none';
+}
+
+function limparSessaoParaAtualizacaoObrigatoria() {
+  try {
+    Object.keys(localStorage || {}).forEach(chave => {
+      if (String(chave).toLowerCase().includes('zuqui') || String(chave).toLowerCase().includes('checkdiario')) {
+        localStorage.removeItem(chave);
+      }
+    });
+  } catch (erro) {
+    console.warn('Falha ao limpar localStorage para atualização:', erro);
+  }
+
+  try {
+    Object.keys(sessionStorage || {}).forEach(chave => {
+      if (String(chave).toLowerCase().includes('zuqui') || String(chave).toLowerCase().includes('checkdiario')) {
+        sessionStorage.removeItem(chave);
+      }
+    });
+  } catch (erro) {
+    console.warn('Falha ao limpar sessionStorage para atualização:', erro);
+  }
+}
+
+async function executarAtualizacaoObrigatoriaSistema(motivo = 'Atualização obrigatória do sistema') {
+  try {
+    await sb.auth.signOut();
+  } catch (erro) {
+    console.warn('Falha ao encerrar auth do Supabase:', erro);
+  }
+
+  limparSessaoParaAtualizacaoObrigatoria();
+
+  try {
+    alert(`${motivo}.\n\nO sistema será recarregado para buscar a versão mais recente.`);
+  } catch (_) {}
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('atualizacao', String(Date.now()));
+    window.location.replace(url.toString());
+  } catch (_) {
+    window.location.reload();
+  }
+}
+
+async function verificarControleVersaoSistema(silencioso = true) {
+  if (!usuarioSistemaLogado) return;
+
+  const { data, error } = await sb
+    .from('sistema_controle')
+    .select('id, versao_obrigatoria, token_atualizacao, atualizado_em')
+    .eq('id', 'global')
+    .maybeSingle();
+
+  if (error) {
+    if (!silencioso) {
+      alert('Não foi possível verificar o controle de versão. Confirme a tabela sistema_controle no Supabase.');
+    }
+    console.warn('Falha ao consultar sistema_controle:', error);
+    return;
+  }
+
+  if (!data) return;
+
+  const versaoObrigatoria = String(data.versao_obrigatoria || '').trim();
+  const tokenAtual = String(data.token_atualizacao || `${versaoObrigatoria}:${data.atualizado_em || ''}`).trim();
+  const chaveToken = obterChaveTokenControleVersaoSistema();
+  const tokenSalvo = localStorage.getItem(chaveToken) || '';
+
+  controleVersaoUltimoTokenRecebido = tokenAtual;
+
+  if (versaoObrigatoria && versaoObrigatoria !== APP_VERSION) {
+    await executarAtualizacaoObrigatoriaSistema(`Nova versão obrigatória disponível (${versaoObrigatoria})`);
+    return;
+  }
+
+  if (!tokenSalvo) {
+    localStorage.setItem(chaveToken, tokenAtual);
+    return;
+  }
+
+  if (tokenAtual && tokenSalvo !== tokenAtual && controleVersaoIgnorarProximoToken !== tokenAtual) {
+    localStorage.setItem(chaveToken, tokenAtual);
+    await executarAtualizacaoObrigatoriaSistema('Atualização geral solicitada pelo administrador');
+  }
+}
+
+function configurarRealtimeControleVersaoSistema() {
+  if (canalControleVersaoSistema) return;
+
+  try {
+    canalControleVersaoSistema = sb
+      .channel('controle-versao-sistema-global')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'sistema_controle',
+        filter: 'id=eq.global',
+      }, async (payload) => {
+        const novo = payload?.new || {};
+        const versaoObrigatoria = String(novo.versao_obrigatoria || '').trim();
+        const tokenAtual = String(novo.token_atualizacao || `${versaoObrigatoria}:${novo.atualizado_em || ''}`).trim();
+        if (!tokenAtual) return;
+
+        const chaveToken = obterChaveTokenControleVersaoSistema();
+        const tokenSalvo = localStorage.getItem(chaveToken) || '';
+
+        if (controleVersaoIgnorarProximoToken === tokenAtual) {
+          localStorage.setItem(chaveToken, tokenAtual);
+          controleVersaoIgnorarProximoToken = '';
+          return;
+        }
+
+        if (versaoObrigatoria && versaoObrigatoria !== APP_VERSION) {
+          await executarAtualizacaoObrigatoriaSistema(`Nova versão obrigatória disponível (${versaoObrigatoria})`);
+          return;
+        }
+
+        if (tokenSalvo && tokenSalvo !== tokenAtual) {
+          localStorage.setItem(chaveToken, tokenAtual);
+          await executarAtualizacaoObrigatoriaSistema('Atualização geral solicitada pelo administrador');
+        } else if (!tokenSalvo) {
+          localStorage.setItem(chaveToken, tokenAtual);
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('Realtime do controle de versão indisponível.');
+        }
+      });
+  } catch (erro) {
+    console.warn('Falha ao configurar Realtime de controle de versão:', erro);
+  }
+}
+
+function configurarControleVersaoSistema() {
+  if (!usuarioSistemaLogado || controleVersaoSistemaInicializado) return;
+  controleVersaoSistemaInicializado = true;
+  verificarControleVersaoSistema(true);
+  configurarRealtimeControleVersaoSistema();
+}
+
+async function forcarAtualizacaoGeralUsuarios() {
+  if (!usuarioPodeForcarAtualizacaoGeral()) {
+    alert('Seu perfil não tem permissão para forçar atualização geral.');
+    return;
+  }
+
+  const confirmacao = await abrirConfirmacaoSistema({
+    title: 'Forçar atualização geral?',
+    subtitle: 'Todos os usuários com o sistema aberto serão deslogados e a página será recarregada.',
+    body: 'Use esta ação após publicar uma nova versão do sistema.',
+    confirmText: 'Forçar atualização',
+    confirmClass: 'btn-red',
+    cancelText: 'Cancelar',
+  });
+
+  if (!confirmacao.confirmado) return;
+
+  const tokenNovo = `${APP_VERSION}-${Date.now()}`;
+  controleVersaoIgnorarProximoToken = tokenNovo;
+
+  const payload = {
+    id: 'global',
+    versao_obrigatoria: APP_VERSION,
+    token_atualizacao: tokenNovo,
+    atualizado_em: new Date().toISOString(),
+    atualizado_por: obterNomeAdminAtual?.() || usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Administrador',
+    atualizado_por_tipo: usuarioSistemaLogado?.tipo || normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo || '') || 'perfil',
+  };
+
+  const { error } = await sb
+    .from('sistema_controle')
+    .upsert(payload, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Erro ao forçar atualização geral:', error);
+    alert(`Não foi possível forçar a atualização.\n\nDetalhe: ${error.message || 'verifique a tabela sistema_controle e as policies RLS.'}`);
+    return;
+  }
+
+  localStorage.setItem(obterChaveTokenControleVersaoSistema(), tokenNovo);
+  alert('Atualização geral enviada com sucesso. Os usuários com o sistema aberto serão deslogados e recarregados.');
+}
+
+
 // ---- STATE ----
 let execucaoAtualId = null;
 let itensExecucao = [];
@@ -6917,6 +7376,7 @@ let dashboardHorasPeriodo = 'dia';
 let relatorioPontoPeriodo = 'dia';
 let relatorioPontoFuncionarioCache = {};
 let timeoutAvisoPontoRegistrado = null;
+let cacheFuncionariosTempoAvisoPonto = [];
 let timeoutLimpezaPinPonto = null;
 let segurancaPinPontoConfigurada = false;
 let ultimoToquePinPontoEm = 0;
@@ -7455,6 +7915,7 @@ const PERFIL_PERMISSOES = [
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'relatorio_ponto', label: 'Relatório de ponto' },
   { key: 'ponto_ajustes', label: 'Solicitações de ajuste de ponto' },
+  { key: 'alterar_tempo_aviso_ponto', label: 'Ponto - alterar tempo para aviso de retorno' },
   { key: 'relatorio_lancamentos', label: 'Relatório de tarefas' },
   { key: 'relatorio_financeiro', label: 'Relatório de contas a pagar' },
   { key: 'relatorio_ajuste_saldo', label: 'Relatório ajuste de saldo' },
@@ -7469,6 +7930,9 @@ const PERFIL_PERMISSOES = [
   { key: 'solicitacoes', label: 'Solicitações de acesso / aprovar e-mail' },
   { key: 'emails', label: 'Envio de e-mail' },
   { key: 'configuracoes', label: 'Informacoes da loja' },
+  { key: 'forcar_atualizacao_geral', label: 'Forçar atualização geral dos usuários' },
+  { key: 'gerenciar_empresas', label: 'SaaS - gerenciar empresas/clientes' },
+  { key: 'gerenciar_lojas', label: 'SaaS - gerenciar lojas por empresa' },
   { key: 'cadastro_lojas', label: 'Lojas - visualizar/editar' },
   { key: 'criar_lojas', label: 'Lojas - criar/inativar' },
   { key: 'cadastro_admins_loja', label: 'Admins por loja - criar/editar/remover' },
@@ -7513,6 +7977,8 @@ function obterPermissoesBase(codigo) {
       solicitacoes: true,
       emails: false,
       configuracoes: false,
+      gerenciar_empresas: false,
+      gerenciar_lojas: false,
       cadastro_lojas: true,
       criar_lojas: false,
       cadastro_admins_loja: true,
@@ -7551,6 +8017,8 @@ function obterPermissoesBase(codigo) {
       solicitacoes: false,
       emails: false,
       configuracoes: false,
+      gerenciar_empresas: false,
+      gerenciar_lojas: false,
       cadastro_lojas: false,
       criar_lojas: false,
       cadastro_admins_loja: false,
@@ -7627,6 +8095,8 @@ const topTitles = {
   solicitacoes: ['Solicitacoes de acesso', 'Aprove ou rejeite pedidos de entrada'],
   emails: ['Cadastro de envio de e-mail', 'Destinatarios para notificacoes'],
   configuracoes: ['Informacoes da Loja', 'Dados basicos e lembretes da operacao'],
+  empresas_saas: ['Empresas / Clientes', 'Cadastro de empresas para vender o sistema'],
+  lojas_saas: ['Lojas por empresa', 'Filiais vinculadas aos clientes'],
   perfis: ['Perfis', 'Permissoes de acesso do sistema'],
   tarefas: ['Cadastro de Checklist', 'Gerenciamento (Admin)'],
   tarefas_rapidas: ['Alertas rápidas', 'Avisos pontuais para a equipe'],
@@ -7652,6 +8122,10 @@ function paginaPertenceMenuFuncionarios(pageId = '') {
 
 function paginaPertenceMenuConfiguracoes(pageId = '') {
   return ['solicitacoes', 'emails', 'configuracoes'].includes(String(pageId || ''));
+}
+
+function paginaPertenceMenuSaas(pageId = '') {
+  return ['empresas_saas', 'lojas_saas'].includes(String(pageId || ''));
 }
 
 function atualizarEstadoMenuChecklist(expandido = false) {
@@ -7680,6 +8154,12 @@ function atualizarEstadoMenuFuncionarios(expandido = false) {
 
 function atualizarEstadoMenuConfiguracoes(expandido = false) {
   const grupo = document.getElementById('menuConfiguracoesGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function atualizarEstadoMenuSaas(expandido = false) {
+  const grupo = document.getElementById('menuSaasGroup');
   if (!grupo) return;
   grupo.classList.toggle('open', !!expandido);
 }
@@ -7714,12 +8194,19 @@ function toggleMenuConfiguracoesSubmenu() {
   grupo.classList.toggle('open');
 }
 
+function toggleMenuSaasSubmenu() {
+  const grupo = document.getElementById('menuSaasGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open');
+}
+
 function fecharMenusLaterais() {
   atualizarEstadoMenuChecklist(false);
   atualizarEstadoMenuRelatorios(false);
   atualizarEstadoMenuFinanceiro(false);
   atualizarEstadoMenuFuncionarios(false);
   atualizarEstadoMenuConfiguracoes(false);
+  atualizarEstadoMenuSaas(false);
 }
 
 function configurarAberturaAutomaticaDatePicker() {
@@ -7866,6 +8353,8 @@ function abrirPagina(id, botao) {
   if (id === 'solicitacoes') { carregarSolicitacoesAcesso(); }
   if (id === 'emails') { carregarDestinatariosEmail(); }
   if (id === 'configuracoes') { carregarConfiguracoesLoja(); }
+  if (id === 'empresas_saas') { carregarEmpresasSaas(); }
+  if (id === 'lojas_saas') { carregarEmpresasSaas({ render: false, silencioso: true }).then(() => carregarLojasSaas()); }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
     atualizarEstadoItensCadastroTarefa();
@@ -8166,6 +8655,146 @@ function setMsg(id, txt, tipo) {
   el.className = 'msg' + (tipo ? ' ' + tipo : '');
 }
 
+
+function usuarioPodeAlterarTempoAvisoPonto() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioEhAdministrador()) return true;
+  const permissoes = obterPermissoesUsuario();
+  return permissoes?.alterar_tempo_aviso_ponto === true;
+}
+
+function obterChaveTempoAvisoPonto(funcionarioId = '', dataIso = dataLocalISO()) {
+  const lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || 'global';
+  return `checkdiario:tempo_aviso_ponto:${lojaId}:global`;
+}
+
+function obterTempoAvisoManualPonto(funcionarioId = '', dataIso = dataLocalISO()) {
+  try {
+    const valor = localStorage.getItem(obterChaveTempoAvisoPonto());
+    const minutos = Number(valor || 0);
+    return Number.isFinite(minutos) && minutos > 0 ? Math.round(minutos) : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function atualizarCardTempoAvisoPonto() {
+  const card = document.getElementById('pontoTempoAvisoCard');
+  if (!card) return;
+  card.hidden = !usuarioPodeAlterarTempoAvisoPonto();
+  if (!card.hidden) carregarTempoAvisoManualPontoSelecionado();
+}
+
+function preencherSelectTempoAvisoPonto(funcionarios = []) {
+  cacheFuncionariosTempoAvisoPonto = Array.isArray(funcionarios) ? funcionarios : [];
+  carregarTempoAvisoManualPontoSelecionado();
+}
+
+function carregarTempoAvisoManualPontoSelecionado() {
+  const input = document.getElementById('tempoAvisoPontoMinutos');
+  const ajuda = document.getElementById('tempoAvisoPontoAjuda');
+  const valorAtual = document.getElementById('tempoAvisoPontoAtual');
+  const infoIcon = document.getElementById('tempoAvisoPontoInfo');
+  if (!input) return;
+  const manual = obterTempoAvisoManualPonto();
+  input.value = manual ? String(manual) : '';
+  const textoAjuda = manual
+    ? `Aviso global ativo: o sistema alerta ${manual} min antes do fim do intervalo previsto de cada funcionário.`
+    : 'Sem aviso manual configurado. O sistema apenas mostra o contador com base no intervalo cadastrado de cada funcionário.';
+  if (ajuda) ajuda.textContent = textoAjuda;
+  if (valorAtual) valorAtual.textContent = manual ? String(manual) : '--';
+  if (infoIcon) infoIcon.title = textoAjuda;
+}
+
+async function salvarTempoAvisoManualPonto() {
+  if (!usuarioPodeAlterarTempoAvisoPonto()) {
+    setMsg('msgTempoAvisoPonto', 'Você não tem permissão para alterar o tempo de aviso.', 'err');
+    return;
+  }
+  const input = document.getElementById('tempoAvisoPontoMinutos');
+  const minutos = Number(input?.value || 0);
+  if (!Number.isFinite(minutos) || minutos <= 0 || minutos > 240 || !Number.isInteger(minutos)) {
+    setMsg('msgTempoAvisoPonto', 'Informe um tempo entre 1 e 240 minutos.', 'err');
+    return;
+  }
+  try {
+    localStorage.setItem(obterChaveTempoAvisoPonto(), String(minutos));
+    setMsg('msgTempoAvisoPonto', `Aviso global salvo: ${minutos} min antes do fim do intervalo.`, 'ok');
+    carregarTempoAvisoManualPontoSelecionado();
+    await carregarResumoPontoHoje();
+  } catch (e) {
+    setMsg('msgTempoAvisoPonto', 'Não foi possível salvar o tempo de aviso neste navegador.', 'err');
+  }
+}
+
+async function limparTempoAvisoManualPonto() {
+  if (!usuarioPodeAlterarTempoAvisoPonto()) {
+    setMsg('msgTempoAvisoPonto', 'Você não tem permissão para alterar o tempo de aviso.', 'err');
+    return;
+  }
+  try {
+    localStorage.removeItem(obterChaveTempoAvisoPonto());
+    setMsg('msgTempoAvisoPonto', 'Aviso manual removido. O contador continua usando o intervalo cadastrado do funcionário.', 'ok');
+    carregarTempoAvisoManualPontoSelecionado();
+    await carregarResumoPontoHoje();
+  } catch (e) {
+    setMsg('msgTempoAvisoPonto', 'Não foi possível remover o tempo de aviso neste navegador.', 'err');
+  }
+}
+
+function calcularTotalIntervalosPonto(intervalos = [], saidaIntervaloSemRegistro = null) {
+  let total = 0;
+  (intervalos || []).forEach(intervalo => {
+    if (!intervalo?.inicio_em) return;
+    const inicioMs = new Date(intervalo.inicio_em).getTime();
+    const fimMs = intervalo.retorno_em ? new Date(intervalo.retorno_em).getTime() : Date.now();
+    if (!Number.isNaN(inicioMs) && !Number.isNaN(fimMs) && fimMs > inicioMs) {
+      total += Math.floor((fimMs - inicioMs) / 60000);
+    }
+  });
+  if (saidaIntervaloSemRegistro) {
+    const inicioMs = new Date(saidaIntervaloSemRegistro).getTime();
+    if (!Number.isNaN(inicioMs) && Date.now() > inicioMs) {
+      total += Math.floor((Date.now() - inicioMs) / 60000);
+    }
+  }
+  return Math.max(0, total);
+}
+
+function formatarTempoRegressivoPonto(msRestante = 0) {
+  const negativo = msRestante < 0;
+  const totalSegundos = Math.max(0, Math.floor(Math.abs(msRestante) / 1000));
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
+  const texto = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+  return negativo ? `-${texto}` : texto;
+}
+
+function falarAvisoPontoRegistrado(nomeFuncionario = '', tipoPonto = 'iniciado') {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const vozes = synth.getVoices ? synth.getVoices() : [];
+    const vozPtBr = vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt-br'))
+      || vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt'))
+      || null;
+    const nome = String(nomeFuncionario || 'funcionário').trim();
+    const tipoNormalizado = String(tipoPonto || '').toLowerCase();
+    const frase = tipoNormalizado === 'parado'
+      ? `Ponto parado. ${nome}.`
+      : `Ponto iniciado. ${nome}.`;
+    const utter = new SpeechSynthesisUtterance(frase);
+    utter.lang = 'pt-BR';
+    utter.volume = 1;
+    utter.rate = 1.03;
+    utter.pitch = 1.05;
+    if (vozPtBr) utter.voice = vozPtBr;
+    synth.speak(utter);
+  } catch (e) {}
+}
+
 function exibirAvisoPontoRegistrado(nomeFuncionario = '', tipoPonto = 'iniciado') {
   const overlay = document.getElementById('pontoFeedbackOverlay');
   const texto = document.getElementById('pontoFeedbackText');
@@ -8178,6 +8807,11 @@ function exibirAvisoPontoRegistrado(nomeFuncionario = '', tipoPonto = 'iniciado'
   texto.textContent = `${pontoParado ? 'PONTO PARADO' : 'PONTO INICIADO'} ${nome}`;
   overlay.hidden = false;
   overlay.classList.add('show');
+
+  try {
+    tocarSomNovaTarefaChecklist();
+    window.setTimeout(() => falarAvisoPontoRegistrado(nomeFuncionario, tipoPonto), 260);
+  } catch (e) {}
 
   if (timeoutAvisoPontoRegistrado) {
     clearTimeout(timeoutAvisoPontoRegistrado);
@@ -8872,7 +9506,13 @@ function usuarioPodeAcessar(pageId) {
   if (usuarioSistemaLogado.tipo === 'admin') return true;
   const permissoes = obterPermissoesUsuario();
   if (pageId === 'configuracoes') {
-    return !!(permissoes.configuracoes || permissoes.cadastro_lojas || permissoes.cadastro_admins_loja);
+    return !!(permissoes.configuracoes || permissoes.cadastro_lojas || permissoes.cadastro_admins_loja || permissoes.forcar_atualizacao_geral);
+  }
+  if (pageId === 'empresas_saas') {
+    return !!permissoes.gerenciar_empresas;
+  }
+  if (pageId === 'lojas_saas') {
+    return !!(permissoes.gerenciar_lojas || permissoes.gerenciar_empresas);
   }
   if (pageId === 'tarefas_rapidas') {
     return usuarioPodeAcessarAlertasRapidos();
@@ -9156,6 +9796,16 @@ function aplicarPermissoesSistema() {
   if (grupoConfiguracoes) {
     grupoConfiguracoes.style.display = algumaConfiguracaoVisivel ? '' : 'none';
   }
+
+  const itensSaas = Array.from(document.querySelectorAll('#menuSaasGroup .nav-btn[data-page]'));
+  const grupoSaas = document.getElementById('menuSaasGroup');
+  const algumSaasVisivel = itensSaas.some(btn => btn.style.display !== 'none');
+  if (grupoSaas) {
+    grupoSaas.style.display = algumSaasVisivel ? '' : 'none';
+  }
+
+  atualizarBotaoForcarAtualizacaoGeral();
+  configurarControleVersaoSistema();
 }
 
 async function countTable(tableName) {
@@ -9755,7 +10405,7 @@ async function obterFuncionarioAtivoPorPin(pin) {
 
   const { data, error } = await sb
     .from('funcionarios')
-    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim')
+    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim, tempo_intervalo_minutos, loja_id, empresa_id')
     .eq('ativo', true);
 
   if (error) return null;
@@ -16561,7 +17211,6 @@ function limparFormularioLojaCadastro() {
   const btnSalvar = document.getElementById('btnSalvarLojaCadastro');
   const btnCancelar = document.getElementById('btnCancelarEdicaoLojaCadastro');
   if (nome) nome.value = '';
-  if (codigo) codigo.value = '';
   if (ativo) ativo.checked = true;
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar filial';
   if (btnCancelar) btnCancelar.style.display = 'none';
@@ -17175,6 +17824,364 @@ async function salvarConfiguracoesLoja() {
 }
 
 // 
+
+//
+// ADMINISTRAÇÃO SAAS - EMPRESAS E LOJAS
+//
+let empresasSaasCache = [];
+let lojasSaasCache = [];
+let empresaSaasEmEdicaoId = null;
+let lojaSaasEmEdicaoId = null;
+
+function usuarioPodeGerenciarEmpresasSaas() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  return obterPermissoesUsuario().gerenciar_empresas === true;
+}
+
+function usuarioPodeGerenciarLojasSaas() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  return obterPermissoesUsuario().gerenciar_lojas === true;
+}
+
+function nomeEmpresaSaas(item = {}) {
+  return String(item.nome || item.razao_social || item.nome_fantasia || item.descricao || '').trim();
+}
+
+function gerarSlugEmpresaSaas(nome = '', idAtual = '') {
+  const base = String(nome || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64) || 'empresa';
+
+  const usados = new Set((empresasSaasCache || [])
+    .filter(item => String(item.id || '') !== String(idAtual || ''))
+    .map(item => String(item.slug || item.codigo || '').trim())
+    .filter(Boolean));
+
+  let slug = base;
+  let contador = 2;
+  while (usados.has(slug)) {
+    slug = `${base}-${contador}`;
+    contador += 1;
+  }
+  return slug;
+}
+
+function codigoEmpresaSaas(item = {}) {
+  return String(item.slug || item.codigo || '').trim();
+}
+
+function empresaSaasAtiva(item = {}) {
+  if (typeof item.ativo === 'boolean') return item.ativo;
+  if (typeof item.inativo === 'boolean') return !item.inativo;
+  return true;
+}
+
+function nomeLojaSaas(item = {}) {
+  return String(item.nome || item.nome_loja || item.descricao || '').trim();
+}
+
+function codigoLojaSaas(item = {}) {
+  return String(item.codigo || item.sigla || '').trim();
+}
+
+function lojaSaasAtiva(item = {}) {
+  if (typeof item.ativo === 'boolean') return item.ativo;
+  if (typeof item.inativo === 'boolean') return !item.inativo;
+  return true;
+}
+
+function nomeEmpresaSaasPorId(id = '') {
+  const empresa = empresasSaasCache.find(item => String(item.id || '') === String(id || ''));
+  return nomeEmpresaSaas(empresa) || String(id || '');
+}
+
+function atualizarSelectEmpresaLojaSaas() {
+  const select = document.getElementById('saasEmpresaLoja');
+  if (!select) return;
+  const atual = String(select.value || '').trim();
+  select.innerHTML = '<option value="">- Selecione a empresa -</option>';
+  [...empresasSaasCache]
+    .sort((a, b) => nomeEmpresaSaas(a).localeCompare(nomeEmpresaSaas(b), 'pt-BR', { sensitivity: 'base' }))
+    .forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = String(item.id || '');
+      const nome = nomeEmpresaSaas(item) || 'Empresa sem nome';
+      const codigo = codigoEmpresaSaas(item);
+      opt.textContent = codigo ? `${nome} (${codigo})` : nome;
+      select.appendChild(opt);
+    });
+  if (atual && empresasSaasCache.some(item => String(item.id || '') === atual)) select.value = atual;
+}
+
+async function carregarEmpresasSaas({ render = true, silencioso = false } = {}) {
+  const lista = document.getElementById('listaEmpresasSaas');
+  if (render && lista) lista.innerHTML = '<div class="empty">Carregando empresas...</div>';
+  if (!usuarioPodeGerenciarEmpresasSaas() && !usuarioPodeGerenciarLojasSaas()) {
+    empresasSaasCache = [];
+    if (render && lista) lista.innerHTML = '<div class="empty">Sem permissão para visualizar empresas.</div>';
+    return [];
+  }
+
+  const { data, error } = await sb.from('empresas').select('*').order('nome', { ascending: true });
+  if (error) {
+    empresasSaasCache = [];
+    if (render && lista) lista.innerHTML = '<div class="empty">Erro ao carregar empresas.</div>';
+    if (!silencioso) setMsg('msgEmpresasSaas', `Erro ao carregar empresas: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return [];
+  }
+
+  empresasSaasCache = Array.isArray(data) ? data : [];
+  atualizarSelectEmpresaLojaSaas();
+  if (render) renderizarEmpresasSaas();
+  return empresasSaasCache;
+}
+
+function renderizarEmpresasSaas() {
+  const lista = document.getElementById('listaEmpresasSaas');
+  if (!lista) return;
+  if (!empresasSaasCache.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma empresa cadastrada.</div>';
+    return;
+  }
+  const podeEditar = usuarioPodeGerenciarEmpresasSaas();
+  lista.innerHTML = '<div class="lista">' + empresasSaasCache.map(item => {
+    const id = String(item.id || '');
+    const nome = nomeEmpresaSaas(item) || 'Sem nome';
+    const codigo = codigoEmpresaSaas(item);
+    const ativa = empresaSaasAtiva(item);
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${escaparHtmlBasico(nome)}</div>
+          <div class="item-detalhe">${codigo ? `Identificador: ${escaparHtmlBasico(codigo)} · ` : ''}Status: ${ativa ? 'Ativa' : 'Inativa'}</div>
+        </div>
+        <div class="item-actions">
+          ${podeEditar ? `<button class="btn btn-ghost btn-sm" onclick="editarEmpresaSaas('${id}')">Editar</button>` : ''}
+          ${podeEditar ? `<button class="btn btn-ghost btn-sm" onclick="alternarEmpresaSaas('${id}')">${ativa ? 'Inativar' : 'Ativar'}</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+function limparFormularioEmpresaSaas() {
+  empresaSaasEmEdicaoId = null;
+  const nome = document.getElementById('saasNomeEmpresa');
+  const ativo = document.getElementById('saasAtivoEmpresa');
+  const btnSalvar = document.getElementById('btnSalvarEmpresaSaas');
+  const btnCancelar = document.getElementById('btnCancelarEmpresaSaas');
+  if (nome) nome.value = '';
+  if (ativo) ativo.checked = true;
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar empresa';
+  if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+function cancelarEdicaoEmpresaSaas() {
+  limparFormularioEmpresaSaas();
+  setMsg('msgEmpresasSaas', 'Edição cancelada.', 'ok');
+}
+
+function editarEmpresaSaas(id) {
+  if (!usuarioPodeGerenciarEmpresasSaas()) return;
+  const item = empresasSaasCache.find(empresa => String(empresa.id || '') === String(id || ''));
+  if (!item) return;
+  empresaSaasEmEdicaoId = String(item.id || '');
+  const nome = document.getElementById('saasNomeEmpresa');
+  const ativo = document.getElementById('saasAtivoEmpresa');
+  const btnSalvar = document.getElementById('btnSalvarEmpresaSaas');
+  const btnCancelar = document.getElementById('btnCancelarEmpresaSaas');
+  if (nome) nome.value = nomeEmpresaSaas(item);
+  if (ativo) ativo.checked = empresaSaasAtiva(item);
+  if (btnSalvar) btnSalvar.textContent = 'Salvar empresa';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  setMsg('msgEmpresasSaas', `Editando empresa: ${nomeEmpresaSaas(item) || '-'}.`, 'ok');
+}
+
+async function salvarEmpresaSaas() {
+  if (!usuarioPodeGerenciarEmpresasSaas()) {
+    setMsg('msgEmpresasSaas', 'Você não tem permissão para gerenciar empresas.', 'err');
+    return;
+  }
+  const nome = String(document.getElementById('saasNomeEmpresa')?.value || '').trim();
+  const ativo = document.getElementById('saasAtivoEmpresa')?.checked !== false;
+  if (!nome) {
+    setMsg('msgEmpresasSaas', 'Informe o nome da empresa.', 'err');
+    return;
+  }
+
+  const slug = gerarSlugEmpresaSaas(nome, empresaSaasEmEdicaoId);
+  const payload = { nome, slug, ativo };
+  const req = empresaSaasEmEdicaoId
+    ? sb.from('empresas').update(payload).eq('id', empresaSaasEmEdicaoId)
+    : sb.from('empresas').insert([payload]);
+  const { error } = await req;
+  if (error) {
+    setMsg('msgEmpresasSaas', `Não foi possível salvar empresa: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  const editando = !!empresaSaasEmEdicaoId;
+  limparFormularioEmpresaSaas();
+  setMsg('msgEmpresasSaas', editando ? 'Empresa atualizada.' : 'Empresa cadastrada.', 'ok');
+  await carregarEmpresasSaas();
+}
+
+async function alternarEmpresaSaas(id) {
+  if (!usuarioPodeGerenciarEmpresasSaas()) return;
+  const item = empresasSaasCache.find(empresa => String(empresa.id || '') === String(id || ''));
+  if (!item) return;
+  const novoAtivo = !empresaSaasAtiva(item);
+  const { error } = await sb.from('empresas').update({ ativo: novoAtivo }).eq('id', id);
+  if (error) {
+    setMsg('msgEmpresasSaas', `Não foi possível alterar status: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  setMsg('msgEmpresasSaas', `Empresa ${novoAtivo ? 'ativada' : 'inativada'}.`, 'ok');
+  await carregarEmpresasSaas();
+}
+
+async function carregarLojasSaas() {
+  const lista = document.getElementById('listaLojasSaas');
+  if (lista) lista.innerHTML = '<div class="empty">Carregando lojas...</div>';
+  if (!usuarioPodeGerenciarLojasSaas()) {
+    lojasSaasCache = [];
+    if (lista) lista.innerHTML = '<div class="empty">Sem permissão para visualizar lojas.</div>';
+    return [];
+  }
+
+  const { data, error } = await sb.from('lojas').select('*').order('nome', { ascending: true });
+  if (error) {
+    lojasSaasCache = [];
+    if (lista) lista.innerHTML = '<div class="empty">Erro ao carregar lojas.</div>';
+    setMsg('msgLojasSaas', `Erro ao carregar lojas: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return [];
+  }
+
+  lojasSaasCache = Array.isArray(data) ? data : [];
+  renderizarLojasSaas();
+  return lojasSaasCache;
+}
+
+function renderizarLojasSaas() {
+  const lista = document.getElementById('listaLojasSaas');
+  if (!lista) return;
+  if (!lojasSaasCache.length) {
+    lista.innerHTML = '<div class="empty">Nenhuma loja cadastrada.</div>';
+    return;
+  }
+  const podeEditar = usuarioPodeGerenciarLojasSaas();
+  lista.innerHTML = '<div class="lista">' + lojasSaasCache.map(item => {
+    const id = String(item.id || '');
+    const nome = nomeLojaSaas(item) || 'Sem nome';
+    const codigo = codigoLojaSaas(item);
+    const ativa = lojaSaasAtiva(item);
+    const empresaNome = nomeEmpresaSaasPorId(item.empresa_id);
+    return `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${escaparHtmlBasico(nome)}</div>
+          <div class="item-detalhe">Empresa: ${escaparHtmlBasico(empresaNome || '-')} · ${codigo ? `Identificador: ${escaparHtmlBasico(codigo)} · ` : ''}Status: ${ativa ? 'Ativa' : 'Inativa'}</div>
+        </div>
+        <div class="item-actions">
+          ${podeEditar ? `<button class="btn btn-ghost btn-sm" onclick="editarLojaSaas('${id}')">Editar</button>` : ''}
+          ${podeEditar ? `<button class="btn btn-ghost btn-sm" onclick="alternarLojaSaas('${id}')">${ativa ? 'Inativar' : 'Ativar'}</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+function limparFormularioLojaSaas() {
+  lojaSaasEmEdicaoId = null;
+  const empresa = document.getElementById('saasEmpresaLoja');
+  const nome = document.getElementById('saasNomeLoja');
+  const codigo = document.getElementById('saasCodigoLoja');
+  const ativo = document.getElementById('saasAtivoLoja');
+  const btnSalvar = document.getElementById('btnSalvarLojaSaas');
+  const btnCancelar = document.getElementById('btnCancelarLojaSaas');
+  if (empresa) empresa.value = '';
+  if (nome) nome.value = '';
+  if (ativo) ativo.checked = true;
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar loja';
+  if (btnCancelar) btnCancelar.style.display = 'none';
+}
+
+function cancelarEdicaoLojaSaas() {
+  limparFormularioLojaSaas();
+  setMsg('msgLojasSaas', 'Edição cancelada.', 'ok');
+}
+
+function editarLojaSaas(id) {
+  if (!usuarioPodeGerenciarLojasSaas()) return;
+  const item = lojasSaasCache.find(loja => String(loja.id || '') === String(id || ''));
+  if (!item) return;
+  lojaSaasEmEdicaoId = String(item.id || '');
+  const empresa = document.getElementById('saasEmpresaLoja');
+  const nome = document.getElementById('saasNomeLoja');
+  const codigo = document.getElementById('saasCodigoLoja');
+  const ativo = document.getElementById('saasAtivoLoja');
+  const btnSalvar = document.getElementById('btnSalvarLojaSaas');
+  const btnCancelar = document.getElementById('btnCancelarLojaSaas');
+  if (empresa) empresa.value = String(item.empresa_id || '');
+  if (nome) nome.value = nomeLojaSaas(item);
+  if (codigo) codigo.value = codigoLojaSaas(item);
+  if (ativo) ativo.checked = lojaSaasAtiva(item);
+  if (btnSalvar) btnSalvar.textContent = 'Salvar loja';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  setMsg('msgLojasSaas', `Editando loja: ${nomeLojaSaas(item) || '-'}.`, 'ok');
+}
+
+async function salvarLojaSaas() {
+  if (!usuarioPodeGerenciarLojasSaas()) {
+    setMsg('msgLojasSaas', 'Você não tem permissão para gerenciar lojas.', 'err');
+    return;
+  }
+  const empresaId = String(document.getElementById('saasEmpresaLoja')?.value || '').trim();
+  const nome = String(document.getElementById('saasNomeLoja')?.value || '').trim();
+  const codigo = String(document.getElementById('saasCodigoLoja')?.value || '').trim();
+  const ativo = document.getElementById('saasAtivoLoja')?.checked !== false;
+  if (!empresaId) {
+    setMsg('msgLojasSaas', 'Selecione a empresa da loja.', 'err');
+    return;
+  }
+  if (!nome) {
+    setMsg('msgLojasSaas', 'Informe o nome da loja.', 'err');
+    return;
+  }
+  const payload = { empresa_id: empresaId, nome, codigo: codigo || null, ativo };
+  const req = lojaSaasEmEdicaoId
+    ? sb.from('lojas').update(payload).eq('id', lojaSaasEmEdicaoId)
+    : sb.from('lojas').insert([payload]);
+  const { error } = await req;
+  if (error) {
+    setMsg('msgLojasSaas', `Não foi possível salvar loja: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  const editando = !!lojaSaasEmEdicaoId;
+  limparFormularioLojaSaas();
+  setMsg('msgLojasSaas', editando ? 'Loja atualizada.' : 'Loja cadastrada.', 'ok');
+  await carregarLojasSaas();
+}
+
+async function alternarLojaSaas(id) {
+  if (!usuarioPodeGerenciarLojasSaas()) return;
+  const item = lojasSaasCache.find(loja => String(loja.id || '') === String(id || ''));
+  if (!item) return;
+  const novoAtivo = !lojaSaasAtiva(item);
+  const { error } = await sb.from('lojas').update({ ativo: novoAtivo }).eq('id', id);
+  if (error) {
+    setMsg('msgLojasSaas', `Não foi possível alterar status: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  setMsg('msgLojasSaas', `Loja ${novoAtivo ? 'ativada' : 'inativada'}.`, 'ok');
+  await carregarLojasSaas();
+}
+
 // PERFIS
 // 
 function normalizarTextoFiltroPermissao(valor) {
@@ -19846,7 +20853,7 @@ function tarefaDisponivelHoje(diasSemana, dataRef = hoje()) {
 async function carregarFuncionariosAtivosPonto() {
   const { data, error } = await sb
     .from('funcionarios')
-    .select('id, nome')
+    .select('id, nome, tempo_intervalo_minutos, horario_trabalho_inicio, horario_trabalho_fim')
     .eq('ativo', true)
     .order('nome');
 
@@ -19996,6 +21003,8 @@ async function carregarSelectFuncionariosPonto() {
     preencherSelectFuncionariosPonto(selPonto, funcionarios, { placeholder: '- Selecione o funcionário -' });
     preencherSelectFuncionariosPonto(selRelatorio, funcionarios, { incluirTodos: !funcionarioRestritoId });
     preencherSelectFuncionariosPonto(selAdminAjuste, funcionarios, { placeholder: '- Selecione o funcionário -' });
+    preencherSelectTempoAvisoPonto(funcionarios);
+    atualizarCardTempoAvisoPonto();
 
     if (funcionarioRestritoId) {
       if (selPonto) {
@@ -20376,21 +21385,54 @@ function formatarMinutosIntervaloPonto(totalMinutos = 0) {
   return resto ? `${horas}h ${resto}min` : `${horas}h`;
 }
 
+
+function batidaPontoProximaDoFimDoTurno(funcionario = {}, referenciaIso = null, janelaAntesMinutos = 90, janelaDepoisMinutos = 180) {
+  const fim = horarioParaMinutos(horaCurta(funcionario?.horario_trabalho_fim || ''));
+  if (fim === null) return false;
+
+  const referencia = referenciaIso ? new Date(referenciaIso) : new Date();
+  if (Number.isNaN(referencia.getTime())) return false;
+
+  const minutosReferencia = (referencia.getHours() * 60) + referencia.getMinutes();
+  let diff = minutosReferencia - fim;
+
+  // Ajuste para turnos que viram o dia.
+  if (diff < -720) diff += 1440;
+  if (diff > 720) diff -= 1440;
+
+  return diff >= -Number(janelaAntesMinutos || 0) && diff <= Number(janelaDepoisMinutos || 0);
+}
+
+function deveIniciarIntervaloPonto({ funcionario = {}, intervalos = [], registro = null, referenciaIso = null } = {}) {
+  const lista = Array.isArray(intervalos) ? intervalos : [];
+  const intervalosConcluidos = lista.filter(item => item?.inicio_em && item?.retorno_em).length;
+  const possuiIntervaloAberto = lista.some(item => item?.inicio_em && !item?.retorno_em);
+  if (possuiIntervaloAberto) return false;
+
+  // Regra atual operacional:
+  // 1ª batida abre jornada.
+  // 2ª batida inicia o intervalo principal, exceto se já estiver perto do fim do turno.
+  // 3ª batida retorna do intervalo.
+  // 4ª batida fecha o expediente.
+  // Regras com intervalos extras serão tratadas futuramente pela tela de Escala de Trabalho.
+  if (intervalosConcluidos >= 1) return false;
+  if (batidaPontoProximaDoFimDoTurno(funcionario, referenciaIso || registro?.saida_em || null)) return false;
+  return true;
+}
+
 function obterResumoRetornoIntervaloPonto(intervaloAberto = null, tempoMinimoMinutos = 0) {
   const tempo = Number(tempoMinimoMinutos || 0);
   if (!intervaloAberto?.inicio_em || !tempo || tempo <= 0) return null;
   const inicioMs = new Date(intervaloAberto.inicio_em).getTime();
   if (Number.isNaN(inicioMs)) return null;
   const retornoPrevistoMs = inicioMs + (tempo * 60000);
-  const diffMin = Math.ceil((retornoPrevistoMs - Date.now()) / 60000);
+  const diffMs = retornoPrevistoMs - Date.now();
   return {
     tempoMinimo: tempo,
     retornoPrevisto: new Date(retornoPrevistoMs).toISOString(),
-    minutosRestantes: diffMin,
-    texto: diffMin > 0
-      ? `Falta ${formatarMinutosIntervaloPonto(diffMin)} para retorno`
-      : `-${formatarMinutosIntervaloPonto(Math.abs(diffMin))} do retorno`,
-    atrasado: diffMin <= 0,
+    retornoPrevistoMs,
+    texto: formatarTempoRegressivoPonto(diffMs),
+    atrasado: diffMs <= 0,
   };
 }
 
@@ -20398,12 +21440,12 @@ function atualizarContadoresRetornoIntervaloPonto() {
   document.querySelectorAll('[data-retorno-intervalo-ms]').forEach(el => {
     const retornoMs = Number(el.getAttribute('data-retorno-intervalo-ms') || 0);
     if (!retornoMs) return;
-    const diffMin = Math.ceil((retornoMs - Date.now()) / 60000);
-    const texto = diffMin > 0
-      ? `Falta ${formatarMinutosIntervaloPonto(diffMin)} para retorno`
-      : `-${formatarMinutosIntervaloPonto(Math.abs(diffMin))} do retorno`;
-    el.textContent = texto;
-    el.style.color = diffMin <= 0 ? 'var(--red)' : 'var(--amber)';
+    const diffMs = retornoMs - Date.now();
+    el.textContent = formatarTempoRegressivoPonto(diffMs);
+    const atrasado = diffMs <= 0;
+    const card = el.closest('.ponto-retorno-destaque');
+    if (card) card.classList.toggle('atrasado', atrasado);
+    el.style.color = atrasado ? '#fca5a5' : '#ef4444';
   });
 }
 
@@ -20414,7 +21456,7 @@ function iniciarContadorRetornoIntervaloPonto() {
   }
   atualizarContadoresRetornoIntervaloPonto();
   if (!document.querySelector('[data-retorno-intervalo-ms]')) return;
-  intervaloContadorRetornoPonto = window.setInterval(atualizarContadoresRetornoIntervaloPonto, 30000);
+  intervaloContadorRetornoPonto = window.setInterval(atualizarContadoresRetornoIntervaloPonto, 1000);
 }
 
 function obterResumoJornadaPonto(registro, intervalos = []) {
@@ -20538,6 +21580,8 @@ async function carregarTempoIntervaloMinimoFuncionarios(ids = []) {
     return Object.fromEntries((data || []).map(item => [String(item.id), {
       padrao: Number(item.tempo_intervalo_minutos || 0),
       semana: normalizarIntervalosSemanaFuncionario(item.intervalos_semana, item.tempo_intervalo_minutos),
+      horario_trabalho_inicio: item.horario_trabalho_inicio || null,
+      horario_trabalho_fim: item.horario_trabalho_fim || null,
     }]));
   } catch (error) {
     console.warn('Não foi possível carregar tempo mínimo de intervalo dos funcionários:', error);
@@ -20559,7 +21603,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   const hojeLocal = dataLocalISO();
   let query = sb
     .from('ponto_registros')
-    .select('id, funcionario_id, entrada_em, saida_em, created_at')
+    .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
     .eq('data_ponto', hojeLocal)
     .order('created_at', { ascending: true });
 
@@ -20602,12 +21646,12 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     inicio: hojeLocal,
     fim: hojeLocal,
     funcionarioId: id,
-    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+    campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
   });
   rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
     diaIso: hojeLocal,
     funcionarioId: id,
-    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+    campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
   });
 
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
@@ -20635,6 +21679,24 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       intervalosPorRegistro[chave].push(item);
     });
   }
+
+  // Compatibilidade com o modelo real atual da tabela ponto_registros:
+  // o intervalo principal fica nas colunas inicio_intervalo_em / retorno_intervalo_em.
+  // Sem isso, o banco grava certo, mas a tela continua mostrando como "Aberto agora".
+  (rows || []).forEach(registro => {
+    const chave = String(registro?.id || '');
+    if (!chave || !registro?.inicio_intervalo_em) return;
+    if (!intervalosPorRegistro[chave]) intervalosPorRegistro[chave] = [];
+    const jaExiste = intervalosPorRegistro[chave].some(item => String(item?.inicio_em || '') === String(registro.inicio_intervalo_em || ''));
+    if (!jaExiste) {
+      intervalosPorRegistro[chave].push({
+        ponto_registro_id: chave,
+        inicio_em: registro.inicio_intervalo_em,
+        retorno_em: registro.retorno_intervalo_em || null,
+        ordem: 1,
+      });
+    }
+  });
 
   const temposIntervaloMinimo = await carregarTempoIntervaloMinimoFuncionarios(
     rows.map(item => item.funcionario_id)
@@ -20667,6 +21729,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
 
     const periodos = [];
     let entradaAtual = registro.entrada_em || null;
+    const temIntervaloAberto = ordenados.some(item => item.inicio_em && !item.retorno_em);
 
     ordenados.forEach(intervalo => {
       if (entradaAtual) {
@@ -20675,7 +21738,9 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       entradaAtual = intervalo.retorno_em || null;
     });
 
-    if (entradaAtual || registro.saida_em) {
+    // Se existe intervalo aberto, não cria um segundo período duplicado usando saida_em.
+    // A próxima jornada só começa quando o funcionário bater o retorno.
+    if (entradaAtual || (registro.saida_em && !temIntervaloAberto)) {
       periodos.push({
         entrada: entradaAtual || registro.entrada_em || null,
         saida: registro.saida_em || null,
@@ -20712,8 +21777,11 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
         ultimaEntrada: null,
         ultimaSaida: null,
         intervaloAbertoInicio: null,
+        totalIntervaloMinutos: 0,
         tempoIntervaloMinimo: 0,
         intervalosMinimosDia: obterIntervalosMinimosFuncionarioData(temposIntervaloMinimo[funcionarioIdAtual] || {}, hojeLocal),
+        horarioTrabalhoInicio: temposIntervaloMinimo[funcionarioIdAtual]?.horario_trabalho_inicio || null,
+        horarioTrabalhoFim: temposIntervaloMinimo[funcionarioIdAtual]?.horario_trabalho_fim || null,
       });
     }
 
@@ -20721,12 +21789,16 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     item.totalMinutos += Number(resumo?.totalMinutos || 0);
     const intervaloAbertoAtual = obterIntervaloAberto(intervalos);
     const intervalosConcluidos = (intervalos || []).filter(intervalo => intervalo.inicio_em && intervalo.retorno_em).length;
-    const saidaPodeSerIntervalo = registro.saida_em && intervalosConcluidos < item.intervalosMinimosDia.length;
+    const saidaEhFimTurno = registro.saida_em && batidaPontoProximaDoFimDoTurno({ horario_trabalho_fim: item.horarioTrabalhoFim }, registro.saida_em);
+    const saidaPodeSerIntervalo = registro.saida_em && !saidaEhFimTurno && intervalosConcluidos < item.intervalosMinimosDia.length;
     const inicioIntervaloAberto = intervaloAbertoAtual?.inicio_em || (saidaPodeSerIntervalo ? registro.saida_em : null);
     if (inicioIntervaloAberto && ts(inicioIntervaloAberto) > ts(item.intervaloAbertoInicio)) {
       item.intervaloAbertoInicio = inicioIntervaloAberto;
       item.tempoIntervaloMinimo = item.intervalosMinimosDia[intervalosConcluidos] || 0;
     }
+
+    const saidaIntervaloSemRegistro = (saidaPodeSerIntervalo && !intervaloAbertoAtual?.inicio_em) ? registro.saida_em : null;
+    item.totalIntervaloMinutos += calcularTotalIntervalosPonto(intervalos, saidaIntervaloSemRegistro);
 
     periodos.forEach(periodo => {
       item.periodos.push(periodo);
@@ -20788,8 +21860,13 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     );
     const statusClasse = item.intervaloAbertoInicio ? 'tag tag-amber' : item.aberto ? 'tag tag-amber' : 'tag tag-green';
     const statusTexto = item.intervaloAbertoInicio ? 'Em intervalo' : item.aberto ? 'Aberto agora' : 'Fechado';
+    const avisoAntesMinutos = obterTempoAvisoManualPonto();
     const retornoHtml = resumoRetorno
-      ? `<div>Intervalo: <strong data-retorno-intervalo-ms="${new Date(resumoRetorno.retornoPrevisto).getTime()}" style="color:${resumoRetorno.atrasado ? 'var(--red)' : 'var(--amber)'}">${escapeHtml(resumoRetorno.texto)}</strong></div>`
+      ? `<div class="ponto-retorno-destaque${resumoRetorno.atrasado ? ' atrasado' : ''}">
+          <div class="retorno-label">${resumoRetorno.atrasado ? 'Retorno atrasado' : 'Minutos para retorno'}</div>
+          <div class="retorno-contador" data-retorno-intervalo-ms="${new Date(resumoRetorno.retornoPrevisto).getTime()}">${escapeHtml(resumoRetorno.texto)}</div>
+          <div class="ponto-retorno-detalhe">Intervalo definido: <strong>${formatarMinutosIntervaloPonto(item.tempoIntervaloMinimo)}</strong> • Retornar até: <strong>${formatarHora(resumoRetorno.retornoPrevisto)}</strong>${avisoAntesMinutos ? ` • Aviso: <strong>${avisoAntesMinutos} min antes</strong>` : ''}</div>
+        </div>`
       : item.tempoIntervaloMinimo
         ? `<div>Intervalo mínimo: <strong>${formatarMinutosIntervaloPonto(item.tempoIntervaloMinimo)}</strong></div>`
         : item.intervalosMinimosDia.length
@@ -20802,11 +21879,12 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       : '';
 
     return `
-      <div class="ponto-resumo-linha">
+      <div class="ponto-resumo-linha${item.intervaloAbertoInicio ? ' em-intervalo-destaque' : ''}">
         <div class="ponto-resumo-nome">${escapeHtml(item.nome)}</div>
         <div class="ponto-resumo-sequencia">${periodosHtml}</div>
         <div class="ponto-resumo-metricas">
-          <div>Total: <strong>${formatarDuracaoMinutos(item.totalMinutos)}</strong></div>
+          <div>Total trabalhado: <strong>${formatarDuracaoMinutos(item.totalMinutos)}</strong></div>
+          <div>Total intervalo: <strong>${formatarDuracaoMinutos(item.totalIntervaloMinutos || 0)}</strong></div>
           <div>Última entrada: ${formatarHora(item.ultimaEntrada)}</div>
           <div>Última saída: ${item.ultimaSaida ? formatarHora(item.ultimaSaida) : '-'}</div>
           ${retornoHtml}
@@ -20831,6 +21909,7 @@ function usuarioLogadoEhTerminalCompartilhadoPonto() {
 
 async function carregarBaterPonto() {
   configurarSegurancaCampoPinPonto();
+  atualizarCardTempoAvisoPonto();
   limparCampoPinPonto();
   await carregarSelectFuncionariosPonto();
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
@@ -20979,7 +22058,7 @@ async function obterFuncionarioLogadoParaPonto() {
   if (!obterFuncionarioRestritoLogadoIdParaPonto()) return null;
   const { data, error } = await sb
     .from('funcionarios')
-    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim')
+    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim, tempo_intervalo_minutos, loja_id, empresa_id')
     .eq('id', usuarioSistemaLogado.id)
     .eq('ativo', true)
     .maybeSingle();
@@ -21023,70 +22102,74 @@ async function registrarPontoFuncionario() {
   let tipoBatidaRegistrada = '';
   let pontoRegistroAuditoriaId = '';
 
-  const { data: registrosHoje, error: erroBusca } = await sb
-    .from('ponto_registros')
-    .select('*')
-    .eq('funcionario_id', funcionarioId)
-    .eq('data_ponto', dataHoje)
-    .order('created_at', { ascending: false });
+  const carregarRegistroHoje = async () => {
+    const consultar = async (builder) => builder.select('*').order('created_at', { ascending: false }).limit(1);
 
-  if (erroBusca) {
-    if (isMissingTimeClockTableError(erroBusca)) {
-      setMsg('msgPonto', 'Rode o SQL da tabela ponto_registros antes de usar o ponto.', 'err');
-      return;
-    }
-    setMsg('msgPonto', `Não foi possível carregar o ponto do funcionário: ${mensagemErroSupabase(erroBusca, 'erro desconhecido')}`, 'err');
-    return;
-  }
-
-  let registros = registrosHoje || [];
-  if (!registros.length) {
-    const { inicioUtc, fimUtc } = obterJanelaUtcDiaBrasil(dataHoje);
-    if (inicioUtc && fimUtc) {
-      const { data: registrosFallback, error: erroBuscaFallback } = await sb
-        .from('ponto_registros')
-        .select('*')
+    let resposta = await consultar(
+      sb.from('ponto_registros')
         .eq('funcionario_id', funcionarioId)
-        .gte('created_at', inicioUtc)
-        .lt('created_at', fimUtc)
-        .order('created_at', { ascending: false });
+        .eq('data_ponto', dataHoje)
+    );
 
-      if (erroBuscaFallback) {
-        console.warn('Não foi possível aplicar fallback de registro de ponto por created_at:', erroBuscaFallback);
-      } else {
-        registros = registrosFallback || [];
+    if (resposta.error) {
+      if (isMissingTimeClockTableError(resposta.error)) {
+        setMsg('msgPonto', 'Rode o SQL da tabela ponto_registros antes de usar o ponto.', 'err');
+        return { registro: null, erro: resposta.error };
+      }
+      setMsg('msgPonto', `Não foi possível carregar o ponto do funcionário: ${mensagemErroSupabase(resposta.error, 'erro desconhecido')}`, 'err');
+      return { registro: null, erro: resposta.error };
+    }
+
+    let registro = (resposta.data || [])[0] || null;
+
+    // Fallback 1: janela do dia Brasil pelo created_at, para evitar erro de timezone/current_date.
+    if (!registro) {
+      const { inicioUtc, fimUtc } = obterJanelaUtcDiaBrasil(dataHoje);
+      if (inicioUtc && fimUtc) {
+        const fallbackDia = await consultar(
+          sb.from('ponto_registros')
+            .eq('funcionario_id', funcionarioId)
+            .gte('created_at', inicioUtc)
+            .lt('created_at', fimUtc)
+        );
+        if (!fallbackDia.error) registro = (fallbackDia.data || [])[0] || null;
       }
     }
-  }
 
+    // Fallback 2: se existe ponto aberto mais recente, continua esse fluxo em vez de tentar inserir outro.
+    if (!registro) {
+      const fallbackAberto = await consultar(
+        sb.from('ponto_registros')
+          .eq('funcionario_id', funcionarioId)
+          .is('saida_em', null)
+      );
+      if (!fallbackAberto.error) registro = (fallbackAberto.data || [])[0] || null;
+    }
 
-  if (!registros.length) {
-    registros = await complementarRegistrosPontoSemFiltroLoja(registros, {
-      inicio: dataHoje,
-      fim: dataHoje,
-      funcionarioId,
-      campos: '*',
-    });
-    registros = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(registros, {
-      diaIso: dataHoje,
-      funcionarioId,
-      campos: '*',
-    });
-  }
+    return { registro, erro: null };
+  };
 
-  registros = [...registros].sort((a, b) => {
-    const aTime = new Date(a?.created_at || 0).getTime();
-    const bTime = new Date(b?.created_at || 0).getTime();
-    return bTime - aTime;
-  });
+  const { registro: registroHoje, erro } = await carregarRegistroHoje();
+  if (erro) return;
 
-  const registroHoje = registros[0] || null;
+  const executarUpdatePonto = async (camposBasicos, tipoAuditoria) => {
+    const campos = { ...camposBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, tipoAuditoria) };
+    return executarComFallbackColunasPonto(
+      (payload) => sb.from('ponto_registros').update(payload).eq('id', registroHoje.id),
+      campos,
+      camposBasicos,
+    );
+  };
 
   if (!registroHoje) {
     const camposEntradaBasicos = {
       funcionario_id: funcionarioId,
       data_ponto: dataHoje,
       entrada_em: agora,
+      loja_id: funcionario.loja_id || usuarioSistemaLogado?.loja_id || null,
+      empresa_id: funcionario.empresa_id || usuarioSistemaLogado?.empresa_id || null,
+      inicio_intervalo_em: null,
+      retorno_intervalo_em: null,
       saida_em: null,
     };
     const camposEntrada = { ...camposEntradaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'entrada') };
@@ -21095,137 +22178,125 @@ async function registrarPontoFuncionario() {
       camposEntrada,
       camposEntradaBasicos,
     );
-    const erroEntrada = respostaEntrada.error;
-    pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
-    tipoBatidaRegistrada = 'entrada';
 
-    if (erroEntrada) {
-      if (isMissingTimeClockTableError(erroEntrada)) {
+    if (respostaEntrada.error) {
+      if (isMissingTimeClockTableError(respostaEntrada.error)) {
         setMsg('msgPonto', 'Rode o SQL da tabela ponto_registros antes de usar o ponto.', 'err');
         return;
       }
-      // Se outro terminal inseriu no mesmo instante, reaproveita o registro existente do dia.
-      if (String(erroEntrada.code || '') === '23505') {
-        await carregarResumoPontoHoje();
-        setMsg('msgPonto', 'Ponto já aberto para este funcionário hoje. Tente novamente para continuar o fluxo.', 'ok');
+      if (String(respostaEntrada.error.code || '') === '23505') {
+        // Registro já existe: carrega o ponto aberto/mais recente e continua atualizando o próximo campo vazio.
+        const recuperado = await carregarRegistroHoje();
+        const registroDuplicado = recuperado.registro;
+        if (registroDuplicado?.id) {
+          const atualizarDuplicado = async (camposBasicos, tipoAuditoria) => {
+            const campos = { ...camposBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, tipoAuditoria) };
+            return executarComFallbackColunasPonto(
+              (payload) => sb.from('ponto_registros').update(payload).eq('id', registroDuplicado.id),
+              campos,
+              camposBasicos,
+            );
+          };
+          if (!registroDuplicado.inicio_intervalo_em && !registroDuplicado.saida_em) {
+            const { error: erroInicioDuplicado } = await atualizarDuplicado({ inicio_intervalo_em: agora }, 'saida');
+            if (erroInicioDuplicado) {
+              setMsg('msgPonto', `Não foi possível iniciar o intervalo: ${mensagemErroSupabase(erroInicioDuplicado, 'erro desconhecido')}`, 'err');
+              return;
+            }
+            pontoRegistroAuditoriaId = registroDuplicado.id;
+            tipoBatidaRegistrada = 'saida_intervalo';
+            tipoAvisoPonto = 'parado';
+          } else if (registroDuplicado.inicio_intervalo_em && !registroDuplicado.retorno_intervalo_em) {
+            const { error: erroRetornoDuplicado } = await atualizarDuplicado({ retorno_intervalo_em: agora, saida_em: null }, 'retorno');
+            if (erroRetornoDuplicado) {
+              setMsg('msgPonto', `Não foi possível registrar o retorno do intervalo: ${mensagemErroSupabase(erroRetornoDuplicado, 'erro desconhecido')}`, 'err');
+              return;
+            }
+            pontoRegistroAuditoriaId = registroDuplicado.id;
+            tipoBatidaRegistrada = 'retorno';
+            tipoAvisoPonto = 'iniciado';
+          } else if (!registroDuplicado.saida_em) {
+            const { error: erroSaidaDuplicado } = await atualizarDuplicado({ saida_em: agora }, 'saida');
+            if (erroSaidaDuplicado) {
+              setMsg('msgPonto', `Não foi possível registrar a saída final: ${mensagemErroSupabase(erroSaidaDuplicado, 'erro desconhecido')}`, 'err');
+              return;
+            }
+            pontoRegistroAuditoriaId = registroDuplicado.id;
+            tipoBatidaRegistrada = 'saida';
+            tipoAvisoPonto = 'parado';
+          } else {
+            setMsg('msgPonto', 'Ponto já fechado hoje para este funcionário.', 'err');
+            return;
+          }
+        } else {
+          await carregarResumoPontoHoje();
+          setMsg('msgPonto', 'Ponto já aberto para este funcionário hoje, mas não foi possível carregar o registro para avançar.', 'err');
+          return;
+        }
+      }
+      if (!pontoRegistroAuditoriaId) {
+        setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(respostaEntrada.error, 'erro desconhecido')}`, 'err');
         return;
       }
+    }
+
+    if (!pontoRegistroAuditoriaId) pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
+    if (!tipoBatidaRegistrada) {
+      tipoBatidaRegistrada = 'entrada';
+      tipoAvisoPonto = 'iniciado';
+    }
+  } else if (!registroHoje.entrada_em) {
+    const { error: erroEntrada } = await executarUpdatePonto({ entrada_em: agora, saida_em: null }, 'entrada');
+    if (erroEntrada) {
       setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroEntrada, 'erro desconhecido')}`, 'err');
       return;
     }
-  } else {
-    const { data: intervalos, error: erroIntervalos } = await sb
-      .from('ponto_intervalos')
-      .select('id, ordem, inicio_em, retorno_em')
-      .eq('ponto_registro_id', registroHoje.id)
-      .order('ordem', { ascending: true });
-
-    if (erroIntervalos && !isMissingTimeClockIntervalsTableError(erroIntervalos)) {
-      setMsg('msgPonto', `Não foi possível carregar os intervalos: ${mensagemErroSupabase(erroIntervalos, 'erro desconhecido')}`, 'err');
-      return;
-    }
-
-    const listaIntervalos = intervalos || [];
-    const ultimoIntervaloAberto = [...listaIntervalos].reverse().find(item => item.inicio_em && !item.retorno_em) || null;
-    const resumoJornadaAtual = obterResumoJornadaPonto(registroHoje, listaIntervalos);
-    tipoAvisoPonto = resumoJornadaAtual.proximaAcao === 'Saída' ? 'parado' : 'iniciado';
-    const podeContinuarComPendencias = await validarPendenciasAntesFecharPonto({
-      funcionario,
-      proximaAcao: resumoJornadaAtual.proximaAcao,
-    });
-    if (!podeContinuarComPendencias) return;
-
-    if (!registroHoje.entrada_em) {
-      const camposEntradaInicialBasicos = { entrada_em: agora, saida_em: null };
-      const camposEntradaInicial = { ...camposEntradaInicialBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'entrada') };
-      const { error: erroEntradaInicial } = await executarComFallbackColunasPonto(
-        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
-        camposEntradaInicial,
-        camposEntradaInicialBasicos,
-      );
-      pontoRegistroAuditoriaId = registroHoje.id;
-      tipoBatidaRegistrada = 'entrada';
-
-      if (erroEntradaInicial) {
-        setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(erroEntradaInicial, 'erro desconhecido')}`, 'err');
+    pontoRegistroAuditoriaId = registroHoje.id;
+    tipoBatidaRegistrada = 'entrada';
+    tipoAvisoPonto = 'iniciado';
+  } else if (!registroHoje.inicio_intervalo_em && !registroHoje.saida_em) {
+    const saidaFinalSemIntervalo = batidaPontoProximaDoFimDoTurno(funcionario, agora);
+    if (saidaFinalSemIntervalo) {
+      const { error: erroSaidaFinal } = await executarUpdatePonto({ saida_em: agora }, 'saida');
+      if (erroSaidaFinal) {
+        setMsg('msgPonto', `Não foi possível registrar a saída final: ${mensagemErroSupabase(erroSaidaFinal, 'erro desconhecido')}`, 'err');
         return;
       }
-    } else if (ultimoIntervaloAberto) {
-      const { error: erroRetorno } = await sb
-        .from('ponto_intervalos')
-        .update({ retorno_em: agora })
-        .eq('id', ultimoIntervaloAberto.id);
-      pontoRegistroAuditoriaId = registroHoje.id;
-      tipoBatidaRegistrada = 'retorno';
-
-      if (erroRetorno) {
-        setMsg('msgPonto', `Não foi possível registrar o retorno: ${mensagemErroSupabase(erroRetorno, 'erro desconhecido')}`, 'err');
-        return;
-      }
-
-      const camposReabreBasicos = { saida_em: null };
-      const camposReabre = { ...camposReabreBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'retorno') };
-      const { error: erroReabre } = await executarComFallbackColunasPonto(
-        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
-        camposReabre,
-        camposReabreBasicos,
-      );
-
-      if (erroReabre) {
-        setMsg('msgPonto', `Não foi possível atualizar o status do ponto: ${mensagemErroSupabase(erroReabre, 'erro desconhecido')}`, 'err');
-        return;
-      }
-    } else if (!registroHoje.saida_em) {
-      const camposSaidaBasicos = { saida_em: agora };
-      const camposSaida = { ...camposSaidaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'saida') };
-      const { error: erroSaida } = await executarComFallbackColunasPonto(
-        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
-        camposSaida,
-        camposSaidaBasicos,
-      );
       pontoRegistroAuditoriaId = registroHoje.id;
       tipoBatidaRegistrada = 'saida';
-
-      if (erroSaida) {
-        setMsg('msgPonto', `Não foi possível registrar a saída: ${mensagemErroSupabase(erroSaida, 'erro desconhecido')}`, 'err');
-        return;
-      }
+      tipoAvisoPonto = 'parado';
     } else {
-      if (isMissingTimeClockIntervalsTableError(erroIntervalos)) {
-        setMsg('msgPonto', 'Rode o SQL da tabela ponto_intervalos para registrar múltiplos intervalos no mesmo dia.', 'err');
+      const { error: erroInicioIntervalo } = await executarUpdatePonto({ inicio_intervalo_em: agora }, 'saida');
+      if (erroInicioIntervalo) {
+        setMsg('msgPonto', `Não foi possível iniciar o intervalo: ${mensagemErroSupabase(erroInicioIntervalo, 'erro desconhecido')}`, 'err');
         return;
       }
-
-      const proximaOrdem = (listaIntervalos || []).reduce((max, item) => Math.max(max, Number(item.ordem || 0)), 0) + 1;
-      const { error: erroCriaIntervalo } = await sb
-        .from('ponto_intervalos')
-        .insert([{
-          ponto_registro_id: registroHoje.id,
-          ordem: proximaOrdem,
-          inicio_em: registroHoje.saida_em,
-          retorno_em: agora,
-        }]);
-
-      if (erroCriaIntervalo) {
-        setMsg('msgPonto', `Não foi possível registrar o retorno: ${mensagemErroSupabase(erroCriaIntervalo, 'erro desconhecido')}`, 'err');
-        return;
-      }
-
-      const camposLimpaSaidaBasicos = { saida_em: null };
-      const camposLimpaSaida = { ...camposLimpaSaidaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'retorno') };
-      const { error: erroLimpaSaida } = await executarComFallbackColunasPonto(
-        (campos) => sb.from('ponto_registros').update(campos).eq('id', registroHoje.id),
-        camposLimpaSaida,
-        camposLimpaSaidaBasicos,
-      );
       pontoRegistroAuditoriaId = registroHoje.id;
-      tipoBatidaRegistrada = 'retorno';
-
-      if (erroLimpaSaida) {
-        setMsg('msgPonto', `Não foi possível atualizar o status do ponto: ${mensagemErroSupabase(erroLimpaSaida, 'erro desconhecido')}`, 'err');
-        return;
-      }
+      tipoBatidaRegistrada = 'saida_intervalo';
+      tipoAvisoPonto = 'parado';
     }
+  } else if (registroHoje.inicio_intervalo_em && !registroHoje.retorno_intervalo_em) {
+    const { error: erroRetorno } = await executarUpdatePonto({ retorno_intervalo_em: agora, saida_em: null }, 'retorno');
+    if (erroRetorno) {
+      setMsg('msgPonto', `Não foi possível registrar o retorno do intervalo: ${mensagemErroSupabase(erroRetorno, 'erro desconhecido')}`, 'err');
+      return;
+    }
+    pontoRegistroAuditoriaId = registroHoje.id;
+    tipoBatidaRegistrada = 'retorno';
+    tipoAvisoPonto = 'iniciado';
+  } else if (!registroHoje.saida_em) {
+    const { error: erroSaida } = await executarUpdatePonto({ saida_em: agora }, 'saida');
+    if (erroSaida) {
+      setMsg('msgPonto', `Não foi possível registrar a saída final: ${mensagemErroSupabase(erroSaida, 'erro desconhecido')}`, 'err');
+      return;
+    }
+    pontoRegistroAuditoriaId = registroHoje.id;
+    tipoBatidaRegistrada = 'saida';
+    tipoAvisoPonto = 'parado';
+  } else {
+    setMsg('msgPonto', 'Ponto já fechado hoje para este funcionário.', 'err');
+    document.getElementById('pontoPinInput').value = '';
+    return;
   }
 
   if (pontoRegistroAuditoriaId && tipoBatidaRegistrada) {
@@ -21238,7 +22309,14 @@ async function registrarPontoFuncionario() {
     });
   }
 
-  setMsg('msgPonto', `PONTO REGISTRADO "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
+  const descricaoBatida = tipoBatidaRegistrada === 'saida_intervalo'
+    ? 'INTERVALO INICIADO'
+    : tipoBatidaRegistrada === 'retorno'
+      ? 'RETORNO REGISTRADO'
+      : tipoBatidaRegistrada === 'saida'
+        ? 'PONTO FECHADO'
+        : 'PONTO REGISTRADO';
+  setMsg('msgPonto', `${descricaoBatida} "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
   exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO', tipoAvisoPonto);
 
   document.getElementById('pontoPinInput').value = '';
@@ -21252,7 +22330,6 @@ async function registrarPontoFuncionario() {
     await carregarRelatorioPonto();
   }
 }
-
 
 function abrirModalExclusaoAjusteManualAdminPonto(funcionarioId = '') {
   abrirModalAjusteManualAdminPonto(funcionarioId, 'anular', dataLocalISO());
@@ -22017,13 +23094,13 @@ async function carregarRelatorioPonto() {
     inicio: dataInicio,
     fim: dataFim,
     funcionarioId,
-    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+    campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
   });
   if (dataInicio && dataFim && dataInicio === dataFim) {
     rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
       diaIso: dataInicio,
       funcionarioId,
-      campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+      campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
     });
   }
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
@@ -25688,13 +26765,13 @@ async function carregarRelatorioPonto() {
     inicio: dataInicio,
     fim: dataFim,
     funcionarioId,
-    campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+    campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
   });
   if (dataInicio && dataFim && dataInicio === dataFim) {
     rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
       diaIso: dataInicio,
       funcionarioId,
-      campos: 'id, funcionario_id, data_ponto, entrada_em, saida_em, created_at',
+      campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at',
     });
   }
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
@@ -25774,6 +26851,343 @@ function exportarRelatorioPontoPDF() {
 
   configurarAberturaAutomaticaDatePicker();
   configurarEnterCadastrosFinanceiros();
+  window.addEventListener('focus', () => verificarControleVersaoSistema(true));
+
+
+/* === FIX 3.1.25: registro de ponto no modelo real da tabela ponto_registros ===
+   Mantém 1 linha por funcionário/dia e avança o próximo campo vazio:
+   entrada_em -> inicio_intervalo_em -> retorno_intervalo_em -> saida_em
+*/
+async function registrarPontoFuncionario() {
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
+  const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
+  const restringirPontoAoUsuarioLogado = funcionarioRestritoId && !terminalCompartilhadoPonto;
+  const campoPin = document.getElementById('pontoPinInput');
+  const pin = String(campoPin?.value || '').trim();
+
+  let funcionario = null;
+  try {
+    if (restringirPontoAoUsuarioLogado) {
+      funcionario = await obterFuncionarioLogadoParaPonto();
+    } else {
+      if (!pin) {
+        setMsg('msgPonto', 'Digite o PIN do funcionário.', 'err');
+        return;
+      }
+      funcionario = await obterFuncionarioAtivoPorPin(pin);
+    }
+  } catch (error) {
+    setMsg('msgPonto', `Não foi possível validar o funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (!funcionario?.id) {
+    setMsg('msgPonto', restringirPontoAoUsuarioLogado ? 'Usuário não encontrado ou inativo.' : 'PIN inválido.', 'err');
+    return;
+  }
+
+  const funcionarioId = String(funcionario.id);
+  relatorioPontoFuncionarioCache[funcionarioId] = funcionario.nome || 'Funcionário';
+
+  const agora = new Date().toISOString();
+  const dataHoje = dataLocalISO();
+  const lojaId = usuarioSistemaLogado?.loja_id || funcionario.loja_id || null;
+  const empresaId = usuarioSistemaLogado?.empresa_id || funcionario.empresa_id || null;
+  const auditoriaPonto = await obterGeolocalizacaoAtualPonto();
+
+  async function buscarRegistroPontoAbertoOuDoDia() {
+    // 1) Primeiro tenta o registro aberto, pois pode estar com data operacional diferente.
+    let resp = await sb
+      .from('ponto_registros')
+      .select('*')
+      .eq('funcionario_id', funcionarioId)
+      .is('saida_em', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (resp.error) throw resp.error;
+    if ((resp.data || [])[0]) return (resp.data || [])[0];
+
+    // 2) Depois tenta pela data local do navegador.
+    resp = await sb
+      .from('ponto_registros')
+      .select('*')
+      .eq('funcionario_id', funcionarioId)
+      .eq('data_ponto', dataHoje)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (resp.error) throw resp.error;
+    if ((resp.data || [])[0]) return (resp.data || [])[0];
+
+    // 3) Fallback: último registro recente sem saída, mesmo que o campo data_ponto tenha divergido.
+    resp = await sb
+      .from('ponto_registros')
+      .select('*')
+      .eq('funcionario_id', funcionarioId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (resp.error) throw resp.error;
+    const ultimo = (resp.data || [])[0] || null;
+    if (ultimo && !ultimo.saida_em) return ultimo;
+    return null;
+  }
+
+  async function atualizarRegistroPonto(registroId, camposBasicos, tipoAuditoria) {
+    const campos = {
+      ...camposBasicos,
+      updated_at: agora,
+      ...montarCamposAuditoriaPonto(auditoriaPonto, tipoAuditoria),
+    };
+    return executarComFallbackColunasPonto(
+      (payload) => sb.from('ponto_registros').update(payload).eq('id', registroId).select('id').maybeSingle(),
+      campos,
+      { ...camposBasicos, updated_at: agora },
+    );
+  }
+
+  let registro = null;
+  try {
+    registro = await buscarRegistroPontoAbertoOuDoDia();
+  } catch (error) {
+    setMsg('msgPonto', `Não foi possível carregar o ponto do funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  let tipoBatidaRegistrada = '';
+  let tipoAvisoPonto = 'iniciado';
+  let pontoRegistroAuditoriaId = '';
+  let descricaoBatida = 'PONTO REGISTRADO';
+
+  try {
+    if (!registro) {
+      const camposEntradaBasicos = {
+        funcionario_id: funcionarioId,
+        data_ponto: dataHoje,
+        entrada_em: agora,
+        inicio_intervalo_em: null,
+        retorno_intervalo_em: null,
+        saida_em: null,
+        loja_id: lojaId,
+        empresa_id: empresaId,
+      };
+      const camposEntrada = { ...camposEntradaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'entrada') };
+      const respostaEntrada = await executarComFallbackColunasPonto(
+        (payload) => sb.from('ponto_registros').insert([payload]).select('id').maybeSingle(),
+        camposEntrada,
+        camposEntradaBasicos,
+      );
+
+      if (respostaEntrada.error) {
+        if (String(respostaEntrada.error.code || '') === '23505') {
+          // Registro já existe, mas a primeira busca não trouxe. Tenta recarregar e avançar.
+          registro = await buscarRegistroPontoAbertoOuDoDia();
+          if (!registro?.id) {
+            setMsg('msgPonto', 'Já existe ponto aberto para este funcionário, mas o sistema não conseguiu ler o registro. Verifique se empresa_id/loja_id do funcionário e do ponto estão iguais.', 'err');
+            return;
+          }
+        } else {
+          setMsg('msgPonto', `Não foi possível registrar a entrada: ${mensagemErroSupabase(respostaEntrada.error, 'erro desconhecido')}`, 'err');
+          return;
+        }
+      } else {
+        pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
+        tipoBatidaRegistrada = 'entrada';
+        tipoAvisoPonto = 'iniciado';
+        descricaoBatida = 'PONTO REGISTRADO';
+      }
+    }
+
+    if (registro && !tipoBatidaRegistrada) {
+      pontoRegistroAuditoriaId = registro.id;
+
+      if (!registro.entrada_em) {
+        const { error } = await atualizarRegistroPonto(registro.id, { entrada_em: agora, saida_em: null, loja_id: lojaId, empresa_id: empresaId }, 'entrada');
+        if (error) throw error;
+        tipoBatidaRegistrada = 'entrada';
+        tipoAvisoPonto = 'iniciado';
+        descricaoBatida = 'PONTO REGISTRADO';
+      } else if (!registro.inicio_intervalo_em && !registro.retorno_intervalo_em && !registro.saida_em) {
+        // 2ª batida: normalmente inicia intervalo. Se estiver perto do fim do turno, vira saída final.
+        const saidaFinalSemIntervalo = batidaPontoProximaDoFimDoTurno(funcionario, agora);
+        if (saidaFinalSemIntervalo) {
+          const { error } = await atualizarRegistroPonto(registro.id, { saida_em: agora }, 'saida');
+          if (error) throw error;
+          tipoBatidaRegistrada = 'saida';
+          tipoAvisoPonto = 'parado';
+          descricaoBatida = 'PONTO FECHADO';
+        } else {
+          const { error } = await atualizarRegistroPonto(registro.id, { inicio_intervalo_em: agora }, 'saida');
+          if (error) throw error;
+          tipoBatidaRegistrada = 'saida_intervalo';
+          tipoAvisoPonto = 'parado';
+          descricaoBatida = 'INTERVALO INICIADO';
+        }
+      } else if (registro.inicio_intervalo_em && !registro.retorno_intervalo_em && !registro.saida_em) {
+        const { error } = await atualizarRegistroPonto(registro.id, { retorno_intervalo_em: agora }, 'retorno');
+        if (error) throw error;
+        tipoBatidaRegistrada = 'retorno';
+        tipoAvisoPonto = 'iniciado';
+        descricaoBatida = 'RETORNO REGISTRADO';
+      } else if (registro.inicio_intervalo_em && registro.retorno_intervalo_em && !registro.saida_em) {
+        const { error } = await atualizarRegistroPonto(registro.id, { saida_em: agora }, 'saida');
+        if (error) throw error;
+        tipoBatidaRegistrada = 'saida';
+        tipoAvisoPonto = 'parado';
+        descricaoBatida = 'PONTO FECHADO';
+      } else if (!registro.saida_em) {
+        const { error } = await atualizarRegistroPonto(registro.id, { saida_em: agora }, 'saida');
+        if (error) throw error;
+        tipoBatidaRegistrada = 'saida';
+        tipoAvisoPonto = 'parado';
+        descricaoBatida = 'PONTO FECHADO';
+      } else {
+        setMsg('msgPonto', 'Ponto já fechado hoje para este funcionário.', 'err');
+        if (campoPin) campoPin.value = '';
+        return;
+      }
+    }
+  } catch (error) {
+    setMsg('msgPonto', `Não foi possível registrar o ponto: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (pontoRegistroAuditoriaId && tipoBatidaRegistrada) {
+    await registrarAuditoriaBatidaPonto({
+      pontoRegistroId: pontoRegistroAuditoriaId,
+      funcionarioId,
+      tipoBatida: tipoBatidaRegistrada,
+      registradoEm: agora,
+      meta: auditoriaPonto,
+    });
+  }
+
+  setMsg('msgPonto', `${descricaoBatida} "${funcionario.nome || 'FUNCIONÁRIO'}"`, 'ok');
+  exibirAvisoPontoRegistrado(funcionario.nome || 'FUNCIONÁRIO', tipoAvisoPonto);
+
+  if (campoPin) campoPin.value = '';
+  if (timeoutLimpezaPinPonto) {
+    clearTimeout(timeoutLimpezaPinPonto);
+    timeoutLimpezaPinPonto = null;
+  }
+  await carregarResumoPontoHoje(restringirPontoAoUsuarioLogado ? funcionarioRestritoId : '');
+  await carregarHorasDashboard();
+  if (obterPaginaAtivaAtual() === 'relatorio_ponto') {
+    await carregarRelatorioPonto();
+  }
+}
+
+
+
+/* === FIX 3.1.25: batida de ponto via função SQL segura ===
+   A lógica de avançar entrada -> intervalo -> retorno -> saída passa a rodar no banco,
+   evitando divergência de data_ponto/current_date e filtros de leitura do front.
+*/
+async function registrarPontoFuncionario() {
+  const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
+  const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
+  const restringirPontoAoUsuarioLogado = funcionarioRestritoId && !terminalCompartilhadoPonto;
+  const campoPin = document.getElementById('pontoPinInput');
+  const pin = String(campoPin?.value || '').trim();
+
+  let funcionario = null;
+  try {
+    if (restringirPontoAoUsuarioLogado) {
+      funcionario = await obterFuncionarioLogadoParaPonto();
+    } else {
+      if (!pin) {
+        setMsg('msgPonto', 'Digite o PIN do funcionário.', 'err');
+        return;
+      }
+      funcionario = await obterFuncionarioAtivoPorPin(pin);
+    }
+  } catch (error) {
+    setMsg('msgPonto', `Não foi possível validar o funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (!funcionario?.id) {
+    setMsg('msgPonto', restringirPontoAoUsuarioLogado ? 'Usuário não encontrado ou inativo.' : 'PIN inválido.', 'err');
+    return;
+  }
+
+  const funcionarioId = String(funcionario.id);
+  relatorioPontoFuncionarioCache[funcionarioId] = funcionario.nome || 'Funcionário';
+
+  const dataPonto = dataLocalISO();
+  const lojaId = usuarioSistemaLogado?.loja_id || funcionario.loja_id || null;
+  const empresaId = usuarioSistemaLogado?.empresa_id || funcionario.empresa_id || null;
+
+  let respostaRpc = null;
+  try {
+    respostaRpc = await sb.rpc('registrar_ponto_funcionario_v2', {
+      p_funcionario_id: funcionarioId,
+      p_data_ponto: dataPonto,
+      p_empresa_id: empresaId,
+      p_loja_id: lojaId,
+    });
+  } catch (error) {
+    setMsg('msgPonto', `Não foi possível registrar o ponto: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (respostaRpc?.error) {
+    setMsg('msgPonto', `Não foi possível registrar o ponto: ${mensagemErroSupabase(respostaRpc.error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  const retorno = respostaRpc?.data || {};
+  if (retorno.ok === false) {
+    setMsg('msgPonto', retorno.mensagem || 'Não foi possível registrar o ponto.', 'err');
+    return;
+  }
+
+  const tipo = String(retorno.tipo || '').toLowerCase();
+  let descricaoBatida = 'PONTO REGISTRADO';
+  let tipoAvisoPonto = 'iniciado';
+
+  if (tipo === 'entrada') {
+    descricaoBatida = 'PONTO REGISTRADO';
+    tipoAvisoPonto = 'iniciado';
+  } else if (tipo === 'inicio_intervalo') {
+    descricaoBatida = 'INTERVALO INICIADO';
+    tipoAvisoPonto = 'parado';
+  } else if (tipo === 'retorno_intervalo') {
+    descricaoBatida = 'RETORNO REGISTRADO';
+    tipoAvisoPonto = 'iniciado';
+  } else if (tipo === 'saida') {
+    descricaoBatida = 'PONTO FECHADO';
+    tipoAvisoPonto = 'parado';
+  }
+
+  try {
+    await registrarAuditoriaBatidaPonto({
+      pontoRegistroId: retorno.registro_id || '',
+      funcionarioId,
+      tipoBatida: tipo || 'batida',
+      registradoEm: retorno.registrado_em || new Date().toISOString(),
+      meta: { origem: 'rpc_registrar_ponto_funcionario_v2' },
+    });
+  } catch (auditError) {
+    console.warn('Auditoria do ponto não registrada:', auditError);
+  }
+
+  setMsg('msgPonto', `${descricaoBatida} "${funcionario.nome || retorno.funcionario_nome || 'FUNCIONÁRIO'}"`, 'ok');
+  exibirAvisoPontoRegistrado(funcionario.nome || retorno.funcionario_nome || 'FUNCIONÁRIO', tipoAvisoPonto);
+
+  if (campoPin) campoPin.value = '';
+  if (timeoutLimpezaPinPonto) {
+    clearTimeout(timeoutLimpezaPinPonto);
+    timeoutLimpezaPinPonto = null;
+  }
+
+  await carregarResumoPontoHoje(restringirPontoAoUsuarioLogado ? funcionarioRestritoId : '');
+  await carregarHorasDashboard();
+  if (obterPaginaAtivaAtual() === 'relatorio_ponto') {
+    await carregarRelatorioPonto();
+  }
+}
 </script>
 </body>
 </html>
