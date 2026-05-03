@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.27-layout-tempo-aviso">
+  <meta name="app-version" content="3.1.28-ajuste-manual-ponto">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -6814,7 +6814,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.27';
+const APP_VERSION = '3.1.28';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -22697,11 +22697,10 @@ function montarIsoAjustePonto(dataAjuste, horarioAjuste) {
 }
 
 async function aplicarAjusteAprovadoNoPonto(solicitacao) {
-  const funcionarioId = solicitacao?.funcionario_id;
-  const dataAjuste = solicitacao?.data_ajuste;
+  const funcionarioId = String(solicitacao?.funcionario_id || '').trim();
+  const dataAjuste = String(solicitacao?.data_ajuste || '').trim();
   const horarioIso = montarIsoAjustePonto(dataAjuste, solicitacao?.horario_ajuste);
-  const tenantLojaId = solicitacao?.loja_id || null;
-  const tenantEmpresaId = solicitacao?.empresa_id || null;
+
   if (!funcionarioId || !dataAjuste || !horarioIso) {
     return { ok: false, mensagem: 'Solicitação sem funcionário, data ou horário válidos.' };
   }
@@ -22721,9 +22720,22 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return [...mapa.values()].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   };
 
+  let funcionarioInfo = null;
+  try {
+    const { data: funcionarioData, error: funcionarioErro } = await sb
+      .from('funcionarios')
+      .select('id, nome, loja_id, empresa_id')
+      .eq('id', funcionarioId)
+      .maybeSingle();
+    if (!funcionarioErro) funcionarioInfo = funcionarioData || null;
+  } catch (_) {}
+
+  const tenantLojaId = solicitacao?.loja_id || funcionarioInfo?.loja_id || lojaAtualId || null;
+  const tenantEmpresaId = solicitacao?.empresa_id || funcionarioInfo?.empresa_id || empresaAtualId || null;
+
   const { data: registros, error: erroBusca } = await sb
     .from('ponto_registros')
-    .select('*')
+    .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id')
     .eq('funcionario_id', funcionarioId)
     .eq('data_ponto', dataAjuste)
     .order('created_at', { ascending: true });
@@ -22736,6 +22748,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   }
 
   const registro = (registros || [])[0] || null;
+
   if (!registro) {
     const { error } = await sb
       .from('ponto_registros')
@@ -22743,63 +22756,29 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
         funcionario_id: funcionarioId,
         data_ponto: dataAjuste,
         entrada_em: horarioIso,
+        inicio_intervalo_em: null,
+        retorno_intervalo_em: null,
         saida_em: null,
         ...(tenantLojaId ? { loja_id: tenantLojaId } : {}),
         ...(tenantEmpresaId ? { empresa_id: tenantEmpresaId } : {}),
       }]);
     if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
-    return { ok: true, mensagem: 'Criado registro de entrada com o horário aprovado. O ponto ficou aberto até a próxima saída.' };
+    return { ok: true, mensagem: 'Criado registro de entrada com o horário aprovado.' };
   }
 
-  const registroLojaId = registro?.loja_id || tenantLojaId || null;
-  const registroEmpresaId = registro?.empresa_id || tenantEmpresaId || null;
-
+  // Garante somente um registro por funcionário/data e evita erro de chave duplicada.
   const registrosExtras = (registros || []).filter(item => item.id !== registro.id);
   if (registrosExtras.length) {
     const extrasIds = registrosExtras.map(item => item.id).filter(Boolean);
-    const { error: erroRemoveExtras } = await sb
-      .from('ponto_registros')
-      .update({ saida_em: null })
-      .in('id', extrasIds);
-    if (erroRemoveExtras) {
-      return { ok: false, mensagem: `Existem registros duplicados no mesmo dia e não foi possível normalizar: ${mensagemErroSupabase(erroRemoveExtras, 'erro desconhecido')}` };
-    }
+    try {
+      await sb.from('ponto_registros').delete().in('id', extrasIds);
+    } catch (_) {}
   }
 
-  const { data: intervalos, error: erroIntervalos } = await sb
-    .from('ponto_intervalos')
-    .select('id, ordem, inicio_em, retorno_em')
-    .eq('ponto_registro_id', registro.id)
-    .order('ordem', { ascending: true });
-
-  if (erroIntervalos && !isMissingTimeClockIntervalsTableError(erroIntervalos)) {
-    return { ok: false, mensagem: mensagemErroSupabase(erroIntervalos, 'erro desconhecido') };
-  }
-
-  if (isMissingTimeClockIntervalsTableError(erroIntervalos)) {
-    if (!registro.entrada_em) {
-      const { error } = await sb
-        .from('ponto_registros')
-        .update({ entrada_em: horarioIso, saida_em: null })
-        .eq('id', registro.id);
-      if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
-      return { ok: true, mensagem: 'Entrada ajustada com o horário aprovado.' };
-    }
-    if (!registro.saida_em) {
-      const { error } = await sb
-        .from('ponto_registros')
-        .update({ saida_em: horarioIso })
-        .eq('id', registro.id);
-      if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
-      return { ok: true, mensagem: 'Saída ajustada com o horário aprovado. O ponto ficou fechado.' };
-    }
-    return { ok: false, mensagem: 'Tabela ponto_intervalos não encontrada para reorganizar múltiplas batidas no mesmo dia.' };
-  }
-
-  const listaIntervalos = intervalos || [];
   const batidas = ordenarUnicos([
     registro.entrada_em,
-    ...listaIntervalos.flatMap(item => [item.inicio_em, item.retorno_em]),
+    registro.inicio_intervalo_em,
+    registro.retorno_intervalo_em,
     registro.saida_em,
     horarioIso,
   ]);
@@ -22808,56 +22787,33 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return { ok: false, mensagem: 'Não foi possível montar a sequência de batidas do dia.' };
   }
 
-  const entradaEm = batidas[0];
-  const saidaEm = batidas.length % 2 === 0 ? batidas[batidas.length - 1] : null;
-  const novosIntervalos = [];
-  const limiteIntervalos = saidaEm ? batidas.length - 1 : batidas.length;
-  for (let i = 1; i + 1 < limiteIntervalos; i += 2) {
-    novosIntervalos.push({
-      ponto_registro_id: registro.id,
-      ordem: novosIntervalos.length + 1,
-      inicio_em: batidas[i],
-      retorno_em: batidas[i + 1],
-      ...(registroLojaId ? { loja_id: registroLojaId } : {}),
-      ...(registroEmpresaId ? { empresa_id: registroEmpresaId } : {}),
-    });
-  }
+  const payload = {
+    entrada_em: batidas[0] || null,
+    inicio_intervalo_em: batidas[1] || null,
+    retorno_intervalo_em: batidas[2] || null,
+    saida_em: batidas[3] || null,
+    ...(tenantLojaId ? { loja_id: tenantLojaId } : {}),
+    ...(tenantEmpresaId ? { empresa_id: tenantEmpresaId } : {}),
+    updated_at: new Date().toISOString(),
+  };
 
   const { error: erroAtualizaRegistro } = await sb
     .from('ponto_registros')
-    .update({
-      entrada_em: entradaEm,
-      saida_em: saidaEm,
-    })
+    .update(payload)
     .eq('id', registro.id);
+
   if (erroAtualizaRegistro) {
     return { ok: false, mensagem: mensagemErroSupabase(erroAtualizaRegistro, 'erro desconhecido') };
   }
 
-  if (listaIntervalos.length) {
-    const { error: erroLimpaIntervalos } = await sb
-      .from('ponto_intervalos')
-      .delete()
-      .eq('ponto_registro_id', registro.id);
-    if (erroLimpaIntervalos) {
-      return { ok: false, mensagem: `Registro principal atualizado, mas não foi possível reorganizar os intervalos: ${mensagemErroSupabase(erroLimpaIntervalos, 'erro desconhecido')}` };
-    }
-  }
+  const statusFinal = payload.saida_em ? 'fechado' : (payload.inicio_intervalo_em && !payload.retorno_intervalo_em ? 'em intervalo' : 'aberto');
+  const labels = ['entrada', 'início do intervalo', 'retorno do intervalo', 'saída'];
+  const batidaInseridaIndex = batidas.findIndex(iso => iso === normalizarIso(horarioIso));
+  const label = labels[batidaInseridaIndex] || 'batida';
 
-  if (novosIntervalos.length) {
-    const { error: erroInsereIntervalos } = await sb
-      .from('ponto_intervalos')
-      .insert(novosIntervalos);
-    if (erroInsereIntervalos) {
-      return { ok: false, mensagem: `Registro principal atualizado, mas não foi possível recriar os intervalos: ${mensagemErroSupabase(erroInsereIntervalos, 'erro desconhecido')}` };
-    }
-  }
-
-  const statusFinal = saidaEm ? 'fechado' : 'aberto';
-  const totalPeriodos = Math.ceil(batidas.length / 2);
   return {
     ok: true,
-    mensagem: `Ajuste aplicado na sequência do dia. O ponto ficou ${statusFinal}, com ${totalPeriodos} período(s) registrado(s).`,
+    mensagem: `Ajuste aplicado como ${label}. O ponto ficou ${statusFinal}.`,
   };
 }
 async function aprovarAjustePonto(id) {
@@ -26466,12 +26422,19 @@ function selecionarTipoAjusteManualAdminPonto(tipo = 'adicionar') {
 function montarListaBatidasPonto(registro, intervalos = []) {
   const lista = [];
   if (registro?.entrada_em) lista.push({ tipo: 'entrada', iso: registro.entrada_em, label: 'Entrada' });
-  [...(intervalos || [])]
-    .sort((a, b) => (Number(a.ordem || 0) - Number(b.ordem || 0)) || (new Date(a.inicio_em || 0) - new Date(b.inicio_em || 0)))
-    .forEach((intervalo, idx) => {
-      if (intervalo.inicio_em) lista.push({ tipo: 'intervalo_inicio', iso: intervalo.inicio_em, label: `Início intervalo ${idx + 1}` });
-      if (intervalo.retorno_em) lista.push({ tipo: 'intervalo_retorno', iso: intervalo.retorno_em, label: `Retorno intervalo ${idx + 1}` });
-    });
+
+  if (registro?.inicio_intervalo_em || registro?.retorno_intervalo_em) {
+    if (registro.inicio_intervalo_em) lista.push({ tipo: 'intervalo_inicio', iso: registro.inicio_intervalo_em, label: 'Início intervalo 1' });
+    if (registro.retorno_intervalo_em) lista.push({ tipo: 'intervalo_retorno', iso: registro.retorno_intervalo_em, label: 'Retorno intervalo 1' });
+  } else {
+    [...(intervalos || [])]
+      .sort((a, b) => (Number(a.ordem || 0) - Number(b.ordem || 0)) || (new Date(a.inicio_em || 0) - new Date(b.inicio_em || 0)))
+      .forEach((intervalo, idx) => {
+        if (intervalo.inicio_em) lista.push({ tipo: 'intervalo_inicio', iso: intervalo.inicio_em, label: `Início intervalo ${idx + 1}` });
+        if (intervalo.retorno_em) lista.push({ tipo: 'intervalo_retorno', iso: intervalo.retorno_em, label: `Retorno intervalo ${idx + 1}` });
+      });
+  }
+
   if (registro?.saida_em) lista.push({ tipo: 'saida', iso: registro.saida_em, label: 'Saída' });
   return lista.filter(item => item.iso).sort((a, b) => new Date(a.iso).getTime() - new Date(b.iso).getTime());
 }
@@ -26479,7 +26442,7 @@ function montarListaBatidasPonto(registro, intervalos = []) {
 async function obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataPonto) {
   const { data: registro, error } = await sb
     .from('ponto_registros')
-    .select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at')
+    .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
     .eq('funcionario_id', funcionarioId)
     .eq('data_ponto', dataPonto)
     .maybeSingle();
@@ -26529,14 +26492,17 @@ async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso }) 
   if (batidas.length === batidasAtuais.length) return { ok: false, mensagem: 'Batida selecionada não foi encontrada.' };
 
   const entradaEm = batidas[0] || null;
-  const saidaEm = batidas.length && batidas.length % 2 === 0 ? batidas[batidas.length - 1] : null;
+  const inicioIntervaloEm = batidas[1] || null;
+  const retornoIntervaloEm = batidas[2] || null;
+  const saidaEm = batidas[3] || null;
   const novosIntervalos = [];
   const limite = saidaEm ? batidas.length - 1 : batidas.length;
   for (let i = 1; i + 1 < limite; i += 2) {
+    if (i === 1) continue;
     novosIntervalos.push({ ponto_registro_id: registro.id, ordem: novosIntervalos.length + 1, inicio_em: batidas[i], retorno_em: batidas[i + 1] });
   }
 
-  const { error: erroAtualiza } = await sb.from('ponto_registros').update({ entrada_em: entradaEm, saida_em: saidaEm }).eq('id', registro.id);
+  const { error: erroAtualiza } = await sb.from('ponto_registros').update({ entrada_em: entradaEm, inicio_intervalo_em: inicioIntervaloEm, retorno_intervalo_em: retornoIntervaloEm, saida_em: saidaEm }).eq('id', registro.id);
   if (erroAtualiza) return { ok: false, mensagem: mensagemErroSupabase(erroAtualiza, 'erro desconhecido') };
 
   const { error: erroDelete } = await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
