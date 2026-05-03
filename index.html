@@ -7486,9 +7486,9 @@ function iniciarPollingControleVersaoSistema() {
   intervaloControleVersaoSistema = window.setInterval(() => {
     if (!usuarioSistemaLogado) return;
     verificarControleVersaoSistema(true).catch((erro) => {
-      console.warn('Falha ao verificar controle de versão por intervalo:', erro);
+      console.warn('Falha ao verificar controle de versão pelo fallback seguro:', erro);
     });
-  }, 5000);
+  }, 60000);
 }
 
 function configurarControleVersaoSistema() {
