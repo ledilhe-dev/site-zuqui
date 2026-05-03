@@ -7320,6 +7320,7 @@ let canalControleVersaoSistema = null;
 let controleVersaoSistemaInicializado = false;
 let controleVersaoUltimoTokenRecebido = '';
 let controleVersaoIgnorarProximoToken = '';
+let intervaloControleVersaoSistema = null;
 
 function obterChaveTokenControleVersaoSistema() {
   const empresaId = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || 'global';
@@ -7372,16 +7373,18 @@ async function executarAtualizacaoObrigatoriaSistema(motivo = 'Atualização obr
   limparSessaoParaAtualizacaoObrigatoria();
 
   try {
-    alert(`${motivo}.\n\nO sistema será recarregado para buscar a versão mais recente.`);
+    alert(`${motivo}.
+
+O sistema será recarregado para buscar a versão mais recente.`);
   } catch (_) {}
 
   try {
-    const url = new URL(window.location.href);
-    url.searchParams.set('atualizacao', String(Date.now()));
-    window.location.replace(url.toString());
-  } catch (_) {
-    window.location.reload();
-  }
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname + (window.location.hash || ''));
+    }
+  } catch (_) {}
+
+  window.location.reload();
 }
 
 async function verificarControleVersaoSistema(silencioso = true) {
@@ -7474,11 +7477,26 @@ function configurarRealtimeControleVersaoSistema() {
   }
 }
 
+function iniciarPollingControleVersaoSistema() {
+  if (intervaloControleVersaoSistema) {
+    clearInterval(intervaloControleVersaoSistema);
+    intervaloControleVersaoSistema = null;
+  }
+
+  intervaloControleVersaoSistema = window.setInterval(() => {
+    if (!usuarioSistemaLogado) return;
+    verificarControleVersaoSistema(true).catch((erro) => {
+      console.warn('Falha ao verificar controle de versão por intervalo:', erro);
+    });
+  }, 5000);
+}
+
 function configurarControleVersaoSistema() {
   if (!usuarioSistemaLogado || controleVersaoSistemaInicializado) return;
   controleVersaoSistemaInicializado = true;
   verificarControleVersaoSistema(true);
   configurarRealtimeControleVersaoSistema();
+  iniciarPollingControleVersaoSistema();
 }
 
 async function forcarAtualizacaoGeralUsuarios() {
@@ -7499,8 +7517,6 @@ async function forcarAtualizacaoGeralUsuarios() {
   if (!confirmacao.confirmado) return;
 
   const tokenNovo = `${APP_VERSION}-${Date.now()}`;
-  controleVersaoIgnorarProximoToken = tokenNovo;
-
   const payload = {
     id: 'global',
     versao_obrigatoria: APP_VERSION,
@@ -7520,8 +7536,9 @@ async function forcarAtualizacaoGeralUsuarios() {
     return;
   }
 
-  localStorage.setItem(obterChaveTokenControleVersaoSistema(), tokenNovo);
   alert('Atualização geral enviada com sucesso. Os usuários com o sistema aberto serão deslogados e recarregados.');
+
+  await executarAtualizacaoObrigatoriaSistema('Atualização geral enviada pelo administrador');
 }
 
 
