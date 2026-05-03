@@ -3,6 +3,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <meta name="autocomplete" content="off">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -5814,6 +5815,7 @@
           <div class="msg" id="msgConfiguracoes"></div>
           <div class="form-row" style="margin-top:12px">
             <button class="btn btn-green" onclick="salvarConfiguracoesLoja()">Salvar configurações</button>
+            <button class="btn btn-ghost" type="button" onclick="atualizarFeriadosDaLojaAtual()">Atualizar feriados da loja</button>
           </div>
         </div>
       </section>
@@ -29650,6 +29652,448 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 })();
 </script>
 
+
+
+<style id="patch-feriados-calendario-completo-zuqui">
+  #escala_plantoes .escala-feriado-label.feriado-nacional{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.42);color:#fbbf24;}
+  #escala_plantoes .escala-feriado-label.feriado-estadual{background:rgba(59,130,246,.16);border-color:rgba(59,130,246,.42);color:#93c5fd;}
+  #escala_plantoes .escala-feriado-label.feriado-municipal{background:rgba(236,72,153,.16);border-color:rgba(236,72,153,.42);color:#f9a8d4;}
+  #escala_plantoes .escala-dia.feriado-estadual{box-shadow:inset 4px 0 0 rgba(59,130,246,.85);}
+  #escala_plantoes .escala-dia.feriado-municipal{box-shadow:inset 4px 0 0 rgba(236,72,153,.85);}
+</style>
+<script id="patch-feriados-calendario-completo-zuqui-script">
+(function(){
+  const MUNICIPAIS_FIXOS = {
+    'SC|ITAPEMA': [
+      { mes: 2, dia: 2, nome: 'Nossa Senhora dos Navegantes', tipo: 'municipal' },
+      { mes: 4, dia: 21, nome: 'Aniversário de Itapema', tipo: 'municipal' },
+      { mes: 6, dia: 13, nome: 'Santo Antônio - Padroeiro de Itapema', tipo: 'municipal' },
+      { mes: 12, dia: 8, nome: 'Imaculada Conceição - Itapema', tipo: 'municipal' }
+    ]
+  };
+  const ESTADUAIS_FIXOS = {
+    'SC': [
+      { mes: 8, dia: 11, nome: 'Dia de Santa Catarina', tipo: 'estadual' },
+      { mes: 11, dia: 25, nome: 'Santa Catarina de Alexandria', tipo: 'estadual' }
+    ]
+  };
+  function esc(v){
+    if(typeof escapeHtml === 'function') return escapeHtml(v);
+    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function isoData(d){
+    const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function addDias(d,n){ const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; }
+  function pascoa(ano){
+    const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1;
+    return new Date(ano, mes-1, dia);
+  }
+  function chave(ano, mes, dia){ return `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`; }
+  function norm(txt){ return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase(); }
+  function addFeriado(map, dataIso, nome, tipo){
+    if(!dataIso || !nome) return;
+    if(!map[dataIso]) map[dataIso] = [];
+    if(!map[dataIso].some(f => norm(f.nome) === norm(nome))) map[dataIso].push({ nome, tipo: tipo || 'feriado' });
+  }
+  function feriadosNacionaisCompletos(ano){
+    const p=pascoa(ano); const map={};
+    [
+      [chave(ano,1,1),'Confraternização Universal'],
+      [chave(ano,4,21),'Tiradentes'],
+      [chave(ano,5,1),'Dia do Trabalhador'],
+      [chave(ano,9,7),'Independência do Brasil'],
+      [chave(ano,10,12),'Nossa Senhora Aparecida'],
+      [chave(ano,11,2),'Finados'],
+      [chave(ano,11,15),'Proclamação da República'],
+      [chave(ano,11,20),'Consciência Negra'],
+      [chave(ano,12,25),'Natal'],
+      [isoData(addDias(p,-2)),'Sexta-feira Santa'],
+      [isoData(addDias(p,60)),'Corpus Christi']
+    ].forEach(([data,nome]) => addFeriado(map,data,nome,'nacional'));
+    return map;
+  }
+  async function obterLojaCalendarioFeriados(){
+    const lojaId = String((typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || window.lojaAtualId || '').trim();
+    const cache = window.__lojaFeriadosEscalaCache;
+    if(cache && cache.loja_id === lojaId) return cache;
+    let loja = { loja_id: lojaId, cidade: '', estado: '', cep: '' };
+    try{
+      if(lojaId && typeof sb !== 'undefined' && sb?.from){
+        const consulta = () => sb.from('lojas').select('id, nome, cep, cidade, estado, uf, municipio').eq('id', lojaId).maybeSingle();
+        const resp = typeof executarSemFiltroLojaTemporario === 'function' ? await executarSemFiltroLojaTemporario(consulta) : await consulta();
+        if(!resp?.error && resp?.data){
+          loja = {
+            loja_id: lojaId,
+            cidade: String(resp.data.cidade || resp.data.municipio || '').trim(),
+            estado: String(resp.data.estado || resp.data.uf || '').trim().toUpperCase(),
+            cep: String(resp.data.cep || '').trim()
+          };
+        }
+      }
+    }catch(e){ console.warn('Não foi possível carregar cidade/estado da loja para feriados:', e); }
+    if(!loja.cidade) loja.cidade = String(usuarioSistemaLogado?.cidade || usuarioSistemaLogado?.loja_cidade || '').trim();
+    if(!loja.estado) loja.estado = String(usuarioSistemaLogado?.estado || usuarioSistemaLogado?.uf || usuarioSistemaLogado?.loja_estado || '').trim().toUpperCase();
+    window.__lojaFeriadosEscalaCache = loja;
+    return loja;
+  }
+  async function buscarFeriadosTabela(ano, loja){
+    const map = {};
+    try{
+      if(typeof sb === 'undefined' || !sb?.from) return map;
+      let resp = await sb.from('feriados_calendario').select('nome,tipo,ano,mes,dia,data,uf,estado,cidade,municipio,ativo').or(`ano.is.null,ano.eq.${ano}`);
+      if(resp?.error) return map;
+      const ufLoja = norm(loja.estado);
+      const cidadeLoja = norm(loja.cidade);
+      (resp.data || []).forEach(item => {
+        if(item.ativo === false) return;
+        const tipo = String(item.tipo || '').toLowerCase() || 'feriado';
+        const uf = norm(item.uf || item.estado || '');
+        const cidade = norm(item.cidade || item.municipio || '');
+        const aplica = tipo === 'nacional' || (!uf || uf === ufLoja) && (!cidade || cidade === cidadeLoja);
+        if(!aplica) return;
+        let dataIso = String(item.data || '').slice(0,10);
+        if(!dataIso && item.mes && item.dia) dataIso = chave(ano, Number(item.mes), Number(item.dia));
+        addFeriado(map, dataIso, item.nome, tipo);
+      });
+    }catch(e){ console.warn('Tabela feriados_calendario não disponível:', e); }
+    return map;
+  }
+  async function montarFeriadosEscalaCompleto(ano){
+    const loja = await obterLojaCalendarioFeriados();
+    const map = feriadosNacionaisCompletos(ano);
+    const uf = norm(loja.estado);
+    const cidade = norm(loja.cidade);
+    (ESTADUAIS_FIXOS[uf] || []).forEach(f => addFeriado(map, chave(ano,f.mes,f.dia), f.nome, 'estadual'));
+    (MUNICIPAIS_FIXOS[`${uf}|${cidade}`] || []).forEach(f => addFeriado(map, chave(ano,f.mes,f.dia), f.nome, 'municipal'));
+    const extras = await buscarFeriadosTabela(ano, loja);
+    Object.entries(extras).forEach(([data, lista]) => (lista || []).forEach(f => addFeriado(map, data, f.nome, f.tipo)));
+    window.__feriadosEscalaCache = { ano, loja, map };
+    return map;
+  }
+  function eventosPorDiaEscala(){
+    const fonte = window.escalaPlantoesEventos || (typeof escalaPlantoesEventos !== 'undefined' ? escalaPlantoesEventos : []);
+    return (fonte || []).reduce((acc,item)=>{
+      if(item.deleted_at) return acc;
+      const k=String(item.data_plantao || '').slice(0,10); if(!k) return acc;
+      (acc[k] ||= []).push(item); return acc;
+    },{});
+  }
+  function nomeFuncionarioEvento(ev){ return ev.funcionario_nome || ev.funcionarios?.nome || ev.titulo || 'Funcionário'; }
+  async function renderizarCalendarioEscalaCompleto(){
+    const grid=document.getElementById('escalaCalendarioGrid');
+    const titulo=document.getElementById('escalaMesTitulo');
+    if(!grid) return;
+    const ref = (window.escalaPlantoesDataReferencia instanceof Date && !Number.isNaN(window.escalaPlantoesDataReferencia.getTime())) ? window.escalaPlantoesDataReferencia : new Date();
+    window.escalaPlantoesDataReferencia = ref;
+    const ano=ref.getFullYear(), mes=ref.getMonth();
+    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    if(titulo) titulo.textContent = `${meses[mes]} de ${ano}`;
+    const showFeriados = document.getElementById('escalaFiltroFeriados')?.checked !== false;
+    const showDomingos = document.getElementById('escalaFiltroDomingos')?.checked !== false;
+    const feriados = showFeriados ? await montarFeriadosEscalaCompleto(ano) : {};
+    const primeiro = new Date(ano, mes, 1);
+    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    const blanksAntes = primeiro.getDay();
+    const totalCelulas = Math.ceil((blanksAntes + diasNoMes) / 7) * 7;
+    const hoje = isoData(new Date());
+    const evDia = eventosPorDiaEscala();
+    const dias=['DOM.','SEG.','TER.','QUA.','QUI.','SEX.','SÁB.'];
+    let html = dias.map(d=>`<div class="escala-dia-semana">${d}</div>`).join('');
+    for(let i=0;i<totalCelulas;i++){
+      const diaMes = i - blanksAntes + 1;
+      if(diaMes < 1 || diaMes > diasNoMes){ html += `<div class="escala-dia escala-dia-vazio" aria-hidden="true"></div>`; continue; }
+      const data = new Date(ano, mes, diaMes);
+      const dataIso = isoData(data);
+      const domingo = data.getDay() === 0;
+      const listaFeriados = feriados[dataIso] || [];
+      const tipoPrincipal = listaFeriados.some(f=>f.tipo==='municipal') ? 'municipal' : listaFeriados.some(f=>f.tipo==='estadual') ? 'estadual' : listaFeriados.length ? 'nacional' : '';
+      const classes = ['escala-dia', domingo && showDomingos ? 'domingo' : '', listaFeriados.length ? 'feriado' : '', tipoPrincipal ? `feriado-${tipoPrincipal}` : '', dataIso===hoje ? 'hoje' : ''].filter(Boolean).join(' ');
+      const feriadoHtml = listaFeriados.map(f=>`<div class="escala-feriado-label feriado-${esc(f.tipo || 'feriado')}" title="${esc(f.nome)}">${esc(f.nome)}</div>`).join('');
+      const eventos = evDia[dataIso] || [];
+      const eventosHtml = eventos.slice(0,4).map(ev=>{
+        const ini=String(ev.inicio_hora || '').slice(0,5);
+        const nome=nomeFuncionarioEvento(ev);
+        const texto=`${ini} ${nome}`.trim();
+        return `<button class="escala-evento ${esc(ev.tipo||'plantao')}" type="button" title="${esc(texto)}" onclick="event.stopPropagation(); abrirModalEditarPlantaoEscala('${esc(ev.id)}')">${esc(texto)}</button>`;
+      }).join('');
+      const mais = eventos.length > 4 ? `<button class="escala-evento" type="button" onclick="event.stopPropagation()">mais +${eventos.length-4}</button>` : '';
+      html += `<div class="${classes}" data-data="${dataIso}" onclick="abrirModalCadastroPlantaoEscala('${dataIso}')"><div class="escala-dia-numero">${diaMes}</div>${feriadoHtml}${eventosHtml}${mais}</div>`;
+    }
+    grid.innerHTML = html;
+  }
+  const renderAnterior = window.renderizarEscalaPlantoes;
+  window.renderizarEscalaPlantoes = function(){ renderizarCalendarioEscalaCompleto().catch(e => { console.error('Erro ao renderizar feriados da escala:', e); if(typeof renderAnterior === 'function') renderAnterior(); }); };
+  const carregarAnterior = window.carregarEscalaPlantoes;
+  window.carregarEscalaPlantoes = async function(){
+    if(typeof carregarAnterior === 'function') await carregarAnterior();
+    await renderizarCalendarioEscalaCompleto();
+  };
+  const mudarAnterior = window.mudarMesEscalaPlantoes;
+  window.mudarMesEscalaPlantoes = function(delta){
+    const r = window.escalaPlantoesDataReferencia || new Date();
+    window.escalaPlantoesDataReferencia = new Date(r.getFullYear(), r.getMonth() + Number(delta || 0), 1);
+    if(typeof window.carregarEscalaPlantoes === 'function') window.carregarEscalaPlantoes();
+  };
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => { if(document.getElementById('escalaCalendarioGrid')) window.renderizarEscalaPlantoes(); }, 600));
+})();
+</script>
+
+
+<script id="patch-feriados-loja-auto-zuqui">
+(function(){
+  // Estrutura segura: não mexe em login/ponto.
+  // Usa loja_id + ano para gerar feriados por loja quando a tabela feriados_loja existir.
+  function normFeriadoLoja(v){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase(); }
+  function isoFeriadoLoja(ano,mes,dia){ return `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`; }
+  function pascoaFeriadoLoja(ano){ const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1; return new Date(ano,mes-1,dia); }
+  function addDiasFeriadoLoja(d,n){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
+  function chaveDataFeriadoLoja(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function nacionaisFeriadoLoja(ano){ const p=pascoaFeriadoLoja(ano); return [
+    {data:isoFeriadoLoja(ano,1,1), nome:'Confraternização Universal', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,4,21), nome:'Tiradentes', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,5,1), nome:'Dia do Trabalhador', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,9,7), nome:'Independência do Brasil', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,10,12), nome:'Nossa Senhora Aparecida', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,11,2), nome:'Finados', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,11,15), nome:'Proclamação da República', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,11,20), nome:'Consciência Negra', tipo:'nacional'},
+    {data:isoFeriadoLoja(ano,12,25), nome:'Natal', tipo:'nacional'},
+    {data:chaveDataFeriadoLoja(addDiasFeriadoLoja(p,-2)), nome:'Sexta-feira Santa', tipo:'nacional'},
+    {data:chaveDataFeriadoLoja(addDiasFeriadoLoja(p,60)), nome:'Corpus Christi', tipo:'nacional'}
+  ]; }
+  async function buscarFeriadosBaseLoja(ano, loja){
+    const lista=[...nacionaisFeriadoLoja(ano)];
+    try{
+      if(typeof sb==='undefined' || !sb?.from) return lista;
+      const resp=await sb.from('feriados_calendario').select('nome,tipo,ano,mes,dia,data,uf,estado,cidade,municipio,ativo').or(`ano.is.null,ano.eq.${ano}`);
+      if(resp?.error) return lista;
+      const uf=normFeriadoLoja(loja.estado || loja.uf);
+      const cidade=normFeriadoLoja(loja.cidade || loja.municipio);
+      (resp.data||[]).forEach(f=>{
+        if(f.ativo===false) return;
+        const tipo=String(f.tipo||'').toLowerCase()||'feriado';
+        const fUf=normFeriadoLoja(f.uf||f.estado);
+        const fCidade=normFeriadoLoja(f.cidade||f.municipio);
+        const aplica = tipo==='nacional' || ((!fUf || fUf===uf) && (!fCidade || fCidade===cidade));
+        if(!aplica) return;
+        let data=String(f.data||'').slice(0,10);
+        if(!data && f.mes && f.dia) data=isoFeriadoLoja(ano, Number(f.mes), Number(f.dia));
+        if(data && f.nome) lista.push({data,nome:f.nome,tipo});
+      });
+    }catch(e){ console.warn('Não foi possível buscar feriados base:', e); }
+    return lista;
+  }
+  window.atualizarFeriadosLojaAno = async function(ano, lojaId){
+    ano = Number(ano || new Date().getFullYear());
+    lojaId = String(lojaId || (typeof obterLojaIdSessao==='function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || '').trim();
+    if(!lojaId) throw new Error('Loja não identificada.');
+    if(typeof sb==='undefined' || !sb?.from) throw new Error('Supabase não iniciado.');
+    const lojaResp = await sb.from('lojas').select('id,nome,cep,cidade,estado,uf,municipio').eq('id', lojaId).maybeSingle();
+    if(lojaResp.error) throw lojaResp.error;
+    const loja = lojaResp.data || { id: lojaId };
+    const feriados = await buscarFeriadosBaseLoja(ano, loja);
+    const payload = feriados.map(f=>({
+      loja_id: lojaId,
+      ano,
+      data: f.data,
+      nome: f.nome,
+      tipo: f.tipo || 'feriado',
+      uf: String(loja.estado || loja.uf || '').toUpperCase(),
+      cidade: String(loja.cidade || loja.municipio || '').toUpperCase(),
+      fonte: 'auto'
+    }));
+    const resp = await sb.from('feriados_loja').upsert(payload,{onConflict:'loja_id,data,nome'});
+    if(resp.error) throw resp.error;
+    return { loja, ano, total: payload.length };
+  };
+})();
+</script>
+
+
+<script id="patch-botao-atualizar-feriados-loja-atual">
+(function(){
+  async function buscarLojaAtualParaFeriados() {
+    var lojaId = '';
+    try {
+      lojaId = String((typeof obterLojaIdSessao === 'function' && obterLojaIdSessao()) || (window.usuarioSistemaLogado && window.usuarioSistemaLogado.loja_id) || '').trim();
+    } catch (_) {}
+
+    var cidade = String(document.getElementById('configCidadeLoja')?.value || '').trim();
+    var estado = String(document.getElementById('configEstadoLoja')?.value || '').trim().toUpperCase();
+    var cep = String(document.getElementById('configCepLoja')?.value || '').trim();
+
+    if (lojaId && typeof sb !== 'undefined' && sb?.from) {
+      try {
+        var resp = await sb.from('lojas').select('id,nome,nome_loja,cep,cidade,estado,uf,municipio').eq('id', lojaId).maybeSingle();
+        if (!resp.error && resp.data) {
+          cidade = cidade || String(resp.data.cidade || resp.data.municipio || '').trim();
+          estado = estado || String(resp.data.estado || resp.data.uf || '').trim().toUpperCase();
+          cep = cep || String(resp.data.cep || '').trim();
+          return { id: lojaId, cep, cidade, estado };
+        }
+      } catch (_) {}
+    }
+
+    if (!lojaId) {
+      try { lojaId = String(window.usuarioSistemaLogado?.loja_id || '').trim(); } catch (_) {}
+    }
+    return { id: lojaId, cep, cidade, estado };
+  }
+
+  window.atualizarFeriadosDaLojaAtual = async function() {
+    try {
+      if (typeof setMsg === 'function') setMsg('msgConfiguracoes', 'Atualizando feriados da loja...', 'ok');
+      if (typeof sb === 'undefined' || !sb?.from) throw new Error('Supabase não iniciado.');
+
+      var anoAtual = new Date().getFullYear();
+      var loja = await buscarLojaAtualParaFeriados();
+      if (!loja.id) throw new Error('Loja logada não identificada.');
+      if (!loja.cidade || !loja.estado) throw new Error('Informe cidade e estado da loja antes de atualizar os feriados.');
+
+      // Garante que a loja principal também tenha cidade/estado/CEP atualizados quando possível.
+      try {
+        await sb.from('lojas').update({
+          cep: loja.cep || null,
+          cidade: loja.cidade,
+          estado: loja.estado
+        }).eq('id', loja.id);
+      } catch (_) {}
+
+      var total = 0;
+      if (typeof window.atualizarFeriadosLojaAno === 'function') {
+        var anos = [anoAtual, anoAtual + 1];
+        for (var i = 0; i < anos.length; i++) {
+          var r = await window.atualizarFeriadosLojaAno(anos[i], loja.id);
+          total += Number(r?.total || 0);
+        }
+      } else {
+        throw new Error('Função de atualização de feriados não encontrada no index.');
+      }
+
+      if (typeof setMsg === 'function') {
+        setMsg('msgConfiguracoes', 'Feriados atualizados para ' + loja.cidade + '/' + loja.estado + ' (' + anoAtual + ' e ' + (anoAtual + 1) + '). Total: ' + total + '.', 'ok');
+      }
+      try {
+        if (typeof window.renderizarEscalaPlantoes === 'function') window.renderizarEscalaPlantoes();
+      } catch (_) {}
+    } catch (e) {
+      console.error('Erro ao atualizar feriados da loja:', e);
+      if (typeof setMsg === 'function') setMsg('msgConfiguracoes', 'Não foi possível atualizar feriados: ' + (e.message || 'erro desconhecido'), 'err');
+    }
+  };
+})();
+</script>
+
+<script id="bloqueio-gerenciador-senhas">
+(function bloquearGerenciadorSenhasNavegador() {
+  function aplicarBloqueioSenha() {
+    try {
+      document.querySelectorAll('form').forEach(function(form) {
+        form.setAttribute('autocomplete', 'off');
+        form.setAttribute('data-lpignore', 'true');
+        form.setAttribute('data-form-type', 'other');
+      });
+
+      document.querySelectorAll('input').forEach(function(input) {
+        var alvo = [
+          input.type,
+          input.name,
+          input.id,
+          input.placeholder,
+          input.getAttribute('aria-label')
+        ].join(' ').toLowerCase();
+
+        if (alvo.includes('senha') || alvo.includes('password') || alvo.includes('pin')) {
+          input.setAttribute('autocomplete', 'new-password');
+          input.setAttribute('autocorrect', 'off');
+          input.setAttribute('autocapitalize', 'off');
+          input.setAttribute('spellcheck', 'false');
+          input.setAttribute('data-lpignore', 'true');
+          input.setAttribute('data-1p-ignore', 'true');
+          input.setAttribute('data-form-type', 'other');
+        }
+      });
+    } catch (e) {
+      console.warn('Não foi possível aplicar bloqueio do gerenciador de senhas:', e);
+    }
+  }
+
+  aplicarBloqueioSenha();
+  document.addEventListener('DOMContentLoaded', aplicarBloqueioSenha);
+  document.addEventListener('focusin', aplicarBloqueioSenha, true);
+  window.addEventListener('load', aplicarBloqueioSenha);
+  window.bloquearGerenciadorSenhasNavegador = aplicarBloqueioSenha;
+})();
+</script>
+
+
+
+<script id="patch-ponto-atualizar-primeiro-clique">
+(function patchPontoAtualizarPrimeiroClique() {
+  function obterFuncionarioFiltroPontoSeguro() {
+    try {
+      return (typeof obterFuncionarioRestritoLogadoIdParaPonto === 'function'
+        ? (obterFuncionarioRestritoLogadoIdParaPonto() || '')
+        : '');
+    } catch (e) {
+      return '';
+    }
+  }
+
+  async function atualizarPontoTelaAgora() {
+    try {
+      const funcionarioId = obterFuncionarioFiltroPontoSeguro();
+      if (typeof carregarResumoPontoHoje === 'function') {
+        await carregarResumoPontoHoje(funcionarioId);
+      }
+    } catch (e) {
+      console.warn('Não foi possível atualizar o status do ponto:', e);
+    }
+
+    try {
+      if (typeof carregarHorasDashboard === 'function') {
+        await carregarHorasDashboard();
+      }
+    } catch (e) {
+      console.warn('Não foi possível atualizar horas do ponto:', e);
+    }
+  }
+
+  function agendarAtualizacaoPonto() {
+    setTimeout(atualizarPontoTelaAgora, 150);
+    setTimeout(atualizarPontoTelaAgora, 650);
+    setTimeout(atualizarPontoTelaAgora, 1400);
+  }
+
+  // Ao abrir a tela Bater ponto, força a atualização após a página ficar ativa.
+  if (typeof window.abrirPagina === 'function' && !window.abrirPagina.__patchPontoPrimeiroClique) {
+    const abrirPaginaOriginal = window.abrirPagina;
+    window.abrirPagina = function(id, botao) {
+      const retorno = abrirPaginaOriginal.apply(this, arguments);
+      if (id === 'bater_ponto') {
+        agendarAtualizacaoPonto();
+      }
+      return retorno;
+    };
+    window.abrirPagina.__patchPontoPrimeiroClique = true;
+  }
+
+  // Depois de registrar ponto, atualiza novamente para não precisar clicar duas vezes.
+  if (typeof window.registrarPontoFuncionario === 'function' && !window.registrarPontoFuncionario.__patchPontoPrimeiroClique) {
+    const registrarOriginal = window.registrarPontoFuncionario;
+    window.registrarPontoFuncionario = async function() {
+      const retorno = await registrarOriginal.apply(this, arguments);
+      agendarAtualizacaoPonto();
+      return retorno;
+    };
+    window.registrarPontoFuncionario.__patchPontoPrimeiroClique = true;
+  }
+
+  window.atualizarPontoTelaAgora = atualizarPontoTelaAgora;
+})();
+</script>
 </body>
 </html>
 
