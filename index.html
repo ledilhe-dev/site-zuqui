@@ -8653,22 +8653,74 @@ function agruparEventosEscalaPorDia(){
   },{});
 }
 
+
+async function obterLojaAtivaAtualParaEscala() {
+  const lojaIdSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const empresaIdSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+
+  if (lojaIdSessao) {
+    try {
+      let q = sb.from('lojas').select('id, nome, ativo, empresa_id').eq('id', lojaIdSessao).eq('ativo', true).limit(1);
+      if (empresaIdSessao) q = q.eq('empresa_id', empresaIdSessao);
+      const r = await q.maybeSingle();
+      if (!r.error && r.data?.id) return r.data;
+    } catch (_) {}
+  }
+
+  const nomeTopbar = String(document.getElementById('topbar-store-name')?.textContent || '').trim();
+  if (nomeTopbar) {
+    try {
+      let q = sb.from('lojas').select('id, nome, ativo, empresa_id').eq('ativo', true).ilike('nome', nomeTopbar).limit(1);
+      if (empresaIdSessao) q = q.eq('empresa_id', empresaIdSessao);
+      const r = await q.maybeSingle();
+      if (!r.error && r.data?.id) return r.data;
+    } catch (_) {}
+  }
+
+  return null;
+}
+
 async function carregarFuncionariosSelectEscala(){
   const select=document.getElementById('escalaPlantaoFuncionario');
   if(!select)return;
-  const lojaId=String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  const empresaId=String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
-  let query=sb.from('funcionarios').select('id, nome, loja_id, empresa_id').eq('ativo', true).order('nome');
+
+  const lojaAtual = await obterLojaAtivaAtualParaEscala();
+  const lojaId=String(lojaAtual?.id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const empresaId=String(lojaAtual?.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+
+  if(!lojaId){
+    escalaPlantoesFuncionariosCache=[];
+    select.innerHTML='<option value="">Loja logada não identificada</option>';
+    setMsg('msgModalEscalaPlantao','Não foi possível identificar a loja logada para carregar funcionários da escala.','err');
+    return;
+  }
+
+  // Seleciona somente funcionários ativos da loja atual e cruza com loja ativa.
+  let query=sb
+    .from('funcionarios')
+    .select('id, nome, loja_id, empresa_id, lojas!inner(id, ativo)')
+    .eq('ativo', true)
+    .eq('lojas.ativo', true)
+    .eq('loja_id', lojaId)
+    .order('nome');
+
   if(empresaId) query=query.eq('empresa_id', empresaId);
-  if(lojaId) query=query.eq('loja_id', lojaId);
+
   const { data, error } = await query;
   if(error){
     select.innerHTML='<option value="">Erro ao carregar funcionários</option>';
     setMsg('msgModalEscalaPlantao',`Erro ao carregar funcionários: ${mensagemErroSupabase(error,'erro desconhecido')}`,'err');
     return;
   }
-  escalaPlantoesFuncionariosCache=data||[];
-  select.innerHTML='<option value="">Selecione...</option>'+(data||[]).map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.nome||'Funcionário')}</option>`).join('');
+
+  const funcionariosFiltrados=(data||[]).filter(f =>
+    String(f.loja_id||'') === lojaId &&
+    (!empresaId || String(f.empresa_id||'') === empresaId) &&
+    f.lojas?.ativo === true
+  );
+
+  escalaPlantoesFuncionariosCache=funcionariosFiltrados;
+  select.innerHTML='<option value="">Selecione...</option>'+funcionariosFiltrados.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.nome||'Funcionário')}</option>`).join('');
 }
 
 async function abrirModalCadastroPlantaoEscala(dataIso=''){
