@@ -5147,6 +5147,15 @@
   #pinActionOverlay .modal { z-index: 1000000 !important; }
   #modalEscalaPlantao.show { z-index: 99990 !important; }
 </style>
+
+<style id="bloqueio-gerenciador-senhas-css">
+  input.pin-secure-input,
+  input[data-no-password-manager="true"] {
+    -webkit-text-security: disc;
+    text-security: disc;
+  }
+</style>
+
 </head>
 <body>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
@@ -5668,7 +5677,7 @@
               </div>
               <div class="campo-com-label">
                 <label class="campo-label" for="pinFuncionario" id="labelPinFuncionario">Senha</label>
-                <input id="pinFuncionario" class="campo-curto" type="password" placeholder="Senha" maxlength="20" autocomplete="new-password" name="pin_funcionario_novo" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <input id="pinFuncionario" class="campo-curto pin-secure-input" type="text" placeholder="Senha" maxlength="20" autocomplete="new-password" name="pin_funcionario_novo" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
               </div>
               <div class="campo-com-label">
                 <label class="campo-label" for="horarioInicioFuncionario">Hora inicial</label>
@@ -5790,7 +5799,7 @@
             </select>
             <input id="nomeAdminCadastro" type="text" placeholder="Nome do admin">
             <input id="usuarioAdminCadastro" class="campo-curto" type="text" placeholder="Usuário login">
-            <input id="pinAdminCadastro" class="campo-curto" type="password" placeholder="PIN" maxlength="20" autocomplete="new-password">
+            <input id="pinAdminCadastro" class="campo-curto pin-secure-input" type="text" placeholder="PIN" maxlength="20" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
             <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
               <input id="ativoAdminCadastro" type="checkbox" checked>
               <span>Ativo</span>
@@ -6049,7 +6058,7 @@
         <div class="card">
           <div class="card-title">Registrar ponto</div>
           <div class="ponto-registro-row">
-            <input id="pontoPinInput" type="password" placeholder="PIN / senha" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }">
+            <input id="pontoPinInput" type="text" placeholder="PIN / senha" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
             <button class="btn btn-green" type="button" onclick="registrarPontoFuncionario()">Registrar ponto</button>
             <button class="btn btn-amber" type="button" onclick="abrirModalSolicitarAjustePonto()">Solicitar ajuste</button>
             <button class="btn btn-ghost" id="btnAjusteManualAdminPonto" type="button" onclick="abrirModalAjusteManualAdminPonto()" hidden>Ajuste manual ADM</button>
@@ -6755,7 +6764,7 @@
       <div class="ponto-ajuste-modal-sub" id="ajustePontoModalSubtexto">Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.</div>
       <div class="ponto-ajuste-form">
         <label id="ajustePontoPinField">PIN do funcionário
-          <input id="ajustePontoPin" type="password" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="Digite seu PIN">
+          <input id="ajustePontoPin" type="text" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="Digite seu PIN" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
         </label>
         <label>Data do ajuste
           <input id="ajustePontoData" type="date">
@@ -6799,7 +6808,7 @@
           <select id="adminAjustePontoBatida"></select>
         </label>
         <label>Senha/PIN do administrador
-          <input id="adminAjustePontoSenha" type="password" maxlength="20" autocomplete="off" placeholder="Confirme sua senha">
+          <input id="adminAjustePontoSenha" type="text" maxlength="20" autocomplete="off" placeholder="Confirme sua senha" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
         </label>
         <label>Motivo do ajuste
           <textarea id="adminAjustePontoMotivo" maxlength="300" placeholder="Exemplo: funcionária esqueceu de bater; horário conferido pelo administrador"></textarea>
@@ -6875,7 +6884,7 @@
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div style="font-size:13px;color:var(--text-muted)" id="pinActionUserName"></div>
-      <input id="pinActionInput" class="login-input" type="password" placeholder="Digite seu PIN" maxlength="6" onkeydown="if (event.key === 'Enter') confirmarModalPin()">
+      <input id="pinActionInput" class="login-input pin-secure-input" type="text" placeholder="Digite seu PIN" maxlength="6" onkeydown="if (event.key === 'Enter') confirmarModalPin()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
       <div class="msg" id="pinActionMsg" style="margin-top:0"></div>
     </div>
     <div class="modal-footer">
@@ -6979,7 +6988,7 @@
       <textarea id="ajusteSaldoMotivo" class="ajuste-saldo-field" rows="2" placeholder="Descreva o motivo do ajuste"></textarea>
 
       <label class="campo-label" for="ajusteSaldoPin">PIN</label>
-      <input id="ajusteSaldoPin" class="ajuste-saldo-field" type="password" inputmode="numeric" maxlength="6" placeholder="Digite seu PIN" autocomplete="off">
+      <input id="ajusteSaldoPin" class="ajuste-saldo-field pin-secure-input" type="text" inputmode="numeric" maxlength="6" placeholder="Digite seu PIN" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
 
       <div class="msg" id="ajusteSaldoMsg" style="margin-top:0"></div>
     </div>
@@ -26745,7 +26754,7 @@ window.setTimeout(() => {
   </div>
   <form id="loginForm" class="login-form" onsubmit="handleLogin(event)">
     <input type="text" id="username" class="login-input" placeholder="Nome ou e-mail" required>
-    <input type="password" id="password" class="login-input" placeholder="PIN ou senha" required>
+    <input type="text" id="password" class="login-input pin-secure-input" placeholder="PIN ou senha" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
     <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-muted); cursor:pointer;">
       <input type="checkbox" id="savePassword" style="width:16px; height:16px; cursor:pointer;">
       Salvar senha
@@ -26766,7 +26775,7 @@ window.setTimeout(() => {
     <div style="display:flex; flex-direction:column; gap:12px;">
       <input type="text" id="solicitacaoNome" class="login-input" placeholder="Nome">
       <input type="email" id="solicitacaoEmail" class="login-input" placeholder="E-mail">
-      <input type="password" id="solicitacaoPin" class="login-input" placeholder="PIN desejado" maxlength="6">
+      <input type="text" id="solicitacaoPin" class="login-input pin-secure-input" placeholder="PIN desejado" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
       <button type="button" class="btn btn-green" onclick="solicitarAcesso()">Enviar solicitação</button>
       <div id="msgSolicitacaoAcesso" class="msg" style="margin-top:0"></div>
     </div>
@@ -26774,8 +26783,8 @@ window.setTimeout(() => {
   <div id="authTokenBox" class="login-auth-box">
     <div id="authTokenTitle" style="font-size:14px; font-weight:600; margin-bottom:12px;">Autenticação por e-mail</div>
     <div id="authTokenContent" style="display:flex; flex-direction:column; gap:12px;">
-      <input type="password" id="novaSenhaToken" class="login-input" placeholder="Nova senha">
-      <input type="password" id="confirmarNovaSenhaToken" class="login-input" placeholder="Confirmar nova senha">
+      <input type="text" id="novaSenhaToken" class="login-input pin-secure-input" placeholder="Nova senha" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
+      <input type="text" id="confirmarNovaSenhaToken" class="login-input pin-secure-input" placeholder="Confirmar nova senha" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
       <button type="button" class="btn btn-green" onclick="salvarNovaSenhaComToken()">Salvar nova senha</button>
       <div id="msgAuthToken" class="msg" style="margin-top:0"></div>
     </div>
@@ -29988,32 +29997,73 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 
 <script id="bloqueio-gerenciador-senhas">
 (function bloquearGerenciadorSenhasNavegador() {
+  function ehCampoSenhaOuPin(input) {
+    var alvo = [
+      input.type,
+      input.name,
+      input.id,
+      input.placeholder,
+      input.getAttribute('aria-label'),
+      input.getAttribute('data-campo')
+    ].join(' ').toLowerCase();
+    return alvo.includes('senha') || alvo.includes('password') || alvo.includes('pin');
+  }
+
+  function reforcarAtributos(input) {
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('spellcheck', 'false');
+    input.setAttribute('data-lpignore', 'true');
+    input.setAttribute('data-1p-ignore', 'true');
+    input.setAttribute('data-bwignore', 'true');
+    input.setAttribute('data-form-type', 'other');
+    input.setAttribute('data-no-password-manager', 'true');
+
+    // Campos de PIN/senha dentro do sistema não podem ser reconhecidos pelo navegador como senha real.
+    // Mantemos o valor normal para o JS, mas mascaramos visualmente com CSS.
+    if (input.type === 'password') {
+      try { input.type = 'text'; } catch (_) {}
+    }
+    input.classList.add('pin-secure-input');
+
+    if (!input.name || /password|senha|pin/i.test(input.name)) {
+      input.name = 'campo_' + (input.id || 'seguro') + '_' + Math.random().toString(36).slice(2, 8);
+    }
+  }
+
+  function inserirCamposIsca(form) {
+    if (!form || form.querySelector('[data-password-decoy="true"]')) return;
+    var fakeUser = document.createElement('input');
+    fakeUser.type = 'text';
+    fakeUser.setAttribute('data-password-decoy', 'true');
+    fakeUser.setAttribute('autocomplete', 'username');
+    fakeUser.tabIndex = -1;
+    fakeUser.style.cssText = 'position:absolute;left:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;';
+
+    var fakePass = document.createElement('input');
+    fakePass.type = 'password';
+    fakePass.setAttribute('data-password-decoy', 'true');
+    fakePass.setAttribute('autocomplete', 'current-password');
+    fakePass.tabIndex = -1;
+    fakePass.style.cssText = 'position:absolute;left:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;';
+
+    form.insertBefore(fakePass, form.firstChild);
+    form.insertBefore(fakeUser, form.firstChild);
+  }
+
   function aplicarBloqueioSenha() {
     try {
       document.querySelectorAll('form').forEach(function(form) {
         form.setAttribute('autocomplete', 'off');
         form.setAttribute('data-lpignore', 'true');
+        form.setAttribute('data-1p-ignore', 'true');
         form.setAttribute('data-form-type', 'other');
+        inserirCamposIsca(form);
       });
 
       document.querySelectorAll('input').forEach(function(input) {
-        var alvo = [
-          input.type,
-          input.name,
-          input.id,
-          input.placeholder,
-          input.getAttribute('aria-label')
-        ].join(' ').toLowerCase();
-
-        if (alvo.includes('senha') || alvo.includes('password') || alvo.includes('pin')) {
-          input.setAttribute('autocomplete', 'new-password');
-          input.setAttribute('autocorrect', 'off');
-          input.setAttribute('autocapitalize', 'off');
-          input.setAttribute('spellcheck', 'false');
-          input.setAttribute('data-lpignore', 'true');
-          input.setAttribute('data-1p-ignore', 'true');
-          input.setAttribute('data-form-type', 'other');
-        }
+        if (ehCampoSenhaOuPin(input)) reforcarAtributos(input);
       });
     } catch (e) {
       console.warn('Não foi possível aplicar bloqueio do gerenciador de senhas:', e);
@@ -30023,6 +30073,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   aplicarBloqueioSenha();
   document.addEventListener('DOMContentLoaded', aplicarBloqueioSenha);
   document.addEventListener('focusin', aplicarBloqueioSenha, true);
+  document.addEventListener('input', aplicarBloqueioSenha, true);
   window.addEventListener('load', aplicarBloqueioSenha);
   window.bloquearGerenciadorSenhasNavegador = aplicarBloqueioSenha;
 })();
