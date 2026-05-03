@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.29-ajuste-manual-rpc">
+  <meta name="app-version" content="3.1.30-ajuste-manual-sequencia">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,7 +30,15 @@
   <link rel="apple-touch-icon" href="./logo-check-diario.svg">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxOCIgZmlsbD0iIzBBMEYwRCIvPgogIDxyZWN0IHg9IjciIHk9IjciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcng9IjE1IiBmaWxsPSIjMTYzNjI2Ii8+CiAgPHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iMjQiIGhlaWdodD0iMzIiIHJ4PSI1IiBmaWxsPSIjRjRGRkY3Ii8+CiAgPGNpcmNsZSBjeD0iNDQiIGN5PSI0MSIgcj0iMTAiIGZpbGw9IiMyMkM1NUUiLz4KICA8cGF0aCBkPSJNMzkuNSA0MUw0MyA0NC41TDQ5IDM4LjUiIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+(function configurarMascaraCepLoja() {
+  document.addEventListener('input', (ev) => {
+    const id = ev.target?.id || '';
+    if (!['configCepLoja', 'cepLojaCadastro', 'saasCepLoja'].includes(id)) return;
+    ev.target.value = formatarCepLoja(ev.target.value || '');
+  });
+})();
+</script>
   <style>
     :root {
       --bg: #0a0f0d;
@@ -326,6 +334,28 @@
     }
     .nav-sub-btn.ativo .nav-hint {
       color: var(--text-muted);
+    }
+
+    /* Relatórios em árvore */
+    .nav-report-section {
+      margin: 6px 0 8px;
+      padding: 6px 0 4px 8px;
+      border-left: 1px solid rgba(107,143,112,0.22);
+    }
+    .nav-report-heading {
+      display: block;
+      padding: 6px 10px 5px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--green);
+      opacity: 0.9;
+    }
+    .nav-report-section .nav-sub-btn {
+      margin-left: 4px;
+      padding-left: 12px;
+      background: rgba(255,255,255,0.018);
     }
     .nav-btn.nav-btn-alerta {
       background: rgba(239, 68, 68, 0.1);
@@ -2473,14 +2503,16 @@
       box-shadow: inset 4px 0 0 rgba(245, 158, 11, 0.9);
     }
     .ponto-retorno-destaque {
-      margin-top: 8px;
-      padding: 12px 14px;
+      margin-top: 6px;
+      padding: 8px 10px;
       border: 1px solid rgba(239, 68, 68, 0.62);
-      border-radius: 12px;
+      border-radius: 10px;
       background: rgba(127, 29, 29, 0.18);
       display: grid;
-      gap: 5px;
-      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.10), 0 10px 24px rgba(239, 68, 68, 0.10);
+      gap: 4px;
+      max-width: 210px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.10), 0 8px 18px rgba(239, 68, 68, 0.10);
     }
     .ponto-retorno-destaque .retorno-label {
       font-size: 11px;
@@ -2490,7 +2522,7 @@
       color: #fecaca;
     }
     .ponto-retorno-destaque .retorno-contador {
-      font-size: clamp(24px, 2.7vw, 38px);
+      font-size: clamp(18px, 1.7vw, 26px);
       line-height: 1;
       font-weight: 950;
       font-family: 'DM Mono', monospace;
@@ -2508,7 +2540,8 @@
     }
     .ponto-retorno-detalhe {
       color: var(--text-muted);
-      font-size: 12px;
+      font-size: 11px;
+      line-height: 1.25;
     }
     @media (max-width: 980px) {
       #bater_ponto .ponto-topo-grid {
@@ -5029,6 +5062,90 @@
       transition: width 0.4s;
     }
   </style>
+
+  <style id="escala-plantoes-layout-fix">
+    /* ---- ESCALA E PLANTÕES: calendário estilo agenda ---- */
+    #escala_plantoes{padding:8px 10px 18px;}
+    #escala_plantoes .escala-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start;width:100%;}
+    #escala_plantoes .escala-side-card,#escala_plantoes .escala-calendario-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;min-width:0;}
+    #escala_plantoes .escala-side-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:800;font-size:15px;color:var(--text);padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+    #escala_plantoes .escala-side-title .btn{width:34px;height:34px;border-radius:9px;padding:0;font-size:20px;line-height:1;}
+    #escala_plantoes .escala-check-row{display:flex;align-items:center;gap:9px;min-height:36px;padding:8px 4px;border-bottom:1px solid rgba(107,143,112,.16);font-size:14px;color:var(--text);}
+    #escala_plantoes .escala-check-row input{width:17px;height:17px;accent-color:#14b8a6;flex:0 0 auto;}
+    #escala_plantoes .escala-dot{width:7px;height:7px;border-radius:999px;background:#38bdf8;flex-shrink:0;display:inline-block;}
+    #escala_plantoes .escala-dot.plantao{background:#ef4444;}
+    #escala_plantoes .escala-dot.reuniao{background:#a855f7;}
+    #escala_plantoes .escala-toolbar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:12px;}
+    #escala_plantoes .escala-nav{display:flex;align-items:center;gap:8px;}
+    #escala_plantoes .escala-nav .btn{min-width:42px;height:40px;border-radius:10px;font-size:18px;}
+    #escala_plantoes .escala-nav .btn:nth-child(3){font-size:14px;min-width:70px;font-weight:700;}
+    #escala_plantoes .escala-mes-titulo{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--text);text-align:center;white-space:nowrap;}
+    #escala_plantoes .escala-view-tabs{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg);justify-self:end;}
+    #escala_plantoes .escala-view-tabs button{border:none;border-right:1px solid var(--border);background:transparent;color:var(--text);padding:9px 13px;cursor:pointer;font-family:inherit;font-size:13px;min-width:52px;}
+    #escala_plantoes .escala-view-tabs button:last-child{border-right:none;}
+    #escala_plantoes .escala-view-tabs button.ativo{background:rgba(20,184,166,.12);color:#2dd4bf;}
+    #escala_plantoes .escala-calendario{display:grid !important;grid-template-columns:repeat(7,minmax(96px,1fr));border-top:1px solid rgba(226,240,228,.18);border-left:1px solid rgba(226,240,228,.18);background:var(--bg);width:100%;min-height:610px;overflow:visible;}
+    #escala_plantoes .escala-dia-semana{height:58px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--text);border-right:1px solid rgba(226,240,228,.18);border-bottom:1px solid rgba(226,240,228,.18);text-transform:uppercase;background:rgba(255,255,255,.025);}
+    #escala_plantoes .escala-dia{min-height:128px;border-right:1px solid rgba(226,240,228,.18);border-bottom:1px solid rgba(226,240,228,.18);padding:8px 9px;position:relative;background:rgba(10,15,13,.8);overflow:hidden;cursor:pointer;}
+    #escala_plantoes .escala-dia:hover{box-shadow:inset 0 0 0 2px rgba(45,212,191,.45);background:rgba(20,184,166,.06);}
+    #escala_plantoes .escala-dia.fora-mes{opacity:.42;background:rgba(255,255,255,.02);}
+    #escala_plantoes .escala-dia.domingo{background:rgba(20,184,166,.12);}
+    #escala_plantoes .escala-dia.feriado{background:rgba(245,158,11,.16);box-shadow:inset 4px 0 0 rgba(245,158,11,.8);}
+    #escala_plantoes .escala-dia.hoje{outline:2px solid rgba(45,212,191,.78);outline-offset:-2px;}
+    #escala_plantoes .escala-dia-numero{font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px;text-align:center;}
+    #escala_plantoes .escala-dia.fora-mes .escala-dia-numero{color:var(--text-muted);}
+    #escala_plantoes .escala-dia.domingo .escala-dia-numero{color:#2dd4bf;}
+    #escala_plantoes .escala-feriado-label{display:block;max-width:100%;padding:4px 6px;border-radius:7px;background:rgba(245,158,11,.16);border:1px solid rgba(245,158,11,.34);color:#fbbf24;font-size:10px;font-weight:800;line-height:1.2;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+    #escala_plantoes .escala-evento{display:block;width:100%;border:none;background:transparent;color:var(--text);text-align:left;font-size:11px;line-height:1.35;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+    #escala_plantoes .escala-evento:before{content:'';display:inline-block;width:7px;height:7px;border-radius:999px;background:#38bdf8;margin-right:5px;vertical-align:1px;}
+    #escala_plantoes .escala-evento.plantao:before{background:#ef4444;}
+    #escala_plantoes .escala-evento.reuniao:before{background:#a855f7;}
+    #escala_plantoes .escala-legenda{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:12px;color:var(--text-muted);}
+    #escala_plantoes .escala-legenda span{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:5px 9px;background:rgba(255,255,255,.02);}
+    .escala-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);z-index:9998;display:none;align-items:center;justify-content:center;padding:18px;}
+    .escala-modal-overlay.show{display:flex;}
+    .escala-modal-card{width:min(560px,calc(100vw - 28px));background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);}
+    .escala-modal-title{font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px;}
+    .escala-modal-sub{font-size:13px;color:var(--green);margin-bottom:14px;}
+    .escala-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .escala-modal-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.3px;}
+    .escala-modal-grid input,.escala-modal-grid select,.escala-modal-grid textarea{width:100%;min-height:40px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);padding:8px 10px;font-family:inherit;font-size:14px;}
+    .escala-modal-grid textarea{min-height:76px;resize:vertical;}
+    .escala-modal-full{grid-column:1/-1;}
+    .escala-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap;}
+    @media(max-width:1050px){#escala_plantoes .escala-layout{grid-template-columns:1fr;}#escala_plantoes .escala-toolbar{grid-template-columns:1fr;justify-items:stretch;}#escala_plantoes .escala-mes-titulo{text-align:left;}#escala_plantoes .escala-view-tabs{justify-self:start;}#escala_plantoes .escala-calendario{grid-template-columns:repeat(7,minmax(86px,1fr));overflow-x:auto;}#escala_plantoes .escala-dia{min-height:110px;}}
+    @media(max-width:640px){#escala_plantoes .escala-calendario{grid-template-columns:repeat(7,minmax(72px,1fr));}.escala-modal-grid{grid-template-columns:1fr;}#escala_plantoes .escala-dia{min-height:96px;padding:6px;}#escala_plantoes .escala-dia-semana{height:42px;font-size:11px;}}
+  </style>
+
+<style id="patch-escala-modal-itens-seguro">
+  .escala-modal-lista{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.14);padding:8px;display:grid;gap:6px;max-height:170px;overflow:auto;}
+  .escala-modal-empty{color:var(--text-muted);font-size:12px;padding:6px;}
+  .escala-modal-item{width:100%;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(34,197,94,.08);color:var(--text);padding:7px 9px;text-align:left;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .escala-modal-item:hover{border-color:rgba(34,197,94,.42);background:rgba(34,197,94,.14);}
+  .escala-modal-item strong{font-size:12px;line-height:1.2;}
+  .escala-modal-item span{font-size:11px;color:var(--text-muted);text-transform:capitalize;}
+</style>
+
+<style id="patch-escala-valor-relatorio">
+  .escala-relatorio-card{margin-top:12px;}
+  .escala-relatorio-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .escala-relatorio-acoes{display:flex;gap:8px;flex-wrap:wrap;}
+  .escala-relatorio-lista{display:grid;gap:8px;margin-top:10px;}
+  .escala-relatorio-item{display:grid;grid-template-columns:110px 1fr 120px 110px 110px;gap:10px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:rgba(255,255,255,.02);font-size:12px;}
+  .escala-relatorio-item strong{font-size:13px;color:var(--text);}
+  .escala-relatorio-item .tipo{display:inline-flex;align-items:center;gap:6px;font-weight:800;}
+  .escala-relatorio-item .tipo:before{content:'';width:8px;height:8px;border-radius:999px;background:#38bdf8;display:inline-block;}
+  .escala-relatorio-item .tipo.plantao:before{background:#ef4444;}
+  .escala-relatorio-item .tipo.reuniao:before{background:#a855f7;}
+  .escala-relatorio-valor{font-family:'DM Mono',monospace;color:var(--green);font-weight:800;text-align:right;}
+  @media(max-width:900px){.escala-relatorio-item{grid-template-columns:1fr;}.escala-relatorio-valor{text-align:left;}}
+</style>
+
+<style id="patch-pin-acima-modal-escala">
+  #pinActionOverlay.show { z-index: 999999 !important; }
+  #pinActionOverlay .modal { z-index: 1000000 !important; }
+  #modalEscalaPlantao.show { z-index: 99990 !important; }
+</style>
 </head>
 <body>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
@@ -5050,6 +5167,13 @@
         <span class="nav-copy">
           <span class="nav-title">Bater ponto</span>
           <span class="nav-hint">Registro de jornada</span>
+        </span>
+      </button>
+      <button class="nav-btn" data-page="escala_plantoes" onclick="abrirPagina('escala_plantoes', this)">
+        <span class="icon">EP</span>
+        <span class="nav-copy">
+          <span class="nav-title">Escala e plantões</span>
+          <span class="nav-hint">Calendário de turnos, domingos e feriados</span>
         </span>
       </button>
       <div class="nav-group-checklist" id="menuChecklistGroup">
@@ -5116,26 +5240,37 @@
           <span class="nav-caret">▾</span>
         </button>
         <div class="nav-submenu">
-          <button class="nav-btn nav-sub-btn" data-page="relatorio_ponto" onclick="abrirPagina('relatorio_ponto', this)">
-            <span class="nav-copy">
-              <span class="nav-title">Relatório ponto</span>
-            </span>
-          </button>
-          <button class="nav-btn nav-sub-btn" data-page="relatorio_lancamentos" onclick="abrirPagina('relatorio_lancamentos', this)">
-            <span class="nav-copy">
-              <span class="nav-title">Relatório tarefas</span>
-            </span>
-          </button>
-          <button class="nav-btn nav-sub-btn" data-page="relatorio_financeiro" onclick="abrirPagina('relatorio_financeiro', this)">
-            <span class="nav-copy">
-              <span class="nav-title">Relatório de contas a pagar</span>
-            </span>
-          </button>
-          <button class="nav-btn nav-sub-btn" data-page="relatorio_ajuste_saldo" onclick="abrirPagina('relatorio_ajuste_saldo', this)">
-            <span class="nav-copy">
-              <span class="nav-title">Relatório ajuste de saldo</span>
-            </span>
-          </button>
+          <div class="nav-report-section">
+            <span class="nav-report-heading">Funcionários</span>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_ponto" onclick="abrirPagina('relatorio_ponto', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Relatório ponto</span>
+              </span>
+            </button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_plantao" onclick="abrirPagina('relatorio_plantao', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Relatório escala/plantões</span>
+              </span>
+            </button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_lancamentos" onclick="abrirPagina('relatorio_lancamentos', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Relatório tarefas</span>
+              </span>
+            </button>
+          </div>
+          <div class="nav-report-section">
+            <span class="nav-report-heading">Financeiro</span>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_financeiro" onclick="abrirPagina('relatorio_financeiro', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Contas a pagar</span>
+              </span>
+            </button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_ajuste_saldo" onclick="abrirPagina('relatorio_ajuste_saldo', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Ajuste de saldo</span>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -5409,6 +5544,48 @@
         </div>
       </section>
 
+
+      <!--  ESCALA E PLANTÕES  -->
+      <section id="escala_plantoes" class="pagina">
+        <div class="page-title">Escala e plantões</div>
+        <div class="escala-layout">
+          <aside class="escala-side-card">
+            <div class="escala-side-title"><span>Agendas</span><button class="btn btn-green btn-sm" type="button" onclick="abrirModalCadastroPlantaoEscala()">+</button></div>
+            <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot plantao"></span> Plantões</label>
+            <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot reuniao"></span> Reunião</label>
+            <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot"></span> Compromissos</label>
+            <div class="escala-side-title" style="margin-top:18px"><span>Filtrar</span></div>
+            <label class="escala-check-row"><input type="checkbox" id="escalaFiltroFeriados" checked onchange="renderizarEscalaPlantoes()"> Feriados nacionais</label>
+            <label class="escala-check-row"><input type="checkbox" id="escalaFiltroDomingos" checked onchange="renderizarEscalaPlantoes()"> Domingos em destaque</label>
+            <label class="escala-check-row"><input type="checkbox" id="escalaFiltroMunicipais" checked onchange="renderizarEscalaPlantoes()"> Feriados estaduais/municipais</label>
+            <div class="msg" id="msgEscalaPlantoes" style="margin-top:12px"></div>
+          </aside>
+          <div class="escala-calendario-card">
+            <div class="escala-toolbar">
+              <div class="escala-nav">
+                <button class="btn btn-ghost" type="button" onclick="mudarMesEscalaPlantoes(-1)">‹</button>
+                <button class="btn btn-ghost" type="button" onclick="mudarMesEscalaPlantoes(1)">›</button>
+                <button class="btn btn-ghost" type="button" onclick="irParaHojeEscalaPlantoes()">Hoje</button>
+              </div>
+              <div class="escala-mes-titulo" id="escalaMesTitulo">Calendário</div>
+              <div class="escala-view-tabs" aria-label="Visualização da escala">
+                <button class="ativo" type="button">Mês</button>
+                <button type="button" onclick="setMsg('msgEscalaPlantoes','Visualização semanal será ligada na próxima etapa.','ok')">Semana</button>
+                <button type="button" onclick="setMsg('msgEscalaPlantoes','Visualização diária será ligada na próxima etapa.','ok')">Dia</button>
+                <button type="button" onclick="setMsg('msgEscalaPlantoes','Lista de plantões será ligada na próxima etapa.','ok')">Lista</button>
+              </div>
+            </div>
+            <div class="escala-calendario" id="escalaCalendarioGrid"><div class="empty">Carregando calendário...</div></div>
+            <div class="escala-legenda">
+              <span><span class="escala-dot plantao"></span> Plantão</span>
+              <span><span class="escala-dot reuniao"></span> Reunião</span>
+              <span style="border-color:rgba(245,158,11,.4);color:#fbbf24">Feriado nacional</span>
+              <span style="border-color:rgba(34,197,94,.4);color:var(--green)">Domingo</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!--  CHECKLISTS  -->
       <section id="checklists" class="pagina ativa">
         <div class="page-title">Checklists</div>
@@ -5573,6 +5750,11 @@
           <div class="card-title">Dados da loja</div>
           <div class="form-row">
             <input id="configNomeLoja" type="text" placeholder="Nome da loja">
+            <input id="configCepLoja" class="campo-curto" type="text" placeholder="CEP" maxlength="9" onblur="buscarCepLoja('configCepLoja','configCidadeLoja','configEstadoLoja','msgConfiguracoes')">
+            <input id="configCidadeLoja" type="text" placeholder="Cidade da loja" required>
+            <select id="configEstadoLoja" class="campo-curto" required style="min-width:130px">
+              <option value="">Estado</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+            </select>
             <input id="configHorarioAbertura" class="campo-curto" type="time" placeholder="Abertura">
             <input id="configHorarioFechamento" class="campo-curto" type="time" placeholder="Fechamento">
           </div>
@@ -5583,6 +5765,11 @@
           <div class="form-row">
             <input id="nomeLojaCadastro" type="text" placeholder="Nome da filial">
             <input id="codigoLojaCadastro" class="campo-curto" type="text" placeholder="Código (opcional)">
+            <input id="cepLojaCadastro" class="campo-curto" type="text" placeholder="CEP" maxlength="9" onblur="buscarCepLoja('cepLojaCadastro','cidadeLojaCadastro','estadoLojaCadastro','msgLojasCadastro')">
+            <input id="cidadeLojaCadastro" type="text" placeholder="Cidade obrigatória">
+            <select id="estadoLojaCadastro" class="campo-curto" required style="min-width:110px">
+              <option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+            </select>
             <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
               <input id="ativoLojaCadastro" type="checkbox" checked>
               <span>Ativa</span>
@@ -5665,6 +5852,11 @@
             </select>
             <input id="saasNomeLoja" type="text" placeholder="Nome da loja">
             <input id="saasCodigoLoja" class="campo-curto" type="text" placeholder="Código">
+            <input id="saasCepLoja" class="campo-curto" type="text" placeholder="CEP" maxlength="9" onblur="buscarCepLoja('saasCepLoja','saasCidadeLoja','saasEstadoLoja','msgLojasSaas')">
+            <input id="saasCidadeLoja" type="text" placeholder="Cidade obrigatória">
+            <select id="saasEstadoLoja" class="campo-curto" required style="min-width:110px">
+              <option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+            </select>
             <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
               <input id="saasAtivoLoja" type="checkbox" checked>
               <span>Ativa</span>
@@ -5866,7 +6058,7 @@
         <div class="card ponto-tempo-aviso-card" id="pontoTempoAvisoCard" hidden>
           <div class="card-title">Tempo para aviso de retorno</div>
           <div class="ponto-tempo-aviso-row">
-            <label>Avisar antes do fim do intervalo
+            <label>Tempo padrão do intervalo
               <input id="tempoAvisoPontoMinutos" type="number" min="1" max="240" step="1" placeholder="Ex: 10">
             </label>
             <button class="btn btn-green" type="button" onclick="salvarTempoAvisoManualPonto()">Salvar aviso</button>
@@ -5886,6 +6078,7 @@
         <div class="card ponto-horas-card">
           <div class="card-title">Horas trabalhadas por colaborador</div>
           <div class="dashboard-period-tabs ponto-horas-tabs">
+            <button class="dashboard-period-btn" data-horas-periodo="ontem" onclick="trocarPeriodoHorasDashboard('ontem', this)">Ontem</button>
             <button class="dashboard-period-btn active" data-horas-periodo="dia" onclick="trocarPeriodoHorasDashboard('dia', this)">Hoje</button>
             <button class="dashboard-period-btn" data-horas-periodo="semana" onclick="trocarPeriodoHorasDashboard('semana', this)">Semana</button>
             <button class="dashboard-period-btn" data-horas-periodo="mes" onclick="trocarPeriodoHorasDashboard('mes', this)">Mês</button>
@@ -5920,12 +6113,39 @@
         </div>
 
         <div class="card">
-          <div class="card-title">Status de ponto de hoje</div>
+          <div class="card-title" id="pontoResumoTitulo">Status de ponto de hoje</div>
+          <div class="dashboard-period-tabs ponto-resumo-dia-tabs" style="margin-bottom:12px">
+            <button class="dashboard-period-btn" data-ponto-resumo-offset="-1" onclick="trocarDiaResumoPonto(-1, this)">Ontem</button>
+            <button class="dashboard-period-btn active" data-ponto-resumo-offset="0" onclick="trocarDiaResumoPonto(0, this)">Hoje</button>
+          </div>
           <div id="pontoResumoHoje"><div class="empty">Carregando status de pontos...</div></div>
         </div>
       </section>
 
       <!--  RELATÓRIO PONTO  -->
+      <section id="relatorio_plantao" class="pagina">
+        <div class="page-title">Relatório escala/plantões</div>
+        <div class="page-sub">Plantões lançados, valores combinados e exportações.</div>
+        <div class="card escala-relatorio-card" id="cardRelatorioEscalaPlantoes">
+          <div class="escala-relatorio-topo">
+            <div>
+              <div class="card-title">Relatório da escala</div>
+              <div class="page-sub" id="escalaRelatorioResumo">Sem lançamentos no período.</div>
+              <div class="escala-relatorio-filtros-export" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px">
+                <label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Data inicial<br><input id="escalaRelatorioDataInicio" type="date" style="min-height:34px;padding:6px 9px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)"></label>
+                <label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Data final<br><input id="escalaRelatorioDataFim" type="date" style="min-height:34px;padding:6px 9px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)"></label>
+                <div class="page-sub" style="margin:0;color:var(--text-dim)">Usado somente na exportação PDF/Excel.</div>
+              </div>
+            </div>
+            <div class="escala-relatorio-acoes">
+              <button class="btn btn-ghost btn-export-pdf" type="button" onclick="exportarRelatorioEscalaPDF()"><span class="btn-export-icon">PDF</span> PDF</button>
+              <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioEscalaExcel()"><span class="btn-export-icon">X</span> Excel</button>
+            </div>
+          </div>
+          <div id="listaRelatorioEscalaPlantoes" class="escala-relatorio-lista"><div class="empty">Sem lançamentos.</div></div>
+        </div>
+      </section>
+
       <section id="relatorio_ponto" class="pagina">
         <div class="page-title">Relatório ponto</div>
 
@@ -6613,7 +6833,7 @@
     <div class="ponto-entrada-alerta-card">
       <div class="ponto-pendente-eyebrow">Alerta de entrada</div>
       <div class="ponto-entrada-alerta-title">Bater ponto</div>
-      <div class="ponto-entrada-alerta-texto">Funcionário com jornada iniciando em até 5 minutos ou já iniciada, sem entrada registrada hoje.</div>
+      <div class="ponto-entrada-alerta-texto">Funcionário com jornada iniciando em até 10 minutos ou já iniciada, sem entrada registrada hoje.</div>
       <div class="ponto-entrada-alerta-lista" id="pontoEntradaAlertaLista"></div>
       <div class="ponto-pendente-acoes">
         <button class="btn btn-green" type="button" onclick="fecharAlertaEntradaPonto()">OK</button>
@@ -6822,6 +7042,7 @@ const AUTH_EMAIL_FUNCTION_NAME = 'autenticacao-email';
 const AUTH_REDIRECT_URL = 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.sb = sb; // compatibilidade para módulos seguros de escala/plantões
 
 
 // Controle de consumo: evita uma consulta ao Supabase a cada tecla digitada em filtros.
@@ -6864,11 +7085,11 @@ const TABELAS_COM_EMPRESA_ID = new Set([
   'contas_financeiras',
   'contas_financeiras_movimentacoes',
   'contas_financeiras_ajustes_saldo',
-  'recebiveis'
+  'recebiveis','escala_plantoes'
 ]);
 
 const TABELAS_COM_LOJA_ID = new Set([
-  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis'
+  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','escala_plantoes'
 ]);
 
 let filtroLojaSuspensoTemporariamente = false;
@@ -7373,6 +7594,7 @@ let ultimosLembretesTarefaAtrasadaEm = {};
 let execucoesPaginaAtual = 1;
 let dashboardProdutividadePeriodo = 'dia';
 let dashboardHorasPeriodo = 'dia';
+let pontoResumoOffsetDias = 0;
 let relatorioPontoPeriodo = 'dia';
 let relatorioPontoFuncionarioCache = {};
 let timeoutAvisoPontoRegistrado = null;
@@ -7410,16 +7632,16 @@ let timeoutAtualizacaoChecklistsRealtime = null;
 let timeoutAtualizacaoPaginaRealtime = null;
 const lancamentosManuaisEmAndamento = new Set();
 const STORAGE_CHECKLISTS_FUTUROS_OPEN = 'zuqui_checklists_futuros_open';
-const INTERVALO_ATUALIZACAO_PADRAO_MS = 5 * 60 * 1000; // Consumo otimizado: sem polling visual pesado
-const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 5 * 60 * 1000; // Consumo otimizado: checklists atualizam por ação/Realtime
-const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 5 * 60 * 1000; // Consumo otimizado: sem consulta a cada 5s
+const INTERVALO_ATUALIZACAO_PADRAO_MS = 10 * 60 * 1000; // Consumo otimizado: sem polling visual pesado
+const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10 * 60 * 1000; // Consumo otimizado: checklists atualizam por ação/Realtime
+const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 10 * 60 * 1000; // Consumo otimizado: sem consulta a cada 5s
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
 const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
 const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
 const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 10 * 60 * 1000;
 const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
 const JANELA_CONFLITO_LANCAMENTO_MANUAL_MINUTOS = 20;
-const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 15 * 60 * 1000;
+const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 110 * 60 * 1000;
 const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
 // Horizonte de agendamento ao clicar em "Lançar tarefa" (ex.: 7, 14, 30).
 const HORIZONTE_AGENDAMENTO_MANUAL_DIAS = 7;
@@ -7913,6 +8135,10 @@ const PERFIL_PERMISSOES = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
+  { key: 'escala_plantoes', label: 'Escala e plantões' },
+  { key: 'cadastro_plantao', label: 'Cadastro de plantão' },
+  { key: 'relatorio_plantao', label: 'Relatório de plantão' },
+  { key: 'escala_valor_combinado', label: 'Escala - ver valor combinado' },
   { key: 'relatorio_ponto', label: 'Relatório de ponto' },
   { key: 'ponto_ajustes', label: 'Solicitações de ajuste de ponto' },
   { key: 'alterar_tempo_aviso_ponto', label: 'Ponto - alterar tempo para aviso de retorno' },
@@ -7961,6 +8187,10 @@ function obterPermissoesBase(codigo) {
       dashboard: false,
       checklists: false,
       bater_ponto: false,
+      escala_plantoes: false,
+      cadastro_plantao: false,
+      relatorio_plantao: false,
+      escala_valor_combinado: false,
       relatorio_ponto: false,
       ponto_ajustes: false,
       relatorio_lancamentos: false,
@@ -8001,6 +8231,10 @@ function obterPermissoesBase(codigo) {
       dashboard: true,
       checklists: true,
       bater_ponto: true,
+      escala_plantoes: true,
+      cadastro_plantao: true,
+      relatorio_plantao: true,
+      escala_valor_combinado: false,
       relatorio_ponto: true,
       ponto_ajustes: true,
       relatorio_lancamentos: true,
@@ -8040,6 +8274,10 @@ function obterPermissoesBase(codigo) {
     dashboard: false,
     checklists: true,
     bater_ponto: true,
+    escala_plantoes: false,
+    cadastro_plantao: false,
+    relatorio_plantao: false,
+    escala_valor_combinado: true,
     relatorio_ponto: false,
     ponto_ajustes: false,
     relatorio_lancamentos: false,
@@ -8078,6 +8316,8 @@ const topTitles = {
   dashboard: ['Dashboard', 'Visao geral do sistema'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
+  escala_plantoes: ['Escala e plantões', 'Calendário de turnos, domingos e feriados'],
+  relatorio_plantao: ['Relatório escala/plantões', 'Plantões lançados, valores combinados e exportações'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
   relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
@@ -8109,7 +8349,7 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_ajuste_saldo'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
@@ -8286,6 +8526,283 @@ function redefinirCampoBuscaTarefas() {
   window.setTimeout(() => forcarCampoBuscaTarefasEmBranco(), 1200);
 }
 
+
+let escalaPlantoesDataReferencia = new Date();
+let escalaPlantoesEventos = [];
+let escalaPlantoesDataSelecionada = '';
+let escalaPlantoesFuncionariosCache = [];
+
+function doisDigitosEscala(valor){return String(valor).padStart(2,'0');}
+function formatarDataIsoLocalEscala(data){return `${data.getFullYear()}-${doisDigitosEscala(data.getMonth()+1)}-${doisDigitosEscala(data.getDate())}`;}
+function calcularPascoaEscala(ano){const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1;return new Date(ano,mes-1,dia);}
+function adicionarDiasEscala(data,dias){const nova=new Date(data);nova.setDate(nova.getDate()+Number(dias||0));return nova;}
+function obterFeriadosNacionaisEscala(ano){const pascoa=calcularPascoaEscala(ano);return [{data:`${ano}-01-01`,nome:'Confraternização Universal'},{data:`${ano}-04-21`,nome:'Tiradentes'},{data:`${ano}-05-01`,nome:'Dia do Trabalhador'},{data:`${ano}-09-07`,nome:'Independência do Brasil'},{data:`${ano}-10-12`,nome:'Nossa Senhora Aparecida'},{data:`${ano}-11-02`,nome:'Finados'},{data:`${ano}-11-15`,nome:'Proclamação da República'},{data:`${ano}-11-20`,nome:'Consciência Negra'},{data:`${ano}-12-25`,nome:'Natal'},{data:formatarDataIsoLocalEscala(adicionarDiasEscala(pascoa,-48)),nome:'Carnaval'},{data:formatarDataIsoLocalEscala(adicionarDiasEscala(pascoa,-47)),nome:'Carnaval'},{data:formatarDataIsoLocalEscala(adicionarDiasEscala(pascoa,-2)),nome:'Sexta-feira Santa'},{data:formatarDataIsoLocalEscala(adicionarDiasEscala(pascoa,60)),nome:'Corpus Christi'}].reduce((acc,item)=>{acc[item.data]=item.nome;return acc;},{});}
+function obterInicioFimMesEscala(){const ref=escalaPlantoesDataReferencia||new Date(),ano=ref.getFullYear(),mes=ref.getMonth();return {inicio:formatarDataIsoLocalEscala(new Date(ano,mes,1)),fim:formatarDataIsoLocalEscala(new Date(ano,mes+1,0))};}
+function normalizarHoraEscala(valor){return String(valor||'').slice(0,5);}
+function formatarDataBRSimplesEscala(dataIso){const [a,m,d]=String(dataIso||'').split('-');return d&&m&&a?`${d}/${m}/${a}`:String(dataIso||'');}
+function isMissingEscalaPlantoesTableError(error){const msg=String(error?.message||error?.details||error?.hint||error?.code||'').toLowerCase(); if(msg.includes('empresa_id') || msg.includes('loja_id') || msg.includes('column')) return false; return msg.includes('could not find the table') || (msg.includes('relation') && msg.includes('escala_plantoes') && msg.includes('does not exist')) || msg.includes('schema cache');}
+
+async function carregarEscalaPlantoes(){
+  if(!(escalaPlantoesDataReferencia instanceof Date)||Number.isNaN(escalaPlantoesDataReferencia.getTime()))escalaPlantoesDataReferencia=new Date();
+  // Renderiza primeiro para nunca deixar a tela presa em "Carregando calendário".
+  renderizarEscalaPlantoes();
+  try {
+    await carregarPlantoesEscalaMes();
+  } catch (error) {
+    escalaPlantoesEventos = [];
+    setMsg('msgEscalaPlantoes', `Erro ao carregar calendário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+  }
+  renderizarEscalaPlantoes();
+}
+function mudarMesEscalaPlantoes(delta){escalaPlantoesDataReferencia=new Date(escalaPlantoesDataReferencia.getFullYear(),escalaPlantoesDataReferencia.getMonth()+Number(delta||0),1);carregarEscalaPlantoes();}
+function irParaHojeEscalaPlantoes(){escalaPlantoesDataReferencia=new Date();carregarEscalaPlantoes();}
+
+async function carregarPlantoesEscalaMes(){
+  const { inicio, fim } = obterInicioFimMesEscala();
+  let query = sb
+    .from('escala_plantoes')
+    .select('*')
+    .gte('data_plantao', inicio)
+    .lte('data_plantao', fim)
+    .is('deleted_at', null)
+    .order('data_plantao', { ascending: true })
+    .order('inicio_hora', { ascending: true });
+  const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  if (lojaId) query = query.eq('loja_id', lojaId);
+  const { data, error } = await query;
+  if (error) {
+    escalaPlantoesEventos = [];
+    if (isMissingEscalaPlantoesTableError(error)) {
+      setMsg('msgEscalaPlantoes','Rode o SQL da tabela escala_plantoes para salvar e exibir plantões.','err');
+    } else {
+      setMsg('msgEscalaPlantoes',`Erro ao carregar plantões: ${mensagemErroSupabase(error,'erro desconhecido')}`,'err');
+    }
+    return;
+  }
+  const eventos = data || [];
+  const idsFuncionarios = [...new Set(eventos.map(item => item.funcionario_id).filter(Boolean))];
+  if (idsFuncionarios.length) {
+    try {
+      let queryFunc = sb.from('funcionarios').select('id, nome').in('id', idsFuncionarios);
+      queryFunc = aplicarFiltroLojaFuncionariosQuery(queryFunc);
+      const { data: funcs, error: erroFuncs } = await queryFunc;
+      if (!erroFuncs) {
+        const nomes = Object.fromEntries((funcs || []).map(f => [String(f.id), f.nome || 'Funcionário']));
+        eventos.forEach(item => { item.funcionario_nome = nomes[String(item.funcionario_id)] || item.titulo || 'Funcionário'; });
+      }
+    } catch (e) {
+      console.warn('Não foi possível anexar nomes dos funcionários à escala:', e);
+    }
+  }
+  escalaPlantoesEventos = eventos;
+}
+
+function agruparEventosEscalaPorDia(){
+  return (escalaPlantoesEventos||[]).reduce((acc,item)=>{
+    const dataIso=String(item.data_plantao||'').slice(0,10);
+    if(!dataIso)return acc;
+    if(!acc[dataIso])acc[dataIso]=[];
+    acc[dataIso].push(item);
+    return acc;
+  },{});
+}
+
+async function carregarFuncionariosSelectEscala(){
+  const select=document.getElementById('escalaPlantaoFuncionario');
+  if(!select)return;
+  let query=sb.from('funcionarios').select('id, nome').eq('ativo', true).order('nome');
+  query=aplicarFiltroLojaFuncionariosQuery(query);
+  const { data, error } = await query;
+  if(error){
+    select.innerHTML='<option value="">Erro ao carregar funcionários</option>';
+    setMsg('msgModalEscalaPlantao',`Erro ao carregar funcionários: ${mensagemErroSupabase(error,'erro desconhecido')}`,'err');
+    return;
+  }
+  escalaPlantoesFuncionariosCache=data||[];
+  select.innerHTML='<option value="">Selecione...</option>'+(data||[]).map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.nome||'Funcionário')}</option>`).join('');
+}
+
+async function abrirModalCadastroPlantaoEscala(dataIso=''){
+  escalaPlantoesDataSelecionada=dataIso || formatarDataIsoLocalEscala(escalaPlantoesDataReferencia || new Date());
+  const modal=document.getElementById('modalEscalaPlantao');
+  const dataTexto=document.getElementById('escalaModalDataTexto');
+  const eventoId=document.getElementById('escalaPlantaoEventoId');
+  if(eventoId) eventoId.value='';
+  if(dataTexto)dataTexto.textContent=`Data selecionada: ${formatarDataBRSimplesEscala(escalaPlantoesDataSelecionada)}`;
+  ['escalaPlantaoInicio','escalaPlantaoFim','escalaPlantaoTitulo','escalaPlantaoValor','escalaPlantaoObservacao'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';});
+  const tipo=document.getElementById('escalaPlantaoTipo'); if(tipo)tipo.value='plantao';
+  const btnExcluir=document.getElementById('btnExcluirPlantaoEscala'); if(btnExcluir) btnExcluir.style.display='none';
+  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar plantão';
+  setMsg('msgModalEscalaPlantao','','');
+  await carregarFuncionariosSelectEscala();
+  renderizarItensDiaModalEscala();
+  modal?.classList.add('show');
+  modal?.setAttribute('aria-hidden','false');
+}
+function fecharModalCadastroPlantaoEscala(){
+  const modal=document.getElementById('modalEscalaPlantao');
+  modal?.classList.remove('show');
+  modal?.setAttribute('aria-hidden','true');
+}
+
+async function salvarPlantaoEscala(){
+  const eventoId=String(document.getElementById('escalaPlantaoEventoId')?.value||'').trim();
+  const funcionarioId=String(document.getElementById('escalaPlantaoFuncionario')?.value||'').trim();
+  const inicio=String(document.getElementById('escalaPlantaoInicio')?.value||'').trim();
+  const fim=String(document.getElementById('escalaPlantaoFim')?.value||'').trim();
+  const tipo=String(document.getElementById('escalaPlantaoTipo')?.value||'plantao').trim();
+  const titulo=String(document.getElementById('escalaPlantaoTitulo')?.value||'').trim();
+  const observacao=String(document.getElementById('escalaPlantaoObservacao')?.value||'').trim();
+  const valorRaw=String(document.getElementById('escalaPlantaoValor')?.value||'').replace(',','.').trim();
+  const valorCombinado=valorRaw ? Number(valorRaw) : null;
+  if(valorRaw && (!Number.isFinite(valorCombinado) || valorCombinado < 0)){setMsg('msgModalEscalaPlantao','Informe um valor combinado válido.','err');return;}
+  if(!escalaPlantoesDataSelecionada){setMsg('msgModalEscalaPlantao','Selecione um dia no calendário.','err');return;}
+  if(!funcionarioId){setMsg('msgModalEscalaPlantao','Selecione o funcionário.','err');return;}
+  if(!inicio||!fim){setMsg('msgModalEscalaPlantao','Informe horário de início e fim.','err');return;}
+  if(inicio>=fim){setMsg('msgModalEscalaPlantao','O horário final precisa ser maior que o horário inicial.','err');return;}
+  const lojaId=String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim() || null;
+  const empresaId=String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim() || null;
+  const payload={
+    empresa_id: empresaId,
+    loja_id: lojaId,
+    funcionario_id: funcionarioId,
+    data_plantao: escalaPlantoesDataSelecionada,
+    inicio_hora: inicio,
+    fim_hora: fim,
+    tipo,
+    titulo: titulo || (tipo === 'plantao' ? 'Plantão' : tipo === 'reuniao' ? 'Reunião' : 'Compromisso'),
+    observacao: observacao || null,
+    valor_combinado: valorCombinado,
+  };
+  let resposta;
+  if(eventoId){
+    let q=sb.from('escala_plantoes').update(payload).eq('id', eventoId);
+    if(lojaId) q=q.eq('loja_id', lojaId);
+    resposta=await q;
+  } else {
+    resposta=await sb.from('escala_plantoes').insert([payload]);
+  }
+  if(resposta.error){
+    if(isMissingEscalaPlantoesTableError(resposta.error)) setMsg('msgModalEscalaPlantao','Rode o SQL da tabela escala_plantoes antes de salvar.','err');
+    else setMsg('msgModalEscalaPlantao',`Não foi possível salvar: ${mensagemErroSupabase(resposta.error,'erro desconhecido')}`,'err');
+    return;
+  }
+  fecharModalCadastroPlantaoEscala();
+  setMsg('msgEscalaPlantoes', eventoId ? 'Plantão atualizado no calendário.' : 'Plantão salvo no calendário.','ok');
+  await carregarEscalaPlantoes();
+}
+
+function renderizarItensDiaModalEscala(){
+  const lista=document.getElementById('escalaPlantaoListaDia');
+  if(!lista)return;
+  const itens=(escalaPlantoesEventos||[]).filter(item=>String(item.data_plantao||'').slice(0,10)===escalaPlantoesDataSelecionada);
+  if(!itens.length){lista.innerHTML='<div class="escala-modal-empty">Nenhum item lançado nesse dia.</div>';return;}
+  lista.innerHTML=itens.map(item=>{
+    const nome=escapeHtml(item.funcionario_nome||item.titulo||'Funcionário');
+    const tipo=escapeHtml(item.tipo||'plantao');
+    const valorTxt = item.valor_combinado != null ? ` · R$ ${Number(item.valor_combinado||0).toFixed(2).replace('.', ',')}` : '';
+    const texto=`${normalizarHoraEscala(item.inicio_hora)} → ${normalizarHoraEscala(item.fim_hora)} · ${nome}${valorTxt}`;
+    return `<button class="escala-modal-item" type="button" onclick="abrirModalEditarPlantaoEscala('${escapeHtml(item.id)}')"><strong>${escapeHtml(texto)}</strong><span>${tipo}</span></button>`;
+  }).join('');
+}
+
+async function abrirModalEditarPlantaoEscala(id){
+  const item=(escalaPlantoesEventos||[]).find(ev=>String(ev.id)===String(id));
+  if(!item){setMsg('msgModalEscalaPlantao','Item da escala não encontrado.','err');return;}
+  escalaPlantoesDataSelecionada=String(item.data_plantao||'').slice(0,10);
+  await carregarFuncionariosSelectEscala();
+  const eventoId=document.getElementById('escalaPlantaoEventoId'); if(eventoId) eventoId.value=item.id||'';
+  const dataTexto=document.getElementById('escalaModalDataTexto'); if(dataTexto)dataTexto.textContent=`Editando: ${formatarDataBRSimplesEscala(escalaPlantoesDataSelecionada)}`;
+  const funcionario=document.getElementById('escalaPlantaoFuncionario'); if(funcionario) funcionario.value=item.funcionario_id||'';
+  const inicio=document.getElementById('escalaPlantaoInicio'); if(inicio) inicio.value=normalizarHoraEscala(item.inicio_hora);
+  const fim=document.getElementById('escalaPlantaoFim'); if(fim) fim.value=normalizarHoraEscala(item.fim_hora);
+  const tipo=document.getElementById('escalaPlantaoTipo'); if(tipo) tipo.value=item.tipo||'plantao';
+  const titulo=document.getElementById('escalaPlantaoTitulo'); if(titulo) titulo.value=item.titulo||'';
+  const valor=document.getElementById('escalaPlantaoValor'); if(valor) valor.value=(item.valor_combinado ?? '') === null ? '' : (item.valor_combinado ?? '');
+  const obs=document.getElementById('escalaPlantaoObservacao'); if(obs) obs.value=item.observacao||'';
+  const btnExcluir=document.getElementById('btnExcluirPlantaoEscala'); if(btnExcluir) btnExcluir.style.display='inline-flex';
+  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar alteração';
+  renderizarItensDiaModalEscala();
+  const modal=document.getElementById('modalEscalaPlantao'); modal?.classList.add('show'); modal?.setAttribute('aria-hidden','false');
+}
+
+async function excluirPlantaoEscala(){
+  const id=String(document.getElementById('escalaPlantaoEventoId')?.value||'').trim();
+  if(!id){setMsg('msgModalEscalaPlantao','Nenhum item selecionado para excluir.','err');return;}
+  const respostaPin = typeof abrirModalPin === 'function'
+    ? await abrirModalPin({ titulo:'Excluir escala', subtitulo:'Informe o PIN/senha de quem está excluindo.', textoAcao:'Excluir', placeholderInput:'PIN ou senha' })
+    : { pin: window.prompt('Digite o PIN/senha para excluir:') };
+  if(!respostaPin || !respostaPin.pin){setMsg('msgModalEscalaPlantao','Exclusão cancelada.','err');return;}
+  const usuarioExclusao = typeof obterFuncionarioAtivoPorPin === 'function' ? await obterFuncionarioAtivoPorPin(respostaPin.pin) : null;
+  if(!usuarioExclusao?.id){setMsg('msgModalEscalaPlantao','PIN/senha inválido. A escala não foi excluída.','err');return;}
+  const lojaId=String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  let q=sb.from('escala_plantoes').update({
+    deleted_at: new Date().toISOString(),
+    deleted_by_funcionario_id: usuarioExclusao.id,
+    deleted_by_nome: usuarioExclusao.nome || 'Funcionário',
+    updated_at: new Date().toISOString()
+  }).eq('id', id);
+  if(lojaId) q=q.eq('loja_id', lojaId);
+  const { error } = await q;
+  if(error){setMsg('msgModalEscalaPlantao',`Não foi possível excluir: ${mensagemErroSupabase(error,'erro desconhecido')}. Rode o SQL dos campos de exclusão se ainda não rodou.`,'err');return;}
+  fecharModalCadastroPlantaoEscala();
+  setMsg('msgEscalaPlantoes',`Item excluído da escala por ${usuarioExclusao.nome || 'Funcionário'}.`,'ok');
+  await carregarEscalaPlantoes();
+}
+
+function renderizarEscalaPlantoes(){
+  const grid=document.getElementById('escalaCalendarioGrid'),titulo=document.getElementById('escalaMesTitulo');
+  if(!grid||!titulo)return;
+  const ref=escalaPlantoesDataReferencia||new Date();
+  const ano=ref.getFullYear();
+  const mes=ref.getMonth();
+  const hojeIso=formatarDataIsoLocalEscala(new Date());
+  const nomesMeses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  titulo.textContent=`${nomesMeses[mes]} de ${ano}`;
+
+  const exibirFeriados=document.getElementById('escalaFiltroFeriados')?.checked!==false;
+  const exibirDomingos=document.getElementById('escalaFiltroDomingos')?.checked!==false;
+  const feriados=obterFeriadosNacionaisEscala(ano);
+  const primeiroDiaMes=new Date(ano,mes,1);
+  const ultimoDiaMes=new Date(ano,mes+1,0);
+  const diasNoMes=ultimoDiaMes.getDate();
+  const primeiroDiaSemana=primeiroDiaMes.getDay();
+  const diasSemana=['DOM.','SEG.','TER.','QUA.','QUI.','SEX.','SÁB.'];
+  const eventosPorDia=agruparEventosEscalaPorDia();
+  let html=diasSemana.map(nome=>`<div class="escala-dia-semana">${nome}</div>`).join('');
+
+  // Células vazias antes do dia 1. Não mostra dias do mês anterior para evitar confusão.
+  for(let i=0;i<primeiroDiaSemana;i++){
+    html+=`<div class="escala-dia escala-dia-vazio" aria-hidden="true"></div>`;
+  }
+
+  for(let dia=1;dia<=diasNoMes;dia++){
+    const data=new Date(ano,mes,dia);
+    const dataIso=formatarDataIsoLocalEscala(data);
+    const domingo=data.getDay()===0;
+    const nomeFeriado=exibirFeriados?feriados[dataIso]:'';
+    const eventos=eventosPorDia[dataIso]||[];
+    const classes=['escala-dia',domingo&&exibirDomingos?'domingo':'',nomeFeriado?'feriado':'',dataIso===hojeIso?'hoje':''].filter(Boolean).join(' ');
+    const feriadoHtml=nomeFeriado?`<div class="escala-feriado-label" title="${escapeHtml(nomeFeriado)}">${escapeHtml(nomeFeriado)}</div>`:'';
+    const eventosHtml=eventos.slice(0,4).map(ev=>{
+      const nome=ev.funcionario_nome||ev.titulo||'Funcionário';
+      const valorTxt = ev.valor_combinado != null ? ` · R$ ${Number(ev.valor_combinado||0).toFixed(2).replace('.', ',')}` : '';
+      const texto=`${normalizarHoraEscala(ev.inicio_hora)} ${nome}${valorTxt}`.trim();
+      return `<button class="escala-evento ${escapeHtml(ev.tipo||'plantao')}" type="button" title="${escapeHtml(texto)}" onclick="event.stopPropagation(); abrirModalEditarPlantaoEscala('${escapeHtml(ev.id)}')">${escapeHtml(texto)}</button>`;
+    }).join('');
+    const maisHtml=eventos.length>4?`<button class="escala-evento" type="button" onclick="event.stopPropagation()">mais +${eventos.length-4}</button>`:'';
+    html+=`<div class="${classes}" data-data="${dataIso}" onclick="abrirModalCadastroPlantaoEscala('${dataIso}')"><div class="escala-dia-numero">${dia}</div>${feriadoHtml}${eventosHtml}${maisHtml}</div>`;
+  }
+
+  // Completa a última semana com células vazias. Não mostra dias do próximo mês.
+  const totalCelulas=primeiroDiaSemana+diasNoMes;
+  const sobra=totalCelulas%7;
+  if(sobra){
+    for(let i=sobra;i<7;i++) html+=`<div class="escala-dia escala-dia-vazio" aria-hidden="true"></div>`;
+  }
+  grid.innerHTML=html;
+}
+
 function abrirPagina(id, botao) {
   if (usuarioSistemaLogado && !usuarioPodeAcessar(id)) return;
   if (id === 'itens') {
@@ -8311,6 +8828,8 @@ function abrirPagina(id, botao) {
   if (id === 'dashboard') carregarDashboard();
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
+  if (id === 'escala_plantoes') { carregarEscalaPlantoes(); }
+  if (id === 'relatorio_plantao') { if (typeof renderizarRelatorioEscalaPlantoes === 'function') renderizarRelatorioEscalaPlantoes(); }
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
   if (id === 'ponto_ajustes') { carregarAjustesPonto(); }
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
@@ -8699,8 +9218,8 @@ function carregarTempoAvisoManualPontoSelecionado() {
   const manual = obterTempoAvisoManualPonto();
   input.value = manual ? String(manual) : '';
   const textoAjuda = manual
-    ? `Aviso global ativo: o sistema alerta ${manual} min antes do fim do intervalo previsto de cada funcionário.`
-    : 'Sem aviso manual configurado. O sistema apenas mostra o contador com base no intervalo cadastrado de cada funcionário.';
+    ? `Intervalo padrão ativo: quando o funcionário não tiver intervalo cadastrado, o sistema considera ${manual} min e avisa se passar do horário.`
+    : 'Sem intervalo padrão configurado. O sistema usa apenas o intervalo cadastrado no funcionário.';
   if (ajuda) ajuda.textContent = textoAjuda;
   if (valorAtual) valorAtual.textContent = manual ? String(manual) : '--';
   if (infoIcon) infoIcon.title = textoAjuda;
@@ -8719,7 +9238,7 @@ async function salvarTempoAvisoManualPonto() {
   }
   try {
     localStorage.setItem(obterChaveTempoAvisoPonto(), String(minutos));
-    setMsg('msgTempoAvisoPonto', `Aviso global salvo: ${minutos} min antes do fim do intervalo.`, 'ok');
+    setMsg('msgTempoAvisoPonto', `Intervalo padrão salvo: ${minutos} min.`, 'ok');
     carregarTempoAvisoManualPontoSelecionado();
     await carregarResumoPontoHoje();
   } catch (e) {
@@ -8734,7 +9253,7 @@ async function limparTempoAvisoManualPonto() {
   }
   try {
     localStorage.removeItem(obterChaveTempoAvisoPonto());
-    setMsg('msgTempoAvisoPonto', 'Aviso manual removido. O contador continua usando o intervalo cadastrado do funcionário.', 'ok');
+    setMsg('msgTempoAvisoPonto', 'Intervalo padrão removido. O contador continua usando o intervalo cadastrado do funcionário.', 'ok');
     carregarTempoAvisoManualPontoSelecionado();
     await carregarResumoPontoHoje();
   } catch (e) {
@@ -9517,11 +10036,40 @@ function usuarioPodeAcessar(pageId) {
   if (pageId === 'tarefas_rapidas') {
     return usuarioPodeAcessarAlertasRapidos();
   }
+  if (pageId === 'escala_plantoes') {
+    return !!(permissoes.escala_plantoes || permissoes.cadastro_plantao || permissoes.relatorio_plantao);
+  }
+  if (pageId === 'relatorio_plantao') {
+    return !!(permissoes.relatorio_plantao || permissoes.escala_plantoes);
+  }
   return !!permissoes[pageId];
 }
 
 function usuarioEhAdministrador() {
   return usuarioSistemaLogado?.tipo === 'admin' || normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo) === 'ADM';
+}
+
+function usuarioPodeVerValorCombinadoEscala() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioEhAdministrador()) return true;
+  const codigoPerfil = normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo || usuarioSistemaLogado?.tipo || '');
+  const permissoes = obterPermissoesUsuario();
+  if (permissoes?.escala_valor_combinado === true) return true;
+  return ['FUNCIONARIO', 'FUNCIONÁRIO', 'COLABORADOR'].includes(codigoPerfil);
+}
+
+function aplicarPermissaoValorCombinadoEscala() {
+  const podeVer = usuarioPodeVerValorCombinadoEscala();
+  document.querySelectorAll('[data-permissao-valor-escala]').forEach(el => {
+    el.style.display = podeVer ? '' : 'none';
+  });
+  const campo = document.getElementById('escalaPlantaoValor');
+  if (campo) {
+    campo.disabled = !podeVer;
+    if (!podeVer) campo.value = '';
+  }
+  document.body.classList.toggle('sem-valor-combinado-escala', !podeVer);
+  return podeVer;
 }
 
 function usuarioPodeGerenciarLojasGlobais() {
@@ -15963,7 +16511,86 @@ function exportarExtratoCofrePdf() {
           </thead>
           <tbody>${linhas}</tbody>
         </table>
-      </body>
+      
+<style id="ajuste-espaco-calendario-escala">
+  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
+  @media (min-width: 901px) {
+    .sidebar {
+      width: 200px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
+    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+    .logo strong { font-size: 15px !important; }
+    .logo span { font-size: 10px !important; }
+    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
+    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
+    .nav-title { font-size: 13px !important; }
+    .nav-hint { font-size: 10px !important; }
+  }
+  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
+  #escala_plantoes .escala-layout {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card {
+    padding: 10px !important;
+  }
+  #escala_plantoes .escala-side-title {
+    font-size: 14px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  #escala_plantoes .escala-check-row {
+    min-height: 30px !important;
+    padding: 6px 2px !important;
+    gap: 7px !important;
+    font-size: 13px !important;
+  }
+  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
+  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
+  #escala_plantoes .escala-nav { gap: 6px !important; }
+  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
+  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
+  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
+  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
+  #escala_plantoes .escala-calendario {
+    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
+    min-height: 570px !important;
+  }
+  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
+  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
+  @media (max-width: 1050px) {
+    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+
+<style id="escala-calendario-apenas-mes-atual-fix">
+  #escala_plantoes .escala-dia-vazio{
+    background:rgba(255,255,255,.015) !important;
+    cursor:default !important;
+    pointer-events:none !important;
+    box-shadow:none !important;
+  }
+  #escala_plantoes .escala-dia-vazio:hover{
+    background:rgba(255,255,255,.015) !important;
+    box-shadow:none !important;
+  }
+</style>
+
+<style id="patch-escala-modal-salvar-zuqui">
+  @media (min-width: 901px){
+    .sidebar{width:210px !important;}
+    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
+  }
+  #escala_plantoes .escala-side-card{padding:12px !important;}
+  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
+  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
+</style>
+</body>
     </html>
   `);
   janela.document.close();
@@ -17169,6 +17796,44 @@ async function desconfirmarPagamentoContaFinanceiro(id) {
   carregarContasAPagarFinanceiro();
 }
 
+
+function somenteDigitosCep(valor = '') {
+  return String(valor || '').replace(/\D/g, '').slice(0, 8);
+}
+
+function formatarCepLoja(valor = '') {
+  const digitos = somenteDigitosCep(valor);
+  if (digitos.length <= 5) return digitos;
+  return `${digitos.slice(0, 5)}-${digitos.slice(5)}`;
+}
+
+async function buscarCepLoja(cepInputId, cidadeInputId, estadoInputId, msgId = '') {
+  const cepEl = document.getElementById(cepInputId);
+  const cidadeEl = document.getElementById(cidadeInputId);
+  const estadoEl = document.getElementById(estadoInputId);
+  if (!cepEl || !cidadeEl || !estadoEl) return;
+
+  const cep = somenteDigitosCep(cepEl.value);
+  cepEl.value = formatarCepLoja(cep);
+  if (!cep) return;
+  if (cep.length !== 8) {
+    if (msgId) setMsg(msgId, 'CEP inválido. Preencha cidade e estado manualmente.', 'err');
+    return;
+  }
+
+  try {
+    if (msgId) setMsg(msgId, 'Buscando cidade pelo CEP...', 'ok');
+    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const dados = await resp.json();
+    if (!resp.ok || dados?.erro) throw new Error('CEP não encontrado');
+    if (cidadeEl) cidadeEl.value = String(dados.localidade || '').trim();
+    if (estadoEl) estadoEl.value = String(dados.uf || '').trim().toUpperCase();
+    if (msgId) setMsg(msgId, 'Cidade e estado preenchidos pelo CEP. Confira antes de salvar.', 'ok');
+  } catch (e) {
+    if (msgId) setMsg(msgId, 'Não foi possível buscar o CEP. Preencha cidade e estado manualmente.', 'err');
+  }
+}
+
 // 
 // CONFIGURACOES DA LOJA
 // 
@@ -17192,6 +17857,9 @@ function atualizarFormularioLojaCadastroPorPermissao() {
   const bloqueado = criando && !podeCriar;
   const nome = document.getElementById('nomeLojaCadastro');
   const codigo = document.getElementById('codigoLojaCadastro');
+  const cep = document.getElementById('cepLojaCadastro');
+  const cidade = document.getElementById('cidadeLojaCadastro');
+  const estado = document.getElementById('estadoLojaCadastro');
   const ativo = document.getElementById('ativoLojaCadastro');
   const btnSalvar = document.getElementById('btnSalvarLojaCadastro');
   if (nome) nome.disabled = bloqueado;
@@ -17207,10 +17875,17 @@ function limparFormularioLojaCadastro() {
   lojaCadastroEmEdicaoId = null;
   const nome = document.getElementById('nomeLojaCadastro');
   const codigo = document.getElementById('codigoLojaCadastro');
+  const cep = document.getElementById('cepLojaCadastro');
+  const cidade = document.getElementById('cidadeLojaCadastro');
+  const estado = document.getElementById('estadoLojaCadastro');
   const ativo = document.getElementById('ativoLojaCadastro');
   const btnSalvar = document.getElementById('btnSalvarLojaCadastro');
   const btnCancelar = document.getElementById('btnCancelarEdicaoLojaCadastro');
   if (nome) nome.value = '';
+  if (codigo) codigo.value = '';
+  if (cep) cep.value = '';
+  if (cidade) cidade.value = '';
+  if (estado) estado.value = '';
   if (ativo) ativo.checked = true;
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar filial';
   if (btnCancelar) btnCancelar.style.display = 'none';
@@ -17235,8 +17910,13 @@ function renderizarListaLojasCadastro() {
     const nome = obterNomeRegistroLoja(item) || 'Sem nome';
     const codigo = obterCodigoRegistroLoja(item);
     const ativa = obterAtivoRegistroLoja(item);
+    const cidade = String(item.cidade || item.municipio || '').trim();
+    const estado = String(item.estado || item.uf || '').trim().toUpperCase();
+    const cep = String(item.cep || '').trim();
     const detalhe = [
       codigo ? `Código: ${codigo}` : '',
+      cep ? `CEP: ${cep}` : '',
+      cidade || estado ? `Local: ${[cidade, estado].filter(Boolean).join('/')}` : '',
       `Status: ${ativa ? 'Ativa' : 'Inativa'}`,
     ].filter(Boolean).join(' · ');
 
@@ -17303,13 +17983,16 @@ async function carregarLojasCadastro() {
   setMsg('msgLojasCadastro', `Tabela ativa: ${tabelaLojasCadastroAtiva}.`, 'ok');
 }
 
-function obterVariantesPayloadLoja({ nome, codigo, ativo }) {
+function obterVariantesPayloadLoja({ nome, codigo, ativo, cep = '', cidade = '', estado = '' }) {
   const codigoNormalizado = codigo || null;
+  const cepNormalizado = formatarCepLoja(cep) || null;
+  const cidadeNormalizada = String(cidade || '').trim() || null;
+  const estadoNormalizado = String(estado || '').trim().toUpperCase() || null;
   return [
-    { nome, codigo: codigoNormalizado, ativo },
-    { nome_loja: nome, codigo: codigoNormalizado, ativo },
-    { nome, codigo: codigoNormalizado },
-    { nome_loja: nome, codigo: codigoNormalizado },
+    { nome, codigo: codigoNormalizado, cep: cepNormalizado, cidade: cidadeNormalizada, estado: estadoNormalizado, ativo },
+    { nome_loja: nome, codigo: codigoNormalizado, cep: cepNormalizado, cidade: cidadeNormalizada, estado: estadoNormalizado, ativo },
+    { nome, codigo: codigoNormalizado, cidade: cidadeNormalizada, estado: estadoNormalizado },
+    { nome_loja: nome, codigo: codigoNormalizado, cidade: cidadeNormalizada, estado: estadoNormalizado },
     { nome, ativo },
     { nome_loja: nome, ativo },
     { nome },
@@ -17317,8 +18000,8 @@ function obterVariantesPayloadLoja({ nome, codigo, ativo }) {
   ];
 }
 
-async function persistirLojaComFallback({ id = '', nome = '', codigo = '', ativo = true }) {
-  const variantes = obterVariantesPayloadLoja({ nome, codigo, ativo });
+async function persistirLojaComFallback({ id = '', nome = '', codigo = '', ativo = true, cep = '', cidade = '', estado = '' }) {
+  const variantes = obterVariantesPayloadLoja({ nome, codigo, ativo, cep, cidade, estado });
   let ultimoErro = null;
 
   for (const payload of variantes) {
@@ -17357,10 +18040,17 @@ async function salvarLojaCadastro() {
   }
   const nome = String(document.getElementById('nomeLojaCadastro')?.value || '').trim();
   const codigo = String(document.getElementById('codigoLojaCadastro')?.value || '').trim();
+  const cep = formatarCepLoja(document.getElementById('cepLojaCadastro')?.value || '');
+  const cidade = String(document.getElementById('cidadeLojaCadastro')?.value || '').trim();
+  const estado = String(document.getElementById('estadoLojaCadastro')?.value || '').trim().toUpperCase();
   const ativo = document.getElementById('ativoLojaCadastro')?.checked !== false;
 
   if (!nome) {
     setMsg('msgLojasCadastro', 'Informe o nome da filial.', 'err');
+    return;
+  }
+  if (!cidade || !estado) {
+    setMsg('msgLojasCadastro', 'Cidade e estado são obrigatórios para calcular feriados estaduais e municipais.', 'err');
     return;
   }
 
@@ -17368,6 +18058,9 @@ async function salvarLojaCadastro() {
     id: lojaCadastroEmEdicaoId,
     nome,
     codigo,
+    cep,
+    cidade,
+    estado,
     ativo,
   });
 
@@ -17407,6 +18100,9 @@ function editarLojaCadastro(id) {
 
   if (nome) nome.value = obterNomeRegistroLoja(item);
   if (codigo) codigo.value = obterCodigoRegistroLoja(item);
+  if (cep) cep.value = formatarCepLoja(item.cep || '');
+  if (cidade) cidade.value = String(item.cidade || item.municipio || '').trim();
+  if (estado) estado.value = String(item.estado || item.uf || '').trim().toUpperCase();
   if (ativo) ativo.checked = obterAtivoRegistroLoja(item);
   if (btnSalvar) btnSalvar.textContent = 'Salvar filial';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
@@ -17764,6 +18460,9 @@ async function carregarConfiguracoesLoja() {
   if (resultado.missing) {
     setMsg('msgConfiguracoes', 'Rode o SQL da tabela configuracoes_loja para salvar estas informações.', 'err');
     document.getElementById('configNomeLoja').value = 'CHECK DIARIO';
+    document.getElementById('configCepLoja').value = '';
+    document.getElementById('configCidadeLoja').value = '';
+    document.getElementById('configEstadoLoja').value = '';
     document.getElementById('configHorarioAbertura').value = '04:00';
     document.getElementById('configHorarioFechamento').value = '20:00';
     document.getElementById('configHorarioLancamento').value = '';
@@ -17776,6 +18475,9 @@ async function carregarConfiguracoesLoja() {
 
   const cfg = resultado.data || {};
   document.getElementById('configNomeLoja').value = cfg.nome_loja || 'CHECK DIARIO';
+  document.getElementById('configCepLoja').value = formatarCepLoja(cfg.cep || '');
+  document.getElementById('configCidadeLoja').value = cfg.cidade || cfg.municipio || '';
+  document.getElementById('configEstadoLoja').value = String(cfg.estado || cfg.uf || '').toUpperCase();
   document.getElementById('configHorarioAbertura').value = cfg.horario_abertura || '04:00';
   document.getElementById('configHorarioFechamento').value = cfg.horario_fechamento || '20:00';
   document.getElementById('configHorarioLancamento').value = cfg.horario_lancamento_checklist || '';
@@ -17788,11 +18490,19 @@ async function carregarConfiguracoesLoja() {
 
 async function salvarConfiguracoesLoja() {
   const nomeLoja = document.getElementById('configNomeLoja').value.trim() || 'CHECK DIARIO';
+  const cepLoja = formatarCepLoja(document.getElementById('configCepLoja')?.value || '');
+  const cidadeLoja = String(document.getElementById('configCidadeLoja')?.value || '').trim();
+  const estadoLoja = String(document.getElementById('configEstadoLoja')?.value || '').trim().toUpperCase();
   const horarioAbertura = document.getElementById('configHorarioAbertura').value || '04:00';
   const horarioFechamento = document.getElementById('configHorarioFechamento').value || '20:00';
   const horarioLancamento = document.getElementById('configHorarioLancamento').value || null;
   const horarioLembrete = document.getElementById('configHorarioLembrete').value || null;
   const enviarEmail = !!document.getElementById('configEnviarEmailLembrete').checked;
+
+  if (!cidadeLoja || !estadoLoja) {
+    setMsg('msgConfiguracoes', 'Cidade e estado são obrigatórios para o calendário de feriados funcionar corretamente.', 'err');
+    return;
+  }
 
   const resultado = await obterConfiguracoesLoja();
   if (resultado.missing) {
@@ -17802,6 +18512,9 @@ async function salvarConfiguracoesLoja() {
 
   const payload = {
     nome_loja: nomeLoja,
+    cep: cepLoja || null,
+    cidade: cidadeLoja,
+    estado: estadoLoja,
     horario_abertura: horarioAbertura,
     horario_fechamento: horarioFechamento,
     horario_lancamento_checklist: horarioLancamento,
@@ -18101,11 +18814,18 @@ function limparFormularioLojaSaas() {
   const empresa = document.getElementById('saasEmpresaLoja');
   const nome = document.getElementById('saasNomeLoja');
   const codigo = document.getElementById('saasCodigoLoja');
+  const cep = document.getElementById('saasCepLoja');
+  const cidade = document.getElementById('saasCidadeLoja');
+  const estado = document.getElementById('saasEstadoLoja');
   const ativo = document.getElementById('saasAtivoLoja');
   const btnSalvar = document.getElementById('btnSalvarLojaSaas');
   const btnCancelar = document.getElementById('btnCancelarLojaSaas');
   if (empresa) empresa.value = '';
   if (nome) nome.value = '';
+  if (codigo) codigo.value = '';
+  if (cep) cep.value = '';
+  if (cidade) cidade.value = '';
+  if (estado) estado.value = '';
   if (ativo) ativo.checked = true;
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar loja';
   if (btnCancelar) btnCancelar.style.display = 'none';
@@ -18124,12 +18844,18 @@ function editarLojaSaas(id) {
   const empresa = document.getElementById('saasEmpresaLoja');
   const nome = document.getElementById('saasNomeLoja');
   const codigo = document.getElementById('saasCodigoLoja');
+  const cep = document.getElementById('saasCepLoja');
+  const cidade = document.getElementById('saasCidadeLoja');
+  const estado = document.getElementById('saasEstadoLoja');
   const ativo = document.getElementById('saasAtivoLoja');
   const btnSalvar = document.getElementById('btnSalvarLojaSaas');
   const btnCancelar = document.getElementById('btnCancelarLojaSaas');
   if (empresa) empresa.value = String(item.empresa_id || '');
   if (nome) nome.value = nomeLojaSaas(item);
   if (codigo) codigo.value = codigoLojaSaas(item);
+  if (cep) cep.value = formatarCepLoja(item.cep || '');
+  if (cidade) cidade.value = String(item.cidade || item.municipio || '').trim();
+  if (estado) estado.value = String(item.estado || item.uf || '').trim().toUpperCase();
   if (ativo) ativo.checked = lojaSaasAtiva(item);
   if (btnSalvar) btnSalvar.textContent = 'Salvar loja';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
@@ -18144,6 +18870,9 @@ async function salvarLojaSaas() {
   const empresaId = String(document.getElementById('saasEmpresaLoja')?.value || '').trim();
   const nome = String(document.getElementById('saasNomeLoja')?.value || '').trim();
   const codigo = String(document.getElementById('saasCodigoLoja')?.value || '').trim();
+  const cep = formatarCepLoja(document.getElementById('saasCepLoja')?.value || '');
+  const cidade = String(document.getElementById('saasCidadeLoja')?.value || '').trim();
+  const estado = String(document.getElementById('saasEstadoLoja')?.value || '').trim().toUpperCase();
   const ativo = document.getElementById('saasAtivoLoja')?.checked !== false;
   if (!empresaId) {
     setMsg('msgLojasSaas', 'Selecione a empresa da loja.', 'err');
@@ -18153,7 +18882,11 @@ async function salvarLojaSaas() {
     setMsg('msgLojasSaas', 'Informe o nome da loja.', 'err');
     return;
   }
-  const payload = { empresa_id: empresaId, nome, codigo: codigo || null, ativo };
+  if (!cidade || !estado) {
+    setMsg('msgLojasSaas', 'Cidade e estado são obrigatórios para calcular feriados estaduais e municipais.', 'err');
+    return;
+  }
+  const payload = { empresa_id: empresaId, nome, codigo: codigo || null, cep: cep || null, cidade, estado, ativo };
   const req = lojaSaasEmEdicaoId
     ? sb.from('lojas').update(payload).eq('id', lojaSaasEmEdicaoId)
     : sb.from('lojas').insert([payload]);
@@ -21046,6 +21779,12 @@ function obterIntervaloDatasPorPeriodo(periodo = 'dia', referencia = new Date())
     const fim = dataLocalISO(new Date(base.getFullYear(), base.getMonth() + 1, 0));
     return { inicio, fim, info: `Período: ${inicio} até ${fim}.` };
   }
+  if (periodo === 'ontem') {
+    const ontem = new Date(base);
+    ontem.setDate(base.getDate() - 1);
+    const dataOntem = dataLocalISO(ontem);
+    return { inicio: dataOntem, fim: dataOntem, info: `Período: ${dataOntem} (ontem).` };
+  }
   if (periodo === 'semana') {
     const diaSemana = base.getDay();
     const deslocamentoSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
@@ -21436,6 +22175,48 @@ function obterResumoRetornoIntervaloPonto(intervaloAberto = null, tempoMinimoMin
   };
 }
 
+function falarAvisoRetornoIntervaloPonto(nomeFuncionario = '') {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const nome = String(nomeFuncionario || 'funcionário').trim();
+    const utter = new SpeechSynthesisUtterance(`Retorno de intervalo atrasado. ${nome}.`);
+    utter.lang = 'pt-BR';
+    utter.volume = 1;
+    utter.rate = 1.03;
+    utter.pitch = 1.05;
+    const vozes = synth.getVoices ? synth.getVoices() : [];
+    const vozPtBr = vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt-br'))
+      || vozes.find(v => (v.lang || '').toLowerCase().startsWith('pt'))
+      || null;
+    if (vozPtBr) utter.voice = vozPtBr;
+    synth.speak(utter);
+  } catch (e) {}
+}
+
+function dispararAvisoRetornoIntervaloPonto(el, retornoMs) {
+  try {
+    if (!el || !retornoMs) return;
+    const linha = el.closest('.ponto-resumo-linha');
+    const nome = linha?.querySelector('.ponto-resumo-nome')?.textContent?.trim() || 'FUNCIONÁRIO';
+    const chave = `checkdiario:aviso-retorno-intervalo:${retornoMs}:${nome}`;
+    const ultimoAviso = Number(localStorage.getItem(chave) || 0);
+    const agoraMs = Date.now();
+    // Depois que atrasar, repete no máximo a cada 10 minutos.
+    if (ultimoAviso && (agoraMs - ultimoAviso) < 10 * 60 * 1000) return;
+    localStorage.setItem(chave, String(agoraMs));
+
+    const horario = formatarHora(new Date(retornoMs).toISOString());
+    const mensagem = `RETORNO DE INTERVALO ATRASADO: ${nome.toUpperCase()} deveria retornar às ${horario}.`;
+    setMsg('msgPonto', mensagem, 'err');
+    try { tocarSomNovaTarefaChecklist(); } catch (e) {}
+    window.setTimeout(() => falarAvisoRetornoIntervaloPonto(nome), 250);
+  } catch (e) {
+    console.warn('Falha ao disparar aviso de retorno de intervalo:', e);
+  }
+}
+
 function atualizarContadoresRetornoIntervaloPonto() {
   document.querySelectorAll('[data-retorno-intervalo-ms]').forEach(el => {
     const retornoMs = Number(el.getAttribute('data-retorno-intervalo-ms') || 0);
@@ -21446,6 +22227,7 @@ function atualizarContadoresRetornoIntervaloPonto() {
     const card = el.closest('.ponto-retorno-destaque');
     if (card) card.classList.toggle('atrasado', atrasado);
     el.style.color = atrasado ? '#fca5a5' : '#ef4444';
+    if (atrasado) dispararAvisoRetornoIntervaloPonto(el, retornoMs);
   });
 }
 
@@ -21459,6 +22241,46 @@ function iniciarContadorRetornoIntervaloPonto() {
   intervaloContadorRetornoPonto = window.setInterval(atualizarContadoresRetornoIntervaloPonto, 1000);
 }
 
+function obterIntervalosConsolidadosPonto(registro = {}, intervalos = []) {
+  const lista = [...(intervalos || [])]
+    .filter(item => item && item.inicio_em)
+    .map(item => ({
+      ...item,
+      inicio_em: item.inicio_em,
+      retorno_em: item.retorno_em || null,
+      ordem: Number(item.ordem || 0),
+    }));
+
+  if (registro?.inicio_intervalo_em) {
+    const inicioPrincipal = String(registro.inicio_intervalo_em || '');
+    const existePrincipal = lista.some(item => String(item.inicio_em || '') === inicioPrincipal);
+    if (!existePrincipal) {
+      lista.push({
+        ponto_registro_id: registro.id || '',
+        inicio_em: registro.inicio_intervalo_em,
+        retorno_em: registro.retorno_intervalo_em || null,
+        ordem: 1,
+      });
+    }
+  }
+
+  return lista
+    .filter(item => {
+      const inicioMs = new Date(item.inicio_em || 0).getTime();
+      if (Number.isNaN(inicioMs)) return false;
+      const entradaMs = registro?.entrada_em ? new Date(registro.entrada_em).getTime() : null;
+      const saidaMs = registro?.saida_em ? new Date(registro.saida_em).getTime() : null;
+      if (entradaMs && !Number.isNaN(entradaMs) && inicioMs < entradaMs) return false;
+      if (saidaMs && !Number.isNaN(saidaMs) && inicioMs > saidaMs) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const aTime = new Date(a.inicio_em || 0).getTime();
+      const bTime = new Date(b.inicio_em || 0).getTime();
+      return (aTime - bTime) || (Number(a.ordem || 0) - Number(b.ordem || 0));
+    });
+}
+
 function obterResumoJornadaPonto(registro, intervalos = []) {
   if (!registro?.entrada_em) {
     return {
@@ -21470,17 +22292,11 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
     };
   }
 
-  const lista = [...intervalos].sort((a, b) => {
-    const aTime = new Date(a.inicio_em || 0).getTime();
-    const bTime = new Date(b.inicio_em || 0).getTime();
-    return aTime - bTime;
-  });
-
+  const lista = obterIntervalosConsolidadosPonto(registro, intervalos);
   const intervaloAberto = obterIntervaloAberto(lista);
   const ultimoRetorno = [...lista].reverse().find(item => item.retorno_em)?.retorno_em || null;
   const agoraIso = new Date().toISOString();
-  // Quando o ponto está em aberto (sem saída), considera a hora atual para o cálculo.
-  const fimJornada = intervaloAberto?.inicio_em || registro.saida_em || ultimoRetorno || agoraIso;
+  const fimJornada = registro.saida_em || intervaloAberto?.inicio_em || ultimoRetorno || agoraIso;
 
   let totalMinutos = 0;
   if (fimJornada) {
@@ -21499,7 +22315,7 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
     }
   }
 
-  const jornadaFechada = !!registro.saida_em && !intervaloAberto;
+  const jornadaFechada = !!registro.saida_em;
   const status = jornadaFechada
     ? 'Jornada fechada'
     : (intervaloAberto ? 'Fora (última batida: saída)' : 'Em jornada');
@@ -21596,11 +22412,38 @@ function obterIntervalosMinimosFuncionarioData(config = {}, dataIso = dataLocalI
   return Number(config?.padrao || 0) > 0 ? [Number(config.padrao)] : [];
 }
 
+
+function obterDataResumoPontoSelecionada() {
+  const base = new Date();
+  base.setDate(base.getDate() + Number(pontoResumoOffsetDias || 0));
+  return dataLocalISO(base);
+}
+
+function atualizarTituloResumoPonto() {
+  const titulo = document.getElementById('pontoResumoTitulo');
+  if (!titulo) return;
+  const dataSelecionada = obterDataResumoPontoSelecionada();
+  titulo.textContent = Number(pontoResumoOffsetDias || 0) === -1
+    ? `Status de ponto de ontem (${dataSelecionada})`
+    : `Status de ponto de hoje (${dataSelecionada})`;
+}
+
+async function trocarDiaResumoPonto(offsetDias = 0, botao = null) {
+  pontoResumoOffsetDias = Number(offsetDias || 0);
+  document.querySelectorAll('.dashboard-period-btn[data-ponto-resumo-offset]').forEach(btn => {
+    btn.classList.toggle('active', String(btn.dataset.pontoResumoOffset) === String(pontoResumoOffsetDias));
+  });
+  if (botao) botao.classList.add('active');
+  atualizarTituloResumoPonto();
+  await carregarResumoPontoHoje(obterFuncionarioRestritoLogadoIdParaPonto() || '');
+}
+
 async function carregarResumoPontoHoje(funcionarioId = '') {
   const container = document.getElementById('pontoResumoHoje');
   if (!container) return;
 
-  const hojeLocal = dataLocalISO();
+  const hojeLocal = obterDataResumoPontoSelecionada();
+  atualizarTituloResumoPonto();
   let query = sb
     .from('ponto_registros')
     .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
@@ -21628,7 +22471,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   if (inicioUtc && fimUtc) {
     let queryFallback = sb
       .from('ponto_registros')
-      .select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at')
+      .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
       .gte('created_at', inicioUtc)
       .lt('created_at', fimUtc)
       .order('created_at', { ascending: true });
@@ -21656,7 +22499,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
 
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
   if (!rows.length) {
-    container.innerHTML = '<div class="empty">Nenhum ponto registrado hoje.</div>';
+    container.innerHTML = `<div class="empty">Nenhum ponto registrado em ${hojeLocal}.</div>`;
     return;
   }
 
@@ -21679,6 +22522,55 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       intervalosPorRegistro[chave].push(item);
     });
   }
+
+  const batidasAuditoriaPorRegistro = {};
+  if (ids.length) {
+    try {
+      const { data: dataAuditoria, error: errAuditoria } = await sb
+        .from('ponto_batidas_auditoria')
+        .select('ponto_registro_id, registrado_em, tipo_batida')
+        .in('ponto_registro_id', ids)
+        .order('registrado_em', { ascending: true });
+
+      if (!errAuditoria) {
+        (dataAuditoria || []).forEach(item => {
+          const chave = String(item.ponto_registro_id || '');
+          if (!chave || !item.registrado_em) return;
+          if (!batidasAuditoriaPorRegistro[chave]) batidasAuditoriaPorRegistro[chave] = [];
+          batidasAuditoriaPorRegistro[chave].push(item.registrado_em);
+        });
+      }
+    } catch (e) {
+      console.warn('Auditoria de batidas indisponível para resumo do ponto:', e);
+    }
+  }
+
+  const completarRegistroPontoComBatidasOrdenadas = (registro, batidasExtras = []) => {
+    const valores = [
+      registro?.entrada_em,
+      registro?.inicio_intervalo_em,
+      registro?.retorno_intervalo_em,
+      registro?.saida_em,
+      ...(batidasExtras || []),
+    ]
+      .filter(Boolean)
+      .map(valor => {
+        const data = new Date(valor);
+        return Number.isNaN(data.getTime()) ? '' : data.toISOString();
+      })
+      .filter(Boolean);
+
+    const unicos = [...new Set(valores)].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    if (unicos.length < 4) return registro;
+
+    return {
+      ...registro,
+      entrada_em: unicos[0] || registro?.entrada_em || null,
+      inicio_intervalo_em: unicos[1] || registro?.inicio_intervalo_em || null,
+      retorno_intervalo_em: unicos[2] || registro?.retorno_intervalo_em || null,
+      saida_em: unicos[unicos.length - 1] || registro?.saida_em || null,
+    };
+  };
 
   // Compatibilidade com o modelo real atual da tabela ponto_registros:
   // o intervalo principal fica nas colunas inicio_intervalo_em / retorno_intervalo_em.
@@ -21723,36 +22615,56 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   };
 
   const montarPeriodos = (registro, intervalos) => {
-    const ordenados = [...(intervalos || [])]
-      .filter(item => item && item.inicio_em)
-      .sort((a, b) => (Number(a.ordem || 0) - Number(b.ordem || 0)) || (ts(a.inicio_em) - ts(b.inicio_em)));
-
+    const ordenados = obterIntervalosConsolidadosPonto(registro, intervalos);
     const periodos = [];
     let entradaAtual = registro.entrada_em || null;
     const temIntervaloAberto = ordenados.some(item => item.inicio_em && !item.retorno_em);
 
     ordenados.forEach(intervalo => {
-      if (entradaAtual) {
-        periodos.push({ entrada: entradaAtual, saida: intervalo.inicio_em || null, aberto: false });
+      const entradaMs = ts(entradaAtual);
+      const inicioIntervaloMs = ts(intervalo.inicio_em);
+      if (entradaAtual && inicioIntervaloMs && (!entradaMs || inicioIntervaloMs > entradaMs)) {
+        periodos.push({ entrada: entradaAtual, saida: intervalo.inicio_em, aberto: false });
       }
       entradaAtual = intervalo.retorno_em || null;
     });
 
-    // Se existe intervalo aberto, não cria um segundo período duplicado usando saida_em.
-    // A próxima jornada só começa quando o funcionário bater o retorno.
-    if (entradaAtual || (registro.saida_em && !temIntervaloAberto)) {
+    if (entradaAtual) {
       periodos.push({
-        entrada: entradaAtual || registro.entrada_em || null,
+        entrada: entradaAtual,
         saida: registro.saida_em || null,
         aberto: !registro.saida_em,
       });
+    } else if (!periodos.length && registro.entrada_em) {
+      periodos.push({
+        entrada: registro.entrada_em,
+        saida: registro.saida_em || null,
+        aberto: !registro.saida_em,
+      });
+    } else if (registro.saida_em && !temIntervaloAberto && !periodos.length) {
+      periodos.push({ entrada: registro.entrada_em || null, saida: registro.saida_em, aberto: false });
     }
 
-    if (!periodos.length && registro.entrada_em) {
-      periodos.push({ entrada: registro.entrada_em, saida: registro.saida_em || null, aberto: !registro.saida_em });
-    }
+    return periodos.filter(periodo => periodo.entrada);
+  };
 
-    return periodos;
+  const normalizarPeriodosExibicao = (periodos = []) => {
+    const lista = [...periodos]
+      .filter(periodo => periodo && periodo.entrada)
+      .sort((a, b) => ts(a.entrada) - ts(b.entrada) || ts(a.saida) - ts(b.saida));
+
+    return lista.filter((periodo, idx) => {
+      const inicio = ts(periodo.entrada);
+      const fim = ts(periodo.saida);
+      if (!inicio || !fim) return true;
+      const existemPartesDentro = lista.some((outro, outroIdx) => {
+        if (outroIdx === idx) return false;
+        const outroInicio = ts(outro.entrada);
+        const outroFim = ts(outro.saida);
+        return outroInicio && outroFim && outroInicio >= inicio && outroFim <= fim && (outroInicio > inicio || outroFim < fim);
+      });
+      return !existemPartesDentro;
+    });
   };
 
   const porFuncionario = new Map();
@@ -21760,10 +22672,15 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     const funcionarioIdAtual = String(registro.funcionario_id || '');
     if (!funcionarioIdAtual) return;
 
-    const nome = registro.funcionarios?.nome || relatorioPontoFuncionarioCache[funcionarioIdAtual] || 'Funcionário';
-    const intervalos = intervalosPorRegistro[String(registro.id)] || [];
-    const resumo = obterResumoJornadaPonto(registro, intervalos);
-    const periodos = montarPeriodos(registro, intervalos);
+    const registroExibicao = completarRegistroPontoComBatidasOrdenadas(
+      registro,
+      batidasAuditoriaPorRegistro[String(registro.id)] || []
+    );
+    const nome = registroExibicao.funcionarios?.nome || relatorioPontoFuncionarioCache[funcionarioIdAtual] || 'Funcionário';
+    const intervalosBase = intervalosPorRegistro[String(registroExibicao.id)] || [];
+    const intervalos = obterIntervalosConsolidadosPonto(registroExibicao, intervalosBase);
+    const resumo = obterResumoJornadaPonto(registroExibicao, intervalos);
+    const periodos = montarPeriodos(registroExibicao, intervalos);
 
     if (!porFuncionario.has(funcionarioIdAtual)) {
       porFuncionario.set(funcionarioIdAtual, {
@@ -21789,16 +22706,16 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     item.totalMinutos += Number(resumo?.totalMinutos || 0);
     const intervaloAbertoAtual = obterIntervaloAberto(intervalos);
     const intervalosConcluidos = (intervalos || []).filter(intervalo => intervalo.inicio_em && intervalo.retorno_em).length;
-    const saidaEhFimTurno = registro.saida_em && batidaPontoProximaDoFimDoTurno({ horario_trabalho_fim: item.horarioTrabalhoFim }, registro.saida_em);
-    const saidaPodeSerIntervalo = registro.saida_em && !saidaEhFimTurno && intervalosConcluidos < item.intervalosMinimosDia.length;
-    const inicioIntervaloAberto = intervaloAbertoAtual?.inicio_em || (saidaPodeSerIntervalo ? registro.saida_em : null);
+    // Regra 3.1.30: saída_em nunca deve ser tratada como início de intervalo.
+    // O retorno atrasado só aparece se existir intervalo aberto de verdade
+    // (inicio_intervalo_em preenchido e retorno_intervalo_em vazio).
+    const inicioIntervaloAberto = intervaloAbertoAtual?.inicio_em || null;
     if (inicioIntervaloAberto && ts(inicioIntervaloAberto) > ts(item.intervaloAbertoInicio)) {
       item.intervaloAbertoInicio = inicioIntervaloAberto;
       item.tempoIntervaloMinimo = item.intervalosMinimosDia[intervalosConcluidos] || 0;
     }
 
-    const saidaIntervaloSemRegistro = (saidaPodeSerIntervalo && !intervaloAbertoAtual?.inicio_em) ? registro.saida_em : null;
-    item.totalIntervaloMinutos += calcularTotalIntervalosPonto(intervalos, saidaIntervaloSemRegistro);
+    item.totalIntervaloMinutos += calcularTotalIntervalosPonto(intervalos, null);
 
     periodos.forEach(periodo => {
       item.periodos.push(periodo);
@@ -21832,14 +22749,9 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
   }
 
   container.innerHTML = '<div class="ponto-resumo-lista">' + listaStatus.map(item => {
-    const periodosHtml = item.periodos.length
-      ? item.periodos
-          .sort((a, b) => ts(a.entrada) - ts(b.entrada))
-          .filter(periodo => {
-            const abertoOriginal = !periodo.saida || periodo.aberto;
-            // Esconde abertura duplicada quando a entrada coincide com uma saída já consolidada no dia.
-            return !abertoOriginal || !item.ultimaSaidaTs || ts(periodo.entrada) > item.ultimaSaidaTs;
-          })
+    const periodosExibicao = normalizarPeriodosExibicao(item.periodos);
+    const periodosHtml = periodosExibicao.length
+      ? periodosExibicao
           .map(periodo => {
             const abertoOriginal = !periodo.saida || periodo.aberto;
             const aberto = abertoOriginal && (!item.ultimaSaidaTs || ts(periodo.entrada) > item.ultimaSaidaTs);
@@ -21854,21 +22766,25 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
           }).join('')
       : '<span class="ponto-periodo-chip">Sem batidas detalhadas</span>';
 
+    const avisoAntesMinutos = obterTempoAvisoManualPonto();
+    // Se o funcionário não tem intervalo cadastrado, usa o valor do card como intervalo padrão da loja.
+    const tempoRetornoIntervalo = Number(item.tempoIntervaloMinimo || 0) > 0
+      ? Number(item.tempoIntervaloMinimo || 0)
+      : Number(avisoAntesMinutos || 0);
     const resumoRetorno = obterResumoRetornoIntervaloPonto(
       item.intervaloAbertoInicio ? { inicio_em: item.intervaloAbertoInicio } : null,
-      item.tempoIntervaloMinimo
+      tempoRetornoIntervalo
     );
     const statusClasse = item.intervaloAbertoInicio ? 'tag tag-amber' : item.aberto ? 'tag tag-amber' : 'tag tag-green';
     const statusTexto = item.intervaloAbertoInicio ? 'Em intervalo' : item.aberto ? 'Aberto agora' : 'Fechado';
-    const avisoAntesMinutos = obterTempoAvisoManualPonto();
     const retornoHtml = resumoRetorno
       ? `<div class="ponto-retorno-destaque${resumoRetorno.atrasado ? ' atrasado' : ''}">
           <div class="retorno-label">${resumoRetorno.atrasado ? 'Retorno atrasado' : 'Minutos para retorno'}</div>
           <div class="retorno-contador" data-retorno-intervalo-ms="${new Date(resumoRetorno.retornoPrevisto).getTime()}">${escapeHtml(resumoRetorno.texto)}</div>
-          <div class="ponto-retorno-detalhe">Intervalo definido: <strong>${formatarMinutosIntervaloPonto(item.tempoIntervaloMinimo)}</strong> • Retornar até: <strong>${formatarHora(resumoRetorno.retornoPrevisto)}</strong>${avisoAntesMinutos ? ` • Aviso: <strong>${avisoAntesMinutos} min antes</strong>` : ''}</div>
+          <div class="ponto-retorno-detalhe">Intervalo definido: <strong>${formatarMinutosIntervaloPonto(tempoRetornoIntervalo)}</strong> • Retornar até: <strong>${formatarHora(resumoRetorno.retornoPrevisto)}</strong>${(!item.tempoIntervaloMinimo && avisoAntesMinutos) ? ' • Padrão da loja' : ''}</div>
         </div>`
-      : item.tempoIntervaloMinimo
-        ? `<div>Intervalo mínimo: <strong>${formatarMinutosIntervaloPonto(item.tempoIntervaloMinimo)}</strong></div>`
+      : tempoRetornoIntervalo
+        ? `<div>Intervalo mínimo: <strong>${formatarMinutosIntervaloPonto(tempoRetornoIntervalo)}</strong></div>`
         : item.intervalosMinimosDia.length
           ? `<div>Intervalos previstos: <strong>${item.intervalosMinimosDia.map(formatarMinutosIntervaloPonto).join(' + ')}</strong></div>`
         : '';
@@ -22151,6 +23067,56 @@ async function registrarPontoFuncionario() {
 
   const { registro: registroHoje, erro } = await carregarRegistroHoje();
   if (erro) return;
+
+  const obterHoraPtBrPonto = (valor) => {
+    const data = new Date(valor);
+    if (Number.isNaN(data.getTime())) return '--:--';
+    return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const obterBatidasRecentesRegistroPonto = async () => {
+    const batidas = [
+      registroHoje?.entrada_em,
+      registroHoje?.inicio_intervalo_em,
+      registroHoje?.retorno_intervalo_em,
+      registroHoje?.saida_em,
+    ].filter(Boolean);
+
+    if (registroHoje?.id) {
+      try {
+        const { data: auditoriaData, error: auditoriaErro } = await sb
+          .from('ponto_batidas_auditoria')
+          .select('registrado_em')
+          .eq('ponto_registro_id', registroHoje.id)
+          .order('registrado_em', { ascending: false })
+          .limit(10);
+        if (!auditoriaErro) {
+          (auditoriaData || []).forEach(item => {
+            if (item.registrado_em) batidas.push(item.registrado_em);
+          });
+        }
+      } catch (_) {}
+    }
+
+    return [...new Set(batidas)]
+      .map(valor => ({ valor, ms: new Date(valor).getTime() }))
+      .filter(item => Number.isFinite(item.ms))
+      .sort((a, b) => b.ms - a.ms);
+  };
+
+  const batidasRecentes = await obterBatidasRecentesRegistroPonto();
+  const agoraMs = new Date(agora).getTime();
+  const batidaDentroCincoMinutos = batidasRecentes.find(item => Math.abs(agoraMs - item.ms) < (10 * 60 * 1000));
+  if (batidaDentroCincoMinutos) {
+    setMsg(
+      'msgPonto',
+      `Funcionário já bateu o ponto no intervalo de 10 minutos: ${funcionario.nome || 'FUNCIONÁRIO'} às ${obterHoraPtBrPonto(batidaDentroCincoMinutos.valor)}.`,
+      'err'
+    );
+    const campoPinErro = document.getElementById('pontoPinInput');
+    if (campoPinErro) campoPinErro.value = '';
+    return;
+  }
 
   const executarUpdatePonto = async (camposBasicos, tipoAuditoria) => {
     const campos = { ...camposBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, tipoAuditoria) };
@@ -22775,12 +23741,41 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     } catch (_) {}
   }
 
+  let batidasAuditoria = [];
+  try {
+    const { data: auditoriaData, error: auditoriaErro } = await sb
+      .from('ponto_batidas_auditoria')
+      .select('registrado_em')
+      .eq('ponto_registro_id', registro.id)
+      .order('registrado_em', { ascending: true });
+    if (!auditoriaErro) {
+      batidasAuditoria = (auditoriaData || []).map(item => item.registrado_em).filter(Boolean);
+    }
+  } catch (_) {}
+
+  let batidasAjustesAprovados = [];
+  try {
+    const { data: ajustesData, error: ajustesErro } = await sb
+      .from('ponto_ajustes_solicitacoes')
+      .select('data_ajuste, horario_ajuste, status')
+      .eq('funcionario_id', funcionarioId)
+      .eq('data_ajuste', dataAjuste)
+      .eq('status', 'aprovado');
+    if (!ajustesErro) {
+      batidasAjustesAprovados = (ajustesData || [])
+        .map(item => montarIsoAjustePonto(item.data_ajuste, item.horario_ajuste))
+        .filter(Boolean);
+    }
+  } catch (_) {}
+
   const batidas = ordenarUnicos([
     registro.entrada_em,
     registro.inicio_intervalo_em,
     registro.retorno_intervalo_em,
     registro.saida_em,
     horarioIso,
+    ...batidasAuditoria,
+    ...batidasAjustesAprovados,
   ]);
 
   if (!batidas.length) {
@@ -22791,7 +23786,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     entrada_em: batidas[0] || null,
     inicio_intervalo_em: batidas[1] || null,
     retorno_intervalo_em: batidas[2] || null,
-    saida_em: batidas[3] || null,
+    saida_em: batidas.length >= 4 ? batidas[batidas.length - 1] : null,
     ...(tenantLojaId ? { loja_id: tenantLojaId } : {}),
     ...(tenantEmpresaId ? { empresa_id: tenantEmpresaId } : {}),
     updated_at: new Date().toISOString(),
@@ -23419,7 +24414,86 @@ function imprimirRelatorioFinanceiroPdf() {
           </thead>
           <tbody>${linhas}</tbody>
         </table>
-      </body>
+      
+<style id="ajuste-espaco-calendario-escala">
+  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
+  @media (min-width: 901px) {
+    .sidebar {
+      width: 200px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
+    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+    .logo strong { font-size: 15px !important; }
+    .logo span { font-size: 10px !important; }
+    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
+    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
+    .nav-title { font-size: 13px !important; }
+    .nav-hint { font-size: 10px !important; }
+  }
+  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
+  #escala_plantoes .escala-layout {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card {
+    padding: 10px !important;
+  }
+  #escala_plantoes .escala-side-title {
+    font-size: 14px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  #escala_plantoes .escala-check-row {
+    min-height: 30px !important;
+    padding: 6px 2px !important;
+    gap: 7px !important;
+    font-size: 13px !important;
+  }
+  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
+  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
+  #escala_plantoes .escala-nav { gap: 6px !important; }
+  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
+  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
+  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
+  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
+  #escala_plantoes .escala-calendario {
+    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
+    min-height: 570px !important;
+  }
+  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
+  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
+  @media (max-width: 1050px) {
+    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+
+<style id="escala-calendario-apenas-mes-atual-fix">
+  #escala_plantoes .escala-dia-vazio{
+    background:rgba(255,255,255,.015) !important;
+    cursor:default !important;
+    pointer-events:none !important;
+    box-shadow:none !important;
+  }
+  #escala_plantoes .escala-dia-vazio:hover{
+    background:rgba(255,255,255,.015) !important;
+    box-shadow:none !important;
+  }
+</style>
+
+<style id="patch-escala-modal-salvar-zuqui">
+  @media (min-width: 901px){
+    .sidebar{width:210px !important;}
+    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
+  }
+  #escala_plantoes .escala-side-card{padding:12px !important;}
+  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
+  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
+</style>
+</body>
     </html>
   `);
   janela.document.close();
@@ -24027,7 +25101,8 @@ function imprimirRelatorioAjusteSaldoPdf() {
           table { width: 100%; border-collapse: collapse; font-size: 12px; }
           th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
           th { background: #f5f5f5; }
-        </style>
+      
+  </style>
       </head>
       <body>
         <h1>Relatorio ajuste de saldo</h1>
@@ -24048,7 +25123,86 @@ function imprimirRelatorioAjusteSaldoPdf() {
           </thead>
           <tbody>${linhas}</tbody>
         </table>
-      </body>
+      
+<style id="ajuste-espaco-calendario-escala">
+  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
+  @media (min-width: 901px) {
+    .sidebar {
+      width: 200px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
+    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+    .logo strong { font-size: 15px !important; }
+    .logo span { font-size: 10px !important; }
+    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
+    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
+    .nav-title { font-size: 13px !important; }
+    .nav-hint { font-size: 10px !important; }
+  }
+  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
+  #escala_plantoes .escala-layout {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card {
+    padding: 10px !important;
+  }
+  #escala_plantoes .escala-side-title {
+    font-size: 14px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  #escala_plantoes .escala-check-row {
+    min-height: 30px !important;
+    padding: 6px 2px !important;
+    gap: 7px !important;
+    font-size: 13px !important;
+  }
+  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
+  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
+  #escala_plantoes .escala-nav { gap: 6px !important; }
+  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
+  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
+  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
+  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
+  #escala_plantoes .escala-calendario {
+    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
+    min-height: 570px !important;
+  }
+  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
+  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
+  @media (max-width: 1050px) {
+    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+
+<style id="escala-calendario-apenas-mes-atual-fix">
+  #escala_plantoes .escala-dia-vazio{
+    background:rgba(255,255,255,.015) !important;
+    cursor:default !important;
+    pointer-events:none !important;
+    box-shadow:none !important;
+  }
+  #escala_plantoes .escala-dia-vazio:hover{
+    background:rgba(255,255,255,.015) !important;
+    box-shadow:none !important;
+  }
+</style>
+
+<style id="patch-escala-modal-salvar-zuqui">
+  @media (min-width: 901px){
+    .sidebar{width:210px !important;}
+    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
+  }
+  #escala_plantoes .escala-side-card{padding:12px !important;}
+  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
+  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
+</style>
+</body>
     </html>
   `);
   janela.document.close();
@@ -24144,7 +25298,86 @@ function exportarRelatorioLancamentosPDF() {
     setMsg('msgRelatorioLancamentos', 'O navegador bloqueou a janela de PDF.', 'err');
     return;
   }
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de tarefas</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}</style></head><body><h1>Relatório de tarefas</h1><p>Gerado em ${escaparHtmlBasico(new Date().toLocaleString('pt-BR'))}</p><table><thead><tr><th>Tarefa</th><th>Status</th><th>Responsável</th><th>Observação</th><th>Descrição</th><th>Data</th><th>Horário</th><th>Início</th><th>Iniciado pelo usuário</th><th>Fim</th><th>Finalizado pelo usuário</th><th>Lançado pelo usuário</th></tr></thead><tbody>${htmlLinhas}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de tarefas</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}</style></head><body><h1>Relatório de tarefas</h1><p>Gerado em ${escaparHtmlBasico(new Date().toLocaleString('pt-BR'))}</p><table><thead><tr><th>Tarefa</th><th>Status</th><th>Responsável</th><th>Observação</th><th>Descrição</th><th>Data</th><th>Horário</th><th>Início</th><th>Iniciado pelo usuário</th><th>Fim</th><th>Finalizado pelo usuário</th><th>Lançado pelo usuário</th></tr></thead><tbody>${htmlLinhas}</tbody></table><script>window.onload=function(){window.print();}<\/script>
+<style id="ajuste-espaco-calendario-escala">
+  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
+  @media (min-width: 901px) {
+    .sidebar {
+      width: 200px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
+    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+    .logo strong { font-size: 15px !important; }
+    .logo span { font-size: 10px !important; }
+    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
+    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
+    .nav-title { font-size: 13px !important; }
+    .nav-hint { font-size: 10px !important; }
+  }
+  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
+  #escala_plantoes .escala-layout {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card {
+    padding: 10px !important;
+  }
+  #escala_plantoes .escala-side-title {
+    font-size: 14px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  #escala_plantoes .escala-check-row {
+    min-height: 30px !important;
+    padding: 6px 2px !important;
+    gap: 7px !important;
+    font-size: 13px !important;
+  }
+  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
+  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
+  #escala_plantoes .escala-nav { gap: 6px !important; }
+  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
+  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
+  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
+  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
+  #escala_plantoes .escala-calendario {
+    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
+    min-height: 570px !important;
+  }
+  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
+  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
+  @media (max-width: 1050px) {
+    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+
+<style id="escala-calendario-apenas-mes-atual-fix">
+  #escala_plantoes .escala-dia-vazio{
+    background:rgba(255,255,255,.015) !important;
+    cursor:default !important;
+    pointer-events:none !important;
+    box-shadow:none !important;
+  }
+  #escala_plantoes .escala-dia-vazio:hover{
+    background:rgba(255,255,255,.015) !important;
+    box-shadow:none !important;
+  }
+</style>
+
+<style id="patch-escala-modal-salvar-zuqui">
+  @media (min-width: 901px){
+    .sidebar{width:210px !important;}
+    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
+  }
+  #escala_plantoes .escala-side-card{padding:12px !important;}
+  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
+  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
+</style>
+</body></html>`);
   win.document.close();
 }
 
@@ -26670,7 +27903,7 @@ carregarResumoPontoHoje = async function(funcionarioId = '') {
   await carregarResumoPontoHojeOriginalComAjuste(funcionarioId);
   const container = document.getElementById('pontoResumoHoje');
   if (!container) return;
-  const hoje = dataLocalISO();
+  const hoje = obterDataResumoPontoSelecionada();
   const ajustes = await carregarAjustesAprovadosPontoPorPeriodo(hoje, hoje, funcionarioId || '');
   if (!ajustes.length) return;
   const nomesAjustados = new Set(ajustes.map(a => String(a.funcionario_nome || relatorioPontoFuncionarioCache[String(a.funcionario_id)] || '').toUpperCase().trim()).filter(Boolean));
@@ -26811,7 +28044,86 @@ function exportarRelatorioPontoPDF() {
   const htmlLinhas = linhas.map(row => `<tr><td>${escapeHtmlPonto(row.Funcionario)}</td><td>${escapeHtmlPonto(row.Data)}</td><td>${escapeHtmlPonto(row.Entrada)}</td><td>${escapeHtmlPonto(row.Intervalos)}</td><td>${escapeHtmlPonto(row.Saida)}</td><td>${escapeHtmlPonto(row.Status)}</td><td>${escapeHtmlPonto(row.Total)}</td><td>${escapeHtmlPonto(row.Ajustes_ADM)}</td></tr>`).join('');
   const win = window.open('', '_blank');
   if (!win) { setMsg('msgRelatorioPonto', 'O navegador bloqueou a janela de PDF.', 'err'); return; }
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de ponto</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}</style></head><body><h1>Relatório de ponto</h1><p>${escapeHtmlPonto(window.__relatorioPontoUltimoPeriodo || '')}</p><table><thead><tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Intervalos</th><th>Saída</th><th>Status</th><th>Total</th><th>Ajustes ADM</th></tr></thead><tbody>${htmlLinhas}</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de ponto</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}</style></head><body><h1>Relatório de ponto</h1><p>${escapeHtmlPonto(window.__relatorioPontoUltimoPeriodo || '')}</p><table><thead><tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Intervalos</th><th>Saída</th><th>Status</th><th>Total</th><th>Ajustes ADM</th></tr></thead><tbody>${htmlLinhas}</tbody></table><script>window.onload=function(){window.print();}<\/script>
+<style id="ajuste-espaco-calendario-escala">
+  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
+  @media (min-width: 901px) {
+    .sidebar {
+      width: 200px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
+    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+    .logo strong { font-size: 15px !important; }
+    .logo span { font-size: 10px !important; }
+    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
+    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
+    .nav-title { font-size: 13px !important; }
+    .nav-hint { font-size: 10px !important; }
+  }
+  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
+  #escala_plantoes .escala-layout {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card {
+    padding: 10px !important;
+  }
+  #escala_plantoes .escala-side-title {
+    font-size: 14px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  #escala_plantoes .escala-check-row {
+    min-height: 30px !important;
+    padding: 6px 2px !important;
+    gap: 7px !important;
+    font-size: 13px !important;
+  }
+  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
+  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
+  #escala_plantoes .escala-nav { gap: 6px !important; }
+  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
+  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
+  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
+  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
+  #escala_plantoes .escala-calendario {
+    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
+    min-height: 570px !important;
+  }
+  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
+  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
+  @media (max-width: 1050px) {
+    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+
+<style id="escala-calendario-apenas-mes-atual-fix">
+  #escala_plantoes .escala-dia-vazio{
+    background:rgba(255,255,255,.015) !important;
+    cursor:default !important;
+    pointer-events:none !important;
+    box-shadow:none !important;
+  }
+  #escala_plantoes .escala-dia-vazio:hover{
+    background:rgba(255,255,255,.015) !important;
+    box-shadow:none !important;
+  }
+</style>
+
+<style id="patch-escala-modal-salvar-zuqui">
+  @media (min-width: 901px){
+    .sidebar{width:210px !important;}
+    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
+  }
+  #escala_plantoes .escala-side-card{padding:12px !important;}
+  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
+  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
+</style>
+</body></html>`);
   win.document.close();
 }
 
@@ -27082,6 +28394,87 @@ async function registrarPontoFuncionario() {
   relatorioPontoFuncionarioCache[funcionarioId] = funcionario.nome || 'Funcionário';
 
   const dataPonto = dataLocalISO();
+
+  // Segurança operacional: bloqueia duas batidas seguidas do mesmo funcionário em até 10 minutos.
+  // Importante: esta trava é por funcionário e não altera loja/login. Ela valida primeiro no navegador
+  // e depois confirma no banco usando apenas funcionario_id + data_ponto.
+  const BLOQUEIO_BATIDA_MS = 10 * 60 * 1000;
+  const chaveBloqueioLocal = `zuqui_ultima_batida_ponto_${funcionarioId}`;
+
+  function avisarBatidaBloqueada(isoUltimaBatida) {
+    const nomeAviso = funcionario.nome || 'FUNCIONÁRIO';
+    const horaAviso = (typeof formatarHoraPonto === 'function')
+      ? formatarHoraPonto(isoUltimaBatida)
+      : new Date(isoUltimaBatida).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    setMsg('msgPonto', `FUNCIONÁRIO JÁ BATEU O PONTO NOS ÚLTIMOS 10 MINUTOS: ${nomeAviso} às ${horaAviso}. Aguarde para registrar novamente.`, 'err');
+    if (campoPin) campoPin.value = '';
+  }
+
+  // 1) Trava imediata local: impede duplo clique/repetição mesmo antes do banco responder.
+  try {
+    const brutoLocal = localStorage.getItem(chaveBloqueioLocal);
+    const ultimaLocal = brutoLocal ? JSON.parse(brutoLocal) : null;
+    const msLocal = ultimaLocal?.iso ? new Date(ultimaLocal.iso).getTime() : NaN;
+    if (Number.isFinite(msLocal) && Date.now() >= msLocal && (Date.now() - msLocal) < BLOQUEIO_BATIDA_MS) {
+      avisarBatidaBloqueada(ultimaLocal.iso);
+      return;
+    }
+  } catch (_) {}
+
+  // 2) Trava pelo banco: funciona mesmo depois de atualizar a página ou trocar de computador.
+  try {
+    const batidasHoje = [];
+    const { data: registrosHoje, error: erroRegistrosHoje } = await sb
+      .from('ponto_registros')
+      .select('id, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
+      .eq('funcionario_id', funcionarioId)
+      .eq('data_ponto', dataPonto)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (erroRegistrosHoje) throw erroRegistrosHoje;
+
+    (registrosHoje || []).forEach(reg => {
+      ['entrada_em', 'inicio_intervalo_em', 'retorno_intervalo_em', 'saida_em', 'created_at'].forEach(campo => {
+        if (reg?.[campo]) batidasHoje.push(reg[campo]);
+      });
+    });
+
+    const registroPrincipal = (registrosHoje || [])[0];
+    if (registroPrincipal?.id) {
+      try {
+        const { data: intervalosHoje, error: erroIntervalosHoje } = await sb
+          .from('ponto_intervalos')
+          .select('inicio_em, retorno_em, created_at')
+          .eq('ponto_registro_id', registroPrincipal.id);
+        if (!erroIntervalosHoje) {
+          (intervalosHoje || []).forEach(intervalo => {
+            if (intervalo?.inicio_em) batidasHoje.push(intervalo.inicio_em);
+            if (intervalo?.retorno_em) batidasHoje.push(intervalo.retorno_em);
+            if (intervalo?.created_at) batidasHoje.push(intervalo.created_at);
+          });
+        }
+      } catch (_) {}
+    }
+
+    const batidasValidas = [...new Set(batidasHoje)]
+      .map(iso => ({ iso, ms: new Date(iso).getTime() }))
+      .filter(item => Number.isFinite(item.ms))
+      .sort((a, b) => a.ms - b.ms);
+
+    const ultimaBatida = batidasValidas[batidasValidas.length - 1] || null;
+    if (ultimaBatida && Date.now() >= ultimaBatida.ms && (Date.now() - ultimaBatida.ms) < BLOQUEIO_BATIDA_MS) {
+      localStorage.setItem(chaveBloqueioLocal, JSON.stringify({ iso: ultimaBatida.iso, funcionarioId, nome: funcionario.nome || '' }));
+      avisarBatidaBloqueada(ultimaBatida.iso);
+      return;
+    }
+  } catch (erroValidacaoDezMinutos) {
+    console.warn('Não foi possível validar bloqueio de batida em 10 minutos:', erroValidacaoDezMinutos);
+    setMsg('msgPonto', 'Não foi possível validar duplicidade de ponto. Tente novamente em alguns segundos.', 'err');
+    if (campoPin) campoPin.value = '';
+    return;
+  }
+
   const lojaId = usuarioSistemaLogado?.loja_id || funcionario.loja_id || null;
   const empresaId = usuarioSistemaLogado?.empresa_id || funcionario.empresa_id || null;
 
@@ -27139,6 +28532,14 @@ async function registrarPontoFuncionario() {
     console.warn('Auditoria do ponto não registrada:', auditError);
   }
 
+  try {
+    localStorage.setItem(chaveBloqueioLocal, JSON.stringify({
+      iso: retorno.registrado_em || new Date().toISOString(),
+      funcionarioId,
+      nome: funcionario.nome || retorno.funcionario_nome || ''
+    }));
+  } catch (_) {}
+
   setMsg('msgPonto', `${descricaoBatida} "${funcionario.nome || retorno.funcionario_nome || 'FUNCIONÁRIO'}"`, 'ok');
   exibirAvisoPontoRegistrado(funcionario.nome || retorno.funcionario_nome || 'FUNCIONÁRIO', tipoAvisoPonto);
 
@@ -27169,6 +28570,11 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return { ok: false, mensagem: 'Solicitação sem funcionário, data ou horário válidos.' };
   }
 
+  const ajusteIso = new Date(`${dataAjuste}T${horarioAjuste}:00`).toISOString();
+  if (!ajusteIso || Number.isNaN(new Date(ajusteIso).getTime())) {
+    return { ok: false, mensagem: 'Horário do ajuste inválido.' };
+  }
+
   let funcionarioInfo = null;
   try {
     const { data } = await sb
@@ -27183,24 +28589,1067 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   const tenantEmpresaId = solicitacao?.empresa_id || funcionarioInfo?.empresa_id || empresaAtualId || null;
 
   try {
-    const { data, error } = await sb.rpc('aplicar_ajuste_manual_ponto_v2', {
-      p_funcionario_id: funcionarioId,
-      p_data_ponto: dataAjuste,
-      p_horario: horarioAjuste,
-      p_empresa_id: tenantEmpresaId,
-      p_loja_id: tenantLojaId,
-    });
+    let { registro, intervalos } = await obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataAjuste);
 
-    if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
-    const retorno = data || {};
-    if (retorno.ok === false) return { ok: false, mensagem: retorno.mensagem || 'Não foi possível aplicar ajuste.' };
-    return { ok: true, mensagem: retorno.mensagem || 'Ajuste manual aplicado no registro existente.' };
+    if (!registro?.id) {
+      const payloadNovo = {
+        funcionario_id: funcionarioId,
+        data_ponto: dataAjuste,
+        entrada_em: ajusteIso,
+        inicio_intervalo_em: null,
+        retorno_intervalo_em: null,
+        saida_em: null,
+      };
+      if (tenantEmpresaId) payloadNovo.empresa_id = tenantEmpresaId;
+      if (tenantLojaId) payloadNovo.loja_id = tenantLojaId;
+      const { error: erroInsert } = await sb.from('ponto_registros').insert([payloadNovo]);
+      if (erroInsert) return { ok: false, mensagem: mensagemErroSupabase(erroInsert, 'erro desconhecido') };
+      return { ok: true, mensagem: 'Ajuste manual criou a entrada do dia.' };
+    }
+
+    const batidas = montarListaBatidasPonto(registro, intervalos)
+      .map(item => item.iso)
+      .concat([ajusteIso])
+      .filter(Boolean)
+      .map(iso => new Date(iso).toISOString())
+      .filter((iso, idx, arr) => arr.indexOf(iso) === idx)
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+    const entradaEm = batidas[0] || null;
+    let inicioIntervaloEm = null;
+    let retornoIntervaloEm = null;
+    let saidaEm = null;
+    const novosIntervalos = [];
+
+    if (batidas.length === 2) {
+      saidaEm = batidas[1];
+    } else if (batidas.length === 3) {
+      inicioIntervaloEm = batidas[1];
+      saidaEm = batidas[2];
+    } else if (batidas.length >= 4) {
+      inicioIntervaloEm = batidas[1];
+      retornoIntervaloEm = batidas[2];
+      saidaEm = batidas[batidas.length - 1];
+      const extras = batidas.slice(3, -1);
+      for (let i = 0; i + 1 < extras.length; i += 2) {
+        novosIntervalos.push({
+          ponto_registro_id: registro.id,
+          ordem: novosIntervalos.length + 2,
+          inicio_em: extras[i],
+          retorno_em: extras[i + 1],
+        });
+      }
+    }
+
+    const payloadUpdate = {
+      entrada_em: entradaEm,
+      inicio_intervalo_em: inicioIntervaloEm,
+      retorno_intervalo_em: retornoIntervaloEm,
+      saida_em: saidaEm,
+    };
+
+    const { error: erroUpdate } = await sb
+      .from('ponto_registros')
+      .update(payloadUpdate)
+      .eq('id', registro.id);
+    if (erroUpdate) return { ok: false, mensagem: mensagemErroSupabase(erroUpdate, 'erro desconhecido') };
+
+    const { error: erroDelete } = await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
+    if (erroDelete && !isMissingTimeClockIntervalsTableError(erroDelete)) {
+      return { ok: false, mensagem: `Registro principal ajustado, mas houve erro ao limpar intervalos antigos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
+    }
+
+    if (novosIntervalos.length) {
+      const { error: erroInsertInt } = await sb.from('ponto_intervalos').insert(novosIntervalos);
+      if (erroInsertInt) return { ok: false, mensagem: `Registro principal ajustado, mas houve erro ao recriar intervalos extras: ${mensagemErroSupabase(erroInsertInt, 'erro desconhecido')}` };
+    }
+
+    return { ok: true, mensagem: 'Ajuste manual aplicado editando o registro existente e reorganizando a sequência.' };
   } catch (error) {
     return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
   }
 }
-
 </script>
+  <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
+    <div class="escala-modal-card">
+      <div class="escala-modal-title">Novo item da escala</div>
+      <input id="escalaPlantaoEventoId" type="hidden">
+      <div class="escala-modal-sub" id="escalaModalDataTexto">Selecione o dia no calendário.</div>
+      <div class="escala-modal-grid">
+        <label class="escala-modal-full">Funcionário
+          <select id="escalaPlantaoFuncionario"></select>
+        </label>
+        <label>Início
+          <input id="escalaPlantaoInicio" type="time">
+        </label>
+        <label>Fim
+          <input id="escalaPlantaoFim" type="time">
+        </label>
+        <label>Tipo
+          <select id="escalaPlantaoTipo">
+            <option value="plantao">Plantão</option>
+            <option value="reuniao">Reunião</option>
+            <option value="compromisso">Compromisso</option>
+          </select>
+        </label>
+        <label>Título
+          <input id="escalaPlantaoTitulo" type="text" placeholder="Ex: Plantão manhã">
+        </label>
+        <label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia
+          <input id="escalaPlantaoValor" type="number" min="0" step="0.01" placeholder="Ex: 120,00">
+        </label>
+        <label class="escala-modal-full">Observação
+          <textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea>
+        </label>
+      </div>
+      <div class="escala-modal-lista" id="escalaPlantaoListaDia"></div>
+      <div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>
+      <div class="escala-modal-actions">
+        <button class="btn btn-ghost" type="button" onclick="fecharModalCadastroPlantaoEscala()">Cancelar</button>
+        <button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" onclick="excluirPlantaoEscala()" style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button>
+        <button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" onclick="salvarPlantaoEscala()">Salvar plantão</button>
+      </div>
+    </div>
+  </div>
+
+<style id="patch-calendario-real-zuqui">
+  @media (min-width: 901px) {
+    .sidebar { width: 230px !important; }
+    .main { min-width: 0 !important; }
+  }
+  #escala_plantoes .escala-layout{
+    display:grid !important;
+    grid-template-columns: 260px minmax(720px, 1fr) !important;
+    gap:16px !important;
+    align-items:start !important;
+  }
+  #escala_plantoes .escala-calendario-card{overflow:auto !important;}
+  #escala_plantoes #escalaCalendarioGrid{
+    display:grid !important;
+    grid-template-columns:repeat(7,minmax(96px,1fr)) !important;
+    border-top:1px solid rgba(226,240,228,.18) !important;
+    border-left:1px solid rgba(226,240,228,.18) !important;
+    background:var(--bg) !important;
+    min-height:620px !important;
+    width:100% !important;
+  }
+  #escala_plantoes .escala-dia-semana{
+    height:54px !important;display:flex !important;align-items:center !important;justify-content:center !important;
+    font-weight:800 !important;border-right:1px solid rgba(226,240,228,.18) !important;border-bottom:1px solid rgba(226,240,228,.18) !important;
+  }
+  #escala_plantoes .escala-dia{
+    min-height:122px !important;border-right:1px solid rgba(226,240,228,.18) !important;border-bottom:1px solid rgba(226,240,228,.18) !important;
+    padding:8px !important;cursor:pointer !important;background:rgba(10,15,13,.8) !important;overflow:hidden !important;
+  }
+  #escala_plantoes .escala-dia:hover{box-shadow:inset 0 0 0 2px rgba(34,197,94,.55) !important;}
+  #escala_plantoes .escala-dia.fora-mes{opacity:.42 !important;background:rgba(255,255,255,.02) !important;}
+  #escala_plantoes .escala-dia.domingo{background:rgba(20,184,166,.14) !important;}
+  #escala_plantoes .escala-dia.feriado{background:rgba(245,158,11,.16) !important;box-shadow:inset 4px 0 0 rgba(245,158,11,.8) !important;}
+  #escala_plantoes .escala-dia.hoje{outline:2px solid rgba(34,197,94,.8) !important;outline-offset:-2px !important;}
+  #escala_plantoes .escala-dia-numero{text-align:center !important;font-weight:800 !important;font-size:15px !important;margin-bottom:7px !important;}
+  #escala_plantoes .escala-feriado-label{font-size:11px !important;color:#fbbf24 !important;font-weight:800 !important;line-height:1.15 !important;margin-bottom:5px !important;}
+  #escala_plantoes .escala-evento{display:block !important;width:100% !important;margin:3px 0 !important;border:none !important;border-radius:6px !important;padding:3px 5px !important;background:rgba(34,197,94,.12) !important;color:var(--text) !important;font-size:11px !important;text-align:left !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
+  #escala_plantoes .escala-evento.plantao{background:rgba(239,68,68,.16) !important;}
+  #escala_plantoes .escala-evento.reuniao{background:rgba(168,85,247,.16) !important;}
+  @media(max-width:1100px){#escala_plantoes .escala-layout{grid-template-columns:1fr !important;}#escala_plantoes .escala-calendario-card{overflow-x:auto !important;}#escala_plantoes #escalaCalendarioGrid{min-width:760px !important;}}
+</style>
+<script id="patch-calendario-real-zuqui-script">
+(function(){
+  function h(v){
+    if (typeof escapeHtml === 'function') return escapeHtml(v);
+    return String(v ?? '').replace(/[&<>'"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]; });
+  }
+  function iso(d){
+    const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function addDays(d,n){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
+  function pascoa(ano){
+    const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),hh=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-hh-k)%7,m=Math.floor((a+11*hh+22*l)/451),mes=Math.floor((hh+l-7*m+114)/31),dia=((hh+l-7*m+114)%31)+1;
+    return new Date(ano,mes-1,dia);
+  }
+  function feriadosNacionais(ano){
+    const p=pascoa(ano);
+    const lista=[
+      [`${ano}-01-01`,'Confraternização Universal'],[`${ano}-04-21`,'Tiradentes'],[`${ano}-05-01`,'Dia do Trabalhador'],[`${ano}-09-07`,'Independência do Brasil'],[`${ano}-10-12`,'Nossa Senhora Aparecida'],[`${ano}-11-02`,'Finados'],[`${ano}-11-15`,'Proclamação da República'],[`${ano}-11-20`,'Consciência Negra'],[`${ano}-12-25`,'Natal'],
+      [iso(addDays(p,-48)),'Carnaval'],[iso(addDays(p,-47)),'Carnaval'],[iso(addDays(p,-2)),'Sexta-feira Santa'],[iso(addDays(p,60)),'Corpus Christi']
+    ];
+    return Object.fromEntries(lista);
+  }
+  function eventosPorDia(){
+    return (window.escalaPlantoesEventos || escalaPlantoesEventos || []).reduce(function(acc,item){
+      const k=String(item.data_plantao||'').slice(0,10); if(!k) return acc; (acc[k]||(acc[k]=[])).push(item); return acc;
+    },{});
+  }
+  window.renderizarEscalaPlantoes = function(){
+    const grid=document.getElementById('escalaCalendarioGrid');
+    const titulo=document.getElementById('escalaMesTitulo');
+    if(!grid) return;
+    if(!(window.escalaPlantoesDataReferencia instanceof Date) || Number.isNaN(window.escalaPlantoesDataReferencia?.getTime?.())) window.escalaPlantoesDataReferencia=new Date();
+    const ref=window.escalaPlantoesDataReferencia;
+    const ano=ref.getFullYear(); const mes=ref.getMonth();
+    const nomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    if(titulo) titulo.textContent=`${nomes[mes]} de ${ano}`;
+    const showFeriados=document.getElementById('escalaFiltroFeriados')?.checked!==false;
+    const showDomingos=document.getElementById('escalaFiltroDomingos')?.checked!==false;
+    const feriados=showFeriados ? feriadosNacionais(ano) : {};
+    const primeiro=new Date(ano,mes,1);
+    const ultimo=new Date(ano,mes+1,0);
+    const diasNoMes=ultimo.getDate();
+    const blanksAntes=primeiro.getDay();
+    const totalCelulas=Math.ceil((blanksAntes+diasNoMes)/7)*7;
+    const hoje=iso(new Date()); const evDia=eventosPorDia();
+    const dias=['DOM.','SEG.','TER.','QUA.','QUI.','SEX.','SÁB.'];
+    let html=dias.map(d=>`<div class="escala-dia-semana">${d}</div>`).join('');
+    for(let i=0;i<totalCelulas;i++){
+      const diaMes=i-blanksAntes+1;
+      if(diaMes<1 || diaMes>diasNoMes){
+        html += `<div class="escala-dia escala-dia-vazio" aria-hidden="true"></div>`;
+        continue;
+      }
+      const data=new Date(ano,mes,diaMes); const k=iso(data); const domingo=data.getDay()===0; const feriado=feriados[k] || '';
+      const classes=['escala-dia', domingo&&showDomingos?'domingo':'', feriado?'feriado':'', k===hoje?'hoje':''].filter(Boolean).join(' ');
+      const feriadoHtml=feriado?`<div class="escala-feriado-label" title="${h(feriado)}">${h(feriado)}</div>`:'';
+      const eventos=(evDia[k]||[]);
+      const eventosHtml=eventos.slice(0,4).map(function(ev){
+        const nome=ev.funcionario_nome || ev.funcionarios?.nome || 'Funcionário';
+        const ini=String(ev.inicio_hora||'').slice(0,5);
+        const txt=`${ini} ${nome}`.trim();
+        return `<button class="escala-evento ${h(ev.tipo||'plantao')}" type="button" title="${h(txt)}">${h(txt)}</button>`;
+      }).join('');
+      const mais=eventos.length>4?`<button class="escala-evento" type="button">mais +${eventos.length-4}</button>`:'';
+      html += `<div class="${classes}" data-data="${k}" onclick="abrirModalCadastroPlantaoEscala('${k}')"><div class="escala-dia-numero">${data.getDate()}</div>${feriadoHtml}${eventosHtml}${mais}</div>`;
+    }
+    grid.innerHTML=html;
+  };
+  window.carregarEscalaPlantoes = async function(){
+    if(!(window.escalaPlantoesDataReferencia instanceof Date)) window.escalaPlantoesDataReferencia=new Date();
+    window.renderizarEscalaPlantoes();
+    try{
+      const ref=window.escalaPlantoesDataReferencia;
+      const inicio=iso(new Date(ref.getFullYear(),ref.getMonth(),1));
+      const fim=iso(new Date(ref.getFullYear(),ref.getMonth()+1,0));
+      if(typeof sb !== 'undefined' && sb?.from){
+        let q=sb.from('escala_plantoes').select('id, empresa_id, loja_id, funcionario_id, data_plantao, inicio_hora, fim_hora, tipo, titulo, observacao').gte('data_plantao',inicio).lte('data_plantao',fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
+        const lojaId=String((typeof obterLojaIdSessao==='function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || lojaAtualId || '').trim();
+        if(lojaId) q=q.eq('loja_id',lojaId);
+        const r=await q;
+        if(!r.error) {
+          const dados = r.data || [];
+          const funcionarioIds = [...new Set(dados.map(ev => ev.funcionario_id).filter(Boolean))];
+          const nomes = {};
+          if (funcionarioIds.length) {
+            try {
+              const rf = await sb.from('funcionarios').select('id, nome').in('id', funcionarioIds);
+              if (!rf.error) (rf.data || []).forEach(f => { nomes[String(f.id)] = f.nome || ''; });
+            } catch (_) {}
+          }
+          window.escalaPlantoesEventos = escalaPlantoesEventos = dados.map(ev => ({
+            ...ev,
+            funcionario_nome: nomes[String(ev.funcionario_id)] || ev.funcionario_nome || 'Funcionário'
+          }));
+          if(typeof setMsg==='function') setMsg('msgEscalaPlantoes', '', 'ok');
+        } else if(typeof setMsg==='function') {
+          const msg = (r.error && (r.error.message || r.error.details || r.error.hint || r.error.code)) || 'erro desconhecido';
+          const textoErro = String(msg).toLowerCase();
+          if (textoErro.includes('empresa_id')) {
+            setMsg('msgEscalaPlantoes', 'Tabela escala_plantoes existe, mas falta a coluna empresa_id. Rode o SQL de correção multi-filial e recarregue a página.', 'err');
+          } else if (textoErro.includes('loja_id')) {
+            setMsg('msgEscalaPlantoes', 'Tabela escala_plantoes existe, mas falta a coluna loja_id. Rode o SQL de correção multi-filial e recarregue a página.', 'err');
+          } else if (String(r.error?.code || '').includes('42P01') || textoErro.includes('could not find the table') || textoErro.includes('schema cache') || (textoErro.includes('relation') && textoErro.includes('does not exist'))) {
+            setMsg('msgEscalaPlantoes', "Tabela escala_plantoes existe no banco, mas o Supabase REST ainda não atualizou o schema cache. Rode o SQL de recarregar schema e atualize a página.", 'err');
+          } else {
+            setMsg('msgEscalaPlantoes', `Erro ao carregar escala_plantoes: ${msg}`, 'err');
+          }
+        }
+      }
+    }catch(e){ console.warn('Falha ao buscar escala_plantoes:', e); }
+    window.renderizarEscalaPlantoes();
+  };
+  window.mudarMesEscalaPlantoes=function(delta){ const r=window.escalaPlantoesDataReferencia || new Date(); window.escalaPlantoesDataReferencia=new Date(r.getFullYear(),r.getMonth()+Number(delta||0),1); window.carregarEscalaPlantoes(); };
+  window.irParaHojeEscalaPlantoes=function(){ window.escalaPlantoesDataReferencia=new Date(); window.carregarEscalaPlantoes(); };
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ if(document.getElementById('escalaCalendarioGrid')) window.renderizarEscalaPlantoes(); }, 400); });
+})();
+</script>
+
+<style id="ajuste-espaco-calendario-escala">
+  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
+  @media (min-width: 901px) {
+    .sidebar {
+      width: 200px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
+    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
+    .logo strong { font-size: 15px !important; }
+    .logo span { font-size: 10px !important; }
+    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
+    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
+    .nav-title { font-size: 13px !important; }
+    .nav-hint { font-size: 10px !important; }
+  }
+  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
+  #escala_plantoes .escala-layout {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card {
+    padding: 10px !important;
+  }
+  #escala_plantoes .escala-side-title {
+    font-size: 14px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 6px !important;
+  }
+  #escala_plantoes .escala-check-row {
+    min-height: 30px !important;
+    padding: 6px 2px !important;
+    gap: 7px !important;
+    font-size: 13px !important;
+  }
+  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
+  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
+  #escala_plantoes .escala-nav { gap: 6px !important; }
+  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
+  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
+  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
+  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
+  #escala_plantoes .escala-calendario {
+    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
+    min-height: 570px !important;
+  }
+  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
+  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
+  @media (max-width: 1050px) {
+    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
+  }
+</style>
+
+
+<style id="escala-calendario-apenas-mes-atual-fix">
+  #escala_plantoes .escala-dia-vazio{
+    background:rgba(255,255,255,.015) !important;
+    cursor:default !important;
+    pointer-events:none !important;
+    box-shadow:none !important;
+  }
+  #escala_plantoes .escala-dia-vazio:hover{
+    background:rgba(255,255,255,.015) !important;
+    box-shadow:none !important;
+  }
+</style>
+
+<style id="patch-escala-modal-salvar-zuqui">
+  @media (min-width: 901px){
+    .sidebar{width:210px !important;}
+    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
+  }
+  #escala_plantoes .escala-side-card{padding:12px !important;}
+  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
+  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
+</style>
+
+
+<!-- PATCH SEGURO: calendário escala abre modal e salva por loja sem mexer no login/ponto -->
+<style id="patch-escala-modal-final-seguro">
+  .escala-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:99999;display:none;align-items:center;justify-content:center;padding:18px}
+  .escala-modal-overlay.show{display:flex!important}
+  .escala-modal-card{width:min(560px,calc(100vw - 28px));background:var(--surface,#111a14);border:1px solid var(--border,#1f2e22);border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);color:var(--text,#e2f0e4)}
+  .escala-modal-title{font-size:20px;font-weight:900;margin-bottom:4px}.escala-modal-sub{font-size:13px;color:var(--green,#22c55e);margin-bottom:14px}
+  .escala-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.escala-modal-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:800;color:var(--text-muted,#6b8f70);text-transform:uppercase;letter-spacing:.3px}.escala-modal-grid input,.escala-modal-grid select,.escala-modal-grid textarea{width:100%;min-height:40px;border:1px solid var(--border,#1f2e22);border-radius:10px;background:var(--bg,#0a0f0d);color:var(--text,#e2f0e4);padding:8px 10px;font-family:inherit;font-size:14px}.escala-modal-grid textarea{min-height:76px;resize:vertical}.escala-modal-full{grid-column:1/-1}.escala-modal-lista{margin-top:10px;border:1px solid var(--border,#1f2e22);border-radius:10px;background:rgba(0,0,0,.14);padding:8px;display:grid;gap:6px;max-height:170px;overflow:auto}.escala-modal-empty{color:var(--text-muted,#6b8f70);font-size:12px;padding:6px}.escala-modal-item{width:100%;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(34,197,94,.08);color:var(--text,#e2f0e4);padding:7px 9px;text-align:left;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}.escala-modal-item:hover{border-color:rgba(34,197,94,.42);background:rgba(34,197,94,.14)}.escala-modal-item strong{font-size:12px;line-height:1.2}.escala-modal-item span{font-size:11px;color:var(--text-muted,#6b8f70);text-transform:capitalize}.escala-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+  #escalaCalendarioGrid .escala-dia:not(.escala-dia-vazio){cursor:pointer!important}
+  @media(max-width:640px){.escala-modal-grid{grid-template-columns:1fr}}
+</style>
+<script id="patch-escala-modal-final-seguro-script">
+(function(){
+  'use strict';
+  var ESCALA_STATE = { data:'', id:'', eventos: [] };
+  function byId(id){ return document.getElementById(id); }
+  function esc(v){
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(v);
+    return String(v == null ? '' : v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function msg(id, texto, tipo){ if (typeof window.setMsg === 'function') window.setMsg(id, texto, tipo || ''); else { var el=byId(id); if(el) el.textContent=texto||''; } }
+  function hojeIso(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function br(dataIso){ var p=String(dataIso||'').slice(0,10).split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : dataIso; }
+  function hora(v){ return String(v||'').slice(0,5); }
+  function lojaIdAtual(){
+    try { if (typeof window.obterLojaIdSessao === 'function') { var a=window.obterLojaIdSessao(); if(a) return String(a); } } catch(e) {}
+    try { if (window.usuarioSistemaLogado && window.usuarioSistemaLogado.loja_id) return String(window.usuarioSistemaLogado.loja_id); } catch(e) {}
+    try { if (window.lojaAtualId) return String(window.lojaAtualId); } catch(e) {}
+    try { var s=JSON.parse(localStorage.getItem('zuqui_usuario_logado')||'null'); if(s && s.loja_id) return String(s.loja_id); } catch(e) {}
+    return '';
+  }
+  function empresaIdAtual(){
+    try { if (typeof window.obterEmpresaIdSessao === 'function') { var a=window.obterEmpresaIdSessao(); if(a) return String(a); } } catch(e) {}
+    try { if (window.usuarioSistemaLogado && window.usuarioSistemaLogado.empresa_id) return String(window.usuarioSistemaLogado.empresa_id); } catch(e) {}
+    return '';
+  }
+  function garantirModalEscala(){
+    var modal=byId('modalEscalaPlantao');
+    if(modal){
+      if(!byId('escalaPlantaoValor')){
+        var titulo=byId('escalaPlantaoTitulo');
+        if(titulo && titulo.parentElement){ var lab=document.createElement('label'); lab.id='escalaPlantaoValorWrap'; lab.setAttribute('data-permissao-valor-escala',''); lab.innerHTML='Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" placeholder="Ex: 120,00">'; titulo.parentElement.insertAdjacentElement('afterend', lab); }
+      }
+      return modal;
+    }
+    var wrap=document.createElement('div');
+    wrap.innerHTML = '<div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">'+
+      '<div class="escala-modal-card">'+
+      '<div class="escala-modal-title" id="escalaModalTitulo">Lançar escala</div>'+
+      '<input id="escalaPlantaoEventoId" type="hidden">'+
+      '<div class="escala-modal-sub" id="escalaModalDataTexto">Selecione o dia no calendário.</div>'+
+      '<div class="escala-modal-grid">'+
+      '<label class="escala-modal-full">Funcionário<select id="escalaPlantaoFuncionario"></select></label>'+
+      '<label>Início<input id="escalaPlantaoInicio" type="time"></label>'+
+      '<label>Fim<input id="escalaPlantaoFim" type="time"></label>'+
+      '<label>Tipo<select id="escalaPlantaoTipo"><option value="plantao">Plantão</option><option value="reuniao">Reunião</option><option value="compromisso">Compromisso</option></select></label>'+
+      '<label>Título<input id="escalaPlantaoTitulo" type="text" placeholder="Ex: Plantão manhã"></label>'+
+      '<label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" placeholder="Ex: 120,00"></label>'+
+      '<label class="escala-modal-full">Observação<textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea></label>'+
+      '</div><div class="escala-modal-lista" id="escalaPlantaoListaDia"></div><div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>'+
+      '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar plantão</button></div>'+
+      '</div></div>';
+    document.body.appendChild(wrap.firstChild);
+    return byId('modalEscalaPlantao');
+  }
+  async function carregarFuncionariosSelect(){
+    garantirModalEscala();
+    var select=byId('escalaPlantaoFuncionario');
+    if(!select) return;
+    select.innerHTML='<option value="">Carregando...</option>';
+    if(!window.sb || !window.sb.from){ select.innerHTML='<option value="">Supabase não iniciado</option>'; return; }
+    try{
+      var q=window.sb.from('funcionarios').select('id,nome,loja_id,ativo').order('nome',{ascending:true});
+      var loja=lojaIdAtual();
+      if(loja) q=q.eq('loja_id',loja);
+      q=q.eq('ativo',true);
+      var r=await q;
+      if(r.error) throw r.error;
+      var lista=r.data||[];
+      if(!lista.length){ select.innerHTML='<option value="">Nenhum funcionário desta filial</option>'; return; }
+      select.innerHTML='<option value="">Selecione...</option>'+lista.map(function(f){return '<option value="'+esc(f.id)+'">'+esc(f.nome||'Funcionário')+'</option>';}).join('');
+    }catch(e){
+      console.warn('Erro funcionários escala:',e);
+      select.innerHTML='<option value="">Erro ao carregar funcionários</option>';
+      msg('msgModalEscalaPlantao','Erro ao carregar funcionários da filial logada.','err');
+    }
+  }
+  function eventosAtuais(){ return window.escalaPlantoesEventos || ESCALA_STATE.eventos || []; }
+  function itensDoDia(dataIso){ return (eventosAtuais()||[]).filter(function(ev){ return String(ev.data_plantao||'').slice(0,10)===dataIso; }); }
+  function renderItensDia(){
+    var lista=byId('escalaPlantaoListaDia'); if(!lista) return;
+    var itens=itensDoDia(ESCALA_STATE.data);
+    if(!itens.length){ lista.innerHTML='<div class="escala-modal-empty">Nenhum item lançado nesse dia.</div>'; return; }
+    lista.innerHTML=itens.map(function(item){
+      var nome=item.funcionario_nome || item.funcionarios?.nome || item.titulo || 'Funcionário';
+      var texto=hora(item.inicio_hora)+' → '+hora(item.fim_hora)+' · '+nome;
+      return '<button class="escala-modal-item" type="button" data-escala-editar="'+esc(item.id)+'"><strong>'+esc(texto)+'</strong><span>'+esc(item.tipo||'plantao')+'</span></button>';
+    }).join('');
+  }
+  async function carregarEventosMesSeguro(){
+    if(!window.sb || !window.sb.from) return;
+    try{
+      var ref=window.escalaPlantoesDataReferencia instanceof Date ? window.escalaPlantoesDataReferencia : new Date();
+      var inicio=ref.getFullYear()+'-'+String(ref.getMonth()+1).padStart(2,'0')+'-01';
+      var fim=new Date(ref.getFullYear(),ref.getMonth()+1,0); fim=fim.getFullYear()+'-'+String(fim.getMonth()+1).padStart(2,'0')+'-'+String(fim.getDate()).padStart(2,'0');
+      var q=window.sb.from('escala_plantoes').select('id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at,deleted_by_nome,deleted_by_funcionario_id').gte('data_plantao',inicio).lte('data_plantao',fim).is('deleted_at', null).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
+      var loja=lojaIdAtual(); if(loja) q=q.eq('loja_id',loja);
+      var r=await q; if(r.error) throw r.error;
+      var dados=r.data||[];
+      var ids=[...new Set(dados.map(function(x){return x.funcionario_id;}).filter(Boolean))];
+      var nomes={};
+      if(ids.length){ try{ var rf=await window.sb.from('funcionarios').select('id,nome').in('id',ids); if(!rf.error)(rf.data||[]).forEach(function(f){nomes[String(f.id)]=f.nome||'';}); }catch(_e){} }
+      dados.forEach(function(ev){ ev.funcionario_nome=nomes[String(ev.funcionario_id)] || ev.titulo || 'Funcionário'; });
+      window.escalaPlantoesEventos=dados; ESCALA_STATE.eventos=dados;
+      msg('msgEscalaPlantoes','','');
+      if(typeof window.renderizarEscalaPlantoes==='function') window.renderizarEscalaPlantoes();
+      if(typeof window.renderizarRelatorioEscalaPlantoes==='function') window.renderizarRelatorioEscalaPlantoes();
+    }catch(e){
+      console.warn('Erro ao carregar escala:',e);
+      msg('msgEscalaPlantoes','Não foi possível carregar escala_plantoes. Confira SQL, loja_id e permissões.','err');
+    }
+  }
+  window.abrirModalCadastroPlantaoEscala = async function(dataIso){
+    garantirModalEscala();
+    if (typeof aplicarPermissaoValorCombinadoEscala === 'function') aplicarPermissaoValorCombinadoEscala();
+    ESCALA_STATE.data = String(dataIso||'').slice(0,10) || hojeIso();
+    ESCALA_STATE.id = '';
+    var ids=['escalaPlantaoEventoId','escalaPlantaoInicio','escalaPlantaoFim','escalaPlantaoTitulo','escalaPlantaoValor','escalaPlantaoObservacao'];
+    ids.forEach(function(id){ var el=byId(id); if(el) el.value=''; });
+    var tipo=byId('escalaPlantaoTipo'); if(tipo) tipo.value='plantao';
+    var dt=byId('escalaModalDataTexto'); if(dt) dt.textContent='Data selecionada: '+br(ESCALA_STATE.data);
+    var title=byId('escalaModalTitulo'); if(title) title.textContent='Lançar escala';
+    var bx=byId('btnExcluirPlantaoEscala'); if(bx) bx.style.display='none';
+    var bs=byId('btnSalvarPlantaoEscala'); if(bs) bs.textContent='Salvar plantão';
+    msg('msgModalEscalaPlantao','','');
+    await carregarFuncionariosSelect();
+    renderItensDia();
+    var modal=byId('modalEscalaPlantao'); modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+  };
+  window.fecharModalCadastroPlantaoEscala = function(){ var m=byId('modalEscalaPlantao'); if(m){m.classList.remove('show');m.setAttribute('aria-hidden','true');} };
+  window.abrirModalEditarPlantaoEscala = async function(id){
+    garantirModalEscala();
+    if (typeof aplicarPermissaoValorCombinadoEscala === 'function') aplicarPermissaoValorCombinadoEscala();
+    var item=(eventosAtuais()||[]).find(function(ev){return String(ev.id)===String(id);});
+    if(!item){ msg('msgModalEscalaPlantao','Item da escala não encontrado.','err'); return; }
+    ESCALA_STATE.data=String(item.data_plantao||'').slice(0,10); ESCALA_STATE.id=String(item.id||'');
+    await carregarFuncionariosSelect();
+    var map={escalaPlantaoEventoId:item.id||'', escalaPlantaoFuncionario:item.funcionario_id||'', escalaPlantaoInicio:hora(item.inicio_hora), escalaPlantaoFim:hora(item.fim_hora), escalaPlantaoTipo:item.tipo||'plantao', escalaPlantaoTitulo:item.titulo||'', escalaPlantaoValor:(item.valor_combinado ?? ''), escalaPlantaoObservacao:item.observacao||''};
+    Object.keys(map).forEach(function(k){ var el=byId(k); if(el) el.value=map[k]; });
+    var dt=byId('escalaModalDataTexto'); if(dt) dt.textContent='Editando: '+br(ESCALA_STATE.data);
+    var title=byId('escalaModalTitulo'); if(title) title.textContent='Editar escala';
+    var bx=byId('btnExcluirPlantaoEscala'); if(bx) bx.style.display='inline-flex';
+    var bs=byId('btnSalvarPlantaoEscala'); if(bs) bs.textContent='Salvar alteração';
+    renderItensDia();
+    var modal=byId('modalEscalaPlantao'); modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+  };
+  window.salvarPlantaoEscala = async function(){
+    garantirModalEscala();
+    if(!window.sb || !window.sb.from){ msg('msgModalEscalaPlantao','Supabase não iniciado. Faça login novamente.','err'); return; }
+    var funcionario=String(byId('escalaPlantaoFuncionario')?.value||'').trim();
+    var inicio=String(byId('escalaPlantaoInicio')?.value||'').trim();
+    var fim=String(byId('escalaPlantaoFim')?.value||'').trim();
+    var tipo=String(byId('escalaPlantaoTipo')?.value||'plantao').trim();
+    var titulo=String(byId('escalaPlantaoTitulo')?.value||'').trim();
+    var obs=String(byId('escalaPlantaoObservacao')?.value||'').trim();
+    var podeVerValor = (typeof usuarioPodeVerValorCombinadoEscala === 'function') ? usuarioPodeVerValorCombinadoEscala() : true;
+    var valorRaw=podeVerValor ? String(byId('escalaPlantaoValor')?.value||'').replace(',','.').trim() : '';
+    var valorCombinado=valorRaw ? Number(valorRaw) : null;
+    if(valorRaw && (!Number.isFinite(valorCombinado) || valorCombinado < 0)){ msg('msgModalEscalaPlantao','Informe um valor combinado válido.','err'); return; }
+    if(!ESCALA_STATE.data){ msg('msgModalEscalaPlantao','Selecione um dia no calendário.','err'); return; }
+    if(!funcionario){ msg('msgModalEscalaPlantao','Selecione o funcionário.','err'); return; }
+    if(!inicio || !fim){ msg('msgModalEscalaPlantao','Informe início e fim.','err'); return; }
+    if(inicio>=fim){ msg('msgModalEscalaPlantao','O horário final precisa ser maior que o inicial.','err'); return; }
+    var loja=lojaIdAtual();
+    if(!loja){ msg('msgModalEscalaPlantao','Loja logada não identificada. Saia e entre novamente.','err'); return; }
+    var payload={ loja_id:loja, funcionario_id:funcionario, data_plantao:ESCALA_STATE.data, inicio_hora:inicio, fim_hora:fim, tipo:tipo, titulo:titulo || (tipo==='plantao'?'Plantão':tipo==='reuniao'?'Reunião':'Compromisso'), observacao:obs||null, valor_combinado:valorCombinado };
+    var emp=empresaIdAtual(); if(emp) payload.empresa_id=emp;
+    try{
+      var r;
+      if(ESCALA_STATE.id || byId('escalaPlantaoEventoId')?.value){
+        var id=ESCALA_STATE.id || byId('escalaPlantaoEventoId').value;
+        r=await window.sb.from('escala_plantoes').update(payload).eq('id',id).eq('loja_id',loja);
+      } else {
+        r=await window.sb.from('escala_plantoes').insert([payload]);
+      }
+      if(r.error) throw r.error;
+      window.fecharModalCadastroPlantaoEscala();
+      msg('msgEscalaPlantoes','Escala salva com sucesso.','ok');
+      await carregarEventosMesSeguro();
+    }catch(e){
+      console.warn('Erro salvar escala:',e);
+      msg('msgModalEscalaPlantao','Não foi possível salvar. Confira SQL da tabela escala_plantoes e permissões.','err');
+    }
+  };
+  window.excluirPlantaoEscala = async function(){
+    var id=ESCALA_STATE.id || String(byId('escalaPlantaoEventoId')?.value||'').trim();
+    if(!id){ msg('msgModalEscalaPlantao','Nenhum item selecionado para excluir.','err'); return; }
+
+    var resp = null;
+    if (typeof window.abrirModalPin === 'function') {
+      resp = await window.abrirModalPin({
+        titulo:'Excluir escala',
+        subtitulo:'Informe o PIN/senha de quem está excluindo.',
+        textoAcao:'Excluir',
+        placeholderInput:'PIN ou senha'
+      });
+    } else {
+      resp = { pin: window.prompt('Digite o PIN/senha para excluir:') };
+    }
+    if(!resp || !resp.pin){ msg('msgModalEscalaPlantao','Exclusão cancelada.','err'); return; }
+
+    var usuarioExclusao = null;
+    try {
+      if (typeof window.obterFuncionarioAtivoPorPin === 'function') {
+        usuarioExclusao = await window.obterFuncionarioAtivoPorPin(resp.pin);
+      }
+    } catch(_e) {}
+    if(!usuarioExclusao || !usuarioExclusao.id){
+      msg('msgModalEscalaPlantao','PIN/senha inválido. A escala não foi excluída.','err');
+      return;
+    }
+
+    var loja=lojaIdAtual();
+    var nomeExclusao=usuarioExclusao.nome || usuarioExclusao.nome_completo || 'Funcionário';
+
+    async function tentarUpdate(payload){
+      var q=window.sb.from('escala_plantoes').update(payload).eq('id',id);
+      if(loja) q=q.eq('loja_id',loja);
+      return await q;
+    }
+
+    try{
+      // 1ª tentativa: exclusão lógica completa, sem updated_at para não quebrar em bancos antigos.
+      var r = await tentarUpdate({
+        deleted_at:new Date().toISOString(),
+        deleted_by_funcionario_id:usuarioExclusao.id,
+        deleted_by_nome:nomeExclusao
+      });
+
+      // Se o PostgREST ainda estiver com cache antigo ou alguma coluna estiver diferente,
+      // tenta uma versão menor mantendo pelo menos data e nome do responsável.
+      if(r.error){
+        console.warn('Falha exclusão completa da escala, tentando fallback com nome:', r.error);
+        r = await tentarUpdate({
+          deleted_at:new Date().toISOString(),
+          deleted_by_nome:nomeExclusao
+        });
+      }
+
+      // Último fallback: se as colunas de exclusão ainda não estiverem disponíveis no cache,
+      // faz delete físico para não travar a operação. O relatório de excluídos depende das colunas acima.
+      if(r.error){
+        console.warn('Falha exclusão lógica da escala, tentando delete físico:', r.error);
+        var qDel=window.sb.from('escala_plantoes').delete().eq('id',id);
+        if(loja) qDel=qDel.eq('loja_id',loja);
+        r = await qDel;
+      }
+
+      if(r.error) throw r.error;
+
+      window.fecharModalCadastroPlantaoEscala();
+      msg('msgEscalaPlantoes','Item excluído da escala por '+nomeExclusao+'.','ok');
+      await carregarEventosMesSeguro();
+    }catch(e){
+      console.warn('Erro excluir escala:', e);
+      msg('msgModalEscalaPlantao','Não foi possível excluir: '+(e.message || 'erro desconhecido')+'.','err');
+    }
+  };
+  function moedaBR(v){ var n=Number(v||0); return n ? n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'; }
+  function dataBR(v){ return br(String(v||'').slice(0,10)); }
+  function diaSemanaBR(v){
+    var d=String(v||'').slice(0,10);
+    if(!d) return '-';
+    var parts=d.split('-');
+    if(parts.length!==3) return '-';
+    var dt=new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+    var nomes=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+    return nomes[dt.getDay()] || '-';
+  }
+  function tipoLabel(v){ v=String(v||'plantao'); return v==='reuniao'?'Reunião':v==='compromisso'?'Compromisso':'Plantão'; }
+  function faixaRelatorioEscalaExportacao(){
+    var iniEl=byId('escalaRelatorioDataInicio');
+    var fimEl=byId('escalaRelatorioDataFim');
+    var ini=String(iniEl && iniEl.value || '').slice(0,10);
+    var fim=String(fimEl && fimEl.value || '').slice(0,10);
+    if(!ini || !fim){
+      var ref=window.escalaPlantoesDataReferencia instanceof Date ? window.escalaPlantoesDataReferencia : new Date();
+      var primeiro=new Date(ref.getFullYear(), ref.getMonth(), 1);
+      var ultimo=new Date(ref.getFullYear(), ref.getMonth()+1, 0);
+      var fmt=function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+      if(!ini) ini=fmt(primeiro);
+      if(!fim) fim=fmt(ultimo);
+      if(iniEl && !iniEl.value) iniEl.value=ini;
+      if(fimEl && !fimEl.value) fimEl.value=fim;
+    }
+    if(ini > fim){ var t=ini; ini=fim; fim=t; }
+    return {inicio:ini, fim:fim};
+  }
+  async function buscarEventosRelatorioEscalaExportacao(){
+    var faixa=faixaRelatorioEscalaExportacao();
+    if(!window.sb || !window.sb.from){
+      return (eventosAtuais()||[]).slice().filter(function(it){ var d=String(it.data_plantao||'').slice(0,10); return d>=faixa.inicio && d<=faixa.fim; });
+    }
+    try{
+      var q=window.sb.from('escala_plantoes')
+        .select('id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at,deleted_by_nome,deleted_by_funcionario_id,created_at,updated_at')
+        .gte('data_plantao',faixa.inicio)
+        .lte('data_plantao',faixa.fim)
+        .order('data_plantao',{ascending:true})
+        .order('inicio_hora',{ascending:true});
+      var loja=lojaIdAtual();
+      if(loja) q=q.eq('loja_id',loja);
+      var r=await q;
+      if(r.error) throw r.error;
+      var dados=r.data||[];
+      var ids=[...new Set(dados.map(function(x){return x.funcionario_id;}).filter(Boolean))];
+      var nomes={};
+      if(ids.length){
+        try{
+          var rf=await window.sb.from('funcionarios').select('id,nome').in('id',ids);
+          if(!rf.error)(rf.data||[]).forEach(function(f){nomes[String(f.id)]=f.nome||'';});
+        }catch(_e){}
+      }
+      dados.forEach(function(ev){ ev.funcionario_nome=nomes[String(ev.funcionario_id)] || ev.titulo || 'Funcionário'; });
+      return dados;
+    }catch(e){
+      console.warn('Erro ao buscar relatório de escala por período:', e);
+      msg('msgEscalaPlantoes','Não foi possível buscar o relatório no período: '+(e.message||'erro desconhecido')+'.','err');
+      return [];
+    }
+  }
+  function statusEscalaRelatorio(it){
+    return it && it.deleted_at ? ('Excluído'+(it.deleted_by_nome ? ' por '+it.deleted_by_nome : '')) : 'Ativo';
+  }
+  function excluidoPorEscalaRelatorio(it){ return it && it.deleted_at ? (it.deleted_by_nome || '-') : '-'; }
+  window.renderizarRelatorioEscalaPlantoes = function(){
+    var lista=byId('listaRelatorioEscalaPlantoes'); var resumo=byId('escalaRelatorioResumo');
+    if(!lista) return;
+    var podeVerValor = (typeof usuarioPodeVerValorCombinadoEscala === 'function') ? usuarioPodeVerValorCombinadoEscala() : true;
+    if (typeof aplicarPermissaoValorCombinadoEscala === 'function') aplicarPermissaoValorCombinadoEscala();
+    var eventos=(eventosAtuais()||[]).slice().sort(function(a,b){ return String(a.data_plantao||'').localeCompare(String(b.data_plantao||'')) || String(a.inicio_hora||'').localeCompare(String(b.inicio_hora||'')); });
+    var total=eventos.reduce(function(acc,it){ return acc + Number(it.valor_combinado||0); },0);
+    if(resumo) resumo.textContent = eventos.length ? (eventos.length+' lançamento(s) no mês'+(podeVerValor ? ' · Total combinado: '+moedaBR(total) : '')) : 'Sem lançamentos no período.';
+    if(!eventos.length){ lista.innerHTML='<div class="empty">Sem lançamentos.</div>'; return; }
+    lista.innerHTML=eventos.map(function(it){
+      var nome=it.funcionario_nome || it.funcionarios?.nome || it.titulo || 'Funcionário';
+      var tipo=String(it.tipo||'plantao');
+      return '<div class="escala-relatorio-item">'+
+        '<div><strong>'+esc(dataBR(it.data_plantao))+'</strong></div>'+
+        '<div><strong>'+esc(nome)+'</strong><div class="item-detalhe">'+esc(it.titulo||'')+'</div></div>'+
+        '<div class="tipo '+esc(tipo)+'">'+esc(tipoLabel(tipo))+'</div>'+
+        '<div>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</div>'+
+        (podeVerValor ? '<div class="escala-relatorio-valor" data-permissao-valor-escala>'+esc(moedaBR(it.valor_combinado))+'</div>' : '')+
+      '</div>';
+    }).join('');
+  };
+  window.exportarRelatorioEscalaExcel = async function(){
+    var eventos=await buscarEventosRelatorioEscalaExportacao();
+    if(!eventos.length){ msg('msgEscalaPlantoes','Não há dados para exportar no período selecionado.','err'); return; }
+    var podeVerValor = (typeof usuarioPodeVerValorCombinadoEscala === 'function') ? usuarioPodeVerValorCombinadoEscala() : true;
+    var linhas=[podeVerValor ? ['Data','Dia da semana','Funcionário','Tipo','Início','Fim','Título','Valor combinado','Status','Excluído por','Observação'] : ['Data','Dia da semana','Funcionário','Tipo','Início','Fim','Título','Status','Excluído por','Observação']];
+    eventos.forEach(function(it){
+      var row=[dataBR(it.data_plantao), diaSemanaBR(it.data_plantao), it.funcionario_nome||it.titulo||'Funcionário', tipoLabel(it.tipo), hora(it.inicio_hora), hora(it.fim_hora), it.titulo||''];
+      if(podeVerValor) row.push(Number(it.valor_combinado||0).toFixed(2).replace('.',','));
+      row.push(statusEscalaRelatorio(it));
+      row.push(excluidoPorEscalaRelatorio(it));
+      row.push(it.observacao||'');
+      linhas.push(row);
+    });
+    var csv='﻿'+linhas.map(function(row){return row.map(function(c){return '"'+String(c??'').replace(/"/g,'""')+'"';}).join(';');}).join('\n');
+    var faixa=faixaRelatorioEscalaExportacao();
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download='relatorio-escala-'+faixa.inicio+'-a-'+faixa.fim+'.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+  window.exportarRelatorioEscalaPDF = async function(){
+    var eventos=await buscarEventosRelatorioEscalaExportacao();
+    if(!eventos.length){ msg('msgEscalaPlantoes','Não há dados para exportar no período selecionado.','err'); return; }
+    var podeVerValor = (typeof usuarioPodeVerValorCombinadoEscala === 'function') ? usuarioPodeVerValorCombinadoEscala() : true;
+    var total=eventos.reduce(function(acc,it){return acc+Number(it.valor_combinado||0);},0);
+    var faixa=faixaRelatorioEscalaExportacao();
+    var linhas=eventos.map(function(it){
+      var tipo=String(it.tipo||'plantao');
+      var status=statusEscalaRelatorio(it);
+      var statusStyle=it.deleted_at ? ' style="color:#b91c1c;font-weight:bold"' : '';
+      return '<tr><td>'+esc(dataBR(it.data_plantao))+'</td><td>'+esc(diaSemanaBR(it.data_plantao))+'</td><td>'+esc(it.funcionario_nome||it.titulo||'Funcionário')+'</td><td class="'+esc(tipo)+'">'+esc(tipoLabel(tipo))+'</td><td>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</td>'+(podeVerValor ? '<td>'+esc(moedaBR(it.valor_combinado))+'</td>' : '')+'<td'+statusStyle+'>'+esc(status)+'</td><td>'+esc(excluidoPorEscalaRelatorio(it))+'</td><td>'+esc(it.observacao||'')+'</td></tr>';
+    }).join('');
+    var w=window.open('','_blank'); if(!w){ msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err'); return; }
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px}.meta{margin-bottom:16px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f2f2f2}.plantao{color:#dc2626}.reuniao{color:#7c3aed}.compromisso{color:#0284c7}.total{margin-top:14px;font-weight:bold}</style></head><body><h1>Relatório de Escala e Plantões</h1><div class="meta">Período: '+esc(dataBR(faixa.inicio))+' até '+esc(dataBR(faixa.fim))+(podeVerValor ? ' · Total combinado: '+esc(moedaBR(total)) : '')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(podeVerValor ? '<th>Valor</th>' : '')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+linhas+'</tbody></table></body></html>');
+    w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
+  };
+  var originalCarregar = window.carregarEscalaPlantoes;
+  window.carregarEscalaPlantoes = async function(){
+    if(typeof originalCarregar==='function'){ try{ await originalCarregar(); }catch(e){ console.warn('carregarEscalaPlantoes original falhou:',e); } }
+    await carregarEventosMesSeguro();
+    if(typeof window.renderizarRelatorioEscalaPlantoes==='function') window.renderizarRelatorioEscalaPlantoes();
+  };
+  document.addEventListener('click', function(ev){
+    var cancel=ev.target.closest && ev.target.closest('[data-escala-cancelar]'); if(cancel){ ev.preventDefault(); window.fecharModalCadastroPlantaoEscala(); return; }
+    var salvar=ev.target.closest && ev.target.closest('[data-escala-salvar]'); if(salvar){ ev.preventDefault(); window.salvarPlantaoEscala(); return; }
+    var excluir=ev.target.closest && ev.target.closest('[data-escala-excluir]'); if(excluir){ ev.preventDefault(); window.excluirPlantaoEscala(); return; }
+    var editar=ev.target.closest && ev.target.closest('[data-escala-editar]'); if(editar){ ev.preventDefault(); ev.stopPropagation(); window.abrirModalEditarPlantaoEscala(editar.getAttribute('data-escala-editar')); return; }
+    var evBtn=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-evento'); if(evBtn){ ev.preventDefault(); ev.stopPropagation(); return; }
+    var cell=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-dia');
+    if(cell && !cell.classList.contains('escala-dia-vazio')){ var data=cell.getAttribute('data-data'); if(data){ ev.preventDefault(); ev.stopPropagation(); window.abrirModalCadastroPlantaoEscala(data); } }
+  }, true);
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ garantirModalEscala(); }, 300); });
+})();
+</script>
+
+
+<script id="patch-escala-somente-adm-gerencia">
+(function(){
+  'use strict';
+  function normalizar(v){
+    return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+  }
+  function ehAdmEscala(){
+    try {
+      if (typeof usuarioEhAdministrador === 'function' && usuarioEhAdministrador()) return true;
+      var u = window.usuarioSistemaLogado || (typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null);
+      var codigo = normalizar(u && u.perfil && u.perfil.codigo || u && u.perfil_codigo || u && u.tipo || '');
+      return codigo === 'ADM' || codigo === 'ADMIN' || codigo === 'ADMINISTRADOR' || codigo === 'MASTER';
+    } catch (_e) {
+      return false;
+    }
+  }
+  window.usuarioPodeGerenciarEscala = ehAdmEscala;
+
+  function msgModal(texto, tipo){
+    try {
+      if (typeof msg === 'function') msg('msgModalEscalaPlantao', texto, tipo || 'err');
+      else {
+        var el = document.getElementById('msgModalEscalaPlantao');
+        if (el) el.textContent = texto || '';
+      }
+    } catch (_e) {}
+  }
+
+  function aplicarModoEscala(){
+    var pode = ehAdmEscala();
+    document.body.classList.toggle('escala-somente-visualizacao', !pode);
+
+    document.querySelectorAll('#escala_plantoes .escala-side-title button, #escala_plantoes button[onclick="abrirModalCadastroPlantaoEscala()"], #escala_plantoes button[onclick^="abrirModalCadastroPlantaoEscala("]').forEach(function(btn){
+      btn.style.display = pode ? '' : 'none';
+      btn.disabled = !pode;
+    });
+
+    var modal = document.getElementById('modalEscalaPlantao');
+    if (!modal) return;
+    modal.classList.toggle('escala-modal-readonly', !pode);
+
+    ['escalaPlantaoFuncionario','escalaPlantaoInicio','escalaPlantaoFim','escalaPlantaoTipo','escalaPlantaoTitulo','escalaPlantaoValor','escalaPlantaoObservacao'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.disabled = !pode;
+    });
+
+    var btnSalvar = document.getElementById('btnSalvarPlantaoEscala');
+    var btnExcluir = document.getElementById('btnExcluirPlantaoEscala');
+    if (btnSalvar) btnSalvar.style.display = pode ? '' : 'none';
+    if (btnExcluir) btnExcluir.style.display = pode ? btnExcluir.style.display : 'none';
+
+    var titulo = document.getElementById('escalaModalTitulo');
+    if (titulo && !pode) titulo.textContent = 'Visualizar escala';
+  }
+  window.aplicarModoEscalaPorPerfil = aplicarModoEscala;
+
+  function envolver(nome, wrapper){
+    var tentativas = 0;
+    var timer = setInterval(function(){
+      tentativas++;
+      if (typeof window[nome] === 'function' && !window[nome].__perfilEscalaPatch) {
+        var original = window[nome];
+        var nova = wrapper(original);
+        nova.__perfilEscalaPatch = true;
+        window[nome] = nova;
+        clearInterval(timer);
+      }
+      if (tentativas > 80) clearInterval(timer);
+    }, 100);
+  }
+
+  envolver('abrirModalCadastroPlantaoEscala', function(original){
+    return async function(dataIso){
+      await original.apply(this, arguments);
+      aplicarModoEscala();
+      if (!ehAdmEscala()) msgModal('Visualização apenas. Somente perfil ADM pode lançar, editar ou excluir escala.', 'ok');
+    };
+  });
+
+  envolver('abrirModalEditarPlantaoEscala', function(original){
+    return async function(id){
+      await original.apply(this, arguments);
+      aplicarModoEscala();
+      if (!ehAdmEscala()) msgModal('Visualização apenas. Somente perfil ADM pode editar ou excluir escala.', 'ok');
+    };
+  });
+
+  envolver('salvarPlantaoEscala', function(original){
+    return async function(){
+      if (!ehAdmEscala()) {
+        aplicarModoEscala();
+        msgModal('Sem permissão. Somente perfil ADM pode salvar escala.', 'err');
+        return;
+      }
+      return await original.apply(this, arguments);
+    };
+  });
+
+  envolver('excluirPlantaoEscala', function(original){
+    return async function(){
+      if (!ehAdmEscala()) {
+        aplicarModoEscala();
+        msgModal('Sem permissão. Somente perfil ADM pode excluir escala.', 'err');
+        return;
+      }
+      return await original.apply(this, arguments);
+    };
+  });
+
+  document.addEventListener('click', function(ev){
+    var btnNovo = ev.target.closest && ev.target.closest('#escala_plantoes .escala-side-title button, #escala_plantoes button[onclick="abrirModalCadastroPlantaoEscala()"]');
+    if (btnNovo && !ehAdmEscala()) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      return false;
+    }
+    var acaoModal = ev.target.closest && ev.target.closest('#btnSalvarPlantaoEscala, #btnExcluirPlantaoEscala, [data-escala-salvar], [data-escala-excluir]');
+    if (acaoModal && !ehAdmEscala()) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      aplicarModoEscala();
+      msgModal('Sem permissão. Somente perfil ADM pode alterar escala.', 'err');
+      return false;
+    }
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(aplicarModoEscala, 500);
+    setTimeout(aplicarModoEscala, 1500);
+  });
+  setInterval(function(){
+    if (document.getElementById('escala_plantoes')) aplicarModoEscala();
+  }, 3000);
+})();
+</script>
+<style id="patch-escala-somente-adm-css">
+  body.escala-somente-visualizacao #escala_plantoes .escala-side-title button { display:none !important; }
+  body.escala-somente-visualizacao #btnSalvarPlantaoEscala,
+  body.escala-somente-visualizacao #btnExcluirPlantaoEscala,
+  body.escala-somente-visualizacao [data-escala-salvar],
+  body.escala-somente-visualizacao [data-escala-excluir] { display:none !important; }
+  #modalEscalaPlantao.escala-modal-readonly input,
+  #modalEscalaPlantao.escala-modal-readonly select,
+  #modalEscalaPlantao.escala-modal-readonly textarea {
+    opacity:.82;
+    cursor:not-allowed;
+  }
+</style>
+
+<style id="patch-permissao-valor-escala">
+  body.sem-valor-combinado-escala .escala-relatorio-valor,
+  body.sem-valor-combinado-escala [data-permissao-valor-escala] { display: none !important; }
+</style>
+
+
+<script id="patch-relatorio-escala-administrador-final">
+(function(){
+  'use strict';
+  function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();}
+  function byId(id){return document.getElementById(id);}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function msg(id,tipoTexto,tipo){try{if(typeof window.setMsg==='function')window.setMsg(id,tipoTexto,tipo||'');else{var el=byId(id);if(el)el.textContent=tipoTexto||'';}}catch(e){}}
+  function usuario(){try{return window.usuarioSistemaLogado || (typeof usuarioSistemaLogado!=='undefined'?usuarioSistemaLogado:null) || {};}catch(e){return {};}}
+  function permissoes(){var u=usuario();return (u.permissoes||u.perfil_permissoes||(u.perfil&&u.perfil.permissoes)||{});}
+  function isAdmin(){
+    try{if(typeof window.usuarioEhAdministrador==='function' && window.usuarioEhAdministrador()) return true;}catch(e){}
+    var u=usuario(), p=u.perfil||{}, per=permissoes();
+    var texto=norm([u.nome,u.username,u.email,u.tipo,u.cargo,u.perfil_codigo,u.perfil_nome,p.codigo,p.nome].join(' '));
+    if(per && (per.admin===true || per.administrador===true || per.sistema_admin===true || per.relatorio_plantao===true)) return true;
+    return /\b(ADM|ADMIN|ADMINISTRADOR|MASTER|SUPERADMIN|PROPRIETARIO|PATRICK|LILIANE)\b/.test(texto);
+  }
+  function lojaIdsPossiveis(){
+    var u=usuario(), ids=[];
+    function add(v){if(v && ids.indexOf(String(v))<0)ids.push(String(v));}
+    try{if(typeof window.obterLojaIdSessao==='function')add(window.obterLojaIdSessao());}catch(e){}
+    ['loja_id','lojaId','id_loja','loja_atual_id'].forEach(function(k){add(u[k]);});
+    try{if(u.loja)add(u.loja.id||u.loja.loja_id);}catch(e){}
+    try{if(typeof lojaAtualId!=='undefined')add(lojaAtualId);}catch(e){}
+    try{if(window.lojaAtual) add(window.lojaAtual.id||window.lojaAtual.loja_id);}catch(e){}
+    try{var ls=JSON.parse(localStorage.getItem('zuqui_usuario_logado')||localStorage.getItem('usuarioSistemaLogado')||'null'); if(ls){add(ls.loja_id); add(ls.lojaId); if(ls.loja)add(ls.loja.id||ls.loja.loja_id);}}catch(e){}
+    return ids;
+  }
+  function dataBR(v){var s=String(v||'').slice(0,10),p=s.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
+  function hora(v){return String(v||'').slice(0,5);}
+  function moeda(v){var n=Number(v||0);try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(e){return 'R$ '+n.toFixed(2).replace('.',',');}}
+  function tipoLabel(v){v=String(v||'plantao').toLowerCase();return v==='reuniao'?'Reunião':v==='compromisso'?'Compromisso':'Plantão';}
+  function faixa(){
+    var iniEl=byId('escalaRelatorioDataInicio'), fimEl=byId('escalaRelatorioDataFim');
+    var ini=String(iniEl&&iniEl.value||'').slice(0,10), fim=String(fimEl&&fimEl.value||'').slice(0,10);
+    var ref=(window.escalaPlantoesDataReferencia instanceof Date)?window.escalaPlantoesDataReferencia:new Date();
+    function f(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+    if(!ini){ini=f(new Date(ref.getFullYear(),ref.getMonth(),1)); if(iniEl)iniEl.value=ini;}
+    if(!fim){fim=f(new Date(ref.getFullYear(),ref.getMonth()+1,0)); if(fimEl)fimEl.value=fim;}
+    if(ini>fim){var t=ini;ini=fim;fim=t;}
+    return {inicio:ini,fim:fim};
+  }
+  async function carregarRelatorioEscala(){
+    var f=faixa(), dados=[];
+    if(window.sb && window.sb.from){
+      var cols='id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at,deleted_by_nome,deleted_by_funcionario_id,created_at,updated_at';
+      var ids=lojaIdsPossiveis();
+      var consultas=[];
+      if(ids.length){
+        for(var i=0;i<ids.length;i++) consultas.push(window.sb.from('escala_plantoes').select(cols).eq('loja_id',ids[i]).gte('data_plantao',f.inicio).lte('data_plantao',f.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true}));
+      }
+      consultas.push(window.sb.from('escala_plantoes').select(cols).gte('data_plantao',f.inicio).lte('data_plantao',f.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true}));
+      var ultimoErro=null;
+      for(var c=0;c<consultas.length;c++){
+        var r=await consultas[c];
+        if(r.error){ultimoErro=r.error; continue;}
+        dados=r.data||[];
+        if(dados.length || c===consultas.length-1) break;
+      }
+      if(!dados.length && ultimoErro) throw ultimoErro;
+      var fids=[...new Set(dados.map(function(x){return x.funcionario_id;}).filter(Boolean).map(String))];
+      var nomes={};
+      if(fids.length){try{var rf=await window.sb.from('funcionarios').select('id,nome').in('id',fids); if(!rf.error)(rf.data||[]).forEach(function(x){nomes[String(x.id)]=x.nome||'';});}catch(e){}}
+      dados.forEach(function(x){x.funcionario_nome=nomes[String(x.funcionario_id)] || x.funcionario_nome || x.titulo || 'Funcionário';});
+    } else {
+      dados=(window.escalaPlantoesEventos||[]).filter(function(x){var d=String(x.data_plantao||'').slice(0,10);return d>=f.inicio&&d<=f.fim;});
+    }
+    return dados;
+  }
+  function diaSemanaBR(v){var d=String(v||'').slice(0,10); if(!d)return '-'; var p=d.split('-'); if(p.length!==3)return '-'; var dt=new Date(Number(p[0]),Number(p[1])-1,Number(p[2])); return ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'][dt.getDay()]||'-';}
+  function excluidoPor(it){return it&&it.deleted_at ? (it.deleted_by_nome || '-') : '-';}
+  function status(it){return it&&it.deleted_at?('Excluído'+(it.deleted_by_nome?' por '+it.deleted_by_nome:'')):'Ativo';}
+  function podeVerValor(){try{return typeof window.usuarioPodeVerValorCombinadoEscala==='function'?window.usuarioPodeVerValorCombinadoEscala():true;}catch(e){return true;}}
+  async function renderRelatorioEscala(){
+    var lista=byId('listaRelatorioEscalaPlantoes'), resumo=byId('escalaRelatorioResumo'); if(!lista)return;
+    if(!isAdmin()){
+      if(resumo)resumo.textContent='Relatório disponível apenas para perfil Administrador.';
+      lista.innerHTML='<div class="empty">Sem permissão para visualizar este relatório.</div>';
+      return;
+    }
+    lista.innerHTML='<div class="empty">Carregando relatório...</div>';
+    try{
+      var eventos=await carregarRelatorioEscala(), verValor=podeVerValor();
+      var ativos=eventos.filter(function(x){return !x.deleted_at;});
+      var total=ativos.reduce(function(a,x){return a+Number(x.valor_combinado||0);},0);
+      if(resumo)resumo.textContent=eventos.length?(eventos.length+' lançamento(s) no período · '+ativos.length+' ativo(s)'+(verValor?' · Total ativo: '+moeda(total):'')):'Sem lançamentos no período.';
+      if(!eventos.length){lista.innerHTML='<div class="empty">Sem lançamentos.</div>';return;}
+      lista.innerHTML=eventos.map(function(it){
+        var del=!!it.deleted_at, tipo=String(it.tipo||'plantao').toLowerCase(), nome=it.funcionario_nome||it.titulo||'Funcionário';
+        return '<div class="escala-relatorio-item" style="'+(del?'opacity:.62;border-color:rgba(239,68,68,.35);':'')+'">'+
+          '<div><strong>'+esc(dataBR(it.data_plantao))+'</strong><div class="item-detalhe">'+esc(diaSemanaBR(it.data_plantao))+'</div><div class="item-detalhe">'+esc(status(it))+'</div>'+(it.deleted_at?'<div class="item-detalhe">Excluído por: '+esc(excluidoPor(it))+'</div>':'')+'</div>'+
+          '<div><strong>'+esc(nome)+'</strong><div class="item-detalhe">'+esc(it.titulo||'')+'</div></div>'+
+          '<div class="tipo '+esc(tipo)+'">'+esc(tipoLabel(tipo))+'</div>'+
+          '<div>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</div>'+
+          (verValor?'<div class="escala-relatorio-valor" data-permissao-valor-escala>'+esc(moeda(it.valor_combinado))+'</div>':'')+
+        '</div>';
+      }).join('');
+    }catch(e){console.error('Relatório escala/plantões:',e); if(resumo)resumo.textContent='Erro ao buscar relatório.'; lista.innerHTML='<div class="empty">Não foi possível carregar: '+esc(e.message||'erro desconhecido')+'</div>';}
+  }
+  window.renderizarRelatorioEscalaPlantoes=renderRelatorioEscala;
+  window.buscarEventosRelatorioEscalaExportacao=carregarRelatorioEscala;
+  window.exportarRelatorioEscalaExcel=async function(){
+    if(!isAdmin()){msg('msgEscalaPlantoes','Somente Administrador pode exportar este relatório.','err');return;}
+    var eventos=await carregarRelatorioEscala(); if(!eventos.length){msg('msgEscalaPlantoes','Não há dados para exportar no período selecionado.','err');return;}
+    var verValor=podeVerValor();
+    var linhas=[verValor?['Data','Dia da semana','Funcionário','Tipo','Início','Fim','Título','Valor combinado','Status','Excluído por','Observação']:['Data','Dia da semana','Funcionário','Tipo','Início','Fim','Título','Status','Excluído por','Observação']];
+    eventos.forEach(function(it){var row=[dataBR(it.data_plantao),diaSemanaBR(it.data_plantao),it.funcionario_nome||it.titulo||'Funcionário',tipoLabel(it.tipo),hora(it.inicio_hora),hora(it.fim_hora),it.titulo||'']; if(verValor)row.push(Number(it.valor_combinado||0).toFixed(2).replace('.',',')); row.push(status(it)); row.push(excluidoPor(it)); row.push(it.observacao||''); linhas.push(row);});
+    var csv='\ufeff'+linhas.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
+    var f=faixa(), blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}), url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download='relatorio-escala-'+f.inicio+'-a-'+f.fim+'.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
+  window.exportarRelatorioEscalaPDF=async function(){
+    if(!isAdmin()){msg('msgEscalaPlantoes','Somente Administrador pode exportar este relatório.','err');return;}
+    var eventos=await carregarRelatorioEscala(); if(!eventos.length){msg('msgEscalaPlantoes','Não há dados para exportar no período selecionado.','err');return;}
+    var verValor=podeVerValor(), f=faixa(), total=eventos.filter(function(e){return !e.deleted_at;}).reduce(function(a,e){return a+Number(e.valor_combinado||0);},0);
+    var rows=eventos.map(function(it){var del=!!it.deleted_at;return '<tr style="'+(del?'color:#991b1b;text-decoration:line-through;':'')+'"><td>'+esc(dataBR(it.data_plantao))+'</td><td>'+esc(diaSemanaBR(it.data_plantao))+'</td><td>'+esc(it.funcionario_nome||it.titulo||'Funcionário')+'</td><td>'+esc(tipoLabel(it.tipo))+'</td><td>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</td>'+(verValor?'<td>'+esc(moeda(it.valor_combinado))+'</td>':'')+'<td>'+esc(status(it))+'</td><td>'+esc(excluidoPor(it))+'</td><td>'+esc(it.observacao||'')+'</td></tr>';}).join('');
+    var w=window.open('','_blank'); if(!w){msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err');return;}
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f3f4f6}.meta{color:#555;margin-bottom:16px}</style></head><body><h1>Relatório de Escala e Plantões</h1><div class="meta">Período: '+esc(dataBR(f.inicio))+' até '+esc(dataBR(f.fim))+(verValor?' · Total ativo: '+esc(moeda(total)):'')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(verValor?'<th>Valor</th>':'')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>');
+    w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
+  };
+  function ajustarVisibilidade(){
+    var admin=isAdmin();
+    document.querySelectorAll('[data-page="relatorio_plantao"], button[onclick*="relatorio_plantao"]').forEach(function(el){el.style.display=admin?'':'none';});
+  }
+  var old=window.abrirPagina;
+  if(typeof old==='function' && !old.__relatorioEscalaAdminFinal){
+    window.abrirPagina=function(id,btn){
+      if(id==='relatorio_plantao' && !isAdmin()){msg('msgEscalaPlantoes','Relatório da escala disponível apenas para Administrador.','err');return;}
+      var r=old.apply(this,arguments); if(id==='relatorio_plantao') setTimeout(renderRelatorioEscala,150); return r;
+    };
+    window.abrirPagina.__relatorioEscalaAdminFinal=true;
+  }
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(ajustarVisibilidade,800); setTimeout(function(){if(byId('relatorio_plantao')&&byId('relatorio_plantao').classList.contains('ativa'))renderRelatorioEscala();},1000);});
+  setTimeout(ajustarVisibilidade,1500);
+})();
+</script>
+
 </body>
 </html>
 
