@@ -7126,14 +7126,14 @@ let filtroLojaSuspensoTemporariamente = false;
 function obterEmpresaIdSessao() {
   if (filtroLojaSuspensoTemporariamente) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
-  if (!s || s.tipo === 'admin') return null;
+  if (!s) return null;
   return s.empresa_id || null;
 }
 
 function obterLojaIdSessao() {
   if (filtroLojaSuspensoTemporariamente) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
-  if (!s || s.tipo === 'admin') return null;
+  if (!s) return null;
   return s.loja_id || null;
 }
 
@@ -8656,8 +8656,11 @@ function agruparEventosEscalaPorDia(){
 async function carregarFuncionariosSelectEscala(){
   const select=document.getElementById('escalaPlantaoFuncionario');
   if(!select)return;
-  let query=sb.from('funcionarios').select('id, nome').eq('ativo', true).order('nome');
-  query=aplicarFiltroLojaFuncionariosQuery(query);
+  const lojaId=String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const empresaId=String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+  let query=sb.from('funcionarios').select('id, nome, loja_id, empresa_id').eq('ativo', true).order('nome');
+  if(empresaId) query=query.eq('empresa_id', empresaId);
+  if(lojaId) query=query.eq('loja_id', lojaId);
   const { data, error } = await query;
   if(error){
     select.innerHTML='<option value="">Erro ao carregar funcionários</option>';
@@ -10251,7 +10254,7 @@ function isMissingLojaIdColumnError(error) {
 }
 
 function obterLojaIdParaEscopoAtual() {
-  if (!usuarioSistemaLogado || usuarioSistemaLogado.tipo === 'admin') return '';
+  if (!usuarioSistemaLogado) return '';
   return String(usuarioSistemaLogado.loja_id || '').trim();
 }
 
