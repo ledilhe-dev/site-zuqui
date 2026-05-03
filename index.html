@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.28-ajuste-manual-ponto">
+  <meta name="app-version" content="3.1.29-ajuste-manual-rpc">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -6814,7 +6814,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.28';
+const APP_VERSION = '3.1.29';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -27154,6 +27154,52 @@ async function registrarPontoFuncionario() {
     await carregarRelatorioPonto();
   }
 }
+
+
+/* === FIX 3.1.29: ajuste manual de ponto sem duplicate key ===
+   Usa função SQL segura para editar o registro existente do dia.
+   Não altera o fluxo de bater ponto que já voltou a funcionar.
+*/
+async function aplicarAjusteAprovadoNoPonto(solicitacao) {
+  const funcionarioId = String(solicitacao?.funcionario_id || '').trim();
+  const dataAjuste = String(solicitacao?.data_ajuste || '').trim();
+  const horarioAjuste = String(solicitacao?.horario_ajuste || '').trim();
+
+  if (!funcionarioId || !dataAjuste || !horarioAjuste) {
+    return { ok: false, mensagem: 'Solicitação sem funcionário, data ou horário válidos.' };
+  }
+
+  let funcionarioInfo = null;
+  try {
+    const { data } = await sb
+      .from('funcionarios')
+      .select('id, nome, loja_id, empresa_id')
+      .eq('id', funcionarioId)
+      .maybeSingle();
+    funcionarioInfo = data || null;
+  } catch (_) {}
+
+  const tenantLojaId = solicitacao?.loja_id || funcionarioInfo?.loja_id || lojaAtualId || null;
+  const tenantEmpresaId = solicitacao?.empresa_id || funcionarioInfo?.empresa_id || empresaAtualId || null;
+
+  try {
+    const { data, error } = await sb.rpc('aplicar_ajuste_manual_ponto_v2', {
+      p_funcionario_id: funcionarioId,
+      p_data_ponto: dataAjuste,
+      p_horario: horarioAjuste,
+      p_empresa_id: tenantEmpresaId,
+      p_loja_id: tenantLojaId,
+    });
+
+    if (error) return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
+    const retorno = data || {};
+    if (retorno.ok === false) return { ok: false, mensagem: retorno.mensagem || 'Não foi possível aplicar ajuste.' };
+    return { ok: true, mensagem: retorno.mensagem || 'Ajuste manual aplicado no registro existente.' };
+  } catch (error) {
+    return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
+  }
+}
+
 </script>
 </body>
 </html>
