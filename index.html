@@ -28437,9 +28437,10 @@ async function registrarPontoFuncionario() {
 
 
 
-/* === FIX 3.1.25: batida de ponto via função SQL segura ===
-   A lógica de avançar entrada -> intervalo -> retorno -> saída passa a rodar no banco,
-   evitando divergência de data_ponto/current_date e filtros de leitura do front.
+/* === FIX 3.1.31: batida de ponto via função SQL segura ===
+   A lógica passa a aceitar até 6 batidas no dia:
+   entrada -> saída intervalo 1 -> retorno 1 -> saída intervalo 2 -> retorno 2 -> saída final.
+   A regra principal roda no banco pela função registrar_ponto_funcionario_v2.
 */
 async function registrarPontoFuncionario() {
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
@@ -28500,43 +28501,36 @@ async function registrarPontoFuncionario() {
     }
   } catch (_) {}
 
-  // 2) Trava pelo banco: funciona mesmo depois de atualizar a página ou trocar de computador.
+  // 2) Trava pelo banco: considera SOMENTE batidas reais registradas pela auditoria.
+  // Ajuste manual ADM / solicitação aprovada NÃO entra nesta trava, porque o funcionário
+  // pode ajustar um horário esquecido e logo em seguida bater o próximo ponto real.
   try {
-    const batidasHoje = [];
-    const { data: registrosHoje, error: erroRegistrosHoje } = await sb
-      .from('ponto_registros')
-      .select('id, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at')
+    const batidasReais = [];
+
+    const { data: auditoriaHoje, error: erroAuditoriaHoje } = await sb
+      .from('ponto_batidas_auditoria')
+      .select('registrado_em, tipo_batida, origem_registro')
       .eq('funcionario_id', funcionarioId)
-      .eq('data_ponto', dataPonto)
-      .order('created_at', { ascending: false })
-      .limit(3);
+      .gte('registrado_em', `${dataPonto}T00:00:00`)
+      .lt('registrado_em', `${dataPonto}T23:59:59`)
+      .order('registrado_em', { ascending: false })
+      .limit(10);
 
-    if (erroRegistrosHoje) throw erroRegistrosHoje;
-
-    (registrosHoje || []).forEach(reg => {
-      ['entrada_em', 'inicio_intervalo_em', 'retorno_intervalo_em', 'saida_em', 'created_at'].forEach(campo => {
-        if (reg?.[campo]) batidasHoje.push(reg[campo]);
+    if (erroAuditoriaHoje) {
+      // Se a tabela de auditoria ainda não existir, não usa campos editáveis de ponto_registros,
+      // porque eles podem ter vindo de ajuste manual. A trava local continua protegendo
+      // duplo clique/dupla batida no mesmo aparelho.
+      console.warn('Auditoria de batidas indisponível para bloqueio de 10 minutos:', erroAuditoriaHoje);
+    } else {
+      (auditoriaHoje || []).forEach(item => {
+        const tipo = String(item?.tipo_batida || '').toLowerCase();
+        const origem = String(item?.origem_registro || '').toLowerCase();
+        const veioDeAjuste = origem.includes('ajuste') || origem.includes('manual') || tipo.includes('ajuste') || tipo.includes('manual');
+        if (!veioDeAjuste && item?.registrado_em) batidasReais.push(item.registrado_em);
       });
-    });
-
-    const registroPrincipal = (registrosHoje || [])[0];
-    if (registroPrincipal?.id) {
-      try {
-        const { data: intervalosHoje, error: erroIntervalosHoje } = await sb
-          .from('ponto_intervalos')
-          .select('inicio_em, retorno_em, created_at')
-          .eq('ponto_registro_id', registroPrincipal.id);
-        if (!erroIntervalosHoje) {
-          (intervalosHoje || []).forEach(intervalo => {
-            if (intervalo?.inicio_em) batidasHoje.push(intervalo.inicio_em);
-            if (intervalo?.retorno_em) batidasHoje.push(intervalo.retorno_em);
-            if (intervalo?.created_at) batidasHoje.push(intervalo.created_at);
-          });
-        }
-      } catch (_) {}
     }
 
-    const batidasValidas = [...new Set(batidasHoje)]
+    const batidasValidas = [...new Set(batidasReais)]
       .map(iso => ({ iso, ms: new Date(iso).getTime() }))
       .filter(item => Number.isFinite(item.ms))
       .sort((a, b) => a.ms - b.ms);
@@ -28548,10 +28542,8 @@ async function registrarPontoFuncionario() {
       return;
     }
   } catch (erroValidacaoDezMinutos) {
-    console.warn('Não foi possível validar bloqueio de batida em 10 minutos:', erroValidacaoDezMinutos);
-    setMsg('msgPonto', 'Não foi possível validar duplicidade de ponto. Tente novamente em alguns segundos.', 'err');
-    if (campoPin) campoPin.value = '';
-    return;
+    console.warn('Não foi possível validar bloqueio real de batida em 10 minutos:', erroValidacaoDezMinutos);
+    // Não bloqueia por campos editados manualmente. Mantém apenas a trava local.
   }
 
   const lojaId = usuarioSistemaLogado?.loja_id || funcionario.loja_id || null;
@@ -28588,13 +28580,13 @@ async function registrarPontoFuncionario() {
   if (tipo === 'entrada') {
     descricaoBatida = 'PONTO REGISTRADO';
     tipoAvisoPonto = 'iniciado';
-  } else if (tipo === 'inicio_intervalo') {
+  } else if (tipo === 'inicio_intervalo' || tipo === 'inicio_intervalo_1' || tipo === 'inicio_intervalo_2') {
     descricaoBatida = 'INTERVALO INICIADO';
     tipoAvisoPonto = 'parado';
-  } else if (tipo === 'retorno_intervalo') {
+  } else if (tipo === 'retorno_intervalo' || tipo === 'retorno_intervalo_1' || tipo === 'retorno_intervalo_2') {
     descricaoBatida = 'RETORNO REGISTRADO';
     tipoAvisoPonto = 'iniciado';
-  } else if (tipo === 'saida') {
+  } else if (tipo === 'saida' || tipo === 'saida_final' || tipo === 'saida_automatica') {
     descricaoBatida = 'PONTO FECHADO';
     tipoAvisoPonto = 'parado';
   }
