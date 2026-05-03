@@ -5406,7 +5406,8 @@
           </button>
           <button class="nav-btn nav-sub-btn" data-page="configuracoes" onclick="abrirPagina('configuracoes', this)">
             <span class="nav-copy">
-              <span class="nav-title">Loja</span>
+              <span class="nav-title">Minha loja</span>
+              <span class="nav-hint">Dados da loja atual</span>
             </span>
           </button>
           <button class="nav-btn nav-sub-btn" id="btnForcarAtualizacaoGeral" data-page="forcar_atualizacao_geral" type="button" onclick="forcarAtualizacaoGeralUsuarios()">
@@ -5436,7 +5437,8 @@
           </button>
           <button class="nav-btn nav-sub-btn" data-page="lojas_saas" onclick="abrirPagina('lojas_saas', this)">
             <span class="nav-copy">
-              <span class="nav-title">Lojas</span>
+              <span class="nav-title">Lojas / Filiais</span>
+              <span class="nav-hint">Gestão SaaS por empresa</span>
             </span>
           </button>
         </div>
@@ -7486,9 +7488,9 @@ function iniciarPollingControleVersaoSistema() {
   intervaloControleVersaoSistema = window.setInterval(() => {
     if (!usuarioSistemaLogado) return;
     verificarControleVersaoSistema(true).catch((erro) => {
-      console.warn('Falha ao verificar controle de versão pelo fallback seguro:', erro);
+      console.warn('Falha ao verificar controle de versão por intervalo:', erro);
     });
-  }, 60000);
+  }, 5000);
 }
 
 function configurarControleVersaoSistema() {
@@ -30408,6 +30410,26 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   window.atualizarPontoTelaAgora = atualizarPontoTelaAgora;
 })();
 </script>
+
+<script id="limpar-url-sensivel-passivo">
+window.addEventListener('load', function() {
+  try {
+    var url = new URL(window.location.href);
+    var changed = false;
+    Array.from(url.searchParams.keys()).forEach(function(key) {
+      var k = String(key || '').toLowerCase();
+      if (k === 'atualizacao' || k.indexOf('campo_password') === 0 || k.indexOf('campo_seguro') === 0) {
+        url.searchParams.delete(key);
+        changed = true;
+      }
+    });
+    if (changed && window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, url.pathname + (url.search || '') + (url.hash || ''));
+    }
+  } catch (e) {}
+});
+</script>
+
 </body>
 </html>
 
