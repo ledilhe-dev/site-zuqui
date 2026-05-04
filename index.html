@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.30-ajuste-manual-sequencia">
+  <meta name="app-version" content="3.1.31-producao-segura">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.18 - Produção
+    Versão 3.1.31 - Produção segura
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -31,12 +31,15 @@
   <link rel="apple-touch-icon" href="./logo-check-diario.svg">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxOCIgZmlsbD0iIzBBMEYwRCIvPgogIDxyZWN0IHg9IjciIHk9IjciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcng9IjE1IiBmaWxsPSIjMTYzNjI2Ii8+CiAgPHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iMjQiIGhlaWdodD0iMzIiIHJ4PSI1IiBmaWxsPSIjRjRGRkY3Ii8+CiAgPGNpcmNsZSBjeD0iNDQiIGN5PSI0MSIgcj0iMTAiIGZpbGw9IiMyMkM1NUUiLz4KICA8cGF0aCBkPSJNMzkuNSA0MUw0MyA0NC41TDQ5IDM4LjUiIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script id="configurar-mascara-cep-loja">
 (function configurarMascaraCepLoja() {
   document.addEventListener('input', (ev) => {
     const id = ev.target?.id || '';
     if (!['configCepLoja', 'cepLojaCadastro', 'saasCepLoja'].includes(id)) return;
-    ev.target.value = formatarCepLoja(ev.target.value || '');
+    if (typeof formatarCepLoja === 'function') {
+      ev.target.value = formatarCepLoja(ev.target.value || '');
+    }
   });
 })();
 </script>
@@ -7063,7 +7066,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.29';
+const APP_VERSION = '3.1.31-producao-segura';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -8695,7 +8698,6 @@ async function carregarFuncionariosSelectEscala(){
     return;
   }
 
-  // Seleciona somente funcionários ativos da loja atual e cruza com loja ativa.
   let query=sb
     .from('funcionarios')
     .select('id, nome, loja_id, empresa_id, lojas!inner(id, ativo)')
