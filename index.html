@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.31-producao-segura">
+  <meta name="app-version" content="3.1.36-filiais-blindadas-escala">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.31 - Produção segura
+    Versão 3.1.36 - Filiais blindadas na escala e trava de versão desativada temporariamente
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7066,7 +7066,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.31-producao-segura';
+const APP_VERSION = '3.1.37-multiloja-ponto-ajuste-blindado';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -7393,6 +7393,8 @@ O sistema será recarregado para buscar a versão mais recente.`);
 }
 
 async function verificarControleVersaoSistema(silencioso = true) {
+  // TEMPORÁRIO: trava de versão desativada para não derrubar produção.
+  return;
   if (!usuarioSistemaLogado) return;
 
   const { data, error } = await sb
@@ -7435,6 +7437,8 @@ async function verificarControleVersaoSistema(silencioso = true) {
 }
 
 function configurarRealtimeControleVersaoSistema() {
+  // TEMPORÁRIO: realtime da trava de versão desativado.
+  return;
   if (canalControleVersaoSistema) return;
 
   try {
@@ -7483,6 +7487,8 @@ function configurarRealtimeControleVersaoSistema() {
 }
 
 function iniciarPollingControleVersaoSistema() {
+  // TEMPORÁRIO: polling da trava de versão desativado.
+  return;
   if (intervaloControleVersaoSistema) {
     clearInterval(intervaloControleVersaoSistema);
     intervaloControleVersaoSistema = null;
@@ -8658,69 +8664,56 @@ function agruparEventosEscalaPorDia(){
 
 
 async function obterLojaAtivaAtualParaEscala() {
-  const lojaIdSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  const empresaIdSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
-
-  if (lojaIdSessao) {
-    try {
-      let q = sb.from('lojas').select('id, nome, ativo, empresa_id').eq('id', lojaIdSessao).eq('ativo', true).limit(1);
-      if (empresaIdSessao) q = q.eq('empresa_id', empresaIdSessao);
-      const r = await q.maybeSingle();
-      if (!r.error && r.data?.id) return r.data;
-    } catch (_) {}
-  }
-
   const nomeTopbar = String(document.getElementById('topbar-store-name')?.textContent || '').trim();
-  if (nomeTopbar) {
+  const empresaIdSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+  const buscarLoja = async (q) => {
     try {
-      let q = sb.from('lojas').select('id, nome, ativo, empresa_id').eq('ativo', true).ilike('nome', nomeTopbar).limit(1);
-      if (empresaIdSessao) q = q.eq('empresa_id', empresaIdSessao);
-      const r = await q.maybeSingle();
-      if (!r.error && r.data?.id) return r.data;
+      const r = await executarSemFiltroLojaTemporario(() => q.maybeSingle());
+      if (!r.error && r.data?.id && r.data.ativo !== false) return r.data;
     } catch (_) {}
+    return null;
+  };
+  if (nomeTopbar && nomeTopbar !== '-') {
+    let loja = await buscarLoja(sb.from('lojas').select('id, nome, ativo, empresa_id').eq('ativo', true).ilike('nome', nomeTopbar).limit(1));
+    if (loja?.id) return loja;
+    loja = await buscarLoja(sb.from('lojas').select('id, nome, ativo, empresa_id').eq('ativo', true).ilike('nome', `%${nomeTopbar}%`).limit(1));
+    if (loja?.id) return loja;
   }
-
+  const lojaIdSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  if (lojaIdSessao) {
+    let q = sb.from('lojas').select('id, nome, ativo, empresa_id').eq('id', lojaIdSessao).eq('ativo', true).limit(1);
+    if (empresaIdSessao) q = q.eq('empresa_id', empresaIdSessao);
+    const loja = await buscarLoja(q);
+    if (loja?.id) return loja;
+    return { id: lojaIdSessao, empresa_id: empresaIdSessao || null, ativo: true };
+  }
   return null;
 }
 
 async function carregarFuncionariosSelectEscala(){
   const select=document.getElementById('escalaPlantaoFuncionario');
   if(!select)return;
-
   const lojaAtual = await obterLojaAtivaAtualParaEscala();
-  const lojaId=String(lojaAtual?.id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  const empresaId=String(lojaAtual?.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
-
+  const lojaId=String(lojaAtual?.id || '').trim();
   if(!lojaId){
     escalaPlantoesFuncionariosCache=[];
     select.innerHTML='<option value="">Loja logada não identificada</option>';
     setMsg('msgModalEscalaPlantao','Não foi possível identificar a loja logada para carregar funcionários da escala.','err');
     return;
   }
-
-  let query=sb
+  const { data, error } = await executarSemFiltroLojaTemporario(() => sb
     .from('funcionarios')
-    .select('id, nome, loja_id, empresa_id, lojas!inner(id, ativo)')
+    .select('id, nome, loja_id, empresa_id, ativo')
     .eq('ativo', true)
-    .eq('lojas.ativo', true)
     .eq('loja_id', lojaId)
-    .order('nome');
-
-  if(empresaId) query=query.eq('empresa_id', empresaId);
-
-  const { data, error } = await query;
+    .order('nome'));
   if(error){
+    escalaPlantoesFuncionariosCache=[];
     select.innerHTML='<option value="">Erro ao carregar funcionários</option>';
-    setMsg('msgModalEscalaPlantao',`Erro ao carregar funcionários: ${mensagemErroSupabase(error,'erro desconhecido')}`,'err');
+    setMsg('msgModalEscalaPlantao',`Erro ao carregar funcionários da filial logada: ${mensagemErroSupabase(error,'erro desconhecido')}`,'err');
     return;
   }
-
-  const funcionariosFiltrados=(data||[]).filter(f =>
-    String(f.loja_id||'') === lojaId &&
-    (!empresaId || String(f.empresa_id||'') === empresaId) &&
-    f.lojas?.ativo === true
-  );
-
+  const funcionariosFiltrados=(data||[]).filter(f => String(f.loja_id||'') === lojaId && f.ativo === true);
   escalaPlantoesFuncionariosCache=funcionariosFiltrados;
   select.innerHTML='<option value="">Selecione...</option>'+funcionariosFiltrados.map(f=>`<option value="${escapeHtml(f.id)}">${escapeHtml(f.nome||'Funcionário')}</option>`).join('');
 }
@@ -11054,13 +11047,19 @@ async function obterFuncionarioAtivoPorPin(pin) {
 
   const pinNormalizado = String(pin).trim();
 
-  const { data, error } = await sb
+  let query = sb
     .from('funcionarios')
     .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim, tempo_intervalo_minutos, loja_id, empresa_id')
     .eq('ativo', true);
 
+  query = aplicarFiltroLojaAtualPontoQuery(query);
+
+  const { data, error } = await query;
+
   if (error) return null;
-  const funcionario = (data || []).find(item => String(item.pin || '').trim() === pinNormalizado) || null;
+  const funcionario = (data || [])
+    .filter(funcionarioPertenceLojaAtualPonto)
+    .find(item => String(item.pin || '').trim() === pinNormalizado) || null;
   return funcionario;
 }
 
@@ -21735,18 +21734,64 @@ function tarefaDisponivelHoje(diasSemana, dataRef = hoje()) {
   return diasSemana.split(',').map(d => d.trim()).includes(diaToken);
 }
 
+
+//
+// MULTI-LOJA SEGURO PARA PONTO / AJUSTES
+// Regra: qualquer lista/validação de funcionário usada no ponto precisa respeitar a loja logada.
+// Isso evita que funcionários de loja desativada/de teste apareçam no Zuqui Café.
+//
+function obterLojaIdAtualParaPontoSeguro() {
+  try {
+    const idSessao = String((typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '') || '').trim();
+    if (idSessao) return idSessao;
+  } catch (_) {}
+  try {
+    const idUsuario = String(usuarioSistemaLogado?.loja_id || usuarioSistemaLogado?.lojaId || '').trim();
+    if (idUsuario) return idUsuario;
+  } catch (_) {}
+  try {
+    if (typeof lojaIdAtual === 'function') {
+      const idLojaAtual = String(lojaIdAtual() || '').trim();
+      if (idLojaAtual) return idLojaAtual;
+    }
+  } catch (_) {}
+  try {
+    const raw = localStorage.getItem('zuqui_usuario_logado') || localStorage.getItem('usuarioSistemaLogado') || localStorage.getItem('usuario_logado') || 'null';
+    const sessao = JSON.parse(raw);
+    const idStorage = String(sessao?.loja_id || sessao?.lojaId || '').trim();
+    if (idStorage) return idStorage;
+  } catch (_) {}
+  return '';
+}
+
+function aplicarFiltroLojaAtualPontoQuery(query) {
+  const lojaId = obterLojaIdAtualParaPontoSeguro();
+  if (lojaId && query && typeof query.eq === 'function') {
+    return query.eq('loja_id', lojaId);
+  }
+  return query;
+}
+
+function funcionarioPertenceLojaAtualPonto(funcionario) {
+  const lojaId = obterLojaIdAtualParaPontoSeguro();
+  if (!lojaId) return true;
+  return String(funcionario?.loja_id || '').trim() === lojaId;
+}
+
 //
 // PONTO ELETRÔNICO
 //
 async function carregarFuncionariosAtivosPonto() {
-  const { data, error } = await sb
+  let query = sb
     .from('funcionarios')
-    .select('id, nome, tempo_intervalo_minutos, horario_trabalho_inicio, horario_trabalho_fim')
-    .eq('ativo', true)
-    .order('nome');
+    .select('id, nome, tempo_intervalo_minutos, horario_trabalho_inicio, horario_trabalho_fim, loja_id, empresa_id')
+    .eq('ativo', true);
+
+  query = aplicarFiltroLojaAtualPontoQuery(query);
+  const { data, error } = await query.order('nome');
 
   if (error) throw error;
-  const funcionarios = data || [];
+  const funcionarios = (data || []).filter(funcionarioPertenceLojaAtualPonto);
   relatorioPontoFuncionarioCache = Object.fromEntries(funcionarios.map(item => [String(item.id), item.nome]));
   return funcionarios;
 }
@@ -21802,9 +21847,11 @@ async function verificarAlertaEntradaPonto() {
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
   let queryFuncionarios = sb
     .from('funcionarios')
-    .select('id, nome, horario_trabalho_inicio')
+    .select('id, nome, horario_trabalho_inicio, loja_id')
     .eq('ativo', true)
     .not('horario_trabalho_inicio', 'is', null);
+
+  queryFuncionarios = aplicarFiltroLojaAtualPontoQuery(queryFuncionarios);
 
   if (funcionarioRestritoId) {
     queryFuncionarios = queryFuncionarios.eq('id', funcionarioRestritoId);
@@ -23127,12 +23174,13 @@ async function registrarAuditoriaBatidaPonto({ pontoRegistroId, funcionarioId, t
 
 async function obterFuncionarioLogadoParaPonto() {
   if (!obterFuncionarioRestritoLogadoIdParaPonto()) return null;
-  const { data, error } = await sb
+  let query = sb
     .from('funcionarios')
     .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim, tempo_intervalo_minutos, loja_id, empresa_id')
     .eq('id', usuarioSistemaLogado.id)
-    .eq('ativo', true)
-    .maybeSingle();
+    .eq('ativo', true);
+  query = aplicarFiltroLojaAtualPontoQuery(query);
+  const { data, error } = await query.maybeSingle();
   if (error) throw error;
   return data || null;
 }
@@ -23524,6 +23572,24 @@ async function salvarAjusteManualAdminPonto() {
 
   if (!funcionarioId || !dataAjuste || !horarioAjuste || !senha || !motivo) {
     setMsg('msgAjusteManualAdminPonto', 'Preencha funcionário, data, horário, senha do administrador e motivo.', 'err');
+    return;
+  }
+
+  try {
+    let qFuncionarioLoja = sb
+      .from('funcionarios')
+      .select('id, nome, loja_id, ativo')
+      .eq('id', funcionarioId)
+      .eq('ativo', true);
+    qFuncionarioLoja = aplicarFiltroLojaAtualPontoQuery(qFuncionarioLoja);
+    const { data: funcionarioLoja, error: erroFuncionarioLoja } = await qFuncionarioLoja.maybeSingle();
+    if (erroFuncionarioLoja) throw erroFuncionarioLoja;
+    if (!funcionarioLoja || !funcionarioPertenceLojaAtualPonto(funcionarioLoja)) {
+      setMsg('msgAjusteManualAdminPonto', 'Funcionário não pertence à loja logada. Ajuste bloqueado para proteger o multi-loja.', 'err');
+      return;
+    }
+  } catch (error) {
+    setMsg('msgAjusteManualAdminPonto', `Não foi possível validar a loja do funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
 
@@ -28002,6 +28068,24 @@ async function salvarAjusteManualAdminPonto() {
     return;
   }
 
+  try {
+    let qFuncionarioLoja = sb
+      .from('funcionarios')
+      .select('id, nome, loja_id, ativo')
+      .eq('id', funcionarioId)
+      .eq('ativo', true);
+    qFuncionarioLoja = aplicarFiltroLojaAtualPontoQuery(qFuncionarioLoja);
+    const { data: funcionarioLoja, error: erroFuncionarioLoja } = await qFuncionarioLoja.maybeSingle();
+    if (erroFuncionarioLoja) throw erroFuncionarioLoja;
+    if (!funcionarioLoja || !funcionarioPertenceLojaAtualPonto(funcionarioLoja)) {
+      setMsg('msgAjusteManualAdminPonto', 'Funcionário não pertence à loja logada. Ajuste bloqueado para proteger o multi-loja.', 'err');
+      return;
+    }
+  } catch (error) {
+    setMsg('msgAjusteManualAdminPonto', `Não foi possível validar a loja do funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
   setMsg('msgAjusteManualAdminPonto', 'Validando senha do administrador...', 'ok');
   let senhaOk = false;
   try { senhaOk = await validarSenhaAdministradorParaAjustePonto(senha); }
@@ -28704,22 +28788,46 @@ async function registrarPontoFuncionario() {
 }
 
 
-/* === FIX 3.1.29: ajuste manual de ponto sem duplicate key ===
-   Usa função SQL segura para editar o registro existente do dia.
-   Não altera o fluxo de bater ponto que já voltou a funcionar.
+/* === FIX 3.1.32: ajuste manual de ponto sem duplicate key na fonte ===
+   Mantém 1 linha por funcionário/dia em ponto_registros.
+   Se o registro já existir, nunca tenta criar outra linha: carrega/atualiza e reorganiza a sequência.
 */
 async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   const funcionarioId = String(solicitacao?.funcionario_id || '').trim();
   const dataAjuste = String(solicitacao?.data_ajuste || '').trim();
-  const horarioAjuste = String(solicitacao?.horario_ajuste || '').trim();
+  const horarioAjuste = String(solicitacao?.horario_ajuste || '').trim().slice(0, 5);
 
-  if (!funcionarioId || !dataAjuste || !horarioAjuste) {
+  if (!funcionarioId || !dataAjuste || !/^\d{2}:\d{2}$/.test(horarioAjuste)) {
     return { ok: false, mensagem: 'Solicitação sem funcionário, data ou horário válidos.' };
   }
 
   const ajusteIso = new Date(`${dataAjuste}T${horarioAjuste}:00`).toISOString();
   if (!ajusteIso || Number.isNaN(new Date(ajusteIso).getTime())) {
     return { ok: false, mensagem: 'Horário do ajuste inválido.' };
+  }
+
+  const normalizarIso = (valor) => {
+    if (!valor) return '';
+    const d = new Date(valor);
+    return Number.isNaN(d.getTime()) ? '' : d.toISOString();
+  };
+
+  const ordenarUnicos = (valores = []) => {
+    const mapa = new Map();
+    valores.map(normalizarIso).filter(Boolean).forEach((iso) => mapa.set(iso, iso));
+    return [...mapa.values()].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  };
+
+  async function buscarRegistroSeguro() {
+    const { data, error } = await sb
+      .from('ponto_registros')
+      .select('id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id')
+      .eq('funcionario_id', funcionarioId)
+      .eq('data_ponto', dataAjuste)
+      .order('created_at', { ascending: true })
+      .limit(1);
+    if (error) throw error;
+    return (data || [])[0] || null;
   }
 
   let funcionarioInfo = null;
@@ -28736,7 +28844,22 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   const tenantEmpresaId = solicitacao?.empresa_id || funcionarioInfo?.empresa_id || empresaAtualId || null;
 
   try {
-    let { registro, intervalos } = await obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataAjuste);
+    let registro = await buscarRegistroSeguro();
+    let intervalos = [];
+
+    if (registro?.id) {
+      try {
+        const { data: intervalosData, error: erroInt } = await sb
+          .from('ponto_intervalos')
+          .select('id, ponto_registro_id, ordem, inicio_em, retorno_em')
+          .eq('ponto_registro_id', registro.id)
+          .order('ordem', { ascending: true });
+        if (erroInt && !isMissingTimeClockIntervalsTableError(erroInt)) throw erroInt;
+        intervalos = isMissingTimeClockIntervalsTableError(erroInt) ? [] : (intervalosData || []);
+      } catch (erroInt) {
+        if (!isMissingTimeClockIntervalsTableError(erroInt)) throw erroInt;
+      }
+    }
 
     if (!registro?.id) {
       const payloadNovo = {
@@ -28749,18 +28872,37 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       };
       if (tenantEmpresaId) payloadNovo.empresa_id = tenantEmpresaId;
       if (tenantLojaId) payloadNovo.loja_id = tenantLojaId;
+
       const { error: erroInsert } = await sb.from('ponto_registros').insert([payloadNovo]);
-      if (erroInsert) return { ok: false, mensagem: mensagemErroSupabase(erroInsert, 'erro desconhecido') };
-      return { ok: true, mensagem: 'Ajuste manual criou a entrada do dia.' };
+      if (!erroInsert) return { ok: true, mensagem: 'Ajuste manual criou a entrada do dia.' };
+
+      if (String(erroInsert.code || '') !== '23505') {
+        return { ok: false, mensagem: mensagemErroSupabase(erroInsert, 'erro desconhecido') };
+      }
+
+      // Se a linha já existe, não tentamos inserir de novo. Recarrega e atualiza.
+      registro = await buscarRegistroSeguro();
+      if (!registro?.id) {
+        // Último recurso: em bancos com política/filtro que oculta a linha existente, aplica como saída final.
+        const payloadSaida = { saida_em: ajusteIso, updated_at: new Date().toISOString() };
+        if (tenantEmpresaId) payloadSaida.empresa_id = tenantEmpresaId;
+        if (tenantLojaId) payloadSaida.loja_id = tenantLojaId;
+        const { data: atualizados, error: erroUpdateDireto } = await sb
+          .from('ponto_registros')
+          .update(payloadSaida)
+          .eq('funcionario_id', funcionarioId)
+          .eq('data_ponto', dataAjuste)
+          .select('id');
+        if (erroUpdateDireto) return { ok: false, mensagem: mensagemErroSupabase(erroUpdateDireto, 'erro desconhecido') };
+        if ((atualizados || []).length) return { ok: true, mensagem: 'Ajuste aplicado no registro existente do dia.' };
+        return { ok: false, mensagem: 'Já existe registro nesse dia, mas o sistema não conseguiu ler/atualizar a linha existente. Verifique loja_id/empresa_id/RLS do ponto.' };
+      }
     }
 
-    const batidas = montarListaBatidasPonto(registro, intervalos)
-      .map(item => item.iso)
-      .concat([ajusteIso])
-      .filter(Boolean)
-      .map(iso => new Date(iso).toISOString())
-      .filter((iso, idx, arr) => arr.indexOf(iso) === idx)
-      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const batidas = ordenarUnicos([
+      ...(montarListaBatidasPonto(registro, intervalos).map(item => item.iso)),
+      ajusteIso,
+    ]);
 
     const entradaEm = batidas[0] || null;
     let inicioIntervaloEm = null;
@@ -28793,7 +28935,10 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       inicio_intervalo_em: inicioIntervaloEm,
       retorno_intervalo_em: retornoIntervaloEm,
       saida_em: saidaEm,
+      updated_at: new Date().toISOString(),
     };
+    if (tenantEmpresaId) payloadUpdate.empresa_id = tenantEmpresaId;
+    if (tenantLojaId) payloadUpdate.loja_id = tenantLojaId;
 
     const { error: erroUpdate } = await sb
       .from('ponto_registros')
@@ -28801,14 +28946,17 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       .eq('id', registro.id);
     if (erroUpdate) return { ok: false, mensagem: mensagemErroSupabase(erroUpdate, 'erro desconhecido') };
 
-    const { error: erroDelete } = await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
-    if (erroDelete && !isMissingTimeClockIntervalsTableError(erroDelete)) {
-      return { ok: false, mensagem: `Registro principal ajustado, mas houve erro ao limpar intervalos antigos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
-    }
-
-    if (novosIntervalos.length) {
-      const { error: erroInsertInt } = await sb.from('ponto_intervalos').insert(novosIntervalos);
-      if (erroInsertInt) return { ok: false, mensagem: `Registro principal ajustado, mas houve erro ao recriar intervalos extras: ${mensagemErroSupabase(erroInsertInt, 'erro desconhecido')}` };
+    try {
+      const { error: erroDelete } = await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
+      if (erroDelete && !isMissingTimeClockIntervalsTableError(erroDelete)) {
+        return { ok: false, mensagem: `Registro principal ajustado, mas houve erro ao limpar intervalos antigos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
+      }
+      if (novosIntervalos.length) {
+        const { error: erroInsertInt } = await sb.from('ponto_intervalos').insert(novosIntervalos);
+        if (erroInsertInt) return { ok: false, mensagem: `Registro principal ajustado, mas houve erro ao recriar intervalos extras: ${mensagemErroSupabase(erroInsertInt, 'erro desconhecido')}` };
+      }
+    } catch (erroIntervalo) {
+      if (!isMissingTimeClockIntervalsTableError(erroIntervalo)) throw erroIntervalo;
     }
 
     return { ok: true, mensagem: 'Ajuste manual aplicado editando o registro existente e reorganizando a sequência.' };
@@ -29163,6 +29311,37 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     document.body.appendChild(wrap.firstChild);
     return byId('modalEscalaPlantao');
   }
+  async function resolverLojaAtivaBlindadaEscala(){
+    // Prioridade máxima: a loja visível no topo da tela. Isso evita cache/login antigo trazer filial errada.
+    var nomeTopo = String(byId('topbar-store-name')?.textContent || '').trim();
+    var empresa = empresaIdAtual();
+    async function run(q){
+      if (typeof window.executarSemFiltroLojaTemporario === 'function') return await window.executarSemFiltroLojaTemporario(function(){ return q; });
+      return await q;
+    }
+    if(nomeTopo && nomeTopo !== '-'){
+      try{
+        var q1 = window.sb.from('lojas').select('id,nome,ativo,empresa_id').eq('ativo',true).ilike('nome',nomeTopo).limit(1).maybeSingle();
+        var r1 = await run(q1);
+        if(!r1.error && r1.data && r1.data.id) return r1.data;
+      }catch(_e){}
+      try{
+        var q2 = window.sb.from('lojas').select('id,nome,ativo,empresa_id').eq('ativo',true).ilike('nome','%'+nomeTopo+'%').limit(1).maybeSingle();
+        var r2 = await run(q2);
+        if(!r2.error && r2.data && r2.data.id) return r2.data;
+      }catch(_e){}
+    }
+    var loja = lojaIdAtual();
+    if(loja){
+      try{
+        var q3 = window.sb.from('lojas').select('id,nome,ativo,empresa_id').eq('id',loja).eq('ativo',true).limit(1).maybeSingle();
+        var r3 = await run(q3);
+        if(!r3.error && r3.data && r3.data.id) return r3.data;
+      }catch(_e){}
+      return { id: loja, empresa_id: empresa || null, ativo: true };
+    }
+    return null;
+  }
   async function carregarFuncionariosSelect(){
     garantirModalEscala();
     var select=byId('escalaPlantaoFuncionario');
@@ -29170,13 +29349,19 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     select.innerHTML='<option value="">Carregando...</option>';
     if(!window.sb || !window.sb.from){ select.innerHTML='<option value="">Supabase não iniciado</option>'; return; }
     try{
-      var q=window.sb.from('funcionarios').select('id,nome,loja_id,ativo').order('nome',{ascending:true});
-      var loja=lojaIdAtual();
-      if(loja) q=q.eq('loja_id',loja);
-      q=q.eq('ativo',true);
-      var r=await q;
+      var lojaObj = await resolverLojaAtivaBlindadaEscala();
+      var loja = String(lojaObj && lojaObj.id || '').trim();
+      if(!loja){
+        select.innerHTML='<option value="">Loja logada não identificada</option>';
+        msg('msgModalEscalaPlantao','Loja logada não identificada. Reabra o sistema antes de lançar escala.','err');
+        return;
+      }
+      var q=window.sb.from('funcionarios').select('id,nome,loja_id,empresa_id,ativo').eq('ativo',true).eq('loja_id',loja).order('nome',{ascending:true});
+      var r;
+      if (typeof window.executarSemFiltroLojaTemporario === 'function') r = await window.executarSemFiltroLojaTemporario(function(){ return q; });
+      else r = await q;
       if(r.error) throw r.error;
-      var lista=r.data||[];
+      var lista=(r.data||[]).filter(function(f){return String(f.loja_id||'')===loja && f.ativo===true;});
       if(!lista.length){ select.innerHTML='<option value="">Nenhum funcionário desta filial</option>'; return; }
       select.innerHTML='<option value="">Selecione...</option>'+lista.map(function(f){return '<option value="'+esc(f.id)+'">'+esc(f.nome||'Funcionário')+'</option>';}).join('');
     }catch(e){
