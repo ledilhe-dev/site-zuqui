@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.39-ajuste-ponto-pin-correto">
+  <meta name="app-version" content="3.1.36-filiais-blindadas-escala">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,9 +16,8 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.39 - Solicitação de ajuste de ponto identifica funcionário pelo PIN
+    Versão 3.1.36 - Filiais blindadas na escala e trava de versão desativada temporariamente
     Principais ajustes:
-    - Solicitação de ajuste de ponto: em terminal/admin usa PIN digitado para identificar o funcionário correto.
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
     - Dashboard: card de checklists exibe apenas os modelos da loja logada.
@@ -23695,17 +23694,8 @@ function dispositivoMovelSolicitacaoAjustePonto() {
 }
 
 function usarSessaoFuncionarioSolicitacaoAjustePonto() {
-  // Segurança: em computador/terminal compartilhado ou usuário administrador,
-  // a solicitação de ajuste deve identificar o FUNCIONÁRIO PELO PIN digitado,
-  // não pelo usuário atualmente logado no sistema.
-  // Mantém a dispensa de PIN apenas para funcionário comum usando sessão própria no celular.
   const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  const sessaoFuncionario = usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId;
-  if (!sessaoFuncionario) return false;
-  if (typeof usuarioEhAdministrador === 'function' && usuarioEhAdministrador()) return false;
-  if (typeof usuarioLogadoEhTerminalCompartilhadoPonto === 'function' && usuarioLogadoEhTerminalCompartilhadoPonto()) return false;
-  if (typeof dispositivoMovelSolicitacaoAjustePonto === 'function' && !dispositivoMovelSolicitacaoAjustePonto()) return false;
-  return true;
+  return usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId;
 }
 
 async function salvarSolicitacaoAjustePonto() {
@@ -29039,24 +29029,25 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     let saidaEm = null;
     const novosIntervalos = [];
 
-    if (batidas.length === 2) {
-      saidaEm = batidas[1];
-    } else if (batidas.length === 3) {
-      inicioIntervaloEm = batidas[1];
-      saidaEm = batidas[2];
-    } else if (batidas.length >= 4) {
-      inicioIntervaloEm = batidas[1];
-      retornoIntervaloEm = batidas[2];
-      saidaEm = batidas[batidas.length - 1];
-      const extras = batidas.slice(3, -1);
-      for (let i = 0; i + 1 < extras.length; i += 2) {
-        novosIntervalos.push({
-          ponto_registro_id: registro.id,
-          ordem: novosIntervalos.length + 2,
-          inicio_em: extras[i],
-          retorno_em: extras[i + 1],
-        });
-      }
+    // Regra de 6 batidas:
+    // 1 entrada, 2 saída intervalo 1, 3 retorno intervalo 1,
+    // 4 saída intervalo 2, 5 retorno intervalo 2, 6 saída final.
+    if (batidas.length >= 2) {
+      inicioIntervaloEm = batidas[1] || null;
+    }
+    if (batidas.length >= 3) {
+      retornoIntervaloEm = batidas[2] || null;
+    }
+    if (batidas.length >= 4) {
+      novosIntervalos.push({
+        ponto_registro_id: registro.id,
+        ordem: 2,
+        inicio_em: batidas[3] || null,
+        retorno_em: batidas[4] || null,
+      });
+    }
+    if (batidas.length >= 6) {
+      saidaEm = batidas[batidas.length - 1] || null;
     }
 
     const payloadUpdate = {
