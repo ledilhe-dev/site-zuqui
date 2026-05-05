@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.46-ajuste-ponto-pin-solicitante">
+  <meta name="app-version" content="3.1.48-ponto-sequencia-unica-dia">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.46 - Ajuste de ponto identifica solicitante pelo PIN
+    Versão 3.1.48 - Ponto com sequência única por dia e 2 intervalos
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -24,7 +24,6 @@
     - Financeiro: isolamento completo por loja (fornecedores, formas de pagamento, contas, recebíveis).
     - Banco de dados: NOT NULL + trigger em ponto_registros, checklists e tabelas financeiras para loja_id.
     - Segurança: fallback de consulta de ponto usa inner join (funcionarios.loja_id) para evitar vazamento entre lojas.
-    - Ajuste de ponto: quando houver PIN informado, o solicitante é sempre o funcionário do PIN, não o usuário logado no terminal.
   -->
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -23155,57 +23154,26 @@ async function executarComFallbackColunasPonto(queryBuilder, campos, camposBasic
 }
 
 async function registrarAuditoriaBatidaPonto({ pontoRegistroId, funcionarioId, tipoBatida, registradoEm, meta }) {
-  if (!pontoRegistroId || !funcionarioId) return { ok: false, error: new Error('Auditoria sem ponto_registro_id ou funcionario_id.') };
-
-  const registradoIso = registradoEm || new Date().toISOString();
-  const payloadCompleto = {
-    ponto_registro_id: pontoRegistroId,
-    funcionario_id: funcionarioId,
-    usuario_logado_id: usuarioSistemaLogado?.tipo === 'funcionario' ? (usuarioSistemaLogado.id || null) : null,
-    tipo_batida: tipoBatida || null,
-    registrado_em: registradoIso,
-    origem_registro: meta?.origem_registro || 'batida_normal',
-    registrado_via: meta?.registrado_via || 'sistema',
-    dispositivo_info: meta?.dispositivo_info || null,
-    latitude: meta?.latitude ?? null,
-    longitude: meta?.longitude ?? null,
-    precisao_metros: meta?.precisao_metros ?? null,
-    geolocalizacao_status: meta?.geolocalizacao_status || null,
-    endereco_aproximado: meta?.endereco_aproximado || null,
-  };
-
-  // A tabela de auditoria pode estar com colunas antigas em produção. Antes o Supabase
-  // devolvia erro no objeto { error } e o código ignorava, por isso nada era salvo.
-  // Agora tentamos o payload completo e caímos para versões menores compatíveis.
-  const tentativas = [
-    payloadCompleto,
-    {
+  if (!pontoRegistroId || !funcionarioId) return;
+  try {
+    await sb.from('ponto_batidas_auditoria').insert([{
       ponto_registro_id: pontoRegistroId,
       funcionario_id: funcionarioId,
+      usuario_logado_id: usuarioSistemaLogado?.tipo === 'funcionario' ? (usuarioSistemaLogado.id || null) : null,
       tipo_batida: tipoBatida || null,
-      registrado_em: registradoIso,
-      origem_registro: payloadCompleto.origem_registro,
-    },
-    {
-      ponto_registro_id: pontoRegistroId,
-      funcionario_id: funcionarioId,
-      tipo_batida: tipoBatida || null,
-      registrado_em: registradoIso,
-    },
-  ];
-
-  let ultimoErro = null;
-  for (const payload of tentativas) {
-    const { error } = await sb.from('ponto_batidas_auditoria').insert([payload]);
-    if (!error) return { ok: true };
-    ultimoErro = error;
-    const msg = String(error.message || '').toLowerCase();
-    const colunaIncompativel = msg.includes('column') || msg.includes('schema cache') || msg.includes('does not exist') || msg.includes('not found');
-    if (!colunaIncompativel) break;
+      registrado_em: registradoEm || new Date().toISOString(),
+      origem_registro: meta?.origem_registro || null,
+      registrado_via: meta?.registrado_via || null,
+      dispositivo_info: meta?.dispositivo_info || null,
+      latitude: meta?.latitude ?? null,
+      longitude: meta?.longitude ?? null,
+      precisao_metros: meta?.precisao_metros ?? null,
+      geolocalizacao_status: meta?.geolocalizacao_status || null,
+      endereco_aproximado: meta?.endereco_aproximado || null,
+    }]);
+  } catch (e) {
+    console.warn('Auditoria de batida indisponível:', e);
   }
-
-  console.warn('Auditoria de batida não registrada:', ultimoErro);
-  return { ok: false, error: ultimoErro };
 }
 
 async function obterFuncionarioLogadoParaPonto() {
@@ -23731,58 +23699,7 @@ function dispositivoMovelSolicitacaoAjustePonto() {
 
 function usarSessaoFuncionarioSolicitacaoAjustePonto() {
   const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  const nomeLogado = String(usuarioSistemaLogado?.nome || usuarioSistemaLogado?.usuario || '').trim().toUpperCase();
-  const tipoLogado = String(usuarioSistemaLogado?.tipo || '').trim().toLowerCase();
-
-  // Regra corrigida:
-  // - Terminal/usuário compartilhado (ex.: ZUQUI) sempre identifica o solicitante pelo PIN digitado.
-  // - Login individual de funcionário no celular continua podendo solicitar sem pedir PIN.
-  if (!funcionarioLogadoId || tipoLogado !== 'funcionario') return false;
-  if (nomeLogado === 'ZUQUI') return false;
-  return true;
-}
-
-async function identificarFuncionarioSolicitacaoAjustePonto(pin) {
-  const pinNormalizado = String(pin || '').trim();
-
-  // Se informou PIN, o PIN manda. Isso evita gravar o ajuste no usuário logado do terminal.
-  if (pinNormalizado) {
-    const funcionarioPin = await obterFuncionarioAtivoPorPin(pinNormalizado);
-    if (!funcionarioPin?.id) return { funcionario: null, erro: 'PIN inválido. Confira a senha do funcionário.' };
-    return {
-      funcionario: {
-        id: funcionarioPin.id,
-        nome: funcionarioPin.nome || 'Funcionário',
-      },
-      erro: '',
-    };
-  }
-
-  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
-
-  if (!usarSessaoFuncionario) {
-    return { funcionario: null, erro: 'Informe o PIN do funcionário.' };
-  }
-
-  const { data: funcionarioData, error: funcionarioErro } = await sb
-    .from('funcionarios')
-    .select('id, nome, ativo')
-    .eq('id', funcionarioLogadoId)
-    .eq('ativo', true)
-    .single();
-
-  if (funcionarioErro || !funcionarioData?.id) {
-    return { funcionario: null, erro: 'Não foi possível identificar seu usuário logado. Faça login novamente e tente de novo.' };
-  }
-
-  return {
-    funcionario: {
-      id: funcionarioData.id,
-      nome: funcionarioData.nome || usuarioSistemaLogado?.nome || 'Funcionário',
-    },
-    erro: '',
-  };
+  return usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId;
 }
 
 async function salvarSolicitacaoAjustePonto() {
@@ -23796,10 +23713,37 @@ async function salvarSolicitacaoAjustePonto() {
     return;
   }
 
-  const { funcionario, erro: erroFuncionario } = await identificarFuncionarioSolicitacaoAjustePonto(pin);
-  if (!funcionario?.id) {
-    setMsg('msgSolicitarAjustePonto', erroFuncionario || 'Não foi possível identificar o funcionário.', 'err');
-    return;
+  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
+  const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
+
+  let funcionario = null;
+  if (usarSessaoFuncionario) {
+    const { data: funcionarioData, error: funcionarioErro } = await sb
+      .from('funcionarios')
+      .select('id, nome, ativo')
+      .eq('id', funcionarioLogadoId)
+      .eq('ativo', true)
+      .single();
+
+    if (funcionarioErro || !funcionarioData?.id) {
+      setMsg('msgSolicitarAjustePonto', 'Não foi possível identificar seu usuário logado. Faça login novamente e tente de novo.', 'err');
+      return;
+    }
+
+    funcionario = {
+      id: funcionarioData.id,
+      nome: funcionarioData.nome || usuarioSistemaLogado?.nome || 'Funcionário',
+    };
+  } else {
+    if (!pin) {
+      setMsg('msgSolicitarAjustePonto', 'Informe o PIN do funcionário.', 'err');
+      return;
+    }
+    funcionario = await obterFuncionarioAtivoPorPin(pin);
+    if (!funcionario?.id) {
+      setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
+      return;
+    }
   }
 
   setMsg('msgSolicitarAjustePonto', 'Enviando solicitação...', 'ok');
@@ -28752,25 +28696,34 @@ async function registrarPontoFuncionario() {
   }
 
   async function buscarRegistroPontoAbertoOuDoDia() {
-    let queryAberto = sb
-      .from('ponto_registros')
-      .select('*')
-      .eq('funcionario_id', funcionarioId)
-      .is('saida_em', null);
-    if (lojaId) queryAberto = queryAberto.eq('loja_id', lojaId);
-    let resp = await queryAberto.order('created_at', { ascending: false }).limit(1);
-    if (resp.error) throw resp.error;
-    if ((resp.data || [])[0]) return (resp.data || [])[0];
+    // Regra definitiva do ponto: 1 registro por funcionário/dia em ponto_registros.
+    // Não filtra por loja_id aqui, porque registros antigos/ajustados podem estar sem loja
+    // ou com loja divergente. Filtrar por loja fazia o sistema não encontrar o ponto aberto
+    // e criar uma nova entrada indevida no mesmo dia.
+    const selecionarCampos = 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id';
 
-    let queryDia = sb
+    let resp = await sb
       .from('ponto_registros')
-      .select('*')
+      .select(selecionarCampos)
       .eq('funcionario_id', funcionarioId)
-      .eq('data_ponto', dataHoje);
-    if (lojaId) queryDia = queryDia.eq('loja_id', lojaId);
-    resp = await queryDia.order('created_at', { ascending: false }).limit(1);
+      .eq('data_ponto', dataHoje)
+      .order('created_at', { ascending: true })
+      .limit(20);
     if (resp.error) throw resp.error;
-    return (resp.data || [])[0] || null;
+
+    const registrosDoDia = resp.data || [];
+    if (!registrosDoDia.length) return null;
+
+    const abertos = registrosDoDia.filter(r => !r.saida_em);
+    if (abertos.length) {
+      // Usa sempre o primeiro aberto do dia para continuar a sequência.
+      // Isso evita transformar a próxima batida em nova entrada.
+      return abertos[0];
+    }
+
+    // Se todos estão fechados, devolve o primeiro registro do dia para bloquear nova entrada
+    // ou permitir mensagem de ponto já fechado, sem criar duplicidade.
+    return registrosDoDia[0] || null;
   }
 
   async function carregarIntervalosDoRegistro(registroId) {
@@ -28806,19 +28759,17 @@ async function registrarPontoFuncionario() {
   }
 
   async function registrarAuditoriaSegura(pontoRegistroId, tipoBatida) {
-    if (!pontoRegistroId || !tipoBatida) return false;
+    if (!pontoRegistroId || !tipoBatida) return;
     try {
-      const resultadoAuditoria = await registrarAuditoriaBatidaPonto({
+      await registrarAuditoriaBatidaPonto({
         pontoRegistroId,
         funcionarioId,
         tipoBatida,
         registradoEm: agora,
         meta: auditoriaPonto,
       });
-      return !!resultadoAuditoria?.ok;
     } catch (auditError) {
       console.warn('Auditoria do ponto não registrada:', auditError);
-      return false;
     }
   }
 
@@ -28933,10 +28884,7 @@ async function registrarPontoFuncionario() {
     return;
   }
 
-  const auditoriaGravada = await registrarAuditoriaSegura(pontoRegistroAuditoriaId, tipoBatidaRegistrada);
-  if (!auditoriaGravada) {
-    console.warn('Ponto principal gravado, mas auditoria da batida não foi salva.');
-  }
+  await registrarAuditoriaSegura(pontoRegistroAuditoriaId, tipoBatidaRegistrada);
 
   try {
     localStorage.setItem(chaveBloqueioLocal, JSON.stringify({
