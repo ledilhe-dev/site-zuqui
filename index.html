@@ -23155,26 +23155,57 @@ async function executarComFallbackColunasPonto(queryBuilder, campos, camposBasic
 }
 
 async function registrarAuditoriaBatidaPonto({ pontoRegistroId, funcionarioId, tipoBatida, registradoEm, meta }) {
-  if (!pontoRegistroId || !funcionarioId) return;
-  try {
-    await sb.from('ponto_batidas_auditoria').insert([{
+  if (!pontoRegistroId || !funcionarioId) return { ok: false, error: new Error('Auditoria sem ponto_registro_id ou funcionario_id.') };
+
+  const registradoIso = registradoEm || new Date().toISOString();
+  const payloadCompleto = {
+    ponto_registro_id: pontoRegistroId,
+    funcionario_id: funcionarioId,
+    usuario_logado_id: usuarioSistemaLogado?.tipo === 'funcionario' ? (usuarioSistemaLogado.id || null) : null,
+    tipo_batida: tipoBatida || null,
+    registrado_em: registradoIso,
+    origem_registro: meta?.origem_registro || 'batida_normal',
+    registrado_via: meta?.registrado_via || 'sistema',
+    dispositivo_info: meta?.dispositivo_info || null,
+    latitude: meta?.latitude ?? null,
+    longitude: meta?.longitude ?? null,
+    precisao_metros: meta?.precisao_metros ?? null,
+    geolocalizacao_status: meta?.geolocalizacao_status || null,
+    endereco_aproximado: meta?.endereco_aproximado || null,
+  };
+
+  // A tabela de auditoria pode estar com colunas antigas em produção. Antes o Supabase
+  // devolvia erro no objeto { error } e o código ignorava, por isso nada era salvo.
+  // Agora tentamos o payload completo e caímos para versões menores compatíveis.
+  const tentativas = [
+    payloadCompleto,
+    {
       ponto_registro_id: pontoRegistroId,
       funcionario_id: funcionarioId,
-      usuario_logado_id: usuarioSistemaLogado?.tipo === 'funcionario' ? (usuarioSistemaLogado.id || null) : null,
       tipo_batida: tipoBatida || null,
-      registrado_em: registradoEm || new Date().toISOString(),
-      origem_registro: meta?.origem_registro || null,
-      registrado_via: meta?.registrado_via || null,
-      dispositivo_info: meta?.dispositivo_info || null,
-      latitude: meta?.latitude ?? null,
-      longitude: meta?.longitude ?? null,
-      precisao_metros: meta?.precisao_metros ?? null,
-      geolocalizacao_status: meta?.geolocalizacao_status || null,
-      endereco_aproximado: meta?.endereco_aproximado || null,
-    }]);
-  } catch (e) {
-    console.warn('Auditoria de batida indisponível:', e);
+      registrado_em: registradoIso,
+      origem_registro: payloadCompleto.origem_registro,
+    },
+    {
+      ponto_registro_id: pontoRegistroId,
+      funcionario_id: funcionarioId,
+      tipo_batida: tipoBatida || null,
+      registrado_em: registradoIso,
+    },
+  ];
+
+  let ultimoErro = null;
+  for (const payload of tentativas) {
+    const { error } = await sb.from('ponto_batidas_auditoria').insert([payload]);
+    if (!error) return { ok: true };
+    ultimoErro = error;
+    const msg = String(error.message || '').toLowerCase();
+    const colunaIncompativel = msg.includes('column') || msg.includes('schema cache') || msg.includes('does not exist') || msg.includes('not found');
+    if (!colunaIncompativel) break;
   }
+
+  console.warn('Auditoria de batida não registrada:', ultimoErro);
+  return { ok: false, error: ultimoErro };
 }
 
 async function obterFuncionarioLogadoParaPonto() {
@@ -28775,17 +28806,19 @@ async function registrarPontoFuncionario() {
   }
 
   async function registrarAuditoriaSegura(pontoRegistroId, tipoBatida) {
-    if (!pontoRegistroId || !tipoBatida) return;
+    if (!pontoRegistroId || !tipoBatida) return false;
     try {
-      await registrarAuditoriaBatidaPonto({
+      const resultadoAuditoria = await registrarAuditoriaBatidaPonto({
         pontoRegistroId,
         funcionarioId,
         tipoBatida,
         registradoEm: agora,
         meta: auditoriaPonto,
       });
+      return !!resultadoAuditoria?.ok;
     } catch (auditError) {
       console.warn('Auditoria do ponto não registrada:', auditError);
+      return false;
     }
   }
 
@@ -28900,7 +28933,10 @@ async function registrarPontoFuncionario() {
     return;
   }
 
-  await registrarAuditoriaSegura(pontoRegistroAuditoriaId, tipoBatidaRegistrada);
+  const auditoriaGravada = await registrarAuditoriaSegura(pontoRegistroAuditoriaId, tipoBatidaRegistrada);
+  if (!auditoriaGravada) {
+    console.warn('Ponto principal gravado, mas auditoria da batida não foi salva.');
+  }
 
   try {
     localStorage.setItem(chaveBloqueioLocal, JSON.stringify({
