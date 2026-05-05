@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.49-forcar-atualizacao-cache">
+  <meta name="app-version" content="3.1.49">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.49 - Forçar atualização/cache + sequência única de ponto
+    Versão 3.1.49 - Versão alinhada e ponto com sequência única por dia
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7066,7 +7066,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.49-forcar-atualizacao-cache';
+const APP_VERSION = '3.1.49';
 const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
 const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
@@ -7075,24 +7075,6 @@ const AUTH_REDIRECT_URL = 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.sb = sb; // compatibilidade para módulos seguros de escala/plantões
-
-
-// Guarda local de versão: quando um index novo carregar, limpa caches antigos e força login limpo.
-(function controleLocalDeVersaoDoIndex() {
-  const chave = 'checkdiario:app_version_local';
-  let versaoAnterior = '';
-  try { versaoAnterior = localStorage.getItem(chave) || ''; } catch (_) {}
-  if (versaoAnterior && versaoAnterior !== APP_VERSION) {
-    try {
-      if ('caches' in window) caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
-      if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-    } catch (_) {}
-    try { localStorage.setItem(chave, APP_VERSION); } catch (_) {}
-    setTimeout(() => executarAtualizacaoObrigatoriaSistema?.(`Sistema atualizado da versão ${versaoAnterior} para ${APP_VERSION}`), 300);
-  } else if (!versaoAnterior) {
-    try { localStorage.setItem(chave, APP_VERSION); } catch (_) {}
-  }
-})();
 
 
 // Controle de consumo: evita uma consulta ao Supabase a cada tecla digitada em filtros.
@@ -7396,24 +7378,6 @@ async function executarAtualizacaoObrigatoriaSistema(motivo = 'Atualização obr
   limparSessaoParaAtualizacaoObrigatoria();
 
   try {
-    if ('caches' in window) {
-      const nomesCache = await caches.keys();
-      await Promise.all(nomesCache.map(nome => caches.delete(nome)));
-    }
-  } catch (erro) {
-    console.warn('Falha ao limpar caches do navegador:', erro);
-  }
-
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(reg => reg.unregister()));
-    }
-  } catch (erro) {
-    console.warn('Falha ao remover service workers antigos:', erro);
-  }
-
-  try {
     alert(`${motivo}.
 
 O sistema será recarregado para buscar a versão mais recente.`);
@@ -7425,11 +7389,12 @@ O sistema será recarregado para buscar a versão mais recente.`);
     }
   } catch (_) {}
 
-  const separador = window.location.pathname.includes('?') ? '&' : '?';
-  window.location.href = `${window.location.origin}${window.location.pathname}${separador}v=${encodeURIComponent(APP_VERSION)}&t=${Date.now()}`;
+  window.location.reload();
 }
 
 async function verificarControleVersaoSistema(silencioso = true) {
+  // TEMPORÁRIO: trava de versão desativada para não derrubar produção.
+  return;
   if (!usuarioSistemaLogado) return;
 
   const { data, error } = await sb
@@ -7472,6 +7437,8 @@ async function verificarControleVersaoSistema(silencioso = true) {
 }
 
 function configurarRealtimeControleVersaoSistema() {
+  // TEMPORÁRIO: realtime da trava de versão desativado.
+  return;
   if (canalControleVersaoSistema) return;
 
   try {
@@ -26957,7 +26924,7 @@ function atualizarQuintoDiaUtilTopbar() {
 function registrarServiceWorkerPwa() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
-      navigator.serviceWorker.register(`./service-worker-v5.js?v=${encodeURIComponent(APP_VERSION)}`, { scope: './' })
+      navigator.serviceWorker.register('./service-worker-v4.js', { scope: './' })
       .catch(error => {
         console.warn('Falha ao registrar Service Worker do PWA:', error);
       });
