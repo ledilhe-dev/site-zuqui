@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.36-filiais-blindadas-escala">
+  <meta name="app-version" content="3.1.46-ajuste-ponto-pin-solicitante">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.36 - Filiais blindadas na escala e trava de versão desativada temporariamente
+    Versão 3.1.46 - Ajuste de ponto identifica solicitante pelo PIN
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -24,6 +24,7 @@
     - Financeiro: isolamento completo por loja (fornecedores, formas de pagamento, contas, recebíveis).
     - Banco de dados: NOT NULL + trigger em ponto_registros, checklists e tabelas financeiras para loja_id.
     - Segurança: fallback de consulta de ponto usa inner join (funcionarios.loja_id) para evitar vazamento entre lojas.
+    - Ajuste de ponto: quando houver PIN informado, o solicitante é sempre o funcionário do PIN, não o usuário logado no terminal.
   -->
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -22473,7 +22474,11 @@ function obterIntervalosConsolidadosPonto(registro = {}, intervalos = []) {
       const entradaMs = registro?.entrada_em ? new Date(registro.entrada_em).getTime() : null;
       const saidaMs = registro?.saida_em ? new Date(registro.saida_em).getTime() : null;
       if (entradaMs && !Number.isNaN(entradaMs) && inicioMs < entradaMs) return false;
-      if (saidaMs && !Number.isNaN(saidaMs) && inicioMs > saidaMs) return false;
+      if (saidaMs && !Number.isNaN(saidaMs)) {
+        const retornoMs = item?.retorno_em ? new Date(item.retorno_em).getTime() : null;
+        if (inicioMs >= saidaMs) return false;
+        if (retornoMs && !Number.isNaN(retornoMs) && retornoMs > saidaMs) return false;
+      }
       return true;
     })
     .sort((a, b) => {
@@ -23695,7 +23700,58 @@ function dispositivoMovelSolicitacaoAjustePonto() {
 
 function usarSessaoFuncionarioSolicitacaoAjustePonto() {
   const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  return usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId;
+  const nomeLogado = String(usuarioSistemaLogado?.nome || usuarioSistemaLogado?.usuario || '').trim().toUpperCase();
+  const tipoLogado = String(usuarioSistemaLogado?.tipo || '').trim().toLowerCase();
+
+  // Regra corrigida:
+  // - Terminal/usuário compartilhado (ex.: ZUQUI) sempre identifica o solicitante pelo PIN digitado.
+  // - Login individual de funcionário no celular continua podendo solicitar sem pedir PIN.
+  if (!funcionarioLogadoId || tipoLogado !== 'funcionario') return false;
+  if (nomeLogado === 'ZUQUI') return false;
+  return true;
+}
+
+async function identificarFuncionarioSolicitacaoAjustePonto(pin) {
+  const pinNormalizado = String(pin || '').trim();
+
+  // Se informou PIN, o PIN manda. Isso evita gravar o ajuste no usuário logado do terminal.
+  if (pinNormalizado) {
+    const funcionarioPin = await obterFuncionarioAtivoPorPin(pinNormalizado);
+    if (!funcionarioPin?.id) return { funcionario: null, erro: 'PIN inválido. Confira a senha do funcionário.' };
+    return {
+      funcionario: {
+        id: funcionarioPin.id,
+        nome: funcionarioPin.nome || 'Funcionário',
+      },
+      erro: '',
+    };
+  }
+
+  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
+  const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
+
+  if (!usarSessaoFuncionario) {
+    return { funcionario: null, erro: 'Informe o PIN do funcionário.' };
+  }
+
+  const { data: funcionarioData, error: funcionarioErro } = await sb
+    .from('funcionarios')
+    .select('id, nome, ativo')
+    .eq('id', funcionarioLogadoId)
+    .eq('ativo', true)
+    .single();
+
+  if (funcionarioErro || !funcionarioData?.id) {
+    return { funcionario: null, erro: 'Não foi possível identificar seu usuário logado. Faça login novamente e tente de novo.' };
+  }
+
+  return {
+    funcionario: {
+      id: funcionarioData.id,
+      nome: funcionarioData.nome || usuarioSistemaLogado?.nome || 'Funcionário',
+    },
+    erro: '',
+  };
 }
 
 async function salvarSolicitacaoAjustePonto() {
@@ -23709,37 +23765,10 @@ async function salvarSolicitacaoAjustePonto() {
     return;
   }
 
-  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
-
-  let funcionario = null;
-  if (usarSessaoFuncionario) {
-    const { data: funcionarioData, error: funcionarioErro } = await sb
-      .from('funcionarios')
-      .select('id, nome, ativo')
-      .eq('id', funcionarioLogadoId)
-      .eq('ativo', true)
-      .single();
-
-    if (funcionarioErro || !funcionarioData?.id) {
-      setMsg('msgSolicitarAjustePonto', 'Não foi possível identificar seu usuário logado. Faça login novamente e tente de novo.', 'err');
-      return;
-    }
-
-    funcionario = {
-      id: funcionarioData.id,
-      nome: funcionarioData.nome || usuarioSistemaLogado?.nome || 'Funcionário',
-    };
-  } else {
-    if (!pin) {
-      setMsg('msgSolicitarAjustePonto', 'Informe o PIN do funcionário.', 'err');
-      return;
-    }
-    funcionario = await obterFuncionarioAtivoPorPin(pin);
-    if (!funcionario?.id) {
-      setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
-      return;
-    }
+  const { funcionario, erro: erroFuncionario } = await identificarFuncionarioSolicitacaoAjustePonto(pin);
+  if (!funcionario?.id) {
+    setMsg('msgSolicitarAjustePonto', erroFuncionario || 'Não foi possível identificar o funcionário.', 'err');
+    return;
   }
 
   setMsg('msgSolicitarAjustePonto', 'Enviando solicitação...', 'ok');
@@ -23953,7 +23982,8 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return { ok: true, mensagem: 'Criado registro de entrada com o horário aprovado.' };
   }
 
-  // Garante somente um registro por funcionário/data e evita erro de chave duplicada.
+  // Mantém apenas um registro principal por funcionário/data.
+  // Registros extras antigos causavam leituras duplicadas e status incorreto.
   const registrosExtras = (registros || []).filter(item => item.id !== registro.id);
   if (registrosExtras.length) {
     const extrasIds = registrosExtras.map(item => item.id).filter(Boolean);
@@ -23962,52 +23992,25 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     } catch (_) {}
   }
 
-  let batidasAuditoria = [];
-  try {
-    const { data: auditoriaData, error: auditoriaErro } = await sb
-      .from('ponto_batidas_auditoria')
-      .select('registrado_em')
-      .eq('ponto_registro_id', registro.id)
-      .order('registrado_em', { ascending: true });
-    if (!auditoriaErro) {
-      batidasAuditoria = (auditoriaData || []).map(item => item.registrado_em).filter(Boolean);
-    }
-  } catch (_) {}
-
-  let batidasAjustesAprovados = [];
-  try {
-    const { data: ajustesData, error: ajustesErro } = await sb
-      .from('ponto_ajustes_solicitacoes')
-      .select('data_ajuste, horario_ajuste, status')
-      .eq('funcionario_id', funcionarioId)
-      .eq('data_ajuste', dataAjuste)
-      .eq('status', 'aprovado');
-    if (!ajustesErro) {
-      batidasAjustesAprovados = (ajustesData || [])
-        .map(item => montarIsoAjustePonto(item.data_ajuste, item.horario_ajuste))
-        .filter(Boolean);
-    }
-  } catch (_) {}
-
-  const batidas = ordenarUnicos([
+  // Ajuste aprovado deve entrar como UMA batida sequencial no registro principal.
+  // Não usamos ponto_intervalos aqui para não duplicar o status visual nem abrir ponto indevidamente.
+  const batidasBase = ordenarUnicos([
     registro.entrada_em,
     registro.inicio_intervalo_em,
     registro.retorno_intervalo_em,
     registro.saida_em,
-    horarioIso,
-    ...batidasAuditoria,
-    ...batidasAjustesAprovados,
   ]);
 
-  if (!batidas.length) {
-    return { ok: false, mensagem: 'Não foi possível montar a sequência de batidas do dia.' };
-  }
+  const batidasComAjuste = ordenarUnicos([...batidasBase, horarioIso]).slice(0, 6);
 
   const payload = {
-    entrada_em: batidas[0] || null,
-    inicio_intervalo_em: batidas[1] || null,
-    retorno_intervalo_em: batidas[2] || null,
-    saida_em: batidas.length >= 4 ? batidas[batidas.length - 1] : null,
+    entrada_em: batidasComAjuste[0] || null,
+    inicio_intervalo_em: batidasComAjuste[1] || null,
+    retorno_intervalo_em: batidasComAjuste[2] || null,
+    // Com 4 batidas, a quarta é saída final quando veio por ajuste aprovado/admin.
+    // Para dois intervalos reais, a segunda estrutura deve ser tratada pela tela futura de batidas,
+    // mas aqui o ajuste administrativo não pode transformar a saída final em "Aberto agora".
+    saida_em: batidasComAjuste.length >= 4 ? batidasComAjuste[batidasComAjuste.length - 1] : null,
     ...(tenantLojaId ? { loja_id: tenantLojaId } : {}),
     ...(tenantEmpresaId ? { empresa_id: tenantEmpresaId } : {}),
     updated_at: new Date().toISOString(),
@@ -24022,9 +24025,25 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return { ok: false, mensagem: mensagemErroSupabase(erroAtualizaRegistro, 'erro desconhecido') };
   }
 
-  const statusFinal = payload.saida_em ? 'fechado' : (payload.inicio_intervalo_em && !payload.retorno_intervalo_em ? 'em intervalo' : 'aberto');
-  const labels = ['entrada', 'início do intervalo', 'retorno do intervalo', 'saída'];
-  const batidaInseridaIndex = batidas.findIndex(iso => iso === normalizarIso(horarioIso));
+  // Remove intervalos auxiliares que começam exatamente no horário de saída final.
+  // Esse caso era o que fazia aparecer "14:00 -> Aberto agora" mesmo com saida_em preenchido.
+  if (payload.saida_em) {
+    try {
+      await sb
+        .from('ponto_intervalos')
+        .delete()
+        .eq('ponto_registro_id', registro.id)
+        .eq('inicio_em', payload.saida_em)
+        .is('retorno_em', null);
+    } catch (_) {}
+  }
+
+  const statusFinal = payload.saida_em
+    ? 'fechado'
+    : (payload.inicio_intervalo_em && !payload.retorno_intervalo_em ? 'em intervalo' : 'aberto');
+
+  const labels = ['entrada', 'início do intervalo', 'retorno do intervalo', 'saída final'];
+  const batidaInseridaIndex = batidasComAjuste.findIndex(iso => iso === normalizarIso(horarioIso));
   const label = labels[batidaInseridaIndex] || 'batida';
 
   return {
@@ -29029,25 +29048,24 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     let saidaEm = null;
     const novosIntervalos = [];
 
-    // Regra de 6 batidas:
-    // 1 entrada, 2 saída intervalo 1, 3 retorno intervalo 1,
-    // 4 saída intervalo 2, 5 retorno intervalo 2, 6 saída final.
-    if (batidas.length >= 2) {
-      inicioIntervaloEm = batidas[1] || null;
-    }
-    if (batidas.length >= 3) {
-      retornoIntervaloEm = batidas[2] || null;
-    }
-    if (batidas.length >= 4) {
-      novosIntervalos.push({
-        ponto_registro_id: registro.id,
-        ordem: 2,
-        inicio_em: batidas[3] || null,
-        retorno_em: batidas[4] || null,
-      });
-    }
-    if (batidas.length >= 6) {
-      saidaEm = batidas[batidas.length - 1] || null;
+    if (batidas.length === 2) {
+      saidaEm = batidas[1];
+    } else if (batidas.length === 3) {
+      inicioIntervaloEm = batidas[1];
+      saidaEm = batidas[2];
+    } else if (batidas.length >= 4) {
+      inicioIntervaloEm = batidas[1];
+      retornoIntervaloEm = batidas[2];
+      saidaEm = batidas[batidas.length - 1];
+      const extras = batidas.slice(3, -1);
+      for (let i = 0; i + 1 < extras.length; i += 2) {
+        novosIntervalos.push({
+          ponto_registro_id: registro.id,
+          ordem: novosIntervalos.length + 2,
+          inicio_em: extras[i],
+          retorno_em: extras[i + 1],
+        });
+      }
     }
 
     const payloadUpdate = {
