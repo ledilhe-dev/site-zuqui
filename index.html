@@ -7431,9 +7431,12 @@ O sistema será recarregado para buscar a versão mais recente.`);
   } catch (_) {}
 
   try {
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState({}, document.title, window.location.pathname + (window.location.hash || ''));
-    }
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', `${APP_VERSION}-forcar-atualizacao-cache`);
+    url.searchParams.set('t', String(Date.now()));
+    url.hash = '';
+    window.location.replace(url.toString());
+    return;
   } catch (_) {}
 
   window.location.reload();
