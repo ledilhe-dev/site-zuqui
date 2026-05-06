@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.49-protecao-cache-visivel">
+  <meta name="app-version" content="3.1.50-ajuste-pin-solicitante">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.49 - Proteção de cache e versão visível
+    Versão 3.1.50 - Ajuste por PIN no solicitante do ponto
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -5208,7 +5208,7 @@
 
 </head>
 <body>
-<div id="appVersionBadge" class="app-version-badge">INDEX 3.1.49</div>
+<div id="appVersionBadge" class="app-version-badge">INDEX 3.1.50</div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
 <div class="shell">
 
@@ -7099,8 +7099,8 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.49';
-const APP_VERSION_LABEL = '3.1.49-protecao-cache-visivel';
+const APP_VERSION = '3.1.50';
+const APP_VERSION_LABEL = '3.1.50-ajuste-pin-solicitante';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -23752,7 +23752,8 @@ function dispositivoMovelSolicitacaoAjustePonto() {
 
 function usarSessaoFuncionarioSolicitacaoAjustePonto() {
   const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  return usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId;
+  const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
+  return usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId && !terminalCompartilhadoPonto;
 }
 
 async function salvarSolicitacaoAjustePonto() {
@@ -27008,7 +27009,7 @@ window.setTimeout(() => {
     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
     <div class="login-brand-title">CHECK DIARIO</div>
     <div class="login-brand-sub">ROTINA " CHECKLIST " OPERACAO</div>
-    <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.1.49</div>
+    <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.1.50</div>
   </div>
   <form id="loginForm" class="login-form" onsubmit="handleLogin(event)">
     <input type="text" id="username" class="login-input" placeholder="Nome ou e-mail" required>
@@ -27048,8 +27049,8 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 3.1.49</div>
-    <div>Notas da versão 3.1.49: proteção de cache/atualização visível, ponto com sequência única por dia, auditoria e trava contra duplicidade.</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 3.1.50</div>
+    <div>Notas da versão 3.1.50: solicitação de ajuste identifica funcionário pelo PIN quando o terminal compartilhado ZUQUI estiver logado.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
