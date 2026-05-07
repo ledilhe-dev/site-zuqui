@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.50-ajuste-pin-solicitante">
+  <meta name="app-version" content="3.1.51-retorno-apos-ajuste">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.50 - Ajuste por PIN no solicitante do ponto
+    Versão 3.1.51 - Retorno após ajuste aprovado no ponto
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7100,7 +7100,7 @@
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '3.1.50';
-const APP_VERSION_LABEL = '3.1.50-ajuste-pin-solicitante';
+const APP_VERSION_LABEL = '3.1.51-retorno-apos-ajuste';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -22820,6 +22820,30 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
       .filter(Boolean);
 
     const unicos = [...new Set(valores)].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+    // FIX 3.1.51: quando existem 3 batidas no dia (ex.: 09:00 ajuste de entrada,
+    // 12:00 ajuste de saída para intervalo e 13:00 batida real de retorno), a 3ª
+    // batida deve fechar o intervalo e manter a jornada aberta. Antes a tela
+    // ignorava esse retorno ou tratava como saída final, deixando o card preso em
+    // "Em intervalo" e escondendo a entrada das 13:00.
+    if (unicos.length === 3) {
+      const registroTemIntervaloSemRetorno = !!registro?.inicio_intervalo_em && !registro?.retorno_intervalo_em;
+      const saidaRegistroIso = registro?.saida_em && !Number.isNaN(new Date(registro.saida_em).getTime())
+        ? new Date(registro.saida_em).toISOString()
+        : '';
+      const terceiroEhSaidaErrada = !!saidaRegistroIso && saidaRegistroIso === unicos[2];
+      if (registroTemIntervaloSemRetorno || terceiroEhSaidaErrada) {
+        return {
+          ...registro,
+          entrada_em: unicos[0] || registro?.entrada_em || null,
+          inicio_intervalo_em: unicos[1] || registro?.inicio_intervalo_em || null,
+          retorno_intervalo_em: unicos[2] || registro?.retorno_intervalo_em || null,
+          saida_em: null,
+        };
+      }
+      return registro;
+    }
+
     if (unicos.length < 4) return registro;
 
     return {
@@ -24036,10 +24060,9 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     entrada_em: batidasComAjuste[0] || null,
     inicio_intervalo_em: batidasComAjuste[1] || null,
     retorno_intervalo_em: batidasComAjuste[2] || null,
-    // Com 4 batidas, a quarta é saída final quando veio por ajuste aprovado/admin.
-    // Para dois intervalos reais, a segunda estrutura deve ser tratada pela tela futura de batidas,
-    // mas aqui o ajuste administrativo não pode transformar a saída final em "Aberto agora".
-    saida_em: batidasComAjuste.length >= 4 ? batidasComAjuste[batidasComAjuste.length - 1] : null,
+    // FIX 3.1.51: número ímpar de batidas depois da entrada significa jornada aberta.
+    // 3 batidas = entrada + intervalo + retorno. 4/6 batidas = saída final fechada.
+    saida_em: batidasComAjuste.length >= 4 && batidasComAjuste.length % 2 === 0 ? batidasComAjuste[batidasComAjuste.length - 1] : null,
     ...(tenantLojaId ? { loja_id: tenantLojaId } : {}),
     ...(tenantEmpresaId ? { empresa_id: tenantEmpresaId } : {}),
     updated_at: new Date().toISOString(),
@@ -29088,15 +29111,19 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     const novosIntervalos = [];
 
     if (batidas.length === 2) {
+      // 2 batidas: entrada + saída/intervalo aberto, mantendo compatibilidade com o fluxo atual.
       saidaEm = batidas[1];
     } else if (batidas.length === 3) {
+      // FIX 3.1.51: 3 batidas significam entrada + saída para intervalo + retorno,
+      // portanto a jornada fica aberta após o retorno, sem saída final.
       inicioIntervaloEm = batidas[1];
-      saidaEm = batidas[2];
+      retornoIntervaloEm = batidas[2];
+      saidaEm = null;
     } else if (batidas.length >= 4) {
       inicioIntervaloEm = batidas[1];
       retornoIntervaloEm = batidas[2];
-      saidaEm = batidas[batidas.length - 1];
-      const extras = batidas.slice(3, -1);
+      saidaEm = batidas.length % 2 === 0 ? batidas[batidas.length - 1] : null;
+      const extras = saidaEm ? batidas.slice(3, -1) : batidas.slice(3);
       for (let i = 0; i + 1 < extras.length; i += 2) {
         novosIntervalos.push({
           ponto_registro_id: registro.id,
