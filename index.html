@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.51-retorno-apos-ajuste">
+  <meta name="app-version" content="3.1.57-pin-original-ponto-recebiveis-info">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.51 - Retorno após ajuste aprovado no ponto
+    Versão 3.1.57 - Ponto com PIN original, recebíveis por loja e botão de informação
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7100,7 +7100,7 @@
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '3.1.50';
-const APP_VERSION_LABEL = '3.1.51-retorno-apos-ajuste';
+const APP_VERSION_LABEL = '3.1.57-pin-original-ponto-recebiveis-info';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -16082,6 +16082,8 @@ async function salvarRecebivelFinanceiro() {
     forma_pagamento_id: formaPagamentoId,
     conta_financeira_id: contaFinanceiraId,
     valor: Number(valorRecebivel.toFixed(2)),
+    empresa_id: empresaAtualId || usuarioSistemaLogado?.empresa_id || null,
+    loja_id: lojaAtualId || usuarioSistemaLogado?.loja_id || null,
   };
   const editando = !!recebivelFinanceiroEmEdicaoId;
   const recebivelAnterior = editando
@@ -28893,6 +28895,30 @@ async function registrarPontoFuncionario() {
         tipoBatidaRegistrada = 'entrada';
         tipoAvisoPonto = 'iniciado';
         descricaoBatida = 'PONTO REGISTRADO';
+      } else if (registro.saida_em && registro.inicio_intervalo_em && !registro.retorno_intervalo_em) {
+        // Correção segura: em alguns casos com ajuste manual, o retorno do intervalo foi salvo em saida_em.
+        // Quando o funcionário bater novamente, repara o retorno e registra esta batida como saída final.
+        const retornoLegado = registro.saida_em;
+        const { error } = await atualizarRegistroPonto(
+          registro.id,
+          { retorno_intervalo_em: retornoLegado, saida_em: agora, loja_id: lojaId, empresa_id: empresaId },
+          'saida_reparada_apos_retorno_legado'
+        );
+        if (error) throw error;
+        try {
+          await registrarAuditoriaBatidaPonto({
+            pontoRegistroId: registro.id,
+            funcionarioId,
+            tipoBatida: 'retorno_intervalo_1_reparado',
+            registradoEm: retornoLegado,
+            meta: auditoriaPonto,
+          });
+        } catch (auditError) {
+          console.warn('Auditoria do retorno reparado não registrada:', auditError);
+        }
+        tipoBatidaRegistrada = 'saida';
+        tipoAvisoPonto = 'parado';
+        descricaoBatida = 'PONTO FECHADO';
       } else if (registro.saida_em) {
         setMsg('msgPonto', 'Ponto já fechado hoje para este funcionário.', 'err');
         if (campoPin) campoPin.value = '';
@@ -30874,6 +30900,79 @@ window.addEventListener('load', function() {
     }
   } catch (e) {}
 });
+</script>
+
+
+<style id="patch-ponto-info-botao-css-3-1-57">
+  .ponto-info-regra-btn{
+    width:38px!important;height:38px!important;min-width:38px!important;padding:0!important;border-radius:999px!important;
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    font-weight:900!important;font-size:16px!important;line-height:1!important;
+    border:1px solid rgba(245,158,11,.85)!important;
+    background:rgba(245,158,11,.18)!important;
+    color:#fbbf24!important;
+    box-shadow:0 0 0 1px rgba(245,158,11,.18),0 10px 24px rgba(245,158,11,.14)!important;
+  }
+  .ponto-info-regra-btn:hover{background:rgba(245,158,11,.28)!important;border-color:rgba(251,191,36,.95)!important;color:#fde68a!important;}
+  .ponto-info-modal-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(4,8,6,.68);backdrop-filter:blur(3px);}
+  .ponto-info-modal-overlay[hidden]{display:none!important;}
+  .ponto-info-modal-card{width:min(640px,calc(100vw - 28px));max-height:calc(100dvh - 36px);overflow:auto;border-radius:18px;border:1px solid rgba(245,158,11,.42);background:#0f1a13;color:#e2f0e4;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:20px;}
+  .ponto-info-modal-card h3{margin:0 0 10px;font-size:18px;color:#fbbf24;}
+  .ponto-info-modal-card p{margin:0 0 10px;color:#a7c7aa;line-height:1.45;font-size:13px;}
+  .ponto-info-modal-card ul{margin:10px 0 14px;padding-left:20px;color:#d9f6dd;font-size:13px;line-height:1.55;}
+  .ponto-info-modal-card li{margin-bottom:6px;}
+  .ponto-info-modal-actions{display:flex;justify-content:flex-end;margin-top:12px;}
+</style>
+<script id="patch-ponto-info-botao-3-1-57">
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function abrirInfoPonto(){
+    var modal = byId('pontoInfoRegrasModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'pontoInfoRegrasModal';
+      modal.className = 'ponto-info-modal-overlay';
+      modal.hidden = true;
+      modal.innerHTML = '<div class="ponto-info-modal-card" role="dialog" aria-modal="true" aria-labelledby="pontoInfoRegrasTitulo">'+
+        '<h3 id="pontoInfoRegrasTitulo">Regras do ponto</h3>'+
+        '<p>O ponto usa uma sequência única para evitar bloqueios quando houver ajuste manual ou mais de um intervalo.</p>'+
+        '<ul>'+
+          '<li><strong>1ª batida:</strong> abre a jornada.</li>'+
+          '<li><strong>2ª batida:</strong> inicia o intervalo.</li>'+
+          '<li><strong>3ª batida:</strong> retorna do intervalo e mantém a jornada aberta.</li>'+
+          '<li><strong>4ª batida:</strong> pode iniciar um segundo intervalo, se ainda não for saída final.</li>'+
+          '<li><strong>5ª batida:</strong> retorna do segundo intervalo.</li>'+
+          '<li><strong>6ª batida:</strong> fecha a jornada do dia.</li>'+
+          '<li>Se o funcionário não retornar em até 2 horas após uma saída para intervalo, o sistema deve mudar apenas o status visual para sem retorno. O ponto não é fechado de verdade.</li>'+
+          '<li>O ponto só fecha definitivamente com a saída final registrada ou no encerramento do dia às 23:59 no horário de Brasília.</li>'+
+          '<li>Ajustes manuais entram na mesma sequência das batidas normais e não devem bloquear batidas futuras.</li>'+
+        '</ul>'+
+        '<div class="ponto-info-modal-actions"><button class="btn btn-green" type="button" id="btnFecharInfoPonto">Entendi</button></div>'+
+      '</div>';
+      document.body.appendChild(modal);
+      modal.addEventListener('click', function(ev){ if (ev.target === modal) modal.hidden = true; });
+      modal.querySelector('#btnFecharInfoPonto').addEventListener('click', function(){ modal.hidden = true; });
+    }
+    modal.hidden = false;
+  }
+  function inserirBotaoInfo(){
+    var row = document.querySelector('#bater_ponto .ponto-registro-row');
+    if (!row || byId('btnInfoRegrasPonto')) return;
+    var btn = document.createElement('button');
+    btn.id = 'btnInfoRegrasPonto';
+    btn.type = 'button';
+    btn.className = 'btn btn-ghost ponto-info-regra-btn';
+    btn.title = 'Regras do ponto';
+    btn.setAttribute('aria-label', 'Regras do ponto');
+    btn.textContent = 'I';
+    btn.addEventListener('click', abrirInfoPonto);
+    row.appendChild(btn);
+  }
+  window.abrirInfoRegrasPonto = abrirInfoPonto;
+  document.addEventListener('DOMContentLoaded', inserirBotaoInfo);
+  setTimeout(inserirBotaoInfo, 300);
+  setTimeout(inserirBotaoInfo, 1200);
+})();
 </script>
 
 </body>
