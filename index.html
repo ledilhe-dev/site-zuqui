@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.57-pin-original-ponto-recebiveis-info">
+  <meta name="app-version" content="3.1.58-pin-original-ponto-recebiveis-info">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.57 - Ponto com PIN original, recebíveis por loja e botão de informação
+    Versão 3.1.58 - Ponto com PIN original, recebíveis por loja e botão de informação
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7100,7 +7100,7 @@
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '3.1.50';
-const APP_VERSION_LABEL = '3.1.57-pin-original-ponto-recebiveis-info';
+const APP_VERSION_LABEL = '3.1.58-pin-original-ponto-recebiveis-info';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -9411,21 +9411,43 @@ async function limparTempoAvisoManualPonto() {
 }
 
 function calcularTotalIntervalosPonto(intervalos = [], saidaIntervaloSemRegistro = null) {
-  let total = 0;
+  // Evita dobrar intervalo quando o mesmo descanso aparece em mais de uma origem
+  // (ex.: ponto_intervalos + campos principais do ponto).
+  // A regra correta é contar cada janela de intervalo uma única vez.
+  const faixas = [];
+
   (intervalos || []).forEach(intervalo => {
     if (!intervalo?.inicio_em) return;
     const inicioMs = new Date(intervalo.inicio_em).getTime();
     const fimMs = intervalo.retorno_em ? new Date(intervalo.retorno_em).getTime() : Date.now();
     if (!Number.isNaN(inicioMs) && !Number.isNaN(fimMs) && fimMs > inicioMs) {
-      total += Math.floor((fimMs - inicioMs) / 60000);
+      faixas.push([inicioMs, fimMs]);
     }
   });
+
   if (saidaIntervaloSemRegistro) {
     const inicioMs = new Date(saidaIntervaloSemRegistro).getTime();
-    if (!Number.isNaN(inicioMs) && Date.now() > inicioMs) {
-      total += Math.floor((Date.now() - inicioMs) / 60000);
+    const fimMs = Date.now();
+    if (!Number.isNaN(inicioMs) && fimMs > inicioMs) {
+      faixas.push([inicioMs, fimMs]);
     }
   }
+
+  if (!faixas.length) return 0;
+
+  faixas.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const consolidadas = [];
+  faixas.forEach(([inicio, fim]) => {
+    const ultima = consolidadas[consolidadas.length - 1];
+    if (!ultima || inicio > ultima[1]) {
+      consolidadas.push([inicio, fim]);
+      return;
+    }
+    // Intervalo igual ou sobreposto: une em uma única faixa para não somar duas vezes.
+    ultima[1] = Math.max(ultima[1], fim);
+  });
+
+  const total = consolidadas.reduce((acc, [inicio, fim]) => acc + Math.floor((fim - inicio) / 60000), 0);
   return Math.max(0, total);
 }
 
