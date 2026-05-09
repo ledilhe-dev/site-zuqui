@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.58-pin-original-ponto-recebiveis-info">
+  <meta name="app-version" content="3.1.59-escala-agenda-loja-blindada">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.58 - Ponto com PIN original, recebíveis por loja e botão de informação
+    Versão 3.1.59 - Escala/agenda com loja blindada sem alterar ponto
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -8845,7 +8845,7 @@ function renderizarItensDiaModalEscala(){
   const lista=document.getElementById('escalaPlantaoListaDia');
   if(!lista)return;
   const itens=(escalaPlantoesEventos||[]).filter(item=>String(item.data_plantao||'').slice(0,10)===escalaPlantoesDataSelecionada);
-  if(!itens.length){lista.innerHTML='<div class="escala-modal-empty">Nenhum item lançado nesse dia.</div>';return;}
+  if(!itens.length){lista.innerHTML='<div class="escala-modal-empty">Nenhum compromisso lançado nesse dia.</div>';return;}
   lista.innerHTML=itens.map(item=>{
     const nome=escapeHtml(item.funcionario_nome||item.titulo||'Funcionário');
     const tipo=escapeHtml(item.tipo||'plantao');
@@ -29627,7 +29627,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   function renderItensDia(){
     var lista=byId('escalaPlantaoListaDia'); if(!lista) return;
     var itens=itensDoDia(ESCALA_STATE.data);
-    if(!itens.length){ lista.innerHTML='<div class="escala-modal-empty">Nenhum item lançado nesse dia.</div>'; return; }
+    if(!itens.length){ lista.innerHTML='<div class="escala-modal-empty">Nenhum compromisso lançado nesse dia.</div>'; return; }
     lista.innerHTML=itens.map(function(item){
       var nome=item.funcionario_nome || item.funcionarios?.nome || item.titulo || 'Funcionário';
       var texto=hora(item.inicio_hora)+' → '+hora(item.fim_hora)+' · '+nome;
@@ -29641,7 +29641,9 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       var inicio=ref.getFullYear()+'-'+String(ref.getMonth()+1).padStart(2,'0')+'-01';
       var fim=new Date(ref.getFullYear(),ref.getMonth()+1,0); fim=fim.getFullYear()+'-'+String(fim.getMonth()+1).padStart(2,'0')+'-'+String(fim.getDate()).padStart(2,'0');
       var q=window.sb.from('escala_plantoes').select('id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at,deleted_by_nome,deleted_by_funcionario_id').gte('data_plantao',inicio).lte('data_plantao',fim).is('deleted_at', null).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
-      var loja=lojaIdAtual(); if(loja) q=q.eq('loja_id',loja);
+      var lojaObj = await resolverLojaAtivaBlindadaEscala();
+      var loja = String(lojaObj && lojaObj.id || lojaIdAtual() || '').trim();
+      if(loja) q=q.eq('loja_id',loja);
       var r=await q; if(r.error) throw r.error;
       var dados=r.data||[];
       var ids=[...new Set(dados.map(function(x){return x.funcionario_id;}).filter(Boolean))];
@@ -29708,10 +29710,11 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     if(!funcionario){ msg('msgModalEscalaPlantao','Selecione o funcionário.','err'); return; }
     if(!inicio || !fim){ msg('msgModalEscalaPlantao','Informe início e fim.','err'); return; }
     if(inicio>=fim){ msg('msgModalEscalaPlantao','O horário final precisa ser maior que o inicial.','err'); return; }
-    var loja=lojaIdAtual();
-    if(!loja){ msg('msgModalEscalaPlantao','Loja logada não identificada. Saia e entre novamente.','err'); return; }
+    var lojaObj = await resolverLojaAtivaBlindadaEscala();
+    var loja = String(lojaObj && lojaObj.id || lojaIdAtual() || '').trim();
+    if(!loja){ msg('msgModalEscalaPlantao','Não consegui identificar a loja para salvar esta agenda. Reabra o sistema e tente novamente.','err'); return; }
     var payload={ loja_id:loja, funcionario_id:funcionario, data_plantao:ESCALA_STATE.data, inicio_hora:inicio, fim_hora:fim, tipo:tipo, titulo:titulo || (tipo==='plantao'?'Plantão':tipo==='reuniao'?'Reunião':'Compromisso'), observacao:obs||null, valor_combinado:valorCombinado };
-    var emp=empresaIdAtual(); if(emp) payload.empresa_id=emp;
+    var emp=String(lojaObj && lojaObj.empresa_id || empresaIdAtual() || '').trim(); if(emp) payload.empresa_id=emp;
     try{
       var r;
       if(ESCALA_STATE.id || byId('escalaPlantaoEventoId')?.value){
