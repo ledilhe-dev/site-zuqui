@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.59-escala-agenda-loja-blindada">
+  <meta name="app-version" content="3.1.61-login-preferencias-blindadas">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.59 - Escala/agenda com loja blindada sem alterar ponto
+    Versão 3.1.61 - Login com salvar senha/manter conectado blindados
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -23760,11 +23760,9 @@ function abrirModalSolicitarAjustePonto() {
   const subtexto = document.getElementById('ajustePontoModalSubtexto');
   const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
 
-  if (pinField) pinField.hidden = usarSessaoFuncionario;
+  if (pinField) pinField.hidden = false;
   if (subtexto) {
-    subtexto.textContent = usarSessaoFuncionario
-      ? 'Sua conta já está identificada. Informe data, horário e motivo para o administrador aprovar a solicitação.'
-      : 'Informe seu PIN para identificação e descreva o horário que precisa ser ajustado. O administrador deverá aprovar a solicitação.';
+    subtexto.textContent = 'Informe o PIN do funcionário que está solicitando o ajuste. O sistema não usa o usuário logado para definir o funcionário desta solicitação.';
   }
 
   if (data) data.value = dataLocalISO();
@@ -23773,7 +23771,7 @@ function abrirModalSolicitarAjustePonto() {
   if (pin) pin.value = '';
   setMsg('msgSolicitarAjustePonto', '', '');
   modal.hidden = false;
-  setTimeout(() => (usarSessaoFuncionario ? horario?.focus() : pin?.focus()), 80);
+  setTimeout(() => pin?.focus(), 80);
 }
 
 function fecharModalSolicitarAjustePonto() {
@@ -23799,9 +23797,11 @@ function dispositivoMovelSolicitacaoAjustePonto() {
 }
 
 function usarSessaoFuncionarioSolicitacaoAjustePonto() {
-  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
-  return usuarioSistemaLogado?.tipo === 'funcionario' && !!funcionarioLogadoId && !terminalCompartilhadoPonto;
+  // FIX 3.1.60:
+  // A solicitação de ajuste de ponto deve identificar o FUNCIONÁRIO PELO PIN informado no modal.
+  // Não usar usuarioSistemaLogado aqui, pois em terminal/loja compartilhada o usuário logado pode ser PATRICK/ZUQUI,
+  // enquanto quem está pedindo o ajuste é outro funcionário digitando o próprio PIN.
+  return false;
 }
 
 async function salvarSolicitacaoAjustePonto() {
@@ -23815,50 +23815,32 @@ async function salvarSolicitacaoAjustePonto() {
     return;
   }
 
-  const funcionarioLogadoId = String(usuarioSistemaLogado?.id || '').trim();
-  const usarSessaoFuncionario = usarSessaoFuncionarioSolicitacaoAjustePonto();
-
-  let funcionario = null;
-  if (usarSessaoFuncionario) {
-    const { data: funcionarioData, error: funcionarioErro } = await sb
-      .from('funcionarios')
-      .select('id, nome, ativo')
-      .eq('id', funcionarioLogadoId)
-      .eq('ativo', true)
-      .single();
-
-    if (funcionarioErro || !funcionarioData?.id) {
-      setMsg('msgSolicitarAjustePonto', 'Não foi possível identificar seu usuário logado. Faça login novamente e tente de novo.', 'err');
-      return;
-    }
-
-    funcionario = {
-      id: funcionarioData.id,
-      nome: funcionarioData.nome || usuarioSistemaLogado?.nome || 'Funcionário',
-    };
-  } else {
-    if (!pin) {
-      setMsg('msgSolicitarAjustePonto', 'Informe o PIN do funcionário.', 'err');
-      return;
-    }
-    funcionario = await obterFuncionarioAtivoPorPin(pin);
-    if (!funcionario?.id) {
-      setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
-      return;
-    }
+  if (!pin) {
+    setMsg('msgSolicitarAjustePonto', 'Informe o PIN do funcionário que está solicitando o ajuste.', 'err');
+    return;
   }
+
+  const funcionario = await obterFuncionarioAtivoPorPin(pin);
+  if (!funcionario?.id) {
+    setMsg('msgSolicitarAjustePonto', 'PIN inválido. Confira a senha do funcionário.', 'err');
+    return;
+  }
+
+  const solicitacaoPayload = {
+    funcionario_id: funcionario.id,
+    funcionario_nome: funcionario.nome || 'Funcionário',
+    data_ajuste: dataAjuste,
+    horario_ajuste: horarioAjuste,
+    motivo,
+    status: 'pendente',
+    ...(funcionario.loja_id ? { loja_id: funcionario.loja_id } : {}),
+    ...(funcionario.empresa_id ? { empresa_id: funcionario.empresa_id } : {}),
+  };
 
   setMsg('msgSolicitarAjustePonto', 'Enviando solicitação...', 'ok');
   const { error } = await sb
     .from('ponto_ajustes_solicitacoes')
-    .insert([{
-      funcionario_id: funcionario.id,
-      funcionario_nome: funcionario.nome || 'Funcionário',
-      data_ajuste: dataAjuste,
-      horario_ajuste: horarioAjuste,
-      motivo,
-      status: 'pendente',
-    }]);
+    .insert([solicitacaoPayload]);
 
   if (error) {
     if (isMissingPontoAjustesTableError(error)) {
@@ -27056,10 +27038,10 @@ window.setTimeout(() => {
     <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
     <div class="login-brand-title">CHECK DIARIO</div>
     <div class="login-brand-sub">ROTINA " CHECKLIST " OPERACAO</div>
-    <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.1.50</div>
+    <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.1.61</div>
   </div>
-  <form id="loginForm" class="login-form" onsubmit="handleLogin(event)">
-    <input type="text" id="username" class="login-input" placeholder="Nome ou e-mail" required>
+  <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+    <input type="text" id="username" class="login-input" placeholder="Nome ou e-mail" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     <input type="text" id="password" class="login-input pin-secure-input" placeholder="PIN ou senha" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
     <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text-muted); cursor:pointer;">
       <input type="checkbox" id="savePassword" style="width:16px; height:16px; cursor:pointer;">
@@ -27096,8 +27078,8 @@ window.setTimeout(() => {
     </div>
   </div>
   <div style="width:min(320px,100%); margin-top:8px; text-align:center; font-size:12px; line-height:1.45; color:var(--text-muted);">
-    <div>Desenvolvido por Patrick Dilhe - Versão 3.1.50</div>
-    <div>Notas da versão 3.1.50: solicitação de ajuste identifica funcionário pelo PIN quando o terminal compartilhado ZUQUI estiver logado.</div>
+    <div>Desenvolvido por Patrick Dilhe - Versão 3.1.61</div>
+    <div>Notas da versão 3.1.61: login com salvar senha/manter conectado corrigidos sem reativar gerenciador de senhas no PIN do ponto.</div>
     <div>Contato: ledilhe@gmail.com</div>
   </div>
 </div>
@@ -27315,7 +27297,41 @@ function restaurarPreferenciasLogin() {
   if (prefs.salvarSenha) {
     if (user) user.value = String(prefs.username || '');
     if (pass) pass.value = String(prefs.password || '');
+  } else {
+    if (pass) pass.value = '';
   }
+}
+
+function sincronizarPreferenciasLoginDaTela() {
+  const user = document.getElementById('username');
+  const pass = document.getElementById('password');
+  const save = document.getElementById('savePassword');
+  const keep = document.getElementById('keepLoggedIn');
+  salvarPreferenciasLogin({
+    username: user?.value || '',
+    password: pass?.value || '',
+    salvarSenha: save?.checked === true,
+    manterConectado: keep?.checked === true,
+  });
+}
+
+function configurarPreferenciasLoginTela() {
+  const user = document.getElementById('username');
+  const pass = document.getElementById('password');
+  const save = document.getElementById('savePassword');
+  const keep = document.getElementById('keepLoggedIn');
+
+  save?.addEventListener('change', () => {
+    if (!save.checked && pass) pass.value = '';
+    sincronizarPreferenciasLoginDaTela();
+  });
+  keep?.addEventListener('change', sincronizarPreferenciasLoginDaTela);
+  user?.addEventListener('input', () => {
+    if (save?.checked) sincronizarPreferenciasLoginDaTela();
+  });
+  pass?.addEventListener('input', () => {
+    if (save?.checked) sincronizarPreferenciasLoginDaTela();
+  });
 }
 
 function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
@@ -27909,6 +27925,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   const keepLoggedInCheckbox = document.getElementById('keepLoggedIn');
   if (keepLoggedInCheckbox) keepLoggedInCheckbox.checked = false;
   restaurarPreferenciasLogin();
+  configurarPreferenciasLoginTela();
   restaurarSessaoSistema();
   processarFluxoAutenticacaoPorToken();
   iniciarAtualizacaoAutomatica();
