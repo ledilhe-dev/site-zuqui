@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.61-login-preferencias-blindadas">
+  <meta name="app-version" content="3.1.63-recebiveis-tenant-fix">
   <meta name="theme-color" content="#0a0f0d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.61 - Login com salvar senha/manter conectado blindados
+    Versão 3.1.62 - Recebíveis com feedback e fallback de movimentação
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7100,7 +7100,7 @@
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '3.1.50';
-const APP_VERSION_LABEL = '3.1.58-pin-original-ponto-recebiveis-info';
+const APP_VERSION_LABEL = '3.1.63-recebiveis-tenant-fix';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -16030,10 +16030,21 @@ async function registrarMovimentacaoContaFinanceira({ contaFinanceiraId, recebiv
   const saldoAntes = Number(conta.saldo_atual || 0);
   const saldoApos = Number((saldoAntes + delta).toFixed(2));
 
-  const { error: erroUpdate } = await sb
+  let { error: erroUpdate } = await sb
     .from('contas_financeiras')
     .update({ saldo_atual: saldoApos, updated_at: new Date().toISOString() })
     .eq('id', contaId);
+
+  // Fallback para bancos que ainda não têm a coluna updated_at em contas_financeiras.
+  // Antes, quando essa coluna faltava, o recebível podia ser salvo mas a tela parava antes de atualizar a lista,
+  // dando a impressão de que o botão Cadastrar não fazia nada.
+  if (erroUpdate && isMissingColumnError(erroUpdate)) {
+    const tentativaSemUpdatedAt = await sb
+      .from('contas_financeiras')
+      .update({ saldo_atual: saldoApos })
+      .eq('id', contaId);
+    erroUpdate = tentativaSemUpdatedAt.error;
+  }
   if (erroUpdate) return { error: erroUpdate };
 
   const { error: erroMov } = await sb
@@ -16071,95 +16082,104 @@ function limparFormularioRecebivelFinanceiro() {
 }
 
 async function salvarRecebivelFinanceiro() {
-  atualizarPagadorSelecionadoRecebivelFinanceiro();
-  const pagadorId = String(document.getElementById('recebivelPagadorId')?.value || '').trim();
-  const formaPagamentoId = String(document.getElementById('recebivelFormaPagamentoId')?.value || '').trim();
-  const contaFinanceiraId = String(document.getElementById('recebivelContaFinanceiraId')?.value || '').trim();
-  const valorTexto = String(document.getElementById('recebivelValor')?.value || '').trim();
-  const valorRecebivel = lerValorMonetarioFinanceiro(valorTexto);
-
-  if (!pagadorId) {
-    setMsg('msgRecebivelFinanceiro', 'Selecione um pagador válido na busca de fornecedores.', 'err');
-    return;
-  }
-  if (!formaPagamentoId) {
-    setMsg('msgRecebivelFinanceiro', 'Selecione uma forma de pagamento cadastrada.', 'err');
-    return;
-  }
-  if (!contaFinanceiraId) {
-    setMsg('msgRecebivelFinanceiro', 'Selecione a conta financeira que receberá este dinheiro.', 'err');
-    return;
-  }
-  if (!valorTexto) {
-    setMsg('msgRecebivelFinanceiro', 'Informe o valor do recebível.', 'err');
-    return;
-  }
-  if (!Number.isFinite(valorRecebivel) || valorRecebivel <= 0) {
-    setMsg('msgRecebivelFinanceiro', 'Informe um valor válido para o recebível.', 'err');
-    return;
-  }
-
-  const payload = {
-    pagador_id: pagadorId,
-    forma_pagamento_id: formaPagamentoId,
-    conta_financeira_id: contaFinanceiraId,
-    valor: Number(valorRecebivel.toFixed(2)),
-    empresa_id: empresaAtualId || usuarioSistemaLogado?.empresa_id || null,
-    loja_id: lojaAtualId || usuarioSistemaLogado?.loja_id || null,
-  };
-  const editando = !!recebivelFinanceiroEmEdicaoId;
-  const recebivelAnterior = editando
-    ? recebiveisFinanceiroCache.find(item => String(item.id) === String(recebivelFinanceiroEmEdicaoId)) || null
-    : null;
-  const query = editando
-    ? sb.from('recebiveis').update(payload).eq('id', recebivelFinanceiroEmEdicaoId).select('id').maybeSingle()
-    : sb.from('recebiveis').insert([payload]).select('id').maybeSingle();
-
-  const { data: recebivelSalvo, error } = await query;
-  if (error) {
-    if (isMissingRecebiveisTableError(error) || isMissingFornecedoresTableError(error) || isMissingFormasPagamentoTableError(error) || isMissingColumnError(error)) {
-      setMsg('msgRecebivelFinanceiro', 'Rode o SQL mais recente do financeiro para habilitar recebíveis.', 'err');
+  try {
+    atualizarPagadorSelecionadoRecebivelFinanceiro();
+    const pagadorId = String(document.getElementById('recebivelPagadorId')?.value || '').trim();
+    const formaPagamentoId = String(document.getElementById('recebivelFormaPagamentoId')?.value || '').trim();
+    const contaFinanceiraId = String(document.getElementById('recebivelContaFinanceiraId')?.value || '').trim();
+    const valorTexto = String(document.getElementById('recebivelValor')?.value || '').trim();
+    const valorRecebivel = lerValorMonetarioFinanceiro(valorTexto);
+  
+    if (!pagadorId) {
+      setMsg('msgRecebivelFinanceiro', 'Selecione um pagador válido na busca de fornecedores.', 'err');
       return;
     }
-    setMsg('msgRecebivelFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
-    return;
-  }
-  const recebivelId = recebivelSalvo?.id || recebivelFinanceiroEmEdicaoId;
+    if (!formaPagamentoId) {
+      setMsg('msgRecebivelFinanceiro', 'Selecione uma forma de pagamento cadastrada.', 'err');
+      return;
+    }
+    if (!contaFinanceiraId) {
+      setMsg('msgRecebivelFinanceiro', 'Selecione a conta financeira que receberá este dinheiro.', 'err');
+      return;
+    }
+    if (!valorTexto) {
+      setMsg('msgRecebivelFinanceiro', 'Informe o valor do recebível.', 'err');
+      return;
+    }
+    if (!Number.isFinite(valorRecebivel) || valorRecebivel <= 0) {
+      setMsg('msgRecebivelFinanceiro', 'Informe um valor válido para o recebível.', 'err');
+      return;
+    }
+  
+    const empresaIdSessao = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
+    const lojaIdSessao = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
 
-  if (editando && recebivelAnterior?.conta_financeira_id && Number(recebivelAnterior.valor || 0) > 0) {
-    const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({
-      contaFinanceiraId: recebivelAnterior.conta_financeira_id,
+    const payload = {
+      pagador_id: pagadorId,
+      forma_pagamento_id: formaPagamentoId,
+      conta_financeira_id: contaFinanceiraId,
+      valor: Number(valorRecebivel.toFixed(2)),
+      empresa_id: empresaIdSessao,
+      loja_id: lojaIdSessao,
+    };
+    const editando = !!recebivelFinanceiroEmEdicaoId;
+    const recebivelAnterior = editando
+      ? recebiveisFinanceiroCache.find(item => String(item.id) === String(recebivelFinanceiroEmEdicaoId)) || null
+      : null;
+    const query = editando
+      ? sb.from('recebiveis').update(payload).eq('id', recebivelFinanceiroEmEdicaoId).select('id').maybeSingle()
+      : sb.from('recebiveis').insert([payload]).select('id').maybeSingle();
+  
+    const { data: recebivelSalvo, error } = await query;
+    if (error) {
+      if (isMissingRecebiveisTableError(error) || isMissingFornecedoresTableError(error) || isMissingFormasPagamentoTableError(error) || isMissingColumnError(error)) {
+        setMsg('msgRecebivelFinanceiro', 'Rode o SQL mais recente do financeiro para habilitar recebíveis.', 'err');
+        return;
+      }
+      setMsg('msgRecebivelFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+      return;
+    }
+    const recebivelId = recebivelSalvo?.id || recebivelFinanceiroEmEdicaoId;
+  
+    if (editando && recebivelAnterior?.conta_financeira_id && Number(recebivelAnterior.valor || 0) > 0) {
+      const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({
+        contaFinanceiraId: recebivelAnterior.conta_financeira_id,
+        recebivelId,
+        tipo: 'estorno',
+        valor: Number(recebivelAnterior.valor || 0),
+        descricao: 'Estorno por edição de recebível',
+      });
+      if (erroEstorno) {
+        setMsg('msgRecebivelFinanceiro', `Recebível salvo, mas não foi possível estornar o saldo anterior: ${mensagemErroSupabase(erroEstorno, 'erro desconhecido')}`, 'err');
+        return;
+      }
+    }
+  
+    const pagadorNome = fornecedoresFinanceiroCache.find(item => String(item.id) === pagadorId)?.nome || 'pagador';
+    const formaNome = formasPagamentoFinanceiroCache.find(item => String(item.id) === formaPagamentoId)?.nome || 'forma de pagamento';
+    const { error: erroMovimentacao } = await registrarMovimentacaoContaFinanceira({
+      contaFinanceiraId,
       recebivelId,
-      tipo: 'estorno',
-      valor: Number(recebivelAnterior.valor || 0),
-      descricao: 'Estorno por edição de recebível',
+      tipo: 'entrada',
+      valor: Number(valorRecebivel.toFixed(2)),
+      descricao: `Recebível de ${pagadorNome} via ${formaNome}`,
     });
-    if (erroEstorno) {
-      setMsg('msgRecebivelFinanceiro', `Recebível salvo, mas não foi possível estornar o saldo anterior: ${mensagemErroSupabase(erroEstorno, 'erro desconhecido')}`, 'err');
+    if (erroMovimentacao) {
+      setMsg('msgRecebivelFinanceiro', `Recebível salvo, mas não foi possível lançar a entrada na conta financeira: ${mensagemErroSupabase(erroMovimentacao, 'erro desconhecido')}`, 'err');
       return;
     }
-  }
-
-  const pagadorNome = fornecedoresFinanceiroCache.find(item => String(item.id) === pagadorId)?.nome || 'pagador';
-  const formaNome = formasPagamentoFinanceiroCache.find(item => String(item.id) === formaPagamentoId)?.nome || 'forma de pagamento';
-  const { error: erroMovimentacao } = await registrarMovimentacaoContaFinanceira({
-    contaFinanceiraId,
-    recebivelId,
-    tipo: 'entrada',
-    valor: Number(valorRecebivel.toFixed(2)),
-    descricao: `Recebível de ${pagadorNome} via ${formaNome}`,
-  });
-  if (erroMovimentacao) {
-    setMsg('msgRecebivelFinanceiro', `Recebível salvo, mas não foi possível lançar a entrada na conta financeira: ${mensagemErroSupabase(erroMovimentacao, 'erro desconhecido')}`, 'err');
-    return;
-  }
-
-  limparFormularioRecebivelFinanceiro();
-  setMsg('msgRecebivelFinanceiro', editando ? 'Recebível atualizado.' : 'Recebível cadastrado.', 'ok');
-  await carregarContasFinanceiras({ render: false, silencioso: true });
-  await carregarRecebiveisFinanceiro();
-  if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
-    await carregarCofreFinanceiro();
+  
+    limparFormularioRecebivelFinanceiro();
+    setMsg('msgRecebivelFinanceiro', editando ? 'Recebível atualizado.' : 'Recebível cadastrado.', 'ok');
+    await carregarContasFinanceiras({ render: false, silencioso: true });
+    await carregarRecebiveisFinanceiro();
+    if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
+      await carregarCofreFinanceiro();
+    }
+  
+  } catch (erroInesperado) {
+    console.error('Erro inesperado ao salvar recebível:', erroInesperado);
+    setMsg('msgRecebivelFinanceiro', `Não foi possível cadastrar o recebível: ${mensagemErroSupabase(erroInesperado, erroInesperado?.message || 'erro inesperado')}`, 'err');
   }
 }
 
