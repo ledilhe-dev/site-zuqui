@@ -4159,6 +4159,34 @@
     .checklist-info-pin:focus-within .checklist-info-pin-texto {
       display: block;
     }
+    .regra-info-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+    .regra-info-btn {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      padding: 0;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(245,158,11,.75);
+      background: rgba(245,158,11,.16);
+      color: #fbbf24;
+      font-weight: 900;
+      font-size: 14px;
+      line-height: 1;
+      box-shadow: 0 0 0 1px rgba(245,158,11,.12);
+    }
+    .regra-info-btn:hover {
+      background: rgba(245,158,11,.26);
+      border-color: rgba(251,191,36,.95);
+      color: #fde68a;
+    }
     .checklists-futuros-box {
       margin-top: 12px;
       border: 1px solid var(--border);
@@ -6321,7 +6349,10 @@
         <div class="page-title">Checklists</div>
 
         <div class="card" id="cardAdminsLojaConfig">
-          <div class="card-title">Checklists lancados</div>
+          <div class="regra-info-row">
+            <button class="regra-info-btn" type="button" title="Regra dos checklists lançados" aria-label="Regra dos checklists lançados" onclick="abrirInfoRegraChecklist('lancados')">I</button>
+            <div class="card-title" style="margin:0">Checklists lancados</div>
+          </div>
           <div class="form-row">
             <select id="filtroChecklistFuncionario" onchange="carregarChecklists()">
               <option value="">- Todos os funcionarios -</option>
@@ -6644,7 +6675,7 @@
           <div class="tarefa-form-row">
             <input id="nomeTarefa" type="text" placeholder="Nome da tarefa">
             <input id="descTarefa" name="descricao_tarefa_manual_no_autofill" type="text" placeholder="Descrição da tarefa" autocomplete="new-password" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="desbloquearCampoDescricaoTarefa(this)">
-            <input id="horarioTarefa" class="campo-curto" type="time" placeholder="Horário" style="display:none">
+            <input id="horarioTarefa" class="campo-curto" type="time" placeholder="Horário" title="Horário obrigatório da tarefa" required>
             <select id="funcionarioTarefa" style="display:none">
               <option value=""></option>
             </select>
@@ -6731,7 +6762,10 @@
         <div class="page-title">Checklist em andamento</div>
 
         <div class="card" id="cardFiltrosExecucao">
-          <div class="card-title">Filtros de execução</div>
+          <div class="regra-info-row">
+            <button class="regra-info-btn" type="button" title="Regra das execuções em andamento" aria-label="Regra das execuções em andamento" onclick="abrirInfoRegraChecklist('execucoes')">I</button>
+            <div class="card-title" style="margin:0">Filtros de execução</div>
+          </div>
           <div class="form-row">
             <input id="filtroDataExec" type="date" style="max-width:180px" onchange="aplicarFunilExecucoesComReset()">
             <input id="filtroHoraInicioExec" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora inicial" onchange="aplicarFunilExecucoesComReset()">
@@ -7743,6 +7777,22 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" type="button" onclick="fecharModalPin()">Cancelar</button>
       <button class="btn btn-green" type="button" id="pinActionConfirmButton" onclick="confirmarModalPin()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modalInfoRegraChecklist">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <div>
+        <h3 id="infoRegraChecklistTitulo">Regra do checklist</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="infoRegraChecklistSubtitulo"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharInfoRegraChecklist()">X Fechar</button>
+    </div>
+    <div class="modal-body" id="infoRegraChecklistBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-green" type="button" onclick="fecharInfoRegraChecklist()">Entendi</button>
     </div>
   </div>
 </div>
@@ -11906,6 +11956,46 @@ function confirmarModalPin() {
   fecharModalPin({ pin: (input?.value || '').trim() });
 }
 
+function abrirInfoRegraChecklist(tipo = 'lancados') {
+  const overlay = document.getElementById('modalInfoRegraChecklist');
+  const titulo = document.getElementById('infoRegraChecklistTitulo');
+  const subtitulo = document.getElementById('infoRegraChecklistSubtitulo');
+  const body = document.getElementById('infoRegraChecklistBody');
+  if (!overlay || !titulo || !subtitulo || !body) return;
+
+  if (tipo === 'execucoes') {
+    titulo.textContent = 'Regra das execuções';
+    subtitulo.textContent = 'Acompanhamento de tarefas iniciadas, pausadas e finalizadas.';
+    body.innerHTML = `
+      <ul style="margin:0;padding-left:18px;line-height:1.55;color:var(--text-muted);font-size:13px">
+        <li><strong style="color:var(--text)">Em andamento:</strong> aparece quando uma tarefa lançada foi iniciada por um funcionário.</li>
+        <li><strong style="color:var(--text)">Pausar:</strong> muda a execução para pausada, mantendo histórico de início e responsável.</li>
+        <li><strong style="color:var(--text)">Finalizar:</strong> registra quem finalizou, data/hora de fim e muda o status para finalizado.</li>
+        <li><strong style="color:var(--text)">Filtro de data:</strong> considera data da execução, início e finalização para manter finalizados visíveis.</li>
+        <li><strong style="color:var(--text)">Relançamento:</strong> ao finalizar, o sistema cria a mesma tarefa para a próxima semana, com o mesmo funcionário e horário, sem duplicar se já existir.</li>
+      </ul>
+    `;
+  } else {
+    titulo.textContent = 'Regra dos checklists lançados';
+    subtitulo.textContent = 'Fila de tarefas disponíveis para início.';
+    body.innerHTML = `
+      <ul style="margin:0;padding-left:18px;line-height:1.55;color:var(--text-muted);font-size:13px">
+        <li><strong style="color:var(--text)">Lançado:</strong> a tarefa só aparece aqui depois de ser lançada para uma data, funcionário e horário.</li>
+        <li><strong style="color:var(--text)">Iniciar:</strong> qualquer funcionário autorizado confirma o PIN e assume o início da execução.</li>
+        <li><strong style="color:var(--text)">Responsável:</strong> vem do lançamento feito no cadastro da tarefa.</li>
+        <li><strong style="color:var(--text)">Próxima tarefa:</strong> tarefas futuras ficam separadas da lista de hoje.</li>
+        <li><strong style="color:var(--text)">Repetição semanal:</strong> quando uma execução é finalizada, o sistema relança automaticamente para +7 dias com o mesmo funcionário e horário.</li>
+      </ul>
+    `;
+  }
+
+  overlay.classList.add('show');
+}
+
+function fecharInfoRegraChecklist() {
+  document.getElementById('modalInfoRegraChecklist')?.classList.remove('show');
+}
+
 function abrirModalConfirmacaoFinanceira({
   titulo = 'Confirmar alteração',
   subtitulo = '',
@@ -12547,16 +12637,18 @@ async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
       // Se o funcionário tiver turno preenchido, só lança hoje dentro do turno local cadastrado.
       // Se o turno estiver vazio/incompleto, segue apenas a regra normal do checklist.
       .filter(item => funcionarioDentroDoTurnoOperacional(funcionariosPorIdTurno.get(String(item.funcionario_id)) || null))
+      .map(item => ({ item, horarioLimite: horaCurta(item.horario_limite || '') }))
       // Se o horário da tarefa já passou no dia atual, ignora hoje e agenda apenas os próximos dias.
-      .filter(item => !item.horario_limite || !horarioJaPassouHoje(item.horario_limite))
-      .filter(item => !chavesExistentes.has(criarChaveAgendaDiaria(item.id, item.funcionario_id, dataReferencia)))
-      .map(item => ({
+      // Tarefa sem horário não pode ser lançada automaticamente.
+      .filter(({ horarioLimite }) => horarioLimite && !horarioJaPassouHoje(horarioLimite))
+      .filter(({ item }) => !chavesExistentes.has(criarChaveAgendaDiaria(item.id, item.funcionario_id, dataReferencia)))
+      .map(({ item, horarioLimite }) => ({
         tarefa_id: item.id,
         checklist_id: item.checklist_id || null,
         funcionario_id: item.funcionario_id,
         nome: item.nome,
         descricao: item.descricao || null,
-        horario_limite: item.horario_limite || null,
+        horario_limite: horarioLimite,
         dias_semana: item.dias_semana || 'todos',
         data_programada: dataReferencia,
         lancado_em: new Date().toISOString(),
@@ -22416,9 +22508,10 @@ async function criarTarefa() {
   }
   const nome = document.getElementById('nomeTarefa').value.trim();
   const descricao = document.getElementById('descTarefa').value.trim();
-  const horarioLimite = document.getElementById('horarioTarefa').value;
+  const horarioLimite = horaCurta(document.getElementById('horarioTarefa').value || '');
   const funcionarioId = document.getElementById('funcionarioTarefa').value || null;
   if (!nome) { setMsg('msgTarefas', 'Digite o nome da tarefa.', 'err'); return; }
+  if (!horarioLimite) { setMsg('msgTarefas', 'Informe o horário da tarefa antes de salvar.', 'err'); return; }
 
   const diasStr = 'todos';
   const checklistRefEdicao = checklistReferenciaEmEdicaoId || null;
@@ -22426,7 +22519,7 @@ async function criarTarefa() {
     nome,
     descricao: descricao || null,
     checklist_id: null,
-    horario_limite: horarioLimite || null,
+    horario_limite: horarioLimite,
     dias_semana: diasStr,
     funcionario_id: funcionarioId,
   };
@@ -22549,7 +22642,7 @@ async function editarTarefa(id) {
   document.getElementById('nomeTarefa').value = tarefa.nome || '';
   document.getElementById('descTarefa').value = tarefa.descricao || '';
   document.getElementById('descTarefa').removeAttribute('readonly');
-  document.getElementById('horarioTarefa').value = tarefa.horario_limite || '';
+  document.getElementById('horarioTarefa').value = horaCurta(tarefa.horario_limite || '');
   document.getElementById('funcionarioTarefa').value = tarefa.funcionario_id || '';
 
   const btnSalvar = document.getElementById('btnSalvarTarefa');
@@ -28894,7 +28987,8 @@ async function garantirRelancamentoSemanalAposFinalizacao(execucao = {}, ator = 
   const proximaData = adicionarDiasDataISO(dataBase, 7);
   const tarefaId = lancamento.tarefa_id || execucao.tarefa_id || null;
   const funcionarioId = lancamento.funcionario_id || execucao.funcionario_id || null;
-  if (!proximaData || !tarefaId || !funcionarioId) return null;
+  const horarioLimite = horaCurta(lancamento.horario_limite || '');
+  if (!proximaData || !tarefaId || !funcionarioId || !horarioLimite) return null;
 
   const { data: existentes, error: erroExistentes } = await sb
     .from('checklist_lancamentos')
@@ -28913,7 +29007,7 @@ async function garantirRelancamentoSemanalAposFinalizacao(execucao = {}, ator = 
     funcionario_id: funcionarioId,
     nome: lancamento.nome || 'Checklist',
     descricao: lancamento.descricao || null,
-    horario_limite: lancamento.horario_limite || null,
+    horario_limite: horarioLimite,
     dias_semana: lancamento.dias_semana || 'todos',
     data_programada: proximaData,
     lancado_em: new Date().toISOString(),
@@ -29183,6 +29277,10 @@ document.getElementById('modalOverlay').addEventListener('click', function(e) {
 
 document.getElementById('pinActionOverlay').addEventListener('click', function(e) {
   if (e.target === this) fecharModalPin();
+});
+
+document.getElementById('modalInfoRegraChecklist').addEventListener('click', function(e) {
+  if (e.target === this) fecharInfoRegraChecklist();
 });
 
 document.getElementById('formaPagamentoOverlay').addEventListener('click', function(e) {
