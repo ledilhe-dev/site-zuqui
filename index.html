@@ -363,8 +363,10 @@
     .login-check-label input[type="checkbox"] {
       width: 16px;
       height: 16px;
+      flex: 0 0 16px;
       accent-color: var(--green);
       cursor: pointer;
+      pointer-events: auto;
     }
 
     .login-btn-primary {
@@ -23650,18 +23652,11 @@ async function iniciarChecklistDireto(lancamentoId) {
     return;
   }
 
-  const funcionarioResponsavel = await obterFuncionarioAtivoPorId(lancamentoAtual.funcionario_id);
-  if (!funcionarioResponsavel?.id) {
-    setMsg('msgChecklists', 'Não foi possível identificar o funcionário responsável por este checklist.', 'err');
-    return;
-  }
-
   const confirmacao = await confirmarAcaoComPin({
-    funcionario: funcionarioResponsavel,
+    funcionario: null,
     titulo: 'Aceitar checklist',
-    subtitulo: `Digite a senha de ${funcionarioResponsavel.nome || 'funcionário responsável'} para iniciar ${lancamentoAtual.nome}.`,
+    subtitulo: `Qualquer funcionário ativo pode confirmar com a própria senha para iniciar ${lancamentoAtual.nome}.`,
     textoAcao: 'Iniciar tarefa',
-    exigirFuncionarioInformado: true,
   });
 
   if (!confirmacao) return;
@@ -28926,9 +28921,9 @@ async function finalizarExecucaoDireta(id) {
   }
 
   const confirmacao = await confirmarAcaoComPin({
-    funcionario: operador,
+    funcionario: null,
     titulo: 'Finalizar checklist',
-    subtitulo: 'Confirme seu PIN para registrar a finalização.',
+    subtitulo: 'Qualquer funcionário ativo pode confirmar com a própria senha para registrar a finalização.',
     textoAcao: 'Finalizar tarefa',
   });
 
@@ -29219,9 +29214,9 @@ async function finalizarExecucao() {
   }
 
   const confirmacao = await confirmarAcaoComPin({
-    funcionario: operador,
+    funcionario: null,
     titulo: 'Finalizar checklist',
-    subtitulo: 'Confirme seu PIN para registrar a finalização.',
+    subtitulo: 'Qualquer funcionário ativo pode confirmar com a própria senha para registrar a finalização.',
     textoAcao: 'Finalizar tarefa',
   });
 
@@ -29523,12 +29518,12 @@ window.setTimeout(() => {
           <input type="text" id="password" class="login-input pin-secure-input" placeholder="Digite seu PIN ou senha" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
         </div>
         <div class="login-checks">
-          <label class="login-check-label">
-            <input type="checkbox" id="savePassword">
+          <label class="login-check-label" for="savePassword">
+            <input type="checkbox" id="savePassword" onchange="sincronizarPreferenciasLoginDaTela()">
             Salvar senha
           </label>
-          <label class="login-check-label">
-            <input type="checkbox" id="keepLoggedIn">
+          <label class="login-check-label" for="keepLoggedIn">
+            <input type="checkbox" id="keepLoggedIn" onchange="sincronizarPreferenciasLoginDaTela()">
             Manter conectado
           </label>
         </div>
@@ -29820,17 +29815,27 @@ function sincronizarPreferenciasLoginDaTela() {
   });
 }
 
+function atualizarPreferenciaSalvarSenhaLogin() {
+  const pass = document.getElementById('password');
+  const save = document.getElementById('savePassword');
+  if (!save?.checked && pass) pass.value = '';
+  sincronizarPreferenciasLoginDaTela();
+}
+
 function configurarPreferenciasLoginTela() {
   const user = document.getElementById('username');
   const pass = document.getElementById('password');
   const save = document.getElementById('savePassword');
   const keep = document.getElementById('keepLoggedIn');
 
-  save?.addEventListener('change', () => {
-    if (!save.checked && pass) pass.value = '';
-    sincronizarPreferenciasLoginDaTela();
-  });
+  save?.addEventListener('change', atualizarPreferenciaSalvarSenhaLogin);
   keep?.addEventListener('change', sincronizarPreferenciasLoginDaTela);
+  document.querySelector('label[for="savePassword"]')?.addEventListener('click', () => {
+    window.setTimeout(atualizarPreferenciaSalvarSenhaLogin, 0);
+  });
+  document.querySelector('label[for="keepLoggedIn"]')?.addEventListener('click', () => {
+    window.setTimeout(sincronizarPreferenciasLoginDaTela, 0);
+  });
   user?.addEventListener('input', () => {
     if (save?.checked) sincronizarPreferenciasLoginDaTela();
   });
