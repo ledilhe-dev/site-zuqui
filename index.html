@@ -8539,7 +8539,7 @@ let checklistsLancadosCache = [];
 let checklistsLancadosFuncionariosMap = {};
 let checklistsLancadosUltimaListaFiltrada = [];
 let relatorioLancamentosCache = [];
-let relatorioLancamentosRegistrosVisiveis = false;
+let relatorioLancamentosRegistrosVisiveis = true;
 let relatorioFinanceiroCache = [];
 let relatorioRecebimentosCache = [];
 let relatorioAjusteSaldoCache = [];
@@ -12396,6 +12396,15 @@ function combinarDataHorarioEmIso(dataRef, horario) {
   const [h, m] = hora.split(':').map(Number);
   data.setHours(h, m, 0, 0);
   return data.toISOString();
+}
+
+function adicionarDiasDataISO(dataISO = '', dias = 0) {
+  const base = String(dataISO || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return '';
+  const data = new Date(`${base}T00:00:00`);
+  if (Number.isNaN(data.getTime())) return '';
+  data.setDate(data.getDate() + Number(dias || 0));
+  return dataLocalISO(data);
 }
 
 function horarioJaPassouHoje(horario) {
@@ -27718,6 +27727,7 @@ function resetFiltroRelatorioLancamentos() {
   const funcionario = document.getElementById('filtroLancamentoFuncionario');
   const busca = document.getElementById('filtroLancamentoBusca');
 
+  relatorioLancamentosRegistrosVisiveis = true;
   if (dataInicio) dataInicio.value = hojeLocal;
   if (dataFim) dataFim.value = hojeLocal;
   if (evento) {
@@ -27973,7 +27983,7 @@ async function carregarRelatorioLancamentos(opcoes = {}) {
   const campoFuncionario = document.getElementById('filtroLancamentoFuncionario');
   const campoBusca = document.getElementById('filtroLancamentoBusca');
   if (!lista) return;
-  if (body && !relatorioLancamentosRegistrosVisiveis) body.hidden = true;
+  if (body) body.hidden = !relatorioLancamentosRegistrosVisiveis;
   if (btnToggle) btnToggle.textContent = relatorioLancamentosRegistrosVisiveis ? 'Ocultar registros' : 'Mostrar registros';
 
   if (campoDataInicio && !campoDataInicio.value) campoDataInicio.value = hoje();
@@ -28188,9 +28198,18 @@ async function carregarRelatorioLancamentos(opcoes = {}) {
 
     const eventosFiltrados = eventos.filter(item => {
       const lancamento = lancamentosMap[String(item.lancamento_id)] || null;
-      const dataReferencia = String(item.data_programada || '').trim() || dataLocalISO(item.registrado_em);
-      if (dataInicio && (!dataReferencia || dataReferencia < dataInicio)) return false;
-      if (dataFim && (!dataReferencia || dataReferencia > dataFim)) return false;
+      const datasReferencia = [
+        item.data_programada,
+        item.registrado_em ? dataLocalISO(item.registrado_em) : '',
+        lancamento?.data_programada || '',
+        lancamento?.lancado_em ? dataLocalISO(lancamento.lancado_em) : '',
+      ].map(valor => String(valor || '').trim()).filter(Boolean);
+      const temDataNoPeriodo = datasReferencia.some(dataRef => {
+        if (dataInicio && dataRef < dataInicio) return false;
+        if (dataFim && dataRef > dataFim) return false;
+        return true;
+      });
+      if (!temDataNoPeriodo) return false;
 
       if (!busca) return true;
       const nomeTarefa = item.nome_evento || lancamento?.nome || tarefasMap[String(item.tarefa_id)] || checklistsMap[String(item.checklist_id)] || '';
@@ -28326,8 +28345,8 @@ async function montarContextoExecucoes(rows = [], dataRef = hoje()) {
 async function obterLinhasBaseExecucoes(dataExecucao = hoje()) {
   let query = sb
     .from('checklist_execucoes')
-    .select('id, funcionario_id, usuario_inicio_id, usuario_fim_id, data_execucao, status')
-    .in('status', ['aberto', 'pausado']);
+    .select('id, funcionario_id, usuario_inicio_id, usuario_fim_id, data_execucao, status, iniciado_em, inicio_confirmado_em, finalizado_em, finalizacao_confirmada_em')
+    .in('status', ['aberto', 'pausado', 'finalizado']);
 
   if (!usuarioPodeVerTodasExecucoes() && usuarioSistemaLogado?.id) {
     query = query.or(`funcionario_id.eq.${usuarioSistemaLogado.id},usuario_inicio_id.eq.${usuarioSistemaLogado.id},usuario_fim_id.eq.${usuarioSistemaLogado.id}`);
@@ -28335,7 +28354,7 @@ async function obterLinhasBaseExecucoes(dataExecucao = hoje()) {
 
   const { data: rows, error } = await query;
   if (error) throw error;
-  return rows || [];
+  return (rows || []).filter(item => execucaoPertenceAoFiltroData(item, dataExecucao));
 }
 
 async function obterMapaFuncionariosExecucao(rows = []) {
@@ -28389,6 +28408,21 @@ function obterDataHoraReferenciaExecucao(execucao) {
     || execucao?.inicio_confirmado_em
     || execucao?.iniciado_em
     || null;
+}
+
+function execucaoPertenceAoFiltroData(execucao, dataFiltro = '') {
+  const data = String(dataFiltro || '').trim();
+  if (!data) return true;
+
+  const datasPossiveis = [
+    execucao?.data_execucao,
+    execucao?.inicio_confirmado_em ? dataLocalISO(execucao.inicio_confirmado_em) : '',
+    execucao?.iniciado_em ? dataLocalISO(execucao.iniciado_em) : '',
+    execucao?.finalizacao_confirmada_em ? dataLocalISO(execucao.finalizacao_confirmada_em) : '',
+    execucao?.finalizado_em ? dataLocalISO(execucao.finalizado_em) : '',
+  ].map(item => String(item || '').trim()).filter(Boolean);
+
+  return datasPossiveis.includes(data);
 }
 
 function execucaoDentroDoFiltroHora(execucao, horaInicio = '', horaFim = '') {
@@ -28510,7 +28544,7 @@ async function carregarExecucoes() {
     let query = sb
       .from('checklist_execucoes')
       .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, usuario_inicio_id, usuario_fim_id, iniciado_em, inicio_confirmado_em, finalizado_em, finalizacao_confirmada_em, status, data_execucao')
-      .in('status', ['aberto', 'pausado'])
+      .in('status', ['aberto', 'pausado', 'finalizado'])
       .order('iniciado_em', { ascending: false });
 
     if (!usuarioPodeVerTodasExecucoes() && usuarioSistemaLogado?.id) {
@@ -28521,6 +28555,7 @@ async function carregarExecucoes() {
     if (error) throw error;
 
     const rows = (rowsBrutas || []).filter(item => {
+      if (!execucaoPertenceAoFiltroData(item, data)) return false;
       if (!execucaoDentroDoFiltroHora(item, horaInicio, horaFim)) return false;
       if (funcionarioId && String(item.funcionario_id || '') !== String(funcionarioId)) return false;
       if (usuarioInicioId && String(item.usuario_inicio_id || '') !== String(usuarioInicioId)) return false;
@@ -28823,12 +28858,102 @@ async function finalizarExecucaoDireta(id) {
     console.warn('Não foi possível auditar a finalização da tarefa:', erroAuditoria);
   }
 
+  try {
+    await garantirRelancamentoSemanalAposFinalizacao(execucao, {
+      funcionarioId: confirmacao.funcionarioId,
+      nome: confirmacao.nomeFuncionario,
+    });
+  } catch (erroRelancamento) {
+    console.warn('Não foi possível relançar a tarefa para a próxima semana:', erroRelancamento);
+  }
+
   await enviarEmailChecklistFinalizado(id);
   pararSomNotificacao();
   carregarExecucoes();
   carregarChecklists();
   carregarNotificacoes();
   setMsg('msgExecucoes', `Execução finalizada por ${confirmacao.nomeFuncionario}.`, 'ok');
+}
+
+async function garantirRelancamentoSemanalAposFinalizacao(execucao = {}, ator = {}) {
+  const lancamentoId = String(execucao?.lancamento_id || '').trim();
+  if (!lancamentoId) return null;
+
+  const { data: lancamento, error: erroLancamento } = await sb
+    .from('checklist_lancamentos')
+    .select('id, tarefa_id, checklist_id, funcionario_id, nome, descricao, horario_limite, dias_semana, data_programada, loja_id, empresa_id')
+    .eq('id', lancamentoId)
+    .maybeSingle();
+
+  if (erroLancamento || !lancamento) {
+    if (erroLancamento) console.warn('Não foi possível consultar lançamento para repetição semanal:', erroLancamento);
+    return null;
+  }
+
+  const dataBase = String(lancamento.data_programada || execucao.data_execucao || hoje()).trim();
+  const proximaData = adicionarDiasDataISO(dataBase, 7);
+  const tarefaId = lancamento.tarefa_id || execucao.tarefa_id || null;
+  const funcionarioId = lancamento.funcionario_id || execucao.funcionario_id || null;
+  if (!proximaData || !tarefaId || !funcionarioId) return null;
+
+  const { data: existentes, error: erroExistentes } = await sb
+    .from('checklist_lancamentos')
+    .select('id, status')
+    .eq('tarefa_id', tarefaId)
+    .eq('funcionario_id', funcionarioId)
+    .eq('data_programada', proximaData)
+    .limit(1);
+
+  if (erroExistentes && !isMissingLancamentosTableError(erroExistentes)) throw erroExistentes;
+  if ((existentes || []).some(item => lancamentoContaComoExistenteParaAgenda(item))) return existentes[0] || null;
+
+  const payload = {
+    tarefa_id: tarefaId,
+    checklist_id: lancamento.checklist_id || execucao.checklist_id || null,
+    funcionario_id: funcionarioId,
+    nome: lancamento.nome || 'Checklist',
+    descricao: lancamento.descricao || null,
+    horario_limite: lancamento.horario_limite || null,
+    dias_semana: lancamento.dias_semana || 'todos',
+    data_programada: proximaData,
+    lancado_em: new Date().toISOString(),
+    criado_por_id: ator?.funcionarioId || null,
+    criado_por_nome: ator?.nome || 'Automático',
+    origem_lancamento: 'automatico',
+    observacao_lancamento: 'Relançamento automático semanal após finalização.',
+    empresa_id: lancamento.empresa_id || execucao.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null,
+    loja_id: lancamento.loja_id || execucao.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null,
+    status: 'pendente',
+  };
+
+  const { data: criado, error: erroCriar } = await sb
+    .from('checklist_lancamentos')
+    .insert([payload])
+    .select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite')
+    .single();
+
+  if (erroCriar) throw erroCriar;
+
+  try {
+    await registrarEventoLancamento({
+      lancamentoId: criado.id,
+      tarefaId: criado.tarefa_id,
+      checklistId: criado.checklist_id,
+      funcionarioResponsavelId: criado.funcionario_id,
+      funcionarioAtorId: ator?.funcionarioId || null,
+      funcionarioAtorNome: ator?.nome || 'Automático',
+      tipoEvento: 'lancado',
+      origemEvento: 'automatico',
+      dataProgramada: criado.data_programada,
+      horarioProgramado: criado.horario_limite,
+      observacao: 'Relançamento automático semanal após finalização.',
+      meta: { automatico: true, relancamento_semanal: true, lancamento_origem_id: lancamentoId },
+    });
+  } catch (erroAuditoria) {
+    console.warn('Não foi possível auditar relançamento semanal:', erroAuditoria);
+  }
+
+  return criado;
 }
 
 async function excluirExecucao(id) {
@@ -29024,6 +29149,15 @@ async function finalizarExecucao() {
     });
   } catch (erroAuditoria) {
     console.warn('Não foi possível auditar a finalização no modal:', erroAuditoria);
+  }
+
+  try {
+    await garantirRelancamentoSemanalAposFinalizacao(execucao, {
+      funcionarioId: confirmacao.funcionarioId,
+      nome: confirmacao.nomeFuncionario,
+    });
+  } catch (erroRelancamento) {
+    console.warn('Não foi possível relançar a tarefa para a próxima semana:', erroRelancamento);
   }
 
   await enviarEmailChecklistFinalizado(execucaoAtualId);
