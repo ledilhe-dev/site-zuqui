@@ -7771,7 +7771,7 @@
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div style="font-size:13px;color:var(--text-muted)" id="pinActionUserName"></div>
-      <input id="pinActionInput" class="login-input pin-secure-input" type="text" placeholder="Digite seu PIN" maxlength="6" onkeydown="if (event.key === 'Enter') confirmarModalPin()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
+      <input id="pinActionInput" class="login-input pin-secure-input" type="text" placeholder="Digite seu PIN" maxlength="20" onkeydown="if (event.key === 'Enter') confirmarModalPin()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
       <div class="msg" id="pinActionMsg" style="margin-top:0"></div>
     </div>
     <div class="modal-footer">
@@ -12205,6 +12205,22 @@ async function validarPinFuncionario(funcionarioId, pin) {
   return String(funcionario.pin || '') === String(pin);
 }
 
+async function obterFuncionarioAtivoPorId(funcionarioId) {
+  const id = String(funcionarioId || '').trim();
+  if (!id) return null;
+
+  const { data: funcionario, error } = await executarSemFiltroLojaTemporario(() => sb
+    .from('funcionarios')
+    .select('id, nome, pin, ativo, loja_id, empresa_id')
+    .eq('id', id)
+    .eq('ativo', true)
+    .maybeSingle());
+
+  if (error || !funcionario) return null;
+  if (typeof funcionarioPertenceLojaAtualPonto === 'function' && !funcionarioPertenceLojaAtualPonto(funcionario)) return null;
+  return funcionario;
+}
+
 async function obterFuncionarioLogadoConfirmadoPorPin(pin) {
   const funcionarioId = String(usuarioSistemaLogado?.tipo === 'funcionario' ? usuarioSistemaLogado?.id || '' : '').trim();
   if (!funcionarioId || !pin) return null;
@@ -12360,7 +12376,7 @@ function mensagemErroSupabase(error, fallback = 'Erro inesperado.') {
   return error.message || error.details || fallback;
 }
 
-async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao }) {
+async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false }) {
   let mensagemErro = '';
   while (true) {
     const resposta = await abrirModalPin({
@@ -12377,9 +12393,18 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao }
       continue;
     }
 
-    const funcionarioConfirmado = funcionario?.id && String(funcionario.id) === String(usuarioSistemaLogado?.id || '')
-      ? await obterFuncionarioLogadoConfirmadoPorPin(resposta.pin)
-      : await obterFuncionarioAtivoPorPin(resposta.pin);
+    let funcionarioConfirmado = null;
+    if (exigirFuncionarioInformado && funcionario?.id) {
+      const ok = await validarPinFuncionario(funcionario.id, resposta.pin);
+      funcionarioConfirmado = ok ? {
+        id: funcionario.id,
+        nome: funcionario.nome || 'Funcionário',
+      } : null;
+    } else {
+      funcionarioConfirmado = funcionario?.id && String(funcionario.id) === String(usuarioSistemaLogado?.id || '')
+        ? await obterFuncionarioLogadoConfirmadoPorPin(resposta.pin)
+        : await obterFuncionarioAtivoPorPin(resposta.pin);
+    }
     if (funcionarioConfirmado?.id) {
       return {
         funcionarioId: funcionarioConfirmado.id,
@@ -12388,7 +12413,9 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao }
       };
     }
 
-    mensagemErro = 'PIN inválido. Tente novamente.';
+    mensagemErro = exigirFuncionarioInformado
+      ? `Senha inválida para ${funcionario?.nome || 'o funcionário responsável'}.`
+      : 'PIN inválido. Tente novamente.';
   }
 }
 
@@ -23623,11 +23650,18 @@ async function iniciarChecklistDireto(lancamentoId) {
     return;
   }
 
+  const funcionarioResponsavel = await obterFuncionarioAtivoPorId(lancamentoAtual.funcionario_id);
+  if (!funcionarioResponsavel?.id) {
+    setMsg('msgChecklists', 'Não foi possível identificar o funcionário responsável por este checklist.', 'err');
+    return;
+  }
+
   const confirmacao = await confirmarAcaoComPin({
-    funcionario: operador,
+    funcionario: funcionarioResponsavel,
     titulo: 'Aceitar checklist',
-    subtitulo: `Confirme seu PIN para iniciar ${lancamentoAtual.nome}.`,
+    subtitulo: `Digite a senha de ${funcionarioResponsavel.nome || 'funcionário responsável'} para iniciar ${lancamentoAtual.nome}.`,
     textoAcao: 'Iniciar tarefa',
+    exigirFuncionarioInformado: true,
   });
 
   if (!confirmacao) return;
