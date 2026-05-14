@@ -5814,6 +5814,7 @@
     #escala_plantoes .escala-check-row input{width:17px;height:17px;accent-color:#14b8a6;flex:0 0 auto;}
     #escala_plantoes .escala-dot{width:7px;height:7px;border-radius:999px;background:#38bdf8;flex-shrink:0;display:inline-block;}
     #escala_plantoes .escala-dot.plantao{background:#ef4444;}
+    #escala_plantoes .escala-dot.folga{background:#dc2626;}
     #escala_plantoes .escala-dot.reuniao{background:#a855f7;}
     #escala_plantoes .escala-toolbar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:12px;}
     #escala_plantoes .escala-nav{display:flex;align-items:center;gap:8px;}
@@ -5839,6 +5840,7 @@
     #escala_plantoes .escala-evento{display:block;width:100%;border:none;background:transparent;color:var(--text);text-align:left;font-size:11px;line-height:1.35;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
     #escala_plantoes .escala-evento:before{content:'';display:inline-block;width:7px;height:7px;border-radius:999px;background:#38bdf8;margin-right:5px;vertical-align:1px;}
     #escala_plantoes .escala-evento.plantao:before{background:#ef4444;}
+    #escala_plantoes .escala-evento.folga:before{background:#dc2626;}
     #escala_plantoes .escala-evento.reuniao:before{background:#a855f7;}
     #escala_plantoes .escala-legenda{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:12px;color:var(--text-muted);}
     #escala_plantoes .escala-legenda span{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:5px 9px;background:rgba(255,255,255,.02);}
@@ -5922,7 +5924,7 @@
       <button class="nav-btn" data-page="escala_plantoes" onclick="abrirPagina('escala_plantoes', this)">
         <span class="icon">EP</span>
         <span class="nav-copy">
-          <span class="nav-title">Escala e plantões</span>
+          <span class="nav-title">Escalas</span>
           <span class="nav-hint">Calendário de turnos, domingos e feriados</span>
         </span>
       </button>
@@ -6305,13 +6307,14 @@
       </section>
 
 
-      <!--  ESCALA E PLANTÕES  -->
+      <!--  ESCALAS  -->
       <section id="escala_plantoes" class="pagina">
-        <div class="page-title">Escala e plantões</div>
+        <div class="page-title">Escalas</div>
         <div class="escala-layout">
           <aside class="escala-side-card">
             <div class="escala-side-title"><span>Agendas</span><button class="btn btn-green btn-sm" type="button" onclick="abrirModalCadastroPlantaoEscala()">+</button></div>
             <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot plantao"></span> Plantões</label>
+            <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot folga"></span> Folgas</label>
             <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot reuniao"></span> Reunião</label>
             <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot"></span> Compromissos</label>
             <div class="escala-side-title" style="margin-top:18px"><span>Filtrar</span></div>
@@ -6327,17 +6330,19 @@
                 <button class="btn btn-ghost" type="button" onclick="mudarMesEscalaPlantoes(1)">›</button>
                 <button class="btn btn-ghost" type="button" onclick="irParaHojeEscalaPlantoes()">Hoje</button>
               </div>
+              <div class="escala-total-pago" id="escalaTotalPagoCard" data-permissao-valor-escala>
+                <div class="escala-total-pago-label">R$ PAGO</div>
+                <div class="escala-total-pago-valor" id="escalaTotalPagoValor">R$ 0,00</div>
+              </div>
               <div class="escala-mes-titulo" id="escalaMesTitulo">Calendário</div>
               <div class="escala-view-tabs" aria-label="Visualização da escala">
-                <button class="ativo" type="button">Mês</button>
-                <button type="button" onclick="setMsg('msgEscalaPlantoes','Visualização semanal será ligada na próxima etapa.','ok')">Semana</button>
-                <button type="button" onclick="setMsg('msgEscalaPlantoes','Visualização diária será ligada na próxima etapa.','ok')">Dia</button>
-                <button type="button" onclick="setMsg('msgEscalaPlantoes','Lista de plantões será ligada na próxima etapa.','ok')">Lista</button>
+                <button class="ativo" type="button" onclick="abrirPagina('relatorio_plantao')">Lista</button>
               </div>
             </div>
             <div class="escala-calendario" id="escalaCalendarioGrid"><div class="empty">Carregando calendário...</div></div>
             <div class="escala-legenda">
               <span><span class="escala-dot plantao"></span> Plantão</span>
+              <span><span class="escala-dot folga"></span> Folga</span>
               <span><span class="escala-dot reuniao"></span> Reunião</span>
               <span style="border-color:rgba(245,158,11,.4);color:#fbbf24">Feriado nacional</span>
               <span style="border-color:rgba(34,197,94,.4);color:var(--green)">Domingo</span>
@@ -9115,7 +9120,7 @@ const PERFIL_PERMISSOES = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
-  { key: 'escala_plantoes', label: 'Escala e plantões' },
+  { key: 'escala_plantoes', label: 'Escalas' },
   { key: 'cadastro_plantao', label: 'Cadastro de plantão' },
   { key: 'relatorio_plantao', label: 'Relatório de plantão' },
   { key: 'escala_valor_combinado', label: 'Escala - ver valor combinado' },
@@ -9300,7 +9305,7 @@ const topTitles = {
   dashboard: ['Dashboard', 'Visao geral do sistema'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
-  escala_plantoes: ['Escala e plantões', 'Calendário de turnos, domingos e feriados'],
+  escala_plantoes: ['Escalas', 'Calendário de trabalho, folgas, domingos e feriados'],
   relatorio_plantao: ['Relatório escala/plantões', 'Plantões lançados, valores combinados e exportações'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
@@ -9658,7 +9663,7 @@ async function abrirModalCadastroPlantaoEscala(dataIso=''){
   ['escalaPlantaoInicio','escalaPlantaoFim','escalaPlantaoTitulo','escalaPlantaoValor','escalaPlantaoObservacao'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';});
   const tipo=document.getElementById('escalaPlantaoTipo'); if(tipo)tipo.value='plantao';
   const btnExcluir=document.getElementById('btnExcluirPlantaoEscala'); if(btnExcluir) btnExcluir.style.display='none';
-  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar plantão';
+  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar escala';
   setMsg('msgModalEscalaPlantao','','');
   await carregarFuncionariosSelectEscala();
   renderizarItensDiaModalEscala();
@@ -9696,7 +9701,7 @@ async function salvarPlantaoEscala(){
     inicio_hora: inicio,
     fim_hora: fim,
     tipo,
-    titulo: titulo || (tipo === 'plantao' ? 'Plantão' : tipo === 'reuniao' ? 'Reunião' : 'Compromisso'),
+    titulo: titulo || (tipo === 'plantao' ? 'Plantão' : tipo === 'folga' ? 'Folga' : tipo === 'reuniao' ? 'Reunião' : 'Compromisso'),
     observacao: observacao || null,
     valor_combinado: valorCombinado,
   };
@@ -9714,7 +9719,7 @@ async function salvarPlantaoEscala(){
     return;
   }
   fecharModalCadastroPlantaoEscala();
-  setMsg('msgEscalaPlantoes', eventoId ? 'Plantão atualizado no calendário.' : 'Plantão salvo no calendário.','ok');
+  setMsg('msgEscalaPlantoes', eventoId ? 'Escala atualizada no calendário.' : 'Escala salva no calendário.','ok');
   await carregarEscalaPlantoes();
 }
 
@@ -32026,6 +32031,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
         <label>Tipo
           <select id="escalaPlantaoTipo">
             <option value="plantao">Plantão</option>
+            <option value="folga">Folga</option>
             <option value="reuniao">Reunião</option>
             <option value="compromisso">Compromisso</option>
           </select>
@@ -32045,7 +32051,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       <div class="escala-modal-actions">
         <button class="btn btn-ghost" type="button" onclick="fecharModalCadastroPlantaoEscala()">Cancelar</button>
         <button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" onclick="excluirPlantaoEscala()" style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button>
-        <button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" onclick="salvarPlantaoEscala()">Salvar plantão</button>
+        <button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" onclick="salvarPlantaoEscala()">Salvar escala</button>
       </div>
     </div>
   </div>
@@ -32060,6 +32066,9 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     grid-template-columns: 260px minmax(720px, 1fr) !important;
     gap:16px !important;
     align-items:start !important;
+  }
+  #escala_plantoes .escala-toolbar{
+    grid-template-columns:auto auto 1fr auto !important;
   }
   #escala_plantoes .escala-calendario-card{overflow:auto !important;}
   #escala_plantoes #escalaCalendarioGrid{
@@ -32088,8 +32097,44 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   #escala_plantoes .escala-feriado-label{font-size:11px !important;color:#fbbf24 !important;font-weight:800 !important;line-height:1.15 !important;margin-bottom:5px !important;}
   #escala_plantoes .escala-evento{display:block !important;width:100% !important;margin:3px 0 !important;border:none !important;border-radius:6px !important;padding:3px 5px !important;background:rgba(34,197,94,.12) !important;color:var(--text) !important;font-size:11px !important;text-align:left !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
   #escala_plantoes .escala-evento.plantao{background:rgba(239,68,68,.16) !important;}
+  #escala_plantoes .escala-evento.folga,
+  #escala_plantoes .escala-evento-folga{
+    background:rgba(220,38,38,.28) !important;
+    border:1px solid rgba(248,113,113,.72) !important;
+    color:#fecaca !important;
+    font-weight:800 !important;
+    box-shadow:0 0 0 1px rgba(127,29,29,.32) inset !important;
+  }
   #escala_plantoes .escala-evento.reuniao{background:rgba(168,85,247,.16) !important;}
-  @media(max-width:1100px){#escala_plantoes .escala-layout{grid-template-columns:1fr !important;}#escala_plantoes .escala-calendario-card{overflow-x:auto !important;}#escala_plantoes #escalaCalendarioGrid{min-width:760px !important;}}
+  #escala_plantoes .escala-total-pago{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:8px !important;
+    min-height:38px !important;
+    min-width:158px !important;
+    margin:0 !important;
+    padding:6px 10px !important;
+    border-radius:8px !important;
+    border:1px solid rgba(34,197,94,.55) !important;
+    background:rgba(34,197,94,.12) !important;
+    box-shadow:0 0 0 1px rgba(34,197,94,.12) inset !important;
+  }
+  #escala_plantoes .escala-total-pago-label{
+    color:#86efac !important;
+    font-size:9px !important;
+    font-weight:900 !important;
+    text-transform:uppercase !important;
+    letter-spacing:.4px !important;
+  }
+  #escala_plantoes .escala-total-pago-valor{
+    color:#f0fdf4 !important;
+    font-size:14px !important;
+    font-weight:900 !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+  }
+  @media(max-width:1100px){#escala_plantoes .escala-layout{grid-template-columns:1fr !important;}#escala_plantoes .escala-toolbar{grid-template-columns:1fr !important;}#escala_plantoes .escala-total-pago{justify-self:start !important;}#escala_plantoes .escala-calendario-card{overflow-x:auto !important;}#escala_plantoes #escalaCalendarioGrid{min-width:760px !important;}}
 </style>
 <script id="patch-calendario-real-zuqui-script">
 (function(){
@@ -32344,12 +32389,12 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       '<label class="escala-modal-full">Funcionário<select id="escalaPlantaoFuncionario"></select></label>'+
       '<label>Início<input id="escalaPlantaoInicio" type="time"></label>'+
       '<label>Fim<input id="escalaPlantaoFim" type="time"></label>'+
-      '<label>Tipo<select id="escalaPlantaoTipo"><option value="plantao">Plantão</option><option value="reuniao">Reunião</option><option value="compromisso">Compromisso</option></select></label>'+
+      '<label>Tipo<select id="escalaPlantaoTipo"><option value="plantao">Plantão</option><option value="folga">Folga</option><option value="reuniao">Reunião</option><option value="compromisso">Compromisso</option></select></label>'+
       '<label>Título<input id="escalaPlantaoTitulo" type="text" placeholder="Ex: Plantão manhã"></label>'+
       '<label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" placeholder="Ex: 120,00"></label>'+
       '<label class="escala-modal-full">Observação<textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea></label>'+
       '</div><div class="escala-modal-lista" id="escalaPlantaoListaDia"></div><div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>'+
-      '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar plantão</button></div>'+
+      '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar escala</button></div>'+
       '</div></div>';
     document.body.appendChild(wrap.firstChild);
     return byId('modalEscalaPlantao');
@@ -32461,7 +32506,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var dt=byId('escalaModalDataTexto'); if(dt) dt.textContent='Data selecionada: '+br(ESCALA_STATE.data);
     var title=byId('escalaModalTitulo'); if(title) title.textContent='Lançar escala';
     var bx=byId('btnExcluirPlantaoEscala'); if(bx) bx.style.display='none';
-    var bs=byId('btnSalvarPlantaoEscala'); if(bs) bs.textContent='Salvar plantão';
+    var bs=byId('btnSalvarPlantaoEscala'); if(bs) bs.textContent='Salvar escala';
     msg('msgModalEscalaPlantao','','');
     await carregarFuncionariosSelect();
     renderItensDia();
@@ -32504,7 +32549,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var lojaObj = await resolverLojaAtivaBlindadaEscala();
     var loja = String(lojaObj && lojaObj.id || lojaIdAtual() || '').trim();
     if(!loja){ msg('msgModalEscalaPlantao','Não consegui identificar a loja para salvar esta agenda. Reabra o sistema e tente novamente.','err'); return; }
-    var payload={ loja_id:loja, funcionario_id:funcionario, data_plantao:ESCALA_STATE.data, inicio_hora:inicio, fim_hora:fim, tipo:tipo, titulo:titulo || (tipo==='plantao'?'Plantão':tipo==='reuniao'?'Reunião':'Compromisso'), observacao:obs||null, valor_combinado:valorCombinado };
+    var payload={ loja_id:loja, funcionario_id:funcionario, data_plantao:ESCALA_STATE.data, inicio_hora:inicio, fim_hora:fim, tipo:tipo, titulo:titulo || (tipo==='plantao'?'Plantão':tipo==='folga'?'Folga':tipo==='reuniao'?'Reunião':'Compromisso'), observacao:obs||null, valor_combinado:valorCombinado };
     var emp=String(lojaObj && lojaObj.empresa_id || empresaIdAtual() || '').trim(); if(emp) payload.empresa_id=emp;
     try{
       var r;
@@ -32608,7 +32653,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var nomes=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
     return nomes[dt.getDay()] || '-';
   }
-  function tipoLabel(v){ v=String(v||'plantao'); return v==='reuniao'?'Reunião':v==='compromisso'?'Compromisso':'Plantão'; }
+  function tipoLabel(v){ v=String(v||'plantao'); return v==='folga'?'Folga':v==='reuniao'?'Reunião':v==='compromisso'?'Compromisso':'Plantão'; }
   function faixaRelatorioEscalaExportacao(){
     var iniEl=byId('escalaRelatorioDataInicio');
     var fimEl=byId('escalaRelatorioDataFim');
@@ -32715,7 +32760,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       return '<tr><td>'+esc(dataBR(it.data_plantao))+'</td><td>'+esc(diaSemanaBR(it.data_plantao))+'</td><td>'+esc(it.funcionario_nome||it.titulo||'Funcionário')+'</td><td class="'+esc(tipo)+'">'+esc(tipoLabel(tipo))+'</td><td>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</td>'+(podeVerValor ? '<td>'+esc(moedaBR(it.valor_combinado))+'</td>' : '')+'<td'+statusStyle+'>'+esc(status)+'</td><td>'+esc(excluidoPorEscalaRelatorio(it))+'</td><td>'+esc(it.observacao||'')+'</td></tr>';
     }).join('');
     var w=window.open('','_blank'); if(!w){ msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err'); return; }
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px}.meta{margin-bottom:16px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f2f2f2}.plantao{color:#dc2626}.reuniao{color:#7c3aed}.compromisso{color:#0284c7}.total{margin-top:14px;font-weight:bold}</style></head><body><h1>Relatório de Escala e Plantões</h1><div class="meta">Período: '+esc(dataBR(faixa.inicio))+' até '+esc(dataBR(faixa.fim))+(podeVerValor ? ' · Total combinado: '+esc(moedaBR(total)) : '')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(podeVerValor ? '<th>Valor</th>' : '')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+linhas+'</tbody></table></body></html>');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px}.meta{margin-bottom:16px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f2f2f2}.plantao,.folga{color:#dc2626}.folga{font-weight:bold}.reuniao{color:#7c3aed}.compromisso{color:#0284c7}.total{margin-top:14px;font-weight:bold}</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(faixa.inicio))+' até '+esc(dataBR(faixa.fim))+(podeVerValor ? ' · Total combinado: '+esc(moedaBR(total)) : '')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(podeVerValor ? '<th>Valor</th>' : '')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+linhas+'</tbody></table></body></html>');
     w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
   };
   var originalCarregar = window.carregarEscalaPlantoes;
@@ -32729,11 +32774,114 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var salvar=ev.target.closest && ev.target.closest('[data-escala-salvar]'); if(salvar){ ev.preventDefault(); window.salvarPlantaoEscala(); return; }
     var excluir=ev.target.closest && ev.target.closest('[data-escala-excluir]'); if(excluir){ ev.preventDefault(); window.excluirPlantaoEscala(); return; }
     var editar=ev.target.closest && ev.target.closest('[data-escala-editar]'); if(editar){ ev.preventDefault(); ev.stopPropagation(); window.abrirModalEditarPlantaoEscala(editar.getAttribute('data-escala-editar')); return; }
-    var evBtn=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-evento'); if(evBtn){ ev.preventDefault(); ev.stopPropagation(); return; }
+    var diaNumero=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-dia-numero');
+    if(diaNumero){
+      var diaCell=diaNumero.closest('#escalaCalendarioGrid .escala-dia');
+      var dataFiltro=diaCell && diaCell.getAttribute('data-data');
+      if(dataFiltro && typeof window.atualizarTotalPagoPlantaoEscala === 'function'){
+        ev.preventDefault();
+        ev.stopPropagation();
+        window.atualizarTotalPagoPlantaoEscala(dataFiltro);
+        return;
+      }
+    }
+    var evBtn=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-evento');
+    if(evBtn){
+      ev.preventDefault();
+      ev.stopPropagation();
+      var idEditar=evBtn.getAttribute('data-escala-editar') || '';
+      if(!idEditar){
+        var onclickTxt=String(evBtn.getAttribute('onclick') || '');
+        var m=onclickTxt.match(/abrirModalEditarPlantaoEscala\(['"]([^'"]+)['"]\)/);
+        if(m) idEditar=m[1];
+      }
+      if(idEditar && typeof window.abrirModalEditarPlantaoEscala === 'function') window.abrirModalEditarPlantaoEscala(idEditar);
+      return;
+    }
     var cell=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-dia');
     if(cell && !cell.classList.contains('escala-dia-vazio')){ var data=cell.getAttribute('data-data'); if(data){ ev.preventDefault(); ev.stopPropagation(); window.abrirModalCadastroPlantaoEscala(data); } }
   }, true);
   document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ garantirModalEscala(); }, 300); });
+})();
+</script>
+
+
+<script id="patch-escala-total-pago-plantao">
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function moeda(v){
+    var n = Number(v || 0);
+    try { return n.toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+    catch(_e){ return 'R$ ' + n.toFixed(2).replace('.', ','); }
+  }
+  function dataCurta(dataIso){
+    var p = String(dataIso || '').slice(0,10).split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] : '';
+  }
+  function eventos(){
+    try {
+      if (Array.isArray(window.escalaPlantoesEventos)) return window.escalaPlantoesEventos;
+      if (typeof escalaPlantoesEventos !== 'undefined' && Array.isArray(escalaPlantoesEventos)) return escalaPlantoesEventos;
+    } catch(_e) {}
+    return [];
+  }
+  function garantirCampo(){
+    var card = byId('escalaTotalPagoCard');
+    if (card) return card;
+    var calendario = byId('escalaCalendarioGrid');
+    if (!calendario || !calendario.parentElement) return null;
+    card = document.createElement('div');
+    card.id = 'escalaTotalPagoCard';
+    card.className = 'escala-total-pago';
+    card.setAttribute('data-permissao-valor-escala', '');
+    card.innerHTML = '<div class="escala-total-pago-label">R$ PAGO</div><div class="escala-total-pago-valor" id="escalaTotalPagoValor">R$ 0,00</div>';
+    calendario.parentElement.insertBefore(card, calendario);
+    return card;
+  }
+  function atualizar(dataIso){
+    var card = garantirCampo();
+    var valorEl = byId('escalaTotalPagoValor');
+    var labelEl = card && card.querySelector('.escala-total-pago-label');
+    if (!card || !valorEl) return;
+    var podeVer = typeof window.usuarioPodeVerValorCombinadoEscala === 'function' ? window.usuarioPodeVerValorCombinadoEscala() : true;
+    card.style.display = podeVer ? '' : 'none';
+    if (!podeVer) return;
+    var dataFiltro = String(dataIso || '').slice(0,10);
+    var total = eventos().reduce(function(acc, item){
+      if (!item || item.deleted_at) return acc;
+      if (String(item.tipo || 'plantao').toLowerCase() !== 'plantao') return acc;
+      if (dataFiltro && String(item.data_plantao || '').slice(0,10) !== dataFiltro) return acc;
+      var bruto = item.valor_combinado;
+      if (bruto === null || bruto === undefined || bruto === '') return acc;
+      var valor = Number(String(bruto).replace(',', '.'));
+      return Number.isFinite(valor) ? acc + valor : acc;
+    }, 0);
+    if (labelEl) labelEl.textContent = dataFiltro ? ('R$ PAGO ' + dataCurta(dataFiltro)) : 'R$ PAGO';
+    valorEl.textContent = moeda(total);
+    if (typeof window.aplicarPermissaoValorCombinadoEscala === 'function') window.aplicarPermissaoValorCombinadoEscala();
+  }
+  function envolver(nome){
+    var original = window[nome];
+    if (typeof original !== 'function' || original.__totalPagoPlantaoPatch) return;
+    window[nome] = function(){
+      var retorno = original.apply(this, arguments);
+      Promise.resolve(retorno).finally(function(){ setTimeout(atualizar, 0); });
+      return retorno;
+    };
+    window[nome].__totalPagoPlantaoPatch = true;
+  }
+  function instalar(){
+    garantirCampo();
+    envolver('renderizarEscalaPlantoes');
+    envolver('carregarEscalaPlantoes');
+    envolver('salvarPlantaoEscala');
+    envolver('excluirPlantaoEscala');
+    atualizar();
+  }
+  window.atualizarTotalPagoPlantaoEscala = atualizar;
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(instalar, 300); setTimeout(instalar, 1200); });
+  setTimeout(instalar, 300);
+  setTimeout(instalar, 1500);
 })();
 </script>
 
@@ -32923,7 +33071,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   function dataBR(v){var s=String(v||'').slice(0,10),p=s.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
   function hora(v){return String(v||'').slice(0,5);}
   function moeda(v){var n=Number(v||0);try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(e){return 'R$ '+n.toFixed(2).replace('.',',');}}
-  function tipoLabel(v){v=String(v||'plantao').toLowerCase();return v==='reuniao'?'Reunião':v==='compromisso'?'Compromisso':'Plantão';}
+  function tipoLabel(v){v=String(v||'plantao').toLowerCase();return v==='folga'?'Folga':v==='reuniao'?'Reunião':v==='compromisso'?'Compromisso':'Plantão';}
   function faixa(){
     var iniEl=byId('escalaRelatorioDataInicio'), fimEl=byId('escalaRelatorioDataFim');
     var ini=String(iniEl&&iniEl.value||'').slice(0,10), fim=String(fimEl&&fimEl.value||'').slice(0,10);
@@ -33008,7 +33156,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var verValor=podeVerValor(), f=faixa(), total=eventos.filter(function(e){return !e.deleted_at;}).reduce(function(a,e){return a+Number(e.valor_combinado||0);},0);
     var rows=eventos.map(function(it){var del=!!it.deleted_at;return '<tr style="'+(del?'color:#991b1b;text-decoration:line-through;':'')+'"><td>'+esc(dataBR(it.data_plantao))+'</td><td>'+esc(diaSemanaBR(it.data_plantao))+'</td><td>'+esc(it.funcionario_nome||it.titulo||'Funcionário')+'</td><td>'+esc(tipoLabel(it.tipo))+'</td><td>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</td>'+(verValor?'<td>'+esc(moeda(it.valor_combinado))+'</td>':'')+'<td>'+esc(status(it))+'</td><td>'+esc(excluidoPor(it))+'</td><td>'+esc(it.observacao||'')+'</td></tr>';}).join('');
     var w=window.open('','_blank'); if(!w){msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err');return;}
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f3f4f6}.meta{color:#555;margin-bottom:16px}</style></head><body><h1>Relatório de Escala e Plantões</h1><div class="meta">Período: '+esc(dataBR(f.inicio))+' até '+esc(dataBR(f.fim))+(verValor?' · Total ativo: '+esc(moeda(total)):'')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(verValor?'<th>Valor</th>':'')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f3f4f6}.meta{color:#555;margin-bottom:16px}</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(f.inicio))+' até '+esc(dataBR(f.fim))+(verValor?' · Total ativo: '+esc(moeda(total)):'')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(verValor?'<th>Valor</th>':'')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>');
     w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
   };
   function ajustarVisibilidade(){
@@ -33790,6 +33938,616 @@ window.addEventListener('load', function() {
   setTimeout(inserirBotaoInfo, 1200);
 })();
 </script>
+
+<style id="patch-escala-compacta-viewport">
+  #escala_plantoes{
+    padding:6px 8px 10px !important;
+  }
+  #escala_plantoes .escala-layout{
+    grid-template-columns:240px minmax(680px,1fr) !important;
+    gap:10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card{
+    padding:10px !important;
+    border-radius:8px !important;
+  }
+  #escala_plantoes .escala-side-title{
+    min-height:28px !important;
+    padding-bottom:8px !important;
+    margin-bottom:6px !important;
+    font-size:14px !important;
+  }
+  #escala_plantoes .escala-side-title .btn{
+    width:34px !important;
+    height:34px !important;
+  }
+  #escala_plantoes .escala-check-row{
+    min-height:25px !important;
+    padding:4px 2px !important;
+    gap:7px !important;
+    font-size:12px !important;
+  }
+  #escala_plantoes .escala-check-row input{
+    width:14px !important;
+    height:14px !important;
+  }
+  #escala_plantoes .escala-toolbar{
+    gap:8px !important;
+    margin-bottom:8px !important;
+  }
+  #escala_plantoes .escala-nav{
+    gap:5px !important;
+  }
+  #escala_plantoes .escala-nav .btn{
+    min-width:36px !important;
+    height:34px !important;
+    padding:0 10px !important;
+    border-radius:8px !important;
+    font-size:14px !important;
+  }
+  #escala_plantoes .escala-nav .btn:nth-child(3){
+    min-width:56px !important;
+  }
+  #escala_plantoes .escala-total-pago{
+    min-height:32px !important;
+    min-width:142px !important;
+    padding:5px 9px !important;
+  }
+  #escala_plantoes .escala-total-pago-label{
+    font-size:8px !important;
+  }
+  #escala_plantoes .escala-total-pago-valor{
+    font-size:13px !important;
+  }
+  #escala_plantoes .escala-mes-titulo{
+    font-size:20px !important;
+  }
+  #escala_plantoes .escala-view-tabs button{
+    min-width:48px !important;
+    padding:7px 10px !important;
+    font-size:12px !important;
+  }
+  #escala_plantoes #escalaCalendarioGrid{
+    min-height:0 !important;
+    grid-template-columns:repeat(7,minmax(78px,1fr)) !important;
+  }
+  #escala_plantoes .escala-dia-semana{
+    height:34px !important;
+    font-size:12px !important;
+  }
+  #escala_plantoes .escala-dia{
+    min-height:70px !important;
+    padding:5px 6px !important;
+  }
+  #escala_plantoes .escala-dia-numero{
+    font-size:14px !important;
+    margin-bottom:4px !important;
+  }
+  #escala_plantoes .escala-feriado-label{
+    padding:3px 5px !important;
+    margin-bottom:3px !important;
+    font-size:9px !important;
+    border-radius:6px !important;
+  }
+  #escala_plantoes .escala-evento{
+    min-height:16px !important;
+    margin:2px 0 !important;
+    padding:2px 5px !important;
+    border-radius:5px !important;
+    font-size:10px !important;
+    line-height:1.15 !important;
+  }
+  #escala_plantoes .escala-evento:before{
+    width:6px !important;
+    height:6px !important;
+    margin-right:4px !important;
+  }
+  #escala_plantoes .escala-legenda{
+    margin-top:6px !important;
+    gap:5px !important;
+    font-size:10px !important;
+  }
+  #escala_plantoes .escala-legenda span{
+    padding:3px 6px !important;
+  }
+  @media (max-width:1100px){
+    #escala_plantoes .escala-layout{
+      grid-template-columns:1fr !important;
+    }
+    #escala_plantoes #escalaCalendarioGrid{
+      min-width:690px !important;
+    }
+  }
+</style>
+
+<style id="patch-layout-global-compacto">
+  .sidebar{
+    width:210px !important;
+    padding:10px 8px !important;
+    gap:4px !important;
+  }
+  .logo{
+    gap:8px !important;
+    padding:0 5px 10px !important;
+    margin-bottom:6px !important;
+  }
+  .logo img{
+    width:32px !important;
+    height:32px !important;
+    border-radius:9px !important;
+  }
+  .logo strong{
+    font-size:14px !important;
+    line-height:1 !important;
+  }
+  .logo span{
+    font-size:9px !important;
+    margin-top:1px !important;
+  }
+  .nav-group{
+    padding:6px 0 0 !important;
+  }
+  .nav-label{
+    padding:4px 8px 5px !important;
+    font-size:10px !important;
+    letter-spacing:1px !important;
+  }
+  .nav-btn{
+    min-height:42px !important;
+    padding:7px 9px !important;
+    gap:8px !important;
+    border-radius:8px !important;
+  }
+  .nav-btn .icon{
+    width:28px !important;
+    height:28px !important;
+    min-width:28px !important;
+    font-size:10px !important;
+    border-radius:8px !important;
+  }
+  .nav-title{
+    font-size:13px !important;
+    line-height:1.1 !important;
+  }
+  .nav-hint{
+    display:none !important;
+  }
+  .nav-submenu{
+    margin-left:38px !important;
+  }
+  .nav-sub-btn{
+    min-height:30px !important;
+    padding:5px 8px !important;
+  }
+  .topbar{
+    min-height:44px !important;
+    padding:4px 8px !important;
+    gap:8px !important;
+  }
+  .topbar-main{
+    gap:8px !important;
+  }
+  #topbarTitleWrap{
+    display:none !important;
+  }
+  .topbar-clock,
+  .topbar-business-day{
+    width:160px !important;
+    min-width:150px !important;
+    min-height:34px !important;
+    padding:5px 10px !important;
+    border-radius:9px !important;
+  }
+  .topbar-info-label{
+    font-size:8px !important;
+    letter-spacing:.7px !important;
+  }
+  .topbar-clock-time,
+  .topbar-business-day-date{
+    font-size:19px !important;
+  }
+  .topbar-store{
+    min-height:34px !important;
+    padding:5px 10px !important;
+    border-radius:9px !important;
+  }
+  .topbar-store-name,
+  .topbar-user-name{
+    font-size:13px !important;
+  }
+  .topbar-store-switch,
+  .topbar-switch-store-btn,
+  .topbar-actions .btn-sm{
+    min-height:28px !important;
+    padding:5px 8px !important;
+    border-radius:8px !important;
+    font-size:11px !important;
+  }
+  .topbar-user{
+    min-height:34px !important;
+    padding:5px 9px !important;
+    border-radius:9px !important;
+  }
+  .topbar-actions{
+    gap:6px !important;
+  }
+  .content{
+    padding:8px 10px !important;
+  }
+  .card,
+  .stat-card{
+    padding:10px !important;
+    border-radius:8px !important;
+  }
+  .stats-grid{
+    gap:8px !important;
+    margin-bottom:8px !important;
+  }
+  #escala_plantoes .escala-layout{
+    grid-template-columns:210px minmax(620px,1fr) !important;
+    gap:8px !important;
+  }
+  #escala_plantoes .escala-side-card{
+    padding:8px !important;
+  }
+  #escala_plantoes .escala-check-row{
+    font-size:11px !important;
+  }
+  #escala_plantoes .escala-calendario-card{
+    padding:8px !important;
+  }
+  #escala_plantoes #escalaCalendarioGrid{
+    grid-template-columns:repeat(7,minmax(72px,1fr)) !important;
+  }
+  @media(max-width:1050px){
+    .sidebar{
+      width:190px !important;
+    }
+    #escala_plantoes .escala-layout{
+      grid-template-columns:1fr !important;
+    }
+  }
+</style>
+
+<style id="patch-ponto-dashboard-compacto">
+  .dashboard-prod-grid{
+    grid-template-columns:150px 1fr !important;
+    gap:12px !important;
+    align-items:start !important;
+  }
+  .prod-pie{
+    width:140px !important;
+    height:140px !important;
+  }
+  .prod-pie-center{
+    width:86px !important;
+    height:86px !important;
+    gap:2px !important;
+  }
+  .prod-pie-value{
+    font-size:22px !important;
+  }
+  .prod-pie-label{
+    font-size:9px !important;
+  }
+  .prod-stats{
+    gap:6px !important;
+  }
+  .prod-stat{
+    padding:6px 8px !important;
+    border-radius:7px !important;
+  }
+  .prod-stat-label{
+    font-size:9px !important;
+    letter-spacing:.35px !important;
+  }
+  .prod-stat-value{
+    margin-top:2px !important;
+    font-size:14px !important;
+  }
+  .prod-period-info{
+    margin-top:6px !important;
+    font-size:11px !important;
+  }
+  .prod-func-list{
+    margin-top:8px !important;
+    padding-top:8px !important;
+    gap:5px !important;
+  }
+  .prod-func-title{
+    font-size:9px !important;
+  }
+  .prod-func-row{
+    font-size:12px !important;
+    gap:7px !important;
+  }
+  .prod-func-dot{
+    width:8px !important;
+    height:8px !important;
+  }
+  .dashboard-period-tabs{
+    gap:5px !important;
+    margin-bottom:8px !important;
+  }
+  .dashboard-period-btn{
+    padding:5px 9px !important;
+    font-size:11px !important;
+    min-height:28px !important;
+  }
+  #bater_ponto{
+    font-size:12px !important;
+  }
+  #bater_ponto .ponto-topo-grid{
+    grid-template-columns:minmax(470px,1fr) minmax(430px,460px) !important;
+    gap:8px !important;
+    align-items:start !important;
+    margin-bottom:8px !important;
+  }
+  #bater_ponto .ponto-topo-grid > .card{
+    min-height:0 !important;
+    align-self:start !important;
+  }
+  #bater_ponto .ponto-topo-grid > .card:first-child{
+    position:relative !important;
+  }
+  #bater_ponto .card-title{
+    font-size:11px !important;
+    letter-spacing:.6px !important;
+    margin-bottom:5px !important;
+    line-height:1.1 !important;
+  }
+  #bater_ponto .ponto-registro-row{
+    display:flex !important;
+    align-items:center !important;
+    gap:6px !important;
+    flex-wrap:wrap !important;
+  }
+  #pontoPinInput{
+    flex:0 1 150px !important;
+    min-width:140px !important;
+    max-width:160px !important;
+    height:32px !important;
+    padding:6px 9px !important;
+    font-size:13px !important;
+    letter-spacing:4px !important;
+  }
+  #bater_ponto .ponto-registro-row .btn{
+    min-height:32px !important;
+    height:32px !important;
+    padding:6px 10px !important;
+    border-radius:7px !important;
+    font-size:11px !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+  }
+  #btnAjusteManualAdminPonto{
+    order:4 !important;
+    flex:0 0 auto !important;
+    max-width:145px !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  #bater_ponto .ponto-info-regra-btn{
+    position:absolute !important;
+    top:10px !important;
+    left:135px !important;
+    width:16px !important;
+    height:16px !important;
+    min-width:16px !important;
+    min-height:16px !important;
+    margin:0 !important;
+    align-self:center !important;
+    order:0 !important;
+    font-size:8px !important;
+    padding:0 !important;
+    border-radius:999px !important;
+    vertical-align:middle !important;
+    transform:none !important;
+    z-index:2 !important;
+  }
+  #bater_ponto #msgPonto,
+  #bater_ponto #msgTempoAvisoPonto,
+  #bater_ponto #dash-horas-msg{
+    margin-top:6px !important;
+    font-size:11px !important;
+    line-height:1.25 !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-card{
+    padding:8px 10px !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row{
+    grid-template-columns:minmax(116px,1fr) auto auto auto auto !important;
+    gap:5px !important;
+    align-items:center !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row label{
+    font-size:9px !important;
+    line-height:1.2 !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row input{
+    min-height:30px !important;
+    height:30px !important;
+    padding:5px 8px !important;
+    font-size:10px !important;
+    border-radius:7px !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row .btn{
+    min-height:30px !important;
+    height:30px !important;
+    padding:6px 9px !important;
+    border-radius:7px !important;
+    font-size:10px !important;
+    white-space:nowrap !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-status{
+    grid-column:auto !important;
+    grid-row:auto !important;
+    justify-content:flex-start !important;
+    min-height:30px !important;
+    font-size:9px !important;
+    order:20 !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-valor{
+    padding:4px 7px !important;
+    gap:3px !important;
+  }
+  #bater_ponto .ponto-tempo-info-icon{
+    width:16px !important;
+    height:16px !important;
+    font-size:8px !important;
+    flex:0 0 16px !important;
+  }
+  #bater_ponto .ponto-horas-card{
+    padding:10px !important;
+  }
+  #bater_ponto .ponto-horas-tabs{
+    gap:5px !important;
+    margin-bottom:8px !important;
+  }
+  #bater_ponto .ponto-horas-tabs .dashboard-period-btn{
+    min-width:54px !important;
+    min-height:28px !important;
+    padding:5px 8px !important;
+    border-radius:8px !important;
+    font-size:11px !important;
+  }
+  #bater_ponto .ponto-horas-grid{
+    grid-template-columns:145px minmax(0,1fr) !important;
+    gap:12px !important;
+  }
+  #horasPieDashboard.ponto-horas-pie{
+    width:138px !important;
+    height:138px !important;
+  }
+  #bater_ponto .ponto-horas-card .prod-stats{
+    margin-bottom:6px !important;
+  }
+  #bater_ponto .ponto-horas-card .prod-func-list{
+    margin-top:6px !important;
+  }
+  #bater_ponto .ponto-resumo-dia-tabs{
+    margin-bottom:6px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-lista{
+    gap:6px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-linha{
+    padding:7px 8px !important;
+    border-radius:8px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-nome{
+    font-size:12px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-sequencia,
+  #pontoResumoHoje .ponto-resumo-metricas,
+  #pontoResumoHoje .ponto-resumo-tag{
+    font-size:11px !important;
+  }
+  @media(max-width:980px){
+    #bater_ponto .ponto-topo-grid,
+    #bater_ponto .ponto-horas-grid,
+    .dashboard-prod-grid{
+      grid-template-columns:1fr !important;
+    }
+    #horasPieDashboard.ponto-horas-pie,
+    .prod-pie{
+      width:128px !important;
+      height:128px !important;
+    }
+  }
+</style>
+
+<style id="patch-ponto-info-no-titulo">
+  #bater_ponto .ponto-topo-grid > .card:first-child .card-title{
+    display:flex !important;
+    align-items:center !important;
+    gap:5px !important;
+  }
+  #bater_ponto .ponto-info-regra-btn{
+    position:static !important;
+    width:16px !important;
+    height:16px !important;
+    min-width:16px !important;
+    min-height:16px !important;
+    margin:0 !important;
+    padding:0 !important;
+    font-size:8px !important;
+    line-height:1 !important;
+    border-radius:999px !important;
+    transform:none !important;
+    box-shadow:none !important;
+  }
+</style>
+<script id="patch-ponto-info-no-titulo-script">
+(function(){
+  function moverInfoParaTitulo(){
+    var btn = document.getElementById('btnInfoRegrasPonto');
+    var titulo = document.querySelector('#bater_ponto .ponto-topo-grid > .card:first-child .card-title');
+    if (!btn || !titulo || btn.parentElement === titulo) return;
+    titulo.appendChild(btn);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(moverInfoParaTitulo, 350);
+    setTimeout(moverInfoParaTitulo, 1200);
+  });
+  setTimeout(moverInfoParaTitulo, 350);
+  setTimeout(moverInfoParaTitulo, 1200);
+})();
+</script>
+
+<style id="patch-ponto-remover-espaco-vazio">
+  #bater_ponto .ponto-topo-grid{
+    align-items:start !important;
+  }
+  #bater_ponto .ponto-topo-grid > .card{
+    height:auto !important;
+    min-height:0 !important;
+    padding:8px 10px !important;
+  }
+  #bater_ponto .ponto-topo-grid .ponto-tempo-aviso-card{
+    min-height:0 !important;
+  }
+  #bater_ponto #msgPonto:empty,
+  #bater_ponto #msgTempoAvisoPonto:empty{
+    display:none !important;
+    min-height:0 !important;
+    height:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+  }
+  #bater_ponto .ponto-registro-row{
+    margin-bottom:0 !important;
+  }
+</style>
+
+<style id="patch-status-ponto-tabs-compacto">
+  #bater_ponto .card:has(#pontoResumoHoje){
+    padding:8px 10px !important;
+  }
+  #bater_ponto .card:has(#pontoResumoHoje) #pontoResumoTitulo{
+    display:inline-flex !important;
+    align-items:center !important;
+    margin:0 10px 0 0 !important;
+    line-height:28px !important;
+    vertical-align:middle !important;
+  }
+  #bater_ponto .ponto-resumo-dia-tabs{
+    display:inline-flex !important;
+    vertical-align:middle !important;
+    margin:0 0 6px 0 !important;
+    gap:5px !important;
+  }
+  #bater_ponto .ponto-resumo-dia-tabs .dashboard-period-btn{
+    min-height:28px !important;
+    padding:5px 10px !important;
+    font-size:11px !important;
+    border-radius:999px !important;
+  }
+  #pontoResumoHoje{
+    margin-top:2px !important;
+  }
+</style>
 
 </body>
 </html>
