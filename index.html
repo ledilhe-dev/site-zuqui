@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-version" content="3.1.72-login-multiloja-estavel">
-  <meta name="theme-color" content="#0a0f0d">
+  <meta name="theme-color" content="#090b10">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -5787,20 +5787,6 @@
       transition: width 0.4s;
     }
   
-/* Ajuste seguro: organização do cadastro de loja/filial */
-#configuracoes #cardDadosLojaConfig,
-#configuracoes #cardCadastroLojasConfig,
-#configuracoes #cardAdminsLojaConfig,
-#configuracoes #cardLembreteLojaConfig {
-  border-color: rgba(34,197,94,0.18);
-}
-#configuracoes #cardCadastroLojasConfig .card-title:first-child::after {
-  content: ' - preencha os campos e clique em Cadastrar filial. Ao editar, os dados aparecem aqui e o botão muda para Salvar filial.';
-  color: var(--text-dim);
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-}
 </style>
 
   <style id="escala-plantoes-layout-fix">
@@ -6136,12 +6122,6 @@
               <span class="nav-title">Envio de e-mail</span>
             </span>
           </button>
-          <button class="nav-btn nav-sub-btn" data-page="configuracoes" onclick="abrirPagina('configuracoes', this)">
-            <span class="nav-copy">
-              <span class="nav-title">Minha loja</span>
-              <span class="nav-hint">Dados da loja atual</span>
-            </span>
-          </button>
           <button class="nav-btn nav-sub-btn" id="btnForcarAtualizacaoGeral" data-page="forcar_atualizacao_geral" type="button" onclick="forcarAtualizacaoGeralUsuarios()">
             <span class="nav-copy">
               <span class="nav-title">Forçar atualização geral</span>
@@ -6170,7 +6150,7 @@
           <button class="nav-btn nav-sub-btn" data-page="lojas_saas" onclick="abrirPagina('lojas_saas', this)">
             <span class="nav-copy">
               <span class="nav-title">Lojas / Filiais</span>
-              <span class="nav-hint">Gestão SaaS por empresa</span>
+              <span class="nav-hint">Lojas, feriados e configurações</span>
             </span>
           </button>
         </div>
@@ -6355,7 +6335,7 @@
       <section id="checklists" class="pagina ativa">
         <div class="page-title">Checklists</div>
 
-        <div class="card" id="cardAdminsLojaConfig">
+        <div class="card" id="cardChecklistsLancados">
           <div class="regra-info-row">
             <button class="regra-info-btn" type="button" title="Regra dos checklists lançados" aria-label="Regra dos checklists lançados" onclick="abrirInfoRegraChecklist('lancados')">I</button>
             <div class="card-title" style="margin:0">Checklists lancados</div>
@@ -6377,7 +6357,7 @@
       <section id="itens" class="pagina">
         <div class="page-title">Itens do Checklist</div>
 
-        <div class="card" id="cardLembreteLojaConfig">
+        <div class="card" id="cardSelecionarChecklistItens">
           <div class="card-title">Selecionar checklist</div>
           <div class="form-row">
             <select id="checklistSelect" onchange="carregarItens()">
@@ -6512,83 +6492,6 @@
         </div>
       </section>
 
-      <section id="configuracoes" class="pagina">
-        <div class="page-title">Informações da Loja</div>
-
-        <div class="card" id="cardDadosLojaConfig">
-          <div class="card-title">Dados da loja atual</div>
-          <div class="form-row">
-            <input id="configNomeLoja" type="text" placeholder="Nome da loja">
-            <input id="configCepLoja" class="campo-curto" type="text" placeholder="CEP" maxlength="9" onblur="buscarCepLoja('configCepLoja','configCidadeLoja','configEstadoLoja','msgConfiguracoes')">
-            <input id="configCidadeLoja" type="text" placeholder="Cidade da loja" required>
-            <select id="configEstadoLoja" class="campo-curto" required style="min-width:130px">
-              <option value="">Estado</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-            </select>
-            <input id="configHorarioAbertura" class="campo-curto" type="time" placeholder="Abertura">
-            <input id="configHorarioFechamento" class="campo-curto" type="time" placeholder="Fechamento">
-          </div>
-        </div>
-
-        <div class="card" id="cardCadastroLojasConfig">
-          <div class="card-title">Cadastro de nova loja / filial</div>
-          <div class="form-row">
-            <input id="nomeLojaCadastro" type="text" placeholder="Nome da nova loja / filial">
-            <input id="codigoLojaCadastro" class="campo-curto" type="text" placeholder="Código (opcional)">
-            <input id="cepLojaCadastro" class="campo-curto" type="text" placeholder="CEP" maxlength="9" onblur="buscarCepLoja('cepLojaCadastro','cidadeLojaCadastro','estadoLojaCadastro','msgLojasCadastro')">
-            <input id="cidadeLojaCadastro" type="text" placeholder="Cidade obrigatória">
-            <select id="estadoLojaCadastro" class="campo-curto" required style="min-width:110px">
-              <option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-            </select>
-            <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
-              <input id="ativoLojaCadastro" type="checkbox" checked>
-              <span>Ativa</span>
-            </label>
-            <button class="btn btn-green" id="btnSalvarLojaCadastro" onclick="salvarLojaCadastro()">Cadastrar filial</button>
-            <button class="btn btn-ghost" id="btnCancelarEdicaoLojaCadastro" onclick="cancelarEdicaoLojaCadastro()" style="display:none">Cancelar</button>
-          </div>
-          <div class="msg" id="msgLojasCadastro"></div>
-          <div class="card-title" style="margin-top:12px;">Filiais / lojas cadastradas</div>
-          <div id="listaLojasCadastro"><div class="empty">Carregando⬦</div></div>
-        </div>
-
-        <div class="card" id="cardAdminsLojaConfig">
-          <div class="card-title">Admins por loja</div>
-          <div class="form-row">
-            <select id="lojaAdminCadastro" class="campo-curto" style="min-width:220px;">
-              <option value="">- Selecione a loja -</option>
-            </select>
-            <input id="nomeAdminCadastro" type="text" placeholder="Nome do admin">
-            <input id="usuarioAdminCadastro" class="campo-curto" type="text" placeholder="Usuário login">
-            <input id="pinAdminCadastro" class="campo-curto pin-secure-input" type="text" placeholder="PIN" maxlength="20" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
-            <label class="perm-item" style="flex:0 0 auto; min-width:150px;">
-              <input id="ativoAdminCadastro" type="checkbox" checked>
-              <span>Ativo</span>
-            </label>
-            <button class="btn btn-green" id="btnSalvarAdminCadastro" onclick="salvarAdminLojaCadastro()">Cadastrar admin</button>
-            <button class="btn btn-ghost" id="btnCancelarEdicaoAdminCadastro" onclick="cancelarEdicaoAdminLojaCadastro()" style="display:none">Cancelar</button>
-          </div>
-          <div class="msg" id="msgAdminsCadastro"></div>
-          <div id="listaAdminsCadastro"><div class="empty">Carregando⬦</div></div>
-        </div>
-
-        <div class="card" id="cardLembreteLojaConfig">
-          <div class="card-title">Lembrete de checklist</div>
-          <div class="form-row">
-            <input id="configHorarioLancamento" class="campo-curto" type="time" placeholder="Lançamento">
-            <input id="configHorarioLembrete" class="campo-curto" type="time" placeholder="Horário">
-            <label class="perm-item" style="flex:1; min-width:220px;">
-              <input id="configEnviarEmailLembrete" type="checkbox">
-              <span>Enviar também por e-mail</span>
-            </label>
-          </div>
-          <div class="msg" id="msgConfiguracoes"></div>
-          <div class="form-row" style="margin-top:12px">
-            <button class="btn btn-green" onclick="salvarConfiguracoesLoja()">Salvar configurações</button>
-            <button class="btn btn-ghost" type="button" onclick="atualizarFeriadosDaLojaAtual()">Atualizar feriados da loja</button>
-          </div>
-        </div>
-      </section>
-
       <section id="empresas_saas" class="pagina">
         <div class="page-title">Empresas / Clientes</div>
 
@@ -6641,6 +6544,37 @@
         <div class="card">
           <div class="card-title">Lojas cadastradas</div>
           <div id="listaLojasSaas"><div class="empty">Carregando⬦</div></div>
+        </div>
+
+        <div class="card" id="cardDadosLojaConfig">
+          <div class="card-title">Dados da loja atual</div>
+          <div class="form-row">
+            <input id="configNomeLoja" type="text" placeholder="Nome da loja">
+            <input id="configCepLoja" class="campo-curto" type="text" placeholder="CEP" maxlength="9" onblur="buscarCepLoja('configCepLoja','configCidadeLoja','configEstadoLoja','msgConfiguracoes')">
+            <input id="configCidadeLoja" type="text" placeholder="Cidade da loja" required>
+            <select id="configEstadoLoja" class="campo-curto" required style="min-width:130px">
+              <option value="">Estado</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+            </select>
+            <input id="configHorarioAbertura" class="campo-curto" type="time" placeholder="Abertura">
+            <input id="configHorarioFechamento" class="campo-curto" type="time" placeholder="Fechamento">
+          </div>
+        </div>
+
+        <div class="card" id="cardLembreteLojaConfig">
+          <div class="card-title">Lembrete e feriados da loja</div>
+          <div class="form-row">
+            <input id="configHorarioLancamento" class="campo-curto" type="time" placeholder="Lançamento">
+            <input id="configHorarioLembrete" class="campo-curto" type="time" placeholder="Horário">
+            <label class="perm-item" style="flex:1; min-width:220px;">
+              <input id="configEnviarEmailLembrete" type="checkbox">
+              <span>Enviar também por e-mail</span>
+            </label>
+          </div>
+          <div class="msg" id="msgConfiguracoes"></div>
+          <div class="form-row" style="margin-top:12px">
+            <button class="btn btn-green" onclick="salvarConfiguracoesLoja()">Salvar configurações</button>
+            <button class="btn btn-ghost" type="button" onclick="atualizarFeriadosDaLojaAtual()">Atualizar feriados da loja</button>
+          </div>
         </div>
       </section>
 
@@ -9407,9 +9341,8 @@ const topTitles = {
   funcionarios: ['Funcionarios', 'Gestao de equipe'],
   solicitacoes: ['Solicitacoes de acesso', 'Aprove ou rejeite pedidos de entrada'],
   emails: ['Cadastro de envio de e-mail', 'Destinatarios para notificacoes'],
-  configuracoes: ['Informacoes da Loja', 'Dados basicos e lembretes da operacao'],
   empresas_saas: ['Empresas / Clientes', 'Cadastro de empresas para vender o sistema'],
-  lojas_saas: ['Lojas por empresa', 'Filiais vinculadas aos clientes'],
+  lojas_saas: ['Lojas por empresa', 'Filiais, feriados e configurações'],
   perfis: ['Perfis', 'Permissoes de acesso do sistema'],
   tarefas: ['Cadastro de Checklist', 'Gerenciamento (Admin)'],
   tarefas_rapidas: ['Alertas rápidas', 'Avisos pontuais para a equipe'],
@@ -9434,7 +9367,7 @@ function paginaPertenceMenuFuncionarios(pageId = '') {
 }
 
 function paginaPertenceMenuConfiguracoes(pageId = '') {
-  return ['solicitacoes', 'emails', 'configuracoes'].includes(String(pageId || ''));
+  return ['solicitacoes', 'emails'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuSaas(pageId = '') {
@@ -9995,9 +9928,11 @@ function abrirPagina(id, botao) {
   }
   if (id === 'solicitacoes') { carregarSolicitacoesAcesso(); }
   if (id === 'emails') { carregarDestinatariosEmail(); }
-  if (id === 'configuracoes') { carregarConfiguracoesLoja(); }
   if (id === 'empresas_saas') { carregarEmpresasSaas(); }
-  if (id === 'lojas_saas') { carregarEmpresasSaas({ render: false, silencioso: true }).then(() => carregarLojasSaas()); }
+  if (id === 'lojas_saas') {
+    carregarEmpresasSaas({ render: false, silencioso: true })
+      .then(() => Promise.all([carregarLojasSaas(), carregarConfiguracoesLoja()]));
+  }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
     atualizarEstadoItensCadastroTarefa();
@@ -10118,7 +10053,6 @@ async function atualizarPaginaAtivaAutomaticamente() {
     if (paginaAtiva === 'funcionarios') await carregarFuncionarios();
     if (paginaAtiva === 'solicitacoes') await carregarSolicitacoesAcesso();
     if (paginaAtiva === 'emails') await carregarDestinatariosEmail();
-    if (paginaAtiva === 'configuracoes') await carregarConfiguracoesLoja();
     if (paginaAtiva === 'perfis') await carregarPerfis();
     if (paginaAtiva === 'tarefas') {
       await carregarTarefas();
@@ -20687,20 +20621,15 @@ async function alternarAtivoAdminLojaCadastro(id) {
 
 function aplicarVisibilidadeConfiguracoesLoja() {
   const permissoes = obterPermissoesUsuario();
-  const podeConfiguracoes = usuarioSistemaLogado?.tipo === 'admin' || !!permissoes.configuracoes;
+  const podeConfiguracoes = usuarioSistemaLogado?.tipo === 'admin' || !!permissoes.configuracoes || usuarioPodeGerenciarLojasSaas();
   const podeLojas = usuarioPodeGerenciarLojasGlobais();
   const podeAdmins = usuarioPodeEditarAdminsDaLojaLogada();
 
   const cardDados = document.getElementById('cardDadosLojaConfig');
   const cardLembrete = document.getElementById('cardLembreteLojaConfig');
-  const cardLojas = document.getElementById('cardCadastroLojasConfig');
-  const cardAdmins = document.getElementById('cardAdminsLojaConfig');
 
   if (cardDados) cardDados.style.display = podeConfiguracoes ? '' : 'none';
   if (cardLembrete) cardLembrete.style.display = podeConfiguracoes ? '' : 'none';
-  if (cardLojas) cardLojas.style.display = podeLojas ? '' : 'none';
-  if (cardAdmins) cardAdmins.style.display = podeAdmins ? '' : 'none';
-  atualizarFormularioLojaCadastroPorPermissao();
 }
 
 
@@ -20757,8 +20686,6 @@ async function carregarConfiguracoesLoja() {
     document.getElementById('configHorarioLancamento').value = '';
     document.getElementById('configHorarioLembrete').value = '';
     document.getElementById('configEnviarEmailLembrete').checked = false;
-    await carregarLojasCadastro();
-    await carregarAdminsLojaCadastro();
     return;
   }
 
@@ -20775,8 +20702,6 @@ async function carregarConfiguracoesLoja() {
   document.getElementById('configHorarioLembrete').value = cfg.horario_lembrete_checklist || '';
   document.getElementById('configEnviarEmailLembrete').checked = !!cfg.enviar_email_lembrete;
   setMsg('msgConfiguracoes', '', '');
-  await carregarLojasCadastro();
-  await carregarAdminsLojaCadastro();
 }
 
 async function salvarConfiguracoesLoja() {
@@ -20825,7 +20750,7 @@ async function salvarConfiguracoesLoja() {
 
   await salvarDadosLojaAtualEmLojas(payload);
   setMsg('msgConfiguracoes', 'Configurações da loja salvas com sucesso.', 'ok');
-  await carregarLojasCadastro();
+  await carregarLojasSaas();
   carregarNotificacoes();
 }
 
@@ -23238,9 +23163,9 @@ async function toggleTarefa(id, ativo) {
   carregarTarefas();
 }
 
-// 
+//
 // TAREFAS RÁPIDAS
-// 
+//
 async function buscarFuncionariosParaAlertaRapido() {
   const empresaId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
   const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
@@ -34760,6 +34685,129 @@ window.addEventListener('load', function() {
   }
   #pontoResumoHoje{
     margin-top:2px !important;
+  }
+</style>
+
+<style id="theme-grafite-moderno">
+  :root {
+    --bg: #090b10;
+    --surface: #11141b;
+    --surface2: #171b24;
+    --border: #29313d;
+    --green: #35d07f;
+    --green-dim: #22a867;
+    --green-glow: rgba(53,208,127,0.13);
+    --text: #eef2f7;
+    --text-muted: #98a2b3;
+    --text-dim: #667085;
+  }
+
+  body {
+    background:
+      linear-gradient(180deg, #0b0e14 0%, #090b10 42%, #080a0e 100%) !important;
+    color: var(--text) !important;
+  }
+
+  .sidebar,
+  .topbar,
+  .card,
+  .stat-card,
+  .notification-panel,
+  .modal,
+  .modal-content,
+  .login-card,
+  .ponto-tempo-aviso-card,
+  .escala-side-card,
+  .escala-calendario-card {
+    background: rgba(17,20,27,0.96) !important;
+    border-color: rgba(68,78,94,0.72) !important;
+    box-shadow: 0 18px 44px rgba(0,0,0,0.26) !important;
+  }
+
+  .sidebar {
+    background: linear-gradient(180deg, #11141b 0%, #0d1017 100%) !important;
+  }
+
+  .content,
+  .pagina {
+    background: transparent !important;
+  }
+
+  .nav-label,
+  .card-title,
+  .page-title,
+  .topbar-info-label {
+    color: #aab4c4 !important;
+  }
+
+  .nav-btn,
+  .nav-sub-btn,
+  .item,
+  .checklist-item,
+  .alerta-rapido-check-item,
+  .tarefas-consulta-item {
+    background: rgba(13,16,22,0.88) !important;
+    border-color: rgba(59,69,84,0.72) !important;
+  }
+
+  .nav-btn:hover,
+  .nav-sub-btn:hover,
+  .item:hover,
+  .alerta-rapido-check-item:hover {
+    background: rgba(24,29,39,0.98) !important;
+    border-color: rgba(95,110,132,0.9) !important;
+  }
+
+  .nav-btn.ativo,
+  .nav-btn-alerta.ativo {
+    background: linear-gradient(135deg, rgba(53,208,127,0.24), rgba(39,52,66,0.98)) !important;
+    border-color: rgba(53,208,127,0.62) !important;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.35), 0 0 0 1px rgba(53,208,127,0.12) inset !important;
+  }
+
+  input,
+  select,
+  textarea,
+  .login-input,
+  .alerta-rapido-input {
+    background: #0c0f15 !important;
+    border-color: #343d4a !important;
+    color: var(--text) !important;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: rgba(53,208,127,0.7) !important;
+    box-shadow: 0 0 0 3px rgba(53,208,127,0.13) !important;
+  }
+
+  .btn-ghost {
+    background: rgba(25,30,40,0.92) !important;
+    border-color: rgba(71,84,103,0.82) !important;
+    color: #d0d5dd !important;
+  }
+
+  .btn-green {
+    background: linear-gradient(135deg, #35d07f, #20b768) !important;
+    color: #06110b !important;
+    border-color: rgba(53,208,127,0.8) !important;
+  }
+
+  .topbar-store {
+    background: linear-gradient(135deg, #1f2937, #334155) !important;
+    border-color: rgba(148,163,184,0.9) !important;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+  }
+
+  .topbar-clock,
+  .topbar-business-day,
+  .topbar-user,
+  .sync-status,
+  .app-version-badge {
+    background: rgba(13,16,22,0.94) !important;
+    border-color: rgba(57,68,84,0.9) !important;
+    color: var(--text) !important;
   }
 </style>
 
