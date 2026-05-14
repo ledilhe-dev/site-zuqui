@@ -6737,9 +6737,13 @@
         <div class="page-title">Alertas rápidas</div>
 
         <div class="card" id="cardAlertaRapidoEnvio">
-          <div class="card-title">Enviar alerta rápido</div>
+          <div class="regra-info-row">
+            <button class="regra-info-btn" type="button" title="Regra dos alertas rápidos" aria-label="Regra dos alertas rápidos" onclick="abrirInfoRegraChecklist('alertas_rapidos')">I</button>
+            <div class="card-title" style="margin:0">Enviar alerta rápido</div>
+          </div>
           <textarea id="mensagemAlertaRapido" class="alerta-rapido-input" rows="3" maxlength="220" placeholder='Exemplo: Porta da geladeira aberta'></textarea>
-          <div class="card-title" style="margin-top:14px">Funcionários</div>
+          <div class="card-title" style="margin-top:14px">Funcionários de referência do aviso</div>
+          <div class="item-detalhe" style="margin-bottom:8px">Usuários com permissão de receber notificação verão os alertas rápidos pendentes da loja. A finalização pode ser feita com o PIN de qualquer funcionário ativo.</div>
           <div id="alertaRapidoFuncionarios" class="alerta-rapido-check-grid"><div class="empty">Carregando⬦</div></div>
           <div class="form-row" style="margin-top:12px">
             <button class="btn btn-green" type="button" onclick="enviarAlertaRapido()">Enviar alerta</button>
@@ -6749,8 +6753,8 @@
 
         <div class="card" id="cardAlertaRapidoLista">
           <div class="financeiro-card-title-row">
-            <div class="card-title" id="tituloListaAlertaRapido">Alertas enviados</div>
-            <button class="btn btn-ghost btn-sm" id="btnToggleAlertasRapidosEnviados" type="button" onclick="toggleAlertasRapidosEnviados()">Mostrar todos</button>
+            <div class="card-title" id="tituloListaAlertaRapido">Relatório oculto de alertas rápidos</div>
+            <button class="btn btn-ghost btn-sm" id="btnToggleAlertasRapidosEnviados" type="button" onclick="toggleAlertasRapidosEnviados()">Mostrar relatório</button>
           </div>
           <div class="form-row" id="alertasRapidosAdminControles" style="margin-top:0;margin-bottom:8px">
             <select id="filtroStatusAlertaRapido" class="campo-curto" style="max-width:170px;flex:0 0 170px !important" onchange="carregarAlertasRapidos()">
@@ -8553,6 +8557,7 @@ let assinaturaAlertasCriticosAnterior = '';
 let avisoCentralTarefasFechado = false;
 let assinaturaAvisoCentralTarefas = '';
 let assinaturaSomAlertaRapidoLista = '';
+let envioAlertaRapidoEmAndamento = false;
 let alertasCriticosSilenciadosNaSessao = false;
 let assinaturaUltimoRedirecionamentoChecklist = '';
 let assinaturaUltimoRedirecionamentoAlertaRapido = '';
@@ -8930,15 +8935,24 @@ function obterFuncionarioDestinoAlertaRapidoAtual() {
   if (usuarioSistemaLogado?.id) {
     const ehAdminSistema = usuarioSistemaLogado?.tipo === 'admin' || usuarioSistemaLogado?.tipo === 'admin_loja';
     if (!ehAdminSistema) {
-      return { id: String(usuarioSistemaLogado.id), nome: usuarioSistemaLogado.nome || '' };
+      return {
+        id: String(usuarioSistemaLogado.id),
+        nome: usuarioSistemaLogado.nome || usuarioSistemaLogado.username || usuarioSistemaLogado.email || '',
+      };
     }
   }
-  return { id: '', nome: '' };
+  return {
+    id: '',
+    nome: usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || usuarioSistemaLogado?.email || '',
+  };
 }
 
 async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome: '' }) {
   const destinoId = String(destino?.id || '').trim();
   const destinoNomeNormalizado = normalizarTextoComparacao(destino?.nome || '');
+  const lojaIdSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const empresaIdSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+  const podeReceberFilaDaLoja = usuarioPodeReceberAlertaRapido();
 
   const agruparAlertas = (itens = []) => {
     const grupos = new Map();
@@ -8978,7 +8992,7 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
     }));
   };
 
-  const consultarPendentes = async (campoData = 'criado_em') => {
+  const consultarPendentes = async (campoData = 'criado_em', modoBusca = 'auto') => {
     let query = sb
       .from('alertas_rapidos')
       .select(`id, grupo_id, mensagem, funcionario_destino_id, funcionario_destino_nome, ${campoData}, status`)
@@ -8986,7 +9000,11 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
       .order(campoData, { ascending: false })
       .limit(100);
 
-    if (destinoId) {
+    if (modoBusca === 'id' && destinoId) {
+      query = query.eq('funcionario_destino_id', destinoId);
+    } else if (modoBusca === 'nome' && destinoNomeNormalizado) {
+      query = query.ilike('funcionario_destino_nome', `%${escaparValorLike(destino.nome)}%`);
+    } else if (destinoId) {
       query = query.eq('funcionario_destino_id', destinoId);
     } else if (destinoNomeNormalizado) {
       query = query.ilike('funcionario_destino_nome', `%${escaparValorLike(destino.nome)}%`);
@@ -9015,15 +9033,29 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
   }
 
   let dadosConsulta = consulta.data || [];
-  if (destinoId && String(obterLojaIdSessao() || '').trim()) {
-    const consultarPendentesSemFiltroLoja = async (campoData = 'criado_em') => executarSemFiltroLojaTemporario(async () => {
-      const { data, error } = await sb
+  if (!dadosConsulta.length && destinoId && destinoNomeNormalizado) {
+    let consultaPorNome = await consultarPendentes('criado_em', 'nome');
+    if (consultaPorNome.error && String(consultaPorNome.error?.message || '').toLowerCase().includes('criado_em')) {
+      consultaPorNome = await consultarPendentes('created_at', 'nome');
+    }
+    if (!consultaPorNome.error && consultaPorNome.data?.length) {
+      dadosConsulta = consultaPorNome.data || [];
+    }
+  }
+  if ((destinoId || destinoNomeNormalizado) && lojaIdSessao) {
+    const consultarPendentesSemFiltroLoja = async (campoData = 'criado_em', modoBusca = 'id') => executarSemFiltroLojaTemporario(async () => {
+      let query = sb
         .from('alertas_rapidos')
         .select(`id, grupo_id, mensagem, funcionario_destino_id, funcionario_destino_nome, ${campoData}, status`)
         .eq('status', 'pendente')
-        .eq('funcionario_destino_id', destinoId)
         .order(campoData, { ascending: false })
         .limit(100);
+      if (modoBusca === 'id' && destinoId) {
+        query = query.eq('funcionario_destino_id', destinoId);
+      } else if (modoBusca === 'nome' && destinoNomeNormalizado) {
+        query = query.ilike('funcionario_destino_nome', `%${escaparValorLike(destino.nome)}%`);
+      }
+      const { data, error } = await query;
       if (error) return { data: null, error };
       return {
         data: (data || []).map(item => ({
@@ -9035,9 +9067,15 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
       };
     });
 
-    let fallback = await consultarPendentesSemFiltroLoja('criado_em');
+    let fallback = await consultarPendentesSemFiltroLoja('criado_em', destinoId ? 'id' : 'nome');
     if (fallback.error && String(fallback.error?.message || '').toLowerCase().includes('criado_em')) {
-      fallback = await consultarPendentesSemFiltroLoja('created_at');
+      fallback = await consultarPendentesSemFiltroLoja('created_at', destinoId ? 'id' : 'nome');
+    }
+    if (!fallback.error && !fallback.data?.length && destinoId && destinoNomeNormalizado) {
+      fallback = await consultarPendentesSemFiltroLoja('criado_em', 'nome');
+      if (fallback.error && String(fallback.error?.message || '').toLowerCase().includes('criado_em')) {
+        fallback = await consultarPendentesSemFiltroLoja('created_at', 'nome');
+      }
     }
     if (!fallback.error && fallback.data?.length) {
       const porId = new Map();
@@ -9051,8 +9089,53 @@ async function buscarAlertasRapidosPendentesParaDestino(destino = { id: '', nome
     }
   }
 
+  if (podeReceberFilaDaLoja && (lojaIdSessao || empresaIdSessao)) {
+    const consultarPendentesDaLoja = async (campoData = 'criado_em') => {
+      let query = sb
+        .from('alertas_rapidos')
+        .select(`id, grupo_id, mensagem, funcionario_destino_id, funcionario_destino_nome, ${campoData}, status`)
+        .eq('status', 'pendente')
+        .order(campoData, { ascending: false })
+        .limit(100);
+
+      if (lojaIdSessao) {
+        query = query.eq('loja_id', lojaIdSessao);
+      } else if (empresaIdSessao) {
+        query = query.eq('empresa_id', empresaIdSessao);
+      }
+
+      const { data, error } = await query;
+      if (error) return { data: null, error };
+      return {
+        data: (data || []).map(item => ({
+          ...item,
+          criado_em: item.criado_em || item.created_at || null,
+          created_at: item.created_at || item.criado_em || null,
+          visivel_por_permissao_alerta_rapido: true,
+        })),
+        error: null,
+      };
+    };
+
+    let consultaLoja = await consultarPendentesDaLoja('criado_em');
+    if (consultaLoja.error && String(consultaLoja.error?.message || '').toLowerCase().includes('criado_em')) {
+      consultaLoja = await consultarPendentesDaLoja('created_at');
+    }
+    if (!consultaLoja.error && consultaLoja.data?.length) {
+      const porId = new Map();
+      [...dadosConsulta, ...consultaLoja.data].forEach(item => {
+        const chave = String(item?.id || '');
+        if (chave) porId.set(chave, item);
+      });
+      dadosConsulta = Array.from(porId.values());
+    } else if (consultaLoja.error && !isMissingQuickAlertsTableError(consultaLoja.error)) {
+      console.warn('Falha ao buscar fila de alertas rápidos da loja:', consultaLoja.error);
+    }
+  }
+
   const filtradosPorDestino = (dadosConsulta || []).filter(item => {
-    if (destinoId) return String(item.funcionario_destino_id || '') === destinoId;
+    if (podeReceberFilaDaLoja && item?.visivel_por_permissao_alerta_rapido) return true;
+    if (destinoId && String(item.funcionario_destino_id || '') === destinoId) return true;
     if (destinoNomeNormalizado) return normalizarTextoComparacao(item.funcionario_destino_nome || '') === destinoNomeNormalizado;
     return false;
   });
@@ -9081,13 +9164,13 @@ function usuarioPodeVerNotificacaoExecucao() {
 }
 
 function usuarioPodeReceberAlertaRapido() {
-  if (!usuarioRecebeAlertaOperacional()) return false;
+  if (!usuarioSistemaLogado) return false;
   return !!obterPermissoesUsuario().receber_alertas_rapidas;
 }
 
 function usuarioPodeConfirmarAlertaRapido() {
-  if (!usuarioRecebeAlertaOperacional()) return false;
-  return !!obterPermissoesUsuario().confirmar_alertas_rapidas;
+  if (!usuarioSistemaLogado) return false;
+  return !!obterPermissoesUsuario().confirmar_alertas_rapidas || usuarioSistemaLogado.tipo === 'funcionario';
 }
 
 function usuarioPodeEnviarAlertasRapidos() {
@@ -9153,7 +9236,7 @@ const PERFIL_PERMISSOES = [
   { key: 'tarefas_rapidas', label: 'Alertas rápidas' },
   { key: 'enviar_alertas_rapidas', label: 'Enviar alertas rápidos' },
   { key: 'excluir_alertas_rapidas', label: 'Excluir alertas rápidos' },
-  { key: 'receber_alertas_rapidas', label: 'Receber alertas rápidos' },
+  { key: 'receber_alertas_rapidas', label: 'Receber notificação de alerta rápido' },
   { key: 'confirmar_alertas_rapidas', label: 'Confirmar alertas rápidos' },
   { key: 'execucoes', label: 'Em andamento' },
   { key: 'tarefas_atraso', label: 'Tarefas em atraso' },
@@ -11974,7 +12057,18 @@ function abrirInfoRegraChecklist(tipo = 'lancados') {
   const body = document.getElementById('infoRegraChecklistBody');
   if (!overlay || !titulo || !subtitulo || !body) return;
 
-  if (tipo === 'execucoes') {
+  if (tipo === 'alertas_rapidos') {
+    titulo.textContent = 'Regra dos alertas rápidos';
+    subtitulo.textContent = 'Avisos emergenciais que não viram tarefa de checklist.';
+    body.innerHTML = `
+      <ul style="margin:0;padding-left:18px;line-height:1.55;color:var(--text-muted);font-size:13px">
+        <li><strong style="color:var(--text)">Uso:</strong> serve para avisos pontuais e urgentes, como porta da geladeira aberta, falta de energia ou risco imediato.</li>
+        <li><strong style="color:var(--text)">Notificação:</strong> aparece com som e voz para usuários com permissão de receber alertas rápidos na loja, sem entrar na lista de tarefas/checklists.</li>
+        <li><strong style="color:var(--text)">Repetição:</strong> não usa a repetição automática das tarefas; depois que o aviso é aceito, ele finaliza.</li>
+        <li><strong style="color:var(--text)">Aceite:</strong> qualquer funcionário ativo pode finalizar o aviso informando o próprio PIN/senha.</li>
+      </ul>
+    `;
+  } else if (tipo === 'execucoes') {
     titulo.textContent = 'Regra das execuções';
     subtitulo.textContent = 'Acompanhamento de tarefas iniciadas, pausadas e finalizadas.';
     body.innerHTML = `
@@ -13433,7 +13527,9 @@ function renderizarAvisoCentralTarefas() {
   }
 
   list.innerHTML = itensBanner.slice(0, 3).map(item => {
-    const nomeTarefa = item?.meta?.nomeTarefa || item?.meta?.nomeChecklist || item?.meta?.nome_checklist || item?.titulo || 'Checklist pendente';
+    const nomeTarefa = item?.tipo === 'alerta_rapido'
+      ? `AVISO: ${item?.meta?.mensagem || item?.descricao || 'Alerta rápido'}`
+      : (item?.meta?.nomeTarefa || item?.meta?.nomeChecklist || item?.meta?.nome_checklist || item?.titulo || 'Checklist pendente');
     const nomeFuncionario = item?.meta?.nomeFuncionario || item?.meta?.nome_funcionario || 'Responsável não definido';
     const horario = item?.tipo === 'alerta_rapido'
       ? 'Aviso imediato'
@@ -13470,8 +13566,9 @@ async function abrirPainelTarefasAtrasadas(event) {
   if (event?.preventDefault) event.preventDefault();
   if (event?.stopPropagation) event.stopPropagation();
 
+  const existeAvisoTarefa = notificacoesAtuais.some(item => tipoNotificacaoTarefaAtrasada(item?.tipo));
   const alertaRapido = notificacoesAtuais.find(item => item?.tipo === 'alerta_rapido');
-  if (alertaRapido) {
+  if (alertaRapido && !existeAvisoTarefa) {
     const index = notificacoesAtuais.findIndex(item => item?.chave === alertaRapido?.chave);
     await confirmarAlertaRapidoNotificacao(alertaRapido, index);
     return;
@@ -13551,7 +13648,7 @@ function sincronizarAvisoNotificacoes() {
   const assinaturaCriticaAtual = notificacoesCriticas.map(item => item.chave).sort().join('|');
   const criticasOperacionais = notificacoesCriticas.filter(item => tipoNotificacaoTarefaAtrasada(item?.tipo));
   const alertasRapidos = notificacoesCriticas.filter(item => item?.tipo === 'alerta_rapido');
-  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente' || item.tipo === 'alerta_rapido');
+  const lancamentosPendentes = notificacoesCriticas.filter(item => item.tipo === 'lancamento_atrasado' || item.tipo === 'checklist_pendente');
   const tarefasAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'tarefa_atrasada');
   const execucoesAtrasadas = notificacoesCriticas.filter(item => item.tipo === 'execucao_atrasada');
   const agora = Date.now();
@@ -13802,7 +13899,6 @@ async function carregarNotificacoes() {
             alertaRapidoId: item.id,
             alertaRapidoGrupoId: item.grupo_id || '',
             mensagem,
-            nomeTarefa: `ALERTA: ${mensagem}`,
             nomeFuncionario: item.funcionario_destino_nome || destino.nome || 'Funcionário',
             funcionarioDestinoId: String(item.funcionario_destino_id || destino.id || ''),
             horarioProgramado: 'Aviso imediato',
@@ -17313,7 +17409,7 @@ async function salvarRecebivelFinanceiro() {
     const contaFinanceiraId = String(document.getElementById('recebivelContaFinanceiraId')?.value || '').trim();
     const valorTexto = String(document.getElementById('recebivelValor')?.value || '').trim();
     const valorRecebivel = lerValorMonetarioFinanceiro(valorTexto);
-  
+
     if (!pagadorId) {
       setMsg('msgRecebivelFinanceiro', 'Selecione um pagador válido na busca de fornecedores.', 'err');
       return;
@@ -17334,7 +17430,7 @@ async function salvarRecebivelFinanceiro() {
       setMsg('msgRecebivelFinanceiro', 'Informe um valor válido para o recebível.', 'err');
       return;
     }
-  
+
     const contaSelecionada = (contasFinanceirasCache || []).find(item => String(item.id) === String(contaFinanceiraId)) || null;
     const empresaIdSessao = contaSelecionada?.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
     const lojaIdSessao = contaSelecionada?.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
@@ -17376,7 +17472,7 @@ async function salvarRecebivelFinanceiro() {
     }
     const recebivelId = recebivelSalvo?.id || recebivelFinanceiroEmEdicaoId;
     const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
-  
+
     if (!saldoGerenciadoNoBanco && editando && recebivelAnterior?.conta_financeira_id && Number(recebivelAnterior.valor || 0) > 0) {
       const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({
         contaFinanceiraId: recebivelAnterior.conta_financeira_id,
@@ -17390,7 +17486,7 @@ async function salvarRecebivelFinanceiro() {
         return;
       }
     }
-  
+
     const pagadorNome = fornecedoresFinanceiroCache.find(item => String(item.id) === pagadorId)?.nome || 'pagador';
     const formaNome = formasPagamentoFinanceiroCache.find(item => String(item.id) === formaPagamentoId)?.nome || 'forma de pagamento';
     if (!saldoGerenciadoNoBanco) {
@@ -17406,7 +17502,7 @@ async function salvarRecebivelFinanceiro() {
         return;
       }
     }
-  
+
     limparFormularioRecebivelFinanceiro();
     setMsg('msgRecebivelFinanceiro', editando ? 'Recebível atualizado.' : 'Recebível cadastrado.', 'ok');
     recebiveisFinanceiroListaVisivel = true;
@@ -17418,7 +17514,7 @@ async function salvarRecebivelFinanceiro() {
     if (document.getElementById('relatorio_recebimentos')?.classList.contains('ativa')) {
       await carregarRelatorioRecebimentos();
     }
-  
+
   } catch (erroInesperado) {
     console.error('Erro inesperado ao salvar recebível:', erroInesperado);
     setMsg('msgRecebivelFinanceiro', `Não foi possível cadastrar o recebível: ${mensagemErroSupabase(erroInesperado, erroInesperado?.message || 'erro inesperado')}`, 'err');
@@ -23145,6 +23241,67 @@ async function toggleTarefa(id, ativo) {
 // 
 // TAREFAS RÁPIDAS
 // 
+async function buscarFuncionariosParaAlertaRapido() {
+  const empresaId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+  const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const ordenarFuncionarios = (itens = []) => (itens || [])
+    .filter(item => item?.id)
+    .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+  const deduplicarFuncionarios = (itens = []) => {
+    const porId = new Map();
+    (itens || []).forEach(item => {
+      const id = String(item?.id || '').trim();
+      if (!id || porId.has(id)) return;
+      porId.set(id, item);
+    });
+    return ordenarFuncionarios(Array.from(porId.values()));
+  };
+
+  const consultarFuncionarios = async ({ filtrarLoja = false, ids = [] } = {}) => {
+    let query = sb
+      .from('funcionarios')
+      .select('id, nome, loja_id, empresa_id')
+      .eq('ativo', true)
+      .order('nome');
+
+    if (empresaId) query = query.eq('empresa_id', empresaId);
+    if (filtrarLoja && lojaId) query = query.eq('loja_id', lojaId);
+    if (ids.length) query = query.in('id', ids);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  };
+
+  let funcionarios = await consultarFuncionarios({ filtrarLoja: true });
+  if (funcionarios.length) return deduplicarFuncionarios(funcionarios);
+
+  if (lojaId) {
+    try {
+      const { data: vinculos, error: erroVinculos } = await sb
+        .from('funcionario_lojas')
+        .select('funcionario_id, ativo')
+        .eq('loja_id', lojaId)
+        .eq('ativo', true);
+
+      if (!erroVinculos && vinculos?.length) {
+        const ids = [...new Set(vinculos.map(item => String(item.funcionario_id || '').trim()).filter(Boolean))];
+        if (ids.length) {
+          funcionarios = await consultarFuncionarios({ ids });
+          if (funcionarios.length) return deduplicarFuncionarios(funcionarios);
+        }
+      } else if (erroVinculos && !String(erroVinculos?.message || '').includes('funcionario_lojas')) {
+        console.warn('Falha ao buscar vínculos de funcionários para alerta rápido:', erroVinculos);
+      }
+    } catch (e) {
+      console.warn('Tabela de vínculos de funcionários indisponível para alerta rápido:', e);
+    }
+  }
+
+  funcionarios = await consultarFuncionarios({ filtrarLoja: false });
+  return deduplicarFuncionarios(funcionarios);
+}
+
 async function carregarFuncionariosAlertaRapido(silencioso = false) {
   const container = document.getElementById('alertaRapidoFuncionarios');
   if (!container) return;
@@ -23156,21 +23313,7 @@ async function carregarFuncionariosAlertaRapido(silencioso = false) {
   }
 
   try {
-    const empresaId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
-    let query = sb
-      .from('funcionarios')
-      .select('id, nome, loja_id, empresa_id')
-      .eq('ativo', true)
-      .order('nome');
-
-    if (empresaId) {
-      query = query.eq('empresa_id', empresaId);
-    }
-    query = aplicarFiltroLojaFuncionariosQuery(query);
-
-    const { data, error } = await query;
-
-    if (error) throw error;
+    const data = await buscarFuncionariosParaAlertaRapido();
 
     if (!data?.length) {
       container.innerHTML = '<div class="empty">Nenhum funcionário ativo para seleção.</div>';
@@ -23203,6 +23346,10 @@ async function enviarAlertaRapido() {
     setMsg('msgAlertasRapidos', 'Somente o perfil administrativo pode enviar alertas rápidos.', 'err');
     return;
   }
+  if (envioAlertaRapidoEmAndamento) {
+    setMsg('msgAlertasRapidos', 'Envio de alerta já em andamento. Aguarde concluir para evitar duplicidade.', 'ok');
+    return;
+  }
 
   const mensagem = String(document.getElementById('mensagemAlertaRapido')?.value || '').trim();
   const selecionados = coletarFuncionariosSelecionadosAlertaRapido();
@@ -23224,6 +23371,8 @@ async function enviarAlertaRapido() {
     ? (usuarioSistemaLogado?.username || 'Administrador')
     : (usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Administrador');
   const criadoPorId = usuarioSistemaLogado?.tipo === 'funcionario' ? usuarioSistemaLogado?.id : null;
+  const lojaIdAlerta = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim() || null;
+  const empresaIdAlerta = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim() || null;
   const grupoId = (window.crypto?.randomUUID?.() || `grupo-${Date.now()}`);
 
   const registros = selecionados.map(item => ({
@@ -23233,30 +23382,35 @@ async function enviarAlertaRapido() {
     funcionario_destino_nome: item.nome || null,
     criado_por_nome: criadoPorNome || 'Administrador',
     criado_por_id: criadoPorId || null,
-    ...(item.loja_id ? { loja_id: item.loja_id } : {}),
-    ...(item.empresa_id ? { empresa_id: item.empresa_id } : {}),
+    ...(item.loja_id || lojaIdAlerta ? { loja_id: item.loja_id || lojaIdAlerta } : {}),
+    ...(item.empresa_id || empresaIdAlerta ? { empresa_id: item.empresa_id || empresaIdAlerta } : {}),
     status: 'pendente',
   }));
 
-  const { error } = await sb.from('alertas_rapidos').insert(registros);
-  if (error) {
-    if (isMissingQuickAlertsTableError(error)) {
-      setMsg('msgAlertasRapidos', 'Rode o SQL da tabela alertas_rapidos antes de usar esta tela.', 'err');
+  envioAlertaRapidoEmAndamento = true;
+  try {
+    const { error } = await sb.from('alertas_rapidos').insert(registros);
+    if (error) {
+      if (isMissingQuickAlertsTableError(error)) {
+        setMsg('msgAlertasRapidos', 'Rode o SQL da tabela alertas_rapidos antes de usar esta tela.', 'err');
+        return;
+      }
+      setMsg('msgAlertasRapidos', `Não foi possível enviar o alerta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
       return;
     }
-    setMsg('msgAlertasRapidos', `Não foi possível enviar o alerta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
-    return;
+
+    const campoMensagem = document.getElementById('mensagemAlertaRapido');
+    if (campoMensagem) campoMensagem.value = '';
+    document.querySelectorAll('[data-alerta-funcionario-id]').forEach(input => { input.checked = false; });
+
+    setMsg('msgAlertasRapidos', selecionados.length === document.querySelectorAll('[data-alerta-funcionario-id]').length
+      ? `Alerta enviado para todos os funcionários ativos (${selecionados.length}).`
+      : `Alerta enviado para ${selecionados.length} funcionário(s).`, 'ok');
+    await carregarAlertasRapidos();
+    await carregarNotificacoes();
+  } finally {
+    envioAlertaRapidoEmAndamento = false;
   }
-
-  const campoMensagem = document.getElementById('mensagemAlertaRapido');
-  if (campoMensagem) campoMensagem.value = '';
-  document.querySelectorAll('[data-alerta-funcionario-id]').forEach(input => { input.checked = false; });
-
-  setMsg('msgAlertasRapidos', selecionados.length === document.querySelectorAll('[data-alerta-funcionario-id]').length
-    ? `Alerta enviado para todos os funcionários ativos (${selecionados.length}).`
-    : `Alerta enviado para ${selecionados.length} funcionário(s).`, 'ok');
-  await carregarAlertasRapidos();
-  await carregarNotificacoes();
 }
 
 async function carregarAlertasRapidos(apenasFuncionario = false, silencioso = false) {
@@ -23270,6 +23424,16 @@ async function carregarAlertasRapidos(apenasFuncionario = false, silencioso = fa
       const destino = obterFuncionarioDestinoAlertaRapidoAtual();
       if (tituloLista) {
         tituloLista.textContent = 'Alertas rápidos pendentes';
+      }
+      if (!usuarioPodeReceberAlertaRapido()) {
+        assinaturaSomAlertaRapidoLista = '';
+        lista.innerHTML = '<div class="empty">Seu perfil não possui a permissão "Receber notificação de alerta rápido".</div>';
+        return;
+      }
+      if (!destino.id && !destino.nome) {
+        assinaturaSomAlertaRapidoLista = '';
+        lista.innerHTML = '<div class="empty">Não foi possível identificar o funcionário logado para buscar alertas rápidos.</div>';
+        return;
       }
       const data = await buscarAlertasRapidosPendentesParaDestino(destino);
       if (!data?.length) {
@@ -23322,12 +23486,12 @@ async function carregarAlertasRapidos(apenasFuncionario = false, silencioso = fa
     }
 
     if (tituloLista) {
-      tituloLista.textContent = 'Alertas enviados';
+      tituloLista.textContent = 'Relatório oculto de alertas rápidos';
     }
 
     atualizarVisibilidadeAlertasRapidosEnviados();
     if (!alertasRapidosListaEnviadosVisivel) {
-      lista.innerHTML = '<div class="empty">Alertas enviados ocultos.</div>';
+      lista.innerHTML = '<div class="empty">Relatório salvo e oculto. Clique em "Mostrar relatório" para consultar alertas enviados, pendentes e confirmados.</div>';
       return;
     }
 
@@ -23408,7 +23572,7 @@ async function carregarAlertasRapidos(apenasFuncionario = false, silencioso = fa
       <div class="item">
         <div class="item-info">
           <div class="item-nome">ALERTA: ${item.mensagem}</div>
-          <div class="item-detalhe">Destino: todos os funcionários ativos (${item.quantidadeDestinos}) · Enviado por: ${item.criado_por_nome || '-'} · ${fmtDate(item.criado_em)}</div>
+          <div class="item-detalhe">Ver aviso: ${item.destinos.filter(Boolean).join(', ') || '-'} (${item.quantidadeDestinos}) · Enviado por: ${item.criado_por_nome || '-'} · ${fmtDate(item.criado_em)}</div>
           <div class="item-detalhe">${item.status === 'confirmado'
             ? `Aceito por ${item.confirmado_por_nome || '-'} às ${fmtDate(item.confirmado_em)}`
             : 'Aguardando confirmação por PIN'
@@ -23526,7 +23690,7 @@ function atualizarVisibilidadeAlertasRapidosEnviados() {
   const controles = document.getElementById('alertasRapidosAdminControles');
   const botao = document.getElementById('btnToggleAlertasRapidosEnviados');
   if (controles) controles.style.display = alertasRapidosListaEnviadosVisivel ? '' : 'none';
-  if (botao) botao.textContent = alertasRapidosListaEnviadosVisivel ? 'Ocultar' : 'Mostrar todos';
+  if (botao) botao.textContent = alertasRapidosListaEnviadosVisivel ? 'Ocultar relatório' : 'Mostrar relatório';
 }
 
 function toggleAlertasRapidosEnviados() {
@@ -23536,7 +23700,7 @@ function toggleAlertasRapidosEnviados() {
     carregarAlertasRapidos(false);
   } else {
     const lista = document.getElementById('listaAlertasRapidos');
-    if (lista) lista.innerHTML = '<div class="empty">Alertas enviados ocultos.</div>';
+    if (lista) lista.innerHTML = '<div class="empty">Relatório salvo e oculto. Clique em "Mostrar relatório" para consultar alertas enviados, pendentes e confirmados.</div>';
   }
 }
 
