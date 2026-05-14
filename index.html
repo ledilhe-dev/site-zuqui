@@ -11363,10 +11363,14 @@ function persistirSessaoSistemaAtual(manterConectado = false) {
   });
   if (manterConectado) {
     localStorage.setItem('zuqui_auth', payload);
-    sessionStorage.removeItem('zuqui_auth');
+    localStorage.setItem('check_diario_auth_persistente', payload);
+    sessionStorage.setItem('zuqui_auth', payload);
+    sessionStorage.setItem('check_diario_auth_persistente', payload);
   } else {
     sessionStorage.setItem('zuqui_auth', payload);
+    sessionStorage.setItem('check_diario_auth_persistente', payload);
     localStorage.removeItem('zuqui_auth');
+    localStorage.removeItem('check_diario_auth_persistente');
   }
 }
 
@@ -21253,7 +21257,7 @@ async function criarPerfil() {
   carregarPerfis();
   carregarSelectPerfisFuncionario();
   if (usuarioSistemaLogado?.tipo === 'admin_loja') {
-    atualizarSessaoAdminLojaComPerfilCorreto(localStorage.getItem('zuqui_auth') != null);
+    atualizarSessaoAdminLojaComPerfilCorreto(localStorage.getItem('zuqui_auth') != null || localStorage.getItem('check_diario_auth_persistente') != null);
   } else {
     aplicarPermissoesSistema();
   }
@@ -29594,8 +29598,36 @@ window.setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const shell = document.querySelector('.shell');
     if (!loginScreen || !shell) return;
+    if (!logado) resetarTelaLoginParaEntrada();
     loginScreen.style.display = logado ? 'none' : 'flex';
     shell.style.display = logado ? 'flex' : 'none';
+  }
+
+  function resetarTelaLoginParaEntrada() {
+    const fase1 = document.getElementById('loginFase1');
+    const picker = document.getElementById('loginStorePicker');
+    const solicitacao = document.getElementById('solicitacaoAcessoBox');
+    const authBox = document.getElementById('authTokenBox');
+    const authContent = document.getElementById('authTokenContent');
+    const listaLojas = document.getElementById('loginStoreList');
+    const buscaLoja = document.getElementById('loginStoreSearch');
+
+    if (fase1) {
+      fase1.style.display = '';
+      fase1.classList.remove('saindo', 'entrando');
+    }
+    if (picker) picker.classList.remove('show', 'saindo', 'entrando');
+    if (solicitacao) solicitacao.style.display = 'none';
+    if (authBox) authBox.style.display = 'none';
+    if (authContent) authContent.style.display = 'none';
+    if (listaLojas) listaLojas.innerHTML = '';
+    if (buscaLoja) buscaLoja.value = '';
+    solicitacaoAcessoVisivel = false;
+    window.__loginContextoPendente = null;
+    window.__loginLojasPermitidasAtual = [];
+    setMsg('msgLogin', '', '');
+    setMsg('msgSolicitacaoAcesso', '', '');
+    setMsg('msgAuthToken', '', '');
   }
 
   const topbarNomeLojaCache = new Map();
@@ -29721,11 +29753,15 @@ window.setTimeout(() => {
   }
 
 function obterPreferenciasLoginSalvas() {
+  const chaves = ['zuqui_login_prefs', 'check_diario_login_prefs'];
   try {
-    const bruto = localStorage.getItem('zuqui_login_prefs');
+    const bruto = chaves.map(chave => localStorage.getItem(chave) || sessionStorage.getItem(chave)).find(Boolean);
     return bruto ? JSON.parse(bruto) : {};
   } catch (error) {
-    localStorage.removeItem('zuqui_login_prefs');
+    chaves.forEach(chave => {
+      localStorage.removeItem(chave);
+      sessionStorage.removeItem(chave);
+    });
     return {};
   }
 }
@@ -29737,7 +29773,11 @@ function salvarPreferenciasLogin({ username = '', password = '', salvarSenha = f
     username: salvarSenha ? String(username || '').trim() : '',
     password: salvarSenha ? String(password || '') : '',
   };
-  localStorage.setItem('zuqui_login_prefs', JSON.stringify(payload));
+  const bruto = JSON.stringify(payload);
+  ['zuqui_login_prefs', 'check_diario_login_prefs'].forEach(chave => {
+    localStorage.setItem(chave, bruto);
+    sessionStorage.setItem(chave, bruto);
+  });
 }
 
 function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
@@ -29847,6 +29887,7 @@ function configurarPreferenciasLoginTela() {
   pass?.addEventListener('input', () => {
     if (save?.checked) sincronizarPreferenciasLoginDaTela();
   });
+  window.addEventListener('beforeunload', sincronizarPreferenciasLoginDaTela);
 }
 
 function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
@@ -29864,10 +29905,14 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   const payload = JSON.stringify(usuarioNormalizado);
   if (manterConectado) {
     localStorage.setItem('zuqui_auth', payload);
-    sessionStorage.removeItem('zuqui_auth');
+    localStorage.setItem('check_diario_auth_persistente', payload);
+    sessionStorage.setItem('zuqui_auth', payload);
+    sessionStorage.setItem('check_diario_auth_persistente', payload);
   } else {
     sessionStorage.setItem('zuqui_auth', payload);
+    sessionStorage.setItem('check_diario_auth_persistente', payload);
     localStorage.removeItem('zuqui_auth');
+    localStorage.removeItem('check_diario_auth_persistente');
   }
   const chk = document.getElementById('keepLoggedIn');
   if (chk) chk.checked = !!manterConectado;
@@ -29877,8 +29922,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
   function restaurarSessaoSistema() {
     const salvoLocal = localStorage.getItem('zuqui_auth');
-    const salvoSessao = sessionStorage.getItem('zuqui_auth');
-    const salvo = salvoLocal || salvoSessao;
+    const salvoLocalBackup = localStorage.getItem('check_diario_auth_persistente');
+    const salvoSessao = sessionStorage.getItem('zuqui_auth') || sessionStorage.getItem('check_diario_auth_persistente');
+    const salvo = salvoLocal || salvoLocalBackup || salvoSessao;
 
     if (!salvo) {
       limparDadosVisuaisDaSessao('Aguardando login...');
@@ -29902,7 +29948,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       atualizarUsuarioTopbar();
       habilitarSomNotificacao();
       const chk = document.getElementById('keepLoggedIn');
-      if (chk) chk.checked = !!salvoLocal;
+      if (chk) chk.checked = !!(salvoLocal || salvoLocalBackup);
       setSistemaLogado(true);
       aplicarPermissoesSistema();
       carregarNotificacoes();
@@ -29917,7 +29963,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return !!usuario;
     } catch (e) {
       localStorage.removeItem('zuqui_auth');
+      localStorage.removeItem('check_diario_auth_persistente');
       sessionStorage.removeItem('zuqui_auth');
+      sessionStorage.removeItem('check_diario_auth_persistente');
       limparDadosVisuaisDaSessao('Aguardando login...');
       usuarioSistemaLogado = null;
       window.usuarioSistemaLogado = null;
@@ -29929,7 +29977,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
   async function logout() {
     localStorage.removeItem('zuqui_auth');
+    localStorage.removeItem('check_diario_auth_persistente');
     sessionStorage.removeItem('zuqui_auth');
+    sessionStorage.removeItem('check_diario_auth_persistente');
     salvarSilenciamentoAlertasCriticosDaSessao(false);
     limparDadosVisuaisDaSessao('Aguardando login...');
     usuarioSistemaLogado = null;
@@ -30477,7 +30527,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       username: usuarioSistemaLogado.nome || usuarioSistemaLogado.username || '',
       password: '',
       salvarSenha: false,
-      manterConectado: !!localStorage.getItem('zuqui_auth'),
+      manterConectado: !!(localStorage.getItem('zuqui_auth') || localStorage.getItem('check_diario_auth_persistente')),
       preservarPreferenciasLogin: true
     };
     const loginScreen = document.getElementById('loginScreen');
