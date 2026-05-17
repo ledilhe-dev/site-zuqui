@@ -2275,13 +2275,14 @@
       gap: 8px;
       align-items: end;
       max-width: 100%;
-      overflow: hidden;
+      overflow: visible;
     }
     .relatorio-financeiro-filtros .campo-com-label {
       max-width: none;
       min-width: 0;
       flex: initial;
       padding-top: 17px;
+      position: relative;
     }
     .relatorio-financeiro-filtros .campo-label {
       left: 0;
@@ -2321,6 +2322,137 @@
     .relatorio-financeiro-filtros select option {
       background: #111;
       color: var(--text);
+    }
+    .relatorio-check-filter {
+      position: relative;
+      width: 100%;
+      box-sizing: border-box;
+      z-index: 20;
+    }
+    .relatorio-check-filter.is-open {
+      z-index: 80;
+    }
+    .relatorio-check-filter-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 16px;
+      align-items: center;
+      width: 100%;
+      height: 38px;
+      min-height: 38px;
+      max-height: 38px;
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: text;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .relatorio-check-filter-head:hover,
+    .relatorio-check-filter.is-open .relatorio-check-filter-head {
+      border-color: var(--green);
+    }
+    .relatorio-check-filter-query {
+      width: 100% !important;
+      height: 24px !important;
+      min-height: 24px !important;
+      max-height: 24px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      color: var(--text) !important;
+      box-shadow: none !important;
+      outline: none !important;
+      font-size: 12px !important;
+      font-weight: 800 !important;
+      text-align: center;
+      line-height: 24px !important;
+      min-width: 0;
+    }
+    .relatorio-check-filter-query::placeholder {
+      color: var(--text) !important;
+      opacity: 1;
+    }
+    .relatorio-check-filter-summary {
+      display: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+    .relatorio-check-filter-arrow {
+      color: var(--text-muted);
+      font-size: 11px;
+      text-align: right;
+    }
+    .relatorio-check-filter-panel {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 220px;
+      min-width: 210px;
+      max-height: 244px;
+      padding: 6px;
+      border: 1px solid rgba(71, 85, 105, 0.95);
+      border-radius: 9px;
+      background: #0b0f16;
+      box-shadow: 0 18px 42px rgba(0,0,0,.42);
+      overflow: hidden;
+      z-index: 99999;
+    }
+    .relatorio-check-filter.is-open .relatorio-check-filter-panel {
+      display: grid;
+      gap: 5px;
+    }
+    .relatorio-check-filter-search {
+      width: 100%;
+      height: 30px !important;
+      min-height: 30px !important;
+      max-height: 30px !important;
+      padding: 5px 8px !important;
+      border-radius: 7px !important;
+      font-size: 11px !important;
+    }
+    .relatorio-check-filter-options {
+      display: grid;
+      gap: 3px;
+      max-height: 196px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .relatorio-check-filter label {
+      display: grid;
+      grid-template-columns: 14px minmax(0, 1fr);
+      align-items: center;
+      gap: 6px;
+      min-height: 26px;
+      padding: 4px 6px;
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+    .relatorio-check-filter label:hover {
+      background: rgba(34,197,94,0.08);
+    }
+    .relatorio-check-filter label span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .relatorio-check-filter input {
+      width: 13px;
+      height: 13px;
+      min-width: 13px;
+      accent-color: var(--green);
     }
     .relatorio-financeiro-filtros .btn {
       height: 38px;
@@ -6955,9 +7087,7 @@
         <div class="card">
           <div class="card-title">Filtros de ponto</div>
           <div class="form-row">
-            <select id="filtroPontoFuncionario">
-              <option value="">- Todos os funcionários -</option>
-            </select>
+            <div id="filtroPontoFuncionario" class="relatorio-check-filter relatorio-ponto-funcionarios-filter"></div>
             <input id="filtroPontoDataInicio" type="date">
             <input id="filtroPontoDataFim" type="date">
             <input id="filtroPontoHoraInicio" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora inicial">
@@ -7067,24 +7197,15 @@
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroStatus">Status</label>
-              <select id="filtroRelFinanceiroStatus">
-                <option value="">- Todos os status -</option>
-                <option value="pendente">Pendente</option>
-                <option value="pago">Pago</option>
-                <option value="excluido">Excluído</option>
-              </select>
+              <div id="filtroRelFinanceiroStatus" class="relatorio-check-filter"></div>
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroFornecedor">Fornecedor</label>
-              <select id="filtroRelFinanceiroFornecedor">
-                <option value="">- Todos os fornecedores -</option>
-              </select>
+              <div id="filtroRelFinanceiroFornecedor" class="relatorio-check-filter"></div>
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroForma">Forma de pagamento</label>
-              <select id="filtroRelFinanceiroForma">
-                <option value="">- Todas as formas -</option>
-              </select>
+              <div id="filtroRelFinanceiroForma" class="relatorio-check-filter"></div>
             </div>
             <button class="btn btn-green" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioFinanceiro()">Hoje</button>
@@ -11726,10 +11847,16 @@ async function obterIdsFuncionariosVisiveisLojaParaPonto(funcionarioId = '') {
 async function filtrarRegistrosPontoPorFuncionariosVisiveis(rows = [], funcionarioId = '') {
   const lista = Array.isArray(rows) ? rows : [];
   const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  const idsVisiveis = await obterIdsFuncionariosVisiveisLojaParaPonto(funcionarioId);
+  const idsFiltro = Array.isArray(funcionarioId)
+    ? funcionarioId.map(id => String(id || '').trim()).filter(Boolean)
+    : String(funcionarioId || '').trim()
+      ? [String(funcionarioId || '').trim()]
+      : [];
+  const idsVisiveis = await obterIdsFuncionariosVisiveisLojaParaPonto(idsFiltro.length === 1 ? idsFiltro[0] : '');
   if (!lojaId && !idsVisiveis.length) return lista;
   const permitidos = new Set(idsVisiveis.map(String));
   return lista.filter(item => {
+    if (idsFiltro.length && !idsFiltro.includes(String(item?.funcionario_id || ''))) return false;
     const funcionarioVinculado = Array.isArray(item?.funcionarios) ? item.funcionarios[0] : item?.funcionarios;
     const lojaFuncionario = String(funcionarioVinculado?.loja_id || '').trim();
     if (lojaFuncionario) return !lojaId || lojaFuncionario === lojaId;
@@ -11753,13 +11880,19 @@ async function complementarRegistrosPontoSemFiltroLoja(rows = [], {
   if (!empresaIdSessao) return rows || [];
 
   const { data: dataFallback, error: errorFallback } = await executarSemFiltroLojaTemporario(() => {
+    const idsFiltro = Array.isArray(funcionarioId)
+      ? funcionarioId.map(id => String(id || '').trim()).filter(Boolean)
+      : String(funcionarioId || '').trim()
+        ? [String(funcionarioId || '').trim()]
+        : [];
     let query = sb
       .from('ponto_registros')
       .select(`${campos}, funcionarios!inner(id,nome,loja_id,empresa_id)`)
       .eq('funcionarios.empresa_id', empresaIdSessao);
     const lojaIdSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     if (lojaIdSessao) query = query.eq('funcionarios.loja_id', lojaIdSessao);
-    if (funcionarioId) query = query.eq('funcionario_id', String(funcionarioId));
+    if (idsFiltro.length === 1) query = query.eq('funcionario_id', idsFiltro[0]);
+    if (idsFiltro.length > 1) query = query.in('funcionario_id', idsFiltro);
     if (inicio) query = query.gte('data_ponto', inicio);
     if (fim) query = query.lte('data_ponto', fim);
     return query.order('data_ponto', { ascending: false }).order('created_at', { ascending: false });
@@ -11788,6 +11921,11 @@ async function complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows = [],
   if (!inicioUtc || !fimUtc) return rows || [];
 
   const { data: dataFallback, error: errorFallback } = await executarSemFiltroLojaTemporario(() => {
+    const idsFiltro = Array.isArray(funcionarioId)
+      ? funcionarioId.map(id => String(id || '').trim()).filter(Boolean)
+      : String(funcionarioId || '').trim()
+        ? [String(funcionarioId || '').trim()]
+        : [];
     let query = sb
       .from('ponto_registros')
       .select(`${campos}, funcionarios!inner(id,nome,loja_id,empresa_id)`)
@@ -11797,7 +11935,8 @@ async function complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows = [],
       .order('created_at', { ascending: false });
     const lojaIdSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     if (lojaIdSessao) query = query.eq('funcionarios.loja_id', lojaIdSessao);
-    if (funcionarioId) query = query.eq('funcionario_id', String(funcionarioId));
+    if (idsFiltro.length === 1) query = query.eq('funcionario_id', idsFiltro[0]);
+    if (idsFiltro.length > 1) query = query.in('funcionario_id', idsFiltro);
     return query;
   });
 
@@ -19101,6 +19240,7 @@ async function salvarContaAPagarFinanceiro() {
       qtd_parcelas: Number.parseInt(String(contaAnterior?.qtd_parcelas || 1), 10) || 1,
       intervalo_parcelas_dias: contaAnterior?.intervalo_parcelas_dias || null,
       numero_parcela: Number.parseInt(String(contaAnterior?.numero_parcela || 1), 10) || 1,
+      updated_at: new Date().toISOString(),
     };
 
     const payloadEdicaoGrupo = {
@@ -19110,6 +19250,7 @@ async function salvarContaAPagarFinanceiro() {
       observacao,
       qtd_parcelas: Number.parseInt(String(contaAnterior?.qtd_parcelas || 1), 10) || 1,
       intervalo_parcelas_dias: contaAnterior?.intervalo_parcelas_dias || null,
+      updated_at: new Date().toISOString(),
     };
 
     let aplicarAlteracaoEmTodasParcelas = false;
@@ -24199,6 +24340,14 @@ function preencherSelectFuncionariosPonto(selectEl, funcionarios = [], {
   incluirTodos = false,
 } = {}) {
   if (!selectEl) return;
+  if (selectEl.classList?.contains('relatorio-check-filter')) {
+    const selecionadosAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro(selectEl.id);
+    const opcoes = (funcionarios || [])
+      .map(item => ({ valor: String(item.id || '').trim(), rotulo: String(item.nome || 'Funcionário').trim() || 'Funcionário' }))
+      .filter(item => item.valor);
+    renderizarCheckboxFiltroRelatorioFinanceiro(selectEl.id, opcoes, selecionadosAtuais);
+    return;
+  }
   const valorAtual = String(selectEl.value || '');
   selectEl.innerHTML = '';
 
@@ -24244,8 +24393,12 @@ async function carregarSelectFuncionariosPonto() {
         selPonto.disabled = true;
       }
       if (selRelatorio) {
-        selRelatorio.value = funcionarioRestritoId;
-        selRelatorio.disabled = true;
+        if (selRelatorio.classList?.contains('relatorio-check-filter')) {
+          renderizarCheckboxFiltroRelatorioFinanceiro('filtroPontoFuncionario', funcionarios.map(item => ({ valor: String(item.id || ''), rotulo: item.nome || 'Funcionário' })), [funcionarioRestritoId]);
+        } else {
+          selRelatorio.value = funcionarioRestritoId;
+          selRelatorio.disabled = true;
+        }
       }
       if (selAdminAjuste) {
         selAdminAjuste.value = funcionarioRestritoId;
@@ -24253,7 +24406,7 @@ async function carregarSelectFuncionariosPonto() {
       }
     } else {
       if (selPonto) selPonto.disabled = false;
-      if (selRelatorio) selRelatorio.disabled = false;
+      if (selRelatorio && !selRelatorio.classList?.contains('relatorio-check-filter')) selRelatorio.disabled = false;
       if (selAdminAjuste) selAdminAjuste.disabled = false;
       if (selPonto && !selPonto.value && usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id) {
         selPonto.value = String(usuarioSistemaLogado.id);
@@ -26549,7 +26702,11 @@ function resetFiltroRelatorioPonto() {
   if (dataFim) dataFim.value = dataHoje;
   if (horaInicio) horaInicio.value = '';
   if (horaFim) horaFim.value = '';
-  if (funcionario) funcionario.value = '';
+  if (funcionario?.classList?.contains('relatorio-check-filter')) {
+    marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroPontoFuncionario');
+  } else if (funcionario) {
+    funcionario.value = '';
+  }
   carregarRelatorioPonto();
 }
 
@@ -26561,7 +26718,12 @@ async function carregarRelatorioPonto() {
   await carregarSelectFuncionariosPonto();
 
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
-  const funcionarioId = funcionarioRestritoId || String(document.getElementById('filtroPontoFuncionario')?.value || '');
+  const funcionarioFiltroEl = document.getElementById('filtroPontoFuncionario');
+  const funcionariosSelecionados = funcionarioFiltroEl?.classList?.contains('relatorio-check-filter')
+    ? obterValoresCheckboxFiltroRelatorioFinanceiro('filtroPontoFuncionario')
+    : [String(funcionarioFiltroEl?.value || '').trim()].filter(Boolean);
+  const funcionarioIds = funcionarioRestritoId ? [String(funcionarioRestritoId)] : funcionariosSelecionados;
+  const funcionarioId = funcionarioIds.length === 1 ? funcionarioIds[0] : '';
   const dataInicioEl = document.getElementById('filtroPontoDataInicio');
   const dataFimEl = document.getElementById('filtroPontoDataFim');
   if (dataInicioEl && dataFimEl && !dataInicioEl.value && !dataFimEl.value) {
@@ -26573,7 +26735,8 @@ async function carregarRelatorioPonto() {
   const dataFim = dataFimEl?.value || '';
   const horaInicio = document.getElementById('filtroPontoHoraInicio')?.value || '';
   const horaFim = document.getElementById('filtroPontoHoraFim')?.value || '';
-  const infoPeriodo = `Período: ${dataInicio || '-'} até ${dataFim || '-'}.`;
+  const funcionariosFiltroTexto = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroPontoFuncionario', 'Todos os funcionários');
+  const infoPeriodo = `Período: ${dataInicio || '-'} até ${dataFim || '-'} | Funcionários: ${funcionariosFiltroTexto}.`;
 
   let query = sb
     .from('ponto_registros')
@@ -26581,7 +26744,8 @@ async function carregarRelatorioPonto() {
     .order('data_ponto', { ascending: false })
     .order('entrada_em', { ascending: false });
 
-  if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+  if (funcionarioIds.length === 1) query = query.eq('funcionario_id', funcionarioIds[0]);
+  if (funcionarioIds.length > 1) query = query.in('funcionario_id', funcionarioIds);
   if (dataInicio) query = query.gte('data_ponto', dataInicio);
   if (dataFim) query = query.lte('data_ponto', dataFim);
 
@@ -26601,17 +26765,17 @@ async function carregarRelatorioPonto() {
   rows = await complementarRegistrosPontoSemFiltroLoja(rows, {
     inicio: dataInicio,
     fim: dataFim,
-    funcionarioId,
+    funcionarioId: funcionarioIds,
     campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id',
   });
   if (dataInicio && dataFim && dataInicio === dataFim) {
     rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
       diaIso: dataInicio,
-      funcionarioId,
+      funcionarioId: funcionarioIds,
       campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id',
     });
   }
-  rows = await filtrarRegistrosPontoPorFuncionariosVisiveis(rows, funcionarioId);
+  rows = await filtrarRegistrosPontoPorFuncionariosVisiveis(rows, funcionarioIds);
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
 
   const registrosIds = rows.map(item => item.id).filter(Boolean);
@@ -26700,6 +26864,186 @@ function preencherSelectRelatorioFinanceiro(selectEl, placeholder, opcoes = [], 
     .map(item => `<option value="${escaparHtmlBasico(item.valor)}">${escaparHtmlBasico(item.rotulo)}</option>`)
     .join('');
   selectEl.value = opcoes.some(item => String(item.valor) === valorSelecionado) ? valorSelecionado : '';
+}
+
+const STATUS_OPCOES_RELATORIO_FINANCEIRO = [
+  { valor: '', rotulo: 'Todos' },
+  { valor: 'pendente', rotulo: 'Pendente' },
+  { valor: 'pago', rotulo: 'Pago' },
+  { valor: 'excluido', rotulo: 'Excluído' },
+];
+
+function obterValoresCheckboxFiltroRelatorioFinanceiro(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  const marcados = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(input => String(input.value || '').trim());
+  if (!marcados.length || marcados.includes('')) return [];
+  return marcados;
+}
+
+function obterRotulosCheckboxFiltroRelatorioFinanceiro(containerId, rotuloTodos = 'Todos') {
+  const container = document.getElementById(containerId);
+  if (!container) return rotuloTodos;
+  const marcados = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'));
+  if (!marcados.length || marcados.some(input => !String(input.value || '').trim())) return rotuloTodos;
+  const rotulos = marcados
+    .map(input => input.closest('label')?.textContent?.trim() || '')
+    .filter(Boolean);
+  return rotulos.length ? rotulos.join(', ') : rotuloTodos;
+}
+
+function obterResumoCheckboxFiltroRelatorioFinanceiro(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return 'Todos';
+  const rotulos = obterRotulosCheckboxFiltroRelatorioFinanceiro(containerId, 'Todos');
+  if (rotulos === 'Todos') return 'Todos';
+  const qtd = obterValoresCheckboxFiltroRelatorioFinanceiro(containerId).length;
+  if (qtd > 1) return `${qtd} selecionados`;
+  return rotulos;
+}
+
+function atualizarResumoCheckboxFiltroRelatorioFinanceiro(containerId) {
+  const container = document.getElementById(containerId);
+  const resumo = container?.querySelector('.relatorio-check-filter-summary');
+  const consulta = container?.querySelector('.relatorio-check-filter-query');
+  const textoResumo = obterResumoCheckboxFiltroRelatorioFinanceiro(containerId);
+  const placeholderConsulta = textoResumo === 'Todos' ? 'Consultar...' : textoResumo;
+  if (resumo) resumo.textContent = textoResumo;
+  if (consulta && !container.classList.contains('is-open')) {
+    consulta.value = '';
+    consulta.placeholder = placeholderConsulta;
+  }
+}
+
+function marcarTodosCheckboxFiltroRelatorioFinanceiro(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = false;
+  });
+  atualizarResumoCheckboxFiltroRelatorioFinanceiro(containerId);
+}
+
+function atualizarCheckboxFiltroRelatorioFinanceiro(containerId, checkbox) {
+  const container = document.getElementById(containerId);
+  if (!container || !checkbox) return;
+  const todos = container.querySelector('input[type="checkbox"][value=""]');
+  const opcoes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
+  if (String(checkbox.value || '') === '') {
+    if (checkbox.checked) opcoes.forEach(input => { if (input !== checkbox) input.checked = false; });
+  } else if (checkbox.checked && todos) {
+    todos.checked = false;
+  }
+  const algumMarcado = opcoes.some(input => input.checked);
+  if (!algumMarcado && todos) todos.checked = true;
+  atualizarResumoCheckboxFiltroRelatorioFinanceiro(containerId);
+}
+
+function alternarDropdownCheckboxFiltroRelatorioFinanceiro(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const vaiAbrir = !container.classList.contains('is-open');
+  document.querySelectorAll('.relatorio-check-filter.is-open').forEach(item => {
+    if (item !== container) item.classList.remove('is-open');
+  });
+  container.classList.toggle('is-open', vaiAbrir);
+  if (vaiAbrir) {
+    posicionarDropdownCheckboxRelatorioFinanceiro(containerId);
+    const consulta = container.querySelector('.relatorio-check-filter-query');
+    if (consulta) setTimeout(() => consulta.focus(), 30);
+  } else {
+    atualizarResumoCheckboxFiltroRelatorioFinanceiro(containerId);
+  }
+}
+
+function filtrarOpcoesCheckboxRelatorioFinanceiro(input, containerId) {
+  const termo = textoFinanceiroNormalizado(input?.value || '');
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('.relatorio-check-filter-options label').forEach(label => {
+    const texto = textoFinanceiroNormalizado(label.textContent || '');
+    label.hidden = !!termo && !texto.includes(termo);
+  });
+}
+
+function abrirDropdownCheckboxRelatorioFinanceiro(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!container.classList.contains('is-open')) {
+    alternarDropdownCheckboxFiltroRelatorioFinanceiro(containerId);
+    return;
+  }
+  posicionarDropdownCheckboxRelatorioFinanceiro(containerId);
+}
+
+function posicionarDropdownCheckboxRelatorioFinanceiro(containerId) {
+  const container = document.getElementById(containerId);
+  const head = container?.querySelector('.relatorio-check-filter-head');
+  const panel = container?.querySelector('.relatorio-check-filter-panel');
+  if (!container || !head || !panel) return;
+  const rect = head.getBoundingClientRect();
+  const margem = 6;
+  const largura = Math.max(rect.width, 220);
+  const espacoAbaixo = window.innerHeight - rect.bottom - margem;
+  const altura = Math.min(244, Math.max(140, espacoAbaixo - margem));
+  const abrirParaCima = espacoAbaixo < 150 && rect.top > 170;
+  panel.style.width = `${largura}px`;
+  panel.style.maxHeight = `${altura}px`;
+  panel.style.left = `${Math.max(margem, Math.min(rect.left, window.innerWidth - largura - margem))}px`;
+  panel.style.top = abrirParaCima
+    ? `${Math.max(margem, rect.top - altura - margem)}px`
+    : `${rect.bottom + margem}px`;
+}
+
+function prepararEventosCheckboxRelatorioFinanceiro() {
+  if (window.__relatorioFinanceiroCheckboxEventos) return;
+  window.__relatorioFinanceiroCheckboxEventos = true;
+  document.addEventListener('click', event => {
+    if (!event.target.closest?.('.relatorio-check-filter')) {
+      document.querySelectorAll('.relatorio-check-filter.is-open').forEach(item => {
+        item.classList.remove('is-open');
+        atualizarResumoCheckboxFiltroRelatorioFinanceiro(item.id);
+      });
+    }
+  });
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.relatorio-check-filter.is-open').forEach(item => posicionarDropdownCheckboxRelatorioFinanceiro(item.id));
+  });
+  window.addEventListener('scroll', () => {
+    document.querySelectorAll('.relatorio-check-filter.is-open').forEach(item => posicionarDropdownCheckboxRelatorioFinanceiro(item.id));
+  }, true);
+}
+
+function renderizarCheckboxFiltroRelatorioFinanceiro(containerId, opcoes = [], valoresAtuais = [], acaoChange = '') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  prepararEventosCheckboxRelatorioFinanceiro();
+  const valores = new Set((Array.isArray(valoresAtuais) ? valoresAtuais : [valoresAtuais]).map(valor => String(valor || '').trim()).filter(Boolean));
+  const opcoesComTodos = opcoes.filter(item => String(item.valor || '').trim());
+  const temValorValido = opcoesComTodos.some(item => valores.has(String(item.valor || '').trim()));
+  const htmlOpcoes = opcoesComTodos.map((item, idx) => {
+    const valor = String(item.valor || '').trim();
+    const checked = valor ? (temValorValido && valores.has(valor)) : !temValorValido;
+    const inputId = `${containerId}_${idx}`;
+    return `
+      <label for="${escaparHtmlBasico(inputId)}" title="${escaparHtmlBasico(item.rotulo)}">
+        <input id="${escaparHtmlBasico(inputId)}" type="checkbox" value="${escaparHtmlBasico(valor)}" ${checked ? 'checked' : ''} onchange="atualizarCheckboxFiltroRelatorioFinanceiro('${containerId}', this); ${acaoChange}">
+        <span>${escaparHtmlBasico(item.rotulo)}</span>
+      </label>
+    `;
+  }).join('');
+  container.innerHTML = `
+    <div class="relatorio-check-filter-head" onclick="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')">
+      <input class="relatorio-check-filter-query" type="search" autocomplete="off" onfocus="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')" oninput="filtrarOpcoesCheckboxRelatorioFinanceiro(this, '${containerId}')" onkeydown="if(event.key==='Escape'){this.closest('.relatorio-check-filter')?.classList.remove('is-open'); this.blur(); atualizarResumoCheckboxFiltroRelatorioFinanceiro('${containerId}');}">
+      <span class="relatorio-check-filter-summary"></span>
+      <span class="relatorio-check-filter-arrow">▾</span>
+    </div>
+    <div class="relatorio-check-filter-panel" onclick="event.stopPropagation()">
+      <div class="relatorio-check-filter-options">${htmlOpcoes}</div>
+    </div>
+  `;
+  atualizarResumoCheckboxFiltroRelatorioFinanceiro(containerId);
 }
 
 const CORES_PIZZA_RELATORIO_FINANCEIRO = ['#22c55e', '#3b82f6', '#f97316', '#ef4444', '#a855f7', '#14b8a6', '#eab308', '#f43f5e', '#84cc16', '#06b6d4'];
@@ -26855,6 +27199,68 @@ function obterInfoParcelasRelatorioFinanceiro(item = {}) {
   };
 }
 
+function ehContaEditadaRelatorioFinanceiro(item = {}) {
+  if (!item?.updated_at || !item?.created_at || item?.excluido_em) return false;
+  const atualizado = new Date(item.updated_at).getTime();
+  const criado = new Date(item.created_at).getTime();
+  if (!Number.isFinite(atualizado) || !Number.isFinite(criado)) return false;
+  return atualizado - criado > 60000;
+}
+
+function obterFiltrosRodapeRelatorioFinanceiro() {
+  const inicio = String(document.getElementById('filtroRelFinanceiroDataInicio')?.value || '').trim();
+  const fim = String(document.getElementById('filtroRelFinanceiroDataFim')?.value || '').trim();
+  const status = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', 'Todos os status');
+  const fornecedor = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor', 'Todos os fornecedores');
+  const forma = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma', 'Todas as formas');
+  const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasRelatorioFinanceiro');
+  const lojas = lojasSelecionadas.length
+    ? lojasSelecionadas.map(id => obterNomeLojaFiltroMultiLoja(id)).filter(Boolean).join(', ')
+    : 'Todas';
+  return [
+    `Vencimento: ${inicio ? formatarDataBRFinanceiro(inicio) : '-'} até ${fim ? formatarDataBRFinanceiro(fim) : '-'}`,
+    `Status: ${status}`,
+    `Fornecedor: ${fornecedor}`,
+    `Forma: ${forma}`,
+    `Lojas: ${lojas}`,
+  ].join(' | ');
+}
+
+function obterUsuarioRodapeRelatorioImpressao() {
+  const usuario = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
+  return String(
+    usuario?.nome ||
+    usuario?.username ||
+    usuario?.email ||
+    obterNomeAdminAtual?.() ||
+    'Usuário não identificado'
+  ).trim();
+}
+
+function cssRodapeRelatorioImpressao() {
+  return `
+    .rodape-relatorio {
+      position: fixed;
+      left: 20px;
+      right: 20px;
+      bottom: 8px;
+      border-top: 1px solid #ddd;
+      padding-top: 4px;
+      font-size: 9px;
+      color: #555;
+      background: #fff;
+    }
+    @media print {
+      body { padding-bottom: 34px; }
+      .rodape-relatorio { display: block; }
+    }
+  `;
+}
+
+function htmlRodapeRelatorioImpressao(geradoEm = '', filtros = '') {
+  return `<div class="rodape-relatorio">Gerado em: ${escaparHtmlBasico(geradoEm || new Date().toLocaleString('pt-BR'))} | Usuário: ${escaparHtmlBasico(obterUsuarioRodapeRelatorioImpressao())} | Filtros: ${escaparHtmlBasico(filtros || '-')}</div>`;
+}
+
 function exportarRelatorioFinanceiroCsv() {
   const itens = Array.isArray(relatorioFinanceiroCache) ? relatorioFinanceiroCache : [];
   if (!itens.length) {
@@ -26870,8 +27276,6 @@ function exportarRelatorioFinanceiroCsv() {
     'Data vencimento',
     'Data pagamento',
     'Valor titulo',
-    'Valor pago',
-    'QTD PARCELAS',
     'PARCELA ATUAL',
     'PARCELAS RESTANTES',
     'Observacao',
@@ -26893,8 +27297,6 @@ function exportarRelatorioFinanceiroCsv() {
       item.data_vencimento || '',
       item.data_pagamento || '',
       Number(item.valor_compra || 0).toFixed(2),
-      obterValorPagoRelatorioFinanceiro(item).toFixed(2),
-      infoParcelas.qtdTexto,
       infoParcelas.parcelaTexto,
       infoParcelas.restantesTexto,
       String(item.observacao || '').trim(),
@@ -26928,20 +27330,21 @@ function imprimirRelatorioFinanceiroPdf() {
   const totalPago = itens.reduce((acc, item) => acc + obterValorPagoRelatorioFinanceiro(item), 0);
   const totalPendente = itens.reduce((acc, item) => acc + obterValorAbertoRelatorioFinanceiro(item), 0);
   const totalGeral = totalPendente;
+  const dataGeracaoRelatorio = new Date().toLocaleString('pt-BR');
+  const filtrosRodape = obterFiltrosRodapeRelatorioFinanceiro();
 
   const linhas = itens.map(item => {
     const statusAtual = obterStatusContaRelatorioFinanceiro(item);
     const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
     const infoParcelas = obterInfoParcelasRelatorioFinanceiro(item);
+    const classeLinha = statusAtual === 'excluido' ? 'linha-excluida' : (ehContaEditadaRelatorioFinanceiro(item) ? 'linha-editada' : '');
     return `
-      <tr>
+      <tr class="${classeLinha}">
         <td>${escaparHtmlBasico(obterNomeFornecedorRelatorioFinanceiro(item))}</td>
         <td>${escaparHtmlBasico(status)}</td>
         <td>${escaparHtmlBasico(obterNomeFormaRelatorioFinanceiro(item))}</td>
         <td>${escaparHtmlBasico(formatarDataBRFinanceiro(item.data_vencimento))}</td>
         <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_compra || 0))}</td>
-        <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item)))}</td>
-        <td>${escaparHtmlBasico(infoParcelas.qtdTexto)}</td>
         <td>${escaparHtmlBasico(infoParcelas.parcelaTexto)}</td>
         <td>${escaparHtmlBasico(infoParcelas.restantesTexto)}</td>
         <td>${escaparHtmlBasico(String(item.observacao || '').trim() || '-')}</td>
@@ -26972,16 +27375,29 @@ function imprimirRelatorioFinanceiroPdf() {
           table { width: 100%; border-collapse: collapse; font-size: 12px; }
           th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
           th { background: #f5f5f5; }
+          .legenda { display: flex; gap: 14px; align-items: center; margin: 0 0 12px; font-size: 11px; color: #333; }
+          .legenda-item { display: inline-flex; align-items: center; gap: 6px; }
+          .legenda-cor { width: 22px; height: 10px; border: 1px solid #bbb; display: inline-block; }
+          .legenda-cor.editada { background: #f3e8ff; border-color: #c084fc; }
+          .legenda-cor.excluida { background: #fff1f2; border-color: #ef4444; position: relative; }
+          .legenda-cor.excluida:after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; border-top: 2px solid #dc2626; }
+          tr.linha-editada td { background: #f3e8ff; }
+          tr.linha-excluida td { background: #fff1f2; color: #7f1d1d; text-decoration: line-through; text-decoration-color: #dc2626; text-decoration-thickness: 2px; }
+          ${cssRodapeRelatorioImpressao()}
         </style>
       </head>
       <body>
         <h1>Relatório de contas a pagar</h1>
-        <div class="meta">Gerado em: ${escaparHtmlBasico(new Date().toLocaleString('pt-BR'))}</div>
+        <div class="meta">Gerado em: ${escaparHtmlBasico(dataGeracaoRelatorio)}</div>
         <div class="totais">
           <div class="box"><div class="label">Total pendente</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalGeral))}</div></div>
           <div class="box"><div class="label">Total pago</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalPago))}</div></div>
           <div class="box"><div class="label">Total pendente</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalPendente))}</div></div>
           <div class="box"><div class="label">Qtd. títulos</div><div class="valor">${escaparHtmlBasico(String(itens.length))}</div></div>
+        </div>
+        <div class="legenda">
+          <span class="legenda-item"><span class="legenda-cor editada"></span> Conta editada</span>
+          <span class="legenda-item"><span class="legenda-cor excluida"></span> Conta excluída</span>
         </div>
         <table>
           <thead>
@@ -26991,8 +27407,6 @@ function imprimirRelatorioFinanceiroPdf() {
               <th>Forma</th>
               <th>Vencimento</th>
               <th>Valor título</th>
-              <th>Valor pago</th>
-              <th>Qtd. parcelas</th>
               <th>Parcela atual</th>
               <th>Restantes</th>
               <th>Observação</th>
@@ -27002,6 +27416,7 @@ function imprimirRelatorioFinanceiroPdf() {
           </thead>
           <tbody>${linhas}</tbody>
         </table>
+        ${htmlRodapeRelatorioImpressao(dataGeracaoRelatorio, filtrosRodape)}
       
 <style id="ajuste-espaco-calendario-escala">
   /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
@@ -27107,9 +27522,9 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     return;
   }
 
-  const filtroStatusAtual = String(document.getElementById('filtroRelFinanceiroStatus')?.value || '').trim();
+  const statusSelecionadosOrdenacao = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   const ordenados = [...itens].sort((a, b) => {
-    if (filtroStatusAtual === 'excluido') {
+    if (statusSelecionadosOrdenacao.length === 1 && statusSelecionadosOrdenacao[0] === 'excluido') {
       const aExcluido = obterStatusContaRelatorioFinanceiro(a) === 'excluido' ? 1 : 0;
       const bExcluido = obterStatusContaRelatorioFinanceiro(b) === 'excluido' ? 1 : 0;
       if (aExcluido !== bExcluido) return bExcluido - aExcluido;
@@ -27127,7 +27542,6 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
   lista.innerHTML = resumoExcluidos + '<div class="lista">' + ordenados.map(item => {
     const status = obterStatusContaRelatorioFinanceiro(item);
     const valorCompra = Number(item.valor_compra || 0);
-    const valorPago = obterValorPagoRelatorioFinanceiro(item);
     const fornecedor = obterNomeFornecedorRelatorioFinanceiro(item);
     const forma = obterNomeFormaRelatorioFinanceiro(item);
     const observacao = String(item.observacao || '').trim() || '-';
@@ -27138,7 +27552,7 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
           <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
-          <div class="item-detalhe">Valor do titulo: ${formatarMoedaBRFinanceiro(valorCompra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)}</div>
+          <div class="item-detalhe">Valor do titulo: ${formatarMoedaBRFinanceiro(valorCompra)}</div>
           <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · ${escaparHtmlBasico(infoParcelas.resumoTexto)}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
           <div class="item-detalhe">Cadastro: ${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
@@ -27182,18 +27596,9 @@ function resetFiltroRelatorioFinanceiro() {
 
   if (campoDataInicio) campoDataInicio.value = hojeLocal;
   if (campoDataFim) campoDataFim.value = hojeLocal;
-  if (campoStatus) {
-    campoStatus.value = '';
-    campoStatus.selectedIndex = 0;
-  }
-  if (campoFornecedor) {
-    campoFornecedor.value = '';
-    campoFornecedor.selectedIndex = 0;
-  }
-  if (campoForma) {
-    campoForma.value = '';
-    campoForma.selectedIndex = 0;
-  }
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
 
   carregarRelatorioFinanceiro();
 }
@@ -27216,15 +27621,11 @@ function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
 
   if (campoDataInicio) campoDataInicio.value = hojeLocal;
   if (campoDataFim) campoDataFim.value = somarDiasDataLocal(hojeLocal, intervalo);
-  if (campoStatus) campoStatus.value = 'pendente';
-  if (campoFornecedor) {
-    campoFornecedor.value = '';
-    campoFornecedor.selectedIndex = 0;
+  if (campoStatus) {
+    renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), ['pendente']);
   }
-  if (campoForma) {
-    campoForma.value = '';
-    campoForma.selectedIndex = 0;
-  }
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
 
   carregarRelatorioFinanceiro();
 }
@@ -27242,6 +27643,8 @@ async function carregarRelatorioFinanceiro() {
   if (!listaDetalhes || !listaFornecedores || !listaFormas) return;
   renderizarFiltroLojasCheckbox('filtroLojasRelatorioFinanceiro', 'carregarRelatorioFinanceiro()');
   const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasRelatorioFinanceiro');
+  const statusSelecionadosAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
+  renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), statusSelecionadosAtuais);
 
   if (campoDataInicio && !campoDataInicio.value) campoDataInicio.value = hoje();
   if (campoDataFim && !campoDataFim.value) campoDataFim.value = hoje();
@@ -27257,7 +27660,7 @@ async function carregarRelatorioFinanceiro() {
     const { data, error } = await executarSemFiltroLojaTemporario(() => {
       let query = sb
         .from('contasapagar')
-        .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome), formas_pagamento(id, nome)')
+        .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, updated_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome), formas_pagamento(id, nome)')
         .order('data_vencimento', { ascending: false });
       if (filtroDataInicioConsulta) query = query.gte('data_vencimento', filtroDataInicioConsulta);
       if (filtroDataFimConsulta) query = query.lte('data_vencimento', filtroDataFimConsulta);
@@ -27278,15 +27681,15 @@ async function carregarRelatorioFinanceiro() {
 
     const rows = data || [];
 
-    const valorFornecedorAtual = String(campoFornecedor?.value || '').trim();
+    const fornecedoresSelecionadosAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
     const fornecedoresOpcoes = [...new Map(rows
       .map(item => ({ valor: String(item.fornecedor_id || '').trim(), rotulo: obterNomeFornecedorRelatorioFinanceiro(item) }))
       .filter(item => item.valor)
       .map(item => [item.valor, item])).values()]
       .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
-    preencherSelectRelatorioFinanceiro(campoFornecedor, '- Todos os fornecedores -', fornecedoresOpcoes, valorFornecedorAtual);
+    renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor', fornecedoresOpcoes, fornecedoresSelecionadosAtuais);
 
-    const valorFormaAtual = String(campoForma?.value || '').trim();
+    const formasSelecionadasAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
     const formasOpcoes = [...new Map(rows
       .map(item => {
         const nomeForma = obterNomeFormaRelatorioFinanceiro(item);
@@ -27297,13 +27700,13 @@ async function carregarRelatorioFinanceiro() {
       .filter(item => item.valor && item.rotulo !== 'Nao informado')
       .map(item => [item.valor, item])).values()]
       .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
-    preencherSelectRelatorioFinanceiro(campoForma, '- Todas as formas -', formasOpcoes, valorFormaAtual);
+    renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma', formasOpcoes, formasSelecionadasAtuais);
 
     const filtroDataInicio = String(campoDataInicio?.value || '').trim();
     const filtroDataFim = String(campoDataFim?.value || '').trim();
-    const filtroStatus = String(campoStatus?.value || '').trim();
-    const filtroFornecedor = String(campoFornecedor?.value || '').trim();
-    const filtroForma = String(campoForma?.value || '').trim();
+    const filtrosStatus = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
+    const filtrosFornecedor = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
+    const filtrosForma = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
     const elTotalGeral = document.getElementById('rfTotalGeral');
     const elTotalPago = document.getElementById('rfTotalPago');
     const elTotalPendente = document.getElementById('rfTotalPendente');
@@ -27336,9 +27739,9 @@ async function carregarRelatorioFinanceiro() {
 
       if (filtroDataInicio && (!dataReferencia || dataReferencia < filtroDataInicio)) return false;
       if (filtroDataFim && (!dataReferencia || dataReferencia > filtroDataFim)) return false;
-      if (filtroStatus && filtroStatus !== status) return false;
-      if (filtroFornecedor && filtroFornecedor !== fornecedorId) return false;
-      if (filtroForma && filtroForma !== (formaId || formaNome)) return false;
+      if (filtrosStatus.length && !filtrosStatus.includes(status)) return false;
+      if (filtrosFornecedor.length && !filtrosFornecedor.includes(fornecedorId)) return false;
+      if (filtrosForma.length && !filtrosForma.includes(formaId || formaNome)) return false;
       return true;
     });
 
@@ -27645,6 +28048,8 @@ function imprimirRelatorioRecebimentosPdf() {
 
   const total = linhas.reduce((acc, item) => acc + item.valor, 0);
   const periodo = `${document.getElementById('filtroRelRecebDataInicio')?.value || '-'} ate ${document.getElementById('filtroRelRecebDataFim')?.value || '-'}`;
+  const geradoEm = new Date().toLocaleString('pt-BR');
+  const filtrosRodape = `Periodo: ${periodo}`;
   const htmlLinhas = linhas.map(item => `
     <tr>
       <td>${escaparHtmlBasico(item.dataHora)}</td>
@@ -27677,12 +28082,13 @@ function imprimirRelatorioRecebimentosPdf() {
           table { width: 100%; border-collapse: collapse; font-size: 12px; }
           th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
           th { background: #f5f5f5; }
+          ${cssRodapeRelatorioImpressao()}
         </style>
       </head>
       <body>
         <h1>Relatorio de recebimentos</h1>
         <div class="meta">Periodo filtrado: ${escaparHtmlBasico(periodo)}</div>
-        <div class="meta">Gerado em: ${escaparHtmlBasico(new Date().toLocaleString('pt-BR'))}</div>
+        <div class="meta">Gerado em: ${escaparHtmlBasico(geradoEm)}</div>
         <div class="totais">
           <div class="box"><div class="label">Total recebido</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(total))}</div></div>
           <div class="box"><div class="label">Quantidade</div><div class="valor">${escaparHtmlBasico(String(linhas.length))}</div></div>
@@ -27701,6 +28107,7 @@ function imprimirRelatorioRecebimentosPdf() {
           </thead>
           <tbody>${htmlLinhas}</tbody>
         </table>
+        ${htmlRodapeRelatorioImpressao(geradoEm, filtrosRodape)}
       </body>
     </html>
   `);
@@ -28044,6 +28451,7 @@ function imprimirRelatorioAjusteSaldoPdf() {
           table { width: 100%; border-collapse: collapse; font-size: 12px; }
           th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
           th { background: #f5f5f5; }
+          ${cssRodapeRelatorioImpressao()}
       
   </style>
       </head>
@@ -28066,6 +28474,7 @@ function imprimirRelatorioAjusteSaldoPdf() {
           </thead>
           <tbody>${linhas}</tbody>
         </table>
+        ${htmlRodapeRelatorioImpressao(geradoEm, `Periodo: ${periodo}`)}
       
 <style id="ajuste-espaco-calendario-escala">
   /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
@@ -28242,7 +28651,8 @@ function exportarRelatorioLancamentosPDF() {
     setMsg('msgRelatorioLancamentos', 'O navegador bloqueou a janela de PDF.', 'err');
     return;
   }
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de tarefas</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}</style></head><body><h1>Relatório de tarefas</h1><p>Gerado em ${escaparHtmlBasico(new Date().toLocaleString('pt-BR'))}</p><table><thead><tr><th>Tarefa</th><th>Status</th><th>Responsável</th><th>Observação</th><th>Descrição</th><th>Data</th><th>Horário</th><th>Início</th><th>Iniciado pelo usuário</th><th>Fim</th><th>Finalizado pelo usuário</th><th>Lançado pelo usuário</th></tr></thead><tbody>${htmlLinhas}</tbody></table><script>window.onload=function(){window.print();}<\/script>
+  const geradoEm = new Date().toLocaleString('pt-BR');
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de tarefas</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}${cssRodapeRelatorioImpressao()}</style></head><body><h1>Relatório de tarefas</h1><p>Gerado em ${escaparHtmlBasico(geradoEm)}</p><table><thead><tr><th>Tarefa</th><th>Status</th><th>Responsável</th><th>Observação</th><th>Descrição</th><th>Data</th><th>Horário</th><th>Início</th><th>Iniciado pelo usuário</th><th>Fim</th><th>Finalizado pelo usuário</th><th>Lançado pelo usuário</th></tr></thead><tbody>${htmlLinhas}</tbody></table>${htmlRodapeRelatorioImpressao(geradoEm, 'Filtros aplicados na tela de Relatório de tarefas')}<script>window.onload=function(){window.print();}<\/script>
 <style id="ajuste-espaco-calendario-escala">
   /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
   @media (min-width: 901px) {
@@ -31414,7 +31824,12 @@ async function carregarRelatorioPonto() {
 
   await carregarSelectFuncionariosPonto();
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
-  const funcionarioId = funcionarioRestritoId || String(document.getElementById('filtroPontoFuncionario')?.value || '');
+  const funcionarioFiltroEl = document.getElementById('filtroPontoFuncionario');
+  const funcionariosSelecionados = funcionarioFiltroEl?.classList?.contains('relatorio-check-filter')
+    ? obterValoresCheckboxFiltroRelatorioFinanceiro('filtroPontoFuncionario')
+    : [String(funcionarioFiltroEl?.value || '').trim()].filter(Boolean);
+  const funcionarioIds = funcionarioRestritoId ? [String(funcionarioRestritoId)] : funcionariosSelecionados;
+  const funcionarioId = funcionarioIds.length === 1 ? funcionarioIds[0] : '';
   const dataInicioEl = document.getElementById('filtroPontoDataInicio');
   const dataFimEl = document.getElementById('filtroPontoDataFim');
   if (dataInicioEl && dataFimEl && !dataInicioEl.value && !dataFimEl.value) {
@@ -31426,9 +31841,11 @@ async function carregarRelatorioPonto() {
   const dataFim = dataFimEl?.value || '';
   const horaInicio = document.getElementById('filtroPontoHoraInicio')?.value || '';
   const horaFim = document.getElementById('filtroPontoHoraFim')?.value || '';
-  const infoPeriodo = `Período: ${dataInicio || '-'} até ${dataFim || '-'}.`;
+  const funcionariosFiltroTexto = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroPontoFuncionario', 'Todos os funcionários');
+  const infoPeriodo = `Período: ${dataInicio || '-'} até ${dataFim || '-'} | Funcionários: ${funcionariosFiltroTexto}.`;
   let query = sb.from('ponto_registros').select('id, funcionario_id, data_ponto, entrada_em, saida_em, created_at, loja_id, empresa_id').order('data_ponto', { ascending: false }).order('entrada_em', { ascending: false });
-  if (funcionarioId) query = query.eq('funcionario_id', funcionarioId);
+  if (funcionarioIds.length === 1) query = query.eq('funcionario_id', funcionarioIds[0]);
+  if (funcionarioIds.length > 1) query = query.in('funcionario_id', funcionarioIds);
   if (dataInicio) query = query.gte('data_ponto', dataInicio);
   if (dataFim) query = query.lte('data_ponto', dataFim);
   const { data, error } = await query;
@@ -31446,17 +31863,17 @@ async function carregarRelatorioPonto() {
   rows = await complementarRegistrosPontoSemFiltroLoja(rows, {
     inicio: dataInicio,
     fim: dataFim,
-    funcionarioId,
+    funcionarioId: funcionarioIds,
     campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id',
   });
   if (dataInicio && dataFim && dataInicio === dataFim) {
     rows = await complementarRegistrosPontoSemFiltroLojaPorCreatedAtDia(rows, {
       diaIso: dataInicio,
-      funcionarioId,
+      funcionarioId: funcionarioIds,
       campos: 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id',
     });
   }
-  rows = await filtrarRegistrosPontoPorFuncionariosVisiveis(rows, funcionarioId);
+  rows = await filtrarRegistrosPontoPorFuncionariosVisiveis(rows, funcionarioIds);
   rows = await anexarNomesFuncionariosARegistrosPonto(rows);
   const registrosIds = rows.map(item => item.id).filter(Boolean);
   let intervalosPorRegistro = {};
@@ -31528,7 +31945,9 @@ function exportarRelatorioPontoPDF() {
   const htmlLinhas = linhas.map(row => `<tr><td>${escapeHtmlPonto(row.Funcionario)}</td><td>${escapeHtmlPonto(row.Data)}</td><td>${escapeHtmlPonto(row.Entrada)}</td><td>${escapeHtmlPonto(row.Intervalos)}</td><td>${escapeHtmlPonto(row.Saida)}</td><td>${escapeHtmlPonto(row.Status)}</td><td>${escapeHtmlPonto(row.Total)}</td><td>${escapeHtmlPonto(row.Ajustes_ADM)}</td></tr>`).join('');
   const win = window.open('', '_blank');
   if (!win) { setMsg('msgRelatorioPonto', 'O navegador bloqueou a janela de PDF.', 'err'); return; }
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de ponto</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}</style></head><body><h1>Relatório de ponto</h1><p>${escapeHtmlPonto(window.__relatorioPontoUltimoPeriodo || '')}</p><table><thead><tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Intervalos</th><th>Saída</th><th>Status</th><th>Total</th><th>Ajustes ADM</th></tr></thead><tbody>${htmlLinhas}</tbody></table><script>window.onload=function(){window.print();}<\/script>
+  const geradoEm = new Date().toLocaleString('pt-BR');
+  const filtrosRodape = window.__relatorioPontoUltimoPeriodo || 'Filtros aplicados na tela de Relatório ponto';
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de ponto</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}${cssRodapeRelatorioImpressao()}</style></head><body><h1>Relatório de ponto</h1><p>${escapeHtmlPonto(window.__relatorioPontoUltimoPeriodo || '')}</p><table><thead><tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Intervalos</th><th>Saída</th><th>Status</th><th>Total</th><th>Ajustes ADM</th></tr></thead><tbody>${htmlLinhas}</tbody></table>${htmlRodapeRelatorioImpressao(geradoEm, filtrosRodape)}<script>window.onload=function(){window.print();}<\/script>
 <style id="ajuste-espaco-calendario-escala">
   /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
   @media (min-width: 901px) {
@@ -33114,7 +33533,8 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       return '<tr><td>'+esc(dataBR(it.data_plantao))+'</td><td>'+esc(diaSemanaBR(it.data_plantao))+'</td><td>'+esc(it.funcionario_nome||it.titulo||'Funcionário')+'</td><td class="'+esc(tipo)+'">'+esc(tipoLabel(tipo))+'</td><td>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</td>'+(podeVerValor ? '<td>'+esc(moedaBR(it.valor_combinado))+'</td>' : '')+'<td'+statusStyle+'>'+esc(status)+'</td><td>'+esc(excluidoPorEscalaRelatorio(it))+'</td><td>'+esc(it.observacao||'')+'</td></tr>';
     }).join('');
     var w=window.open('','_blank'); if(!w){ msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err'); return; }
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px}.meta{margin-bottom:16px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f2f2f2}.plantao,.folga{color:#dc2626}.folga{font-weight:bold}.reuniao{color:#7c3aed}.compromisso{color:#0284c7}.total{margin-top:14px;font-weight:bold}</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(faixa.inicio))+' até '+esc(dataBR(faixa.fim))+(podeVerValor ? ' · Total combinado: '+esc(moedaBR(total)) : '')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(podeVerValor ? '<th>Valor</th>' : '')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+linhas+'</tbody></table></body></html>');
+    var geradoEm=new Date().toLocaleString('pt-BR'), filtrosRodape='Período: '+dataBR(faixa.inicio)+' até '+dataBR(faixa.fim);
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px}.meta{margin-bottom:16px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f2f2f2}.plantao,.folga{color:#dc2626}.folga{font-weight:bold}.reuniao{color:#7c3aed}.compromisso{color:#0284c7}.total{margin-top:14px;font-weight:bold}'+cssRodapeRelatorioImpressao()+'</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(faixa.inicio))+' até '+esc(dataBR(faixa.fim))+(podeVerValor ? ' · Total combinado: '+esc(moedaBR(total)) : '')+' · Gerado em '+esc(geradoEm)+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(podeVerValor ? '<th>Valor</th>' : '')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+linhas+'</tbody></table>'+htmlRodapeRelatorioImpressao(geradoEm,filtrosRodape)+'</body></html>');
     w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
   };
   var originalCarregar = window.carregarEscalaPlantoes;
@@ -33510,7 +33930,8 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var verValor=podeVerValor(), f=faixa(), total=eventos.filter(function(e){return !e.deleted_at;}).reduce(function(a,e){return a+Number(e.valor_combinado||0);},0);
     var rows=eventos.map(function(it){var del=!!it.deleted_at;return '<tr style="'+(del?'color:#991b1b;text-decoration:line-through;':'')+'"><td>'+esc(dataBR(it.data_plantao))+'</td><td>'+esc(diaSemanaBR(it.data_plantao))+'</td><td>'+esc(it.funcionario_nome||it.titulo||'Funcionário')+'</td><td>'+esc(tipoLabel(it.tipo))+'</td><td>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</td>'+(verValor?'<td>'+esc(moeda(it.valor_combinado))+'</td>':'')+'<td>'+esc(status(it))+'</td><td>'+esc(excluidoPor(it))+'</td><td>'+esc(it.observacao||'')+'</td></tr>';}).join('');
     var w=window.open('','_blank'); if(!w){msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err');return;}
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f3f4f6}.meta{color:#555;margin-bottom:16px}</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(f.inicio))+' até '+esc(dataBR(f.fim))+(verValor?' · Total ativo: '+esc(moeda(total)):'')+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(verValor?'<th>Valor</th>':'')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>');
+    var geradoEm=new Date().toLocaleString('pt-BR'), filtrosRodape='Período: '+dataBR(f.inicio)+' até '+dataBR(f.fim);
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f3f4f6}.meta{color:#555;margin-bottom:16px}'+cssRodapeRelatorioImpressao()+'</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(f.inicio))+' até '+esc(dataBR(f.fim))+(verValor?' · Total ativo: '+esc(moeda(total)):'')+' · Gerado em '+esc(geradoEm)+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(verValor?'<th>Valor</th>':'')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+rows+'</tbody></table>'+htmlRodapeRelatorioImpressao(geradoEm,filtrosRodape)+'</body></html>');
     w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
   };
   function ajustarVisibilidade(){
@@ -35121,6 +35542,52 @@ window.addEventListener('load', function() {
   #financeiro_contasapagar .financeiro-selecao-contas-row {
     grid-template-columns: 166px 186px minmax(0, 1fr) !important;
     margin-top: 6px !important;
+  }
+</style>
+
+<style id="patch-relatorio-ponto-filtro-funcionarios">
+  #relatorio_ponto .card:has(#filtroPontoFuncionario) {
+    overflow: visible !important;
+  }
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) {
+    display: grid !important;
+    grid-template-columns: minmax(220px, 1.25fr) minmax(126px, 1fr) minmax(126px, 1fr) 112px 112px auto auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  #relatorio_ponto #filtroPontoFuncionario {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  #relatorio_ponto #filtroPontoFuncionario .relatorio-check-filter-head {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+  }
+  #relatorio_ponto #filtroPontoFuncionario .relatorio-check-filter-query {
+    text-align: left !important;
+    font-size: 12px !important;
+  }
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) input[type="date"],
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) input[type="time"] {
+    min-width: 0 !important;
+    width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) .btn {
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+  @media (max-width: 1100px) {
+    #relatorio_ponto .form-row:has(#filtroPontoFuncionario) {
+      grid-template-columns: 1fr 1fr !important;
+    }
   }
 </style>
 
