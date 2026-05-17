@@ -2174,37 +2174,89 @@
       min-width: 0;
     }
     .financeiro-filtros-row {
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: center;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(138px, 160px) minmax(72px, 86px);
+      align-items: end;
+      gap: 6px;
     }
     .financeiro-filtros-row input {
-      flex: 1 1 auto;
+      width: 100%;
       min-width: 0;
     }
+    .financeiro-filtros-row input,
+    .financeiro-filtros-row select,
+    .financeiro-filtros-row .btn {
+      height: 32px;
+      min-height: 32px;
+      padding: 5px 9px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+    .financeiro-filtros-row .btn {
+      align-self: end;
+      white-space: nowrap;
+    }
     .financeiro-filtros-row .campo-curto {
-      flex: 0 0 150px !important;
-      min-width: 150px;
-      max-width: 150px;
+      width: 100% !important;
+      min-width: 0;
+      max-width: none;
+    }
+    .financeiro-selecao-contas-row {
+      grid-template-columns: minmax(118px, 150px) minmax(146px, 170px) minmax(0, 1fr);
+      align-items: center;
+    }
+    .financeiro-filtro-compacto {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .financeiro-filtro-compacto label {
+      color: var(--text-muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .32px;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .financeiro-card-title-row {
-      display: flex;
-      align-items: center;
+      display: grid;
+      grid-template-columns: auto auto repeat(4, minmax(104px, 118px)) minmax(0, 1fr);
+      align-items: end;
       justify-content: flex-start;
-      gap: 18px;
+      gap: 8px;
       margin-bottom: 8px;
     }
     .financeiro-card-title-row .card-title {
       margin-bottom: 0;
+      align-self: center;
     }
     .financeiro-card-title-row #btnToggleContasAPagarLista {
-      margin-left: clamp(80px, 24vw, 340px);
+      margin-left: 6px;
       border-color: rgba(34, 197, 94, 0.45);
       background: rgba(34, 197, 94, 0.16);
       color: var(--text);
       box-shadow: 0 8px 18px rgba(34, 197, 94, 0.12);
-      min-width: 138px;
+      min-width: 132px;
+      height: 30px;
+      min-height: 30px;
+      padding: 4px 10px;
+      font-size: 12px;
+      align-self: end;
+    }
+    .financeiro-card-title-row .financeiro-filtro-compacto input {
+      height: 30px;
+      min-height: 30px;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+    .financeiro-card-title-row .financeiro-filtro-compacto label {
+      font-size: 8px;
+      letter-spacing: .28px;
     }
     .financeiro-card-title-row #btnToggleContasAPagarLista:hover {
       border-color: rgba(34, 197, 94, 0.72);
@@ -7006,11 +7058,11 @@
           <div id="filtroLojasRelatorioFinanceiro" class="multi-loja-filter" style="margin-bottom:10px"></div>
           <div class="relatorio-financeiro-filtros">
             <div class="campo-com-label">
-              <label class="campo-label" for="filtroRelFinanceiroDataInicio">Data inicial</label>
+              <label class="campo-label" for="filtroRelFinanceiroDataInicio">Vencimento inicial</label>
               <input id="filtroRelFinanceiroDataInicio" type="date">
             </div>
             <div class="campo-com-label">
-              <label class="campo-label" for="filtroRelFinanceiroDataFim">Data final</label>
+              <label class="campo-label" for="filtroRelFinanceiroDataFim">Vencimento final</label>
               <input id="filtroRelFinanceiroDataFim" type="date">
             </div>
             <div class="campo-com-label">
@@ -7375,18 +7427,33 @@
         <div class="card">
           <div class="financeiro-card-title-row">
             <div class="card-title">Contas cadastradas</div>
-            <button class="btn btn-ghost btn-sm" id="btnToggleContasAPagarLista" type="button" onclick="toggleListaContasAPagarFinanceiro()">Exibir contas</button>
+            <button class="btn btn-ghost btn-sm" id="btnToggleContasAPagarLista" type="button" onclick="toggleListaContasAPagarFinanceiro()">Mostrar contas</button>
+            <div class="financeiro-filtro-compacto">
+              <label for="filtroContaAPagarCadastroInicio">Cad. inicial</label>
+              <input id="filtroContaAPagarCadastroInicio" class="campo-curto" type="date" title="Cadastro início" aria-label="Cadastro início" onchange="carregarContasAPagarFinanceiro()">
+            </div>
+            <div class="financeiro-filtro-compacto">
+              <label for="filtroContaAPagarCadastroFim">Cad. final</label>
+              <input id="filtroContaAPagarCadastroFim" class="campo-curto" type="date" title="Cadastro fim" aria-label="Cadastro fim" onchange="carregarContasAPagarFinanceiro()">
+            </div>
+            <div class="financeiro-filtro-compacto">
+              <label for="filtroContaAPagarVencimentoInicio">Venc. inicial</label>
+              <input id="filtroContaAPagarVencimentoInicio" class="campo-curto" type="date" title="Vencimento início" aria-label="Vencimento início" onchange="carregarContasAPagarFinanceiro()">
+            </div>
+            <div class="financeiro-filtro-compacto">
+              <label for="filtroContaAPagarVencimentoFim">Venc. final</label>
+              <input id="filtroContaAPagarVencimentoFim" class="campo-curto" type="date" title="Vencimento fim" aria-label="Vencimento fim" onchange="carregarContasAPagarFinanceiro()">
+            </div>
           </div>
           <div class="form-row financeiro-filtros-row">
             <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, valor, data, observação ou parcela" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)">
-            <input id="filtroContaAPagarCadastroInicio" class="campo-curto" type="date" title="Cadastro início" aria-label="Cadastro início" onchange="carregarContasAPagarFinanceiro()">
-            <input id="filtroContaAPagarCadastroFim" class="campo-curto" type="date" title="Cadastro fim" aria-label="Cadastro fim" onchange="carregarContasAPagarFinanceiro()">
             <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
               <option value="">- Todos os status -</option>
               <option value="pendente">Pendente</option>
               <option value="pago">Pago</option>
             </select>
             <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
+            <input id="filtroContaAPagarFornecedor" type="text" placeholder="Fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)">
           </div>
           <div id="filtroLojasContasAPagarFinanceiro" class="multi-loja-filter" style="margin-top:8px"></div>
           <div class="form-row financeiro-filtros-row financeiro-selecao-contas-row" id="acoesSelecaoContasAPagarFinanceiro" style="margin-top:8px">
@@ -12043,6 +12110,7 @@ function abrirModalConfirmacaoFinanceira({
   detalhes = [],
   textoSim = 'Sim, alterar todos',
   textoNao = 'Não, alterar só este',
+  textoAjuda = '',
 } = {}) {
   const overlay = document.getElementById('confirmacaoFinanceiraOverlay');
   const title = document.getElementById('confirmacaoFinanceiraTitle');
@@ -12063,7 +12131,9 @@ function abrirModalConfirmacaoFinanceira({
       ${(detalhes || []).map(item => `<span>${escaparHtmlBasico(item)}</span>`).join('')}
     </div>
     <div style="font-size:13px;color:var(--text-muted);line-height:1.5">
-      Escolha <strong style="color:var(--text)">Sim</strong> para aplicar a alteração em todos os lançamentos relacionados, ou <strong style="color:var(--text)">Não</strong> para alterar somente este título.
+      ${textoAjuda
+        ? escaparHtmlBasico(textoAjuda)
+        : 'Escolha <strong style="color:var(--text)">Sim</strong> para aplicar a alteração em todos os lançamentos relacionados, ou <strong style="color:var(--text)">Não</strong> para alterar somente este título.'}
     </div>
   `;
   overlay.classList.add('show');
@@ -18917,6 +18987,51 @@ function limparFormularioContaAPagarFinanceiro() {
   atualizarModoEdicaoContaAPagarFinanceiro(false);
 }
 
+function gerarGrupoParcelasIdFinanceiro() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  if (globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function obterParcelasRelacionadasContaAPagarFinanceiro(item = {}) {
+  if (!item?.id) return [];
+  const grupoParcelasId = String(item.grupo_parcelas_id || '').trim();
+  const qtdParcelas = Number.parseInt(String(item.qtd_parcelas || 1), 10) || 1;
+  const cache = Array.isArray(contasAPagarFinanceiroCache) ? contasAPagarFinanceiroCache : [];
+
+  if (grupoParcelasId) {
+    return cache
+      .filter(conta => String(conta.grupo_parcelas_id || '').trim() === grupoParcelasId)
+      .sort((a, b) => (Number(a.numero_parcela || 0) - Number(b.numero_parcela || 0)) || String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || '')));
+  }
+
+  if (qtdParcelas <= 1) return [item];
+
+  const fornecedorId = String(item.fornecedor_id || '').trim();
+  const lojaId = String(item.loja_id || '').trim();
+  const dataCompra = String(item.data_compra || '').trim();
+  const observacao = textoFinanceiroNormalizado(item.observacao || '');
+  const valor = Number(item.valor_compra || 0).toFixed(2);
+  return cache
+    .filter(conta => {
+      if ((Number.parseInt(String(conta.qtd_parcelas || 1), 10) || 1) !== qtdParcelas) return false;
+      if (String(conta.fornecedor_id || '').trim() !== fornecedorId) return false;
+      if (String(conta.loja_id || '').trim() !== lojaId) return false;
+      if (String(conta.data_compra || '').trim() !== dataCompra) return false;
+      if (Number(conta.valor_compra || 0).toFixed(2) !== valor) return false;
+      return textoFinanceiroNormalizado(conta.observacao || '') === observacao;
+    })
+    .sort((a, b) => (Number(a.numero_parcela || 0) - Number(b.numero_parcela || 0)) || String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || '')));
+}
+
 async function salvarContaAPagarFinanceiro() {
   const campoFornecedor = document.getElementById('contaFornecedorBusca');
   const campoFornecedorId = document.getElementById('contaFornecedorId');
@@ -19092,7 +19207,7 @@ async function salvarContaAPagarFinanceiro() {
     return;
   }
 
-  const grupoParcelasId = crypto?.randomUUID ? crypto.randomUUID() : null;
+  const grupoParcelasId = gerarGrupoParcelasIdFinanceiro();
   const payloadBase = {
     fornecedor_id: fornecedorId,
     loja_id: lojaSelecionada.id,
@@ -19142,10 +19257,13 @@ function atualizarEstadoListaContasAPagarFinanceiro() {
   const filtroBusca = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
   const filtroCadastroInicio = String(document.getElementById('filtroContaAPagarCadastroInicio')?.value || '').trim();
   const filtroCadastroFim = String(document.getElementById('filtroContaAPagarCadastroFim')?.value || '').trim();
-  const visivel = contasAPagarListaVisivel || !!filtroBusca || !!filtroCadastroInicio || !!filtroCadastroFim;
+  const filtroVencimentoInicio = String(document.getElementById('filtroContaAPagarVencimentoInicio')?.value || '').trim();
+  const filtroVencimentoFim = String(document.getElementById('filtroContaAPagarVencimentoFim')?.value || '').trim();
+  const filtroFornecedor = String(document.getElementById('filtroContaAPagarFornecedor')?.value || '').trim();
+  const visivel = contasAPagarListaVisivel || !!filtroBusca || !!filtroCadastroInicio || !!filtroCadastroFim || !!filtroVencimentoInicio || !!filtroVencimentoFim || !!filtroFornecedor;
   if (lista) lista.hidden = !visivel;
   if (btn) {
-    btn.textContent = visivel ? 'Ocultar contas' : 'Exibir contas';
+    btn.textContent = visivel ? 'Ocultar contas' : 'Mostrar contas';
     btn.setAttribute('aria-expanded', String(visivel));
   }
 }
@@ -19170,6 +19288,15 @@ function dentroDoPeriodoCadastroContaAPagar(item, dataInicio = '', dataFim = '')
   return true;
 }
 
+function dentroDoPeriodoVencimentoContaAPagar(item, dataInicio = '', dataFim = '') {
+  if (!dataInicio && !dataFim) return true;
+  const dataVencimento = String(item?.data_vencimento || '').trim().slice(0, 10);
+  if (!dataVencimento) return false;
+  if (dataInicio && dataVencimento < dataInicio) return false;
+  if (dataFim && dataVencimento > dataFim) return false;
+  return true;
+}
+
 function limparFiltroContasAPagarFinanceiro() {
   resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel: false });
   carregarContasAPagarFinanceiro();
@@ -19179,10 +19306,16 @@ function resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel = false } = {
   const busca = document.getElementById('filtroContaAPagarBusca');
   const cadastroInicio = document.getElementById('filtroContaAPagarCadastroInicio');
   const cadastroFim = document.getElementById('filtroContaAPagarCadastroFim');
+  const vencimentoInicio = document.getElementById('filtroContaAPagarVencimentoInicio');
+  const vencimentoFim = document.getElementById('filtroContaAPagarVencimentoFim');
+  const fornecedor = document.getElementById('filtroContaAPagarFornecedor');
   const status = document.getElementById('filtroContaAPagarStatus');
   if (busca) busca.value = '';
   if (cadastroInicio) cadastroInicio.value = '';
   if (cadastroFim) cadastroFim.value = '';
+  if (vencimentoInicio) vencimentoInicio.value = '';
+  if (vencimentoFim) vencimentoFim.value = '';
+  if (fornecedor) fornecedor.value = '';
   if (status) {
     status.value = '';
     status.selectedIndex = 0;
@@ -19292,14 +19425,18 @@ async function carregarContasAPagarFinanceiro() {
   if (!lista) return;
   renderizarFiltroLojasCheckbox('filtroLojasContasAPagarFinanceiro', 'carregarContasAPagarFinanceiro()');
   const filtroBuscaBruto = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
+  const filtroFornecedorBruto = String(document.getElementById('filtroContaAPagarFornecedor')?.value || '').trim();
   const filtroCadastroInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarCadastroInicio');
   const filtroCadastroFim = obterDataISOFiltroContaAPagar('filtroContaAPagarCadastroFim');
+  const filtroVencimentoInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoInicio');
+  const filtroVencimentoFim = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoFim');
   const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasContasAPagarFinanceiro');
-  if (filtroBuscaBruto || filtroCadastroInicio || filtroCadastroFim) contasAPagarListaVisivel = true;
+  if (filtroBuscaBruto || filtroFornecedorBruto || filtroCadastroInicio || filtroCadastroFim || filtroVencimentoInicio || filtroVencimentoFim) contasAPagarListaVisivel = true;
   atualizarEstadoListaContasAPagarFinanceiro();
   lista.innerHTML = '<div class="empty">Carregando...</div>';
 
   const filtroBusca = textoFinanceiroNormalizado(filtroBuscaBruto);
+  const filtroFornecedor = textoFinanceiroNormalizado(filtroFornecedorBruto);
   const filtroBuscaDigitos = filtroBuscaBruto.replace(/\D/g, '');
   const filtroStatus = String(document.getElementById('filtroContaAPagarStatus')?.value || '').trim();
 
@@ -19369,9 +19506,11 @@ async function carregarContasAPagarFinanceiro() {
     const bateBuscaNumero = !!filtroBuscaDigitos && [valorInteiro, valorCentavos, valorDecimal.replace(/\D/g, ''), valorFormatado.replace(/\D/g, '')]
       .some(valor => String(valor || '').includes(filtroBuscaDigitos));
     const bateBusca = !filtroBusca || bateBuscaTexto || bateBuscaNumero;
+    const bateFornecedor = !filtroFornecedor || textoFinanceiroNormalizado(nomeFornecedor).includes(filtroFornecedor);
     const bateStatus = !filtroStatus || filtroStatus === status;
     const bateCadastro = dentroDoPeriodoCadastroContaAPagar(item, filtroCadastroInicio, filtroCadastroFim);
-    return bateBusca && bateStatus && bateCadastro;
+    const bateVencimento = dentroDoPeriodoVencimentoContaAPagar(item, filtroVencimentoInicio, filtroVencimentoFim);
+    return bateBusca && bateFornecedor && bateStatus && bateCadastro && bateVencimento;
   });
 
   const lojaAtualIdSelecao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
@@ -19452,12 +19591,37 @@ async function excluirContaAPagarFinanceiro(id) {
     return;
   }
 
+  const parcelasRelacionadas = obterParcelasRelacionadasContaAPagarFinanceiro(item);
+  const possuiParcelasRelacionadas = parcelasRelacionadas.length > 1;
+  let idsParaExcluir = [String(id)];
+
+  if (possuiParcelasRelacionadas) {
+    const decisaoParcelas = await abrirModalConfirmacaoFinanceira({
+      titulo: 'Excluir parcelas vinculadas?',
+      subtitulo: 'Este título faz parte de um lançamento parcelado',
+      fornecedor: item.fornecedores?.nome || 'Fornecedor',
+      lancamento: String(item.observacao || '').trim() || 'Conta a pagar',
+      detalhes: [
+        `Parcela atual: ${item.numero_parcela || 1} de ${item.qtd_parcelas || parcelasRelacionadas.length}`,
+        `Títulos vinculados ativos: ${parcelasRelacionadas.length}`,
+        `Vencimento deste título: ${formatarDataBRFinanceiro(item.data_vencimento)}`,
+      ],
+      textoSim: 'Excluir todos vinculados',
+      textoNao: 'Excluir só este título',
+      textoAjuda: 'Escolha se deseja excluir somente esta parcela ou todos os títulos vinculados ao mesmo lançamento parcelado.',
+    });
+    if (decisaoParcelas === 'cancelar') return;
+    if (decisaoParcelas === 'sim') idsParaExcluir = parcelasRelacionadas.map(conta => String(conta.id));
+  }
+
   const operador = obterFuncionarioOperadorAtual();
   const confirmacao = await confirmarAcaoComPin({
     funcionario: operador,
-    titulo: 'Excluir conta a pagar',
-    subtitulo: `Confirme o PIN para excluir a conta de ${item.fornecedores?.nome || 'fornecedor'}. A exclusão ficará registrada no relatório.`,
-    textoAcao: 'Excluir conta',
+    titulo: possuiParcelasRelacionadas && idsParaExcluir.length > 1 ? 'Excluir parcelas vinculadas' : 'Excluir conta a pagar',
+    subtitulo: idsParaExcluir.length > 1
+      ? `Confirme o PIN para excluir ${idsParaExcluir.length} título(s) vinculados de ${item.fornecedores?.nome || 'fornecedor'}. A exclusão ficará registrada no relatório.`
+      : `Confirme o PIN para excluir a conta de ${item.fornecedores?.nome || 'fornecedor'}. A exclusão ficará registrada no relatório.`,
+    textoAcao: idsParaExcluir.length > 1 ? 'Excluir vinculados' : 'Excluir conta',
   });
 
   if (!confirmacao) return;
@@ -19469,10 +19633,9 @@ async function excluirContaAPagarFinanceiro(id) {
       excluido_por_id: confirmacao.funcionarioId,
       excluido_por_nome: confirmacao.nomeFuncionario,
     })
-    .eq('id', id)
+    .in('id', idsParaExcluir)
     .is('excluido_em', null)
-    .select('id')
-    .maybeSingle();
+    .select('id');
 
   if (error) {
     if (isMissingContasAPagarAuditoriaColumnsError(error)) {
@@ -19482,14 +19645,15 @@ async function excluirContaAPagarFinanceiro(id) {
     setMsg('msgContaAPagarFinanceiro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
-  if (!data?.id) {
+  const excluidas = Array.isArray(data) ? data.length : 0;
+  if (!excluidas) {
     setMsg('msgContaAPagarFinanceiro', 'Esta conta já foi excluída ou não está mais disponível.', 'err');
     carregarContasAPagarFinanceiro();
     return;
   }
-  contasAPagarFinanceiroSelecionadasIds.delete(String(id));
-  if (contaAPagarFinanceiroEmEdicaoId === id) limparFormularioContaAPagarFinanceiro();
-  setMsg('msgContaAPagarFinanceiro', 'Conta excluída com sucesso.', 'ok');
+  idsParaExcluir.forEach(idExcluido => contasAPagarFinanceiroSelecionadasIds.delete(String(idExcluido)));
+  if (idsParaExcluir.includes(String(contaAPagarFinanceiroEmEdicaoId))) limparFormularioContaAPagarFinanceiro();
+  setMsg('msgContaAPagarFinanceiro', `${excluidas} conta(s) excluída(s) com sucesso.`, 'ok');
   carregarContasAPagarFinanceiro();
 }
 
@@ -19504,7 +19668,7 @@ function obterStatusContaRelatorioFinanceiro(item) {
 
 function obterDataReferenciaContaRelatorioFinanceiro(item) {
   if (item?.excluido_em) return String(item.excluido_em || '').trim().slice(0, 10);
-  return String(item?.data_pagamento || item?.data_vencimento || item?.data_compra || '').trim();
+  return String(item?.data_vencimento || item?.data_pagamento || item?.data_compra || '').trim();
 }
 
 function tagStatusContaRelatorioFinanceiro(status = '') {
@@ -26672,6 +26836,25 @@ function escaparCsvRelatorioFinanceiro(valor = '') {
   return `"${texto.replace(/"/g, '""')}"`;
 }
 
+function obterInfoParcelasRelatorioFinanceiro(item = {}) {
+  const qtdParcelas = Math.max(1, Number.parseInt(String(item.qtd_parcelas || 1), 10) || 1);
+  const numeroParcela = Math.min(qtdParcelas, Math.max(1, Number.parseInt(String(item.numero_parcela || 1), 10) || 1));
+  const restantes = Math.max(0, qtdParcelas - numeroParcela);
+  const temParcelamento = qtdParcelas > 1;
+  return {
+    qtdParcelas,
+    numeroParcela,
+    restantes,
+    temParcelamento,
+    parcelaTexto: temParcelamento ? `${numeroParcela} de ${qtdParcelas}` : '-',
+    qtdTexto: temParcelamento ? String(qtdParcelas) : '-',
+    restantesTexto: temParcelamento ? String(restantes) : '-',
+    resumoTexto: temParcelamento
+      ? `Qtd. parcelas: ${qtdParcelas} · Parcela atual: ${numeroParcela} de ${qtdParcelas} · Restantes após esta: ${restantes}`
+      : 'Sem parcelamento',
+  };
+}
+
 function exportarRelatorioFinanceiroCsv() {
   const itens = Array.isArray(relatorioFinanceiroCache) ? relatorioFinanceiroCache : [];
   if (!itens.length) {
@@ -26688,7 +26871,9 @@ function exportarRelatorioFinanceiroCsv() {
     'Data pagamento',
     'Valor titulo',
     'Valor pago',
-    'Parcela',
+    'QTD PARCELAS',
+    'PARCELA ATUAL',
+    'PARCELAS RESTANTES',
     'Observacao',
     'Criado por',
     'Cadastrado em',
@@ -26699,7 +26884,7 @@ function exportarRelatorioFinanceiroCsv() {
   const linhas = itens.map(item => {
     const statusAtual = obterStatusContaRelatorioFinanceiro(item);
     const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
-    const parcela = `${item.numero_parcela || 1}/${item.qtd_parcelas || 1}`;
+    const infoParcelas = obterInfoParcelasRelatorioFinanceiro(item);
     return [
       obterNomeFornecedorRelatorioFinanceiro(item),
       status,
@@ -26709,7 +26894,9 @@ function exportarRelatorioFinanceiroCsv() {
       item.data_pagamento || '',
       Number(item.valor_compra || 0).toFixed(2),
       obterValorPagoRelatorioFinanceiro(item).toFixed(2),
-      parcela,
+      infoParcelas.qtdTexto,
+      infoParcelas.parcelaTexto,
+      infoParcelas.restantesTexto,
       String(item.observacao || '').trim(),
       String(item.criado_por_nome || 'Cadastro anterior').trim(),
       item.created_at ? fmtDate(item.created_at) : '-',
@@ -26745,6 +26932,7 @@ function imprimirRelatorioFinanceiroPdf() {
   const linhas = itens.map(item => {
     const statusAtual = obterStatusContaRelatorioFinanceiro(item);
     const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
+    const infoParcelas = obterInfoParcelasRelatorioFinanceiro(item);
     return `
       <tr>
         <td>${escaparHtmlBasico(obterNomeFornecedorRelatorioFinanceiro(item))}</td>
@@ -26753,6 +26941,9 @@ function imprimirRelatorioFinanceiroPdf() {
         <td>${escaparHtmlBasico(formatarDataBRFinanceiro(item.data_vencimento))}</td>
         <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_compra || 0))}</td>
         <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item)))}</td>
+        <td>${escaparHtmlBasico(infoParcelas.qtdTexto)}</td>
+        <td>${escaparHtmlBasico(infoParcelas.parcelaTexto)}</td>
+        <td>${escaparHtmlBasico(infoParcelas.restantesTexto)}</td>
         <td>${escaparHtmlBasico(String(item.observacao || '').trim() || '-')}</td>
         <td>${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')}<br>${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</td>
         <td>${escaparHtmlBasico(String(item.excluido_por_nome || '').trim() || '-')}<br>${escaparHtmlBasico(item.excluido_em ? fmtDate(item.excluido_em) : '-')}</td>
@@ -26801,6 +26992,9 @@ function imprimirRelatorioFinanceiroPdf() {
               <th>Vencimento</th>
               <th>Valor título</th>
               <th>Valor pago</th>
+              <th>Qtd. parcelas</th>
+              <th>Parcela atual</th>
+              <th>Restantes</th>
               <th>Observação</th>
               <th>Cadastro</th>
               <th>Exclusão</th>
@@ -26938,13 +27132,14 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     const forma = obterNomeFormaRelatorioFinanceiro(item);
     const observacao = String(item.observacao || '').trim() || '-';
     const classeItem = status === 'excluido' ? 'item item-relatorio-excluido' : 'item';
+    const infoParcelas = obterInfoParcelasRelatorioFinanceiro(item);
     return `
       <div class="${classeItem}">
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
           <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
           <div class="item-detalhe">Valor do titulo: ${formatarMoedaBRFinanceiro(valorCompra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)}</div>
-          <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}</div>
+          <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · ${escaparHtmlBasico(infoParcelas.resumoTexto)}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
           <div class="item-detalhe">Cadastro: ${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
           <div class="item-detalhe">Exclusão: ${escaparHtmlBasico(String(item.excluido_por_nome || '').trim() || '-')} · ${escaparHtmlBasico(item.excluido_em ? fmtDate(item.excluido_em) : '-')}</div>
@@ -27057,11 +27252,15 @@ async function carregarRelatorioFinanceiro() {
   ocultarDetalhesRelatorioFinanceiro();
 
   try {
+    const filtroDataInicioConsulta = String(campoDataInicio?.value || '').trim();
+    const filtroDataFimConsulta = String(campoDataFim?.value || '').trim();
     const { data, error } = await executarSemFiltroLojaTemporario(() => {
       let query = sb
         .from('contasapagar')
         .select('id, fornecedor_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome), formas_pagamento(id, nome)')
         .order('data_vencimento', { ascending: false });
+      if (filtroDataInicioConsulta) query = query.gte('data_vencimento', filtroDataInicioConsulta);
+      if (filtroDataFimConsulta) query = query.lte('data_vencimento', filtroDataFimConsulta);
       if (lojasSelecionadas.length) query = query.in('loja_id', lojasSelecionadas);
       return query;
     });
@@ -27105,6 +27304,28 @@ async function carregarRelatorioFinanceiro() {
     const filtroStatus = String(campoStatus?.value || '').trim();
     const filtroFornecedor = String(campoFornecedor?.value || '').trim();
     const filtroForma = String(campoForma?.value || '').trim();
+    const elTotalGeral = document.getElementById('rfTotalGeral');
+    const elTotalPago = document.getElementById('rfTotalPago');
+    const elTotalPendente = document.getElementById('rfTotalPendente');
+    const elSaldoContas = document.getElementById('rfSaldoContas');
+    const elFaltaQuitar = document.getElementById('rfFaltaQuitar');
+    const elQtdTitulos = document.getElementById('rfQuantidadeTitulos');
+
+    if (filtroDataInicio && filtroDataFim && filtroDataFim < filtroDataInicio) {
+      relatorioFinanceiroCache = [];
+      if (elTotalGeral) elTotalGeral.textContent = formatarMoedaBRFinanceiro(0);
+      if (elTotalPago) elTotalPago.textContent = formatarMoedaBRFinanceiro(0);
+      if (elTotalPendente) elTotalPendente.textContent = formatarMoedaBRFinanceiro(0);
+      if (elFaltaQuitar) elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(0);
+      if (elQtdTitulos) elQtdTitulos.textContent = '0';
+      renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', [], 'Corrija o período para carregar o dashboard.');
+      renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFormas', [], 'Corrija o período para carregar o dashboard.');
+      listaDetalhes.innerHTML = '<div class="empty">A data final do vencimento não pode ser menor que a data inicial.</div>';
+      listaFornecedores.innerHTML = '';
+      listaFormas.innerHTML = '';
+      setMsg('msgRelatorioFinanceiro', 'Corrija o período: o vencimento final está antes do vencimento inicial.', 'err');
+      return;
+    }
 
     const itensFiltrados = rows.filter(item => {
       const status = obterStatusContaRelatorioFinanceiro(item);
@@ -27139,12 +27360,6 @@ async function carregarRelatorioFinanceiro() {
     const faltaParaQuitar = Math.max(0, totalPendente - saldoTotalContas);
 
     const qtdTitulos = itensFiltrados.length;
-    const elTotalGeral = document.getElementById('rfTotalGeral');
-    const elTotalPago = document.getElementById('rfTotalPago');
-    const elTotalPendente = document.getElementById('rfTotalPendente');
-    const elSaldoContas = document.getElementById('rfSaldoContas');
-    const elFaltaQuitar = document.getElementById('rfFaltaQuitar');
-    const elQtdTitulos = document.getElementById('rfQuantidadeTitulos');
     if (elTotalGeral) elTotalGeral.textContent = formatarMoedaBRFinanceiro(totalGeral);
     if (elTotalPago) elTotalPago.textContent = formatarMoedaBRFinanceiro(totalPago);
     if (elTotalPendente) elTotalPendente.textContent = formatarMoedaBRFinanceiro(totalPendente);
@@ -34808,6 +35023,104 @@ window.addEventListener('load', function() {
     background: rgba(13,16,22,0.94) !important;
     border-color: rgba(57,68,84,0.9) !important;
     color: var(--text) !important;
+  }
+</style>
+
+<style id="patch-contas-pagar-filtros-compactos">
+  #financeiro_contasapagar > .card:has(#btnToggleContasAPagarLista) {
+    padding: 10px 12px 10px !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row {
+    display: grid !important;
+    grid-template-columns: max-content 122px repeat(4, 112px) minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 36px !important;
+    margin: 0 0 8px !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .card-title {
+    align-self: center !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row #btnToggleContasAPagarLista {
+    align-self: center !important;
+    justify-self: start !important;
+    width: 122px !important;
+    min-width: 122px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    margin: 0 !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto {
+    align-self: center !important;
+    display: grid !important;
+    grid-template-rows: 10px 28px !important;
+    gap: 2px !important;
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+    height: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto label {
+    display: block !important;
+    height: 10px !important;
+    margin: 0 !important;
+    color: var(--text-muted) !important;
+    font-size: 7px !important;
+    font-weight: 800 !important;
+    letter-spacing: .25px !important;
+    line-height: 10px !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto input[type="date"] {
+    display: block !important;
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    padding: 3px 7px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+  }
+  #financeiro_contasapagar .financeiro-filtros-row {
+    display: grid !important;
+    grid-template-columns: minmax(360px, 1fr) 180px 84px 220px !important;
+    gap: 6px !important;
+    margin: 0 !important;
+  }
+  #financeiro_contasapagar .financeiro-filtros-row input,
+  #financeiro_contasapagar .financeiro-filtros-row select,
+  #financeiro_contasapagar .financeiro-filtros-row .btn {
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 4px 9px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+  }
+  #financeiro_contasapagar #filtroLojasContasAPagarFinanceiro {
+    margin-top: 6px !important;
+    padding: 8px 10px !important;
+    min-height: 0 !important;
+  }
+  #financeiro_contasapagar .financeiro-selecao-contas-row {
+    grid-template-columns: 166px 186px minmax(0, 1fr) !important;
+    margin-top: 6px !important;
   }
 </style>
 
