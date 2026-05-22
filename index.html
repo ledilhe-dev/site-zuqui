@@ -1985,10 +1985,6 @@
       padding: 0;
       margin: 0;
     }
-    #horarioTarefa {
-      max-width: 130px;
-      flex: 0 0 130px !important;
-    }
     .tarefa-form-row {
       display: flex;
       flex-wrap: nowrap;
@@ -2018,11 +2014,6 @@
     #descTarefa {
       flex: 1.1 1 220px;
       min-width: 190px;
-    }
-    #horarioTarefa {
-      flex: 0 0 118px !important;
-      min-width: 118px;
-      max-width: 118px;
     }
     .tarefa-form-row input:focus,
     .tarefa-form-row select:focus {
@@ -5540,14 +5531,10 @@
       }
       #tarefas #nomeTarefa,
       #tarefas #descTarefa,
-      #tarefas #horarioTarefa,
       #tarefas .campo-com-label {
         min-width: 0 !important;
         max-width: 100% !important;
         flex: 1 1 100% !important;
-      }
-      #tarefas #horarioTarefa {
-        max-width: 100% !important;
       }
       #tarefas .campo-com-label {
         padding-top: 0;
@@ -6917,9 +6904,11 @@
         <div class="card">
           <div class="card-title">Nova tarefa</div>
           <div class="tarefa-form-row">
-            <input id="nomeTarefa" type="text" placeholder="Nome da tarefa">
-            <input id="descTarefa" name="descricao_tarefa_manual_no_autofill" type="text" placeholder="Descrição da tarefa" autocomplete="new-password" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="desbloquearCampoDescricaoTarefa(this)">
-            <input id="horarioTarefa" class="campo-curto" type="time" placeholder="Horário" title="Horário obrigatório da tarefa" required>
+            <input id="nomeTarefa" type="text" placeholder="Nome da tarefa (obrigatório)" required>
+            <input id="descTarefa" name="descricao_tarefa_manual_no_autofill" type="text" placeholder="Observação da tarefa (obrigatório)" autocomplete="new-password" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly required onfocus="desbloquearCampoDescricaoTarefa(this)">
+            <select id="lojaTarefaCadastro" class="campo-curto" style="display:none">
+              <option value="">Loja</option>
+            </select>
             <select id="funcionarioTarefa" style="display:none">
               <option value=""></option>
             </select>
@@ -6927,24 +6916,6 @@
               <button class="btn btn-green" id="btnSalvarTarefa" onclick="criarTarefa()">Salvar</button>
               <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
             </div>
-          </div>
-          <div class="tarefa-cadastro-atalhos">
-            <button class="btn btn-ghost btn-sm" id="btnToggleItensCadastroTarefa" type="button" onclick="toggleItensTarefaCadastro()">Mostrar itens opcionais</button>
-          </div>
-          <div class="tarefa-itens-builder" id="tarefaItensBuilderCard" hidden>
-            <div class="tarefa-itens-builder-topo">
-              <div class="card-title" style="margin:0">Itens do checklist</div>
-              <div class="item-detalhe" id="resumoItensTarefa">Nenhum item adicionado.</div>
-            </div>
-            <div class="form-row">
-              <input id="nomeItemTarefaCadastro" type="text" placeholder="Nome do item">
-              <select id="obrigatorioItemTarefaCadastro" class="campo-curto">
-                <option value="true">Obrigatório</option>
-                <option value="false">Opcional</option>
-              </select>
-              <button class="btn btn-green" type="button" onclick="adicionarItemTarefaNoCadastro()">Adicionar item</button>
-            </div>
-            <div id="listaItensTarefaCadastro" class="tarefa-itens-builder-lista"><div class="empty">Adicione os itens que o funcionário deve marcar durante a execução.</div></div>
           </div>
           <div class="item-detalhe" style="margin-top:8px">Funcionário: selecione por checkbox ao lado de cada tarefa cadastrada.</div>
 
@@ -8786,7 +8757,6 @@ let itensExecucao = [];
 let tarefasDisponiveis = true;
 let tarefaEmEdicaoId = null;
 let checklistReferenciaEmEdicaoId = null;
-let itensRascunhoTarefaCadastro = [];
 let funcionariosAtivosTarefa = [];
 let selecaoFuncionarioLancamentoPorTarefa = {};
 let horarioLancamentoPorTarefa = {};
@@ -8915,7 +8885,6 @@ let tarefasFavoritasIds = new Set();
 let tarefasConfigLancamentoAbertasIds = new Set();
 let mostrarSomenteFavoritasTarefas = false;
 let favoritosTarefasMinimizados = false;
-let itensCadastroTarefaExpandidos = false;
 let checklistsFuturosExpandido = false;
 let assinaturaRenderChecklists = '';
 let tokenRequisicaoChecklists = 0;
@@ -10302,8 +10271,8 @@ function abrirPagina(id, botao) {
   }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
-    atualizarEstadoItensCadastroTarefa();
     atualizarBotaoFavoritasMinimizadas();
+    carregarSelectLojaTarefaCadastro();
     carregarSelectFuncionariosTarefa();
     redefinirCampoBuscaTarefas();
     carregarTarefas();
@@ -12800,7 +12769,7 @@ async function validarPendenciasAntesFecharPonto({ funcionario, proximaAcao }) {
 
 function mensagemErroSupabase(error, fallback = 'Erro inesperado.') {
   if (!error) return fallback;
-  return error.message || error.details || fallback;
+  return [error.message, error.details, error.hint, error.code].filter(Boolean).join(' - ') || fallback;
 }
 
 async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false }) {
@@ -22381,15 +22350,15 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
       </label>
     `).join('');
 
-  const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
+  const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, '');
   const botaoLancarDesktop = tarefa.ativo
     ? `<div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-lancar">
-         <button class="btn btn-sm btn-lancar-desktop-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+         <button class="btn btn-sm btn-lancar-desktop-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
        </div>`
     : '';
   const botaoLancarMobile = tarefa.ativo
     ? `<div class="tarefa-lancar-mobile-wrap">
-         <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+         <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
        </div>`
     : '';
   return `
@@ -22434,30 +22403,6 @@ function obterStorageFavoritosTarefas() {
 
 function viewportTarefaEhMobile() {
   return window.matchMedia('(max-width: 900px)').matches;
-}
-
-function atualizarEstadoItensCadastroTarefa({ forcarPorViewport = false } = {}) {
-  const card = document.getElementById('tarefaItensBuilderCard');
-  const btn = document.getElementById('btnToggleItensCadastroTarefa');
-  if (!card || !btn) return;
-
-  if (forcarPorViewport) {
-    itensCadastroTarefaExpandidos = !viewportTarefaEhMobile();
-  }
-
-  card.hidden = !itensCadastroTarefaExpandidos;
-  btn.textContent = itensCadastroTarefaExpandidos
-    ? 'Ocultar itens opcionais'
-    : 'Mostrar itens opcionais';
-}
-
-function toggleItensTarefaCadastro(forcarAberto = null) {
-  if (typeof forcarAberto === 'boolean') {
-    itensCadastroTarefaExpandidos = forcarAberto;
-  } else {
-    itensCadastroTarefaExpandidos = !itensCadastroTarefaExpandidos;
-  }
-  atualizarEstadoItensCadastroTarefa();
 }
 
 function atualizarBotaoFavoritasMinimizadas() {
@@ -22672,7 +22617,7 @@ function renderizarCardTarefaCadastrada(t) {
         </div>
         <div class="item-actions tarefa-cadastrada-actions">
           <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${t.id}')">${favorita ? '★' : '☆'}</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', ''), obterHorarioLancamentoSelecionado('${t.id}', '${t.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', ''), obterHorarioLancamentoSelecionado('${t.id}', ''), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm btn-excluir-x" title="Excluir tarefa" aria-label="Excluir tarefa" onclick="excluirTarefa('${t.id}')">×</button>
         </div>
       </div>
@@ -22723,120 +22668,6 @@ function limparFiltroTarefasCadastradas() {
   filtroTarefasNomeEditado = false;
   mostrarSomenteFavoritasTarefas = false;
   renderizarListaConsultaTarefas();
-}
-
-function renderizarItensTarefaNoCadastro() {
-  const lista = document.getElementById('listaItensTarefaCadastro');
-  const resumo = document.getElementById('resumoItensTarefa');
-  if (!lista || !resumo) return;
-
-  const total = Array.isArray(itensRascunhoTarefaCadastro) ? itensRascunhoTarefaCadastro.length : 0;
-  resumo.textContent = total === 1 ? '1 item configurado.' : `${total} itens configurados.`;
-
-  if (!total) {
-    lista.innerHTML = '<div class="empty">Adicione os itens que o funcionário deve marcar durante a execução.</div>';
-    return;
-  }
-
-  lista.innerHTML = '<div class="lista">' + itensRascunhoTarefaCadastro.map((item, index) => `
-    <div class="item">
-      <div class="item-info">
-        <div class="item-nome">#${index + 1} - ${escaparHtmlBasico(item.nome || '')}</div>
-        <div class="item-detalhe">${item.obrigatorio ? 'Obrigatorio' : 'Opcional'}</div>
-      </div>
-      <div class="item-actions">
-        <button class="btn btn-red btn-sm" type="button" onclick="removerItemTarefaNoCadastro(${index})">Excluir</button>
-      </div>
-    </div>
-  `).join('') + '</div>';
-}
-
-function adicionarItemTarefaNoCadastro() {
-  const inputNome = document.getElementById('nomeItemTarefaCadastro');
-  const selectObrigatorio = document.getElementById('obrigatorioItemTarefaCadastro');
-  if (!inputNome || !selectObrigatorio) return;
-
-  const nome = String(inputNome.value || '').trim();
-  if (!nome) {
-    setMsg('msgTarefas', 'Digite o nome do item para adicionar.', 'err');
-    return;
-  }
-
-  itensRascunhoTarefaCadastro.push({
-    nome,
-    obrigatorio: String(selectObrigatorio.value || 'true') === 'true',
-  });
-
-  inputNome.value = '';
-  inputNome.focus();
-  renderizarItensTarefaNoCadastro();
-  setMsg('msgTarefas', 'Item adicionado na tarefa.', 'ok');
-}
-
-function removerItemTarefaNoCadastro(index) {
-  if (!Array.isArray(itensRascunhoTarefaCadastro)) return;
-  if (index < 0 || index >= itensRascunhoTarefaCadastro.length) return;
-  itensRascunhoTarefaCadastro.splice(index, 1);
-  renderizarItensTarefaNoCadastro();
-}
-
-async function carregarItensTarefaNoCadastro(checklistId) {
-  itensRascunhoTarefaCadastro = [];
-  if (!checklistId) {
-    renderizarItensTarefaNoCadastro();
-    return;
-  }
-
-  const { data, error } = await sb
-    .from('checklist_itens')
-    .select('id, nome, ordem, obrigatorio')
-    .eq('checklist_id', checklistId)
-    .order('ordem');
-
-  if (error && !isMissingTableError(error)) {
-    console.warn('Nao foi possivel carregar itens da tarefa em edicao:', error);
-    setMsg('msgTarefas', 'Nao foi possivel carregar os itens da tarefa em edicao.', 'err');
-    renderizarItensTarefaNoCadastro();
-    return;
-  }
-
-  itensRascunhoTarefaCadastro = (data || []).map(item => ({
-    nome: item.nome || '',
-    obrigatorio: item.obrigatorio !== false,
-  }));
-  renderizarItensTarefaNoCadastro();
-}
-
-async function salvarItensDaTarefa(checklistId) {
-  if (!checklistId) return;
-
-  const itensNormalizados = (itensRascunhoTarefaCadastro || [])
-    .map(item => ({
-      nome: String(item?.nome || '').trim(),
-      obrigatorio: item?.obrigatorio !== false,
-    }))
-    .filter(item => item.nome);
-
-  const { error: erroLimpeza } = await sb
-    .from('checklist_itens')
-    .delete()
-    .eq('checklist_id', checklistId);
-
-  if (erroLimpeza && !isMissingTableError(erroLimpeza)) {
-    throw erroLimpeza;
-  }
-
-  if (!itensNormalizados.length) return;
-
-  const payload = itensNormalizados.map((item, index) => ({
-    checklist_id: checklistId,
-    nome: item.nome,
-    ordem: index + 1,
-    obrigatorio: item.obrigatorio,
-  }));
-
-  const { error: erroInsert } = await sb.from('checklist_itens').insert(payload);
-  if (erroInsert) throw erroInsert;
 }
 
 async function garantirChecklistReferenciaDaTarefa({ tarefaId, nome, descricao = null, checklistIdPreferido = null }) {
@@ -22899,6 +22730,108 @@ async function garantirChecklistReferenciaDaTarefa({ tarefaId, nome, descricao =
   if (erroVincularChecklist) throw erroVincularChecklist;
 
   return checklistIdValido;
+}
+
+async function resolverTenantCadastroChecklist() {
+  let lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  let empresaId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+
+  const selectLoja = document.getElementById('lojaTarefaCadastro');
+  if (!lojaId && selectLoja && selectLoja.style.display !== 'none') {
+    const option = selectLoja.selectedOptions?.[0] || null;
+    lojaId = String(selectLoja.value || '').trim();
+    empresaId = String(option?.dataset?.empresaId || empresaId || '').trim();
+  }
+
+  if (lojaId && !empresaId) {
+    const { data: lojaAtual, error } = await executarSemFiltroLojaTemporario(() => sb
+      .from('lojas')
+      .select('id, empresa_id')
+      .eq('id', lojaId)
+      .maybeSingle());
+    if (!error && lojaAtual?.empresa_id) empresaId = String(lojaAtual.empresa_id || '').trim();
+  }
+
+  if (!lojaId || !empresaId) {
+    const lojasPermitidas = typeof obterLojasPermitidasSessao === 'function' ? obterLojasPermitidasSessao() : [];
+    if (lojasPermitidas.length === 1) {
+      lojaId = String(lojasPermitidas[0]?.id || '').trim();
+      empresaId = String(lojasPermitidas[0]?.empresa_id || empresaId || '').trim();
+      if (lojaId && !empresaId) {
+        const { data: lojaAtual, error } = await executarSemFiltroLojaTemporario(() => sb
+          .from('lojas')
+          .select('id, empresa_id')
+          .eq('id', lojaId)
+          .maybeSingle());
+        if (!error && lojaAtual?.empresa_id) empresaId = String(lojaAtual.empresa_id || '').trim();
+      }
+    }
+  }
+
+  if (!lojaId || !empresaId) {
+    throw new Error('Selecione uma loja para cadastrar o checklist. Se nenhuma loja aparecer, vincule este usuário a uma loja ativa.');
+  }
+
+  return { loja_id: lojaId, empresa_id: empresaId };
+}
+
+async function carregarSelectLojaTarefaCadastro() {
+  const select = document.getElementById('lojaTarefaCadastro');
+  if (!select) return;
+
+  const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  if (lojaSessao) {
+    select.style.display = 'none';
+    select.innerHTML = '<option value="">Loja</option>';
+    return;
+  }
+
+  let lojas = [];
+  try {
+    const lojasSessao = typeof obterLojasPermitidasSessao === 'function' ? obterLojasPermitidasSessao() : [];
+    if (lojasSessao.length) {
+      lojas = lojasSessao.map(loja => ({
+        id: String(loja?.id || loja?.loja_id || '').trim(),
+        nome: String(loja?.nome || loja?.nome_loja || 'Loja').trim() || 'Loja',
+        empresa_id: String(loja?.empresa_id || '').trim(),
+      })).filter(loja => loja.id);
+    } else if (usuarioSistemaLogado?.tipo === 'admin') {
+      const { data, error } = await executarSemFiltroLojaTemporario(() => sb
+        .from('lojas')
+        .select('id, nome, empresa_id, ativo')
+        .eq('ativo', true)
+        .order('nome'));
+      if (error) throw error;
+      lojas = (data || []).map(loja => ({
+        id: String(loja.id || '').trim(),
+        nome: String(loja.nome || 'Loja').trim() || 'Loja',
+        empresa_id: String(loja.empresa_id || '').trim(),
+      })).filter(loja => loja.id);
+    }
+  } catch (error) {
+    console.warn('Não foi possível carregar lojas para cadastro de checklist:', error);
+  }
+
+  select.style.display = '';
+  select.innerHTML = '<option value="">Selecione a loja</option>' + lojas.map(loja => (
+    `<option value="${escaparHtmlBasico(loja.id)}" data-empresa-id="${escaparHtmlBasico(loja.empresa_id || '')}">${escaparHtmlBasico(loja.nome)}</option>`
+  )).join('');
+  if (lojas.length === 1) select.value = lojas[0].id;
+}
+
+async function criarChecklistReferenciaCadastroTarefa({ nome, descricao = null, tenant = null } = {}) {
+  const nomeChecklist = String(nome || '').trim() || 'Checklist';
+  const descricaoChecklist = String(descricao || '').trim() || null;
+  const tenantChecklist = tenant || await resolverTenantCadastroChecklist();
+
+  const { data, error } = await sb
+    .from('checklists')
+    .insert([{ nome: nomeChecklist, descricao: descricaoChecklist, ...tenantChecklist }])
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return String(data?.id || '').trim() || null;
 }
 
 async function carregarTarefas() {
@@ -23251,22 +23184,41 @@ async function criarTarefa() {
   }
   const nome = document.getElementById('nomeTarefa').value.trim();
   const descricao = document.getElementById('descTarefa').value.trim();
-  const horarioLimite = horaCurta(document.getElementById('horarioTarefa').value || '');
   const funcionarioId = document.getElementById('funcionarioTarefa').value || null;
   if (!nome) { setMsg('msgTarefas', 'Digite o nome da tarefa.', 'err'); return; }
-  if (!horarioLimite) { setMsg('msgTarefas', 'Informe o horário da tarefa antes de salvar.', 'err'); return; }
+  if (!descricao) { setMsg('msgTarefas', 'Digite a observação da tarefa.', 'err'); return; }
 
   const diasStr = 'todos';
-  const checklistRefEdicao = checklistReferenciaEmEdicaoId || null;
+  const editandoAgora = !!tarefaEmEdicaoId;
+  let checklistRefEdicao = checklistReferenciaEmEdicaoId || null;
+  let checklistCriadoAntesDaTarefa = null;
+  let tenantCadastroChecklist = null;
+  try {
+    tenantCadastroChecklist = await resolverTenantCadastroChecklist();
+  } catch (erroTenant) {
+    setMsg('msgTarefas', mensagemErroSupabase(erroTenant, 'Selecione uma loja para cadastrar o checklist.'), 'err');
+    await carregarSelectLojaTarefaCadastro();
+    return;
+  }
+  if (!editandoAgora && !checklistRefEdicao) {
+    try {
+      checklistRefEdicao = await criarChecklistReferenciaCadastroTarefa({ nome, descricao, tenant: tenantCadastroChecklist });
+      checklistCriadoAntesDaTarefa = checklistRefEdicao;
+    } catch (erroChecklistInicial) {
+      console.error('Erro ao criar checklist de referência antes da tarefa:', erroChecklistInicial);
+      setMsg('msgTarefas', `Erro ao preparar checklist: ${mensagemErroSupabase(erroChecklistInicial, 'erro desconhecido')}`, 'err');
+      return;
+    }
+  }
   const payload = {
     nome,
-    descricao: descricao || null,
-    checklist_id: null,
-    horario_limite: horarioLimite,
+    descricao,
+    checklist_id: checklistRefEdicao,
+    horario_limite: null,
     dias_semana: diasStr,
     funcionario_id: funcionarioId,
+    ...tenantCadastroChecklist,
   };
-  const editandoAgora = !!tarefaEmEdicaoId;
   const query = editandoAgora
     ? sb.from('tarefas').update(payload).eq('id', tarefaEmEdicaoId).select()
     : sb.from('tarefas').insert([{ ...payload, ativo: true, lancada_checklist: false }]).select();
@@ -23279,7 +23231,14 @@ async function criarTarefa() {
       setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
       return;
     }
-    setMsg('msgTarefas', editandoAgora ? 'Erro ao salvar alterações da tarefa.' : 'Erro ao criar tarefa.', 'err');
+    if (checklistCriadoAntesDaTarefa) {
+      try {
+        await sb.from('checklists').delete().eq('id', checklistCriadoAntesDaTarefa);
+      } catch (erroLimpezaChecklist) {
+        console.warn('Não foi possível limpar checklist criado antes da falha da tarefa:', erroLimpezaChecklist);
+      }
+    }
+    setMsg('msgTarefas', `${editandoAgora ? 'Erro ao salvar alterações' : 'Erro ao criar tarefa'}: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
 
@@ -23312,15 +23271,6 @@ async function criarTarefa() {
     return;
   }
 
-  try {
-    await salvarItensDaTarefa(checklistReferencia);
-  } catch (erroItens) {
-    console.error('Erro ao salvar itens da tarefa:', erroItens);
-    setMsg('msgTarefas', `Tarefa salva, mas ocorreu erro ao salvar itens: ${mensagemErroSupabase(erroItens, 'erro desconhecido')}`, 'err');
-    await carregarTarefas();
-    return;
-  }
-
   if (editandoAgora) {
     try {
       await sb
@@ -23329,8 +23279,6 @@ async function criarTarefa() {
           checklist_id: checklistReferencia,
           nome: payload.nome,
           descricao: payload.descricao,
-          horario_limite: payload.horario_limite,
-          dias_semana: payload.dias_semana,
         })
         .eq('tarefa_id', tarefaSalva.id)
         .eq('status', 'pendente');
@@ -23350,21 +23298,14 @@ async function criarTarefa() {
 function limparFormularioTarefa() {
   tarefaEmEdicaoId = null;
   checklistReferenciaEmEdicaoId = null;
-  itensRascunhoTarefaCadastro = [];
   document.getElementById('nomeTarefa').value = '';
   document.getElementById('descTarefa').value = '';
   document.getElementById('descTarefa').setAttribute('readonly', 'readonly');
-  document.getElementById('horarioTarefa').value = '';
   document.getElementById('funcionarioTarefa').value = '';
-  const campoNomeItem = document.getElementById('nomeItemTarefaCadastro');
-  const campoObrigatorio = document.getElementById('obrigatorioItemTarefaCadastro');
-  if (campoNomeItem) campoNomeItem.value = '';
-  if (campoObrigatorio) campoObrigatorio.value = 'true';
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'none';
-  renderizarItensTarefaNoCadastro();
 }
 
 async function editarTarefa(id) {
@@ -23385,15 +23326,12 @@ async function editarTarefa(id) {
   document.getElementById('nomeTarefa').value = tarefa.nome || '';
   document.getElementById('descTarefa').value = tarefa.descricao || '';
   document.getElementById('descTarefa').removeAttribute('readonly');
-  document.getElementById('horarioTarefa').value = horaCurta(tarefa.horario_limite || '');
   document.getElementById('funcionarioTarefa').value = tarefa.funcionario_id || '';
 
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
-  toggleItensTarefaCadastro(true);
-  await carregarItensTarefaNoCadastro(checklistReferenciaEmEdicaoId);
   setMsg('msgTarefas', `Editando tarefa: ${tarefa.nome}.`, 'ok');
 }
 
@@ -23515,7 +23453,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     setMsgLancamentoTarefa(id, 'Marque um funcionário no card antes de lançar.', 'err');
     return;
   }
-  const horarioSelecionado = horaCurta(horarioOverride || '') || horaCurta(tarefa.horario_limite || '');
+  const horarioSelecionado = horaCurta(horarioOverride || '');
   if (!horarioSelecionado) {
     abrirConfigLancamentoTarefa(id);
     setMsg('msgTarefas', 'Defina o horário nas opções de lançamento antes de lançar.', 'err');
@@ -31853,13 +31791,6 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     forcarCampoObservacaoTarefaEmBranco();
     redefinirCampoBuscaTarefas();
   }, 250);
-  renderizarItensTarefaNoCadastro();
-  document.getElementById('nomeItemTarefaCadastro')?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      adicionarItemTarefaNoCadastro();
-    }
-  });
   document.getElementById('filtroChecklistLancadoBusca')?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
