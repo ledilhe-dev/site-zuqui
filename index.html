@@ -8244,7 +8244,7 @@
 
 <script>
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.1.50';
+const APP_VERSION = '3.1.73';
 const APP_VERSION_LABEL = '3.1.63-recebiveis-tenant-fix';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
@@ -19082,6 +19082,48 @@ function limparFormularioFornecedorFinanceiro() {
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
+async function resolverTenantFornecedorFinanceiro() {
+  let lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || window.lojaAtualId || '').trim();
+  let empresaId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+
+  if (!lojaId) {
+    const lojasPermitidas = typeof obterLojasPermitidasSessao === 'function' ? obterLojasPermitidasSessao() : [];
+    if (lojasPermitidas.length === 1) {
+      lojaId = String(lojasPermitidas[0]?.id || lojasPermitidas[0]?.loja_id || '').trim();
+      empresaId = String(lojasPermitidas[0]?.empresa_id || empresaId || '').trim();
+    }
+  }
+
+  if (lojaId && !empresaId) {
+    const { data: lojaAtual, error } = await executarSemFiltroLojaTemporario(() => sb
+      .from('lojas')
+      .select('id, empresa_id')
+      .eq('id', lojaId)
+      .maybeSingle());
+    if (!error && lojaAtual?.empresa_id) empresaId = String(lojaAtual.empresa_id || '').trim();
+  }
+
+  if (!lojaId || !empresaId) {
+    const { data: lojaPadrao, error } = await executarSemFiltroLojaTemporario(() => sb
+      .from('lojas')
+      .select('id, empresa_id')
+      .eq('ativo', true)
+      .order('criado_em', { ascending: true })
+      .limit(1)
+      .maybeSingle());
+    if (!error && lojaPadrao?.id && lojaPadrao?.empresa_id) {
+      lojaId = String(lojaPadrao.id || '').trim();
+      empresaId = String(lojaPadrao.empresa_id || '').trim();
+    }
+  }
+
+  if (!lojaId || !empresaId) {
+    throw new Error('Não foi possível identificar a loja/empresa para cadastrar o fornecedor. Faça login novamente ou selecione uma loja ativa.');
+  }
+
+  return { loja_id: lojaId, empresa_id: empresaId };
+}
+
 async function salvarFornecedorFinanceiro() {
   const nome = String(document.getElementById('fornecedorNome')?.value || '').trim();
   const cnpjInformado = String(document.getElementById('fornecedorCnpj')?.value || '').trim();
@@ -19102,11 +19144,21 @@ async function salvarFornecedorFinanceiro() {
   const campoDocumento = document.getElementById('fornecedorCnpj');
   if (campoDocumento) campoDocumento.value = documentoValidado.valor || '';
 
+  let tenantFornecedor = null;
+  try {
+    tenantFornecedor = await resolverTenantFornecedorFinanceiro();
+  } catch (erroTenant) {
+    setMsg('msgFornecedorFinanceiro', erroTenant?.message || 'Não foi possível identificar a loja/empresa para cadastrar o fornecedor.', 'err');
+    return;
+  }
+
   const payload = {
     nome,
     cnpj: documentoValidado.valor || null,
     telefone: telefone || null,
     email: email || null,
+    loja_id: tenantFornecedor.loja_id,
+    empresa_id: tenantFornecedor.empresa_id,
   };
 
   const editando = !!fornecedorFinanceiroEmEdicaoId;
