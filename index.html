@@ -30458,6 +30458,15 @@ function criarDataLocal(year, monthIndex, day) {
   return new Date(year, monthIndex, day, 12, 0, 0, 0);
 }
 
+const CONFIG_QUINTO_DIA_UTIL = {
+  considerarSabadoComoDiaUtil: true,
+  incluirFeriadosMoveisFacultativos: false,
+  // Adicione datas locais no formato YYYY-MM-DD quando necessário.
+  feriadosLocaisEmpresa: [],
+};
+
+const cacheFeriadosAno = new Map();
+
 function chaveDataLocal(data) {
   const ano = data.getFullYear();
   const mes = String(data.getMonth() + 1).padStart(2, '0');
@@ -30487,7 +30496,9 @@ function calcularPascoaGregoriana(ano) {
   return criarDataLocal(ano, mes, dia);
 }
 
-function obterFeriadosNacionaisBrasil(ano) {
+function obterFeriadosFolhaBrasil(ano) {
+  if (cacheFeriadosAno.has(ano)) return cacheFeriadosAno.get(ano);
+
   const feriados = new Set([
     chaveDataLocal(criarDataLocal(ano, 0, 1)),
     chaveDataLocal(criarDataLocal(ano, 3, 21)),
@@ -30500,21 +30511,36 @@ function obterFeriadosNacionaisBrasil(ano) {
     chaveDataLocal(criarDataLocal(ano, 11, 25)),
   ]);
 
-  const pascoa = calcularPascoaGregoriana(ano);
-  [
-    somarDiasLocal(pascoa, -48),
-    somarDiasLocal(pascoa, -47),
-    somarDiasLocal(pascoa, -2),
-    somarDiasLocal(pascoa, 60),
-  ].forEach(data => feriados.add(chaveDataLocal(data)));
+  if (CONFIG_QUINTO_DIA_UTIL.incluirFeriadosMoveisFacultativos) {
+    const pascoa = calcularPascoaGregoriana(ano);
+    [
+      somarDiasLocal(pascoa, -48),
+      somarDiasLocal(pascoa, -47),
+      somarDiasLocal(pascoa, -2),
+      somarDiasLocal(pascoa, 60),
+    ].forEach(data => feriados.add(chaveDataLocal(data)));
+  }
+
+  if (Array.isArray(CONFIG_QUINTO_DIA_UTIL.feriadosLocaisEmpresa)) {
+    CONFIG_QUINTO_DIA_UTIL.feriadosLocaisEmpresa.forEach(dataIso => {
+      if (typeof dataIso !== 'string') return;
+      const chave = dataIso.trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(chave)) return;
+      if (Number(chave.slice(0, 4)) !== ano) return;
+      feriados.add(chave);
+    });
+  }
+
+  cacheFeriadosAno.set(ano, feriados);
 
   return feriados;
 }
 
 function dataEhDiaUtilBrasil(data) {
   const diaSemana = data.getDay();
-  if (diaSemana === 0 || diaSemana === 6) return false;
-  return !obterFeriadosNacionaisBrasil(data.getFullYear()).has(chaveDataLocal(data));
+  if (diaSemana === 0) return false;
+  if (!CONFIG_QUINTO_DIA_UTIL.considerarSabadoComoDiaUtil && diaSemana === 6) return false;
+  return !obterFeriadosFolhaBrasil(data.getFullYear()).has(chaveDataLocal(data));
 }
 
 function calcularQuintoDiaUtilMes(ano, mesIndex) {
