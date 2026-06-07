@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -32,6 +32,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxOCIgZmlsbD0iIzBBMEYwRCIvPgogIDxyZWN0IHg9IjciIHk9IjciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcng9IjE1IiBmaWxsPSIjMTYzNjI2Ii8+CiAgPHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iMjQiIGhlaWdodD0iMzIiIHJ4PSI1IiBmaWxsPSIjRjRGRkY3Ii8+CiAgPGNpcmNsZSBjeD0iNDQiIGN5PSI0MSIgcj0iMTAiIGZpbGw9IiMyMkM1NUUiLz4KICA8cGF0aCBkPSJNMzkuNSA0MUw0MyA0NC41TDQ5IDM4LjUiIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja">
 (function configurarMascaraCepLoja() {
   document.addEventListener('input', (ev) => {
@@ -45,21 +46,47 @@
 </script>
   <style>
     :root {
-      --bg: #0a0f0d;
-      --surface: #111a14;
-      --surface2: #182218;
-      --border: #1f2e22;
-      --green: #22c55e;
-      --green-dim: #16a34a;
-      --green-glow: rgba(34,197,94,0.12);
-      --red: #ef4444;
-      --red-dim: #b91c1c;
-      --amber: #f59e0b;
-      --text: #e2f0e4;
-      --text-muted: #6b8f70;
-      --text-dim: #3d5c42;
-      --radius: 12px;
-      --radius-sm: 8px;
+      /* === Paleta Principal — Verde Esmeralda Profundo === */
+      --bg: #080e0b;
+      --surface: #0f1812;
+      --surface2: #162014;
+      --surface3: #1c2a1a;
+      --border: #1e3022;
+      --border-subtle: #152219;
+
+      /* Acentos verdes vibrantes */
+      --green: #10d97a;
+      --green-bright: #00f587;
+      --green-dim: #0ea860;
+      --green-dark: #087a43;
+      --green-glow: rgba(16,217,122,0.13);
+      --green-glow-strong: rgba(16,217,122,0.22);
+
+      /* Feedback */
+      --red: #f43f5e;
+      --red-dim: #be123c;
+      --red-glow: rgba(244,63,94,0.15);
+      --amber: #fbbf24;
+      --amber-dim: #d97706;
+      --amber-glow: rgba(251,191,36,0.13);
+      --blue: #38bdf8;
+      --blue-dim: #0284c7;
+
+      /* Texto */
+      --text: #e8f5eb;
+      --text-soft: #b8d9bd;
+      --text-muted: #5d8a65;
+      --text-dim: #2e5436;
+
+      /* Raios */
+      --radius: 14px;
+      --radius-sm: 9px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+
+      /* Sombras */
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -109,42 +136,51 @@
 
     /* ---- SIDEBAR ---- */
     .sidebar {
-      width: 280px;
+      width: 268px;
       flex-shrink: 0;
-      background: var(--surface);
+      background: linear-gradient(180deg, #0d1810 0%, #0a140e 100%);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 18px 14px;
-      gap: 6px;
+      padding: 16px 12px;
+      gap: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(16,217,122,0.3), transparent);
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
       font-size: 22px;
       font-weight: 700;
       color: var(--green);
       letter-spacing: -0.5px;
-      padding: 0 8px 16px;
+      padding: 4px 8px 16px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .logo img {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       flex-shrink: 0;
       border-radius: 12px;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+      box-shadow: 0 0 0 1px rgba(16,217,122,0.25), 0 8px 20px rgba(0,0,0,0.4);
     }
     .logo strong {
       display: block;
-      font-size: 17px;
+      font-size: 16px;
       color: var(--text);
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
     }
-    .logo span { color: var(--text-muted); font-weight: 400; font-size: 12px; display: block; margin-top: 2px; }
+    .logo span { color: var(--text-muted); font-weight: 400; font-size: 11px; display: block; margin-top: 2px; }
     .login-brand {
       display: flex;
       flex-direction: column;
@@ -190,8 +226,8 @@
       to   { opacity: 1; transform: translateX(0); }
     }
     @keyframes pulseGreen {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-      50% { box-shadow: 0 0 0 8px rgba(34,197,94,0.12); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16,217,122,0); }
+      50% { box-shadow: 0 0 0 8px rgba(16,217,122,0.15); }
     }
 
     .login-screen {
@@ -212,21 +248,21 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(34,197,94,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(34,197,94,0.03) 1px, transparent 1px);
-      background-size: 48px 48px;
+        linear-gradient(rgba(16,217,122,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,217,122,0.04) 1px, transparent 1px);
+      background-size: 52px 52px;
       pointer-events: none;
     }
     /* brilho central */
     .login-screen::after {
       content: '';
       position: fixed;
-      top: -20%;
+      top: -15%;
       left: 50%;
       transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(34,197,94,0.07) 0%, transparent 70%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(16,217,122,0.09) 0%, rgba(16,217,122,0.03) 35%, transparent 70%);
       pointer-events: none;
     }
 
@@ -234,18 +270,18 @@
     .login-card {
       position: relative;
       z-index: 1;
-      width: min(380px, calc(100vw - 28px));
+      width: min(390px, calc(100vw - 28px));
       max-height: calc(100dvh - 24px);
-      overflow: hidden;
-      background: rgba(17,26,20,0.85);
-      border: 1px solid rgba(34,197,94,0.18);
-      border-radius: 24px;
-      padding: 24px 28px 20px;
-      backdrop-filter: blur(16px);
+      overflow: hidden auto;
+      background: rgba(13,22,16,0.92);
+      border: 1px solid rgba(16,217,122,0.2);
+      border-radius: 28px;
+      padding: 28px 30px 22px;
+      backdrop-filter: blur(24px);
       box-shadow:
-        0 0 0 1px rgba(34,197,94,0.06),
-        0 32px 80px rgba(0,0,0,0.55),
-        inset 0 1px 0 rgba(255,255,255,0.04);
+        0 0 0 1px rgba(16,217,122,0.08),
+        0 40px 100px rgba(0,0,0,0.65),
+        inset 0 1px 0 rgba(16,217,122,0.08);
       margin: 0;
     }
 
@@ -325,21 +361,22 @@
     }
     .login-input {
       width: 100%;
-      min-height: 42px;
-      padding: 9px 13px;
-      border: 1px solid rgba(34,197,94,0.15);
+      min-height: 44px;
+      padding: 10px 14px;
+      border: 1px solid rgba(16,217,122,0.18);
       border-radius: 12px;
-      background: rgba(5,16,10,0.6);
+      background: rgba(4,10,6,0.7);
       color: var(--text);
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      transition: border-color .2s, box-shadow .2s;
+      transition: border-color .2s, box-shadow .2s, background .2s;
     }
     .login-input::placeholder { color: var(--text-dim); }
     .login-input:focus {
-      border-color: rgba(34,197,94,0.5);
-      box-shadow: 0 0 0 3px rgba(34,197,94,0.08);
+      border-color: rgba(16,217,122,0.55);
+      background: rgba(4,12,7,0.9);
+      box-shadow: 0 0 0 3px rgba(16,217,122,0.1);
     }
 
     .login-checks {
@@ -371,26 +408,26 @@
 
     .login-btn-primary {
       width: 100%;
-      min-height: 42px;
+      min-height: 44px;
       padding: 10px 13px;
       border: none;
       border-radius: 12px;
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      background: linear-gradient(135deg, #10d97a 0%, #0db868 50%, #0a9650 100%);
       color: #041108;
       font-size: 14px;
       font-weight: 700;
       font-family: inherit;
       cursor: pointer;
       letter-spacing: .3px;
-      transition: opacity .2s, transform .15s, box-shadow .2s;
-      box-shadow: 0 4px 20px rgba(34,197,94,0.3);
+      transition: all .2s ease;
+      box-shadow: 0 4px 22px rgba(16,217,122,0.35), 0 0 0 1px rgba(16,217,122,0.2);
     }
     .login-btn-primary:hover {
-      opacity: .92;
+      background: linear-gradient(135deg, #00f587 0%, #10d97a 50%, #0db868 100%);
       transform: translateY(-1px);
-      box-shadow: 0 8px 28px rgba(34,197,94,0.4);
+      box-shadow: 0 8px 30px rgba(16,217,122,0.45), 0 0 0 1px rgba(16,217,122,0.35);
     }
-    .login-btn-primary:active { transform: translateY(0); opacity: 1; }
+    .login-btn-primary:active { transform: translateY(0); }
 
     .login-btn-secondary {
       width: 100%;
@@ -542,6 +579,15 @@
       gap: 14px;
       transition: border-color .2s, background .2s, transform .15s;
     }
+    .login-store-admin-panel {
+      background: linear-gradient(135deg, rgba(16,217,122,0.12) 0%, rgba(16,217,122,0.06) 100%);
+      border-color: rgba(16,217,122,0.35);
+      box-shadow: 0 0 20px rgba(16,217,122,0.1);
+    }
+    .login-store-admin-panel:hover {
+      background: linear-gradient(135deg, rgba(16,217,122,0.2) 0%, rgba(16,217,122,0.1) 100%);
+      border-color: rgba(16,217,122,0.6);
+    }
     .login-store-option:hover {
       border-color: rgba(34,197,94,0.5);
       background: rgba(34,197,94,0.07);
@@ -671,10 +717,10 @@
     }
     .nav-label {
       display: block;
-      padding: 0 10px 7px;
-      font-size: 11px;
+      padding: 0 10px 6px;
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.9px;
+      letter-spacing: 1.1px;
       text-transform: uppercase;
       color: var(--text-dim);
     }
@@ -682,23 +728,32 @@
     .nav-btn {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 9px;
       width: 100%;
-      border: none;
+      border: 1px solid transparent;
       background: transparent;
       color: var(--text-muted);
       text-align: left;
-      padding: 10px 11px;
+      padding: 9px 10px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13.5px;
       font-family: inherit;
       font-weight: 500;
-      transition: all 0.15s;
+      transition: all 0.18s ease;
       margin-bottom: 1px;
     }
-    .nav-btn:hover { background: var(--surface2); color: var(--text); }
-    .nav-btn.ativo { background: var(--green-glow); color: var(--green); }
+    .nav-btn:hover {
+      background: rgba(16,217,122,0.07);
+      border-color: rgba(16,217,122,0.12);
+      color: var(--text);
+    }
+    .nav-btn.ativo {
+      background: linear-gradient(135deg, rgba(16,217,122,0.16) 0%, rgba(16,217,122,0.08) 100%);
+      border-color: rgba(16,217,122,0.28);
+      color: var(--green);
+      box-shadow: 0 2px 12px rgba(16,217,122,0.1);
+    }
     .nav-btn .icon {
       width: 30px;
       height: 30px;
@@ -707,13 +762,18 @@
       align-items: center;
       justify-content: center;
       border-radius: 8px;
-      background: rgba(34,197,94,0.08);
-      border: 1px solid rgba(34,197,94,0.12);
+      background: rgba(16,217,122,0.1);
+      border: 1px solid rgba(16,217,122,0.18);
       color: var(--green);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.4px;
       text-transform: uppercase;
+    }
+    .nav-btn.ativo .icon {
+      background: rgba(16,217,122,0.2);
+      border-color: rgba(16,217,122,0.4);
+      box-shadow: 0 0 10px rgba(16,217,122,0.2);
     }
     .nav-copy {
       display: flex;
@@ -721,13 +781,13 @@
       min-width: 0;
     }
     .nav-title {
-      font-size: 14px;
-      font-weight: 650;
+      font-size: 13.5px;
+      font-weight: 600;
       color: inherit;
       line-height: 1.2;
     }
     .nav-hint {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--text-dim);
       margin-top: 2px;
       line-height: 1.25;
@@ -948,13 +1008,14 @@
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
     .topbar {
-      background: var(--surface);
+      background: linear-gradient(180deg, #0e1a10 0%, #0b1410 100%);
       border-bottom: 1px solid var(--border);
-      padding: 8px 14px;
+      padding: 8px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      box-shadow: 0 1px 0 rgba(16,217,122,0.06);
     }
     .topbar-main {
       display: flex;
@@ -984,9 +1045,9 @@
       min-height: 42px;
       padding: 7px 14px;
       border-radius: 12px;
-      border: 1px solid rgba(34,197,94,0.35);
-      background: rgba(5,16,10,0.86);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      border: 1px solid rgba(16,217,122,0.28);
+      background: rgba(8,14,10,0.9);
+      box-shadow: 0 0 0 1px rgba(16,217,122,0.06) inset;
       flex-shrink: 0;
     }
     .topbar-info-label {
@@ -1037,11 +1098,11 @@
       justify-content: center;
       gap: 1px;
       min-width: 0;
-      min-height: 30px;
-      padding: 5px 10px;
+      min-height: 32px;
+      padding: 5px 11px;
       border-radius: 10px;
-      border: 1px solid rgba(107,143,112,0.18);
-      background: rgba(17,26,20,0.92);
+      border: 1px solid rgba(16,217,122,0.14);
+      background: rgba(10,18,12,0.92);
     }
     .topbar-store {
       display: inline-flex;
@@ -1055,9 +1116,9 @@
       min-height: 42px;
       padding: 7px 14px;
       border-radius: 12px;
-      border: 1px solid rgba(56,189,248,0.78);
-      background: linear-gradient(135deg, rgba(14,116,144,0.96), rgba(37,99,235,0.95));
-      box-shadow: 0 0 0 1px rgba(125,211,252,0.18), 0 10px 26px rgba(37,99,235,0.28);
+      border: 1px solid rgba(56,189,248,0.6);
+      background: linear-gradient(135deg, #0c2a3d 0%, #0f1f4a 100%);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.1), 0 8px 24px rgba(0,0,0,0.4);
       flex-shrink: 0;
     }
     .topbar-store-main {
@@ -1073,8 +1134,8 @@
     }
     .topbar-store.is-switchable:hover {
       transform: translateY(-1px);
-      border-color: rgba(191,219,254,0.95);
-      box-shadow: 0 0 0 1px rgba(191,219,254,0.24), 0 14px 30px rgba(37,99,235,0.32);
+      border-color: rgba(125,211,252,0.9);
+      box-shadow: 0 0 0 1px rgba(125,211,252,0.2), 0 12px 28px rgba(0,0,0,0.5);
     }
     .topbar-store-switch {
       display: none;
@@ -1650,7 +1711,7 @@
       color: #fff1f2;
     }
 
-    .content { flex: 1; padding: 16px 18px; overflow-y: auto; }
+    .content { flex: 1; padding: 18px 20px; overflow-y: auto; background: #09100c; }
     .mobile-nav-overlay {
       position: fixed;
       inset: 0;
@@ -1680,13 +1741,16 @@
     /* ---- CARDS / GRID ---- */
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
     .stat-card {
-      background: var(--surface);
+      background: linear-gradient(145deg, #101c13 0%, #0c1710 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 16px;
+      transition: border-color 0.2s, transform 0.15s;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
-    .stat-card .s-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
-    .stat-card .s-value { font-size: 24px; font-weight: 700; color: var(--green); font-family: 'DM Mono', monospace; }
+    .stat-card:hover { border-color: rgba(16,217,122,0.22); transform: translateY(-1px); }
+    .stat-card .s-label { font-size: 10.5px; color: var(--text-muted); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+    .stat-card .s-value { font-size: 26px; font-weight: 700; color: var(--green); font-family: 'DM Mono', monospace; }
     .stat-card .s-desc { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
     .rf-total-geral-card {
       border-color: rgba(249, 115, 22, 0.8);
@@ -1945,14 +2009,17 @@
 
     /* ---- FORM ---- */
     .card {
-      background: var(--surface);
+      background: linear-gradient(145deg, #101c13 0%, #0d1710 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 16px;
       margin-bottom: 10px;
       overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+      transition: border-color 0.2s;
     }
-    .card-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .card:hover { border-color: rgba(16,217,122,0.18); }
+    .card-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
 
     .form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
     .form-row input,
@@ -1961,7 +2028,7 @@
       flex: 1;
       min-width: 120px;
       padding: 8px 12px;
-      background: var(--bg);
+      background: rgba(5,10,7,0.8);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       color: var(--text);
@@ -3446,25 +3513,34 @@
 
     /* ---- BUTTONS ---- */
     .btn {
-      border: none;
+      border: 1px solid transparent;
       padding: 8px 14px;
       border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
       font-family: inherit;
-      transition: all 0.15s;
+      transition: all 0.18s ease;
       white-space: nowrap;
       min-height: 34px;
     }
-    .btn-green { background: var(--green); color: #000; }
-    .btn-green:hover { background: var(--green-dim); }
-    .btn-red { background: transparent; color: var(--red); border: 1px solid var(--red-dim); padding: 6px 10px; font-size: 12px; }
-    .btn-red:hover { background: rgba(239,68,68,0.1); }
-    .btn-amber { background: transparent; color: var(--amber); border: 1px solid rgba(245,158,11,0.4); padding: 6px 10px; font-size: 12px; }
-    .btn-amber:hover { background: rgba(245,158,11,0.1); }
-    .btn-ghost { background: var(--surface2); color: var(--text); }
-    .btn-ghost:hover { background: var(--border); }
+    .btn-green {
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-dim) 100%);
+      color: #041108;
+      border-color: transparent;
+      box-shadow: 0 2px 10px rgba(16,217,122,0.25);
+    }
+    .btn-green:hover {
+      background: linear-gradient(135deg, var(--green-bright) 0%, var(--green) 100%);
+      box-shadow: 0 4px 16px rgba(16,217,122,0.4);
+      transform: translateY(-1px);
+    }
+    .btn-red { background: transparent; color: var(--red); border: 1px solid rgba(244,63,94,0.35); padding: 6px 10px; font-size: 12px; }
+    .btn-red:hover { background: rgba(244,63,94,0.1); border-color: var(--red); }
+    .btn-amber { background: transparent; color: var(--amber); border: 1px solid rgba(251,191,36,0.35); padding: 6px 10px; font-size: 12px; }
+    .btn-amber:hover { background: rgba(251,191,36,0.1); border-color: var(--amber); }
+    .btn-ghost { background: rgba(22,40,24,0.8); color: var(--text-soft); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface3); border-color: rgba(16,217,122,0.2); color: var(--text); }
     .btn-sm { padding: 5px 10px; font-size: 11px; min-height: 30px; }
     .btn-icon {
       min-width: 36px;
@@ -6079,7 +6155,166 @@
   
 </style>
 
-  <style id="escala-plantoes-layout-fix">
+  <style id="design-enhancement-v2">
+  /* ===== DESIGN ENHANCEMENT V2 — Esmeralda Profundo ===== */
+
+  /* Scrollbar personalizada */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(16,217,122,0.25); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(16,217,122,0.45); }
+
+  /* Inputs globais com foco esmeralda */
+  input:not([type="checkbox"]):not([type="radio"]):not(.login-input):not(.pin-secure-input):focus,
+  select:focus,
+  textarea:focus {
+    border-color: rgba(16,217,122,0.5) !important;
+    box-shadow: 0 0 0 3px rgba(16,217,122,0.1) !important;
+    outline: none !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not(.login-input):not(.pin-secure-input),
+  select,
+  textarea {
+    background: rgba(5,10,7,0.85) !important;
+    border-color: rgba(28,48,34,0.9) !important;
+    color: #e8f5eb !important;
+    transition: border-color .18s, box-shadow .18s;
+  }
+
+  /* Items de lista */
+  .item {
+    background: rgba(13,21,15,0.9) !important;
+    border: 1px solid rgba(28,48,34,0.8) !important;
+    border-radius: 12px !important;
+    transition: border-color .18s, background .18s;
+  }
+  .item:hover {
+    border-color: rgba(16,217,122,0.2) !important;
+    background: rgba(16,25,18,0.95) !important;
+  }
+
+  /* Badges de notificação */
+  .nav-badge {
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    box-shadow: 0 2px 8px rgba(244,63,94,0.4);
+  }
+
+  /* Msg de status */
+  .msg.ok { color: #10d97a; }
+  .msg.err { color: #f43f5e; }
+  .msg.warn { color: #fbbf24; }
+
+  /* Tabelas */
+  table { border-collapse: collapse; width: 100%; }
+  thead th {
+    background: rgba(10,18,12,0.8) !important;
+    border-bottom: 1px solid rgba(16,217,122,0.2) !important;
+    color: var(--text-muted) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 10px 12px !important;
+  }
+  tbody tr { border-bottom: 1px solid rgba(28,48,34,0.5); transition: background .15s; }
+  tbody tr:hover { background: rgba(16,217,122,0.04); }
+  td { padding: 10px 12px !important; font-size: 13px; }
+
+  /* Nav alerta */
+  .nav-btn.nav-btn-alerta {
+    background: rgba(244,63,94,0.08) !important;
+    border-color: rgba(244,63,94,0.22) !important;
+    color: #fca5a5 !important;
+  }
+  .nav-btn.nav-btn-alerta:hover {
+    background: rgba(244,63,94,0.14) !important;
+    border-color: rgba(244,63,94,0.4) !important;
+  }
+  .nav-btn.nav-btn-alerta .icon {
+    background: rgba(244,63,94,0.15) !important;
+    border-color: rgba(244,63,94,0.3) !important;
+    color: #f43f5e !important;
+  }
+  .nav-btn.nav-btn-alerta.ativo {
+    background: rgba(244,63,94,0.18) !important;
+    border-color: rgba(244,63,94,0.5) !important;
+    box-shadow: 0 2px 12px rgba(244,63,94,0.15) !important;
+  }
+
+  /* Page header */
+  .page-title { color: var(--text) !important; font-size: 16px !important; font-weight: 700 !important; }
+
+  /* Sync status */
+  .sync-status {
+    border: 1px solid rgba(16,217,122,0.18) !important;
+    background: rgba(8,14,10,0.9) !important;
+    border-radius: 10px !important;
+  }
+  .app-version-badge {
+    border-color: rgba(16,217,122,0.4) !important;
+    background: rgba(5,12,8,0.94) !important;
+  }
+
+  /* Modais */
+  .modal-overlay {
+    background: rgba(4,8,5,0.75) !important;
+    backdrop-filter: blur(6px);
+  }
+  .modal-card, [class*="modal-card"], [id*="modal"] .card {
+    background: linear-gradient(145deg, #0f1c12 0%, #0b1610 100%) !important;
+    border: 1px solid rgba(16,217,122,0.2) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6) !important;
+  }
+
+  /* Nav sub-btn */
+  .nav-sub-btn {
+    padding-left: 16px !important;
+    font-size: 13px !important;
+    opacity: 0.85;
+  }
+  .nav-sub-btn:hover { opacity: 1; }
+  .nav-sub-btn.ativo { opacity: 1; }
+
+  /* Nav group separator */
+  .nav-group {
+    border-top-color: rgba(16,217,122,0.1) !important;
+  }
+
+  /* Hover para o painel admin no menu */
+  #menuConfiguracoesGroup .nav-btn-parent .icon,
+  #menuSaasGroup .nav-btn-parent .icon {
+    background: rgba(251,191,36,0.12) !important;
+    border-color: rgba(251,191,36,0.22) !important;
+    color: #fbbf24 !important;
+  }
+  #menuConfiguracoesGroup .nav-btn-parent,
+  #menuSaasGroup .nav-btn-parent {
+    color: #fbbf24 !important;
+  }
+  #menuConfiguracoesGroup .nav-btn-parent:hover,
+  #menuSaasGroup .nav-btn-parent:hover {
+    background: rgba(251,191,36,0.07) !important;
+    border-color: rgba(251,191,36,0.2) !important;
+    color: #fcd34d !important;
+  }
+  #menuConfiguracoesGroup .nav-btn-parent.ativo,
+  #menuSaasGroup .nav-btn-parent.ativo {
+    background: rgba(251,191,36,0.12) !important;
+    border-color: rgba(251,191,36,0.35) !important;
+    box-shadow: 0 2px 12px rgba(251,191,36,0.1) !important;
+  }
+  #menuConfiguracoesGroup .nav-title,
+  #menuSaasGroup .nav-title {
+    color: inherit !important;
+  }
+  #menuConfiguracoesGroup .nav-hint,
+  #menuSaasGroup .nav-hint {
+    color: rgba(251,191,36,0.55) !important;
+  }
+</style>
+
+<style id="escala-plantoes-layout-fix">
     /* ---- ESCALA E PLANTÕES: calendário estilo agenda ---- */
     #escala_plantoes{padding:8px 10px 18px;}
     #escala_plantoes .escala-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start;width:100%;}
@@ -6722,9 +6957,15 @@
               </div>
               <div class="campo-com-label">
                 <label class="campo-label" for="perfilFuncionario">Perfil</label>
-                <select id="perfilFuncionario">
+                <select id="perfilFuncionario" onchange="atualizarFuncionarioAdminCheckbox()">
                   <option value="">- Selecione o perfil -</option>
                 </select>
+              </div>
+              <div class="campo-com-label" style="align-items:flex-end;gap:8px;">
+                <label class="campo-label" for="funcionarioAdmin">Administrativo</label>
+                <label class="campo-label" style="font-weight:normal;">
+                  <input id="funcionarioAdmin" type="checkbox" onchange="atualizarFuncionarioAdminToggle()"> Funcionário admin
+                </label>
               </div>
               <button class="btn btn-green" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
               <button class="btn btn-ghost" id="btnCancelarEdicaoFuncionario" onclick="cancelarEdicaoFuncionario()" style="display:none">Cancelar</button>
@@ -6815,7 +7056,7 @@
               <option value="">- Selecione a empresa -</option>
             </select>
             <input id="saasNomeLoja" type="text" placeholder="Nome da loja">
-            <input id="saasCodigoLoja" class="campo-curto" type="text" placeholder="Código">
+            <input id="saasCodigoLoja" class="campo-curto" type="text" placeholder="Automático" readonly title="Código gerado automaticamente no cadastro de nova loja">
             <input id="saasCepLoja" class="campo-curto" type="text" placeholder="CEP" maxlength="9" onblur="buscarCepLoja('saasCepLoja','saasCidadeLoja','saasEstadoLoja','msgLojasSaas')">
             <input id="saasCidadeLoja" type="text" placeholder="Cidade obrigatória">
             <select id="saasEstadoLoja" class="campo-curto" required style="min-width:110px">
@@ -6834,6 +7075,33 @@
         <div class="card">
           <div class="card-title">Lojas cadastradas</div>
           <div id="listaLojasSaas"><div class="empty">Carregando⬦</div></div>
+        </div>
+
+        <div class="card" id="cardCopiarDadosLojasSaas">
+          <div class="card-title">COPIAR DADOS ENTRE LOJAS</div>
+          <div class="form-row">
+            <select id="saasEmpresaCopiarDados" style="min-width:220px" onchange="sincronizarSelectsCopiarDadosEntreLojas()">
+              <option value="">- Empresa -</option>
+            </select>
+            <select id="saasLojaOrigemCopiarDados" style="min-width:220px">
+              <option value="">- Loja origem -</option>
+            </select>
+            <select id="saasLojaDestinoCopiarDados" style="min-width:220px">
+              <option value="">- Loja destino -</option>
+            </select>
+          </div>
+          <div class="form-row" style="margin-top:8px">
+            <label class="perm-item" style="flex:0 0 auto; min-width:180px;">
+              <input id="copiarDadosFornecedores" type="checkbox" checked>
+              <span>Fornecedores</span>
+            </label>
+            <label class="perm-item" style="flex:0 0 auto; min-width:180px;">
+              <input id="copiarDadosChecklists" type="checkbox" checked>
+              <span>Checklist</span>
+            </label>
+            <button class="btn btn-green" id="btnCopiarDadosEntreLojas" onclick="copiarDadosEntreLojasSaas()">Copiar dados entre lojas</button>
+          </div>
+          <div class="msg" id="msgCopiarDadosLojasSaas"></div>
         </div>
 
         <div class="card" id="cardDadosLojaConfig">
@@ -7739,6 +8007,7 @@
 
         <div class="card">
           <div class="card-title">Contas cadastradas</div>
+          <div id="filtroLojasContasFinanceiras" class="multi-loja-filter" style="margin-top:8px"></div>
           <div id="listaContasFinanceiras"><div class="empty">Carregando...</div></div>
         </div>
 
@@ -7842,6 +8111,7 @@
             <button class="btn btn-ghost" type="button" onclick="exportarExtratoCofrePdf()">Exportar PDF</button>
             <button class="btn btn-amber" id="btnAbrirAjusteSaldoCofre" type="button" onclick="abrirModalAjusteSaldoCofre()">Ajustar saldo</button>
           </div>
+          <div id="filtroLojasCofreFinanceiro" class="multi-loja-filter" style="margin-top:8px"></div>
           <div class="msg" id="msgCofreFinanceiro"></div>
         </div>
 
@@ -8259,11 +8529,12 @@ if (document.readyState === 'loading') {
 } else {
   aplicarVersaoVisivelSistema();
 }
-const SUPABASE_URL = 'https://tqfoxqbmslxoynrasltl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88';
-const EMAIL_FUNCTION_NAME = 'notificar-alertas-email';
-const AUTH_EMAIL_FUNCTION_NAME = 'autenticacao-email';
-const AUTH_REDIRECT_URL = 'https://checkdiario.com.br/';
+// Configurações carregadas do config.js (separado do código principal)
+const SUPABASE_URL = (window.APP_CONFIG || {}).supabaseUrl || '';
+const SUPABASE_ANON_KEY = (window.APP_CONFIG || {}).supabaseAnonKey || '';
+const EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).emailFunctionName || 'notificar-alertas-email';
+const AUTH_EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).authEmailFunctionName || 'autenticacao-email';
+const AUTH_REDIRECT_URL = (window.APP_CONFIG || {}).authRedirectUrl || 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.sb = sb; // compatibilidade para módulos seguros de escala/plantões
@@ -8303,6 +8574,8 @@ const TABELAS_COM_EMPRESA_ID = new Set([
   'alertas_rapidos',
   'tarefas',
   'usuarios_admin',
+  'filiais',
+  'lojas',
   'fornecedores',
   'formas_pagamento',
   'contasapagar',
@@ -8317,9 +8590,10 @@ const TABELAS_COM_LOJA_ID = new Set([
 ]);
 
 let filtroLojaSuspensoTemporariamente = false;
+let filtroEmpresaSuspensoTemporariamente = false;
 
 function obterEmpresaIdSessao() {
-  if (filtroLojaSuspensoTemporariamente) return null;
+  if (filtroEmpresaSuspensoTemporariamente) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s) return null;
   return s.empresa_id || null;
@@ -8353,6 +8627,19 @@ async function executarSemFiltroLojaTemporario(callback) {
     return await callback();
   } finally {
     filtroLojaSuspensoTemporariamente = estadoAnterior;
+  }
+}
+
+async function executarSemFiltrosTenantTemporario(callback) {
+  const estadoLojaAnterior = filtroLojaSuspensoTemporariamente;
+  const estadoEmpresaAnterior = filtroEmpresaSuspensoTemporariamente;
+  filtroLojaSuspensoTemporariamente = true;
+  filtroEmpresaSuspensoTemporariamente = true;
+  try {
+    return await callback();
+  } finally {
+    filtroLojaSuspensoTemporariamente = estadoLojaAnterior;
+    filtroEmpresaSuspensoTemporariamente = estadoEmpresaAnterior;
   }
 }
 
@@ -8527,9 +8814,8 @@ function obterChaveTokenControleVersaoSistema() {
 
 function usuarioPodeForcarAtualizacaoGeral() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioEhAdministrador()) return true;
-  const permissoes = obterPermissoesUsuario();
-  return permissoes?.forcar_atualizacao_geral === true;
+  // Forçar atualização geral = exclusivo do painel administrativo global
+  return usuarioSistemaLogado?.tipo === 'admin';
 }
 
 function atualizarBotaoForcarAtualizacaoGeral() {
@@ -9703,7 +9989,7 @@ function paginaPertenceMenuFuncionarios(pageId = '') {
 }
 
 function paginaPertenceMenuConfiguracoes(pageId = '') {
-  return ['solicitacoes', 'emails'].includes(String(pageId || ''));
+  return ['solicitacoes', 'emails', 'forcar_atualizacao_geral'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuSaas(pageId = '') {
@@ -10243,6 +10529,7 @@ function abrirPagina(id, botao) {
   }
   if (id === 'financeiro_conta_financeira') {
     limparFormularioContaFinanceira();
+    renderizarFiltroLojasCheckbox('filtroLojasContasFinanceiras', 'carregarContasFinanceiras(); carregarExtratoContaFinanceira()');
     carregarContasFinanceiras();
     carregarExtratoContaFinanceira();
   }
@@ -10254,6 +10541,7 @@ function abrirPagina(id, botao) {
     carregarRecebiveisFinanceiro();
   }
   if (id === 'financeiro_cofre') {
+    renderizarFiltroLojasCheckbox('filtroLojasCofreFinanceiro', 'carregarCofreFinanceiro()');
     carregarCofreFinanceiro();
   }
   if (id === 'funcionarios') {
@@ -10267,7 +10555,8 @@ function abrirPagina(id, botao) {
   if (id === 'empresas_saas') { carregarEmpresasSaas(); }
   if (id === 'lojas_saas') {
     carregarEmpresasSaas({ render: false, silencioso: true })
-      .then(() => Promise.all([carregarLojasSaas(), carregarConfiguracoesLoja()]));
+      .then(() => Promise.all([carregarLojasSaas(), carregarConfiguracoesLoja()]))
+      .then(() => inicializarCopiarDadosEntreLojasSaas());
   }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
@@ -11459,17 +11748,14 @@ function obterPermissoesUsuario() {
 
 function usuarioPodeAcessar(pageId) {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  // Páginas exclusivas do painel administrativo global (tipo='admin'):
+  // usuários com perfil ADM/MASTER em lojas NÃO devem ver esses menus
+  const apenasAdminGlobal = ['solicitacoes', 'emails', 'forcar_atualizacao_geral', 'empresas_saas', 'lojas_saas', 'configuracoes'];
+  if (apenasAdminGlobal.includes(pageId)) {
+    return usuarioSistemaLogado?.tipo === 'admin';
+  }
+  if (usuarioEhAdministrador()) return true;
   const permissoes = obterPermissoesUsuario();
-  if (pageId === 'configuracoes') {
-    return !!(permissoes.configuracoes || permissoes.cadastro_lojas || permissoes.cadastro_admins_loja || permissoes.forcar_atualizacao_geral);
-  }
-  if (pageId === 'empresas_saas') {
-    return !!permissoes.gerenciar_empresas;
-  }
-  if (pageId === 'lojas_saas') {
-    return !!(permissoes.gerenciar_lojas || permissoes.gerenciar_empresas);
-  }
   if (pageId === 'tarefas_rapidas') {
     return usuarioPodeAcessarAlertasRapidos();
   }
@@ -11483,7 +11769,9 @@ function usuarioPodeAcessar(pageId) {
 }
 
 function usuarioEhAdministrador() {
-  return usuarioSistemaLogado?.tipo === 'admin' || normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo) === 'ADM';
+  if (!usuarioSistemaLogado) return false;
+  const codigo = normalizarCodigoPerfil(usuarioSistemaLogado?.perfil?.codigo || usuarioSistemaLogado?.tipo || '');
+  return usuarioSistemaLogado?.tipo === 'admin' || codigo === 'ADM' || codigo === 'MASTER';
 }
 
 function usuarioPodeVerValorCombinadoEscala() {
@@ -11511,33 +11799,33 @@ function aplicarPermissaoValorCombinadoEscala() {
 
 function usuarioPodeGerenciarLojasGlobais() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioEhAdministrador()) return true;
   if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
   return !!obterPermissoesUsuario().cadastro_lojas;
 }
 
 function usuarioPodeCriarLojasGlobais() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioEhAdministrador()) return true;
   return !!obterPermissoesUsuario().criar_lojas;
 }
 
 function usuarioPodeGerenciarAdminsLojasGlobais() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioEhAdministrador()) return true;
   return !!obterPermissoesUsuario().cadastro_admins_loja;
 }
 
 function usuarioPodeEditarAdminsDaLojaLogada() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioEhAdministrador()) return true;
   if (usuarioSistemaLogado.tipo === 'admin_loja') return true;
   return !!obterPermissoesUsuario().cadastro_admins_loja;
 }
 
 function usuarioPodeCriarAdminsLojasGlobais() {
   if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
+  if (usuarioEhAdministrador()) return true;
   return !!obterPermissoesUsuario().cadastro_admins_loja;
 }
 
@@ -11693,6 +11981,12 @@ async function buscarPerfilPorCodigoEscopoLoja(codigo = 'GERENTE', lojaId = obte
   });
 }
 
+async function buscarPerfilAdminPadraoParaFuncionario() {
+  const perfilAdm = await buscarPerfilPorCodigoEscopoLoja('ADM');
+  if (perfilAdm?.id) return perfilAdm;
+  return await buscarPerfilPorCodigoEscopoLoja('MASTER');
+}
+
 async function obterPerfilAdminLojaSeguro(lojaId = '') {
   // Admin de loja entra com permissões de ADM, mas o acesso aos dados segue
   // limitado pelo loja_id da sessão no wrapper do Supabase.
@@ -11729,10 +12023,13 @@ function persistirSessaoSistemaAtual(manterConectado = false) {
 
 function obterLojasDisponiveisParaFiltroMultiLoja() {
   const mapa = new Map();
+  const empresaSessaoId = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
   try {
     if (typeof obterLojasPermitidasSessao === 'function') {
       obterLojasPermitidasSessao().forEach(loja => {
         const id = String(loja?.id || loja?.loja_id || '').trim();
+        const empresaLoja = String(loja?.empresa_id || '').trim();
+        if (empresaSessaoId && empresaLoja && empresaLoja !== empresaSessaoId) return;
         if (id) mapa.set(id, { id, nome: String(loja?.nome || loja?.nome_loja || 'Loja').trim() || 'Loja' });
       });
     }
@@ -11753,7 +12050,11 @@ function renderizarFiltroLojasCheckbox(containerId = '', onChange = '') {
   if (!container) return [];
   const lojas = obterLojasDisponiveisParaFiltroMultiLoja();
   const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  const selecionadasAntes = new Set(Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(input => String(input.value || '')));
+  const lojaSessaoAnterior = String(container.dataset.lojaSessaoId || '').trim();
+  const houveTrocaLojaSessao = !!lojaSessaoId && lojaSessaoAnterior && lojaSessaoAnterior !== lojaSessaoId;
+  const selecionadasAntes = houveTrocaLojaSessao
+    ? new Set()
+    : new Set(Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(input => String(input.value || '')));
   const selecionadas = selecionadasAntes.size ? selecionadasAntes : new Set(lojaSessaoId ? [lojaSessaoId] : lojas.map(loja => loja.id));
   const handler = String(onChange || '').trim() || 'void 0';
 
@@ -11773,6 +12074,7 @@ function renderizarFiltroLojasCheckbox(containerId = '', onChange = '') {
       </label>
     `),
   ].join('');
+  container.dataset.lojaSessaoId = lojaSessaoId;
   return lojas;
 }
 
@@ -15966,7 +16268,8 @@ async function criarFuncionario() {
       setMsg('msgFuncionarios', 'Informe o tempo de intervalo em minutos inteiros.', 'err');
       return;
     }
-    if (!perfilId) { setMsg('msgFuncionarios', 'Selecione o perfil.', 'err'); return; }
+    if (!perfilId && !funcionarioAdmin) { setMsg('msgFuncionarios', 'Selecione o perfil ou marque Funcionário admin para usar o perfil ADM padrão.', 'err'); return; }
+    const funcionarioAdmin = !!document.getElementById('funcionarioAdmin')?.checked;
     const mensagemDuplicidade = await validarDuplicidadeCadastro({
       nome,
       email: emailInformado ? email : null,
@@ -15980,12 +16283,25 @@ async function criarFuncionario() {
       setMsg('msgFuncionarios', 'Não foi possível identificar loja/empresa para o cadastro. Verifique se existe ao menos uma loja ativa.', 'err');
       return;
     }
+    const perfilIdParaSalvar = await (async () => {
+      if (funcionarioAdmin) {
+        const perfilAdmin = await buscarPerfilAdminPadraoParaFuncionario();
+        return perfilAdmin?.id || perfilId;
+      }
+      return perfilId;
+    })();
+
+    if (funcionarioAdmin && !perfilIdParaSalvar) {
+      setMsg('msgFuncionarios', 'Nenhum perfil ADM encontrado para salvar o funcionário como admin. Cadastre um perfil ADM primeiro.', 'err');
+      return;
+    }
+
     const payload = editandoAgora
       ? {
           nome,
           email: emailInformado ? email : null,
           ...(pin ? { pin } : {}),
-          perfil_id: perfilId,
+          perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,
           tempo_intervalo_minutos: tempoIntervaloMinutos,
@@ -15998,7 +16314,7 @@ async function criarFuncionario() {
           pin: pin || null,
           loja_id: tenantCadastro.loja_id,
           empresa_id: tenantCadastro.empresa_id,
-          perfil_id: perfilId,
+          perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,
           tempo_intervalo_minutos: tempoIntervaloMinutos,
@@ -16077,6 +16393,8 @@ function limparFormularioFuncionario() {
   document.getElementById('tempoIntervaloFuncionario').value = '';
   renderizarIntervalosSemanaFuncionario();
   document.getElementById('perfilFuncionario').value = '';
+  const funcionarioAdmin = document.getElementById('funcionarioAdmin');
+  if (funcionarioAdmin) funcionarioAdmin.checked = false;
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
   if (btnCancelar) btnCancelar.style.display = 'none';
   cadastroFuncionarioAberto = false;
@@ -16117,6 +16435,11 @@ async function editarFuncionario(id) {
   document.getElementById('tempoIntervaloFuncionario').value = funcionario.tempo_intervalo_minutos ?? '';
   renderizarIntervalosSemanaFuncionario(funcionario.intervalos_semana || normalizarIntervalosSemanaFuncionario(null, funcionario.tempo_intervalo_minutos));
   document.getElementById('perfilFuncionario').value = funcionario.perfil_id || '';
+  const funcionarioAdmin = document.getElementById('funcionarioAdmin');
+  if (funcionarioAdmin) {
+    const perfilFuncionario = normalizarPerfilUsuario(funcionario.perfis);
+    funcionarioAdmin.checked = !!perfilFuncionario && ['ADM', 'MASTER'].includes(normalizarCodigoPerfil(perfilFuncionario.codigo));
+  }
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
   atualizarEstadoCadastroFuncionarioUI();
@@ -17332,6 +17655,11 @@ function aplicarFiltroLojasFinanceirasPermitidas(query, lojasPermitidasIds = nul
   return query;
 }
 
+function obterIdsLojasSelecionadasFiltroFinanceiroPage(containerId = '') {
+  const ids = obterIdsLojasSelecionadasFiltroMultiLoja(containerId || '');
+  return ids.length ? ids : obterIdsLojasFinanceirasPermitidas();
+}
+
 function limparFormularioContaFinanceira() {
   contaFinanceiraEmEdicaoId = null;
   const campoNome = document.getElementById('contaFinanceiraNome');
@@ -17347,7 +17675,7 @@ async function carregarContasFinanceiras({ render = true, silencioso = false } =
   const lista = document.getElementById('listaContasFinanceiras');
   if (render && lista) lista.innerHTML = '<div class="empty">Carregando...</div>';
 
-  const lojasPermitidasIds = obterIdsLojasFinanceirasPermitidas();
+  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasContasFinanceiras');
   const { data, error } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('contas_financeiras')
@@ -17534,11 +17862,13 @@ async function carregarExtratoContaFinanceira() {
   const filtroConta = String(document.getElementById('filtroExtratoContaFinanceira')?.value || '').trim();
   const filtroBusca = textoFinanceiroNormalizado(document.getElementById('filtroExtratoContaBusca')?.value || '');
 
+  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasContasFinanceiras');
   let query = sb
     .from('contas_financeiras_movimentacoes')
     .select('id, conta_financeira_id, recebivel_id, tipo, valor, descricao, saldo_apos, created_at, contas_financeiras(nome), recebiveis(id, fornecedores(nome), formas_pagamento(nome))')
     .order('created_at', { ascending: false });
   if (filtroConta) query = query.eq('conta_financeira_id', filtroConta);
+  query = aplicarFiltroLojasFinanceirasPermitidas(query, lojasPermitidasIds);
 
   const { data, error } = await query;
   if (error) {
@@ -18852,84 +19182,12 @@ function exportarExtratoCofrePdf() {
           <tbody>${linhas}</tbody>
         </table>
       
-<style id="ajuste-espaco-calendario-escala">
-  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
-  @media (min-width: 901px) {
-    .sidebar {
-      width: 200px !important;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
-    }
-    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
-    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
-    .logo strong { font-size: 15px !important; }
-    .logo span { font-size: 10px !important; }
-    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
-    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
-    .nav-title { font-size: 13px !important; }
-    .nav-hint { font-size: 10px !important; }
-  }
-  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
-  #escala_plantoes .escala-layout {
-    grid-template-columns: 220px minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-  #escala_plantoes .escala-side-card,
-  #escala_plantoes .escala-calendario-card {
-    padding: 10px !important;
-  }
-  #escala_plantoes .escala-side-title {
-    font-size: 14px !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 6px !important;
-  }
-  #escala_plantoes .escala-check-row {
-    min-height: 30px !important;
-    padding: 6px 2px !important;
-    gap: 7px !important;
-    font-size: 13px !important;
-  }
-  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
-  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
-  #escala_plantoes .escala-nav { gap: 6px !important; }
-  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
-  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
-  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
-  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
-  #escala_plantoes .escala-calendario {
-    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
-    min-height: 570px !important;
-  }
-  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
-  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
-  @media (max-width: 1050px) {
-    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
-  }
-</style>
 
 
-<style id="escala-calendario-apenas-mes-atual-fix">
-  #escala_plantoes .escala-dia-vazio{
-    background:rgba(255,255,255,.015) !important;
-    cursor:default !important;
-    pointer-events:none !important;
-    box-shadow:none !important;
-  }
-  #escala_plantoes .escala-dia-vazio:hover{
-    background:rgba(255,255,255,.015) !important;
-    box-shadow:none !important;
-  }
-</style>
 
-<style id="patch-escala-modal-salvar-zuqui">
-  @media (min-width: 901px){
-    .sidebar{width:210px !important;}
-    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
-  }
-  #escala_plantoes .escala-side-card{padding:12px !important;}
-  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
-  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
-</style>
+
+
+
 </body>
     </html>
   `);
@@ -18947,7 +19205,7 @@ async function carregarCofreFinanceiro() {
   renderizarCardsCofreContas([]);
   renderizarPizzaCofreContas([]);
 
-  const lojasPermitidasIds = obterIdsLojasFinanceirasPermitidas();
+  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasCofreFinanceiro');
   const filtroInicio = String(document.getElementById('filtroCofreDataInicio')?.value || '').trim();
   const filtroFim = String(document.getElementById('filtroCofreDataFim')?.value || '').trim();
   const { data: contas, error: erroContas } = await executarSemFiltroLojaTemporario(() => {
@@ -20733,7 +20991,8 @@ function obterAtivoRegistroLoja(item = {}) {
 
 function atualizarFormularioLojaCadastroPorPermissao() {
   const criando = !lojaCadastroEmEdicaoId;
-  const podeCriar = usuarioPodeCriarLojasGlobais();
+  // criação de filiais agora restrita a administradores
+  const podeCriar = usuarioEhAdministrador();
   const bloqueado = criando && !podeCriar;
   const nome = document.getElementById('nomeLojaCadastro');
   const codigo = document.getElementById('codigoLojaCadastro');
@@ -20750,7 +21009,12 @@ function atualizarFormularioLojaCadastroPorPermissao() {
   if (ativo) ativo.disabled = bloqueado || (!criando && !podeCriar);
   if (btnSalvar) {
     btnSalvar.disabled = bloqueado;
-    if (bloqueado) btnSalvar.textContent = 'Selecione uma filial';
+    if (bloqueado) {
+      btnSalvar.textContent = 'Selecione uma filial';
+      btnSalvar.title = 'Apenas administradores podem cadastrar filiais';
+    } else {
+      btnSalvar.title = '';
+    }
   }
 }
 
@@ -20919,8 +21183,13 @@ async function salvarLojaCadastro() {
     setMsg('msgLojasCadastro', 'Você não tem permissão para cadastrar filiais.', 'err');
     return;
   }
+  // criação de nova filial só por administradores (reduz risco de cruzamento de dados)
   if (!lojaCadastroEmEdicaoId && !usuarioPodeCriarLojasGlobais()) {
     setMsg('msgLojasCadastro', 'Você pode editar a loja vinculada, mas não cadastrar novas filiais.', 'err');
+    return;
+  }
+  if (!lojaCadastroEmEdicaoId && !usuarioEhAdministrador()) {
+    setMsg('msgLojasCadastro', 'Apenas administradores podem cadastrar novas filiais.', 'err');
     return;
   }
   const nome = String(document.getElementById('nomeLojaCadastro')?.value || '').trim();
@@ -21325,10 +21594,7 @@ async function alternarAtivoAdminLojaCadastro(id) {
 }
 
 function aplicarVisibilidadeConfiguracoesLoja() {
-  const permissoes = obterPermissoesUsuario();
-  const podeConfiguracoes = usuarioSistemaLogado?.tipo === 'admin' || !!permissoes.configuracoes || usuarioPodeGerenciarLojasSaas();
-  const podeLojas = usuarioPodeGerenciarLojasGlobais();
-  const podeAdmins = usuarioPodeEditarAdminsDaLojaLogada();
+  const podeConfiguracoes = usuarioEhAdministrador();
 
   const cardDados = document.getElementById('cardDadosLojaConfig');
   const cardLembrete = document.getElementById('cardLembreteLojaConfig');
@@ -21468,17 +21734,14 @@ let empresasSaasCache = [];
 let lojasSaasCache = [];
 let empresaSaasEmEdicaoId = null;
 let lojaSaasEmEdicaoId = null;
+let copiaDadosEntreLojasEmAndamento = false;
 
 function usuarioPodeGerenciarEmpresasSaas() {
-  if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
-  return obterPermissoesUsuario().gerenciar_empresas === true;
+  return usuarioEhAdministrador();
 }
 
 function usuarioPodeGerenciarLojasSaas() {
-  if (!usuarioSistemaLogado) return false;
-  if (usuarioSistemaLogado.tipo === 'admin') return true;
-  return obterPermissoesUsuario().gerenciar_lojas === true;
+  return usuarioEhAdministrador();
 }
 
 function nomeEmpresaSaas(item = {}) {
@@ -21615,6 +21878,11 @@ function limparFormularioEmpresaSaas() {
   if (nome) nome.value = '';
   if (ativo) ativo.checked = true;
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar empresa';
+  if (btnSalvar) {
+    btnSalvar.disabled = !usuarioEhAdministrador();
+    if (btnSalvar.disabled) btnSalvar.title = 'Apenas administradores podem cadastrar empresas';
+    else btnSalvar.title = '';
+  }
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -21642,6 +21910,11 @@ function editarEmpresaSaas(id) {
 async function salvarEmpresaSaas() {
   if (!usuarioPodeGerenciarEmpresasSaas()) {
     setMsg('msgEmpresasSaas', 'Você não tem permissão para gerenciar empresas.', 'err');
+    return;
+  }
+  // criação de empresas restrita a administradores
+  if (!empresaSaasEmEdicaoId && !usuarioEhAdministrador()) {
+    setMsg('msgEmpresasSaas', 'Apenas administradores podem cadastrar novas empresas.', 'err');
     return;
   }
   const nome = String(document.getElementById('saasNomeEmpresa')?.value || '').trim();
@@ -21686,6 +21959,7 @@ async function carregarLojasSaas() {
   if (lista) lista.innerHTML = '<div class="empty">Carregando lojas...</div>';
   if (!usuarioPodeGerenciarLojasSaas()) {
     lojasSaasCache = [];
+    inicializarCopiarDadosEntreLojasSaas();
     if (lista) lista.innerHTML = '<div class="empty">Sem permissão para visualizar lojas.</div>';
     return [];
   }
@@ -21693,6 +21967,7 @@ async function carregarLojasSaas() {
   const { data, error } = await sb.from('lojas').select('*').order('nome', { ascending: true });
   if (error) {
     lojasSaasCache = [];
+    inicializarCopiarDadosEntreLojasSaas();
     if (lista) lista.innerHTML = '<div class="empty">Erro ao carregar lojas.</div>';
     setMsg('msgLojasSaas', `Erro ao carregar lojas: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return [];
@@ -21700,6 +21975,7 @@ async function carregarLojasSaas() {
 
   lojasSaasCache = Array.isArray(data) ? data : [];
   renderizarLojasSaas();
+  inicializarCopiarDadosEntreLojasSaas();
   return lojasSaasCache;
 }
 
@@ -21745,12 +22021,22 @@ function limparFormularioLojaSaas() {
   const btnCancelar = document.getElementById('btnCancelarLojaSaas');
   if (empresa) empresa.value = '';
   if (nome) nome.value = '';
-  if (codigo) codigo.value = '';
+  if (codigo) {
+    codigo.value = '';
+    codigo.readOnly = true;
+    codigo.placeholder = 'Automático';
+    codigo.title = 'Código gerado automaticamente no cadastro de nova loja';
+  }
   if (cep) cep.value = '';
   if (cidade) cidade.value = '';
   if (estado) estado.value = '';
   if (ativo) ativo.checked = true;
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar loja';
+  if (btnSalvar) {
+    btnSalvar.disabled = !usuarioEhAdministrador();
+    if (btnSalvar.disabled) btnSalvar.title = 'Apenas administradores podem cadastrar lojas';
+    else btnSalvar.title = '';
+  }
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -21775,7 +22061,12 @@ function editarLojaSaas(id) {
   const btnCancelar = document.getElementById('btnCancelarLojaSaas');
   if (empresa) empresa.value = String(item.empresa_id || '');
   if (nome) nome.value = nomeLojaSaas(item);
-  if (codigo) codigo.value = codigoLojaSaas(item);
+  if (codigo) {
+    codigo.value = codigoLojaSaas(item);
+    codigo.readOnly = false;
+    codigo.placeholder = 'Código';
+    codigo.title = 'Você pode ajustar o código ao editar a loja';
+  }
   if (cep) cep.value = formatarCepLoja(item.cep || '');
   if (cidade) cidade.value = String(item.cidade || item.municipio || '').trim();
   if (estado) estado.value = String(item.estado || item.uf || '').trim().toUpperCase();
@@ -21788,6 +22079,11 @@ function editarLojaSaas(id) {
 async function salvarLojaSaas() {
   if (!usuarioPodeGerenciarLojasSaas()) {
     setMsg('msgLojasSaas', 'Você não tem permissão para gerenciar lojas.', 'err');
+    return;
+  }
+  // criação de lojas via painel SaaS apenas por administradores
+  if (!lojaSaasEmEdicaoId && !usuarioEhAdministrador()) {
+    setMsg('msgLojasSaas', 'Apenas administradores podem cadastrar novas lojas.', 'err');
     return;
   }
   const empresaId = String(document.getElementById('saasEmpresaLoja')?.value || '').trim();
@@ -21836,6 +22132,329 @@ async function alternarLojaSaas(id) {
   }
   setMsg('msgLojasSaas', `Loja ${novoAtivo ? 'ativada' : 'inativada'}.`, 'ok');
   await carregarLojasSaas();
+}
+
+function normalizarNumeroCnpj(valor = '') {
+  return String(valor || '').replace(/\D/g, '');
+}
+
+function normalizarNomeComparacao(valor = '') {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function obterEmpresaSelecionadaCopiarDadosLojas() {
+  const select = document.getElementById('saasEmpresaCopiarDados');
+  const empresaSelecionada = String(select?.value || '').trim();
+  if (empresaSelecionada) return empresaSelecionada;
+  return String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+}
+
+function preencherSelectComLojas(selectId = '', lojas = [], lojaSelecionada = '') {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  const atual = String(lojaSelecionada || select.value || '').trim();
+  const placeholder = selectId === 'saasLojaOrigemCopiarDados' ? '- Loja origem -' : '- Loja destino -';
+  select.innerHTML = `<option value="">${placeholder}</option>`;
+  lojas.forEach(loja => {
+    const id = String(loja?.id || '').trim();
+    if (!id) return;
+    const nome = String(loja?.nome || loja?.nome_loja || id).trim();
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = nome;
+    select.appendChild(opt);
+  });
+  if (atual && lojas.some(loja => String(loja?.id || '').trim() === atual)) {
+    select.value = atual;
+  }
+}
+
+function sincronizarSelectsCopiarDadosEntreLojas() {
+  const empresaId = obterEmpresaSelecionadaCopiarDadosLojas();
+  const lojasEmpresa = (lojasSaasCache || []).filter(loja => String(loja?.empresa_id || '').trim() === empresaId);
+  const origem = String(document.getElementById('saasLojaOrigemCopiarDados')?.value || '').trim();
+  const destino = String(document.getElementById('saasLojaDestinoCopiarDados')?.value || '').trim();
+
+  preencherSelectComLojas('saasLojaOrigemCopiarDados', lojasEmpresa, origem);
+  preencherSelectComLojas('saasLojaDestinoCopiarDados', lojasEmpresa, destino);
+}
+
+function inicializarCopiarDadosEntreLojasSaas() {
+  const card = document.getElementById('cardCopiarDadosLojasSaas');
+  if (!card) return;
+
+  const podeGerenciar = usuarioPodeGerenciarLojasSaas();
+  card.style.display = podeGerenciar ? '' : 'none';
+  if (!podeGerenciar) return;
+
+  const selectEmpresa = document.getElementById('saasEmpresaCopiarDados');
+  if (!selectEmpresa) return;
+
+  const empresaAtual = String(selectEmpresa.value || '').trim();
+  const empresaSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
+  const empresasDisponiveis = [...(empresasSaasCache || [])].filter(empresa => {
+    const id = String(empresa?.id || '').trim();
+    return !empresaSessao || id === empresaSessao;
+  });
+
+  selectEmpresa.innerHTML = '<option value="">- Empresa -</option>';
+  empresasDisponiveis.forEach(empresa => {
+    const id = String(empresa?.id || '').trim();
+    if (!id) return;
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = nomeEmpresaSaas(empresa) || id;
+    selectEmpresa.appendChild(opt);
+  });
+
+  if (empresaAtual && empresasDisponiveis.some(empresa => String(empresa?.id || '').trim() === empresaAtual)) {
+    selectEmpresa.value = empresaAtual;
+  } else if (empresaSessao) {
+    selectEmpresa.value = empresaSessao;
+  } else if (empresasDisponiveis.length === 1) {
+    selectEmpresa.value = String(empresasDisponiveis[0].id || '');
+  }
+
+  sincronizarSelectsCopiarDadosEntreLojas();
+}
+
+async function copiarFornecedoresEntreLojasSaas(empresaId = '', lojaOrigemId = '', lojaDestinoId = '') {
+  const { data: fornecedoresOrigem, error: erroOrigem } = await sb
+    .from('fornecedores')
+    .select('*')
+    .eq('empresa_id', empresaId)
+    .eq('loja_id', lojaOrigemId)
+    .order('nome', { ascending: true });
+
+  if (erroOrigem) throw erroOrigem;
+  if (!Array.isArray(fornecedoresOrigem) || !fornecedoresOrigem.length) {
+    return { inseridos: 0, ignorados: 0 };
+  }
+
+  const { data: fornecedoresDestino, error: erroDestino } = await sb
+    .from('fornecedores')
+    .select('id, nome, cnpj')
+    .eq('empresa_id', empresaId)
+    .eq('loja_id', lojaDestinoId);
+
+  if (erroDestino) throw erroDestino;
+
+  const existentes = new Set((fornecedoresDestino || []).map(item => {
+    const cnpj = normalizarNumeroCnpj(item?.cnpj || '');
+    if (cnpj) return `cnpj:${cnpj}`;
+    return `nome:${normalizarNomeComparacao(item?.nome || '')}`;
+  }));
+
+  const inserir = [];
+  let ignorados = 0;
+  for (const fornecedor of fornecedoresOrigem) {
+    const cnpj = normalizarNumeroCnpj(fornecedor?.cnpj || '');
+    const chave = cnpj ? `cnpj:${cnpj}` : `nome:${normalizarNomeComparacao(fornecedor?.nome || '')}`;
+    if (existentes.has(chave)) {
+      ignorados += 1;
+      continue;
+    }
+    existentes.add(chave);
+
+    const { id, created_at, updated_at, loja_id, empresa_id, ...restante } = fornecedor || {};
+    inserir.push({
+      ...restante,
+      empresa_id: empresaId,
+      loja_id: lojaDestinoId,
+    });
+  }
+
+  if (inserir.length) {
+    const { error: erroInsert } = await sb.from('fornecedores').insert(inserir);
+    if (erroInsert) throw erroInsert;
+  }
+
+  return { inseridos: inserir.length, ignorados };
+}
+
+async function copiarChecklistsEntreLojasSaas(empresaId = '', lojaOrigemId = '', lojaDestinoId = '') {
+  const { data: checklistsOrigem, error: erroOrigem } = await sb
+    .from('checklists')
+    .select('*')
+    .eq('empresa_id', empresaId)
+    .eq('loja_id', lojaOrigemId)
+    .order('nome', { ascending: true });
+
+  if (erroOrigem) throw erroOrigem;
+  if (!Array.isArray(checklistsOrigem) || !checklistsOrigem.length) {
+    return { checklistsInseridos: 0, itensInseridos: 0, checklistsIgnorados: 0 };
+  }
+
+  const { data: checklistsDestino, error: erroDestino } = await sb
+    .from('checklists')
+    .select('id, nome')
+    .eq('empresa_id', empresaId)
+    .eq('loja_id', lojaDestinoId);
+
+  if (erroDestino) throw erroDestino;
+
+  const nomesDestino = new Set((checklistsDestino || []).map(item => normalizarNomeComparacao(item?.nome || '')));
+  const mapaChecklistNovoPorAntigo = new Map();
+  let checklistsIgnorados = 0;
+
+  for (const checklist of checklistsOrigem) {
+    const nomeNormalizado = normalizarNomeComparacao(checklist?.nome || '');
+    if (!nomeNormalizado || nomesDestino.has(nomeNormalizado)) {
+      checklistsIgnorados += 1;
+      continue;
+    }
+    nomesDestino.add(nomeNormalizado);
+
+    const { id, created_at, updated_at, loja_id, empresa_id, ...restante } = checklist || {};
+    const payload = {
+      ...restante,
+      empresa_id: empresaId,
+      loja_id: lojaDestinoId,
+    };
+    const { data: novoChecklist, error: erroInsertChecklist } = await sb
+      .from('checklists')
+      .insert([payload])
+      .select('id')
+      .single();
+
+    if (erroInsertChecklist) throw erroInsertChecklist;
+
+    const idAntigo = String(id || '').trim();
+    const idNovo = String(novoChecklist?.id || '').trim();
+    if (idAntigo && idNovo) {
+      mapaChecklistNovoPorAntigo.set(idAntigo, idNovo);
+    }
+  }
+
+  const idsOriginaisCopiados = Array.from(mapaChecklistNovoPorAntigo.keys());
+  if (!idsOriginaisCopiados.length) {
+    return { checklistsInseridos: 0, itensInseridos: 0, checklistsIgnorados };
+  }
+
+  const { data: itensOrigem, error: erroItensOrigem } = await sb
+    .from('checklist_itens')
+    .select('*')
+    .in('checklist_id', idsOriginaisCopiados);
+
+  if (erroItensOrigem) throw erroItensOrigem;
+
+  const itensParaInserir = [];
+  (itensOrigem || []).forEach(item => {
+    const checklistAntigoId = String(item?.checklist_id || '').trim();
+    const checklistNovoId = mapaChecklistNovoPorAntigo.get(checklistAntigoId);
+    if (!checklistNovoId) return;
+    const { id, created_at, updated_at, checklist_id, ...restante } = item || {};
+    itensParaInserir.push({
+      ...restante,
+      checklist_id: checklistNovoId,
+    });
+  });
+
+  if (itensParaInserir.length) {
+    const { error: erroInsertItens } = await sb.from('checklist_itens').insert(itensParaInserir);
+    if (erroInsertItens) throw erroInsertItens;
+  }
+
+  return {
+    checklistsInseridos: idsOriginaisCopiados.length,
+    itensInseridos: itensParaInserir.length,
+    checklistsIgnorados,
+  };
+}
+
+async function copiarDadosEntreLojasSaas() {
+  if (!usuarioPodeGerenciarLojasSaas()) {
+    setMsg('msgCopiarDadosLojasSaas', 'Você não tem permissão para copiar dados entre lojas.', 'err');
+    return;
+  }
+  if (copiaDadosEntreLojasEmAndamento) return;
+
+  const empresaId = obterEmpresaSelecionadaCopiarDadosLojas();
+  const lojaOrigemId = String(document.getElementById('saasLojaOrigemCopiarDados')?.value || '').trim();
+  const lojaDestinoId = String(document.getElementById('saasLojaDestinoCopiarDados')?.value || '').trim();
+  const copiarFornecedores = document.getElementById('copiarDadosFornecedores')?.checked === true;
+  const copiarChecklists = document.getElementById('copiarDadosChecklists')?.checked === true;
+
+  if (!empresaId) {
+    setMsg('msgCopiarDadosLojasSaas', 'Selecione a empresa para copiar dados entre lojas.', 'err');
+    return;
+  }
+  if (!lojaOrigemId || !lojaDestinoId) {
+    setMsg('msgCopiarDadosLojasSaas', 'Selecione loja de origem e de destino.', 'err');
+    return;
+  }
+  if (lojaOrigemId === lojaDestinoId) {
+    setMsg('msgCopiarDadosLojasSaas', 'A loja de origem deve ser diferente da loja de destino.', 'err');
+    return;
+  }
+  if (!copiarFornecedores && !copiarChecklists) {
+    setMsg('msgCopiarDadosLojasSaas', 'Selecione ao menos um tipo de dado para copiar.', 'err');
+    return;
+  }
+
+  const lojasEmpresa = (lojasSaasCache || []).filter(loja => String(loja?.empresa_id || '').trim() === empresaId);
+  const origemValida = lojasEmpresa.some(loja => String(loja?.id || '').trim() === lojaOrigemId);
+  const destinoValido = lojasEmpresa.some(loja => String(loja?.id || '').trim() === lojaDestinoId);
+  if (!origemValida || !destinoValido) {
+    setMsg('msgCopiarDadosLojasSaas', 'Origem e destino devem pertencer à mesma empresa selecionada.', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('btnCopiarDadosEntreLojas');
+  const textoOriginal = btn?.textContent || 'Copiar dados entre lojas';
+  copiaDadosEntreLojasEmAndamento = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Copiando...';
+  }
+  setMsg('msgCopiarDadosLojasSaas', 'Processando cópia de dados entre lojas...', 'ok');
+
+  try {
+    const resumo = {
+      fornecedoresInseridos: 0,
+      fornecedoresIgnorados: 0,
+      checklistsInseridos: 0,
+      checklistsIgnorados: 0,
+      checklistItensInseridos: 0,
+    };
+
+    await executarSemFiltroLojaTemporario(async () => {
+      if (copiarFornecedores) {
+        const resultadoFornecedores = await copiarFornecedoresEntreLojasSaas(empresaId, lojaOrigemId, lojaDestinoId);
+        resumo.fornecedoresInseridos = resultadoFornecedores.inseridos;
+        resumo.fornecedoresIgnorados = resultadoFornecedores.ignorados;
+      }
+
+      if (copiarChecklists) {
+        const resultadoChecklists = await copiarChecklistsEntreLojasSaas(empresaId, lojaOrigemId, lojaDestinoId);
+        resumo.checklistsInseridos = resultadoChecklists.checklistsInseridos;
+        resumo.checklistsIgnorados = resultadoChecklists.checklistsIgnorados;
+        resumo.checklistItensInseridos = resultadoChecklists.itensInseridos;
+      }
+    });
+
+    const partes = [];
+    if (copiarFornecedores) {
+      partes.push(`Fornecedores: ${resumo.fornecedoresInseridos} copiado(s), ${resumo.fornecedoresIgnorados} ignorado(s)`);
+    }
+    if (copiarChecklists) {
+      partes.push(`Checklist: ${resumo.checklistsInseridos} copiado(s), ${resumo.checklistsIgnorados} ignorado(s), ${resumo.checklistItensInseridos} item(ns) replicado(s)`);
+    }
+
+    setMsg('msgCopiarDadosLojasSaas', `Cópia concluída. ${partes.join(' · ')}`, 'ok');
+  } catch (error) {
+    setMsg('msgCopiarDadosLojasSaas', `Falha ao copiar dados: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+  } finally {
+    copiaDadosEntreLojasEmAndamento = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+    }
+  }
 }
 
 // PERFIS
@@ -21941,7 +22560,7 @@ async function carregarSelectPerfisFuncionario() {
   const sel = document.getElementById('perfilFuncionario');
   if (!sel) return;
   sel.innerHTML = '<option value="">- Selecione o perfil -</option>';
-  const resposta = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome').order('nome'));
+  const resposta = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome, codigo').order('nome'));
   const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
@@ -21952,9 +22571,30 @@ async function carregarSelectPerfisFuncionario() {
   (data || []).forEach(p => {
     const o = document.createElement('option');
     o.value = p.id;
+    if (p.codigo) o.dataset.codigo = p.codigo;
     o.textContent = p.nome;
     sel.appendChild(o);
   });
+}
+
+function atualizarFuncionarioAdminCheckbox() {
+  const sel = document.getElementById('perfilFuncionario');
+  const funcionarioAdmin = document.getElementById('funcionarioAdmin');
+  if (!sel || !funcionarioAdmin) return;
+  const selectedCodigo = normalizarCodigoPerfil(sel.selectedOptions?.[0]?.dataset?.codigo || '');
+  funcionarioAdmin.checked = ['ADM', 'MASTER'].includes(selectedCodigo);
+}
+
+function atualizarFuncionarioAdminToggle() {
+  const sel = document.getElementById('perfilFuncionario');
+  const funcionarioAdmin = document.getElementById('funcionarioAdmin');
+  if (!sel || !funcionarioAdmin) return;
+  if (funcionarioAdmin.checked) {
+    const opcaoAdmin = Array.from(sel.options).find(opt => ['ADM', 'MASTER'].includes(normalizarCodigoPerfil(opt.dataset?.codigo || '')));
+    if (opcaoAdmin) {
+      sel.value = opcaoAdmin.value;
+    }
+  }
 }
 
 async function criarPerfil() {
@@ -27787,84 +28427,12 @@ function imprimirRelatorioFinanceiroPdf() {
         </table>
         ${htmlRodapeRelatorioImpressao(dataGeracaoRelatorio, filtrosRodape)}
       
-<style id="ajuste-espaco-calendario-escala">
-  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
-  @media (min-width: 901px) {
-    .sidebar {
-      width: 200px !important;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
-    }
-    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
-    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
-    .logo strong { font-size: 15px !important; }
-    .logo span { font-size: 10px !important; }
-    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
-    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
-    .nav-title { font-size: 13px !important; }
-    .nav-hint { font-size: 10px !important; }
-  }
-  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
-  #escala_plantoes .escala-layout {
-    grid-template-columns: 220px minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-  #escala_plantoes .escala-side-card,
-  #escala_plantoes .escala-calendario-card {
-    padding: 10px !important;
-  }
-  #escala_plantoes .escala-side-title {
-    font-size: 14px !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 6px !important;
-  }
-  #escala_plantoes .escala-check-row {
-    min-height: 30px !important;
-    padding: 6px 2px !important;
-    gap: 7px !important;
-    font-size: 13px !important;
-  }
-  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
-  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
-  #escala_plantoes .escala-nav { gap: 6px !important; }
-  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
-  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
-  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
-  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
-  #escala_plantoes .escala-calendario {
-    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
-    min-height: 570px !important;
-  }
-  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
-  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
-  @media (max-width: 1050px) {
-    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
-  }
-</style>
 
 
-<style id="escala-calendario-apenas-mes-atual-fix">
-  #escala_plantoes .escala-dia-vazio{
-    background:rgba(255,255,255,.015) !important;
-    cursor:default !important;
-    pointer-events:none !important;
-    box-shadow:none !important;
-  }
-  #escala_plantoes .escala-dia-vazio:hover{
-    background:rgba(255,255,255,.015) !important;
-    box-shadow:none !important;
-  }
-</style>
 
-<style id="patch-escala-modal-salvar-zuqui">
-  @media (min-width: 901px){
-    .sidebar{width:210px !important;}
-    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
-  }
-  #escala_plantoes .escala-side-card{padding:12px !important;}
-  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
-  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
-</style>
+
+
+
 </body>
     </html>
   `);
@@ -28845,84 +29413,12 @@ function imprimirRelatorioAjusteSaldoPdf() {
         </table>
         ${htmlRodapeRelatorioImpressao(geradoEm, `Periodo: ${periodo}`)}
       
-<style id="ajuste-espaco-calendario-escala">
-  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
-  @media (min-width: 901px) {
-    .sidebar {
-      width: 200px !important;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
-    }
-    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
-    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
-    .logo strong { font-size: 15px !important; }
-    .logo span { font-size: 10px !important; }
-    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
-    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
-    .nav-title { font-size: 13px !important; }
-    .nav-hint { font-size: 10px !important; }
-  }
-  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
-  #escala_plantoes .escala-layout {
-    grid-template-columns: 220px minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-  #escala_plantoes .escala-side-card,
-  #escala_plantoes .escala-calendario-card {
-    padding: 10px !important;
-  }
-  #escala_plantoes .escala-side-title {
-    font-size: 14px !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 6px !important;
-  }
-  #escala_plantoes .escala-check-row {
-    min-height: 30px !important;
-    padding: 6px 2px !important;
-    gap: 7px !important;
-    font-size: 13px !important;
-  }
-  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
-  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
-  #escala_plantoes .escala-nav { gap: 6px !important; }
-  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
-  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
-  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
-  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
-  #escala_plantoes .escala-calendario {
-    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
-    min-height: 570px !important;
-  }
-  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
-  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
-  @media (max-width: 1050px) {
-    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
-  }
-</style>
 
 
-<style id="escala-calendario-apenas-mes-atual-fix">
-  #escala_plantoes .escala-dia-vazio{
-    background:rgba(255,255,255,.015) !important;
-    cursor:default !important;
-    pointer-events:none !important;
-    box-shadow:none !important;
-  }
-  #escala_plantoes .escala-dia-vazio:hover{
-    background:rgba(255,255,255,.015) !important;
-    box-shadow:none !important;
-  }
-</style>
 
-<style id="patch-escala-modal-salvar-zuqui">
-  @media (min-width: 901px){
-    .sidebar{width:210px !important;}
-    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
-  }
-  #escala_plantoes .escala-side-card{padding:12px !important;}
-  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
-  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
-</style>
+
+
+
 </body>
     </html>
   `);
@@ -29022,84 +29518,12 @@ function exportarRelatorioLancamentosPDF() {
   }
   const geradoEm = new Date().toLocaleString('pt-BR');
   win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de tarefas</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}${cssRodapeRelatorioImpressao()}</style></head><body><h1>Relatório de tarefas</h1><p>Gerado em ${escaparHtmlBasico(geradoEm)}</p><table><thead><tr><th>Tarefa</th><th>Status</th><th>Responsável</th><th>Observação</th><th>Descrição</th><th>Data</th><th>Horário</th><th>Início</th><th>Iniciado pelo usuário</th><th>Fim</th><th>Finalizado pelo usuário</th><th>Lançado pelo usuário</th></tr></thead><tbody>${htmlLinhas}</tbody></table>${htmlRodapeRelatorioImpressao(geradoEm, 'Filtros aplicados na tela de Relatório de tarefas')}<script>window.onload=function(){window.print();}<\/script>
-<style id="ajuste-espaco-calendario-escala">
-  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
-  @media (min-width: 901px) {
-    .sidebar {
-      width: 200px !important;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
-    }
-    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
-    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
-    .logo strong { font-size: 15px !important; }
-    .logo span { font-size: 10px !important; }
-    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
-    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
-    .nav-title { font-size: 13px !important; }
-    .nav-hint { font-size: 10px !important; }
-  }
-  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
-  #escala_plantoes .escala-layout {
-    grid-template-columns: 220px minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-  #escala_plantoes .escala-side-card,
-  #escala_plantoes .escala-calendario-card {
-    padding: 10px !important;
-  }
-  #escala_plantoes .escala-side-title {
-    font-size: 14px !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 6px !important;
-  }
-  #escala_plantoes .escala-check-row {
-    min-height: 30px !important;
-    padding: 6px 2px !important;
-    gap: 7px !important;
-    font-size: 13px !important;
-  }
-  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
-  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
-  #escala_plantoes .escala-nav { gap: 6px !important; }
-  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
-  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
-  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
-  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
-  #escala_plantoes .escala-calendario {
-    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
-    min-height: 570px !important;
-  }
-  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
-  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
-  @media (max-width: 1050px) {
-    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
-  }
-</style>
 
 
-<style id="escala-calendario-apenas-mes-atual-fix">
-  #escala_plantoes .escala-dia-vazio{
-    background:rgba(255,255,255,.015) !important;
-    cursor:default !important;
-    pointer-events:none !important;
-    box-shadow:none !important;
-  }
-  #escala_plantoes .escala-dia-vazio:hover{
-    background:rgba(255,255,255,.015) !important;
-    box-shadow:none !important;
-  }
-</style>
 
-<style id="patch-escala-modal-salvar-zuqui">
-  @media (min-width: 901px){
-    .sidebar{width:210px !important;}
-    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
-  }
-  #escala_plantoes .escala-side-card{padding:12px !important;}
-  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
-  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
-</style>
+
+
+
 </body></html>`);
   win.document.close();
 }
@@ -30699,9 +31123,8 @@ window.setTimeout(() => {
 </div>
 
 <script>
-  const predefinedUsers = [
-    { username: 'admin', password: 'Santamaria@12#Check2026!' }
-  ];
+  // SEGURANÇA: Credenciais hardcoded removidas. Autenticação via Supabase.
+  const predefinedUsers = [];
 
   function setSistemaLogado(logado) {
     const loginScreen = document.getElementById('loginScreen');
@@ -31418,6 +31841,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const lojasMap = new Map();
     const funcionarioId = String(funcionario?.id || '').trim();
     const funcionarioLojaId = String(funcionario?.loja_id || '').trim();
+    const funcionarioEmpresaId = String(funcionario?.empresa_id || '').trim();
 
     const adicionarLoja = (loja) => {
       const normalizada = normalizarLojaLogin(loja);
@@ -31429,7 +31853,11 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     async function carregarLojasPorIds(ids) {
       const listaIds = [...new Set((ids || []).map(id => String(id || '').trim()).filter(Boolean))];
       if (!listaIds.length) return;
-      const lojasRes = await consultarTabelaSeguroLogin('lojas', q => q.select('*').in('id', listaIds));
+      const lojasRes = await consultarTabelaSeguroLogin('lojas', q => {
+        let query = q.select('*').in('id', listaIds);
+        if (funcionarioEmpresaId) query = query.eq('empresa_id', funcionarioEmpresaId);
+        return query;
+      });
       if (!lojasRes.error && Array.isArray(lojasRes.data)) lojasRes.data.forEach(adicionarLoja);
     }
 
@@ -31438,9 +31866,11 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       if (!vinculosFuncionario.error && Array.isArray(vinculosFuncionario.data) && vinculosFuncionario.data.length > 0) {
         const idsLojas = [...new Set(vinculosFuncionario.data.filter(v => v?.ativo !== false).map(v => String(v.loja_id||'').trim()).filter(Boolean))];
         if (idsLojas.length > 0) {
-          const lojasRes = await fetchSupabaseLogin('lojas', {'select':'*','id':'in.('+idsLojas.join(',')+')'});
-          if (!lojasRes.error && Array.isArray(lojasRes.data)) lojasRes.data.forEach(adicionarLoja);
-        }
+            const paramsLojas = {'select':'*','id':'in.('+idsLojas.join(',')+')'};
+            // Não filtrar por empresa aqui — permitir que vínculos tragam lojas de múltiplas empresas
+            const lojasRes = await fetchSupabaseLogin('lojas', paramsLojas);
+            if (!lojasRes.error && Array.isArray(lojasRes.data)) lojasRes.data.forEach(adicionarLoja);
+          }
       }
 
       const vinculosUsuario = await consultarTabelaSeguroLogin('usuario_lojas', q => q.select('loja_id, ativo').eq('usuario_id', funcionarioId));
@@ -31581,7 +32011,23 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       lista.innerHTML = '<div class="login-store-empty">Nenhuma loja vinculada encontrada para este usuário.</div>';
       return;
     }
-    lista.innerHTML = lojas.map(loja => `
+
+    // Se o usuário que está tentando logar for do tipo ADM/MASTER, mostrar opção "PAINEL ADMINISTRATIVO"
+    const contexto = window.__loginContextoPendente || {};
+    const perfilFuncionario = contexto.perfilFuncionario || null;
+    const codigoPerfil = perfilFuncionario ? normalizarCodigoPerfil(perfilFuncionario.codigo || '') : '';
+    const ehMasterLogin = codigoPerfil === 'ADM' || codigoPerfil === 'MASTER';
+
+    lista.innerHTML = (ehMasterLogin ? `
+      <button type="button" class="login-store-option login-store-admin-panel" data-admin-panel="true">
+        <div class="login-store-icon">⚙️</div>
+        <div class="login-store-info">
+          <strong>PAINEL ADMINISTRATIVO</strong>
+          <span>Acessar todas as empresas, lojas e usuários (apenas administradores)</span>
+        </div>
+        <span class="login-store-arrow">›</span>
+      </button>
+    ` : '') + lojas.map(loja => `
       <button type="button" class="login-store-option" data-loja-id="${escaparHtmlBasico(loja.id)}">
         <div class="login-store-icon">🏪</div>
         <div class="login-store-info">
@@ -31602,6 +32048,34 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         finalizarLoginFuncionarioComLoja(window.__loginContextoPendente, loja);
       });
     });
+    // evento para abrir o painel administrativo direto do login
+    const adminBtn = lista.querySelector('[data-admin-panel]');
+    if (adminBtn) {
+      adminBtn.addEventListener('click', () => {
+        abrirPainelAdministrativoLogin();
+      });
+    }
+  }
+
+  function abrirPainelAdministrativoLogin() {
+    const contexto = window.__loginContextoPendente || null;
+    if (!contexto || !contexto.perfilFuncionario) return setMsg('msgLogin', 'Perfil administrativo não identificado.', 'err');
+    const codigoPerfil = normalizarCodigoPerfil(contexto.perfilFuncionario.codigo || '');
+    if (!(codigoPerfil === 'ADM' || codigoPerfil === 'MASTER')) {
+      setMsg('msgLogin', 'Acesso ao painel administrativo restrito a administradores.', 'err');
+      return;
+    }
+
+    // Cria sessão administrativa baseada no funcionário que entrou (apenas front-end)
+    const nomeUsuario = contexto.funcionario?.nome || contexto.username || 'Administrador';
+    salvarPreferenciasLogin({ username: contexto.username || '', password: contexto.password || '', salvarSenha: contexto.salvarSenha, manterConectado: contexto.manterConectado });
+    salvarSessaoSistema({ tipo: 'admin', username: nomeUsuario, perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador', permissoes: obterPermissoesBase('ADM') }) }, { manterConectado: !!contexto.manterConectado });
+    setSistemaLogado(true);
+    aplicarPermissoesSistema();
+    carregarNotificacoes();
+    limparSelecaoLojaLogin();
+    // Abrir a página de administração de empresas por padrão
+    abrirPagina('empresas_saas');
   }
 
   function obterLojasPermitidasSessao() {
@@ -31661,16 +32135,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return;
     }
 
-    const isAdmin = predefinedUsers.some(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-    if (isAdmin) {
-      salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
-      salvarSessaoSistema({ tipo: 'admin', username: username.toLowerCase(), perfil: { codigo: 'ADM', permissoes: obterPermissoesBase('ADM') } }, { manterConectado });
-      setSistemaLogado(true);
-      aplicarPermissoesSistema();
-      carregarNotificacoes();
-      window.setTimeout(() => restaurarPaginaAtivaSalvaOuPadrao(), 0);
-      return;
-    }
+    // predefinedUsers está vazio (credenciais removidas por segurança). Login exclusivo via Supabase.
 
     let funcionario = null;
     let error = null;
@@ -31729,10 +32194,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return { funcionario: funcionarioEncontrado ? { ...funcionarioEncontrado, perfis: null } : null, error: null };
     };
 
-    ({ funcionario, error } = await consultarFuncionarioComPerfil());
+    ({ funcionario, error } = await executarSemFiltrosTenantTemporario(() => consultarFuncionarioComPerfil()));
     if (error) {
       console.warn('Falha ao consultar funcionário com perfil, tentando fallback sem perfil:', error);
-      ({ funcionario, error } = await consultarFuncionarioSemPerfil());
+      ({ funcionario, error } = await executarSemFiltrosTenantTemporario(() => consultarFuncionarioSemPerfil()));
     }
 
     if (error) {
@@ -31748,7 +32213,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     if (!funcionario || !senhaFuncionarioLoginCombina(funcionario, username, password)) {
       // Tenta login como admin de loja (usuarios_admin: usuario + pin)
       if (!loginComEmail) {
-        const { data: adminsLojaPorLogin, error: erroAdminLogin } = await executarSemFiltroLojaTemporario(() => sb
+        const { data: adminsLojaPorLogin, error: erroAdminLogin } = await executarSemFiltrosTenantTemporario(() => sb
           .from('usuarios_admin')
           .select('id, nome, usuario, pin, ativo, loja_id, empresa_id')
           .eq('ativo', true)
@@ -31757,7 +32222,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
         let adminsLoja = erroAdminLogin ? [] : (adminsLojaPorLogin || []);
         if (!adminsLoja.length) {
-          const { data: adminsLojaPorSenha, error: erroAdminSenha } = await executarSemFiltroLojaTemporario(() => sb
+          const { data: adminsLojaPorSenha, error: erroAdminSenha } = await executarSemFiltrosTenantTemporario(() => sb
             .from('usuarios_admin')
             .select('id, nome, usuario, pin, ativo, loja_id, empresa_id')
             .eq('ativo', true)
@@ -31774,11 +32239,11 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
           if (lojaIdAdmin) {
             try {
-              const lojaRes = await sb
+              const lojaRes = await executarSemFiltrosTenantTemporario(() => sb
                 .from('lojas')
                 .select('*')
                 .eq('id', lojaIdAdmin)
-                .maybeSingle();
+                .maybeSingle());
               if (!lojaRes.error && lojaRes.data) {
                 const loja = lojaRes.data;
                 nomeLojaAdmin = String(loja.nome || loja.nome_loja || loja.descricao || loja.codigo || '').trim();
@@ -31788,11 +32253,11 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
             if (!nomeLojaAdmin) {
               try {
-                const filialRes = await sb
+                const filialRes = await executarSemFiltrosTenantTemporario(() => sb
                   .from('filiais')
                   .select('*')
                   .eq('id', lojaIdAdmin)
-                  .maybeSingle();
+                  .maybeSingle());
                 if (!filialRes.error && filialRes.data) {
                   const filial = filialRes.data;
                   nomeLojaAdmin = String(filial.nome || filial.nome_loja || filial.descricao || filial.codigo || '').trim();
@@ -32336,84 +32801,12 @@ function exportarRelatorioPontoPDF() {
   const geradoEm = new Date().toLocaleString('pt-BR');
   const filtrosRodape = window.__relatorioPontoUltimoPeriodo || 'Filtros aplicados na tela de Relatório ponto';
   win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de ponto</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}${cssRodapeRelatorioImpressao()}</style></head><body><h1>Relatório de ponto</h1><p>${escapeHtmlPonto(window.__relatorioPontoUltimoPeriodo || '')}</p><table><thead><tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Intervalos</th><th>Saída</th><th>Status</th><th>Total</th><th>Ajustes ADM</th></tr></thead><tbody>${htmlLinhas}</tbody></table>${htmlRodapeRelatorioImpressao(geradoEm, filtrosRodape)}<script>window.onload=function(){window.print();}<\/script>
-<style id="ajuste-espaco-calendario-escala">
-  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
-  @media (min-width: 901px) {
-    .sidebar {
-      width: 200px !important;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
-    }
-    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
-    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
-    .logo strong { font-size: 15px !important; }
-    .logo span { font-size: 10px !important; }
-    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
-    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
-    .nav-title { font-size: 13px !important; }
-    .nav-hint { font-size: 10px !important; }
-  }
-  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
-  #escala_plantoes .escala-layout {
-    grid-template-columns: 220px minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-  #escala_plantoes .escala-side-card,
-  #escala_plantoes .escala-calendario-card {
-    padding: 10px !important;
-  }
-  #escala_plantoes .escala-side-title {
-    font-size: 14px !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 6px !important;
-  }
-  #escala_plantoes .escala-check-row {
-    min-height: 30px !important;
-    padding: 6px 2px !important;
-    gap: 7px !important;
-    font-size: 13px !important;
-  }
-  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
-  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
-  #escala_plantoes .escala-nav { gap: 6px !important; }
-  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
-  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
-  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
-  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
-  #escala_plantoes .escala-calendario {
-    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
-    min-height: 570px !important;
-  }
-  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
-  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
-  @media (max-width: 1050px) {
-    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
-  }
-</style>
 
 
-<style id="escala-calendario-apenas-mes-atual-fix">
-  #escala_plantoes .escala-dia-vazio{
-    background:rgba(255,255,255,.015) !important;
-    cursor:default !important;
-    pointer-events:none !important;
-    box-shadow:none !important;
-  }
-  #escala_plantoes .escala-dia-vazio:hover{
-    background:rgba(255,255,255,.015) !important;
-    box-shadow:none !important;
-  }
-</style>
 
-<style id="patch-escala-modal-salvar-zuqui">
-  @media (min-width: 901px){
-    .sidebar{width:210px !important;}
-    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
-  }
-  #escala_plantoes .escala-side-card{padding:12px !important;}
-  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
-  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
-</style>
+
+
+
 </body></html>`);
   win.document.close();
 }
