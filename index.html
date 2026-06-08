@@ -8568,22 +8568,44 @@
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
             <div>
               <div style="font-size:14px;font-weight:700;">📄 Importar fatura de cartão</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Nubank · Inter · Bradesco e outros</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">PDF (Nubank · Inter · Bradesco) ou OFX (Nubank)</div>
             </div>
             <button class="btn btn-ghost btn-sm" onclick="fecharImportadorFatura()" style="font-size:20px;padding:0 10px;">×</button>
           </div>
 
           <!-- Step 1: Upload -->
           <div id="faturaStep1" style="padding:20px;flex:1;overflow-y:auto;">
-            <div id="faturaDropZone" onclick="document.getElementById('faturaFileInput').click()"
-              style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:40px;text-align:center;cursor:pointer;transition:border-color .2s;"
-              ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-              ondragleave="this.style.borderColor='var(--border-mid)'"
-              ondrop="faturaHandleDrop(event)">
-              <div style="font-size:40px;margin-bottom:10px;">📄</div>
-              <div style="font-size:14px;font-weight:600;color:var(--text);">Clique ou arraste o PDF da fatura aqui</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Suporte: Nubank, Inter, Bradesco · PDF com texto (não escaneado)</div>
-              <input id="faturaFileInput" type="file" accept=".pdf" style="display:none" onchange="faturaHandleFile(this.files[0])">
+            <!-- Seleção de formato -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+              <!-- PDF -->
+              <div id="faturaDropZone" onclick="document.getElementById('faturaFileInput').click()"
+                style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;"
+                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+                ondragleave="this.style.borderColor='var(--border-mid)'"
+                ondrop="faturaHandleDrop(event,'pdf')">
+                <div style="font-size:36px;margin-bottom:8px;">📄</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Importar PDF</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Nubank · Inter · Bradesco<br>Usa IA para extrair os dados</div>
+                <div style="margin-top:10px;font-size:10px;background:var(--surface3);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--text-muted);">🤖 Processado por IA</div>
+                <input id="faturaFileInput" type="file" accept=".pdf" style="display:none" onchange="faturaHandleFile(this.files[0],'pdf')">
+              </div>
+              <!-- OFX -->
+              <div id="ofxDropZone" onclick="document.getElementById('ofxFileInput').click()"
+                style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;"
+                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+                ondragleave="this.style.borderColor='var(--border-mid)'"
+                ondrop="faturaHandleDrop(event,'ofx')">
+                <div style="font-size:36px;margin-bottom:8px;">🗂️</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Importar OFX</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Nubank (recomendado)<br>Extração 100% precisa</div>
+                <div style="margin-top:10px;font-size:10px;background:rgba(34,197,94,.1);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--green);">✓ Sem IA — direto do banco</div>
+                <input id="ofxFileInput" type="file" accept=".ofx,.qfx" style="display:none" onchange="faturaHandleFile(this.files[0],'ofx')">
+              </div>
+            </div>
+            <!-- Dica OFX -->
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;">
+              💡 <strong style="color:var(--text);">Como exportar OFX do Nubank:</strong>
+              App Nubank → Cartão de crédito → Fatura → ··· → Exportar fatura → OFX
             </div>
             <div class="msg" id="msgImportarFatura" style="margin-top:10px;"></div>
           </div>
@@ -20505,12 +20527,20 @@ function fecharImportadorFatura() {
   _faturaItensExtraidos = [];
 }
 
-function faturaHandleDrop(e) {
+function faturaHandleDrop(e, tipo) {
   e.preventDefault();
-  document.getElementById('faturaDropZone').style.borderColor = 'var(--border-mid)';
+  const zoneId = tipo === 'ofx' ? 'ofxDropZone' : 'faturaDropZone';
+  document.getElementById(zoneId).style.borderColor = 'var(--border-mid)';
   const file = e.dataTransfer.files[0];
-  if (file?.type === 'application/pdf') faturaHandleFile(file);
-  else setMsg('msgImportarFatura', 'Selecione um arquivo PDF.', 'err');
+  if (!file) return;
+  const ext = file.name.toLowerCase();
+  if (tipo === 'ofx' && (ext.endsWith('.ofx') || ext.endsWith('.qfx'))) {
+    faturaHandleFile(file, 'ofx');
+  } else if (tipo === 'pdf' && file.type === 'application/pdf') {
+    faturaHandleFile(file, 'pdf');
+  } else {
+    setMsg('msgImportarFatura', tipo === 'ofx' ? 'Selecione um arquivo .ofx ou .qfx' : 'Selecione um arquivo PDF.', 'err');
+  }
 }
 
 function faturaVoltarUpload() {
@@ -20531,9 +20561,15 @@ function faturaSetProgress(pct, msg) {
   if (txt) txt.textContent = msg;
 }
 
-async function faturaHandleFile(file) {
+async function faturaHandleFile(file, tipo = 'pdf') {
   if (!file) return;
   setMsg('msgImportarFatura', '', '');
+
+  // OFX: processar direto sem IA
+  if (tipo === 'ofx') {
+    await faturaProcessarOFX(file);
+    return;
+  }
 
   // Mostrar step 2
   document.getElementById('faturaStep1').style.display = 'none';
@@ -20711,6 +20747,101 @@ function faturaAtualizarFooter() {
   const info = document.getElementById('faturaFooterInfo');
   if (info) info.textContent = `${sel.length} de ${_faturaItensExtraidos.length} selecionados · ${formatarMoedaBRFinanceiro(total)}`;
 }
+
+// ── Parser OFX ──────────────────────────────────────────────────
+async function faturaProcessarOFX(file) {
+  document.getElementById('faturaStep1').style.display = 'none';
+  const s2 = document.getElementById('faturaStep2');
+  s2.style.display = 'flex'; s2.style.flexDirection = 'column'; s2.style.alignItems = 'center';
+  faturaSetProgress(20, 'Lendo arquivo OFX...');
+
+  try {
+    const texto = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(new Error('Erro ao ler arquivo'));
+      r.readAsText(file, 'latin1');
+    });
+
+    faturaSetProgress(50, 'Interpretando transações...');
+    const lancamentos = ofxParseLancamentos(texto);
+
+    if (!lancamentos.length) throw new Error('Nenhuma transação encontrada no arquivo OFX.');
+
+    // Extrair info do arquivo
+    const vencimento = ofxExtrairTag(texto, 'DTEND') || ofxExtrairTag(texto, 'DUEDATE') || new Date().toISOString().slice(0,10);
+    const banco = ofxDetectarBanco(texto);
+    const total = lancamentos.reduce((s,l) => s + Math.abs(l.valor), 0);
+
+    _faturaItensExtraidos = lancamentos.map((l, i) => ({
+      id: 'ofx_' + i,
+      data: l.data,
+      descricao: l.descricao,
+      valor: Math.abs(l.valor),
+      parcela_atual: l.parcela_atual,
+      total_parcelas: l.total_parcelas,
+      vencimento_fatura: vencimento,
+      selecionado: l.valor < 0, // débitos = compras; créditos (pagamentos) desmarcados
+    }));
+
+    faturaSetProgress(100, 'Concluído!');
+    setTimeout(() => faturaExibirRevisao({ banco, vencimento, total_fatura: total }), 300);
+
+  } catch(e) {
+    document.getElementById('faturaStep2').style.display = 'none';
+    document.getElementById('faturaStep1').style.display = '';
+    setMsg('msgImportarFatura', '❌ ' + (e.message || 'Erro ao processar OFX'), 'err');
+  }
+}
+
+function ofxParseLancamentos(texto) {
+  const lancamentos = [];
+  // Suporte a formato SGML (antigo) e XML
+  const regexStmt = /<STMTTRN>([\s\S]*?)<\/STMTTRN>|<STMTTRN>([\s\S]*?)(?=<STMTTRN>|<\/BANKTRANLIST>)/gi;
+  let bloco;
+  while ((bloco = regexStmt.exec(texto)) !== null) {
+    const b = bloco[1] || bloco[2] || '';
+    const tipo = ofxExtrairTag(b, 'TRNTYPE') || '';
+    const dtStr = ofxExtrairTag(b, 'DTPOSTED') || '';
+    const valorStr = ofxExtrairTag(b, 'TRNAMT') || '0';
+    const memo = ofxExtrairTag(b, 'MEMO') || ofxExtrairTag(b, 'NAME') || '';
+    const valor = parseFloat(valorStr.replace(',','.')) || 0;
+    const data = ofxParseData(dtStr);
+    if (!data || !memo) continue;
+    // Detectar parcelamento no memo (ex: "AMAZON 02/06" ou "02/06")
+    const matchParc = memo.match(/(\d{1,2})\/(\d{1,2})/);
+    lancamentos.push({
+      data,
+      descricao: memo.replace(/\s+\d{1,2}\/\d{1,2}\s*$/, '').trim(),
+      valor,
+      parcela_atual: matchParc ? parseInt(matchParc[1]) : null,
+      total_parcelas: matchParc ? parseInt(matchParc[2]) : null,
+    });
+  }
+  return lancamentos;
+}
+
+function ofxExtrairTag(texto, tag) {
+  // Suporte SGML: <TAG>valor e XML: <TAG>valor</TAG>
+  const m = texto.match(new RegExp(`<${tag}>([^<\r\n]+)`, 'i'));
+  return m ? m[1].trim() : null;
+}
+
+function ofxParseData(dtStr) {
+  // Formato OFX: YYYYMMDDHHMMSS ou YYYYMMDD
+  if (!dtStr || dtStr.length < 8) return null;
+  const y = dtStr.slice(0,4), m = dtStr.slice(4,6), d = dtStr.slice(6,8);
+  return `${y}-${m}-${d}`;
+}
+
+function ofxDetectarBanco(texto) {
+  const fi = ofxExtrairTag(texto, 'FI') || ofxExtrairTag(texto, 'ORG') || '';
+  if (/nubank/i.test(fi) || /nubank/i.test(texto.slice(0,500))) return 'Nubank';
+  if (/bradesco/i.test(fi) || /bradesco/i.test(texto.slice(0,500))) return 'Bradesco';
+  if (/inter/i.test(fi) || /inter/i.test(texto.slice(0,500))) return 'Inter';
+  return fi || 'Banco';
+}
+// ─────────────────────────────────────────────────────────────────
 
 function faturaSelecionarTodas(checked) {
   _faturaItensExtraidos.forEach(i => i.selecionado = checked);
