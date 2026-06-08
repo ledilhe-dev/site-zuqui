@@ -20141,9 +20141,7 @@ async function carregarGruposFornecedor() {
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
   try {
-    const { data, error } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('grupos_fornecedor').select('*').eq('ativo', true).order('nome')
-    );
+    const { data, error } = await sb.from('grupos_fornecedor').select('*').eq('ativo', true).order('nome');
     if (error) throw error;
     gruposFornecedorCache = data || [];
     preencherSelectGruposFornecedor();
@@ -20186,11 +20184,12 @@ async function salvarGrupoFornecedor() {
   const desc = String(document.getElementById('grupoFornecedorDesc')?.value || '').trim();
   if (!nome) { setMsg('msgGrupoFornecedor', 'Informe o nome do grupo.', 'err'); return; }
   const empresaId = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
-  const payload = { nome, descricao: desc || null, empresa_id: empresaId, ativo: true };
+  const lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
+  const payload = { nome, descricao: desc || null, empresa_id: empresaId, loja_id: lojaId, ativo: true };
   try {
     const { error } = grupoFornecedorEmEdicaoId
-      ? await executarSemFiltroLojaTemporario(() => sb.from('grupos_fornecedor').update(payload).eq('id', grupoFornecedorEmEdicaoId))
-      : await executarSemFiltroLojaTemporario(() => sb.from('grupos_fornecedor').insert([payload]));
+      ? await sb.from('grupos_fornecedor').update(payload).eq('id', grupoFornecedorEmEdicaoId)
+      : await sb.from('grupos_fornecedor').insert([payload]);
     if (error) throw error;
     cancelarEdicaoGrupoFornecedor();
     setMsg('msgGrupoFornecedor', 'Grupo salvo.', 'ok');
@@ -20221,9 +20220,7 @@ function cancelarEdicaoGrupoFornecedor() {
 async function excluirGrupoFornecedor(id) {
   if (!confirm('Excluir este grupo?')) return;
   try {
-    const { error } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('grupos_fornecedor').update({ ativo: false }).eq('id', id)
-    );
+    const { error } = await sb.from('grupos_fornecedor').update({ ativo: false }).eq('id', id);
     if (error) throw error;
     await carregarGruposFornecedor();
   } catch(e) { alert('Erro: ' + (e?.message||'')); }
@@ -20240,9 +20237,7 @@ async function carregarCategoriasCompra() {
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
   try {
-    const { data, error } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('categorias_compra').select('*').eq('ativo', true).order('nome')
-    );
+    const { data, error } = await sb.from('categorias_compra').select('*').eq('ativo', true).order('nome');
     if (error) throw error;
     categoriasCompraCache = data || [];
     preencherSelectCategoriasCompra();
@@ -20293,11 +20288,12 @@ async function salvarCategoriaCompra() {
   const desc = String(document.getElementById('categoriaDesc')?.value || '').trim();
   if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
   const empresaId = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
-  const payload = { nome, icone: icone||null, cor, descricao: desc||null, empresa_id: empresaId, ativo: true };
+  const lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
+  const payload = { nome, icone: icone||null, cor, descricao: desc||null, empresa_id: empresaId, loja_id: lojaId, ativo: true };
   try {
     const { error } = categoriaEmEdicaoId
-      ? await executarSemFiltroLojaTemporario(() => sb.from('categorias_compra').update(payload).eq('id', categoriaEmEdicaoId))
-      : await executarSemFiltroLojaTemporario(() => sb.from('categorias_compra').insert([payload]));
+      ? await sb.from('categorias_compra').update(payload).eq('id', categoriaEmEdicaoId)
+      : await sb.from('categorias_compra').insert([payload]);
     if (error) throw error;
     cancelarEdicaoCategoria();
     setMsg('msgCategoriaCompra', 'Categoria salva.', 'ok');
@@ -20326,9 +20322,7 @@ function cancelarEdicaoCategoria() {
 async function excluirCategoriaCompra(id) {
   if (!confirm('Excluir esta categoria?')) return;
   try {
-    const { error } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('categorias_compra').update({ ativo: false }).eq('id', id)
-    );
+    const { error } = await sb.from('categorias_compra').update({ ativo: false }).eq('id', id);
     if (error) throw error;
     await carregarCategoriasCompra();
   } catch(e) { alert('Erro: ' + (e?.message||'')); }
