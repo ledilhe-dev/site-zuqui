@@ -8460,7 +8460,12 @@
       </section>
 
       <section id="financeiro_contasapagar" class="pagina">
-        <div class="page-title">Cadastro de contas a pagar</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="page-title" style="margin:0;">Cadastro de contas a pagar</div>
+          <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">
+            📄 Importar fatura PDF
+          </button>
+        </div>
 
         <div class="card card-compact">
           <div class="card-title" id="tituloContaAPagarFinanceiro">Nova conta</div>
@@ -8554,6 +8559,72 @@
           <div id="listaContasAPagarFinanceiro"><div class="empty">Carregando...</div></div>
         </div>
       </section>
+
+      <!-- ══ MODAL IMPORTAR FATURA PDF ══ -->
+      <div id="modalImportarFatura" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:var(--radius-lg);width:min(780px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);overflow:hidden;">
+
+          <!-- Header -->
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+            <div>
+              <div style="font-size:14px;font-weight:700;">📄 Importar fatura de cartão</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Nubank · Inter · Bradesco e outros</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="fecharImportadorFatura()" style="font-size:20px;padding:0 10px;">×</button>
+          </div>
+
+          <!-- Step 1: Upload -->
+          <div id="faturaStep1" style="padding:20px;flex:1;overflow-y:auto;">
+            <div id="faturaDropZone" onclick="document.getElementById('faturaFileInput').click()"
+              style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:40px;text-align:center;cursor:pointer;transition:border-color .2s;"
+              ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+              ondragleave="this.style.borderColor='var(--border-mid)'"
+              ondrop="faturaHandleDrop(event)">
+              <div style="font-size:40px;margin-bottom:10px;">📄</div>
+              <div style="font-size:14px;font-weight:600;color:var(--text);">Clique ou arraste o PDF da fatura aqui</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Suporte: Nubank, Inter, Bradesco · PDF com texto (não escaneado)</div>
+              <input id="faturaFileInput" type="file" accept=".pdf" style="display:none" onchange="faturaHandleFile(this.files[0])">
+            </div>
+            <div class="msg" id="msgImportarFatura" style="margin-top:10px;"></div>
+          </div>
+
+          <!-- Step 2: Processando -->
+          <div id="faturaStep2" style="display:none;padding:40px;text-align:center;flex:1;">
+            <div style="font-size:40px;margin-bottom:16px;">🤖</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:8px;">Analisando sua fatura com IA...</div>
+            <div style="font-size:12px;color:var(--text-muted);" id="faturaProgressMsg">Lendo o PDF...</div>
+            <div style="margin-top:20px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+              <div id="faturaProgressBar" style="height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .5s;"></div>
+            </div>
+          </div>
+
+          <!-- Step 3: Revisão -->
+          <div id="faturaStep3" style="display:none;flex:1;overflow-y:auto;display:none;flex-direction:column;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <span style="font-size:13px;font-weight:600;" id="faturaResumoTexto"></span>
+                <span style="font-size:11px;color:var(--text-muted);margin-left:8px;" id="faturaResumoValor"></span>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <label style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
+                  <input type="checkbox" id="faturaSelecionarTodos" checked onchange="faturaSelecionarTodas(this.checked)">
+                  Selecionar todos
+                </label>
+              </div>
+            </div>
+            <div id="faturaListaItens" style="padding:10px 16px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+
+          <!-- Footer -->
+          <div id="faturaFooter" style="display:none;padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+            <span style="font-size:12px;color:var(--text-muted);" id="faturaFooterInfo"></span>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="faturaVoltarUpload()">← Voltar</button>
+              <button class="btn btn-green" onclick="faturaLancarSelecionados()" id="btnFaturaLancar">Lançar selecionados</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <section id="financeiro_baixar_contas" class="pagina">
         <div class="page-title">Baixar contas</div>
@@ -13114,6 +13185,8 @@ function aplicarPermissoesSistema() {
   // Garante que a checkbox de admin seja ocultada/bloqueada conforme o usuário logado
   atualizarVisibilidadeCheckboxAdmin();
   // Ordem do menu é carregada explicitamente antes de restaurarPaginaAtivaSalvaOuPadrao
+  // Recarregar tema da loja atual sempre que as permissões são reaplicadas
+  if (usuarioSistemaLogado) carregarTemaUsuario();
 }
 
 async function countTable(tableName) {
@@ -16100,14 +16173,23 @@ function resetarTema() {
   if (corInput) corInput.value = '#f0a500';
 }
 
+function chaveTemaPorLoja() {
+  const lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || 'global';
+  return 'tema_interface_' + lojaId;
+}
+
 async function salvarTema() {
   if (!_temaAtual) return;
-  await salvarPreferenciaMeuPainel('tema_interface', _temaAtual);
+  await salvarPreferenciaMeuPainel(chaveTemaPorLoja(), _temaAtual);
 }
 
 async function carregarTemaUsuario() {
   try {
-    const tema = await carregarPreferenciaMeuPainel('tema_interface', null);
+    // Tentar carregar tema específico da loja atual
+    const chave = chaveTemaPorLoja();
+    let tema = await carregarPreferenciaMeuPainel(chave, null);
+    // Fallback: tema global (compatibilidade com dados antigos)
+    if (!tema) tema = await carregarPreferenciaMeuPainel('tema_interface', null);
     if (!tema) return;
     _temaAtual = tema;
     if (tema.vars) aplicarVariaveisCSS(tema.vars);
@@ -20405,6 +20487,325 @@ async function recalcularFaltaQuitar() {
 let grupoFornecedorEmEdicaoId = null;
 let gruposFornecedorCache = [];
 
+
+// ══════════════════════════════════════════════════════════════════
+// IMPORTADOR DE FATURA PDF
+// ══════════════════════════════════════════════════════════════════
+let _faturaItensExtraidos = [];
+
+function abrirImportadorFatura() {
+  const modal = document.getElementById('modalImportarFatura');
+  if (modal) { modal.style.display = 'flex'; }
+  faturaVoltarUpload();
+}
+
+function fecharImportadorFatura() {
+  const modal = document.getElementById('modalImportarFatura');
+  if (modal) modal.style.display = 'none';
+  _faturaItensExtraidos = [];
+}
+
+function faturaHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('faturaDropZone').style.borderColor = 'var(--border-mid)';
+  const file = e.dataTransfer.files[0];
+  if (file?.type === 'application/pdf') faturaHandleFile(file);
+  else setMsg('msgImportarFatura', 'Selecione um arquivo PDF.', 'err');
+}
+
+function faturaVoltarUpload() {
+  ['faturaStep2','faturaStep3','faturaFooter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; }
+  });
+  document.getElementById('faturaStep1').style.display = '';
+  document.getElementById('faturaFileInput').value = '';
+  setMsg('msgImportarFatura', '', '');
+  _faturaItensExtraidos = [];
+}
+
+function faturaSetProgress(pct, msg) {
+  const bar = document.getElementById('faturaProgressBar');
+  const txt = document.getElementById('faturaProgressMsg');
+  if (bar) bar.style.width = pct + '%';
+  if (txt) txt.textContent = msg;
+}
+
+async function faturaHandleFile(file) {
+  if (!file) return;
+  setMsg('msgImportarFatura', '', '');
+
+  // Mostrar step 2
+  document.getElementById('faturaStep1').style.display = 'none';
+  const s2 = document.getElementById('faturaStep2');
+  s2.style.display = 'flex'; s2.style.flexDirection = 'column'; s2.style.alignItems = 'center';
+  faturaSetProgress(10, 'Lendo o PDF...');
+
+  try {
+    // Converter PDF para base64
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = () => rej(new Error('Erro ao ler arquivo'));
+      r.readAsDataURL(file);
+    });
+    faturaSetProgress(30, 'Enviando para análise com IA...');
+
+    // Chamar API do Claude
+    const lojaAtual = usuarioSistemaLogado?.loja_nome || 'loja atual';
+    const hoje = new Date().toISOString().slice(0,10);
+
+    const resposta = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: { type: 'base64', media_type: 'application/pdf', data: base64 }
+            },
+            {
+              type: 'text',
+              text: `Você é um assistente especializado em extrair lançamentos de faturas de cartão de crédito brasileiras.
+
+Analise esta fatura e extraia TODOS os lançamentos/compras. Para cada item, identifique:
+1. data: data da compra no formato YYYY-MM-DD (se não tiver ano, use o ano do vencimento da fatura)
+2. descricao: nome do estabelecimento/compra (limpo, sem códigos)
+3. valor: valor em número decimal (ex: 150.00)
+4. parcela_atual: número da parcela atual (ex: 2 se for "02/06") — null se não for parcelado
+5. total_parcelas: total de parcelas (ex: 6 se for "02/06") — null se não for parcelado
+6. vencimento_fatura: data de vencimento desta fatura no formato YYYY-MM-DD
+
+Hoje é ${hoje}. Loja: ${lojaAtual}.
+
+IMPORTANTE:
+- Ignore pagamentos, créditos, ajustes e totais
+- Para parcelados, extraia APENAS a parcela atual mostrada na fatura — o sistema calculará as demais
+- Retorne SOMENTE um JSON válido, sem texto extra, neste formato exato:
+
+{
+  "banco": "nome do banco detectado",
+  "vencimento": "YYYY-MM-DD",
+  "total_fatura": 0.00,
+  "lancamentos": [
+    {
+      "data": "YYYY-MM-DD",
+      "descricao": "Nome do estabelecimento",
+      "valor": 0.00,
+      "parcela_atual": null,
+      "total_parcelas": null
+    }
+  ]
+}`
+            }
+          ]
+        }]
+      })
+    });
+
+    faturaSetProgress(70, 'Processando resultado...');
+
+    if (!resposta.ok) {
+      const err = await resposta.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `Erro HTTP ${resposta.status}`);
+    }
+
+    const dados = await resposta.json();
+    const texto = (dados.content || []).map(b => b.text || '').join('');
+    faturaSetProgress(85, 'Interpretando lançamentos...');
+
+    // Parse do JSON retornado
+    let resultado;
+    try {
+      const jsonLimpo = texto.replace(/```json|```/g, '').trim();
+      resultado = JSON.parse(jsonLimpo);
+    } catch(e) {
+      throw new Error('A IA não retornou um formato válido. Tente novamente.');
+    }
+
+    if (!Array.isArray(resultado.lancamentos) || !resultado.lancamentos.length) {
+      throw new Error('Nenhum lançamento encontrado na fatura.');
+    }
+
+    _faturaItensExtraidos = resultado.lancamentos.map((item, i) => ({
+      ...item,
+      id: 'fat_' + i,
+      selecionado: true,
+      vencimento_fatura: resultado.vencimento || hoje,
+    }));
+
+    faturaSetProgress(100, 'Concluído!');
+    setTimeout(() => faturaExibirRevisao(resultado), 400);
+
+  } catch(e) {
+    document.getElementById('faturaStep2').style.display = 'none';
+    document.getElementById('faturaStep1').style.display = '';
+    setMsg('msgImportarFatura', '❌ ' + (e.message || 'Erro desconhecido'), 'err');
+  }
+}
+
+function faturaExibirRevisao(resultado) {
+  document.getElementById('faturaStep2').style.display = 'none';
+  const s3 = document.getElementById('faturaStep3');
+  s3.style.display = 'flex';
+  s3.style.flexDirection = 'column';
+
+  const total = _faturaItensExtraidos.reduce((s,i) => s + Number(i.valor||0), 0);
+  document.getElementById('faturaResumoTexto').textContent =
+    `${resultado.banco || 'Fatura'} · ${_faturaItensExtraidos.length} lançamentos`;
+  document.getElementById('faturaResumoValor').textContent =
+    `Total: ${formatarMoedaBRFinanceiro(total)} · Venc: ${formatarDataBRFinanceiro(resultado.vencimento || '')}`;
+
+  const perfisOpts = '<option value="">Sem categoria</option>' +
+    categoriasCompraCache.map(c => `<option value="${c.id}">${escaparHtmlBasico(c.nome)}</option>`).join('');
+  const fornOpts = '<option value="">Novo fornecedor</option>' +
+    (fornecedoresFinanceiroCache||[]).map(f => `<option value="${f.id}">${escaparHtmlBasico(f.nome)}</option>`).join('');
+
+  const lista = document.getElementById('faturaListaItens');
+  lista.innerHTML = _faturaItensExtraidos.map(item => {
+    const parc = item.parcela_atual && item.total_parcelas
+      ? `<span style="font-size:10px;color:var(--accent);margin-left:6px;">${item.parcela_atual}/${item.total_parcelas}x</span>`
+      : '';
+    const restantes = (item.total_parcelas && item.parcela_atual)
+      ? item.total_parcelas - item.parcela_atual
+      : 0;
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface2);" id="faturaItem_${item.id}">
+      <div style="display:flex;align-items:flex-start;gap:8px;">
+        <input type="checkbox" ${item.selecionado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;"
+          onchange="_faturaItensExtraidos.find(i=>i.id==='${item.id}').selecionado=this.checked;faturaAtualizarFooter()">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:600;color:var(--text);">${escaparHtmlBasico(item.descricao)}</span>
+            ${parc}
+            ${restantes > 0 ? `<span style="font-size:10px;color:var(--text-muted);">→ +${restantes} parcelas futuras serão geradas</span>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:11px;color:var(--text-muted);">${formatarDataBRFinanceiro(item.data)}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--text);">${formatarMoedaBRFinanceiro(item.valor)}</span>
+            <select style="font-size:11px;height:24px;padding:0 4px;flex:1;min-width:120px;"
+              onchange="_faturaItensExtraidos.find(i=>i.id==='${item.id}').categoria_id=this.value">
+              ${perfisOpts}
+            </select>
+            <select style="font-size:11px;height:24px;padding:0 4px;flex:1;min-width:140px;"
+              onchange="_faturaItensExtraidos.find(i=>i.id==='${item.id}').fornecedor_id=this.value">
+              ${fornOpts}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const footer = document.getElementById('faturaFooter');
+  footer.style.display = 'flex';
+  faturaAtualizarFooter();
+}
+
+function faturaAtualizarFooter() {
+  const sel = _faturaItensExtraidos.filter(i => i.selecionado);
+  const total = sel.reduce((s,i) => s + Number(i.valor||0), 0);
+  const info = document.getElementById('faturaFooterInfo');
+  if (info) info.textContent = `${sel.length} de ${_faturaItensExtraidos.length} selecionados · ${formatarMoedaBRFinanceiro(total)}`;
+}
+
+function faturaSelecionarTodas(checked) {
+  _faturaItensExtraidos.forEach(i => i.selecionado = checked);
+  document.querySelectorAll('#faturaListaItens input[type=checkbox]').forEach(cb => cb.checked = checked);
+  faturaAtualizarFooter();
+}
+
+async function faturaLancarSelecionados() {
+  const selecionados = _faturaItensExtraidos.filter(i => i.selecionado);
+  if (!selecionados.length) { alert('Selecione pelo menos um item.'); return; }
+
+  const btn = document.getElementById('btnFaturaLancar');
+  if (btn) { btn.textContent = 'Lançando...'; btn.disabled = true; }
+
+  const lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
+  const empresaId = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
+  const criadoPorNome = usuarioSistemaLogado?.nome || 'Usuário';
+
+  let erros = 0;
+  let lancados = 0;
+
+  for (const item of selecionados) {
+    try {
+      // Resolver ou criar fornecedor
+      let fornecedorId = item.fornecedor_id || null;
+      if (!fornecedorId) {
+        // Buscar por nome similar
+        const similar = (fornecedoresFinanceiroCache||[]).find(f =>
+          f.nome.toLowerCase().includes(item.descricao.toLowerCase().slice(0,6))
+        );
+        if (similar) {
+          fornecedorId = similar.id;
+        } else {
+          // Criar fornecedor novo
+          const { data: novoForn, error: errForn } = await sb.from('fornecedores').insert([{
+            nome: item.descricao.toUpperCase(),
+            loja_id: lojaId,
+            empresa_id: empresaId,
+          }]).select('id').single();
+          if (!errForn && novoForn) fornecedorId = novoForn.id;
+        }
+      }
+
+      if (!fornecedorId) { erros++; continue; }
+
+      const vencimento = item.vencimento_fatura || new Date().toISOString().slice(0,10);
+      const qtdParcelas = item.total_parcelas && item.parcela_atual
+        ? item.total_parcelas - item.parcela_atual + 1  // parcelas restantes incluindo atual
+        : 1;
+      const intervaloDias = 30;
+      const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
+
+      // Gerar linhas das parcelas
+      const linhas = Array.from({ length: qtdParcelas }, (_, i) => ({
+        fornecedor_id: fornecedorId,
+        categoria_id: item.categoria_id || null,
+        loja_id: lojaId,
+        empresa_id: empresaId,
+        data_compra: item.data,
+        data_vencimento: adicionarDiasDataISOFinanceiro(vencimento, i * intervaloDias),
+        valor_compra: Number(Number(item.valor).toFixed(2)),
+        observacao: item.total_parcelas ? `Importado da fatura · ${item.parcela_atual + i}/${item.total_parcelas}` : 'Importado da fatura',
+        qtd_parcelas: qtdParcelas,
+        intervalo_parcelas_dias: qtdParcelas > 1 ? intervaloDias : null,
+        numero_parcela: item.parcela_atual ? item.parcela_atual + i : i + 1,
+        grupo_parcelas_id: grupoId,
+        criado_por_nome: criadoPorNome,
+      }));
+
+      const { error } = await sb.from('contasapagar').insert(linhas);
+      if (error) throw error;
+      lancados += linhas.length;
+    } catch(e) {
+      console.error('Erro ao lançar item:', item.descricao, e);
+      erros++;
+    }
+  }
+
+  // Atualizar cache de fornecedores
+  await carregarFornecedoresFinanceiro();
+
+  if (btn) { btn.textContent = 'Lançar selecionados'; btn.disabled = false; }
+
+  const msg = erros === 0
+    ? `✅ ${lancados} lançamento(s) importados com sucesso!`
+    : `✅ ${lancados} lançados · ⚠️ ${erros} com erro`;
+
+  fecharImportadorFatura();
+
+  // Recarregar lista de contas
+  if (typeof carregarContasAPagarFinanceiro === 'function') await carregarContasAPagarFinanceiro();
+
+  alert(msg);
+}
+// ══════════════════════════════════════════════════════════════════
 async function carregarGruposFornecedor() {
   const lista = document.getElementById('listaGruposFornecedor');
   if (!lista) return;
