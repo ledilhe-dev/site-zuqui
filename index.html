@@ -2282,6 +2282,26 @@
     .financeiro-form-row .campo-com-label select:focus {
       border-color: var(--green);
     }
+    /* ── Modal Confirmar Recebimento Futuro: grade própria (a grade padrão de 5 colunas
+       estoura a largura do modal e corta os campos) ─────────────────────────────── */
+    #modalConfirmarRecFuturo .financeiro-form-row {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    }
+    #modalConfirmarRecFuturo .financeiro-form-row .campo-com-label,
+    #modalConfirmarRecFuturo .financeiro-form-row .campo-com-label input,
+    #modalConfirmarRecFuturo .financeiro-form-row .campo-com-label select {
+      min-width: 0;
+      width: 100%;
+    }
+    #modalConfirmarRecFuturo .campo-curto {
+      max-width: 100% !important;
+      flex: 1 1 auto !important;
+    }
+    @media (max-width: 560px) {
+      #modalConfirmarRecFuturo .financeiro-form-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
     .financeiro-form-row .campo-com-label input::placeholder {
       color: var(--text-dim);
     }
@@ -8912,7 +8932,7 @@
 
         <!-- Modal confirmação de recebimento -->
         <div id="modalConfirmarRecFuturo" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
-          <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:var(--radius-lg);width:min(480px,95vw);box-shadow:var(--shadow-lg);overflow:hidden;">
+          <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:var(--radius-lg);width:min(560px,95vw);box-shadow:var(--shadow-lg);overflow:hidden;">
             <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
               <div style="font-size:13px;font-weight:700;">Confirmar recebimento</div>
               <button class="btn btn-ghost btn-sm" onclick="fecharModalConfirmarRecFuturo()" style="font-size:18px;padding:0 8px;">×</button>
@@ -9519,7 +9539,7 @@
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '3.1.51';
-const APP_VERSION_LABEL = '3.1.63-recebiveis-tenant-fix';
+const APP_VERSION_LABEL = '3.1.64-confirmar-rec-futuro-fix';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -20678,7 +20698,7 @@ function configurarCampoValorRecFuturo(valor = 0) {
 async function excluirRecFuturo(id) {
   if (!confirm('Excluir este provisionamento?')) return;
   try {
-    const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').delete().eq('id', id));
+    const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').delete().eq('id', id));
     if (error) throw error;
     await carregarRecFuturos();
   } catch(e) { alert('Erro ao excluir: ' + (e?.message || '')); }
@@ -20724,39 +20744,105 @@ async function confirmarRecebimentoFuturo() {
   if (!contaId) { setMsg('msgModalConfirmarRecFuturo', 'Selecione a conta financeira.', 'err'); return; }
   if (!Number.isFinite(valor) || valor <= 0) { setMsg('msgModalConfirmarRecFuturo', 'Informe um valor válido.', 'err'); return; }
 
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  if (!item) { setMsg('msgModalConfirmarRecFuturo', 'Recebimento não encontrado. Atualize a lista e tente novamente.', 'err'); return; }
+
   const confirmadoPorNome = usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Usuário';
+  const valorConfirmado = Number(valor.toFixed(2));
+  // Usa a data informada no modal (meio-dia para evitar problemas de fuso horário)
+  const confirmadoEmISO = new Date(`${dataConfirmacao}T12:00:00`).toISOString();
+
+  // Resolver loja/empresa para o novo recebível
+  const contaSelecionada = (contasFinanceirasCache || []).find(c => String(c.id) === String(contaId)) || null;
+  const empresaId = contaSelecionada?.empresa_id || item.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
+  const lojaId = contaSelecionada?.loja_id || item.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
 
   try {
-    // 1. Atualizar o recebível como confirmado
-    const { error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('recebiveis').update({
-        confirmado_em: new Date().toISOString(),
-        confirmado_por_nome: confirmadoPorNome,
-        valor_confirmado: Number(valor.toFixed(2)),
-        conta_financeira_confirmada_id: contaId,
-        // Manter provisionado=true para distinguir dos recebíveis normais
-      }).eq('id', id)
+    // 1. Marcar o recebimento futuro como confirmado (tabela recebiveis_futuros)
+    const payloadConfirmacao = {
+      confirmado_em: confirmadoEmISO,
+      confirmado_por_nome: confirmadoPorNome,
+      valor_confirmado: valorConfirmado,
+      conta_financeira_confirmada_id: contaId,
+    };
+    let { error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
+      sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id)
     );
+    // Fallback para bancos sem as colunas de auditoria da confirmação
+    if (erroUpdate && isMissingColumnError(erroUpdate)) {
+      const tentativaMinima = await executarSemFiltroLojaTemporario(() =>
+        sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id)
+      );
+      erroUpdate = tentativaMinima.error;
+    }
     if (erroUpdate) throw erroUpdate;
 
-    // 2. Gerar movimentação real no cofre
-    const item = recFuturosCache.find(i => String(i.id) === String(id));
+    // 2. Criar o recebível real para aparecer na tela de Recebíveis
     const pagadorNome = item?.fornecedores?.nome || 'pagador';
     const formaNome = item?.formas_pagamento?.nome || 'forma de pagamento';
-    const descricao = `Recebível futuro confirmado: ${pagadorNome} via ${formaNome}${obs ? ' - ' + obs : ''}`;
+    const payloadRecebivelBase = {
+      pagador_id: item.pagador_id,
+      forma_pagamento_id: item.forma_pagamento_id,
+      conta_financeira_id: contaId,
+      valor: valorConfirmado,
+      empresa_id: empresaId,
+      loja_id: lojaId,
+    };
+    const payloadRecebivel = {
+      ...payloadRecebivelBase,
+      criado_por_id: obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null,
+      criado_por_nome: confirmadoPorNome,
+    };
+    const inserirRecebivel = (dados) => executarSemFiltroLojaTemporario(() =>
+      sb.from('recebiveis').insert([dados]).select('id').maybeSingle()
+    );
+    let { data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivel);
+    if (erroRecebivel && isMissingColumnError(erroRecebivel)) {
+      ({ data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivelBase));
+    }
+    if (erroRecebivel) {
+      // Desfaz a confirmação para não deixar o registro pela metade
+      try {
+        await executarSemFiltroLojaTemporario(() =>
+          sb.from('recebiveis_futuros').update({
+            confirmado_em: null,
+            confirmado_por_nome: null,
+            valor_confirmado: null,
+            conta_financeira_confirmada_id: null,
+          }).eq('id', id)
+        );
+      } catch (eRollback) {
+        console.warn('Falha ao desfazer confirmação do recebimento futuro:', eRollback);
+      }
+      throw erroRecebivel;
+    }
+    const recebivelId = recebivelSalvo?.id || null;
 
-    const { error: erroMov } = await registrarMovimentacaoContaFinanceira({
-      contaFinanceiraId: contaId,
-      recebivelId: id,
-      tipo: 'entrada',
-      valor: Number(valor.toFixed(2)),
-      descricao,
-    });
-    if (erroMov) throw erroMov;
+    // 3. Somar no saldo da conta (apenas se o banco não gerencia o saldo via trigger,
+    //    para não somar em duplicidade — mesma regra do cadastro manual de recebíveis)
+    const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+    if (!saldoGerenciadoNoBanco) {
+      const descricao = `Recebível futuro confirmado: ${pagadorNome} via ${formaNome}${obs ? ' - ' + obs : ''}`;
+      const { error: erroMov } = await registrarMovimentacaoContaFinanceira({
+        contaFinanceiraId: contaId,
+        recebivelId,
+        tipo: 'entrada',
+        valor: valorConfirmado,
+        descricao,
+      });
+      if (erroMov) {
+        setMsg('msgModalConfirmarRecFuturo', 'Recebimento confirmado, mas não foi possível lançar a entrada na conta: ' + mensagemErroSupabase(erroMov, erroMov?.message || 'erro desconhecido'), 'err');
+        return;
+      }
+    }
 
     fecharModalConfirmarRecFuturo();
     await carregarRecFuturos();
     await carregarContasFinanceiras({ render: false, silencioso: true });
+    if (document.getElementById('financeiro_recebiveis')?.classList.contains('ativa')) {
+      recebiveisFinanceiroListaVisivel = true;
+      await carregarRecebiveisFinanceiro();
+    }
     if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
     if (document.getElementById('relatorio_recebimentos')?.classList.contains('ativa')) await carregarRelatorioRecebimentos();
   } catch(e) {
