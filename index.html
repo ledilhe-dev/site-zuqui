@@ -25106,54 +25106,91 @@ async function abrirBaixaMultiplaFinanceiro() {
   const formaSelecionada = await solicitarFormaPagamentoObrigatoriaFinanceiro('');
   if (!formaSelecionada) return;
 
-  // Conta financeira (uma vez para o lote)
-  const totalLote = itens.reduce((s, i) => s + Number(i.valor_pago ?? i.valor_compra ?? 0), 0);
-  const contaSelecionada = await solicitarContaFinanceiraObrigatoriaBaixaFinanceiro('', {
-    valor: Number(totalLote.toFixed(2)),
-    titulo: `${itens.length} título(s)`,
-    movimentarSaldo: true,
-  });
-  if (!contaSelecionada) return;
-  const movimentarSaldo = contaSelecionada.movimentarSaldo === true;
-
   // Modal com valores editáveis por item (preenchidos com o valor da compra)
   const valores = await abrirModalValoresBaixaMultipla(itens);
   if (!valores) return;
+  const totalFinal = Number(Object.values(valores).reduce((s, v) => s + Number(v || 0), 0).toFixed(2));
+  if (!(totalFinal > 0)) {
+    setMsg('msgBaixarContasFinanceiro', 'Informe valores maiores que zero para baixar.', 'err');
+    return;
+  }
+
+  // Contas financeiras (uma ou mais) para compor o pagamento agrupado
+  await carregarContasFinanceiras({ render: false, silencioso: true });
+  const selecaoContas = await abrirModalContasBaixaMultipla(totalFinal, `${itens.length} título(s)`);
+  if (!selecaoContas || !Array.isArray(selecaoContas.contas) || !selecaoContas.contas.length) return;
+  const movimentarSaldo = selecaoContas.movimentarSaldo === true;
+  const contasEscolhidas = selecaoContas.contas;
 
   // PIN uma vez para o lote
   const operador = obterFuncionarioOperadorAtual();
-  const totalFinal = Object.values(valores).reduce((s, v) => s + Number(v || 0), 0);
+  const resumoContas = contasEscolhidas.map(c => `${c.nome || '-'} (${formatarMoedaBRFinanceiro(c.valor || 0)})`).join(' + ');
   const confirmacaoPin = await confirmarAcaoComPin({
     funcionario: operador,
     titulo: 'Confirmar baixa em lote',
-    subtitulo: `Confirme o PIN para baixar ${itens.length} título(s) · ${formatarMoedaBRFinanceiro(totalFinal)} pela conta ${contaSelecionada.nome || '-'}.`,
+    subtitulo: `Confirme o PIN para baixar ${itens.length} título(s) · ${formatarMoedaBRFinanceiro(totalFinal)} · ${resumoContas}.`,
     textoAcao: 'Confirmar baixa',
     escopo: 'empresa',
   });
   if (!confirmacaoPin) return;
 
+  // Distribui o valor de cada título entre as contas escolhidas, na ordem,
+  // até esgotar o valor alocado em cada uma.
+  const bucketsContasBaixa = contasEscolhidas.map(c => ({
+    id: c.id,
+    nome: c.nome || '-',
+    restante: Number(Number(c.valor || 0).toFixed(2)),
+  }));
+  let bucketContaAtual = 0;
+  const consumirContasBaixa = (valorTitulo) => {
+    const partes = [];
+    let resta = Number(Number(valorTitulo || 0).toFixed(2));
+    while (resta > 0.004 && bucketContaAtual < bucketsContasBaixa.length) {
+      const bucket = bucketsContasBaixa[bucketContaAtual];
+      if (bucket.restante <= 0.004) { bucketContaAtual++; continue; }
+      const usar = Math.min(bucket.restante, resta);
+      partes.push({ contaId: bucket.id, contaNome: bucket.nome, valor: Number(usar.toFixed(2)) });
+      bucket.restante = Number((bucket.restante - usar).toFixed(2));
+      resta = Number((resta - usar).toFixed(2));
+    }
+    if (resta > 0.004 && bucketsContasBaixa.length) {
+      // Diferença residual de arredondamento vai para a última conta escolhida.
+      const ultima = bucketsContasBaixa[bucketsContasBaixa.length - 1];
+      const partExistente = partes.find(p => String(p.contaId) === String(ultima.id));
+      if (partExistente) partExistente.valor = Number((partExistente.valor + resta).toFixed(2));
+      else partes.push({ contaId: ultima.id, contaNome: ultima.nome, valor: Number(resta.toFixed(2)) });
+    }
+    return partes;
+  };
+
   let ok = 0, falhas = 0;
   for (const item of itens) {
     const valorPagoFinal = Number(Number(valores[item.id] || 0).toFixed(2));
+    const partes = consumirContasBaixa(valorPagoFinal);
+    const partePrincipal = partes.reduce((maior, parte) => (parte.valor > (maior?.valor || 0) ? parte : maior), null);
     const payload = {
       data_pagamento: item.data_pagamento || hoje(),
       valor_pago: valorPagoFinal,
       forma_pagamento_id: formaSelecionada.id,
       forma_pagamento: formaSelecionada.nome,
-      conta_financeira_id: contaSelecionada.id,
+      conta_financeira_id: partePrincipal?.contaId || contasEscolhidas[0].id,
       observacao: ajustarObservacaoBaixaSemMovimentacao(item.observacao, !movimentarSaldo),
       pago_confirmado_em: new Date().toISOString(),
     };
     const { error } = await sb.from('contasapagar').update(payload).eq('id', item.id).is('excluido_em', null);
     if (error) { falhas++; continue; }
     if (movimentarSaldo) {
-      await registrarMovimentacaoContaFinanceira({
-        contaFinanceiraId: contaSelecionada.id,
-        contaApagarId: item.id,
-        tipo: 'saida',
-        valor: valorPagoFinal,
-        descricao: `Pagamento de título para ${item.fornecedores?.nome || 'fornecedor'}`,
-      });
+      for (const parte of partes) {
+        if (!(parte.valor > 0)) continue;
+        await registrarMovimentacaoContaFinanceira({
+          contaFinanceiraId: parte.contaId,
+          contaApagarId: item.id,
+          tipo: 'saida',
+          valor: parte.valor,
+          descricao: `Pagamento de título para ${item.fornecedores?.nome || 'fornecedor'}`
+            + (partes.length > 1 ? ` (parcial via ${parte.contaNome})` : ''),
+        });
+      }
     }
     ok++;
   }
@@ -25207,6 +25244,189 @@ function abrirModalValoresBaixaMultipla(itens) {
       fechar(valores);
     };
     overlay.onclick = (e) => { if (e.target === overlay) fechar(null); };
+  });
+}
+
+// Modal para escolher uma ou mais contas financeiras na baixa em lote.
+// Permite dividir o total entre contas; se faltar saldo alocado, pergunta
+// qual conta vai cobrir a diferença e ficar negativa, com confirmação.
+function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
+  return new Promise(resolve => {
+    const contas = (contasFinanceirasCache || []).filter(c => c && c.ativo !== false);
+    if (!contas.length) {
+      setMsg('msgBaixarContasFinanceiro', 'Cadastre ao menos uma conta financeira ativa antes de baixar.', 'err');
+      resolve(null);
+      return;
+    }
+
+    const total = Number(Number(totalLote || 0).toFixed(2));
+    const lerNumeroBR = (texto) => {
+      const num = parseFloat(String(texto || '').replace(/\./g, '').replace(',', '.'));
+      return Number.isFinite(num) ? Number(num.toFixed(2)) : 0;
+    };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+
+    const linhas = contas.map((c, idx) => {
+      const saldo = Number(c.saldo_atual || 0);
+      const corSaldo = saldo < 0 ? 'var(--red, #ff6b6b)' : 'var(--text-muted)';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
+        <label style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer;">
+          <input type="checkbox" data-bcm-chk="${c.id}" style="width:14px;height:14px;flex-shrink:0;">
+          <span style="min-width:0;">
+            <span style="display:block;font-size:12px;font-weight:600;color:var(--text);">${escaparHtmlBasico(c.nome || '-')}</span>
+            <span style="display:block;font-size:10px;color:${corSaldo};">Saldo: ${escaparHtmlBasico(formatarMoedaBRFinanceiro(saldo))}</span>
+          </span>
+        </label>
+        <input type="text" inputmode="decimal" data-bcm-val="${c.id}" placeholder="R$ 0,00" disabled
+          style="width:110px;text-align:right;font-size:12px;height:30px;padding:0 8px;border-radius:8px;opacity:.45;">
+      </div>`;
+    }).join('');
+
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:14px;padding:18px;max-width:560px;width:100%;max-height:85vh;overflow:auto;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Pagar com quais contas?</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">
+          Total da baixa: <b style="color:var(--text);">${escaparHtmlBasico(formatarMoedaBRFinanceiro(total))}</b>${tituloDescr ? ` · ${escaparHtmlBasico(tituloDescr)}` : ''}.
+          Marque uma ou mais contas e informe quanto sai de cada uma. Ao marcar, o valor é preenchido automaticamente com o saldo disponível.
+        </div>
+        ${linhas}
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--text-muted);cursor:pointer;">
+          <input type="checkbox" id="bcmMovSaldo" checked style="width:13px;height:13px;"> Movimentar saldo das contas (registrar saída no extrato)
+        </label>
+        <div id="bcmResumo" style="margin-top:12px;font-size:12px;font-weight:600;color:var(--text);"></div>
+        <div id="bcmFaltaBox" style="display:none;margin-top:10px;padding:10px;border:1px solid var(--border-mid);border-radius:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--red, #ff6b6b);margin-bottom:6px;" id="bcmFaltaTexto"></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Escolha qual conta vai cobrir a diferença e ficar negativa:</div>
+          <div id="bcmFaltaBotoes" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+        <div class="msg" id="bcmMsg" style="margin-top:8px;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+          <button class="btn btn-ghost" id="bcmCancelar" type="button">Cancelar</button>
+          <button class="btn btn-green" id="bcmConfirmar" type="button">Continuar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const fechar = (resultado) => { overlay.remove(); resolve(resultado); };
+    const msgEl = overlay.querySelector('#bcmMsg');
+    const setMsgModal = (texto, tipo) => {
+      if (!msgEl) return;
+      msgEl.textContent = texto || '';
+      msgEl.className = 'msg' + (tipo ? ' ' + tipo : '');
+    };
+
+    const lerSelecionadas = () => contas
+      .filter(c => overlay.querySelector(`[data-bcm-chk="${c.id}"]`)?.checked)
+      .map(c => ({
+        id: c.id,
+        nome: c.nome || '-',
+        saldo_atual: Number(c.saldo_atual || 0),
+        valor: lerNumeroBR(overlay.querySelector(`[data-bcm-val="${c.id}"]`)?.value),
+      }));
+
+    const atualizarResumo = () => {
+      const sel = lerSelecionadas();
+      const alocado = Number(sel.reduce((s, c) => s + Number(c.valor || 0), 0).toFixed(2));
+      const diferenca = Number((total - alocado).toFixed(2));
+      const resumo = overlay.querySelector('#bcmResumo');
+      if (resumo) {
+        let extra = '';
+        if (diferenca > 0.004) extra = ` · <span style="color:var(--red, #ff6b6b);">Falta ${escaparHtmlBasico(formatarMoedaBRFinanceiro(diferenca))}</span>`;
+        else if (diferenca < -0.004) extra = ` · <span style="color:var(--red, #ff6b6b);">Excedente ${escaparHtmlBasico(formatarMoedaBRFinanceiro(Math.abs(diferenca)))}</span>`;
+        else if (sel.length) extra = ' · <span style="color:var(--green, #2ecc71);">Valores conferem ✓</span>';
+        resumo.innerHTML = `Alocado: ${escaparHtmlBasico(formatarMoedaBRFinanceiro(alocado))} de ${escaparHtmlBasico(formatarMoedaBRFinanceiro(total))}${extra}`;
+      }
+      const faltaBox = overlay.querySelector('#bcmFaltaBox');
+      if (faltaBox && diferenca <= 0.004) faltaBox.style.display = 'none';
+      return { sel, alocado, diferenca };
+    };
+
+    contas.forEach(c => {
+      const chk = overlay.querySelector(`[data-bcm-chk="${c.id}"]`);
+      const val = overlay.querySelector(`[data-bcm-val="${c.id}"]`);
+      if (!chk || !val) return;
+      chk.addEventListener('change', () => {
+        if (chk.checked) {
+          val.disabled = false;
+          val.style.opacity = '1';
+          const { diferenca } = atualizarResumo();
+          const faltaAtual = Math.max(diferenca, 0);
+          const disponivel = Math.max(Number(c.saldo_atual || 0), 0);
+          const sugestao = Number(Math.min(disponivel, faltaAtual).toFixed(2));
+          val.value = valorMoedaInputFinanceiro(sugestao);
+        } else {
+          val.value = '';
+          val.disabled = true;
+          val.style.opacity = '.45';
+        }
+        setMsgModal('');
+        atualizarResumo();
+      });
+      val.addEventListener('input', () => { setMsgModal(''); atualizarResumo(); });
+    });
+    atualizarResumo();
+
+    const mostrarEscolhaContaNegativa = (sel, falta) => {
+      const box = overlay.querySelector('#bcmFaltaBox');
+      const texto = overlay.querySelector('#bcmFaltaTexto');
+      const botoes = overlay.querySelector('#bcmFaltaBotoes');
+      if (!box || !texto || !botoes) return;
+      texto.textContent = `Falta ${formatarMoedaBRFinanceiro(falta)} para cobrir o total.`;
+      botoes.innerHTML = '';
+      sel.forEach(c => {
+        const saldoFinal = Number((c.saldo_atual - c.valor - falta).toFixed(2));
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-ghost';
+        btn.style.cssText = 'font-size:11px;padding:6px 10px;';
+        btn.textContent = `${c.nome} (ficará em ${formatarMoedaBRFinanceiro(saldoFinal)})`;
+        btn.onclick = () => {
+          const val = overlay.querySelector(`[data-bcm-val="${c.id}"]`);
+          if (val) val.value = valorMoedaInputFinanceiro(Number((c.valor + falta).toFixed(2)));
+          box.style.display = 'none';
+          setMsgModal(`Diferença adicionada à conta ${c.nome}. Confira e clique em Continuar.`, 'ok');
+          atualizarResumo();
+        };
+        botoes.appendChild(btn);
+      });
+      box.style.display = 'block';
+    };
+
+    overlay.querySelector('#bcmCancelar').onclick = () => fechar(null);
+    overlay.onclick = (e) => { if (e.target === overlay) fechar(null); };
+    overlay.querySelector('#bcmConfirmar').onclick = () => {
+      const { sel, alocado, diferenca } = atualizarResumo();
+      if (!sel.length) {
+        setMsgModal('Marque ao menos uma conta financeira.', 'err');
+        return;
+      }
+      if (sel.some(c => !(c.valor > 0))) {
+        setMsgModal('Informe um valor maior que zero em cada conta marcada (ou desmarque a conta).', 'err');
+        return;
+      }
+      if (diferenca < -0.004) {
+        setMsgModal(`O alocado supera o total da baixa em ${formatarMoedaBRFinanceiro(Math.abs(diferenca))}. Ajuste os valores.`, 'err');
+        return;
+      }
+      if (diferenca > 0.004) {
+        mostrarEscolhaContaNegativa(sel, diferenca);
+        return;
+      }
+      const negativas = sel.filter(c => Number((c.valor - c.saldo_atual).toFixed(2)) > 0.004);
+      if (negativas.length) {
+        const lista = negativas
+          .map(c => `• ${c.nome}: saldo ${formatarMoedaBRFinanceiro(c.saldo_atual)} → ficará em ${formatarMoedaBRFinanceiro(Number((c.saldo_atual - c.valor).toFixed(2)))}`)
+          .join('\n');
+        if (!confirm(`Atenção: a(s) conta(s) abaixo ficará(ão) NEGATIVA(S) após esta baixa:\n\n${lista}\n\nConfirmar mesmo assim?`)) return;
+      }
+      fechar({
+        contas: sel.map(c => ({ id: c.id, nome: c.nome, valor: Number(c.valor.toFixed(2)) })),
+        movimentarSaldo: overlay.querySelector('#bcmMovSaldo')?.checked !== false,
+      });
+    };
   });
 }
 
