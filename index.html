@@ -22613,7 +22613,7 @@ async function salvarAjusteSaldoCofre() {
     return;
   }
 
-  const funcionarioConfirmado = await obterFuncionarioAtivoPorPin(pin);
+  const funcionarioConfirmado = await obterFuncionarioAtivoPorPinEmpresa(pin);
   if (!funcionarioConfirmado?.id) {
     setMsg('ajusteSaldoMsg', 'PIN inválido ou funcionário inativo.', 'err');
     return;
@@ -22702,7 +22702,7 @@ async function salvarDefinicaoSaldoAtualCofre() {
     return;
   }
 
-  const funcionarioConfirmado = await obterFuncionarioAtivoPorPin(pin);
+  const funcionarioConfirmado = await obterFuncionarioAtivoPorPinEmpresa(pin);
   if (!funcionarioConfirmado?.id) {
     setMsg('ajusteSaldoMsg', 'PIN inválido ou funcionário inativo.', 'err');
     return;
@@ -22791,7 +22791,7 @@ async function salvarTransferenciaSaldoCofre() {
     return;
   }
 
-  const funcionarioConfirmado = await obterFuncionarioAtivoPorPin(pin);
+  const funcionarioConfirmado = await obterFuncionarioAtivoPorPinEmpresa(pin);
   if (!funcionarioConfirmado?.id) {
     setMsg('ajusteSaldoMsg', 'PIN inválido ou funcionário inativo.', 'err');
     return;
