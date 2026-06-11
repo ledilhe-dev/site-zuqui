@@ -2358,6 +2358,42 @@
       min-width: 0;
       max-width: none;
     }
+    /* Calendários/datas sempre dentro da página */
+    input[type="date"] { min-width: 0; max-width: 100%; }
+    @media (max-width: 1400px) {
+      input[type="date"] { font-size: 11px; padding-left: 6px; padding-right: 4px; }
+    }
+    /* Variante flexível da barra de filtros: quebra linha em vez de cortar campos */
+    .financeiro-filtros-row.financeiro-filtros-flex {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center;
+      gap: 6px;
+      row-gap: 6px;
+    }
+    .financeiro-filtros-row.financeiro-filtros-flex input[type="text"] {
+      flex: 1 1 220px;
+      min-width: 180px;
+      width: auto;
+    }
+    .financeiro-filtros-row.financeiro-filtros-flex input[type="date"] {
+      flex: 0 0 122px;
+      width: 122px !important;
+      max-width: 122px;
+      font-size: 11px;
+      padding: 4px 6px;
+    }
+    .financeiro-filtros-row.financeiro-filtros-flex select.campo-curto {
+      flex: 0 0 auto;
+      width: auto !important;
+      min-width: 116px;
+      max-width: 156px;
+      font-size: 11px;
+    }
+    .financeiro-filtros-row.financeiro-filtros-flex .btn {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
     /* Tela "Baixar contas": 6 controles em uma linha sem quebrar/comprimir */
     .financeiro-filtros-baixar {
       display: flex !important;
@@ -8846,7 +8882,7 @@
             <div class="card-title">Recebíveis cadastrados</div>
             <button class="btn btn-ghost btn-sm" id="btnToggleRecebiveisLista" type="button" onclick="toggleListaRecebiveisFinanceiro()" aria-expanded="false">Mostrar recebíveis</button>
           </div>
-          <div class="form-row financeiro-filtros-row" style="flex-wrap:wrap;gap:6px;align-items:center;">
+          <div class="form-row financeiro-filtros-row financeiro-filtros-flex" style="gap:6px;align-items:center;">
             <input id="filtroRecebivelBusca" type="text" placeholder="Buscar por pagador, forma, conta ou valor" style="flex:1;min-width:200px;" oninput="debounceConsumo('filtro_recebiveis', () => carregarRecebiveisFinanceiro(), 700)">
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
               <label style="font-size:11px;color:var(--text-muted);white-space:nowrap;">De</label>
@@ -9094,7 +9130,7 @@
         <div id="cardsCofreContas" class="stats-grid"></div>
 
         <div class="card" style="padding:10px 14px;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px;">
             <span style="font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">EXTRATO</span>
             <input id="filtroCofreDataInicio" type="date" style="width:126px;flex-shrink:0;font-size:11px;height:28px;padding:0 6px;" onchange="carregarCofreFinanceiro()">
             <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;">→</span>
@@ -20077,7 +20113,12 @@ function limparFormularioRecebivelFinanceiro() {
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
+let salvandoRecebivelFinanceiroEmAndamento = false;
 async function salvarRecebivelFinanceiro() {
+  if (salvandoRecebivelFinanceiroEmAndamento) return;
+  salvandoRecebivelFinanceiroEmAndamento = true;
+  const btnCadastrarRecebivel = document.getElementById('btnSalvarRecebivelFinanceiro');
+  if (btnCadastrarRecebivel) btnCadastrarRecebivel.disabled = true;
   try {
     atualizarPagadorSelecionadoRecebivelFinanceiro();
     const pagadorId = String(document.getElementById('recebivelPagadorId')?.value || '').trim();
@@ -20204,6 +20245,9 @@ async function salvarRecebivelFinanceiro() {
   } catch (erroInesperado) {
     console.error('Erro inesperado ao salvar recebível:', erroInesperado);
     setMsg('msgRecebivelFinanceiro', `Não foi possível cadastrar o recebível: ${mensagemErroSupabase(erroInesperado, erroInesperado?.message || 'erro inesperado')}`, 'err');
+  } finally {
+    salvandoRecebivelFinanceiroEmAndamento = false;
+    if (btnCadastrarRecebivel) btnCadastrarRecebivel.disabled = false;
   }
 }
 
