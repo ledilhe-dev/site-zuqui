@@ -7457,25 +7457,39 @@
               <button class="btn btn-ghost btn-sm" type="button" onclick="mudarAnoGraficoFinanceiroDashboard(-1)">◀</button>
               <strong id="dashGfAnoLabel" style="font-size:14px;min-width:54px;text-align:center;">—</strong>
               <button class="btn btn-ghost btn-sm" type="button" onclick="mudarAnoGraficoFinanceiroDashboard(1)">▶</button>
-              <select id="dashGfFornecedor" style="font-size:12px;height:30px;padding:0 6px;min-width:160px;" onchange="renderizarGraficosFinanceirosDashboard()">
+              <select id="dashGfFornecedor" style="font-size:12px;height:30px;padding:0 6px;min-width:160px;" onchange="dashGfSelectFornecedorChange(this.value)">
                 <option value="">Todos os fornecedores</option>
               </select>
+              <select id="dashGfCategoria" style="font-size:12px;height:30px;padding:0 6px;min-width:150px;" onchange="dashGfSelectCategoriaChange(this.value)">
+                <option value="">Todas as categorias</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" type="button" id="dashGfLimparBtn" onclick="dashGfLimparFiltros()" style="display:none;">✕ Limpar filtros</button>
             </div>
           </div>
+          <div id="dashGfChips" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
           <div id="dashGfResumo" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:13px;">
-            <span>Pago no ano: <strong id="dashGfTotalPago" style="color:var(--green,#22c55e);">R$ 0,00</strong></span>
-            <span>Pendente no ano: <strong id="dashGfTotalPendente" style="color:var(--amber,#f59e0b);">R$ 0,00</strong></span>
+            <span>Pago: <strong id="dashGfTotalPago" style="color:var(--green,#22c55e);">R$ 0,00</strong></span>
+            <span>Pendente: <strong id="dashGfTotalPendente" style="color:var(--amber,#f59e0b);">R$ 0,00</strong></span>
             <span>Total: <strong id="dashGfTotalGeral">R$ 0,00</strong></span>
+            <span>Lançamentos: <strong id="dashGfTotalQtd">0</strong></span>
+            <span>Ticket médio: <strong id="dashGfTicketMedio">R$ 0,00</strong></span>
           </div>
           <div style="display:grid;grid-template-columns:1fr;gap:20px;">
             <div>
-              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Por mês (pago vs pendente)</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Por mês (pago vs pendente) · <span style="opacity:.8;">clique em um mês para filtrar</span></div>
               <div id="dashGfBarras" style="width:100%;overflow-x:auto;"></div>
             </div>
-            <div>
-              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Gasto por fornecedor (ano)</div>
-              <div id="dashGfRosca" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;"></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
+              <div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Gasto por fornecedor · <span style="opacity:.8;">clique para filtrar</span></div>
+                <div id="dashGfRosca" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;"></div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Gasto por categoria · <span style="opacity:.8;">clique para filtrar</span></div>
+                <div id="dashGfRoscaCategoria" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;"></div>
+              </div>
             </div>
+            <div id="dashGfDetalhe"></div>
           </div>
           <div class="msg" id="dashGfMsg" style="margin-top:8px;"></div>
         </div>
@@ -8266,6 +8280,7 @@
             </div>
             <button class="btn btn-green" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioFinanceiro()">Hoje</button>
+            <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioFinanceiro()" title="Mantém o período e limpa status, fornecedor, grupo, categoria e forma de pagamento">✕ Limpar filtros</button>
           </div>
           <div class="relatorio-financeiro-acoes">
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(7)">Próx. 7 dias</button>
@@ -16597,12 +16612,18 @@ function widgetDrop(e) {
   renderizarMeuPainel();
 }
 
-// ── Gráficos financeiros do Dashboard ─────────────────────────────
+// ── Gráficos financeiros do Dashboard (modo B.I. com filtros cruzados) ──
 let _dashGfAno = new Date().getFullYear();
 let _dashGfDados = [];          // contas do ano carregadas
 let _dashGfCarregadoAno = null; // ano já carregado no cache
+let _dashGfCategoriasMapa = {}; // id -> { nome, cor, icone }
+// Filtros ativos (cross-filter estilo B.I.): clique nos gráficos liga/desliga.
+let _dashGfFiltro = { mes: null, fornecedorId: null, categoriaId: null };
 
-const _dashGfCores = ['#22c55e','#3b82f6','#f59e0b','#a855f7','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'];
+const _dashGfCores = ['#22c55e','#3b82f6','#f59e0b','#a855f7','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#eab308','#6366f1'];
+const _dashGfNomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+function _dashGfSanitizarChave(v) { return String(v ?? '').replace(/[^a-zA-Z0-9_-]/g, ''); }
 
 async function carregarGraficosFinanceirosDashboard() {
   const ano = _dashGfAno;
@@ -16611,27 +16632,54 @@ async function carregarGraficosFinanceirosDashboard() {
   const msg = document.getElementById('dashGfMsg');
   if (msg) { msg.textContent = ''; msg.className = 'msg'; }
   try {
-    // Carrega todas as contas do ano (por vencimento), respeitando loja/empresa da sessão.
-    const { data, error } = await sb.from('contasapagar')
-      .select('id, fornecedor_id, valor_compra, valor_pago, data_vencimento, data_pagamento, pago_confirmado_em, fornecedores(nome)')
-      .is('excluido_em', null)
-      .gte('data_vencimento', inicio)
-      .lte('data_vencimento', fim);
-    if (error) throw error;
-    _dashGfDados = data || [];
+    // Carrega todas as contas do ano (por vencimento) + categorias de compra em paralelo.
+    const [resContas, resCategorias] = await Promise.all([
+      sb.from('contasapagar')
+        .select('id, fornecedor_id, categoria_id, valor_compra, valor_pago, data_vencimento, data_pagamento, pago_confirmado_em, observacao, fornecedores(nome)')
+        .is('excluido_em', null)
+        .gte('data_vencimento', inicio)
+        .lte('data_vencimento', fim),
+      sb.from('categorias_compra').select('id, nome, cor, icone')
+    ]);
+    if (resContas.error) throw resContas.error;
+    _dashGfDados = resContas.data || [];
     _dashGfCarregadoAno = ano;
+
+    _dashGfCategoriasMapa = {};
+    (resCategorias.data || []).forEach(c => {
+      _dashGfCategoriasMapa[String(c.id)] = { nome: c.nome || 'Categoria', cor: c.cor || null, icone: c.icone || null };
+    });
+
+    // Ao trocar de ano, limpa filtro de mês mas preserva fornecedor/categoria se ainda existirem.
+    const fornecedoresAno = new Set(_dashGfDados.map(c => c.fornecedor_id ? String(c.fornecedor_id) : 'sem'));
+    if (_dashGfFiltro.fornecedorId && !fornecedoresAno.has(_dashGfFiltro.fornecedorId)) _dashGfFiltro.fornecedorId = null;
+    const categoriasAno = new Set(_dashGfDados.map(c => c.categoria_id ? String(c.categoria_id) : 'sem'));
+    if (_dashGfFiltro.categoriaId && !categoriasAno.has(_dashGfFiltro.categoriaId)) _dashGfFiltro.categoriaId = null;
 
     // Popula o filtro de fornecedor com os que aparecem no ano
     const sel = document.getElementById('dashGfFornecedor');
     if (sel) {
-      const atual = sel.value;
       const fornecedores = [...new Map(_dashGfDados
         .filter(c => c.fornecedor_id)
         .map(c => [String(c.fornecedor_id), c.fornecedores?.nome || 'Fornecedor'])).entries()]
         .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+      const temSemFornecedor = _dashGfDados.some(c => !c.fornecedor_id);
       sel.innerHTML = '<option value="">Todos os fornecedores</option>' +
-        fornecedores.map(([id, nome]) => `<option value="${id}">${escaparHtmlBasico(nome)}</option>`).join('');
-      if (atual && fornecedores.some(([id]) => id === atual)) sel.value = atual;
+        fornecedores.map(([id, nome]) => `<option value="${id}">${escaparHtmlBasico(nome)}</option>`).join('') +
+        (temSemFornecedor ? '<option value="sem">— Sem fornecedor —</option>' : '');
+      sel.value = _dashGfFiltro.fornecedorId || '';
+    }
+    // Popula o filtro de categoria com as que aparecem no ano
+    const selCat = document.getElementById('dashGfCategoria');
+    if (selCat) {
+      const cats = [...categoriasAno].filter(id => id !== 'sem')
+        .map(id => [id, _dashGfCategoriasMapa[id]?.nome || 'Categoria'])
+        .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+      const temSemCat = categoriasAno.has('sem');
+      selCat.innerHTML = '<option value="">Todas as categorias</option>' +
+        cats.map(([id, nome]) => `<option value="${id}">${escaparHtmlBasico(nome)}</option>`).join('') +
+        (temSemCat ? '<option value="sem">— Sem categoria —</option>' : '');
+      selCat.value = _dashGfFiltro.categoriaId || '';
     }
     renderizarGraficosFinanceirosDashboard();
   } catch (e) {
@@ -16642,41 +16690,150 @@ async function carregarGraficosFinanceirosDashboard() {
 
 function mudarAnoGraficoFinanceiroDashboard(delta) {
   _dashGfAno += delta;
+  _dashGfFiltro.mes = null; // mês pertence ao ano exibido
   carregarGraficosFinanceirosDashboard();
+}
+
+// ── Ações de filtro (cross-filter) ────────────────────────────────
+function dashGfToggleMes(m) {
+  _dashGfFiltro.mes = (_dashGfFiltro.mes === m) ? null : m;
+  renderizarGraficosFinanceirosDashboard();
+}
+function dashGfToggleFornecedor(id) {
+  const chave = String(id || '');
+  _dashGfFiltro.fornecedorId = (_dashGfFiltro.fornecedorId === chave) ? null : chave;
+  const sel = document.getElementById('dashGfFornecedor');
+  if (sel) sel.value = _dashGfFiltro.fornecedorId || '';
+  renderizarGraficosFinanceirosDashboard();
+}
+function dashGfToggleCategoria(id) {
+  const chave = String(id || '');
+  _dashGfFiltro.categoriaId = (_dashGfFiltro.categoriaId === chave) ? null : chave;
+  const sel = document.getElementById('dashGfCategoria');
+  if (sel) sel.value = _dashGfFiltro.categoriaId || '';
+  renderizarGraficosFinanceirosDashboard();
+}
+function dashGfSelectFornecedorChange(valor) {
+  _dashGfFiltro.fornecedorId = String(valor || '').trim() || null;
+  renderizarGraficosFinanceirosDashboard();
+}
+function dashGfSelectCategoriaChange(valor) {
+  _dashGfFiltro.categoriaId = String(valor || '').trim() || null;
+  renderizarGraficosFinanceirosDashboard();
+}
+function dashGfLimparFiltros() {
+  _dashGfFiltro = { mes: null, fornecedorId: null, categoriaId: null };
+  const sel = document.getElementById('dashGfFornecedor'); if (sel) sel.value = '';
+  const selCat = document.getElementById('dashGfCategoria'); if (selCat) selCat.value = '';
+  renderizarGraficosFinanceirosDashboard();
+}
+
+// ── Helpers de agregação ──────────────────────────────────────────
+function _dashGfChaveFornecedor(c) { return c.fornecedor_id ? String(c.fornecedor_id) : 'sem'; }
+function _dashGfChaveCategoria(c) { return c.categoria_id ? String(c.categoria_id) : 'sem'; }
+function _dashGfMesDe(c) { return parseInt(String(c.data_vencimento || '').slice(5, 7), 10) - 1; }
+function _dashGfEhPago(c) { return !!c.pago_confirmado_em || !!c.data_pagamento; }
+function _dashGfValorDe(c) { return Number(c.valor_pago ?? c.valor_compra ?? 0) || Number(c.valor_compra || 0); }
+
+// Desenha uma rosca SVG clicável. itens: [{chave, nome, valor, cor, selecionado}]
+function _dashGfDesenharRosca(itens, total, fnToggleNome, temSelecao) {
+  const fmt = (n) => formatarMoedaBRFinanceiro(n);
+  const cx = 80, cy = 80, rExt = 76, rInt = 44;
+  let angulo = -90;
+  const arcos = itens.map((it) => {
+    const frac = it.valor / total;
+    const a0 = angulo;
+    const a1 = angulo + Math.min(359.98, frac * 360);
+    angulo = a0 + frac * 360;
+    const rad = (g) => (g * Math.PI) / 180;
+    const p = (r, g) => `${(cx + r * Math.cos(rad(g))).toFixed(2)} ${(cy + r * Math.sin(rad(g))).toFixed(2)}`;
+    const grande = (a1 - a0) > 180 ? 1 : 0;
+    const dim = temSelecao && !it.selecionado;
+    const d = `M ${p(rExt, a0)} A ${rExt} ${rExt} 0 ${grande} 1 ${p(rExt, a1)} L ${p(rInt, a1)} A ${rInt} ${rInt} 0 ${grande} 0 ${p(rInt, a0)} Z`;
+    return `<path d="${d}" fill="${it.cor}" opacity="${dim ? 0.28 : 1}" style="cursor:pointer;" stroke="${it.selecionado ? 'var(--text,#fff)' : 'transparent'}" stroke-width="${it.selecionado ? 2 : 0}" onclick="${fnToggleNome}('${_dashGfSanitizarChave(it.chave)}')"><title>${escaparHtmlBasico(it.nome)}: ${fmt(it.valor)} (${Math.round((it.valor / total) * 100)}%)</title></path>`;
+  }).join('');
+  return `
+    <svg viewBox="0 0 160 160" width="160" height="160" style="flex-shrink:0;">
+      ${arcos}
+      <circle cx="${cx}" cy="${cy}" r="${rInt - 2}" fill="var(--surface,#0f0f1a)"/>
+      <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-size="10" fill="var(--text-muted,#888)">Total</text>
+      <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-size="12" font-weight="bold" fill="var(--text,#eee)">${fmt(total)}</text>
+    </svg>`;
+}
+
+function _dashGfLegendaRosca(itens, total, fnToggleNome, temSelecao) {
+  const fmt = (n) => formatarMoedaBRFinanceiro(n);
+  return itens.map((it) => `
+    <div onclick="${fnToggleNome}('${_dashGfSanitizarChave(it.chave)}')"
+         style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;cursor:pointer;border-radius:6px;padding:2px 6px;${it.selecionado ? 'background:rgba(255,255,255,0.08);outline:1px solid rgba(255,255,255,0.25);' : ''}${temSelecao && !it.selecionado ? 'opacity:0.45;' : ''}">
+      <span style="width:11px;height:11px;border-radius:2px;background:${it.cor};display:inline-block;flex-shrink:0;"></span>
+      <span style="flex:1;">${it.icone ? escaparHtmlBasico(it.icone) + ' ' : ''}${escaparHtmlBasico(it.nome)}</span>
+      <strong>${fmt(it.valor)}</strong>
+      <span style="color:var(--text-muted);">${Math.round((it.valor / total) * 100)}%</span>
+    </div>`).join('');
 }
 
 function renderizarGraficosFinanceirosDashboard() {
   const labelAno = document.getElementById('dashGfAnoLabel');
   if (labelAno) labelAno.textContent = String(_dashGfAno);
 
-  const fornFiltro = String(document.getElementById('dashGfFornecedor')?.value || '').trim();
-  const contas = _dashGfDados.filter(c => !fornFiltro || String(c.fornecedor_id) === fornFiltro);
-
-  const ehPago = (c) => !!c.pago_confirmado_em || !!c.data_pagamento;
-  const valorDe = (c) => Number(c.valor_pago ?? c.valor_compra ?? 0) || Number(c.valor_compra || 0);
-
-  // Agrupamento mensal
-  const meses = Array.from({ length: 12 }, () => ({ pago: 0, pendente: 0 }));
-  let totalPago = 0, totalPendente = 0;
-  contas.forEach(c => {
-    const m = parseInt(String(c.data_vencimento || '').slice(5, 7), 10) - 1;
-    if (m < 0 || m > 11) return;
-    const v = valorDe(c);
-    if (ehPago(c)) { meses[m].pago += v; totalPago += v; }
-    else { meses[m].pendente += v; totalPendente += v; }
-  });
-
-  // Resumo
   const fmt = (n) => formatarMoedaBRFinanceiro(n);
+  const F = _dashGfFiltro;
+  const filtraForn = (c) => !F.fornecedorId || _dashGfChaveFornecedor(c) === F.fornecedorId;
+  const filtraCat = (c) => !F.categoriaId || _dashGfChaveCategoria(c) === F.categoriaId;
+  const filtraMes = (c) => F.mes === null || _dashGfMesDe(c) === F.mes;
+  const temFiltro = F.mes !== null || !!F.fornecedorId || !!F.categoriaId;
+
+  // ── Chips de filtros ativos + botão limpar ──
+  const chips = document.getElementById('dashGfChips');
+  const btnLimpar = document.getElementById('dashGfLimparBtn');
+  if (btnLimpar) btnLimpar.style.display = temFiltro ? '' : 'none';
+  if (chips) {
+    if (!temFiltro) { chips.style.display = 'none'; chips.innerHTML = ''; }
+    else {
+      const partes = [];
+      const chip = (rotulo, acao) => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:99px;padding:3px 10px;">${rotulo}<span onclick="${acao}" style="cursor:pointer;font-weight:bold;opacity:.8;">✕</span></span>`;
+      if (F.mes !== null) partes.push(chip(`📅 ${_dashGfNomesMes[F.mes]}/${_dashGfAno}`, `dashGfToggleMes(${F.mes})`));
+      if (F.fornecedorId) {
+        const nomeF = F.fornecedorId === 'sem' ? 'Sem fornecedor' : (_dashGfDados.find(c => String(c.fornecedor_id) === F.fornecedorId)?.fornecedores?.nome || 'Fornecedor');
+        partes.push(chip(`🏢 ${escaparHtmlBasico(nomeF)}`, `dashGfToggleFornecedor('${_dashGfSanitizarChave(F.fornecedorId)}')`));
+      }
+      if (F.categoriaId) {
+        const cat = F.categoriaId === 'sem' ? null : _dashGfCategoriasMapa[F.categoriaId];
+        partes.push(chip(`🏷️ ${escaparHtmlBasico(cat?.nome || 'Sem categoria')}`, `dashGfToggleCategoria('${_dashGfSanitizarChave(F.categoriaId)}')`));
+      }
+      chips.style.display = 'flex';
+      chips.innerHTML = '<span style="font-size:12px;color:var(--text-muted);align-self:center;">Filtros ativos:</span>' + partes.join('');
+    }
+  }
+
+  // ── Resumo (todos os filtros aplicados) ──
+  const contasResumo = _dashGfDados.filter(c => filtraForn(c) && filtraCat(c) && filtraMes(c));
+  let totalPago = 0, totalPendente = 0;
+  contasResumo.forEach(c => {
+    const v = _dashGfValorDe(c);
+    if (_dashGfEhPago(c)) totalPago += v; else totalPendente += v;
+  });
   const elPago = document.getElementById('dashGfTotalPago');
   const elPend = document.getElementById('dashGfTotalPendente');
   const elGeral = document.getElementById('dashGfTotalGeral');
+  const elQtd = document.getElementById('dashGfTotalQtd');
+  const elTicket = document.getElementById('dashGfTicketMedio');
   if (elPago) elPago.textContent = fmt(totalPago);
   if (elPend) elPend.textContent = fmt(totalPendente);
   if (elGeral) elGeral.textContent = fmt(totalPago + totalPendente);
+  if (elQtd) elQtd.textContent = String(contasResumo.length);
+  if (elTicket) elTicket.textContent = fmt(contasResumo.length ? (totalPago + totalPendente) / contasResumo.length : 0);
 
-  // Gráfico de barras (SVG): pago (verde) e pendente (âmbar) lado a lado por mês
-  const nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  // ── Gráfico de barras mensal (filtrado por fornecedor + categoria; clique filtra o mês) ──
+  const contasBarras = _dashGfDados.filter(c => filtraForn(c) && filtraCat(c));
+  const meses = Array.from({ length: 12 }, () => ({ pago: 0, pendente: 0 }));
+  contasBarras.forEach(c => {
+    const m = _dashGfMesDe(c);
+    if (m < 0 || m > 11) return;
+    const v = _dashGfValorDe(c);
+    if (_dashGfEhPago(c)) meses[m].pago += v; else meses[m].pendente += v;
+  });
   const maxValor = Math.max(1, ...meses.map(m => Math.max(m.pago, m.pendente)));
   const larguraMes = 64, alturaGraf = 180, baseY = alturaGraf + 18, larguraTotal = larguraMes * 12;
   const escala = alturaGraf / maxValor;
@@ -16686,15 +16843,18 @@ function renderizarGraficosFinanceirosDashboard() {
     const hPago = Math.round(m.pago * escala);
     const hPend = Math.round(m.pendente * escala);
     const larBarra = 22;
-    // pago
-    barrasSvg += `<rect x="${x + 8}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e"><title>${nomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
-    // pendente
-    barrasSvg += `<rect x="${x + 8 + larBarra + 3}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b"><title>${nomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
-    // rótulo do mês
-    barrasSvg += `<text x="${x + larguraMes / 2}" y="${baseY + 14}" text-anchor="middle" font-size="11" fill="var(--text-muted,#888)">${nomesMes[i]}</text>`;
+    const selecionado = F.mes === i;
+    const dim = F.mes !== null && !selecionado;
+    const op = dim ? 0.3 : 1;
+    const totalMes = m.pago + m.pendente;
+    // área clicável do mês inteiro
+    barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" fill="transparent" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Total: ${fmt(totalMes)} (clique para filtrar)</title></rect>`;
+    if (selecionado) barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" rx="6" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.5)" pointer-events="none"/>`;
+    barrasSvg += `<rect x="${x + 8}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
+    barrasSvg += `<rect x="${x + 8 + larBarra + 3}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
+    barrasSvg += `<text x="${x + larguraMes / 2}" y="${baseY + 14}" text-anchor="middle" font-size="11" font-weight="${selecionado ? 'bold' : 'normal'}" fill="${selecionado ? 'var(--text,#fff)' : 'var(--text-muted,#888)'}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})">${_dashGfNomesMes[i]}</text>`;
   });
   barrasSvg += '</svg>';
-  // legenda
   barrasSvg += `<div style="display:flex;gap:16px;font-size:11px;margin-top:6px;">
     <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Pago</span>
     <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Pendente</span>
@@ -16702,40 +16862,101 @@ function renderizarGraficosFinanceirosDashboard() {
   const elBarras = document.getElementById('dashGfBarras');
   if (elBarras) elBarras.innerHTML = barrasSvg;
 
-  // Rosca de gasto por fornecedor (conic-gradient)
+  // ── Rosca por fornecedor (filtrada por mês + categoria; clique filtra fornecedor) ──
+  const contasForn = _dashGfDados.filter(c => filtraMes(c) && filtraCat(c));
   const porForn = {};
-  contas.forEach(c => {
-    const nome = c.fornecedores?.nome || 'Sem fornecedor';
-    porForn[nome] = (porForn[nome] || 0) + valorDe(c);
+  contasForn.forEach(c => {
+    const chave = _dashGfChaveFornecedor(c);
+    if (!porForn[chave]) porForn[chave] = { nome: c.fornecedores?.nome || 'Sem fornecedor', valor: 0 };
+    porForn[chave].valor += _dashGfValorDe(c);
   });
-  const ordenado = Object.entries(porForn).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  const totalRosca = ordenado.reduce((s, [, v]) => s + v, 0);
+  const ordForn = Object.entries(porForn).filter(([, o]) => o.valor > 0).sort((a, b) => b[1].valor - a[1].valor).slice(0, 12);
+  const totalForn = ordForn.reduce((s, [, o]) => s + o.valor, 0);
   const elRosca = document.getElementById('dashGfRosca');
   if (elRosca) {
-    if (!totalRosca) {
-      elRosca.innerHTML = '<div class="empty" style="padding:20px;">Sem dados para o período.</div>';
+    if (!totalForn) {
+      elRosca.innerHTML = '<div class="empty" style="padding:20px;">Sem dados para o período/filtros.</div>';
     } else {
-      let acc = 0;
-      const fatias = ordenado.map(([, v], i) => {
-        const ini = (acc / totalRosca) * 100; acc += v;
-        const fimP = (acc / totalRosca) * 100;
-        return `${_dashGfCores[i % _dashGfCores.length]} ${ini}% ${fimP}%`;
-      });
-      const legenda = ordenado.map(([nome, v], i) => `
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;">
-          <span style="width:11px;height:11px;border-radius:2px;background:${_dashGfCores[i % _dashGfCores.length]};display:inline-block;flex-shrink:0;"></span>
-          <span style="flex:1;">${escaparHtmlBasico(nome)}</span>
-          <strong>${fmt(v)}</strong>
-          <span style="color:var(--text-muted);">${Math.round((v / totalRosca) * 100)}%</span>
-        </div>`).join('');
-      elRosca.innerHTML = `
-        <div style="width:150px;height:150px;border-radius:50%;flex-shrink:0;background:conic-gradient(${fatias.join(', ')});position:relative;">
-          <div style="position:absolute;inset:34px;background:var(--surface,#0f0f1a);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-            <span style="font-size:10px;color:var(--text-muted);">Total</span>
-            <strong style="font-size:13px;">${fmt(totalRosca)}</strong>
-          </div>
-        </div>
-        <div style="flex:1;min-width:200px;">${legenda}</div>`;
+      const itens = ordForn.map(([chave, o], i) => ({
+        chave, nome: o.nome, valor: o.valor,
+        cor: _dashGfCores[i % _dashGfCores.length],
+        selecionado: F.fornecedorId === chave
+      }));
+      elRosca.innerHTML =
+        _dashGfDesenharRosca(itens, totalForn, 'dashGfToggleFornecedor', !!F.fornecedorId) +
+        `<div style="flex:1;min-width:200px;">${_dashGfLegendaRosca(itens, totalForn, 'dashGfToggleFornecedor', !!F.fornecedorId)}</div>`;
+    }
+  }
+
+  // ── Rosca por categoria (filtrada por mês + fornecedor; clique filtra categoria) ──
+  const contasCat = _dashGfDados.filter(c => filtraMes(c) && filtraForn(c));
+  const porCat = {};
+  contasCat.forEach(c => {
+    const chave = _dashGfChaveCategoria(c);
+    if (!porCat[chave]) {
+      const cat = chave === 'sem' ? null : _dashGfCategoriasMapa[chave];
+      porCat[chave] = { nome: cat?.nome || 'Sem categoria', cor: cat?.cor || null, icone: (cat?.icone && !String(cat.icone).startsWith('http')) ? cat.icone : null, valor: 0 };
+    }
+    porCat[chave].valor += _dashGfValorDe(c);
+  });
+  const ordCat = Object.entries(porCat).filter(([, o]) => o.valor > 0).sort((a, b) => b[1].valor - a[1].valor).slice(0, 12);
+  const totalCat = ordCat.reduce((s, [, o]) => s + o.valor, 0);
+  const elRoscaCat = document.getElementById('dashGfRoscaCategoria');
+  if (elRoscaCat) {
+    if (!totalCat) {
+      elRoscaCat.innerHTML = '<div class="empty" style="padding:20px;">Sem dados para o período/filtros.</div>';
+    } else {
+      const itens = ordCat.map(([chave, o], i) => ({
+        chave, nome: o.nome, valor: o.valor, icone: o.icone,
+        cor: o.cor || _dashGfCores[i % _dashGfCores.length],
+        selecionado: F.categoriaId === chave
+      }));
+      elRoscaCat.innerHTML =
+        _dashGfDesenharRosca(itens, totalCat, 'dashGfToggleCategoria', !!F.categoriaId) +
+        `<div style="flex:1;min-width:200px;">${_dashGfLegendaRosca(itens, totalCat, 'dashGfToggleCategoria', !!F.categoriaId)}</div>`;
+    }
+  }
+
+  // ── Detalhamento dos lançamentos quando há filtro ativo (cruzamento de informações) ──
+  const elDetalhe = document.getElementById('dashGfDetalhe');
+  if (elDetalhe) {
+    if (!temFiltro || !contasResumo.length) {
+      elDetalhe.innerHTML = temFiltro
+        ? '<div class="empty" style="padding:14px;">Nenhum lançamento para os filtros selecionados.</div>'
+        : '';
+    } else {
+      const LIMITE = 60;
+      const ordenadas = [...contasResumo].sort((a, b) => String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || '')));
+      const linhas = ordenadas.slice(0, LIMITE).map(c => {
+        const pago = _dashGfEhPago(c);
+        const cat = c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)] : null;
+        const dv = String(c.data_vencimento || '').slice(0, 10).split('-').reverse().join('/');
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+          <td style="padding:5px 8px;white-space:nowrap;">${escaparHtmlBasico(dv)}</td>
+          <td style="padding:5px 8px;">${escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor')}</td>
+          <td style="padding:5px 8px;">${escaparHtmlBasico(cat?.nome || 'Sem categoria')}</td>
+          <td style="padding:5px 8px;">${escaparHtmlBasico(String(c.observacao || '—').slice(0, 60))}</td>
+          <td style="padding:5px 8px;"><span style="font-size:11px;padding:2px 8px;border-radius:99px;${pago ? 'background:rgba(34,197,94,0.15);color:#22c55e;' : 'background:rgba(245,158,11,0.15);color:#f59e0b;'}">${pago ? 'Pago' : 'Pendente'}</span></td>
+          <td style="padding:5px 8px;text-align:right;white-space:nowrap;"><strong>${fmt(_dashGfValorDe(c))}</strong></td>
+        </tr>`;
+      }).join('');
+      elDetalhe.innerHTML = `
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Detalhamento dos lançamentos filtrados (${contasResumo.length}${contasResumo.length > LIMITE ? `, exibindo ${LIMITE}` : ''})</div>
+        <div style="overflow-x:auto;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:640px;">
+            <thead>
+              <tr style="text-align:left;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.12);">
+                <th style="padding:6px 8px;">Vencimento</th>
+                <th style="padding:6px 8px;">Fornecedor</th>
+                <th style="padding:6px 8px;">Categoria</th>
+                <th style="padding:6px 8px;">Observação</th>
+                <th style="padding:6px 8px;">Status</th>
+                <th style="padding:6px 8px;text-align:right;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>${linhas}</tbody>
+          </table>
+        </div>`;
     }
   }
 }
@@ -32605,6 +32826,16 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
           <div class="item-detalhe">Cadastro: ${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
           <div class="item-detalhe">Exclusão: ${escaparHtmlBasico(String(item.excluido_por_nome || '').trim() || '-')} · ${escaparHtmlBasico(item.excluido_em ? fmtDate(item.excluido_em) : '-')}</div>
         </div>
+        <div class="item-destaque" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;flex:1;min-width:260px;padding:8px 16px;">
+          <div style="display:flex;flex-direction:column;align-items:center;line-height:1;">
+            <span style="font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fca5a5;">Vencimento</span>
+            <span style="font-size:30px;font-weight:900;color:#ff5b5b;text-shadow:0 0 12px rgba(255,91,91,.45);">${formatarDataBRFinanceiro(item.data_vencimento)}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;line-height:1;">
+            <span style="font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fde047;">Valor</span>
+            <span style="font-size:34px;font-weight:900;color:#ffd400;text-shadow:0 0 12px rgba(255,212,0,.45);">${formatarMoedaBRFinanceiro(valorCompra)}</span>
+          </div>
+        </div>
         <div class="item-actions">
           ${tagStatusContaRelatorioFinanceiro(status)}
         </div>
@@ -32647,6 +32878,18 @@ function resetFiltroRelatorioFinanceiro() {
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
+
+  carregarRelatorioFinanceiro();
+}
+
+function limparFiltrosRelatorioFinanceiro() {
+  // Mantém o período (vencimento inicial/final) e limpa todos os demais filtros.
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
+  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
+  const campoGrupo = document.getElementById('filtroRelFinanceiroGrupo');
+  if (campoGrupo) campoGrupo.value = '';
 
   carregarRelatorioFinanceiro();
 }
