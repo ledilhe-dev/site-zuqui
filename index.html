@@ -8272,7 +8272,7 @@
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(15)">Próx. 15 dias</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(30)">Próx. 30 dias</button>
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:8px;">
-              <input type="checkbox" id="contasSomarFuturosAcoes" style="margin:0;" onchange="document.getElementById('contasSomarFuturos').checked=this.checked;recalcularFaltaQuitar()">
+              <input type="checkbox" id="contasSomarFuturosAcoes" style="margin:0;" onchange="recalcularFaltaQuitar()">
               Somar recebimentos futuros ao saldo
             </label>
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
@@ -8302,13 +8302,7 @@
             <div class="s-desc">Soma dos saldos das contas financeiras</div>
           </div>
           <div class="stat-card rf-falta-quitar-btn" style="cursor:default;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-              <div class="s-label" style="margin:0;">Falta para quitar (R$)</div>
-              <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);cursor:pointer;white-space:nowrap;">
-                <input type="checkbox" id="contasSomarFuturos" style="margin:0;width:11px;height:11px;" onchange="recalcularFaltaQuitar()">
-                + Futuros
-              </label>
-            </div>
+            <div class="s-label">Falta para quitar (R$)</div>
             <div class="s-value" id="rfFaltaQuitar">R$ 0,00</div>
             <div class="s-desc" id="rfFaltaQuitarDesc">Total pendente menos saldo disponível</div>
           </div>
@@ -9724,7 +9718,9 @@ async function aplicarEmpresaRLS() {
     const empresaId = obterEmpresaIdSessao();
     const lojaId = obterLojaIdSessao();
 
-    if (!empresaId || !TABELAS_COM_EMPRESA_ID.has(tabela)) return builder;
+    const aplicaEmpresa = !!empresaId && TABELAS_COM_EMPRESA_ID.has(tabela);
+    const aplicaLoja = !!lojaId && TABELAS_COM_LOJA_ID.has(tabela);
+    if (!aplicaEmpresa && !aplicaLoja) return builder;
 
     ['select', 'update', 'delete'].forEach(metodo => {
       if (typeof builder[metodo] !== 'function') return;
@@ -9732,8 +9728,10 @@ async function aplicarEmpresaRLS() {
       builder[metodo] = function(...args) {
         let result = _orig(...args);
         if (result && typeof result.eq === 'function') {
-          result = result.eq('empresa_id', empresaId);
-          if (lojaId && TABELAS_COM_LOJA_ID.has(tabela)) {
+          if (aplicaEmpresa) {
+            result = result.eq('empresa_id', empresaId);
+          }
+          if (aplicaLoja) {
             result = result.eq('loja_id', lojaId);
           }
         }
@@ -9746,8 +9744,8 @@ async function aplicarEmpresaRLS() {
       builder.insert = function(valores, opts) {
         const enriquecerTenant = (v) => ({
           ...v,
-          empresa_id: v?.empresa_id || empresaId,
-          ...(lojaId && TABELAS_COM_LOJA_ID.has(tabela) ? { loja_id: v?.loja_id || lojaId } : {}),
+          ...(aplicaEmpresa ? { empresa_id: v?.empresa_id || empresaId } : {}),
+          ...(aplicaLoja ? { loja_id: v?.loja_id || lojaId } : {}),
         });
         const comTenant = Array.isArray(valores)
           ? valores.map(enriquecerTenant)
@@ -9761,8 +9759,8 @@ async function aplicarEmpresaRLS() {
       builder.upsert = function(valores, opts) {
         const enriquecerTenant = (v) => ({
           ...v,
-          empresa_id: v?.empresa_id || empresaId,
-          ...(lojaId && TABELAS_COM_LOJA_ID.has(tabela) ? { loja_id: v?.loja_id || lojaId } : {}),
+          ...(aplicaEmpresa ? { empresa_id: v?.empresa_id || empresaId } : {}),
+          ...(aplicaLoja ? { loja_id: v?.loja_id || lojaId } : {}),
         });
         const comTenant = Array.isArray(valores)
           ? valores.map(enriquecerTenant)
@@ -20668,7 +20666,18 @@ async function carregarRecFuturos() {
     }
 
     const hoje = new Date().toISOString().slice(0, 10);
-    lista.innerHTML = '<div class="lista">' + recFuturosCache.map(item => {
+    const itensPendentesFut = recFuturosCache.filter(i => !i.confirmado_em);
+    const itensConfirmadosFut = recFuturosCache.filter(i => !!i.confirmado_em);
+    const totalPendentesFut = itensPendentesFut.reduce((s, i) => s + Number(i.valor || 0), 0);
+    const totalConfirmadosFut = itensConfirmadosFut.reduce((s, i) => s + Number(i.valor_confirmado ?? i.valor ?? 0), 0);
+    const resumoFuturosHtml = `
+      <div class="item" style="border-left:3px solid var(--green,#22c55e);">
+        <div class="item-info">
+          <div class="item-nome">Total previsto pendente: ${formatarMoedaBRFinanceiro(totalPendentesFut)} <span style="font-weight:400;color:var(--text-muted);">(${itensPendentesFut.length} lançamento${itensPendentesFut.length === 1 ? '' : 's'})</span></div>
+          ${itensConfirmadosFut.length ? `<div class="item-detalhe">Confirmados no filtro: ${formatarMoedaBRFinanceiro(totalConfirmadosFut)} (${itensConfirmadosFut.length})</div>` : ''}
+        </div>
+      </div>`;
+    lista.innerHTML = '<div class="lista">' + resumoFuturosHtml + recFuturosCache.map(item => {
       const confirmado = !!item.confirmado_em;
       const dp = String(item.data_prevista || '').slice(0, 10);
       const atrasado = !confirmado && dp && dp < hoje;
@@ -20896,7 +20905,7 @@ async function confirmarRecebimentoFuturo() {
 }
 // ══════════════════════════════════════════════════════════════════
 async function recalcularFaltaQuitar() {
-  const chk = document.getElementById('contasSomarFuturos');
+  const chk = document.getElementById('contasSomarFuturosAcoes');
   const elFaltaQuitar = document.getElementById('rfFaltaQuitar');
   const desc = document.getElementById('rfFaltaQuitarDesc');
   if (!elFaltaQuitar) return;
@@ -20911,14 +20920,49 @@ async function recalcularFaltaQuitar() {
     return;
   }
 
-  // Buscar recebimentos futuros pendentes
+  // Buscar recebimentos futuros pendentes — restritos às lojas marcadas no
+  // filtro do próprio relatório (mesmo mecanismo do Cofre).
   try {
-    const { data: futuros } = await sb.from('recebiveis_futuros').select('valor').eq('ativo', true).is('confirmado_em', null);
-    const totalFuturos = (futuros || []).reduce((s, f) => s + Number(f.valor || 0), 0);
+    const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasRelatorioFinanceiro');
+    if (!Array.isArray(lojasPermitidasIds) || !lojasPermitidasIds.length) {
+      const falta = Math.max(0, totalPendente - saldoTotalContas);
+      elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(falta);
+      if (desc) desc.textContent = 'Não foi possível identificar a loja para somar os futuros';
+      return;
+    }
+    // Mesmo recorte de datas do relatório: futuros previstos dentro do período filtrado.
+    const futInicio = String(document.getElementById('filtroRelFinanceiroDataInicio')?.value || '').trim();
+    const futFim = String(document.getElementById('filtroRelFinanceiroDataFim')?.value || '').trim();
+    const { data: futuros, error: erroFuturos } = await executarSemFiltroLojaTemporario(() => {
+      let queryFuturos = sb.from('recebiveis_futuros')
+        .select('valor, loja_id, data_prevista')
+        .eq('ativo', true)
+        .is('confirmado_em', null);
+      if (futInicio) queryFuturos = queryFuturos.gte('data_prevista', futInicio);
+      if (futFim) queryFuturos = queryFuturos.lte('data_prevista', futFim);
+      return aplicarFiltroLojasFinanceirasPermitidas(queryFuturos, lojasPermitidasIds);
+    });
+    if (erroFuturos) {
+      console.warn('Erro ao buscar recebimentos futuros para "Falta para quitar":', erroFuturos);
+      const falta = Math.max(0, totalPendente - saldoTotalContas);
+      elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(falta);
+      if (desc) desc.textContent = 'Não foi possível somar os recebimentos futuros';
+      return;
+    }
+    const idsPermitidosFut = new Set(lojasPermitidasIds.map(id => String(id)));
+    const totalFuturos = (futuros || [])
+      .filter(f => idsPermitidosFut.has(String(f.loja_id || '')))
+      .filter(f => {
+        const dp = String(f.data_prevista || '').slice(0, 10);
+        if (futInicio && dp < futInicio) return false;
+        if (futFim && dp > futFim) return false;
+        return true;
+      })
+      .reduce((s, f) => s + Number(f.valor || 0), 0);
     const saldoComFuturos = saldoTotalContas + totalFuturos;
     const faltaComFuturos = Math.max(0, totalPendente - saldoComFuturos);
     elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(faltaComFuturos);
-    if (desc) desc.textContent = `Saldo (${formatarMoedaBRFinanceiro(saldoTotalContas)}) + futuros (${formatarMoedaBRFinanceiro(totalFuturos)})`;
+    if (desc) desc.textContent = `Saldo (${formatarMoedaBRFinanceiro(saldoTotalContas)}) + futuros no período (${formatarMoedaBRFinanceiro(totalFuturos)})`;
   } catch(e) {
     console.warn('Erro ao buscar futuros:', e);
   }
@@ -22321,7 +22365,9 @@ function renderizarPizzaCofreContas(contas = [], contexto = {}) {
           <strong style="color:var(--green,#22c55e)">+${formatarMoedaBRFinanceiro(totalFuturos)}</strong>
         </div>` : ''}
         <div class="item-detalhe" style="margin-top:4px;font-size:10px;">
-          Período: ${escaparHtmlBasico(periodoInicio)} até ${escaparHtmlBasico(periodoFim)}
+          ${(!contexto.filtroInicio && !contexto.filtroFim)
+            ? 'Período: todas as contas em aberto (sem filtro de datas — inclui parcelas futuras)'
+            : `Período: ${escaparHtmlBasico(periodoInicio)} até ${escaparHtmlBasico(periodoFim)}`}
         </div>
       </div>
     `;
@@ -23207,6 +23253,22 @@ async function carregarCofreFinanceiro() {
   atualizarResumoCofreFinanceiro({ saldoTotal: 0, movimentos: [] });
   renderizarCardsCofreContas([]);
   renderizarPizzaCofreContas([]);
+
+  // Período padrão: se as duas datas estiverem vazias na primeira abertura,
+  // preenche com o mês atual para o indicador "falta para cobrir" não somar
+  // todas as contas em aberto de todos os tempos (parcelas de anos futuros).
+  const campoCofreInicio = document.getElementById('filtroCofreDataInicio');
+  const campoCofreFim = document.getElementById('filtroCofreDataFim');
+  if (!window.__cofrePeriodoInicializado && campoCofreInicio && campoCofreFim
+      && !String(campoCofreInicio.value || '').trim() && !String(campoCofreFim.value || '').trim()) {
+    const agora = new Date();
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const ano = agora.getFullYear();
+    const mes = agora.getMonth();
+    campoCofreInicio.value = `${ano}-${pad2(mes + 1)}-01`;
+    campoCofreFim.value = `${ano}-${pad2(mes + 1)}-${pad2(new Date(ano, mes + 1, 0).getDate())}`;
+  }
+  window.__cofrePeriodoInicializado = true;
 
   const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasCofreFinanceiro');
   const filtroInicio = String(document.getElementById('filtroCofreDataInicio')?.value || '').trim();
@@ -32628,6 +32690,9 @@ async function carregarRelatorioFinanceiro() {
   const campoForma = document.getElementById('filtroRelFinanceiroForma');
 
   if (!listaDetalhes || !listaFornecedores || !listaFormas) return;
+  // Evita renders concorrentes (causa do "piscar"): só a chamada mais recente
+  // conclui a renderização; chamadas antigas são abandonadas após cada await.
+  const seqRelFin = (window.__relFinSeq = (window.__relFinSeq || 0) + 1);
   renderizarFiltroLojasCheckbox('filtroLojasRelatorioFinanceiro', 'carregarRelatorioFinanceiro()');
   const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasRelatorioFinanceiro');
   const statusSelecionadosAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
@@ -32652,6 +32717,7 @@ async function carregarRelatorioFinanceiro() {
   if (!(gruposFornecedorCache || []).length && typeof carregarGruposFornecedor === 'function') {
     try { await carregarGruposFornecedor(); } catch (_) {}
   }
+  if (seqRelFin !== window.__relFinSeq) return;
 
   try {
     const filtroDataInicioConsulta = String(campoDataInicio?.value || '').trim();
@@ -32679,6 +32745,7 @@ async function carregarRelatorioFinanceiro() {
     }
 
     const rows = data || [];
+    if (seqRelFin !== window.__relFinSeq) return;
 
     // Lista de fornecedores do filtro: usa TODOS os fornecedores da(s) loja(s)
     // selecionada(s) — não apenas os que têm conta no período — para permitir
@@ -32803,6 +32870,7 @@ async function carregarRelatorioFinanceiro() {
       saldoTotalContas = 0;
     }
     const faltaParaQuitar = Math.max(0, totalPendente - saldoTotalContas);
+    if (seqRelFin !== window.__relFinSeq) return;
     // Guardar para recalcular quando checkbox mudar
     window._contasFaltaCache = { totalPendente, saldoTotalContas };
 
@@ -32815,11 +32883,12 @@ async function carregarRelatorioFinanceiro() {
     if (elTotalSomado) elTotalSomado.textContent = formatarMoedaBRFinanceiro(totalSomado);
     if (elSaldoContas) elSaldoContas.textContent = formatarMoedaBRFinanceiro(saldoTotalContas);
     if (elFaltaQuitar) elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(faltaParaQuitar);
-    // Resetar checkbox e descrição
-    const chk = document.getElementById('contasSomarFuturos');
-    if (chk) chk.checked = false;
+    // Mantém a escolha do usuário: se "Somar recebimentos futuros ao saldo"
+    // estiver marcado, recalcula o "Falta para quitar" somando os futuros.
+    const chkAcoesFuturos = document.getElementById('contasSomarFuturosAcoes');
     const desc = document.getElementById('rfFaltaQuitarDesc');
     if (desc) desc.textContent = 'Total pendente menos saldo disponível';
+    if (chkAcoesFuturos?.checked === true) await recalcularFaltaQuitar();
     if (elQtdTitulos) elQtdTitulos.textContent = String(qtdTitulos);
 
     renderizarDashboardFornecedoresRelatorioFinanceiro(itensFiltrados);
