@@ -3806,6 +3806,45 @@
       min-height: 36px;
       font-size: 13px;
     }
+    .tarefas-filtro-avancado {
+      margin: 4px 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2, rgba(255,255,255,.02));
+      padding: 4px 10px;
+    }
+    .tarefas-filtro-avancado > summary {
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      padding: 4px 0;
+      user-select: none;
+    }
+    .tarefas-filtro-avancado-corpo {
+      padding: 8px 0 4px;
+    }
+    .tarefas-filtro-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px 10px;
+      margin-bottom: 10px;
+    }
+    .tarefas-filtro-grid .campo-com-label {
+      max-width: none;
+      flex: none;
+    }
+    .tarefas-filtro-grid input,
+    .tarefas-filtro-grid select {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .tarefas-filtro-acoes-massa {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
     .tarefa-cadastro-atalhos {
       display: flex;
       align-items: center;
@@ -3916,7 +3955,7 @@
     }
     @media (max-width: 1280px) and (min-width: 901px) {
       #tarefas .tarefa-lancamento-grid {
-        grid-template-columns: minmax(0, 1.90fr) minmax(146px, 0.60fr) minmax(176px, 0.50fr) minmax(104px, 0.28fr);
+        grid-template-columns: minmax(0, 1.55fr) minmax(120px, 0.55fr) minmax(140px, 0.55fr) minmax(160px, 0.46fr) minmax(100px, 0.26fr);
         gap: 6px;
         align-items: end;
       }
@@ -4131,11 +4170,44 @@
     }
     .tarefa-lancamento-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.78fr) minmax(164px, 0.66fr) minmax(186px, 0.55fr) minmax(114px, 0.32fr);
-      grid-template-areas: "dias func horario lancar";
+      grid-template-columns: minmax(0, 1.55fr) minmax(140px, 0.62fr) minmax(150px, 0.60fr) minmax(170px, 0.50fr) minmax(110px, 0.30fr);
+      grid-template-areas: "dias repeticao func horario lancar";
       gap: 6px 8px;
       align-items: end;
       padding: 6px 6px;
+    }
+    .tarefa-lancamento-bloco-repeticao {
+      grid-area: repeticao;
+      min-width: 0;
+      align-self: end;
+    }
+    .tarefa-repeticao-campos {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 3px;
+    }
+    .tarefa-repeticao-campo {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1 1 60px;
+    }
+    .tarefa-repeticao-campo > span {
+      font-size: 9px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .tarefa-repeticao-campo input[type="number"] {
+      width: 100%;
+      height: 30px;
+      font-size: 12px;
+      padding: 0 6px;
+      box-sizing: border-box;
     }
     .tarefa-lancamento-bloco {
       display: flex;
@@ -4720,6 +4792,43 @@
         grid-column: 1 / -1;
       }
     }
+    /* Filtros compactos da Próxima tarefa: data/hora/funcionário menores + tarefa */
+    .checklists-futuros-filtros-compacto {
+      grid-template-columns: 130px 96px 96px minmax(120px, 0.8fr) minmax(150px, 1fr) auto;
+    }
+    .checklists-futuros-filtros-compacto .filtro-compacto-data { max-width: 130px; }
+    .checklists-futuros-filtros-compacto .filtro-compacto-hora { max-width: 96px; }
+    .checklists-futuros-filtros-compacto .filtro-compacto-func { max-width: 220px; }
+    @media (max-width: 900px) {
+      .checklists-futuros-filtros-compacto {
+        grid-template-columns: 1fr 1fr;
+      }
+      .checklists-futuros-filtros-compacto .filtro-compacto-tarefa,
+      .checklists-futuros-filtros-compacto .filtro-compacto-func {
+        grid-column: 1 / -1;
+        max-width: none;
+      }
+    }
+    .checklists-futuros-acoes-massa {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin: 0 0 10px;
+    }
+    .checklist-item-check {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 2;
+    }
+    .checklist-item-check input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .checklist-item { position: relative; }
+    .checklists-futuros-conteudo .checklist-item .item-info { padding-left: 22px; }
     #perfis .perfil-form-row {
       display: flex;
       align-items: center;
@@ -5053,6 +5162,22 @@
     .msg { font-size: 13px; color: var(--text-muted); margin-top: 10px; min-height: 20px; }
     .msg.ok { color: var(--green); }
     .msg.err { color: var(--red); }
+    /* Mensagem de alerta (amarela) destacada dentro de modais como o de PIN/conferência. */
+    .msg.alerta {
+      color: #b45309;
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    /* Caixa de PIN em modo alerta: borda/fundo amarelados para o usuário leigo perceber. */
+    #pinActionOverlay .modal.pin-modal-alerta {
+      border: 2px solid rgba(245, 158, 11, 0.75);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14), var(--shadow-lg, 0 10px 40px rgba(0,0,0,.4));
+      background: linear-gradient(180deg, rgba(245,158,11,0.06), transparent 120px), var(--surface);
+    }
     .msg.ponto-alerta-dez-minutos {
       color: #fff;
       background: linear-gradient(135deg, rgba(239,68,68,0.3), rgba(127,29,29,0.92));
@@ -5970,8 +6095,9 @@
       #tarefas .tarefa-lancamento-grid {
         grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
         grid-template-areas:
-          "dias func"
-          "dias horario";
+          "dias dias"
+          "repeticao func"
+          "repeticao horario";
         gap: 6px;
         align-items: start;
       }
@@ -6365,6 +6491,7 @@
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         grid-template-areas:
           "dias horario"
+          "repeticao repeticao"
           "func func";
       }
       .tarefa-lancamento-horario {
@@ -6960,6 +7087,34 @@
     -webkit-text-security: disc;
     text-security: disc;
   }
+  /* Correção: campos de senha (pin-secure-input) apareciam como caixa branca crua
+     porque a regra global de inputs os exclui. Reaplicamos o tema escuro
+     apenas para os campos que NÃO são da tela de login. */
+  input.pin-secure-input:not(.login-input) {
+    background: rgba(5,10,7,0.85) !important;
+    border: 1px solid rgba(28,48,34,0.9) !important;
+    border-radius: 8px !important;
+    color: #e8f5eb !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    transition: border-color .18s, box-shadow .18s;
+  }
+  input.pin-secure-input:not(.login-input):focus {
+    border-color: rgba(16,217,122,0.5) !important;
+    box-shadow: 0 0 0 3px rgba(16,217,122,0.1) !important;
+    outline: none !important;
+  }
+  input.pin-secure-input:not(.login-input)::placeholder {
+    color: rgba(180,200,186,0.45) !important;
+  }
+  /* Campo de senha do cadastro de funcionário: alinhar altura/box com os demais */
+  #pinFuncionario.pin-secure-input {
+    height: 32px !important;
+    max-width: none !important;
+    flex: 1 1 auto !important;
+    font-size: 12px !important;
+  }
 </style>
 
 </head>
@@ -7082,6 +7237,11 @@
             <button class="nav-btn nav-sub-btn" data-page="relatorio_lancamentos" onclick="abrirPagina('relatorio_lancamentos', this)">
               <span class="nav-copy">
                 <span class="nav-title">Relatório tarefas</span>
+              </span>
+            </button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_tarefas_cadastradas" onclick="abrirPagina('relatorio_tarefas_cadastradas', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Tarefas cadastradas</span>
               </span>
             </button>
           </div>
@@ -7389,9 +7549,14 @@
 
       <section id="dashboard" class="pagina">
         <div class="card" id="cardDashboardPizzas">
-          <div class="card-title">Painel de indicadores</div>
-          <div class="dashboard-kpi-pies-grid">
-            <div class="dashboard-kpi-card">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span>Painel de indicadores <span style="font-size:10px;color:var(--text-muted);font-weight:400;">· arraste os cartões para reordenar · ✕ remove</span></span>
+            <div id="dashKpiOcultosChips" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;"></div>
+          </div>
+          <div class="dashboard-kpi-pies-grid" id="dashKpiGrid">
+            <div class="dashboard-kpi-card" data-kpi="financeiro" style="position:relative;">
+              <button type="button" onclick="dashKpiOcultar('financeiro')" title="Remover este indicador do painel"
+                style="position:absolute;top:6px;right:6px;width:22px;height:22px;border:none;background:rgba(255,255,255,0.06);color:var(--text-muted);border-radius:6px;cursor:pointer;font-size:11px;line-height:1;z-index:2;">✕</button>
               <div class="dashboard-kpi-title">Financeiro: contas a pagar x saldo em conta</div>
               <div class="dashboard-period-tabs" aria-label="Período das contas a pagar">
                 <button class="dashboard-period-btn active" type="button" data-financeiro-dias="0" onclick="trocarPeriodoFinanceiroDashboard(0, this)">Hoje</button>
@@ -7407,7 +7572,9 @@
               </div>
               <div class="dashboard-kpi-meta" id="dashPieFinanceiroMeta">Sem dados.</div>
             </div>
-            <div class="dashboard-kpi-card">
+            <div class="dashboard-kpi-card" data-kpi="horas" style="position:relative;">
+              <button type="button" onclick="dashKpiOcultar('horas')" title="Remover este indicador do painel"
+                style="position:absolute;top:6px;right:6px;width:22px;height:22px;border:none;background:rgba(255,255,255,0.06);color:var(--text-muted);border-radius:6px;cursor:pointer;font-size:11px;line-height:1;z-index:2;">✕</button>
               <div class="dashboard-kpi-title">Tempo de trabalho dos funcionários</div>
               <div class="prod-pie dashboard-kpi-pie" id="dashPieHoras">
                 <div class="prod-pie-center">
@@ -7417,7 +7584,9 @@
               </div>
               <div class="dashboard-kpi-meta" id="dashPieHorasMeta">Sem dados.</div>
             </div>
-            <div class="dashboard-kpi-card">
+            <div class="dashboard-kpi-card" data-kpi="tarefas" style="position:relative;">
+              <button type="button" onclick="dashKpiOcultar('tarefas')" title="Remover este indicador do painel"
+                style="position:absolute;top:6px;right:6px;width:22px;height:22px;border:none;background:rgba(255,255,255,0.06);color:var(--text-muted);border-radius:6px;cursor:pointer;font-size:11px;line-height:1;z-index:2;">✕</button>
               <div class="dashboard-kpi-title">Tarefas concluídas por funcionário</div>
               <div class="prod-pie dashboard-kpi-pie" id="dashPieConcluidasFuncionario">
                 <div class="prod-pie-center">
@@ -7427,7 +7596,9 @@
               </div>
               <div class="dashboard-kpi-meta" id="dashPieConcluidasFuncionarioMeta">Sem dados.</div>
             </div>
-            <div class="dashboard-kpi-card">
+            <div class="dashboard-kpi-card" data-kpi="prazo" style="position:relative;">
+              <button type="button" onclick="dashKpiOcultar('prazo')" title="Remover este indicador do painel"
+                style="position:absolute;top:6px;right:6px;width:22px;height:22px;border:none;background:rgba(255,255,255,0.06);color:var(--text-muted);border-radius:6px;cursor:pointer;font-size:11px;line-height:1;z-index:2;">✕</button>
               <div class="dashboard-kpi-title">Execuções no prazo x fora do prazo</div>
               <div class="prod-pie dashboard-kpi-pie" id="dashPiePrazo">
                 <div class="prod-pie-center">
@@ -7437,7 +7608,9 @@
               </div>
               <div class="dashboard-kpi-meta" id="dashPiePrazoMeta">Sem dados.</div>
             </div>
-            <div class="dashboard-kpi-card">
+            <div class="dashboard-kpi-card" data-kpi="status" style="position:relative;">
+              <button type="button" onclick="dashKpiOcultar('status')" title="Remover este indicador do painel"
+                style="position:absolute;top:6px;right:6px;width:22px;height:22px;border:none;background:rgba(255,255,255,0.06);color:var(--text-muted);border-radius:6px;cursor:pointer;font-size:11px;line-height:1;z-index:2;">✕</button>
               <div class="dashboard-kpi-title">Status das execuções hoje</div>
               <div class="prod-pie dashboard-kpi-pie" id="dashPieStatusExecucao">
                 <div class="prod-pie-center">
@@ -7454,15 +7627,21 @@
           <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <span>Análise financeira — contas a pagar</span>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <div id="dashGfModoBtns" style="display:inline-flex;border:1px solid rgba(255,255,255,0.18);border-radius:8px;overflow:hidden;" title="Escolha qual data agrupa os gráficos: vencimento (fatura) ou data da compra">
+                <button class="btn btn-ghost btn-sm" type="button" id="dashGfModoVenc" onclick="dashGfMudarModoData('vencimento')" style="border-radius:0;border:none;">📅 Vencimento</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="dashGfModoCompra" onclick="dashGfMudarModoData('compra')" style="border-radius:0;border:none;">🛒 Compra</button>
+              </div>
               <button class="btn btn-ghost btn-sm" type="button" onclick="mudarAnoGraficoFinanceiroDashboard(-1)">◀</button>
               <strong id="dashGfAnoLabel" style="font-size:14px;min-width:54px;text-align:center;">—</strong>
               <button class="btn btn-ghost btn-sm" type="button" onclick="mudarAnoGraficoFinanceiroDashboard(1)">▶</button>
-              <select id="dashGfFornecedor" style="font-size:12px;height:30px;padding:0 6px;min-width:160px;" onchange="dashGfSelectFornecedorChange(this.value)">
-                <option value="">Todos os fornecedores</option>
-              </select>
-              <select id="dashGfCategoria" style="font-size:12px;height:30px;padding:0 6px;min-width:150px;" onchange="dashGfSelectCategoriaChange(this.value)">
-                <option value="">Todas as categorias</option>
-              </select>
+              <span id="dashGfFornWrap" style="position:relative;display:inline-block;">
+                <button class="btn btn-ghost btn-sm" type="button" id="btnDashGfFornecedores" onclick="dashGfToggleDropdown('forn')" title="Filtrar por um ou mais fornecedores">Fornecedores ▾</button>
+                <div id="dashGfDropdownForn" style="display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:60;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card,#0f1a2b);border:1px solid var(--border,#2a3a52);border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);"></div>
+              </span>
+              <span id="dashGfCatWrap" style="position:relative;display:inline-block;">
+                <button class="btn btn-ghost btn-sm" type="button" id="btnDashGfCategorias" onclick="dashGfToggleDropdown('cat')" title="Filtrar por uma ou mais categorias">Categorias ▾</button>
+                <div id="dashGfDropdownCat" style="display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:60;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card,#0f1a2b);border:1px solid var(--border,#2a3a52);border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);"></div>
+              </span>
               <button class="btn btn-ghost btn-sm" type="button" id="dashGfLimparBtn" onclick="dashGfLimparFiltros()" style="display:none;">✕ Limpar filtros</button>
             </div>
           </div>
@@ -7706,6 +7885,41 @@
         </div>
       </section>
 
+      <!-- Modal de aprovação de solicitação: define lojas + perfil por loja -->
+      <div id="modalAprovacaoSolicitacao" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,0.72);align-items:center;justify-content:center;padding:16px;">
+        <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:var(--radius-lg);width:min(680px,96vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-lg);">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text);">Aprovar solicitação de acesso</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;" id="aprovacaoSolicitacaoResumo"></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalAprovacaoSolicitacao()" style="font-size:18px;padding:0 8px;line-height:1;">×</button>
+          </div>
+
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">
+            <input id="filtroLojasAprovacao" type="text" placeholder="Buscar loja por nome, código ou cidade..." style="flex:1;min-width:180px;font-size:12px;padding:6px 10px;" oninput="renderizarLojasAprovacao()">
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button class="btn btn-ghost btn-sm" type="button" onclick="abrirCadastroEmpresaDaAprovacao()" title="Criar nova empresa/cliente">+ Empresa</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="abrirCadastroLojaDaAprovacao()" title="Criar nova loja">+ Loja</button>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="recarregarLojasAprovacao()" title="Atualizar lista de lojas">↻</button>
+            </div>
+          </div>
+
+          <div id="listaLojasAprovacao" style="flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:6px;">
+            <div class="empty" style="font-size:12px;">Carregando lojas…</div>
+          </div>
+
+          <div style="padding:10px 16px;border-top:1px solid var(--border);">
+            <div class="msg" id="msgAprovacaoSolicitacao" style="margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalAprovacaoSolicitacao()">Cancelar</button>
+              <button class="btn btn-green btn-sm" id="btnConfirmarAprovacaoSolicitacao" type="button" onclick="confirmarAprovacaoSolicitacao()">Aprovar e liberar acesso</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
       <section id="emails" class="pagina">
         <div class="page-title">Cadastro de envio de e-mail</div>
 
@@ -7905,6 +8119,41 @@
               <button class="btn btn-ghost" type="button" onclick="limparFiltroTarefasCadastradas()">Limpar</button>
             </div>
             <div id="resumoConsultaTarefas" class="item-detalhe">Selecione as tarefas para exibir abaixo.</div>
+            <details id="tarefasFiltroAvancado" class="tarefas-filtro-avancado">
+              <summary>Filtros avançados e exclusão em massa</summary>
+              <div class="tarefas-filtro-avancado-corpo">
+                <div class="tarefas-filtro-grid">
+                  <div class="campo-com-label">
+                    <label class="campo-label">Cadastro de</label>
+                    <input id="filtroTarefaAvDataInicio" type="date" onchange="filtrarTarefasCadastradas()">
+                  </div>
+                  <div class="campo-com-label">
+                    <label class="campo-label">Cadastro até</label>
+                    <input id="filtroTarefaAvDataFim" type="date" onchange="filtrarTarefasCadastradas()">
+                  </div>
+                  <div class="campo-com-label">
+                    <label class="campo-label">Contém (nome/observação)</label>
+                    <input id="filtroTarefaAvBusca" type="text" placeholder="Texto contido na tarefa" autocomplete="off" oninput="filtrarTarefasCadastradas()">
+                  </div>
+                  <div class="campo-com-label">
+                    <label class="campo-label">Funcionário responsável</label>
+                    <select id="filtroTarefaAvFuncionario" onchange="filtrarTarefasCadastradas()">
+                      <option value="">- Todos -</option>
+                    </select>
+                  </div>
+                  <div class="campo-com-label">
+                    <label class="campo-label">Tarefa (multi)</label>
+                    <select id="filtroTarefaAvTarefa" multiple size="4" onchange="filtrarTarefasCadastradas()" style="min-height:84px;"></select>
+                  </div>
+                </div>
+                <div class="tarefas-filtro-acoes-massa">
+                  <button class="btn btn-ghost btn-sm" type="button" onclick="selecionarTodasTarefasConsulta()">Selecionar todos filtrados</button>
+                  <button class="btn btn-ghost btn-sm" type="button" onclick="limparMarcacaoConsultaTarefas()">Desmarcar todos</button>
+                  <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefasSelecionadas()">Excluir selecionadas</button>
+                  <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltrosAvancadosTarefas()">Limpar filtros</button>
+                </div>
+              </div>
+            </details>
             <div id="listaConsultaTarefas" class="tarefas-consulta-lista"><div class="empty">Carregando tarefas cadastradas...</div></div>
           </div>
           <div id="listaTarefas"><div class="empty">Carregando⬦</div></div>
@@ -8242,6 +8491,41 @@
         </div>
       </section>
 
+      <section id="relatorio_tarefas_cadastradas" class="pagina">
+        <div class="page-title">Relatório de tarefas cadastradas</div>
+
+        <div class="card">
+          <div class="card-title">Filtros do relatório</div>
+          <div class="form-row">
+            <input id="filtroTarefasCadDataInicio" type="date" title="Cadastro/lançamento a partir de">
+            <input id="filtroTarefasCadDataFim" type="date" title="Cadastro/lançamento até">
+            <select id="filtroTarefasCadTarefa">
+              <option value="">- Todas as tarefas -</option>
+            </select>
+            <select id="filtroTarefasCadCadastrante">
+              <option value="">- Quem cadastrou (todos) -</option>
+            </select>
+            <select id="filtroTarefasCadResponsavel">
+              <option value="">- Responsável (todos) -</option>
+            </select>
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioTarefasCadastradas()">Filtrar</button>
+            <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioTarefasCadastradas()">Limpar</button>
+          </div>
+          <div class="msg" id="msgRelatorioTarefasCad"></div>
+        </div>
+
+        <div class="card">
+          <div class="relatorio-ponto-title-row">
+            <div class="card-title">Tarefas cadastradas</div>
+            <div class="relatorio-ponto-acoes">
+              <button class="btn btn-export-excel btn-sm" type="button" onclick="exportarRelatorioTarefasCadastradasExcel()"><span class="btn-export-icon excel">X</span>Excel</button>
+              <button class="btn btn-export-pdf btn-sm" type="button" onclick="exportarRelatorioTarefasCadastradasPDF()"><span class="btn-export-icon pdf">PDF</span>PDF</button>
+            </div>
+          </div>
+          <div id="listaRelatorioTarefasCad"><div class="empty">Use os filtros acima e clique em Filtrar.</div></div>
+        </div>
+      </section>
+
       <section id="relatorio_financeiro" class="pagina">
         <div class="page-title">Relatório de contas a pagar</div>
 
@@ -8558,6 +8842,12 @@
             <input id="fornecedorTelefone" class="campo-curto" type="text" placeholder="Telefone" autocomplete="off">
             <input id="fornecedorEmail" type="email" placeholder="E-mail" autocomplete="off">
             <input id="fornecedorDiaVencimento" class="campo-curto" type="number" min="1" max="31" step="1" placeholder="Dia venc." title="Dia de vencimento do cartão/fatura (1 a 31) — usado na importação OFX" autocomplete="off" style="max-width:90px;">
+            <input id="fornecedorDiaFechamento" class="campo-curto" type="number" min="1" max="31" step="1" placeholder="Dia fech." title="Dia de FECHAMENTO da fatura (1 a 31). Compras feitas a partir deste dia entram na fatura do mês seguinte — assim o valor do mês bate com a fatura do cartão." autocomplete="off" style="max-width:90px;">
+            <span style="display:inline-flex;align-items:center;gap:3px;" title="Cor do fornecedor — identifica este banco/cartão nos gráficos do dashboard">
+              <input type="color" id="fornecedorCor" value="#3b82f6" oninput="fornecedorCorAoEscolher(this.value)" style="width:38px;height:38px;padding:2px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:transparent;opacity:.4;">
+              <button class="btn btn-ghost btn-sm" type="button" onclick="fornecedorCorLimpar()" title="Sem cor (usa cor automática nos gráficos)">✕</button>
+            </span>
+            <input type="hidden" id="fornecedorCorValor" value="">
             <select id="fornecedorGrupoId" style="min-width:140px;" title="Grupo de fornecedor">
               <option value="">Sem grupo</option>
             </select>
@@ -8677,12 +8967,16 @@
             </div>
           </div>
           <div class="form-row financeiro-filtros-row">
-            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, valor, data, observação ou parcela" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)">
+            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, categoria, forma, conta, valor, data, observação ou parcela" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)">
             <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
               <option value="">- Todos os status -</option>
               <option value="pendente">Pendente</option>
               <option value="pago">Pago</option>
             </select>
+            <span id="filtroContaAPagarCategoriasWrap" style="position:relative;display:inline-block;">
+              <button class="btn btn-ghost" type="button" id="btnFiltroContaAPagarCategorias" onclick="toggleDropdownCategoriasContaAPagar()" title="Filtrar por uma ou mais categorias">Categorias ▾</button>
+              <div id="dropdownCategoriasContaAPagar" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:60;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card,#0f1a2b);border:1px solid var(--border,#2a3a52);border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);"></div>
+            </span>
             <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
             <input id="filtroContaAPagarFornecedor" type="text" placeholder="Fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)">
           </div>
@@ -9691,6 +9985,34 @@ function aplicarFiltroLojaFuncionariosQuery(query) {
   return query;
 }
 
+// Loja atualmente em uso (logada ou trocada pelo admin no topo).
+function obterLojaAtualParaIsolamento() {
+  try {
+    return String(
+      (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '')
+      || usuarioSistemaLogado?.loja_id
+      || (typeof window !== 'undefined' ? window.lojaAtualId : '')
+      || ''
+    ).trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+// Aplica .eq('loja_id', lojaAtual) em qualquer query que tenha coluna loja_id.
+// Usado para isolar checklists/lançamentos por loja e evitar vazamento entre lojas.
+function aplicarFiltroLojaGenericoQuery(query) {
+  try {
+    const lojaId = obterLojaAtualParaIsolamento();
+    if (lojaId && query && typeof query.eq === 'function') {
+      return query.eq('loja_id', lojaId);
+    }
+  } catch (e) {
+    console.warn('Filtro de loja genérico não aplicado:', e);
+  }
+  return query;
+}
+
 async function executarSemFiltroLojaTemporario(callback) {
   const estadoAnterior = filtroLojaSuspensoTemporariamente;
   filtroLojaSuspensoTemporariamente = true;
@@ -10086,6 +10408,9 @@ let funcionariosAtivosTarefa = [];
 let selecaoFuncionarioLancamentoPorTarefa = {};
 let horarioLancamentoPorTarefa = {};
 let diasLancamentoPorTarefa = {};
+// Repetição do lançamento: intervalo (dias entre relançamento) e duração (se repete por X dias).
+let intervaloLancamentoPorTarefa = {};
+let duracaoLancamentoPorTarefa = {};
 const DIAS_SEMANA_INTERVALO_FUNCIONARIO = [
   ['dom', 'Domingo'],
   ['seg', 'Segunda-feira'],
@@ -10211,6 +10536,7 @@ let tarefasConfigLancamentoAbertasIds = new Set();
 let mostrarSomenteFavoritasTarefas = false;
 let favoritosTarefasMinimizados = false;
 let checklistsFuturosExpandido = false;
+let proximasTarefasSelecionadasIds = new Set();
 let assinaturaRenderChecklists = '';
 let tokenRequisicaoChecklists = 0;
 let timeoutAtualizacaoChecklistsRealtime = null;
@@ -10227,7 +10553,7 @@ const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 10 * 60 * 1000;
 const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
 const JANELA_CONFLITO_LANCAMENTO_MANUAL_MINUTOS = 20;
 const JANELA_ALERTA_IMEDIATO_LANCAMENTO_MS = 110 * 60 * 1000;
-const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = true;
+const LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO = false; // desativado: lançamento só manual via botão "Lançar"
 // Horizonte de agendamento ao clicar em "Lançar tarefa" (ex.: 7, 14, 30).
 const HORIZONTE_AGENDAMENTO_MANUAL_DIAS = 7;
 let checklistLancamentosSuportaColunasAgendamento = null;
@@ -10812,6 +11138,7 @@ const PERFIL_PERMISSOES = [
   { key: 'ponto_ajustes', label: 'Solicitações de ajuste de ponto' },
   { key: 'alterar_tempo_aviso_ponto', label: 'Ponto - alterar tempo para aviso de retorno' },
   { key: 'relatorio_lancamentos', label: 'Relatório de tarefas' },
+  { key: 'relatorio_tarefas_cadastradas', label: 'Relatório de tarefas cadastradas' },
   { key: 'relatorio_financeiro', label: 'Relatório de contas a pagar' },
   { key: 'relatorio_recebimentos', label: 'Relatório de recebimentos' },
   { key: 'relatorio_ajuste_saldo', label: 'Relatório ajuste de saldo' },
@@ -10849,6 +11176,10 @@ const PERFIL_PERMISSOES = [
   { key: 'nova_execucao_manual', label: 'Nova execucao manual' },
   { key: 'ver_todos_checklists', label: 'Ver checklists de todos' },
   { key: 'ver_todas_execucoes', label: 'Ver execucoes de todos' },
+  { key: 'excluir_proximas_tarefas', label: 'Excluir próximas tarefas (seleção em massa em Iniciar checklist)' },
+  { key: 'excluir_tarefas_massa', label: 'Excluir tarefas em massa (Cadastro de checklist)' },
+  { key: 'excluir_checklist_lancado', label: 'Excluir checklist lançado individualmente' },
+  { key: 'aprovar_solicitacao_acesso', label: 'Aprovar solicitação de acesso (definir lojas/perfil)' },
 ];
 
 function obterPermissoesBase(codigo) {
@@ -10870,6 +11201,7 @@ function obterPermissoesBase(codigo) {
       relatorio_ponto: false,
       ponto_ajustes: false,
       relatorio_lancamentos: false,
+      relatorio_tarefas_cadastradas: false,
       relatorio_financeiro: false,
       relatorio_recebimentos: false,
       relatorio_ajuste_saldo: false,
@@ -10920,6 +11252,7 @@ function obterPermissoesBase(codigo) {
       relatorio_ponto: true,
       ponto_ajustes: true,
       relatorio_lancamentos: true,
+      relatorio_tarefas_cadastradas: true,
       relatorio_financeiro: false,
       relatorio_recebimentos: false,
       relatorio_ajuste_saldo: false,
@@ -10970,6 +11303,7 @@ function obterPermissoesBase(codigo) {
     relatorio_ponto: false,
     ponto_ajustes: false,
     relatorio_lancamentos: false,
+    relatorio_tarefas_cadastradas: false,
     relatorio_financeiro: false,
     relatorio_recebimentos: false,
     relatorio_ajuste_saldo: false,
@@ -11013,6 +11347,7 @@ const topTitles = {
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
   relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
+  relatorio_tarefas_cadastradas: ['Relatório de tarefas cadastradas', 'O que está cadastrado: quem cadastrou, período e repetição'],
   relatorio_financeiro: ['Relatório de contas a pagar', 'Análise detalhada de títulos e pagamentos'],
   relatorio_recebimentos: ['Relatório de recebimentos', 'Entradas com usuário e horário de lançamento'],
   relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
@@ -11573,6 +11908,7 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
   if (id === 'ponto_ajustes') { carregarAjustesPonto(); }
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
+  if (id === 'relatorio_tarefas_cadastradas') { carregarRelatorioTarefasCadastradas(); }
   if (id === 'relatorio_financeiro') {
     renderizarFiltroLojasCheckbox('filtroLojasRelatorioFinanceiro', 'carregarRelatorioFinanceiro()');
     carregarRelatorioFinanceiro();
@@ -12466,10 +12802,10 @@ async function excluirCadastroCompletoPorEmail(email, opcoes = {}) {
     return { success: false, cancelled: true };
   }
 
-  const { data: funcionariosRelacionados, error: erroFuncionariosRelacionados } = await sb
+  const { data: funcionariosRelacionados, error: erroFuncionariosRelacionados } = await executarSemFiltrosTenantTemporario(() => sb
     .from('funcionarios')
     .select('id')
-    .eq('email', emailNormalizado);
+    .eq('email', emailNormalizado));
 
   if (erroFuncionariosRelacionados && !isMissingTableError(erroFuncionariosRelacionados)) {
     return { success: false, message: mensagemErroSupabase(erroFuncionariosRelacionados, 'Não foi possível preparar a exclusão do cadastro.') };
@@ -12480,13 +12816,11 @@ async function excluirCadastroCompletoPorEmail(email, opcoes = {}) {
     if (!preparo.success) return preparo;
   }
 
-  const operacoes = [
+  const resultados = await executarSemFiltrosTenantTemporario(() => Promise.allSettled([
     sb.from('email_tokens_auth').delete().eq('email', emailNormalizado),
     sb.from('solicitacoes_acesso').delete().eq('email', emailNormalizado),
     sb.from('funcionarios').delete().eq('email', emailNormalizado),
-  ];
-
-  const resultados = await Promise.allSettled(operacoes);
+  ]));
   const falha = resultados.find(resultado => resultado.status === 'fulfilled' && resultado.value?.error && !isMissingAccessRequestsTableError(resultado.value.error) && !isMissingTableError(resultado.value.error));
 
   if (falha && falha.status === 'fulfilled') {
@@ -12764,6 +13098,8 @@ async function desvincularFuncionarioParaExclusao(funcionarioId) {
     sb.from('checklist_execucoes').update({ usuario_fim_id: null }).eq('usuario_fim_id', id),
     sb.from('checklist_lancamento_eventos').update({ funcionario_responsavel_id: null }).eq('funcionario_responsavel_id', id),
     sb.from('checklist_lancamento_eventos').update({ funcionario_ator_id: null }).eq('funcionario_ator_id', id),
+    // Remove os vínculos de loja (multi-loja) para permitir a exclusão sem violar FK.
+    executarSemFiltroLojaTemporario(() => sb.from('funcionario_lojas').delete().eq('funcionario_id', id)),
   ];
 
   const resultados = await Promise.allSettled(operacoes);
@@ -12852,6 +13188,29 @@ function usuarioPodeAcessar(pageId) {
     return !!(permissoes.relatorio_plantao || permissoes.escala_plantoes);
   }
   return !!permissoes[pageId];
+}
+
+// Verifica uma permissão específica de FUNÇÃO (não de página) definida no perfil.
+// Admin global e perfis ADM/MASTER sempre passam. Demais perfis dependem do toggle salvo.
+function usuarioTemPermissao(chave) {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioEhAdministrador()) return true;
+  const permissoes = obterPermissoesUsuario();
+  return permissoes?.[chave] === true;
+}
+
+// True para admin de SISTEMA (tipo='admin') OU membro do perfil Administrador/Master
+// OU admin de loja. Use para operações privilegiadas de loja (checklist, funcionários),
+// onde o perfil Administrador deve ter os mesmos direitos, mesmo sem ser admin de sistema.
+function usuarioEhAdminOuPerfilAdmin() {
+  if (!usuarioSistemaLogado) return false;
+  if (usuarioEhAdministrador()) return true;
+  if (usuarioSistemaLogado?.tipo === 'admin_loja') return true;
+  if (usuarioSistemaLogado?.é_administrador === true || usuarioSistemaLogado?.is_admin === true) return true;
+  const codigo = normalizarCodigoPerfil(
+    usuarioSistemaLogado?.perfil?.codigo || usuarioSistemaLogado?.tipo || ''
+  );
+  return codigo === 'ADM' || codigo === 'MASTER';
 }
 
 function usuarioEhAdministrador() {
@@ -13692,7 +14051,8 @@ function abrirModalPin({
   textoAcao = 'Confirmar',
   mensagem = '',
   exibirUsuario = true,
-  placeholderInput = 'Digite seu PIN'
+  placeholderInput = 'Digite seu PIN',
+  tipoMensagem = 'err'
 } = {}) {
   const overlay = document.getElementById('pinActionOverlay');
   const title = document.getElementById('pinActionTitle');
@@ -13705,6 +14065,8 @@ function abrirModalPin({
     return Promise.resolve(null);
   }
 
+  const modalEl = overlay.querySelector('.modal');
+
   title.textContent = titulo;
   subtitle.textContent = subtitulo;
   userName.textContent = nomeFuncionario ? `Usuário sugerido: ${nomeFuncionario}` : 'Qualquer funcionário pode confirmar com o próprio PIN.';
@@ -13712,7 +14074,13 @@ function abrirModalPin({
   input.placeholder = placeholderInput;
   input.value = '';
   msg.textContent = mensagem;
-  msg.className = 'msg' + (mensagem ? ' err' : '');
+  // Tipo da mensagem: 'err' (vermelho) ou 'alerta' (amarelo, destacado dentro da caixa).
+  const classeMsg = mensagem ? (tipoMensagem === 'alerta' ? ' alerta' : ' err') : '';
+  msg.className = 'msg' + classeMsg;
+  // Em modo alerta, a caixa inteira muda de cor (borda/fundo amarelados) para o usuário leigo perceber.
+  if (modalEl) {
+    modalEl.classList.toggle('pin-modal-alerta', !!mensagem && tipoMensagem === 'alerta');
+  }
   confirmButton.textContent = textoAcao;
   overlay.classList.add('show');
 
@@ -13728,6 +14096,8 @@ function fecharModalPin(resultado = null) {
   const input = document.getElementById('pinActionInput');
   const msg = document.getElementById('pinActionMsg');
   if (overlay) overlay.classList.remove('show');
+  const modalEl = overlay?.querySelector('.modal');
+  if (modalEl) modalEl.classList.remove('pin-modal-alerta');
   if (input) input.value = '';
   if (msg) {
     msg.textContent = '';
@@ -14232,8 +14602,9 @@ function mensagemErroSupabase(error, fallback = 'Erro inesperado.') {
   return [error.message, error.details, error.hint, error.code].filter(Boolean).join(' - ') || fallback;
 }
 
-async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false, escopo = 'ponto' }) {
+async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false, escopo = 'ponto', validarFuncionarioConfirmado = null }) {
   let mensagemErro = '';
+  let tipoMensagem = 'err';
   while (true) {
     const resposta = await abrirModalPin({
       titulo,
@@ -14241,11 +14612,13 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, 
       nomeFuncionario: funcionario?.nome || '',
       textoAcao,
       mensagem: mensagemErro,
+      tipoMensagem,
     });
 
     if (!resposta) return null;
     if (!resposta.pin) {
       mensagemErro = 'Digite o PIN para continuar.';
+      tipoMensagem = 'err';
       continue;
     }
 
@@ -14265,6 +14638,16 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, 
         : await obterFuncionarioAtivoPorPin(resposta.pin);
     }
     if (funcionarioConfirmado?.id) {
+      // Validação extra (ex.: conferência — quem iniciou não pode finalizar).
+      // Se retornar uma string, mantém o modal aberto e mostra o aviso DENTRO da caixa.
+      if (typeof validarFuncionarioConfirmado === 'function') {
+        const erroValidacao = await validarFuncionarioConfirmado(funcionarioConfirmado);
+        if (erroValidacao) {
+          mensagemErro = String(erroValidacao);
+          tipoMensagem = 'alerta';
+          continue;
+        }
+      }
       return {
         funcionarioId: funcionarioConfirmado.id,
         nomeFuncionario: funcionarioConfirmado.nome || 'Funcionário',
@@ -14275,6 +14658,7 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, 
     mensagemErro = exigirFuncionarioInformado
       ? `Senha inválida para ${funcionario?.nome || 'o funcionário responsável'}.`
       : 'PIN inválido. Tente novamente.';
+    tipoMensagem = 'err';
   }
 }
 
@@ -14434,6 +14818,13 @@ function criarChaveAlerta(tipo, referenciaId, dataRef = hoje()) {
 }
 
 async function garantirLancamentosAutomaticosDoDia(configuracaoLoja = null) {
+  // [DESATIVADO] Lançamento automático diário das tarefas ativas.
+  // Removido a pedido: as tarefas agora só são lançadas quando o usuário clica em "Lançar",
+  // definindo a repetição (a cada X dias por Y dias). Mantida como no-op para não quebrar chamadas.
+  return;
+}
+
+async function garantirLancamentosAutomaticosDoDiaLegado(configuracaoLoja = null) {
   if (!LANCAMENTO_AUTOMATICO_TAREFAS_HABILITADO) return;
   if (lancamentoAutomaticoEmAndamento) return;
 
@@ -16612,13 +17003,128 @@ function widgetDrop(e) {
   renderizarMeuPainel();
 }
 
+// ── Painel de indicadores editável (ordem + ocultos, igual ao Meu Painel) ──
+const _DASH_KPI_NOMES = {
+  financeiro: 'Financeiro',
+  horas: 'Tempo de trabalho',
+  tarefas: 'Tarefas por funcionário',
+  prazo: 'No prazo x fora do prazo',
+  status: 'Status das execuções',
+};
+let _dashKpiConfig = null;
+let _dashKpiDragSrc = null;
+
+async function aplicarConfigPainelIndicadores() {
+  const grid = document.getElementById('dashKpiGrid');
+  if (!grid) return;
+  if (!_dashKpiConfig) {
+    const salvo = await carregarPreferenciaMeuPainel('dash_indicadores_config', null);
+    _dashKpiConfig = (salvo && Array.isArray(salvo.ordem))
+      ? { ordem: salvo.ordem, ocultos: Array.isArray(salvo.ocultos) ? salvo.ocultos : [] }
+      : { ordem: Object.keys(_DASH_KPI_NOMES), ocultos: [] };
+  }
+  const cards = {};
+  grid.querySelectorAll('[data-kpi]').forEach(el => { cards[el.dataset.kpi] = el; });
+  // Ordem salva primeiro; cartões novos (futuras versões) entram no fim.
+  const ordem = _dashKpiConfig.ordem.filter(k => cards[k]);
+  Object.keys(cards).forEach(k => { if (!ordem.includes(k)) ordem.push(k); });
+  ordem.forEach(k => grid.appendChild(cards[k]));
+  // Visibilidade
+  Object.entries(cards).forEach(([k, el]) => {
+    el.style.display = (_dashKpiConfig.ocultos || []).includes(k) ? 'none' : '';
+  });
+  // Chips para restaurar os ocultos
+  const chips = document.getElementById('dashKpiOcultosChips');
+  if (chips) {
+    const ocultos = (_dashKpiConfig.ocultos || []).filter(k => cards[k]);
+    chips.style.display = ocultos.length ? 'flex' : 'none';
+    chips.innerHTML = ocultos.length
+      ? '<span style="font-size:10px;color:var(--text-muted);">Ocultos:</span>' +
+        ocultos.map(k => `<button class="btn btn-ghost btn-sm" type="button" style="font-size:10px;padding:3px 8px;" onclick="dashKpiRestaurar('${k}')" title="Mostrar este indicador novamente">+ ${_DASH_KPI_NOMES[k] || k}</button>`).join('')
+      : '';
+  }
+  // Drag & drop (liga uma única vez por cartão)
+  Object.values(cards).forEach(el => {
+    if (el._kpiDragOn) return;
+    el._kpiDragOn = true;
+    el.setAttribute('draggable', 'true');
+    el.style.cursor = 'grab';
+    el.addEventListener('dragstart', () => { _dashKpiDragSrc = el; el.style.opacity = '.5'; });
+    el.addEventListener('dragend', () => {
+      _dashKpiDragSrc = null; el.style.opacity = '';
+      grid.querySelectorAll('[data-kpi]').forEach(x => { x.style.outline = ''; });
+    });
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (_dashKpiDragSrc && el !== _dashKpiDragSrc) el.style.outline = '2px dashed rgba(59,130,246,.6)';
+    });
+    el.addEventListener('dragleave', () => { el.style.outline = ''; });
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.style.outline = '';
+      if (!_dashKpiDragSrc || el === _dashKpiDragSrc) return;
+      const lista = [...grid.querySelectorAll('[data-kpi]')];
+      const iSrc = lista.indexOf(_dashKpiDragSrc);
+      const iAlvo = lista.indexOf(el);
+      if (iSrc < iAlvo) el.after(_dashKpiDragSrc); else el.before(_dashKpiDragSrc);
+      dashKpiSalvarOrdemAtual();
+    });
+  });
+}
+
+function dashKpiSalvarOrdemAtual() {
+  const grid = document.getElementById('dashKpiGrid');
+  if (!grid || !_dashKpiConfig) return;
+  _dashKpiConfig.ordem = [...grid.querySelectorAll('[data-kpi]')].map(el => el.dataset.kpi);
+  salvarPreferenciaMeuPainel('dash_indicadores_config', _dashKpiConfig);
+}
+
+function dashKpiOcultar(k) {
+  if (!_dashKpiConfig) _dashKpiConfig = { ordem: Object.keys(_DASH_KPI_NOMES), ocultos: [] };
+  if (!_dashKpiConfig.ocultos) _dashKpiConfig.ocultos = [];
+  if (!_dashKpiConfig.ocultos.includes(k)) _dashKpiConfig.ocultos.push(k);
+  salvarPreferenciaMeuPainel('dash_indicadores_config', _dashKpiConfig);
+  aplicarConfigPainelIndicadores();
+}
+
+function dashKpiRestaurar(k) {
+  if (!_dashKpiConfig) return;
+  _dashKpiConfig.ocultos = (_dashKpiConfig.ocultos || []).filter(x => x !== k);
+  salvarPreferenciaMeuPainel('dash_indicadores_config', _dashKpiConfig);
+  aplicarConfigPainelIndicadores();
+}
+
 // ── Gráficos financeiros do Dashboard (modo B.I. com filtros cruzados) ──
 let _dashGfAno = new Date().getFullYear();
 let _dashGfDados = [];          // contas do ano carregadas
 let _dashGfCarregadoAno = null; // ano já carregado no cache
 let _dashGfCategoriasMapa = {}; // id -> { nome, cor, icone }
 // Filtros ativos (cross-filter estilo B.I.): clique nos gráficos liga/desliga.
-let _dashGfFiltro = { mes: null, fornecedorId: null, categoriaId: null };
+let _dashGfFiltro = { mes: null, fornecedorIds: new Set(), categoriaIds: new Set() };
+let _dashGfOpcoesFornecedores = []; // [[id, nome], ...] do ano carregado
+let _dashGfOpcoesCategorias = [];
+// Modo de data dos gráficos: 'vencimento' (padrão — espelha a fatura) ou 'compra'.
+let _dashGfModoData = (() => {
+  try { return localStorage.getItem('dashGfModoData') === 'compra' ? 'compra' : 'vencimento'; }
+  catch (_) { return 'vencimento'; }
+})();
+function _dashGfCampoData() { return _dashGfModoData === 'compra' ? 'data_compra' : 'data_vencimento'; }
+function dashGfMudarModoData(modo) {
+  const novo = modo === 'compra' ? 'compra' : 'vencimento';
+  if (novo === _dashGfModoData) return;
+  _dashGfModoData = novo;
+  try { localStorage.setItem('dashGfModoData', novo); } catch (_) { /* opcional */ }
+  _dashGfCarregadoAno = null; // a janela do ano muda de campo → recarrega do banco
+  carregarGraficosFinanceirosDashboard();
+}
+function _dashGfAtualizarBotoesModo() {
+  const on = 'background:rgba(59,130,246,0.25);color:#fff;font-weight:700;';
+  const off = 'background:transparent;color:var(--text-muted,#888);font-weight:400;';
+  const bV = document.getElementById('dashGfModoVenc');
+  const bC = document.getElementById('dashGfModoCompra');
+  if (bV) bV.style.cssText = 'border-radius:0;border:none;' + (_dashGfModoData === 'vencimento' ? on : off);
+  if (bC) bC.style.cssText = 'border-radius:0;border:none;' + (_dashGfModoData === 'compra' ? on : off);
+}
 
 const _dashGfCores = ['#22c55e','#3b82f6','#f59e0b','#a855f7','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#eab308','#6366f1'];
 const _dashGfNomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -16626,21 +17132,31 @@ const _dashGfNomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','
 function _dashGfSanitizarChave(v) { return String(v ?? '').replace(/[^a-zA-Z0-9_-]/g, ''); }
 
 async function carregarGraficosFinanceirosDashboard() {
+  aplicarConfigPainelIndicadores(); // ordem/ocultos do painel de indicadores
   const ano = _dashGfAno;
   const inicio = `${ano}-01-01`;
   const fim = `${ano}-12-31`;
   const msg = document.getElementById('dashGfMsg');
   if (msg) { msg.textContent = ''; msg.className = 'msg'; }
   try {
-    // Carrega todas as contas do ano (por vencimento) + categorias de compra em paralelo.
-    const [resContas, resCategorias] = await Promise.all([
-      sb.from('contasapagar')
-        .select('id, fornecedor_id, categoria_id, valor_compra, valor_pago, data_vencimento, data_pagamento, pago_confirmado_em, observacao, fornecedores(nome)')
-        .is('excluido_em', null)
-        .gte('data_vencimento', inicio)
-        .lte('data_vencimento', fim),
+    // Carrega todas as contas do ano (pela data escolhida: vencimento ou compra)
+    // + categorias de compra em paralelo.
+    const campoData = _dashGfCampoData();
+    const consultarContasDash = async (incluirCor) => sb.from('contasapagar')
+      .select(`id, fornecedor_id, categoria_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, fornecedores(nome${incluirCor ? ', cor' : ''})`)
+      .is('excluido_em', null)
+      .gte(campoData, inicio)
+      .lte(campoData, fim);
+    const [resContasTentativa, resCategorias] = await Promise.all([
+      consultarContasDash(true),
       sb.from('categorias_compra').select('id, nome, cor, icone')
     ]);
+    // Fallback: banco ainda sem a coluna fornecedores.cor (ALTER não rodado).
+    let resContas = resContasTentativa;
+    if (resContas.error && /\bcor\b|column/i.test(String(resContas.error.message || ''))) {
+      console.warn('fornecedores.cor ausente no banco — carregando dashboard sem cores personalizadas. Rode: ALTER TABLE fornecedores ADD COLUMN cor text;');
+      resContas = await consultarContasDash(false);
+    }
     if (resContas.error) throw resContas.error;
     _dashGfDados = resContas.data || [];
     _dashGfCarregadoAno = ano;
@@ -16650,37 +17166,23 @@ async function carregarGraficosFinanceirosDashboard() {
       _dashGfCategoriasMapa[String(c.id)] = { nome: c.nome || 'Categoria', cor: c.cor || null, icone: c.icone || null };
     });
 
-    // Ao trocar de ano, limpa filtro de mês mas preserva fornecedor/categoria se ainda existirem.
+    // Ao trocar de ano, limpa filtro de mês mas preserva fornecedores/categorias que ainda existirem.
     const fornecedoresAno = new Set(_dashGfDados.map(c => c.fornecedor_id ? String(c.fornecedor_id) : 'sem'));
-    if (_dashGfFiltro.fornecedorId && !fornecedoresAno.has(_dashGfFiltro.fornecedorId)) _dashGfFiltro.fornecedorId = null;
+    _dashGfFiltro.fornecedorIds = new Set([..._dashGfFiltro.fornecedorIds].filter(id => fornecedoresAno.has(id)));
     const categoriasAno = new Set(_dashGfDados.map(c => c.categoria_id ? String(c.categoria_id) : 'sem'));
-    if (_dashGfFiltro.categoriaId && !categoriasAno.has(_dashGfFiltro.categoriaId)) _dashGfFiltro.categoriaId = null;
+    _dashGfFiltro.categoriaIds = new Set([..._dashGfFiltro.categoriaIds].filter(id => categoriasAno.has(id)));
 
-    // Popula o filtro de fornecedor com os que aparecem no ano
-    const sel = document.getElementById('dashGfFornecedor');
-    if (sel) {
-      const fornecedores = [...new Map(_dashGfDados
-        .filter(c => c.fornecedor_id)
-        .map(c => [String(c.fornecedor_id), c.fornecedores?.nome || 'Fornecedor'])).entries()]
-        .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
-      const temSemFornecedor = _dashGfDados.some(c => !c.fornecedor_id);
-      sel.innerHTML = '<option value="">Todos os fornecedores</option>' +
-        fornecedores.map(([id, nome]) => `<option value="${id}">${escaparHtmlBasico(nome)}</option>`).join('') +
-        (temSemFornecedor ? '<option value="sem">— Sem fornecedor —</option>' : '');
-      sel.value = _dashGfFiltro.fornecedorId || '';
-    }
-    // Popula o filtro de categoria com as que aparecem no ano
-    const selCat = document.getElementById('dashGfCategoria');
-    if (selCat) {
-      const cats = [...categoriasAno].filter(id => id !== 'sem')
-        .map(id => [id, _dashGfCategoriasMapa[id]?.nome || 'Categoria'])
-        .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
-      const temSemCat = categoriasAno.has('sem');
-      selCat.innerHTML = '<option value="">Todas as categorias</option>' +
-        cats.map(([id, nome]) => `<option value="${id}">${escaparHtmlBasico(nome)}</option>`).join('') +
-        (temSemCat ? '<option value="sem">— Sem categoria —</option>' : '');
-      selCat.value = _dashGfFiltro.categoriaId || '';
-    }
+    // Opções dos dropdowns: fornecedores e categorias que aparecem no ano.
+    _dashGfOpcoesFornecedores = [...new Map(_dashGfDados
+      .filter(c => c.fornecedor_id)
+      .map(c => [String(c.fornecedor_id), c.fornecedores?.nome || 'Fornecedor'])).entries()]
+      .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+    if (_dashGfDados.some(c => !c.fornecedor_id)) _dashGfOpcoesFornecedores.push(['sem', '— Sem fornecedor —']);
+    _dashGfOpcoesCategorias = [...categoriasAno].filter(id => id !== 'sem')
+      .map(id => [id, _dashGfCategoriasMapa[id]?.nome || 'Categoria'])
+      .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+    if (categoriasAno.has('sem')) _dashGfOpcoesCategorias.push(['sem', '— Sem categoria —']);
+    dashGfRenderDropdowns();
     renderizarGraficosFinanceirosDashboard();
   } catch (e) {
     console.warn('Falha ao carregar gráficos financeiros:', e?.message || e);
@@ -16699,39 +17201,90 @@ function dashGfToggleMes(m) {
   _dashGfFiltro.mes = (_dashGfFiltro.mes === m) ? null : m;
   renderizarGraficosFinanceirosDashboard();
 }
+// Toggle multi-seleção: clicar na rosca, na legenda, no chip ou na checkbox
+// adiciona/remove o item do conjunto — dá para montar relatório com vários.
 function dashGfToggleFornecedor(id) {
   const chave = String(id || '');
-  _dashGfFiltro.fornecedorId = (_dashGfFiltro.fornecedorId === chave) ? null : chave;
-  const sel = document.getElementById('dashGfFornecedor');
-  if (sel) sel.value = _dashGfFiltro.fornecedorId || '';
+  if (_dashGfFiltro.fornecedorIds.has(chave)) _dashGfFiltro.fornecedorIds.delete(chave);
+  else _dashGfFiltro.fornecedorIds.add(chave);
+  dashGfRenderDropdowns();
   renderizarGraficosFinanceirosDashboard();
 }
 function dashGfToggleCategoria(id) {
   const chave = String(id || '');
-  _dashGfFiltro.categoriaId = (_dashGfFiltro.categoriaId === chave) ? null : chave;
-  const sel = document.getElementById('dashGfCategoria');
-  if (sel) sel.value = _dashGfFiltro.categoriaId || '';
-  renderizarGraficosFinanceirosDashboard();
-}
-function dashGfSelectFornecedorChange(valor) {
-  _dashGfFiltro.fornecedorId = String(valor || '').trim() || null;
-  renderizarGraficosFinanceirosDashboard();
-}
-function dashGfSelectCategoriaChange(valor) {
-  _dashGfFiltro.categoriaId = String(valor || '').trim() || null;
+  if (_dashGfFiltro.categoriaIds.has(chave)) _dashGfFiltro.categoriaIds.delete(chave);
+  else _dashGfFiltro.categoriaIds.add(chave);
+  dashGfRenderDropdowns();
   renderizarGraficosFinanceirosDashboard();
 }
 function dashGfLimparFiltros() {
-  _dashGfFiltro = { mes: null, fornecedorId: null, categoriaId: null };
-  const sel = document.getElementById('dashGfFornecedor'); if (sel) sel.value = '';
-  const selCat = document.getElementById('dashGfCategoria'); if (selCat) selCat.value = '';
+  _dashGfFiltro = { mes: null, fornecedorIds: new Set(), categoriaIds: new Set() };
+  dashGfRenderDropdowns();
+  renderizarGraficosFinanceirosDashboard();
+}
+
+// ── Dropdowns de filtro com checkbox (fornecedores e categorias) ──
+function dashGfToggleDropdown(tipo, forcarFechar) {
+  const dd = document.getElementById(tipo === 'forn' ? 'dashGfDropdownForn' : 'dashGfDropdownCat');
+  const outro = document.getElementById(tipo === 'forn' ? 'dashGfDropdownCat' : 'dashGfDropdownForn');
+  if (!dd) return;
+  if (outro) outro.style.display = 'none';
+  const abrir = forcarFechar === true ? false : dd.style.display === 'none';
+  dd.style.display = abrir ? 'block' : 'none';
+  if (abrir) setTimeout(() => document.addEventListener('click', dashGfFecharDropdownsFora), 0);
+  else document.removeEventListener('click', dashGfFecharDropdownsFora);
+}
+function dashGfFecharDropdownsFora(ev) {
+  const w1 = document.getElementById('dashGfFornWrap');
+  const w2 = document.getElementById('dashGfCatWrap');
+  if ((w1 && w1.contains(ev.target)) || (w2 && w2.contains(ev.target))) return;
+  ['dashGfDropdownForn', 'dashGfDropdownCat'].forEach(id => {
+    const dd = document.getElementById(id); if (dd) dd.style.display = 'none';
+  });
+  document.removeEventListener('click', dashGfFecharDropdownsFora);
+}
+function dashGfRenderDropdowns() {
+  const montar = (opcoes, selecionados, fnToggle, titulo, fnLimpar) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="font-size:10px;letter-spacing:.5px;color:var(--text-muted);font-weight:700;">${titulo}</span>
+      <button class="btn btn-ghost btn-sm" type="button" style="font-size:10px;padding:2px 8px;" onclick="${fnLimpar}()">Limpar</button>
+    </div>` + (opcoes.length ? opcoes.map(([id, nome]) => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--text);">
+      <input type="checkbox" style="width:13px;height:13px;flex-shrink:0;" ${selecionados.has(id) ? 'checked' : ''}
+        onchange="${fnToggle}('${_dashGfSanitizarChave(id)}')"> ${escaparHtmlBasico(nome)}
+    </label>`).join('') : '<div class="empty" style="padding:8px;">Nada neste ano.</div>');
+  const ddF = document.getElementById('dashGfDropdownForn');
+  if (ddF) ddF.innerHTML = montar(_dashGfOpcoesFornecedores, _dashGfFiltro.fornecedorIds, 'dashGfToggleFornecedor', 'FORNECEDORES', 'dashGfLimparFornecedores');
+  const ddC = document.getElementById('dashGfDropdownCat');
+  if (ddC) ddC.innerHTML = montar(_dashGfOpcoesCategorias, _dashGfFiltro.categoriaIds, 'dashGfToggleCategoria', 'CATEGORIAS', 'dashGfLimparCategorias');
+  const btnF = document.getElementById('btnDashGfFornecedores');
+  if (btnF) {
+    const n = _dashGfFiltro.fornecedorIds.size;
+    btnF.textContent = n ? `Fornecedores (${n}) ▾` : 'Fornecedores ▾';
+    btnF.style.fontWeight = n ? '700' : '';
+  }
+  const btnC = document.getElementById('btnDashGfCategorias');
+  if (btnC) {
+    const n = _dashGfFiltro.categoriaIds.size;
+    btnC.textContent = n ? `Categorias (${n}) ▾` : 'Categorias ▾';
+    btnC.style.fontWeight = n ? '700' : '';
+  }
+}
+function dashGfLimparFornecedores() {
+  _dashGfFiltro.fornecedorIds = new Set();
+  dashGfRenderDropdowns();
+  renderizarGraficosFinanceirosDashboard();
+}
+function dashGfLimparCategorias() {
+  _dashGfFiltro.categoriaIds = new Set();
+  dashGfRenderDropdowns();
   renderizarGraficosFinanceirosDashboard();
 }
 
 // ── Helpers de agregação ──────────────────────────────────────────
 function _dashGfChaveFornecedor(c) { return c.fornecedor_id ? String(c.fornecedor_id) : 'sem'; }
 function _dashGfChaveCategoria(c) { return c.categoria_id ? String(c.categoria_id) : 'sem'; }
-function _dashGfMesDe(c) { return parseInt(String(c.data_vencimento || '').slice(5, 7), 10) - 1; }
+function _dashGfMesDe(c) { return parseInt(String(c[_dashGfCampoData()] || '').slice(5, 7), 10) - 1; }
 function _dashGfEhPago(c) { return !!c.pago_confirmado_em || !!c.data_pagamento; }
 function _dashGfValorDe(c) { return Number(c.valor_pago ?? c.valor_compra ?? 0) || Number(c.valor_compra || 0); }
 
@@ -16774,15 +17327,16 @@ function _dashGfLegendaRosca(itens, total, fnToggleNome, temSelecao) {
 }
 
 function renderizarGraficosFinanceirosDashboard() {
+  _dashGfAtualizarBotoesModo();
   const labelAno = document.getElementById('dashGfAnoLabel');
   if (labelAno) labelAno.textContent = String(_dashGfAno);
 
   const fmt = (n) => formatarMoedaBRFinanceiro(n);
   const F = _dashGfFiltro;
-  const filtraForn = (c) => !F.fornecedorId || _dashGfChaveFornecedor(c) === F.fornecedorId;
-  const filtraCat = (c) => !F.categoriaId || _dashGfChaveCategoria(c) === F.categoriaId;
+  const filtraForn = (c) => !F.fornecedorIds.size || F.fornecedorIds.has(_dashGfChaveFornecedor(c));
+  const filtraCat = (c) => !F.categoriaIds.size || F.categoriaIds.has(_dashGfChaveCategoria(c));
   const filtraMes = (c) => F.mes === null || _dashGfMesDe(c) === F.mes;
-  const temFiltro = F.mes !== null || !!F.fornecedorId || !!F.categoriaId;
+  const temFiltro = F.mes !== null || F.fornecedorIds.size > 0 || F.categoriaIds.size > 0;
 
   // ── Chips de filtros ativos + botão limpar ──
   const chips = document.getElementById('dashGfChips');
@@ -16794,14 +17348,14 @@ function renderizarGraficosFinanceirosDashboard() {
       const partes = [];
       const chip = (rotulo, acao) => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:99px;padding:3px 10px;">${rotulo}<span onclick="${acao}" style="cursor:pointer;font-weight:bold;opacity:.8;">✕</span></span>`;
       if (F.mes !== null) partes.push(chip(`📅 ${_dashGfNomesMes[F.mes]}/${_dashGfAno}`, `dashGfToggleMes(${F.mes})`));
-      if (F.fornecedorId) {
-        const nomeF = F.fornecedorId === 'sem' ? 'Sem fornecedor' : (_dashGfDados.find(c => String(c.fornecedor_id) === F.fornecedorId)?.fornecedores?.nome || 'Fornecedor');
-        partes.push(chip(`🏢 ${escaparHtmlBasico(nomeF)}`, `dashGfToggleFornecedor('${_dashGfSanitizarChave(F.fornecedorId)}')`));
-      }
-      if (F.categoriaId) {
-        const cat = F.categoriaId === 'sem' ? null : _dashGfCategoriasMapa[F.categoriaId];
-        partes.push(chip(`🏷️ ${escaparHtmlBasico(cat?.nome || 'Sem categoria')}`, `dashGfToggleCategoria('${_dashGfSanitizarChave(F.categoriaId)}')`));
-      }
+      F.fornecedorIds.forEach(idF => {
+        const nomeF = idF === 'sem' ? 'Sem fornecedor' : (_dashGfDados.find(c => String(c.fornecedor_id) === idF)?.fornecedores?.nome || 'Fornecedor');
+        partes.push(chip(`🏢 ${escaparHtmlBasico(nomeF)}`, `dashGfToggleFornecedor('${_dashGfSanitizarChave(idF)}')`));
+      });
+      F.categoriaIds.forEach(idC => {
+        const cat = idC === 'sem' ? null : _dashGfCategoriasMapa[idC];
+        partes.push(chip(`🏷️ ${escaparHtmlBasico(cat?.nome || 'Sem categoria')}`, `dashGfToggleCategoria('${_dashGfSanitizarChave(idC)}')`));
+      });
       chips.style.display = 'flex';
       chips.innerHTML = '<span style="font-size:12px;color:var(--text-muted);align-self:center;">Filtros ativos:</span>' + partes.join('');
     }
@@ -16867,7 +17421,7 @@ function renderizarGraficosFinanceirosDashboard() {
   const porForn = {};
   contasForn.forEach(c => {
     const chave = _dashGfChaveFornecedor(c);
-    if (!porForn[chave]) porForn[chave] = { nome: c.fornecedores?.nome || 'Sem fornecedor', valor: 0 };
+    if (!porForn[chave]) porForn[chave] = { nome: c.fornecedores?.nome || 'Sem fornecedor', cor: c.fornecedores?.cor || null, valor: 0 };
     porForn[chave].valor += _dashGfValorDe(c);
   });
   const ordForn = Object.entries(porForn).filter(([, o]) => o.valor > 0).sort((a, b) => b[1].valor - a[1].valor).slice(0, 12);
@@ -16879,12 +17433,12 @@ function renderizarGraficosFinanceirosDashboard() {
     } else {
       const itens = ordForn.map(([chave, o], i) => ({
         chave, nome: o.nome, valor: o.valor,
-        cor: _dashGfCores[i % _dashGfCores.length],
-        selecionado: F.fornecedorId === chave
+        cor: o.cor || _dashGfCores[i % _dashGfCores.length], // cor cadastrada no fornecedor tem prioridade
+        selecionado: F.fornecedorIds.has(chave)
       }));
       elRosca.innerHTML =
-        _dashGfDesenharRosca(itens, totalForn, 'dashGfToggleFornecedor', !!F.fornecedorId) +
-        `<div style="flex:1;min-width:200px;">${_dashGfLegendaRosca(itens, totalForn, 'dashGfToggleFornecedor', !!F.fornecedorId)}</div>`;
+        _dashGfDesenharRosca(itens, totalForn, 'dashGfToggleFornecedor', F.fornecedorIds.size > 0) +
+        `<div style="flex:1;min-width:200px;">${_dashGfLegendaRosca(itens, totalForn, 'dashGfToggleFornecedor', F.fornecedorIds.size > 0)}</div>`;
     }
   }
 
@@ -16909,11 +17463,11 @@ function renderizarGraficosFinanceirosDashboard() {
       const itens = ordCat.map(([chave, o], i) => ({
         chave, nome: o.nome, valor: o.valor, icone: o.icone,
         cor: o.cor || _dashGfCores[i % _dashGfCores.length],
-        selecionado: F.categoriaId === chave
+        selecionado: F.categoriaIds.has(chave)
       }));
       elRoscaCat.innerHTML =
-        _dashGfDesenharRosca(itens, totalCat, 'dashGfToggleCategoria', !!F.categoriaId) +
-        `<div style="flex:1;min-width:200px;">${_dashGfLegendaRosca(itens, totalCat, 'dashGfToggleCategoria', !!F.categoriaId)}</div>`;
+        _dashGfDesenharRosca(itens, totalCat, 'dashGfToggleCategoria', F.categoriaIds.size > 0) +
+        `<div style="flex:1;min-width:200px;">${_dashGfLegendaRosca(itens, totalCat, 'dashGfToggleCategoria', F.categoriaIds.size > 0)}</div>`;
     }
   }
 
@@ -16926,11 +17480,13 @@ function renderizarGraficosFinanceirosDashboard() {
         : '';
     } else {
       const LIMITE = 60;
-      const ordenadas = [...contasResumo].sort((a, b) => String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || '')));
+      const campoDataDet = _dashGfCampoData();
+      const rotuloDataDet = _dashGfModoData === 'compra' ? 'Compra' : 'Vencimento';
+      const ordenadas = [...contasResumo].sort((a, b) => String(a[campoDataDet] || '').localeCompare(String(b[campoDataDet] || '')));
       const linhas = ordenadas.slice(0, LIMITE).map(c => {
         const pago = _dashGfEhPago(c);
         const cat = c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)] : null;
-        const dv = String(c.data_vencimento || '').slice(0, 10).split('-').reverse().join('/');
+        const dv = String(c[campoDataDet] || '').slice(0, 10).split('-').reverse().join('/');
         return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
           <td style="padding:5px 8px;white-space:nowrap;">${escaparHtmlBasico(dv)}</td>
           <td style="padding:5px 8px;">${escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor')}</td>
@@ -16946,7 +17502,7 @@ function renderizarGraficosFinanceirosDashboard() {
           <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:640px;">
             <thead>
               <tr style="text-align:left;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.12);">
-                <th style="padding:6px 8px;">Vencimento</th>
+                <th style="padding:6px 8px;">${rotuloDataDet}</th>
                 <th style="padding:6px 8px;">Fornecedor</th>
                 <th style="padding:6px 8px;">Categoria</th>
                 <th style="padding:6px 8px;">Observação</th>
@@ -17573,11 +18129,12 @@ async function carregarChecklists(opcoes = {}) {
     console.warn('Não foi possível preparar os checklists automáticos do dia:', error);
   }
 
-  const query = sb
+  let query = sb
     .from('checklist_lancamentos')
     .select('*')
     .eq('status', 'pendente')
     .order('lancado_em', { ascending: false });
+  query = aplicarFiltroLojaGenericoQuery(query); // isolamento multi-loja
 
   const { data, error } = await query;
   if (versaoSessaoInicio !== versaoSessaoSistema) return;
@@ -17648,18 +18205,20 @@ async function carregarChecklists(opcoes = {}) {
 
   rows.sort(compararLancamentosChecklist);
 
-  const renderizarCardsChecklist = (itens) => '<div class="lista">' + itens.map(t => {
+  const renderizarCardsChecklist = (itens, comSelecao = false) => '<div class="lista">' + itens.map(t => {
     const aviso = obterAvisoDiscretoChecklist(t);
     const nomeFuncionario = funcionariosMap[String(t.funcionario_id)] ?? '-';
     const dataProgramada = String(obterDataProgramadaLancamento(t) || '').trim();
     const diaSemanaProgramado = formatarDiaSemanaExtenso(dataProgramada);
+    const marcado = proximasTarefasSelecionadasIds.has(String(t.id));
     return `
     <div class="item checklist-item${aviso ? ' checklist-alerta-discreto' : ''}">
+      ${comSelecao && usuarioTemPermissao('excluir_proximas_tarefas') ? `<div class="checklist-item-check"><input type="checkbox" ${marcado ? 'checked' : ''} title="Selecionar para excluir" onchange="alternarSelecaoProximaTarefa('${t.id}', this.checked)"></div>` : ''}
       <div class="item-info">
         <div class="checklist-titulo-linha">
           <details class="checklist-info-pin">
-            <summary title="Informação sobre aceite por PIN" aria-label="Informação sobre aceite por PIN">i</summary>
-            <div class="checklist-info-pin-texto">Qualquer funcionário pode aceitar com o próprio PIN.</div>
+            <summary title="Como funciona o aceite e a conferência" aria-label="Como funciona o aceite e a conferência">i</summary>
+            <div class="checklist-info-pin-texto">Qualquer funcionário pode iniciar a tarefa com o próprio PIN. Para finalizar, é obrigatória a conferência de OUTRO funcionário: quem iniciou não pode finalizar a própria tarefa — outro confere e confirma com a senha dele.</div>
           </details>
           <div class="item-nome">${t.nome}</div>
         </div>
@@ -17677,7 +18236,7 @@ async function carregarChecklists(opcoes = {}) {
       </div>
       <div class="item-actions">
         <button class="btn btn-green" onclick="iniciarChecklistDireto('${t.id}')">Iniciar</button>
-        ${usuarioEhAdministrador() ? `<button class="btn btn-red" onclick="excluirChecklistLancado('${t.id}')">Excluir</button>` : ''}
+        ${usuarioTemPermissao('excluir_checklist_lancado') ? `<button class="btn btn-red" onclick="excluirChecklistLancado('${t.id}')">Excluir</button>` : ''}
       </div>
     </div>`;
   }).join('') + '</div>';
@@ -17696,31 +18255,42 @@ async function carregarChecklists(opcoes = {}) {
   const campoProximaHoraInicio = document.getElementById('filtroProximaTarefaHoraInicio');
   const campoProximaHoraFim = document.getElementById('filtroProximaTarefaHoraFim');
   const campoProximaFuncionario = document.getElementById('filtroProximaTarefaFuncionario');
+  const campoProximaTarefa = document.getElementById('filtroProximaTarefaNome');
   const filtroProximaData = String(campoProximaData?.value || '').trim();
   const filtroProximaHoraInicio = String(campoProximaHoraInicio?.value || '').trim();
   const filtroProximaHoraFim = String(campoProximaHoraFim?.value || '').trim();
   const filtroProximaFuncionario = normalizarTextoComparacao(campoProximaFuncionario?.value || '');
-  const proximaTarefaTemFiltro = !!(filtroProximaData || filtroProximaHoraInicio || filtroProximaHoraFim || filtroProximaFuncionario);
+  const filtroProximaTarefa = normalizarTextoComparacao(campoProximaTarefa?.value || '');
+  const proximaTarefaTemFiltro = !!(filtroProximaData || filtroProximaHoraInicio || filtroProximaHoraFim || filtroProximaFuncionario || filtroProximaTarefa);
 
   const rowsFuturosFiltrados = rowsFuturos.filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
     const horaReferencia = horaCurta(t?.horario_limite || '');
     const nomeFuncionario = normalizarTextoComparacao(funcionariosMap[String(t.funcionario_id)] || '');
+    const nomeTarefa = normalizarTextoComparacao(t?.nome || '');
     if (filtroProximaData && dataReferencia !== filtroProximaData) return false;
     if (filtroProximaHoraInicio && (!horaReferencia || horaReferencia < filtroProximaHoraInicio)) return false;
     if (filtroProximaHoraFim && (!horaReferencia || horaReferencia > filtroProximaHoraFim)) return false;
     if (filtroProximaFuncionario && !nomeFuncionario.includes(filtroProximaFuncionario)) return false;
+    if (filtroProximaTarefa && !nomeTarefa.includes(filtroProximaTarefa)) return false;
     return true;
   });
 
   const htmlFiltrosFuturos = (totalFiltrado, totalGeral) => `
-    <div class="checklists-futuros-filtros">
-      <input id="filtroProximaTarefaData" type="date" value="${escaparHtmlBasico(filtroProximaData)}" onclick="this.showPicker?.()" onchange="carregarChecklists({ forcarRender: true })">
-      <input id="filtroProximaTarefaHoraInicio" type="time" value="${escaparHtmlBasico(filtroProximaHoraInicio)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário inicial">
-      <input id="filtroProximaTarefaHoraFim" type="time" value="${escaparHtmlBasico(filtroProximaHoraFim)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário final">
-      <input id="filtroProximaTarefaFuncionario" type="text" value="${escaparHtmlBasico(campoProximaFuncionario?.value || '')}" placeholder="Buscar por funcionário" oninput="debounceConsumo('filtro_checklist_funcionario', () => carregarChecklists({ forcarRender: true }), 500)">
+    <div class="checklists-futuros-filtros checklists-futuros-filtros-compacto">
+      <input id="filtroProximaTarefaData" class="filtro-compacto-data" type="date" value="${escaparHtmlBasico(filtroProximaData)}" onclick="this.showPicker?.()" onchange="carregarChecklists({ forcarRender: true })" title="Data programada">
+      <input id="filtroProximaTarefaHoraInicio" class="filtro-compacto-hora" type="time" value="${escaparHtmlBasico(filtroProximaHoraInicio)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário inicial">
+      <input id="filtroProximaTarefaHoraFim" class="filtro-compacto-hora" type="time" value="${escaparHtmlBasico(filtroProximaHoraFim)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário final">
+      <input id="filtroProximaTarefaFuncionario" class="filtro-compacto-func" type="text" value="${escaparHtmlBasico(campoProximaFuncionario?.value || '')}" placeholder="Funcionário" oninput="debounceConsumo('filtro_checklist_funcionario', () => carregarChecklists({ forcarRender: true }), 500)">
+      <input id="filtroProximaTarefaNome" class="filtro-compacto-tarefa" type="text" value="${escaparHtmlBasico(campoProximaTarefa?.value || '')}" placeholder="Buscar por tarefa" oninput="debounceConsumo('filtro_checklist_tarefa', () => carregarChecklists({ forcarRender: true }), 500)">
       <span class="checklists-futuros-total">Total: ${totalFiltrado}${proximaTarefaTemFiltro ? ` de ${totalGeral}` : ''}</span>
-    </div>`;
+    </div>
+    ${usuarioTemPermissao('excluir_proximas_tarefas') ? `
+    <div class="checklists-futuros-acoes-massa">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="selecionarTodasProximasTarefas()">Selecionar todas</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="limparSelecaoProximasTarefas()">Desmarcar todas</button>
+      <button class="btn btn-red btn-sm" type="button" onclick="excluirProximasTarefasSelecionadas()">Excluir selecionadas</button>
+    </div>` : ''}`;
 
   const htmlHoje = rowsHoje.length
     ? renderizarCardsChecklist(rowsHoje)
@@ -17732,7 +18302,7 @@ async function carregarChecklists(opcoes = {}) {
         <div class="checklists-futuros-conteudo">
           ${htmlFiltrosFuturos(rowsFuturosFiltrados.length, rowsFuturos.length)}
           ${rowsFuturosFiltrados.length
-            ? renderizarCardsChecklist(rowsFuturosFiltrados)
+            ? renderizarCardsChecklist(rowsFuturosFiltrados, true)
             : '<div class="empty">Nenhuma próxima tarefa encontrada com os filtros selecionados.</div>'}
         </div>
       </details>`
@@ -17835,7 +18405,7 @@ async function criarChecklist() {
 }
 
 async function excluirChecklist(id) {
-  if (!usuarioEhAdministrador()) {
+  if (!usuarioEhAdminOuPerfilAdmin()) {
     setMsg('msgChecklists', 'Somente o perfil Administrador pode excluir checklists.', 'err');
     return;
   }
@@ -17846,11 +18416,26 @@ async function excluirChecklist(id) {
 }
 
 async function excluirChecklistLancado(id) {
-  if (!usuarioEhAdministrador()) {
-    setMsg('msgChecklists', 'Somente o perfil Administrador pode excluir checklists lançados.', 'err');
+  if (!usuarioTemPermissao('excluir_checklist_lancado')) {
+    setMsg('msgChecklists', 'Seu perfil não tem permissão para excluir checklists lançados.', 'err');
     return;
   }
-  if (!confirm('Excluir este checklist lançado da fila?')) return;
+
+  const confirmacaoSenha = await abrirModalPin({
+    titulo: 'Excluir checklist lançado',
+    subtitulo: 'Digite a senha master para remover este checklist da fila.',
+    textoAcao: 'Validar senha',
+    exibirUsuario: false,
+    placeholderInput: 'Digite a senha master'
+  });
+  if (!confirmacaoSenha?.pin) {
+    setMsg('msgChecklists', 'Exclusão cancelada.', 'err');
+    return;
+  }
+  if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
+    setMsg('msgChecklists', 'Senha master inválida. Exclusão cancelada.', 'err');
+    return;
+  }
 
   const { error } = await sb
     .from('checklist_lancamentos')
@@ -17864,6 +18449,81 @@ async function excluirChecklistLancado(id) {
   }
 
   setMsg('msgChecklists', 'Checklist removido da fila de hoje.', 'ok');
+  carregarChecklists();
+  carregarNotificacoes();
+}
+
+// ── Seleção em massa das "Próximas tarefas" (apenas administrador) ──
+function alternarSelecaoProximaTarefa(id, marcado) {
+  const chave = String(id || '');
+  if (!chave) return;
+  if (marcado) proximasTarefasSelecionadasIds.add(chave);
+  else proximasTarefasSelecionadasIds.delete(chave);
+}
+
+function selecionarTodasProximasTarefas() {
+  // Marca todas as que estão visíveis nos checkboxes atualmente renderizados.
+  const checks = document.querySelectorAll('.checklist-item-check input[type="checkbox"]');
+  checks.forEach(chk => {
+    chk.checked = true;
+    const onchange = chk.getAttribute('onchange') || '';
+    const m = onchange.match(/alternarSelecaoProximaTarefa\('([^']+)'/);
+    if (m) proximasTarefasSelecionadasIds.add(m[1]);
+  });
+  if (!checks.length) setMsg('msgChecklists', 'Nenhuma próxima tarefa visível para selecionar.', 'err');
+}
+
+function limparSelecaoProximasTarefas() {
+  proximasTarefasSelecionadasIds = new Set();
+  document.querySelectorAll('.checklist-item-check input[type="checkbox"]').forEach(chk => { chk.checked = false; });
+}
+
+async function excluirProximasTarefasSelecionadas() {
+  if (!usuarioTemPermissao('excluir_proximas_tarefas')) {
+    setMsg('msgChecklists', 'Seu perfil não tem permissão para excluir próximas tarefas.', 'err');
+    return;
+  }
+  const ids = Array.from(proximasTarefasSelecionadasIds);
+  if (!ids.length) {
+    setMsg('msgChecklists', 'Marque ao menos uma próxima tarefa para excluir.', 'err');
+    return;
+  }
+
+  const confirmacaoSenha = await abrirModalPin({
+    titulo: 'Excluir próximas tarefas',
+    subtitulo: `Digite a senha master para excluir ${ids.length} dia(s) selecionado(s) da sequência.`,
+    textoAcao: 'Validar senha',
+    exibirUsuario: false,
+    placeholderInput: 'Digite a senha master'
+  });
+  if (!confirmacaoSenha?.pin) {
+    setMsg('msgChecklists', 'Exclusão cancelada.', 'err');
+    return;
+  }
+  if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
+    setMsg('msgChecklists', 'Senha master inválida. Exclusão cancelada.', 'err');
+    return;
+  }
+
+  let sucesso = 0;
+  let falhas = 0;
+  for (const id of ids) {
+    try {
+      const { error } = await sb
+        .from('checklist_lancamentos')
+        .update({ status: 'cancelado' })
+        .eq('id', id)
+        .eq('status', 'pendente');
+      if (error) throw error;
+      sucesso++;
+    } catch (e) {
+      console.error('Erro ao excluir lançamento futuro:', id, e);
+      falhas++;
+    }
+  }
+
+  proximasTarefasSelecionadasIds = new Set();
+  setMsg('msgChecklists', `Exclusão concluída: ${sucesso} removido(s)${falhas ? `, ${falhas} com erro` : ''}.`, falhas ? 'err' : 'ok');
   carregarChecklists();
   carregarNotificacoes();
 }
@@ -17957,7 +18617,7 @@ async function carregarFuncionarios() {
     }
 
     const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-    const ehAdminGlobal = usuarioSistemaLogado?.tipo === 'admin';
+    const ehAdminGlobal = usuarioEhAdminOuPerfilAdmin();
     lista.innerHTML = '<div class="lista">' + data.map(f => {
       const nomeLoja = obterNomeLojaFiltroMultiLoja(f.loja_id);
       // Admin global pode editar qualquer funcionário (não tem loja_id vinculada).
@@ -18284,6 +18944,71 @@ async function reenviarVerificacaoFuncionarioLista(funcionarioId, email, nome = 
   await reenviarVerificacaoFuncionarioCadastro();
 }
 
+// Resolve uma empresa/loja padrão para a solicitação pública (tela de login, sem sessão).
+// Tenta várias estratégias e nunca depende de colunas opcionais de ordenação.
+async function resolverTenantPublicoParaSolicitacao() {
+  // 1) Se houver sessão (caso raro nesta tela), aproveita.
+  try {
+    const sessao = await resolverTenantParaCadastroFuncionario();
+    if (sessao?.loja_id && sessao?.empresa_id) return sessao;
+  } catch (e) { /* ignora e segue para as próximas estratégias */ }
+
+  // 2) Primeira loja ativa (com empresa vinculada).
+  try {
+    const { data: lojas } = await executarSemFiltrosTenantTemporario(() => sb
+      .from('lojas')
+      .select('id, empresa_id, ativo')
+      .eq('ativo', true)
+      .limit(50));
+    const lojaValida = (lojas || []).find(l => l.empresa_id);
+    if (lojaValida) {
+      return {
+        loja_id: String(lojaValida.id || '').trim() || null,
+        empresa_id: String(lojaValida.empresa_id || '').trim() || null,
+      };
+    }
+  } catch (e) { /* tenta a próxima */ }
+
+  // 3) Qualquer loja (mesmo inativa) que tenha empresa.
+  try {
+    const { data: lojas } = await executarSemFiltrosTenantTemporario(() => sb
+      .from('lojas')
+      .select('id, empresa_id')
+      .limit(50));
+    const lojaValida = (lojas || []).find(l => l.empresa_id);
+    if (lojaValida) {
+      return {
+        loja_id: String(lojaValida.id || '').trim() || null,
+        empresa_id: String(lojaValida.empresa_id || '').trim() || null,
+      };
+    }
+  } catch (e) { /* tenta a próxima */ }
+
+  // 4) Primeira empresa ativa + qualquer loja dela.
+  try {
+    const { data: empresas } = await executarSemFiltrosTenantTemporario(() => sb
+      .from('empresas')
+      .select('id, ativo')
+      .eq('ativo', true)
+      .limit(1));
+    const empresa = (empresas || [])[0];
+    if (empresa?.id) {
+      const { data: lojaDaEmpresa } = await executarSemFiltrosTenantTemporario(() => sb
+        .from('lojas')
+        .select('id, empresa_id')
+        .eq('empresa_id', empresa.id)
+        .limit(1));
+      const loja = (lojaDaEmpresa || [])[0];
+      return {
+        loja_id: loja?.id ? String(loja.id).trim() : null,
+        empresa_id: String(empresa.id).trim(),
+      };
+    }
+  } catch (e) { /* desiste */ }
+
+  return { loja_id: null, empresa_id: null };
+}
+
 async function resolverTenantParaCadastroFuncionario() {
   const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
   let empresaSessao = String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim();
@@ -18322,6 +19047,7 @@ async function resolverTenantParaCadastroFuncionario() {
     empresa_id: String(lojaPadrao.empresa_id || '').trim() || null,
   };
 }
+
 
 
 // ── GERENCIADOR DE VÍNCULOS EMPRESA → LOJAS ──────────────────────────────
@@ -18559,6 +19285,21 @@ let _perfisCache = [];
       setMsg('msgFuncionarios', 'Não foi possível identificar empresa para o cadastro.', 'err');
       return;
     }
+    // Loja logada que receberá o vínculo automático ao criar um novo funcionário.
+    // Resolve de várias fontes, ignorando o filtro temporário de loja (que pode zerar obterLojaIdSessao).
+    const lojaLogadaParaVinculo = String(
+      usuarioSistemaLogado?.loja_id
+      || (typeof window !== 'undefined' ? window.lojaAtualId : '')
+      || obterLojaAtualParaIsolamento?.()
+      || lojaParaSalvar.loja_id
+      || ''
+    ).trim();
+
+    // Sem loja logada não dá para vincular: bloqueia o cadastro para não gerar registro órfão.
+    if (!editandoAgora && !lojaLogadaParaVinculo) {
+      setMsg('msgFuncionarios', 'Não foi possível identificar a loja logada para vincular o funcionário. Selecione/troque a loja no topo e tente novamente.', 'err');
+      return;
+    }
     const perfilIdParaSalvar = await (async () => {
       if (funcionarioAdmin) {
         const perfilAdmin = await buscarPerfilAdminPadraoParaFuncionario();
@@ -18590,7 +19331,7 @@ let _perfisCache = [];
           nome,
           email: emailInformado ? email : null,
           pin: pin || null,
-          loja_id: lojaId,
+          loja_id: lojaLogadaParaVinculo || null,
           empresa_id: lojaParaSalvar.empresa_id,
           é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
@@ -18626,11 +19367,54 @@ let _perfisCache = [];
         setMsg('msgFuncionarios', 'Falta aplicar a coluna intervalos_semana no banco. Rode a nova migration antes de salvar os intervalos por dia.', 'err');
         return;
       }
+      const erroTexto = String(error.message || '').toLowerCase();
+      if (String(error.code || '') === '23505' || erroTexto.includes('duplicate key')) {
+        if (erroTexto.includes('funcionarios_nome_unique') || erroTexto.includes('nome')) {
+          setMsg('msgFuncionarios', `Já existe um funcionário cadastrado com o nome "${nome}". Escolha um nome diferente (ex.: inclua sobrenome ou loja).`, 'err');
+          return;
+        }
+        if (erroTexto.includes('email')) {
+          setMsg('msgFuncionarios', 'Já existe um funcionário cadastrado com este e-mail. Use outro e-mail.', 'err');
+          return;
+        }
+        if (erroTexto.includes('pin')) {
+          setMsg('msgFuncionarios', 'Esta senha/PIN já está em uso por outro funcionário. Escolha uma senha diferente.', 'err');
+          return;
+        }
+        setMsg('msgFuncionarios', 'Já existe um registro com esses dados. Verifique nome, e-mail e senha e tente novamente.', 'err');
+        return;
+      }
       setMsg('msgFuncionarios', `${editandoAgora ? 'Erro ao salvar alterações' : 'Erro ao cadastrar'}: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
       return;
     }
     const funcionarioIdParaEmail = funcionarioSalvo?.id || funcionarioIdAtual || '';
     const funcionarioNomeParaEmail = funcionarioSalvo?.nome || nome;
+
+    // Vínculo automático com a loja logada (apenas em cadastro novo). Evita registro órfão sem loja.
+    if (!editandoAgora && funcionarioSalvo?.id && lojaLogadaParaVinculo) {
+      try {
+        await executarSemFiltroLojaTemporario(async () => {
+          // Não duplica vínculo caso já exista.
+          const { data: vinculoExistente } = await sb.from('funcionario_lojas')
+            .select('id')
+            .eq('funcionario_id', funcionarioSalvo.id)
+            .eq('loja_id', lojaLogadaParaVinculo)
+            .maybeSingle();
+          if (!vinculoExistente) {
+            await sb.from('funcionario_lojas').insert([{
+              funcionario_id: funcionarioSalvo.id,
+              loja_id: lojaLogadaParaVinculo,
+              perfil_id: perfilIdParaSalvar || null,
+              ativo: true,
+            }]);
+          }
+        });
+      } catch (vincErro) {
+        console.warn('Não foi possível criar o vínculo automático com a loja logada:', vincErro);
+        // Não bloqueia o cadastro; o vínculo pode ser ajustado na edição.
+      }
+    }
+
     limparFormularioFuncionario();
     carregarFuncionarios();
     if (emailInformado && emailAlterado) {
@@ -18740,7 +19524,11 @@ function cancelarEdicaoFuncionario() {
 
 async function excluirFuncionario(id) {
   if (!confirm('Excluir este funcionário?')) return;
-  const { data: funcionario, error } = await sb.from('funcionarios').select('id, email').eq('id', id).single();
+  // Busca SEM filtro de loja: funcionários órfãos (sem loja) ou de outra loja
+  // não seriam encontrados pelo filtro padrão, impedindo a exclusão.
+  const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() =>
+    sb.from('funcionarios').select('id, email').eq('id', id).maybeSingle()
+  );
   if (error || !funcionario) {
     setMsg('msgFuncionarios', 'Não foi possível localizar o funcionário.', 'err');
     return;
@@ -18767,7 +19555,9 @@ async function excluirFuncionario(id) {
       return;
     }
 
-    const { error: erroDelete } = await sb.from('funcionarios').delete().eq('id', id);
+    const { error: erroDelete } = await executarSemFiltrosTenantTemporario(() =>
+      sb.from('funcionarios').delete().eq('id', id)
+    );
     if (erroDelete) {
       if (isForeignKeyViolationError(erroDelete)) {
         setMsg('msgFuncionarios', 'Não foi possível excluir porque esse usuário ainda possui vínculos obrigatórios no histórico.', 'err');
@@ -18909,56 +19699,266 @@ async function aprovarSolicitacaoAcesso(id) {
     return;
   }
 
-  const tenantCadastro = await resolverTenantParaCadastroFuncionario();
-  if (!tenantCadastro.loja_id || !tenantCadastro.empresa_id) {
-    setMsg('msgSolicitacoes', 'Não foi possível identificar loja/empresa para criar o funcionário aprovado.', 'err');
+  // Abre o modal onde o admin escolhe lojas (uma ou mais) + perfil por loja.
+  await abrirModalAprovacaoSolicitacao(solicitacao);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MODAL DE APROVAÇÃO: seleção de lojas + perfil por loja
+// ─────────────────────────────────────────────────────────────────────────
+let _aprovacaoSolicitacaoAtual = null;        // solicitação em aprovação
+let _aprovacaoLojasCache = [];                // lojas disponíveis
+let _aprovacaoEmpresasCache = [];             // empresas disponíveis
+let _aprovacaoPerfisCache = [];               // perfis disponíveis
+let _aprovacaoSelecao = {};                   // { loja_id: perfil_id | '' }
+
+async function abrirModalAprovacaoSolicitacao(solicitacao) {
+  _aprovacaoSolicitacaoAtual = solicitacao;
+  _aprovacaoSelecao = {};
+
+  const modal = document.getElementById('modalAprovacaoSolicitacao');
+  const resumo = document.getElementById('aprovacaoSolicitacaoResumo');
+  const filtro = document.getElementById('filtroLojasAprovacao');
+  if (resumo) resumo.textContent = `${solicitacao.nome} · ${solicitacao.email}`;
+  if (filtro) filtro.value = '';
+  setMsg('msgAprovacaoSolicitacao', '', '');
+  if (modal) modal.style.display = 'flex';
+
+  await recarregarLojasAprovacao();
+}
+
+function fecharModalAprovacaoSolicitacao() {
+  const modal = document.getElementById('modalAprovacaoSolicitacao');
+  if (modal) modal.style.display = 'none';
+  _aprovacaoSolicitacaoAtual = null;
+  _aprovacaoSelecao = {};
+}
+
+async function recarregarLojasAprovacao() {
+  const lista = document.getElementById('listaLojasAprovacao');
+  if (lista) lista.innerHTML = '<div class="empty" style="font-size:12px;">Carregando lojas…</div>';
+  try {
+    const [resLojas, resEmpresas, resPerfis] = await Promise.all([
+      executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, codigo, cidade, uf, empresa_id, ativo').order('nome')),
+      executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome, ativo').order('nome')),
+      executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome, codigo').order('nome')),
+    ]);
+    _aprovacaoLojasCache = (resLojas.data || []).filter(l => l.ativo !== false);
+    _aprovacaoEmpresasCache = resEmpresas.data || [];
+    _aprovacaoPerfisCache = resPerfis.data || [];
+  } catch (e) {
+    console.error('Erro ao carregar lojas/empresas/perfis para aprovação:', e);
+    if (lista) lista.innerHTML = '<div class="empty" style="font-size:12px;color:var(--red);">Erro ao carregar lojas. Tente novamente.</div>';
+    return;
+  }
+  renderizarLojasAprovacao();
+}
+
+function renderizarLojasAprovacao() {
+  const lista = document.getElementById('listaLojasAprovacao');
+  if (!lista) return;
+
+  const termo = (document.getElementById('filtroLojasAprovacao')?.value || '')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const lojasFiltradas = _aprovacaoLojasCache.filter(l => {
+    if (!termo) return true;
+    const alvo = [l.nome, l.codigo, l.cidade, l.uf].filter(Boolean).join(' ')
+      .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return alvo.includes(termo);
+  });
+
+  if (!lojasFiltradas.length) {
+    lista.innerHTML = '<div class="empty" style="font-size:12px;">Nenhuma loja encontrada. Use "+ Loja" para cadastrar.</div>';
     return;
   }
 
-  const { error: errInsert } = await sb.from('funcionarios').insert([{
-    nome: solicitacao.nome,
-    email: solicitacao.email.toLowerCase(),
-    pin: solicitacao.pin,
-    loja_id: tenantCadastro.loja_id,
-    empresa_id: tenantCadastro.empresa_id,
-    perfil_id: null,
-    ativo: true,
-    email_verificado: false,
-  }]);
+  const perfisOpts = '<option value="">Perfil padrão</option>' +
+    _aprovacaoPerfisCache.map(p => `<option value="${escaparHtmlBasico(p.id)}">${escaparHtmlBasico(p.nome)}</option>`).join('');
 
-  if (errInsert) {
-    setMsg('msgSolicitacoes', `Erro ao criar o funcionário aprovado: ${mensagemErroSupabase(errInsert, 'erro desconhecido')}`, 'err');
+  // Agrupar por empresa
+  const porEmpresa = {};
+  lojasFiltradas.forEach(l => {
+    const empId = l.empresa_id || 'sem-empresa';
+    const empNome = _aprovacaoEmpresasCache.find(e => e.id === empId)?.nome || 'Sem empresa';
+    if (!porEmpresa[empId]) porEmpresa[empId] = { nome: empNome, lojas: [] };
+    porEmpresa[empId].lojas.push(l);
+  });
+
+  lista.innerHTML = Object.entries(porEmpresa).map(([empId, emp]) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 8px;background:var(--surface2);">
+      <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">🏢 ${escaparHtmlBasico(emp.nome)}</div>
+      ${emp.lojas.map(loja => {
+        const marcada = Object.prototype.hasOwnProperty.call(_aprovacaoSelecao, loja.id);
+        return `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--border);">
+          <label style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer;">
+            <input type="checkbox" ${marcada ? 'checked' : ''} onchange="alternarLojaAprovacao('${escaparHtmlBasico(loja.id)}', this.checked)">
+            <span style="min-width:0;">
+              <span style="font-size:12px;color:var(--text);">🏪 ${escaparHtmlBasico(loja.nome || loja.codigo || '-')}</span>
+              ${(loja.cidade || loja.uf) ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px;">${escaparHtmlBasico([loja.cidade, loja.uf].filter(Boolean).join(' · '))}</span>` : ''}
+            </span>
+          </label>
+          <select id="perfilAprovacao_${escaparHtmlBasico(loja.id)}" style="font-size:10px;padding:1px 4px;height:24px;max-width:140px;flex-shrink:0;${marcada ? '' : 'opacity:.45;'}" ${marcada ? '' : 'disabled'} onchange="definirPerfilAprovacao('${escaparHtmlBasico(loja.id)}', this.value)">${perfisOpts}</select>
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  // Restaura os perfis já escolhidos
+  Object.entries(_aprovacaoSelecao).forEach(([lojaId, perfilId]) => {
+    const sel = document.getElementById('perfilAprovacao_' + lojaId);
+    if (sel && perfilId) sel.value = perfilId;
+  });
+}
+
+function alternarLojaAprovacao(lojaId, marcada) {
+  const id = String(lojaId || '');
+  if (!id) return;
+  if (marcada) {
+    if (!Object.prototype.hasOwnProperty.call(_aprovacaoSelecao, id)) _aprovacaoSelecao[id] = '';
+    const sel = document.getElementById('perfilAprovacao_' + id);
+    if (sel) { sel.disabled = false; sel.style.opacity = '1'; }
+  } else {
+    delete _aprovacaoSelecao[id];
+    const sel = document.getElementById('perfilAprovacao_' + id);
+    if (sel) { sel.disabled = true; sel.style.opacity = '.45'; sel.value = ''; }
+  }
+}
+
+function definirPerfilAprovacao(lojaId, perfilId) {
+  const id = String(lojaId || '');
+  if (!id || !Object.prototype.hasOwnProperty.call(_aprovacaoSelecao, id)) return;
+  _aprovacaoSelecao[id] = String(perfilId || '');
+}
+
+function abrirCadastroEmpresaDaAprovacao() {
+  fecharModalAprovacaoSolicitacao();
+  setMsg('msgSolicitacoes', 'Cadastre a empresa abaixo. Depois volte em Solicitações e clique novamente em "Aprovar" para escolher as lojas.', 'ok');
+  try { abrirPagina('empresas_saas'); } catch (e) { console.warn('Não foi possível abrir empresas_saas:', e); }
+}
+
+function abrirCadastroLojaDaAprovacao() {
+  fecharModalAprovacaoSolicitacao();
+  setMsg('msgSolicitacoes', 'Cadastre a loja abaixo. Depois volte em Solicitações e clique novamente em "Aprovar" para escolher as lojas.', 'ok');
+  try { abrirPagina('lojas_saas'); } catch (e) { console.warn('Não foi possível abrir lojas_saas:', e); }
+}
+
+async function confirmarAprovacaoSolicitacao() {
+  const solicitacao = _aprovacaoSolicitacaoAtual;
+  if (!solicitacao) { fecharModalAprovacaoSolicitacao(); return; }
+
+  const lojasSelecionadas = Object.keys(_aprovacaoSelecao);
+  if (!lojasSelecionadas.length) {
+    setMsg('msgAprovacaoSolicitacao', 'Selecione pelo menos uma loja para conceder acesso.', 'err');
     return;
   }
 
-  const { error: errUpdate } = await sb
-    .from('solicitacoes_acesso')
-    .update({ status: 'aprovada', aprovado_em: new Date().toISOString() })
-    .eq('id', id);
-
-  if (errUpdate) {
-    setMsg('msgSolicitacoes', 'Funcionário criado, mas houve erro ao marcar a solicitação como aprovada.', 'err');
+  // Empresa/loja representativas para o registro do funcionário (a tabela exige).
+  const primeiraLoja = _aprovacaoLojasCache.find(l => String(l.id) === String(lojasSelecionadas[0]));
+  if (!primeiraLoja || !primeiraLoja.empresa_id) {
+    setMsg('msgAprovacaoSolicitacao', 'A loja selecionada não tem empresa vinculada. Verifique o cadastro da loja.', 'err');
     return;
   }
 
-  await sb
-    .from('solicitacoes_acesso')
-    .delete()
-    .eq('email', solicitacao.email.toLowerCase())
-    .neq('id', id)
-    .neq('status', 'aprovada');
+  const btn = document.getElementById('btnConfirmarAprovacaoSolicitacao');
+  if (btn) { btn.disabled = true; btn.textContent = 'Aprovando…'; }
 
   try {
-    await enviarVerificacaoEmailFuncionario(solicitacao.email);
-    setMsg('msgSolicitacoes', `Solicitação aprovada para ${solicitacao.nome}. O e-mail de verificação foi enviado e o perfil permanece sem acesso até você definir um perfil.`, 'ok');
-  } catch (emailError) {
-    setMsg('msgSolicitacoes', `Solicitação aprovada para ${solicitacao.nome}, mas não foi possível enviar o e-mail de verificação: ${emailError.message}`, 'err');
-  }
+    // Revalida duplicidade na hora (caso outra aprovação tenha acontecido).
+    const { data: existente } = await sb
+      .from('funcionarios')
+      .select('id')
+      .eq('email', solicitacao.email.toLowerCase())
+      .maybeSingle();
+    if (existente) {
+      setMsg('msgAprovacaoSolicitacao', 'Já existe um funcionário com este e-mail.', 'err');
+      return;
+    }
 
-  carregarSolicitacoesAcesso();
-  carregarFuncionarios();
-  carregarNotificacoes();
+    // 1) Cria o funcionário com loja/empresa representativas.
+    const { data: funcionarioCriado, error: errInsert } = await sb.from('funcionarios').insert([{
+      nome: solicitacao.nome,
+      email: solicitacao.email.toLowerCase(),
+      pin: solicitacao.pin,
+      loja_id: primeiraLoja.id,
+      empresa_id: primeiraLoja.empresa_id,
+      perfil_id: _aprovacaoSelecao[primeiraLoja.id] || null,
+      ativo: true,
+      email_verificado: false,
+    }]).select('id').single();
+
+    if (errInsert || !funcionarioCriado?.id) {
+      setMsg('msgAprovacaoSolicitacao', `Erro ao criar o funcionário aprovado: ${mensagemErroSupabase(errInsert, 'erro desconhecido')}`, 'err');
+      return;
+    }
+
+    const funcionarioId = funcionarioCriado.id;
+
+    // 2) Cria os vínculos por loja (funcionario_lojas) com o perfil de cada uma.
+    const vinculos = lojasSelecionadas.map(lojaId => ({
+      funcionario_id: funcionarioId,
+      loja_id: lojaId,
+      perfil_id: _aprovacaoSelecao[lojaId] || null,
+      ativo: true,
+    }));
+
+    let avisoVinculos = '';
+    try {
+      const { error: errVinculos } = await executarSemFiltroLojaTemporario(() =>
+        sb.from('funcionario_lojas').insert(vinculos)
+      );
+      if (errVinculos) {
+        console.warn('Erro ao criar vínculos de loja:', errVinculos);
+        avisoVinculos = ' (atenção: não foi possível registrar todos os acessos por loja — verifique na edição do funcionário)';
+      }
+    } catch (eVinc) {
+      console.warn('Falha ao inserir vínculos de loja:', eVinc);
+      avisoVinculos = ' (atenção: não foi possível registrar os acessos por loja — verifique na edição do funcionário)';
+    }
+
+    // 3) Marca a solicitação como aprovada e limpa duplicadas.
+    const { error: errUpdate } = await sb
+      .from('solicitacoes_acesso')
+      .update({ status: 'aprovada', aprovado_em: new Date().toISOString() })
+      .eq('id', solicitacao.id);
+    if (errUpdate) {
+      setMsg('msgAprovacaoSolicitacao', 'Funcionário criado, mas houve erro ao marcar a solicitação como aprovada.', 'err');
+    }
+
+    await sb
+      .from('solicitacoes_acesso')
+      .delete()
+      .eq('email', solicitacao.email.toLowerCase())
+      .neq('id', solicitacao.id)
+      .neq('status', 'aprovada');
+
+    const nomesLojas = lojasSelecionadas
+      .map(lojaId => _aprovacaoLojasCache.find(l => String(l.id) === String(lojaId))?.nome)
+      .filter(Boolean);
+    const resumoLojas = nomesLojas.length === 1 ? nomesLojas[0] : `${nomesLojas.length} lojas`;
+
+    // 4) Envia o e-mail de verificação / troca de senha.
+    let msgFinal;
+    let tipoFinal = 'ok';
+    try {
+      await enviarVerificacaoEmailFuncionario(solicitacao.email, { funcionarioId });
+      msgFinal = `Solicitação aprovada para ${solicitacao.nome} em ${resumoLojas}${avisoVinculos}. O e-mail de confirmação e troca de senha foi enviado ao cliente.`;
+    } catch (emailError) {
+      tipoFinal = 'err';
+      msgFinal = `Funcionário criado e vinculado em ${resumoLojas}${avisoVinculos}, mas não foi possível enviar o e-mail de confirmação: ${emailError.message}. Use "Reenviar verificação de e-mail".`;
+    }
+
+    fecharModalAprovacaoSolicitacao();
+    setMsg('msgSolicitacoes', msgFinal, tipoFinal);
+    carregarSolicitacoesAcesso();
+    carregarFuncionarios();
+    carregarNotificacoes();
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Aprovar e liberar acesso'; }
+  }
 }
+
 
 async function rejeitarSolicitacaoAcesso(id) {
   const { error } = await sb
@@ -21388,6 +22388,38 @@ async function faturaVerificarFitidsJaLancados(itens) {
   }
 }
 
+// Reconhece uma PARCELA já provisionada no banco para um item parcelado do OFX.
+// O FITID muda a cada fatura, então a trava por identificador não pega parcela
+// gerada em importação anterior. O casamento aqui é por:
+//   nº da parcela + total de parcelas + valor (centavo) + fornecedor (se ambos tiverem)
+//   + proximidade de data (compra ±5 dias OU vencimento ±10 dias).
+function faturaEncontrarParcelaExistente(item, candidatos, fornecedorIdResolvido) {
+  if (!(item && item.parcela_atual && item.total_parcelas)) return null;
+  const diffDias = (a, b) => {
+    const da = new Date(`${String(a).slice(0,10)}T12:00:00`);
+    const db = new Date(`${String(b).slice(0,10)}T12:00:00`);
+    if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return 9999;
+    return Math.abs(Math.round((da - db) / 86400000));
+  };
+  const mesmoCentavo = (a, b) => Math.round(Number(a || 0) * 100) === Math.round(Number(b || 0) * 100);
+  const fornItem = String(fornecedorIdResolvido || item.fornecedor_id || '').trim();
+  const dataRefVenc = /^\d{4}-\d{2}-\d{2}$/.test(String(item.vencimento_fatura || '')) ? item.vencimento_fatura : null;
+  return (candidatos || []).find(c => {
+    if (Number(c.numero_parcela) !== Number(item.parcela_atual)) return false;
+    if (Number(c.qtd_parcelas) !== Number(item.total_parcelas)) return false;
+    if (!mesmoCentavo(c.valor_compra, item.valor)) return false;
+    const fornCand = String(c.fornecedor_id || '').trim();
+    if (fornItem && fornCand && fornItem !== fornCand) return false;
+    // Amarra por data: compra original igual/próxima OU vencimento provisionado próximo
+    // (provisionamento usa +30 dias; meses reais variam de 28 a 31 — janela de ±10).
+    const dCompra = String(c.data_compra || '').slice(0, 10);
+    const compraOk = /^\d{4}-\d{2}-\d{2}$/.test(dCompra) && diffDias(dCompra, item.data) <= 5;
+    const dVenc = String(c.data_vencimento || '').slice(0, 10);
+    const vencOk = dataRefVenc && /^\d{4}-\d{2}-\d{2}$/.test(dVenc) && diffDias(dVenc, dataRefVenc) <= 10;
+    return compraOk || vencOk;
+  }) || null;
+}
+
 // Concilia os itens do OFX contra o que já existe no banco.
 // 1) Por FITID (código único do banco) — match forte.
 // 2) Por valor + data (±3 dias) + fornecedor — para casar lançamentos MANUAIS sem FITID.
@@ -21402,18 +22434,18 @@ async function faturaConciliarComBanco(itens) {
   try {
     const { data, error } = await executarSemFiltrosTenantTemporario(() => {
       let q = sb.from('contasapagar')
-        .select('id, ofx_fitid, valor_compra, data_compra, data_vencimento, fornecedor_id, observacao, loja_id, fornecedores(nome)')
+        .select('id, ofx_fitid, valor_compra, data_compra, data_vencimento, fornecedor_id, numero_parcela, qtd_parcelas, observacao, loja_id, fornecedores(nome)')
         .is('excluido_em', null);
       return q;
     });
     if (error) {
       console.warn('Conciliação indisponível:', error?.message || error);
-      return { conciliados: 0, fitid: 0, manual: 0 };
+      return { conciliados: 0, fitid: 0, manual: 0, parcela: 0 };
     }
     candidatos = (data || []).filter(row => !lojaSessao || String(row.loja_id || '').trim() === lojaSessao);
   } catch (e) {
     console.warn('Falha na conciliação:', e?.message || e);
-    return { conciliados: 0, fitid: 0, manual: 0 };
+    return { conciliados: 0, fitid: 0, manual: 0, parcela: 0 };
   }
 
   const fitidsExistentes = new Set(candidatos.filter(c => c.ofx_fitid).map(c => String(c.ofx_fitid)));
@@ -21424,7 +22456,8 @@ async function faturaConciliarComBanco(itens) {
   };
   const mesmoCentavo = (a, b) => Math.round(Number(a || 0) * 100) === Math.round(Number(b || 0) * 100);
 
-  let qtdFitid = 0, qtdManual = 0;
+  let qtdFitid = 0, qtdManual = 0, qtdParcela = 0;
+  const adocoesFitid = []; // parcelas provisionadas que vão "adotar" o FITID deste mês
   (itens || []).forEach(item => {
     item._jaLancado = false;
     item._motivoConciliacao = '';
@@ -21434,6 +22467,23 @@ async function faturaConciliarComBanco(itens) {
       item._motivoConciliacao = 'fitid';
       item.selecionado = false;
       qtdFitid++;
+      return;
+    }
+    // (1.5) PARCELA — "LOJA 04/06" do OFX deste mês × parcela 4/6 já provisionada
+    // numa importação anterior. O FITID muda a cada fatura, então sem esta etapa
+    // a parcela entraria em dobro.
+    const parcelaExistente = faturaEncontrarParcelaExistente(item, candidatos, null);
+    if (parcelaExistente) {
+      item._jaLancado = true;
+      item._motivoConciliacao = 'parcela';
+      item.selecionado = false;
+      qtdParcela++;
+      // Adota o FITID deste mês na parcela provisionada: a partir daí, reimportar
+      // o MESMO arquivo cai direto na trava por identificador (índice único).
+      if (item.fitid && !parcelaExistente.ofx_fitid) {
+        parcelaExistente.ofx_fitid = String(item.fitid);
+        adocoesFitid.push({ id: parcelaExistente.id, ofx_fitid: String(item.fitid) });
+      }
       return;
     }
     // (2) valor + data (±3 dias) + fornecedor (rígido). Só tenta se o item já tem fornecedor resolvido.
@@ -21453,29 +22503,55 @@ async function faturaConciliarComBanco(itens) {
       qtdManual++;
     }
   });
-  return { conciliados: qtdFitid + qtdManual, fitid: qtdFitid, manual: qtdManual };
+  // Grava o FITID adotado nas parcelas provisionadas (silencioso; melhora as
+  // próximas verificações por identificador). Só preenche onde estava vazio.
+  for (const a of adocoesFitid) {
+    try {
+      await sb.from('contasapagar')
+        .update({ ofx_fitid: a.ofx_fitid })
+        .eq('id', a.id)
+        .is('excluido_em', null)
+        .is('ofx_fitid', null);
+    } catch (eAdo) {
+      console.warn('Não foi possível vincular o FITID à parcela provisionada:', eAdo?.message || eAdo);
+    }
+  }
+  return { conciliados: qtdFitid + qtdManual + qtdParcela, fitid: qtdFitid, manual: qtdManual, parcela: qtdParcela };
 }
 
 
-// Regra: próximo dia X a partir da data da compra. Se a compra for no dia X ou antes,
-// vence no mês da compra; senão, no mês seguinte. Ajusta meses curtos (ex.: dia 31 em fev).
-function faturaCalcularVencimentoPorDia(dataCompraISO, diaVencimento) {
+// Regra SEM fechamento: próximo dia X a partir da data da compra (se a compra for
+// no dia X ou antes, vence no mês da compra; senão, no mês seguinte).
+// Regra COM fechamento (diaFechamento informado — lógica de FATURA de cartão):
+//   - compra ANTES do dia de fechamento → entra na fatura que fecha neste mês;
+//   - compra NO dia de fechamento ou DEPOIS → entra na fatura do mês seguinte;
+//   - se o vencimento cai no dia do fechamento ou antes dele, a fatura vence no
+//     mês seguinte ao fechamento (ex.: fecha dia 28, vence dia 5 do mês seguinte).
+// Ajusta meses curtos (ex.: dia 31 em fevereiro).
+function faturaCalcularVencimentoPorDia(dataCompraISO, diaVencimento, diaFechamento) {
   const dia = Number.parseInt(diaVencimento, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dataCompraISO || '')) || !Number.isFinite(dia) || dia < 1 || dia > 31) {
     return null;
   }
   const [ano, mes, diaCompra] = dataCompraISO.split('-').map(Number);
   let anoV = ano, mesV = mes; // mes 1-12
-  if (diaCompra > dia) {
+  const fech = Number.parseInt(diaFechamento, 10);
+  if (Number.isFinite(fech) && fech >= 1 && fech <= 31) {
+    if (diaCompra >= fech) mesV += 1; // já entrou na fatura seguinte
+    if (dia <= fech) mesV += 1;       // fatura vence depois do fechamento
+  } else if (diaCompra > dia) {
     mesV += 1;
-    if (mesV > 12) { mesV = 1; anoV += 1; }
   }
+  while (mesV > 12) { mesV -= 12; anoV += 1; }
   // último dia do mês de vencimento (trata fevereiro, meses de 30 dias, etc.)
   const ultimoDia = new Date(anoV, mesV, 0).getDate();
   const diaFinal = Math.min(dia, ultimoDia);
   const mm = String(mesV).padStart(2, '0');
   const dd = String(diaFinal).padStart(2, '0');
-  return `${anoV}-${mm}-${dd}`;
+  // Fatura que vence em fim de semana/feriado paga no próximo dia útil.
+  return (typeof ajustarVencimentoParaDiaUtilFinanceiro === 'function')
+    ? ajustarVencimentoParaDiaUtilFinanceiro(`${anoV}-${mm}-${dd}`)
+    : `${anoV}-${mm}-${dd}`;
 }
 
 async function faturaExibirRevisao(resultado) {
@@ -21519,12 +22595,14 @@ async function faturaExibirRevisao(resultado) {
     const fornObj = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornDoItem)) || null;
     const diaVenc = fornObj?.dia_vencimento;
     if (diaVenc) {
-      const venc = faturaCalcularVencimentoPorDia(item.data, diaVenc);
+      const venc = faturaCalcularVencimentoPorDia(item.data, diaVenc, fornObj?.dia_fechamento);
       if (venc) { item.vencimento_fatura = venc; item._vencAuto = true; qtdVencAuto++; }
     }
     // Inicializa parcelas manuais (provisionamento): 1 por padrão; itens parcelados do OFX
     // já trazem o total detectado e não usam o campo manual.
     if (item._parcelasManuais == null) item._parcelasManuais = 1;
+    // Obs editável: pré-preenchida com o nome da compra (memo limpo do OFX).
+    if (item._obsManual == null) item._obsManual = String(item.descricao || '').trim();
   });
 
   // Conciliação reforçada: marca o que já existe no banco (FITID ou valor+data+fornecedor).
@@ -21557,9 +22635,19 @@ async function faturaExibirRevisao(resultado) {
       ? `<span style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">${qtdLancar} parcelas</span>`
       : '';
     const jaLancado = !!item._jaLancado;
+    const rotuloConcil = item._motivoConciliacao === 'fitid' ? 'OFX'
+      : item._motivoConciliacao === 'parcela' ? 'parcela já provisionada'
+      : 'manual';
     const seloConciliado = jaLancado
-      ? `<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">já lançado · ${item._motivoConciliacao === 'fitid' ? 'OFX' : 'manual'}</span>`
+      ? `<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">já lançado · ${rotuloConcil}</span>`
       : '';
+    // Campo de observação editável (pré-preenchido com o nome da compra).
+    const campoObs = `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;flex:1;min-width:180px;">Obs.:
+         <input type="text" maxlength="200" value="${escaparHtmlBasico(item._obsManual || '')}"
+           style="flex:1;min-width:140px;font-size:11px;height:24px;padding:0 6px;"
+           onchange="faturaAoAlterarObs('${item.id}', this.value)"
+           title="Observação que será gravada no contas a pagar (mantém a marcação 'Importado do arquivo bancário')">
+       </label>`;
     // Campo de parcelas manuais: aparece só quando NÃO é parcelamento detectado do OFX.
     const campoParcelasManuais = !ehParceladoOFX
       ? `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Parcelas:
@@ -21569,6 +22657,7 @@ async function faturaExibirRevisao(resultado) {
              title="Quantidade de parcelas a provisionar (vencimento mensal a partir do vencimento definido)">
          </label>`
       : '';
+    void campoObs; // usado no template abaixo
     return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface2);${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
       <div style="display:flex;align-items:flex-start;gap:8px;">
         <input type="checkbox" ${item.selecionado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;"
@@ -21589,6 +22678,7 @@ async function faturaExibirRevisao(resultado) {
                 onchange="faturaAoAlterarVencimento('${item.id}', this.value); this.style.boxShadow='';">
             </label>
             ${campoParcelasManuais}
+            ${campoObs}
             <span style="font-size:13px;font-weight:700;color:var(--text);">${formatarMoedaBRFinanceiro(item.valor)}</span>
             <select class="fatura-select-categoria" style="font-size:11px;height:24px;padding:0 4px;flex:1;min-width:120px;${item._catAuto ? corAuto : ''}"
               onchange="faturaAoSelecionarCategoria('${item.id}', this.value); this.style.boxShadow='';">
@@ -21613,6 +22703,7 @@ async function faturaExibirRevisao(resultado) {
   if (concil && concil.conciliados) {
     const detalhe = [];
     if (concil.fitid) detalhe.push(`${concil.fitid} pelo código do banco`);
+    if (concil.parcela) detalhe.push(`${concil.parcela} parcela(s) já provisionada(s) de importação anterior`);
     if (concil.manual) detalhe.push(`${concil.manual} por valor/data/fornecedor`);
     msgsConcil.push(`🔗 ${concil.conciliados} item(ns) já constavam no sistema (${detalhe.join(' e ')}) e foram desmarcados. Os novos seguem prontos para lançar.`);
   }
@@ -21639,7 +22730,7 @@ async function faturaAoSelecionarFornecedor(itemId, fornecedorId) {
     const fornObj = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
     const diaVenc = fornObj?.dia_vencimento;
     if (diaVenc) {
-      const venc = faturaCalcularVencimentoPorDia(item.data, diaVenc);
+      const venc = faturaCalcularVencimentoPorDia(item.data, diaVenc, fornObj?.dia_fechamento);
       if (venc) {
         item.vencimento_fatura = venc;
         const card = document.getElementById('faturaItem_' + itemId);
@@ -21659,6 +22750,12 @@ function faturaAoAlterarVencimento(itemId, valor) {
   item.vencimento_fatura = valor || '';
   item._vencAuto = false;
   item._vencEditadoManual = true;
+}
+
+function faturaAoAlterarObs(itemId, valor) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  item._obsManual = String(valor || '').trim().slice(0, 200);
 }
 
 function faturaAoAlterarParcelasManuais(itemId, valor) {
@@ -21812,15 +22909,36 @@ function ofxParseLancamentos(texto) {
     const valor = parseFloat(valorStr.replace(',','.')) || 0;
     const data = ofxParseData(dtStr);
     if (!data || !memo) continue;
-    // Detectar parcelamento no memo (ex: "AMAZON 02/06" ou "02/06")
-    const matchParc = memo.match(/(\d{1,2})\/(\d{1,2})/);
+    // Detectar parcelamento no memo. Formatos aceitos:
+    //   "Mercadolivre*Fortsaau - Parcela 7/10"  (Nubank)
+    //   "AMAZON 02/06"                          (X/Y no FINAL do memo)
+    // Um "X/Y" no MEIO do texto sem a palavra "parcela" e ignorado de proposito,
+    // para uma data como "compra 03/06" nao virar parcelamento por engano.
+    const mParcExplicito = memo.match(/parcelas?\s*[:\-]?\s*(\d{1,3})\s*\/\s*(\d{1,3})/i);
+    const mParcFinal = memo.match(/(\d{1,2})\s*\/\s*(\d{1,2})\s*$/);
+    let parcAtual = null, parcTotal = null;
+    const mParc = mParcExplicito || mParcFinal;
+    if (mParc) {
+      const a = parseInt(mParc[1], 10), t = parseInt(mParc[2], 10);
+      // Sanidade: 1 <= atual <= total e total >= 2 (senao nao e parcelamento).
+      if (Number.isFinite(a) && Number.isFinite(t) && a >= 1 && t >= 2 && a <= t) {
+        parcAtual = a; parcTotal = t;
+      }
+    }
+    // Descricao limpa: remove "- Parcela 7/10", "(7/10)", "7/10" no final etc.
+    const descricaoLimpa = memo
+      .replace(/\s*[-\u2013\u2014\u00b7:]?\s*parcelas?\s*[:\-]?\s*\d{1,3}\s*\/\s*\d{1,3}\s*\)?/gi, ' ')
+      .replace(/\s+\(?\d{1,2}\s*\/\s*\d{1,2}\)?\s*$/, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/[\s\-\u2013\u2014\u00b7:]+$/, '')
+      .trim();
     lancamentos.push({
       data,
-      descricao: memo.replace(/\s+\d{1,2}\/\d{1,2}\s*$/, '').trim(),
+      descricao: descricaoLimpa || memo.trim(),
       valor,
       fitid: fitid || null,
-      parcela_atual: matchParc ? parseInt(matchParc[1]) : null,
-      total_parcelas: matchParc ? parseInt(matchParc[2]) : null,
+      parcela_atual: parcAtual,
+      total_parcelas: parcTotal,
     });
   }
   return lancamentos;
@@ -21911,6 +23029,9 @@ async function faturaLancarSelecionados() {
   const traduzirErroImportacao = (e) => {
     const bruto = [e?.message, e?.details, e?.hint, e?.code].filter(Boolean).join(' - ');
     const txt = bruto.toLowerCase();
+    if (String(e?.code) === 'PARCELA_DUPLICADA') {
+      return 'Lançamento DUPLICADO — esta parcela já foi provisionada em uma importação anterior nesta loja (o sistema reconhece pelo nº da parcela, valor e fornecedor, já que o código do banco muda a cada fatura). Bloqueado para evitar conta em dobro.';
+    }
     if (String(e?.code) === '23505' || txt.includes('uix_contasapagar_ofx_fitid_loja') || txt.includes('duplicate key')) {
       return 'Lançamento DUPLICADO — este item já foi importado antes nesta loja. O sistema bloqueou para evitar conta em dobro. Se quiser lançar mesmo assim, cadastre manualmente.';
     }
@@ -21946,6 +23067,25 @@ async function faturaLancarSelecionados() {
     } catch (_) { /* destaque visual é opcional */ }
   };
 
+  // Trava extra contra duplicidade de PARCELAS: o FITID muda a cada fatura,
+  // então o índice único sozinho não pega parcela já provisionada em
+  // importação anterior. Busca as parcelas ativas da loja uma única vez.
+  let parcelasExistentesLoja = [];
+  if (selecionados.some(i => i.parcela_atual && i.total_parcelas)) {
+    try {
+      const { data: pData, error: pErr } = await executarSemFiltrosTenantTemporario(() => sb
+        .from('contasapagar')
+        .select('id, ofx_fitid, fornecedor_id, valor_compra, data_compra, data_vencimento, numero_parcela, qtd_parcelas, loja_id')
+        .not('numero_parcela', 'is', null)
+        .is('excluido_em', null));
+      if (!pErr) {
+        parcelasExistentesLoja = (pData || []).filter(r => String(r.loja_id || '').trim() === String(lojaId || '').trim());
+      }
+    } catch (ePar) {
+      console.warn('Checagem de parcelas existentes indisponível:', ePar?.message || ePar);
+    }
+  }
+
   for (const item of selecionados) {
     try {
       // Resolver ou criar fornecedor
@@ -21980,6 +23120,24 @@ async function faturaLancarSelecionados() {
       const vencimentoBase = ehDataValida(item.vencimento_fatura) ? item.vencimento_fatura : dataCompra;
 
       const ehParceladoOFX = item.total_parcelas && item.parcela_atual;
+      // Bloqueio duro: esta parcela já existe (provisionada em importação anterior)?
+      if (ehParceladoOFX && parcelasExistentesLoja.length) {
+        const dupParcela = faturaEncontrarParcelaExistente(item, parcelasExistentesLoja, fornecedorId);
+        if (dupParcela) {
+          // Aproveita para vincular o FITID deste mês à parcela existente.
+          if (dupParcela.id && item.fitid && !dupParcela.ofx_fitid) {
+            try {
+              await sb.from('contasapagar')
+                .update({ ofx_fitid: String(item.fitid) })
+                .eq('id', dupParcela.id)
+                .is('excluido_em', null)
+                .is('ofx_fitid', null);
+              dupParcela.ofx_fitid = String(item.fitid);
+            } catch (_) { /* vínculo é opcional */ }
+          }
+          throw { code: 'PARCELA_DUPLICADA' };
+        }
+      }
       const qtdParcelas = ehParceladoOFX
         ? item.total_parcelas - item.parcela_atual + 1  // parcelas restantes incluindo atual
         : Math.max(1, parseInt(item._parcelasManuais, 10) || 1); // provisionamento manual
@@ -21991,10 +23149,15 @@ async function faturaLancarSelecionados() {
 
       // Gerar linhas das parcelas (campos idênticos ao cadastro manual que funciona)
       const linhas = Array.from({ length: qtdParcelas }, (_, i) => {
-        // Provisionamento manual com dia de vencimento do fornecedor: avança mês a mês
-        // mantendo o dia configurado. Caso contrário, soma 30 dias (comportamento atual).
+        // Vencimentos:
+        //  - Parcela ATUAL do OFX (i=0): respeita o vencimento definido na revisão.
+        //  - Parcelas seguintes (OFX) e provisionamento manual: se o fornecedor tem
+        //    dia de vencimento configurado, avança mês a mês mantendo esse dia;
+        //    senão, soma 30 dias (comportamento antigo).
         let venc;
-        if (!ehParceladoOFX && diaVencForn) {
+        if (ehParceladoOFX && i === 0) {
+          venc = ehDataValida(vencimentoBase) ? vencimentoBase : dataCompra;
+        } else if (diaVencForn) {
           const baseISO = ehDataValida(vencimentoBase) ? vencimentoBase : dataCompra;
           const dBase = new Date(`${baseISO}T12:00:00`);
           const anoB = dBase.getFullYear();
@@ -22008,6 +23171,7 @@ async function faturaLancarSelecionados() {
         } else {
           venc = adicionarDiasDataISOFinanceiro(vencimentoBase, i * intervaloDias) || vencimentoBase;
         }
+        venc = ajustarVencimentoParaDiaUtilFinanceiro(venc); // sáb/dom/feriado → dia útil
         const numeroParcela = ehParceladoOFX ? item.parcela_atual + i : i + 1;
         const totalRotulo = ehParceladoOFX ? item.total_parcelas : qtdParcelas;
         return {
@@ -22019,9 +23183,11 @@ async function faturaLancarSelecionados() {
           data_pagamento: null,
           data_vencimento: venc,
           valor_compra: Number(Number(item.valor || 0).toFixed(2)),
-          observacao: (qtdParcelas > 1 || ehParceladoOFX)
-            ? `Importado do arquivo bancário · ${numeroParcela}/${totalRotulo}`
-            : 'Importado do arquivo bancário',
+          observacao: (() => {
+            const obsItem = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
+            const base = obsItem ? `${obsItem} · Importado do arquivo bancário` : 'Importado do arquivo bancário';
+            return (qtdParcelas > 1 || ehParceladoOFX) ? `${base} · ${numeroParcela}/${totalRotulo}` : base;
+          })(),
           qtd_parcelas: ehParceladoOFX ? item.total_parcelas : qtdParcelas,
           intervalo_parcelas_dias: qtdParcelas > 1 ? intervaloDias : null,
           numero_parcela: numeroParcela,
@@ -22034,6 +23200,16 @@ async function faturaLancarSelecionados() {
 
       const { error } = await sb.from('contasapagar').insert(linhas);
       if (error) throw error;
+      // Alimenta a lista de parcelas existentes: se o MESMO arquivo trouxer o
+      // item repetido, a duplicata é barrada ainda nesta importação.
+      if (ehParceladoOFX) {
+        linhas.forEach(l => parcelasExistentesLoja.push({
+          id: null, ofx_fitid: l.ofx_fitid, fornecedor_id: l.fornecedor_id,
+          valor_compra: l.valor_compra, data_compra: l.data_compra,
+          data_vencimento: l.data_vencimento, numero_parcela: l.numero_parcela,
+          qtd_parcelas: l.qtd_parcelas, loja_id: l.loja_id,
+        }));
+      }
       lancados += linhas.length;
       titulosLancados += 1;
       if (linhas.length > 1) titulosComParcelas += 1;
@@ -22278,7 +23454,8 @@ function preencherSelectCategoriasCompra() {
 }
 
 async function salvarCategoriaCompra() {
-  const nome = String(document.getElementById('categoriaNome')?.value || '').trim();
+  // Padrão de cadastro: nome de categoria sempre em MAIÚSCULAS.
+  const nome = String(document.getElementById('categoriaNome')?.value || '').trim().toUpperCase();
   const icone = String(document.getElementById('categoriaIcone')?.value || '').trim();
   const cor = String(document.getElementById('categoriaCor')?.value || '#3b82f6').trim();
   const desc = String(document.getElementById('categoriaDesc')?.value || '').trim();
@@ -23653,7 +24830,7 @@ function renderizarListaFornecedoresFinanceiro(itens) {
     return `
     <div class="item">
       <div class="item-info">
-        <div class="item-nome">${escaparHtmlBasico(item.nome || '-')}${grupoNome ? ` <span style="font-size:10px;color:var(--text-muted);font-weight:400;">· ${escaparHtmlBasico(grupoNome)}</span>` : ''}</div>
+        <div class="item-nome">${item.cor ? `<span style="display:inline-block;width:11px;height:11px;border-radius:99px;background:${escaparHtmlBasico(item.cor)};margin-right:6px;vertical-align:baseline;" title="Cor nos gráficos"></span>` : ''}${escaparHtmlBasico(item.nome || '-')}${grupoNome ? ` <span style="font-size:10px;color:var(--text-muted);font-weight:400;">· ${escaparHtmlBasico(grupoNome)}</span>` : ''}</div>
         <div class="item-detalhe">Loja: ${escaparHtmlBasico(nomeLoja || '-')} · CPF/CNPJ: ${item.cnpj ? formatarCpfCnpjFinanceiro(item.cnpj) : '-'} · Telefone: ${item.telefone || '-'} · E-mail: ${item.email || '-'}</div>
       </div>
       <div class="item-actions">
@@ -23664,11 +24841,26 @@ function renderizarListaFornecedoresFinanceiro(itens) {
   }).join('') + '</div>';
 }
 
+function fornecedorCorAoEscolher(hex) {
+  const hid = document.getElementById('fornecedorCorValor');
+  if (hid) hid.value = String(hex || '').trim();
+  const pick = document.getElementById('fornecedorCor');
+  if (pick) pick.style.opacity = '1';
+}
+
+function fornecedorCorLimpar() {
+  const hid = document.getElementById('fornecedorCorValor');
+  if (hid) hid.value = '';
+  const pick = document.getElementById('fornecedorCor');
+  if (pick) { pick.value = '#3b82f6'; pick.style.opacity = '.4'; }
+}
+
 function limparFormularioFornecedorFinanceiro() {
   fornecedorFinanceiroEmEdicaoId = null;
-  ['fornecedorNome','fornecedorCnpj','fornecedorTelefone','fornecedorEmail','fornecedorDiaVencimento'].forEach(id => {
+  ['fornecedorNome','fornecedorCnpj','fornecedorTelefone','fornecedorEmail','fornecedorDiaVencimento','fornecedorDiaFechamento'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  fornecedorCorLimpar();
   const grp = document.getElementById('fornecedorGrupoId');
   if (grp) grp.value = '';
   const btnSalvar = document.getElementById('btnSalvarFornecedorFinanceiro');
@@ -23759,6 +24951,18 @@ async function salvarFornecedorFinanceiro() {
     }
     diaVencimento = d;
   }
+  const diaFechTexto = String(document.getElementById('fornecedorDiaFechamento')?.value || '').trim();
+  let diaFechamento = null;
+  if (diaFechTexto) {
+    const f = Number.parseInt(diaFechTexto, 10);
+    if (!Number.isFinite(f) || f < 1 || f > 31) {
+      setMsg('msgFornecedorFinanceiro', 'Dia de fechamento deve ser entre 1 e 31.', 'err');
+      return;
+    }
+    diaFechamento = f;
+  }
+  const corHex = String(document.getElementById('fornecedorCorValor')?.value || '').trim();
+  const corFornecedor = /^#[0-9a-fA-F]{6}$/.test(corHex) ? corHex.toLowerCase() : null;
   const payload = {
     nome,
     cnpj: documentoValidado.valor || null,
@@ -23766,6 +24970,8 @@ async function salvarFornecedorFinanceiro() {
     email: email || null,
     grupo_id: grupoId,
     dia_vencimento: diaVencimento,
+    dia_fechamento: diaFechamento,
+    cor: corFornecedor,
     loja_id: tenantFornecedor.loja_id,
     empresa_id: tenantFornecedor.empresa_id,
   };
@@ -23811,6 +25017,15 @@ function editarFornecedorFinanceiro(id) {
   document.getElementById('fornecedorEmail').value = item.email || '';
   const campoDiaVenc = document.getElementById('fornecedorDiaVencimento');
   if (campoDiaVenc) campoDiaVenc.value = item.dia_vencimento != null ? item.dia_vencimento : '';
+  const campoDiaFech = document.getElementById('fornecedorDiaFechamento');
+  if (campoDiaFech) campoDiaFech.value = item.dia_fechamento != null ? item.dia_fechamento : '';
+  if (item.cor && /^#[0-9a-fA-F]{6}$/.test(String(item.cor))) {
+    const pick = document.getElementById('fornecedorCor');
+    if (pick) pick.value = item.cor;
+    fornecedorCorAoEscolher(item.cor);
+  } else {
+    fornecedorCorLimpar();
+  }
   const grp = document.getElementById('fornecedorGrupoId');
   if (grp) grp.value = item.grupo_id || '';
   const btnSalvar = document.getElementById('btnSalvarFornecedorFinanceiro');
@@ -23986,6 +25201,51 @@ function obterParcelasRelacionadasContaAPagarFinanceiro(item = {}) {
     .sort((a, b) => (Number(a.numero_parcela || 0) - Number(b.numero_parcela || 0)) || String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || '')));
 }
 
+// Empurra um vencimento que caia em sábado, domingo ou feriado nacional
+// para o PRÓXIMO DIA ÚTIL. Reaproveita o calendário de feriados das escalas
+// (nacionais + móveis: Carnaval, Sexta-feira Santa, Corpus Christi).
+function ajustarVencimentoParaDiaUtilFinanceiro(dataISO) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dataISO || ''))) return dataISO;
+  const d = new Date(`${dataISO}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return dataISO;
+  const isoDe = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  const ehFeriado = (dt) => {
+    try {
+      if (typeof obterFeriadosNacionaisEscala !== 'function') return false;
+      return !!obterFeriadosNacionaisEscala(dt.getFullYear())[isoDe(dt)];
+    } catch (_) { return false; }
+  };
+  let protecao = 0; // nunca itera mais que 15 dias (segurança)
+  while (protecao < 15 && (d.getDay() === 0 || d.getDay() === 6 || ehFeriado(d))) {
+    d.setDate(d.getDate() + 1);
+    protecao++;
+  }
+  return isoDe(d);
+}
+
+// Vencimento da parcela idx (0-based) a partir do vencimento base.
+// Intervalo vazio ou 30 = MENSAL: mantém o DIA do vencimento base mês a mês
+// (ex.: base 08/07 → 08/08, 08/09... ajustando meses curtos como fevereiro).
+// Qualquer outro intervalo (15, 45...) continua somando dias exatos.
+// idx pode ser negativo (recálculo de parcelas anteriores na edição).
+function calcularVencimentoParcelaFinanceiro(baseISO, idx, intervaloDias) {
+  const n = Number.parseInt(String(intervaloDias ?? ''), 10);
+  const ehMensal = !Number.isFinite(n) || n <= 0 || n === 30;
+  if (!ehMensal) {
+    return ajustarVencimentoParaDiaUtilFinanceiro(adicionarDiasDataISOFinanceiro(baseISO, idx * n) || baseISO);
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(baseISO || ''))) return baseISO;
+  const [ano, mes, dia] = baseISO.split('-').map(Number);
+  const alvo = (mes - 1) + idx;
+  const anoV = ano + Math.floor(alvo / 12);
+  const mesV = ((alvo % 12) + 12) % 12 + 1;
+  const ultimo = new Date(anoV, mesV, 0).getDate();
+  const diaV = Math.min(dia, ultimo);
+  // O dia âncora vem SEMPRE do vencimento base (ex.: dia 10), mês a mês —
+  // o ajuste de fim de semana de um mês não desloca os meses seguintes.
+  return ajustarVencimentoParaDiaUtilFinanceiro(`${anoV}-${String(mesV).padStart(2, '0')}-${String(diaV).padStart(2, '0')}`);
+}
+
 async function salvarContaAPagarFinanceiro() {
   const campoFornecedor = document.getElementById('contaFornecedorBusca');
   const campoFornecedorId = document.getElementById('contaFornecedorId');
@@ -24123,10 +25383,9 @@ async function salvarContaAPagarFinanceiro() {
 
       for (const parcela of parcelasRelacionadas) {
         const numeroParcela = Number.parseInt(String(parcela.numero_parcela || 1), 10) || 1;
-        const deslocamento = (numeroParcela - numeroParcelaAtual) * intervaloBase;
         const payloadParcela = {
           ...payloadGrupoBase,
-          data_vencimento: adicionarDiasDataISOFinanceiro(dataVencimento, deslocamento) || dataVencimento,
+          data_vencimento: calcularVencimentoParcelaFinanceiro(dataVencimento, numeroParcela - numeroParcelaAtual, intervaloBase) || dataVencimento,
         };
         const { error: erroParcela } = await sb
           .from('contasapagar')
@@ -24209,7 +25468,7 @@ async function salvarContaAPagarFinanceiro() {
   const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
     ...payloadBase,
     data_pagamento: null,
-    data_vencimento: adicionarDiasDataISOFinanceiro(dataVencimento, idx * (intervaloParcelasDiasFinal || 0)),
+    data_vencimento: calcularVencimentoParcelaFinanceiro(dataVencimento, idx, intervaloParcelasDiasFinal),
     numero_parcela: idx + 1,
     grupo_parcelas_id: grupoParcelasId,
     criado_por_id: atorAuditoria.funcionarioId || null,
@@ -24289,7 +25548,72 @@ function limparFiltroContasAPagarFinanceiro() {
   carregarContasAPagarFinanceiro();
 }
 
+// ── Filtro de categorias (multi-seleção por checkbox) das contas a pagar ──
+let filtroContaAPagarCategoriasSelecionadas = new Set();
+
+function toggleDropdownCategoriasContaAPagar(forcarFechar) {
+  const dd = document.getElementById('dropdownCategoriasContaAPagar');
+  if (!dd) return;
+  const abrir = forcarFechar === true ? false : dd.style.display === 'none';
+  if (abrir) {
+    renderizarDropdownCategoriasContaAPagar();
+    dd.style.display = 'block';
+    setTimeout(() => document.addEventListener('click', fecharDropdownCategoriasForaContaAPagar), 0);
+  } else {
+    dd.style.display = 'none';
+    document.removeEventListener('click', fecharDropdownCategoriasForaContaAPagar);
+  }
+}
+
+function fecharDropdownCategoriasForaContaAPagar(ev) {
+  const wrap = document.getElementById('filtroContaAPagarCategoriasWrap');
+  if (wrap && !wrap.contains(ev.target)) toggleDropdownCategoriasContaAPagar(true);
+}
+
+function renderizarDropdownCategoriasContaAPagar() {
+  const dd = document.getElementById('dropdownCategoriasContaAPagar');
+  if (!dd) return;
+  const categorias = [...(categoriasCompraCache || [])].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+  const linha = (valor, nome) => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--text);">
+      <input type="checkbox" style="width:13px;height:13px;flex-shrink:0;" ${filtroContaAPagarCategoriasSelecionadas.has(valor) ? 'checked' : ''}
+        onchange="alternarCategoriaFiltroContaAPagar('${valor}', this.checked)"> ${nome}
+    </label>`;
+  dd.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="font-size:10px;letter-spacing:.5px;color:var(--text-muted);font-weight:700;">CATEGORIAS</span>
+      <button class="btn btn-ghost btn-sm" type="button" style="font-size:10px;padding:2px 8px;" onclick="limparCategoriasFiltroContaAPagar()">Limpar</button>
+    </div>
+    ${linha('__sem__', '<i>— Sem categoria</i>')}
+    ${categorias.map(c => linha(String(c.id), escaparHtmlBasico(c.nome || '-'))).join('') || '<div class="empty" style="padding:8px;">Nenhuma categoria cadastrada.</div>'}`;
+}
+
+function alternarCategoriaFiltroContaAPagar(valor, marcado) {
+  if (marcado) filtroContaAPagarCategoriasSelecionadas.add(valor);
+  else filtroContaAPagarCategoriasSelecionadas.delete(valor);
+  atualizarBotaoCategoriasContaAPagar();
+  carregarContasAPagarFinanceiro();
+}
+
+function limparCategoriasFiltroContaAPagar() {
+  filtroContaAPagarCategoriasSelecionadas.clear();
+  renderizarDropdownCategoriasContaAPagar();
+  atualizarBotaoCategoriasContaAPagar();
+  carregarContasAPagarFinanceiro();
+}
+
+function atualizarBotaoCategoriasContaAPagar() {
+  const btn = document.getElementById('btnFiltroContaAPagarCategorias');
+  if (!btn) return;
+  const n = filtroContaAPagarCategoriasSelecionadas.size;
+  btn.textContent = n ? `Categorias (${n}) ▾` : 'Categorias ▾';
+  btn.style.fontWeight = n ? '700' : '';
+}
+
 function resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel = false } = {}) {
+  filtroContaAPagarCategoriasSelecionadas.clear();
+  atualizarBotaoCategoriasContaAPagar();
+  toggleDropdownCategoriasContaAPagar(true);
   const busca = document.getElementById('filtroContaAPagarBusca');
   const cadastroInicio = document.getElementById('filtroContaAPagarCadastroInicio');
   const cadastroFim = document.getElementById('filtroContaAPagarCadastroFim');
@@ -24419,7 +25743,7 @@ async function carregarContasAPagarFinanceiro() {
   const filtroVencimentoInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoInicio');
   const filtroVencimentoFim = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoFim');
   const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasContasAPagarFinanceiro');
-  if (filtroBuscaBruto || filtroFornecedorBruto || filtroCadastroInicio || filtroCadastroFim || filtroVencimentoInicio || filtroVencimentoFim) contasAPagarListaVisivel = true;
+  if (filtroBuscaBruto || filtroFornecedorBruto || filtroCadastroInicio || filtroCadastroFim || filtroVencimentoInicio || filtroVencimentoFim || filtroContaAPagarCategoriasSelecionadas.size) contasAPagarListaVisivel = true;
   atualizarEstadoListaContasAPagarFinanceiro();
   lista.innerHTML = '<div class="empty">Carregando...</div>';
 
@@ -24436,7 +25760,8 @@ async function carregarContasAPagarFinanceiro() {
   // Recorte padrão ao abrir a tela (sem nenhum filtro do usuário): mostra
   // vencidas em aberto + vencimentos de hoje até +30 dias, em ordem de vencimento.
   const semFiltroUsuario = !filtroBuscaBruto && !filtroFornecedorBruto && !filtroCadastroInicio
-    && !filtroCadastroFim && !filtroVencimentoInicio && !filtroVencimentoFim && !filtroStatus;
+    && !filtroCadastroFim && !filtroVencimentoInicio && !filtroVencimentoFim && !filtroStatus
+    && !filtroContaAPagarCategoriasSelecionadas.size;
   const aplicarPadrao30Dias = semFiltroUsuario;
   const hojeISOPadrao = hoje();
   const limite30DiasISO = (() => {
@@ -24489,7 +25814,18 @@ async function carregarContasAPagarFinanceiro() {
     const parcelaTexto = `${item.numero_parcela || 1}/${item.qtd_parcelas || 1}`;
     const intervaloTexto = item.intervalo_parcelas_dias ? `${item.intervalo_parcelas_dias} dias` : '';
     const status = item.data_pagamento ? 'pago' : 'pendente';
+    // Campos exibidos no card também entram na busca: categoria, forma, conta, quem cadastrou.
+    const nomeCategoria = item.categoria_id
+      ? String((categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || '')
+      : '';
+    const nomeForma = String(item.formas_pagamento?.nome || item.forma_pagamento || '').trim();
+    const nomeContaFin = String(item.contas_financeiras?.nome || '').trim();
+    const nomeCriadoPor = String(item.criado_por_nome || '').trim();
     const textoBuscaConta = [
+      nomeCategoria,
+      nomeForma,
+      nomeContaFin,
+      nomeCriadoPor,
       nomeFornecedor,
       observacaoConta,
       valorFormatado,
@@ -24513,6 +25849,10 @@ async function carregarContasAPagarFinanceiro() {
       .some(valor => String(valor || '').includes(filtroBuscaDigitos));
     const bateBusca = !filtroBusca || bateBuscaTexto || bateBuscaNumero;
     const bateFornecedor = !filtroFornecedor || textoFinanceiroNormalizado(nomeFornecedor).includes(filtroFornecedor);
+    const bateCategoria = !filtroContaAPagarCategoriasSelecionadas.size
+      || (item.categoria_id
+        ? filtroContaAPagarCategoriasSelecionadas.has(String(item.categoria_id))
+        : filtroContaAPagarCategoriasSelecionadas.has('__sem__'));
     const bateStatus = !filtroStatus || filtroStatus === status;
     const bateCadastro = dentroDoPeriodoCadastroContaAPagar(item, filtroCadastroInicio, filtroCadastroFim);
     const bateVencimento = dentroDoPeriodoVencimentoContaAPagar(item, filtroVencimentoInicio, filtroVencimentoFim);
@@ -24530,7 +25870,7 @@ async function carregarContasAPagarFinanceiro() {
       }
       // Demais casos: vencidas em aberto (pendentes) ou dentro dos próximos 30 dias -> traz.
     }
-    return bateBusca && bateFornecedor && bateStatus && bateCadastro && bateVencimento && batePadrao30Dias;
+    return bateBusca && bateFornecedor && bateCategoria && bateStatus && bateCadastro && bateVencimento && batePadrao30Dias;
   });
 
   const lojaAtualIdSelecao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
@@ -25618,12 +26958,19 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
         <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Pagar com quais contas?</div>
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">
           Total da baixa: <b style="color:var(--text);">${escaparHtmlBasico(formatarMoedaBRFinanceiro(total))}</b>${tituloDescr ? ` · ${escaparHtmlBasico(tituloDescr)}` : ''}.
-          Marque uma ou mais contas e informe quanto sai de cada uma. Ao marcar, o valor é preenchido automaticamente com o saldo disponível.
+          Marque uma ou mais contas e informe quanto sai de cada uma. <span id="bcmDicaPreenchimento">Ao marcar, o valor é preenchido automaticamente com o saldo disponível.</span>
         </div>
         ${linhas}
-        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--text-muted);cursor:pointer;">
-          <input type="checkbox" id="bcmMovSaldo" checked style="width:13px;height:13px;"> Movimentar saldo das contas (registrar saída no extrato)
-        </label>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px;border:1px solid var(--border);border-radius:10px;padding:10px;">
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text);cursor:pointer;">
+            <input type="radio" name="bcmModo" id="bcmModoMov" checked style="width:13px;height:13px;margin-top:1px;flex-shrink:0;">
+            <span><b>💸 Movimentar saldo das contas</b><br><span style="color:var(--text-muted);">Registra a saída no extrato e desconta do saldo de cada conta marcada.</span></span>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text);cursor:pointer;">
+            <input type="radio" name="bcmModo" id="bcmModoReg" style="width:13px;height:13px;margin-top:1px;flex-shrink:0;">
+            <span><b>📝 Não movimentar conta — apenas baixar</b><br><span style="color:var(--text-muted);">Muda o status para pago e guarda a conta marcada só como registro. O caixa/cofre e o extrato não são alterados.</span></span>
+          </label>
+        </div>
         <div id="bcmResumo" style="margin-top:12px;font-size:12px;font-weight:600;color:var(--text);"></div>
         <div id="bcmFaltaBox" style="display:none;margin-top:10px;padding:10px;border:1px solid var(--border-mid);border-radius:10px;">
           <div style="font-size:12px;font-weight:700;color:var(--red, #ff6b6b);margin-bottom:6px;" id="bcmFaltaTexto"></div>
@@ -25672,6 +27019,18 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
       return { sel, alocado, diferenca };
     };
 
+    // Modo da baixa: movimentar saldo (padrão) ou apenas registrar.
+    const modoMovimentar = () => overlay.querySelector('#bcmModoMov')?.checked !== false;
+
+    // Sugestão de preenchimento ao marcar uma conta:
+    //  - Movimentando saldo: limita ao saldo disponível (comportamento atual).
+    //  - Apenas registro: preenche com TODO o valor faltante (o saldo não importa).
+    const sugerirValorPara = (c, faltaAtual) => {
+      if (!modoMovimentar()) return Number(Math.max(faltaAtual, 0).toFixed(2));
+      const disponivel = Math.max(Number(c.saldo_atual || 0), 0);
+      return Number(Math.min(disponivel, Math.max(faltaAtual, 0)).toFixed(2));
+    };
+
     contas.forEach(c => {
       const chk = overlay.querySelector(`[data-bcm-chk="${c.id}"]`);
       const val = overlay.querySelector(`[data-bcm-val="${c.id}"]`);
@@ -25681,10 +27040,7 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
           val.disabled = false;
           val.style.opacity = '1';
           const { diferenca } = atualizarResumo();
-          const faltaAtual = Math.max(diferenca, 0);
-          const disponivel = Math.max(Number(c.saldo_atual || 0), 0);
-          const sugestao = Number(Math.min(disponivel, faltaAtual).toFixed(2));
-          val.value = valorMoedaInputFinanceiro(sugestao);
+          val.value = valorMoedaInputFinanceiro(sugerirValorPara(c, diferenca));
         } else {
           val.value = '';
           val.disabled = true;
@@ -25695,6 +27051,31 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
       });
       val.addEventListener('input', () => { setMsgModal(''); atualizarResumo(); });
     });
+
+    // Ao trocar o modo, refaz as sugestões das contas já marcadas
+    // (no modo registro, a primeira conta marcada absorve o total faltante).
+    const reSugerirValores = () => {
+      const dica = overlay.querySelector('#bcmDicaPreenchimento');
+      if (dica) dica.textContent = modoMovimentar()
+        ? 'Ao marcar, o valor é preenchido automaticamente com o saldo disponível.'
+        : 'Ao marcar, o valor é preenchido com o total faltante — é só registro, o saldo das contas não muda.';
+      contas.forEach(c => {
+        const chk = overlay.querySelector(`[data-bcm-chk="${c.id}"]`);
+        const val = overlay.querySelector(`[data-bcm-val="${c.id}"]`);
+        if (chk?.checked && val) val.value = '';
+      });
+      contas.forEach(c => {
+        const chk = overlay.querySelector(`[data-bcm-chk="${c.id}"]`);
+        const val = overlay.querySelector(`[data-bcm-val="${c.id}"]`);
+        if (!chk?.checked || !val) return;
+        const { diferenca } = atualizarResumo();
+        val.value = valorMoedaInputFinanceiro(sugerirValorPara(c, diferenca));
+      });
+      setMsgModal('');
+      atualizarResumo();
+    };
+    overlay.querySelector('#bcmModoMov')?.addEventListener('change', reSugerirValores);
+    overlay.querySelector('#bcmModoReg')?.addEventListener('change', reSugerirValores);
     atualizarResumo();
 
     const mostrarEscolhaContaNegativa = (sel, falta) => {
@@ -25702,7 +27083,12 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
       const texto = overlay.querySelector('#bcmFaltaTexto');
       const botoes = overlay.querySelector('#bcmFaltaBotoes');
       if (!box || !texto || !botoes) return;
+      const registroApenas = !modoMovimentar();
       texto.textContent = `Falta ${formatarMoedaBRFinanceiro(falta)} para cobrir o total.`;
+      const dicaBox = box.querySelector('div:nth-child(2)');
+      if (dicaBox) dicaBox.textContent = registroApenas
+        ? 'Escolha em qual conta registrar a diferença (o saldo não será alterado):'
+        : 'Escolha qual conta vai cobrir a diferença e ficar negativa:';
       botoes.innerHTML = '';
       sel.forEach(c => {
         const saldoFinal = Number((c.saldo_atual - c.valor - falta).toFixed(2));
@@ -25710,7 +27096,9 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
         btn.type = 'button';
         btn.className = 'btn btn-ghost';
         btn.style.cssText = 'font-size:11px;padding:6px 10px;';
-        btn.textContent = `${c.nome} (ficará em ${formatarMoedaBRFinanceiro(saldoFinal)})`;
+        btn.textContent = registroApenas
+          ? c.nome
+          : `${c.nome} (ficará em ${formatarMoedaBRFinanceiro(saldoFinal)})`;
         btn.onclick = () => {
           const val = overlay.querySelector(`[data-bcm-val="${c.id}"]`);
           if (val) val.value = valorMoedaInputFinanceiro(Number((c.valor + falta).toFixed(2)));
@@ -25743,16 +27131,19 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
         mostrarEscolhaContaNegativa(sel, diferenca);
         return;
       }
-      const negativas = sel.filter(c => Number((c.valor - c.saldo_atual).toFixed(2)) > 0.004);
-      if (negativas.length) {
-        const lista = negativas
-          .map(c => `• ${c.nome}: saldo ${formatarMoedaBRFinanceiro(c.saldo_atual)} → ficará em ${formatarMoedaBRFinanceiro(Number((c.saldo_atual - c.valor).toFixed(2)))}`)
-          .join('\n');
-        if (!confirm(`Atenção: a(s) conta(s) abaixo ficará(ão) NEGATIVA(S) após esta baixa:\n\n${lista}\n\nConfirmar mesmo assim?`)) return;
+      // Só avisa sobre saldo negativo quando o saldo será de fato movimentado.
+      if (modoMovimentar()) {
+        const negativas = sel.filter(c => Number((c.valor - c.saldo_atual).toFixed(2)) > 0.004);
+        if (negativas.length) {
+          const lista = negativas
+            .map(c => `• ${c.nome}: saldo ${formatarMoedaBRFinanceiro(c.saldo_atual)} → ficará em ${formatarMoedaBRFinanceiro(Number((c.saldo_atual - c.valor).toFixed(2)))}`)
+            .join('\n');
+          if (!confirm(`Atenção: a(s) conta(s) abaixo ficará(ão) NEGATIVA(S) após esta baixa:\n\n${lista}\n\nConfirmar mesmo assim?`)) return;
+        }
       }
       fechar({
         contas: sel.map(c => ({ id: c.id, nome: c.nome, valor: Number(c.valor.toFixed(2)) })),
-        movimentarSaldo: overlay.querySelector('#bcmMovSaldo')?.checked !== false,
+        movimentarSaldo: modoMovimentar(),
       });
     };
   });
@@ -27742,6 +29133,43 @@ function definirHorarioLancamentoTarefa(tarefaId, valor) {
   horarioLancamentoPorTarefa[idTarefa] = hora;
 }
 
+// ─── Repetição: dias entre relançamento (intervalo) e duração (se repete por dias) ───
+function obterIntervaloLancamentoTarefa(tarefaId) {
+  const idTarefa = String(tarefaId || '');
+  const valor = parseInt(intervaloLancamentoPorTarefa[idTarefa], 10);
+  if (!Number.isFinite(valor) || valor < 1) return 1;
+  return valor;
+}
+
+function definirIntervaloLancamentoTarefa(tarefaId, valor) {
+  const idTarefa = String(tarefaId || '');
+  if (!idTarefa) return;
+  const num = parseInt(valor, 10);
+  if (!Number.isFinite(num) || num < 1) {
+    delete intervaloLancamentoPorTarefa[idTarefa];
+    return;
+  }
+  intervaloLancamentoPorTarefa[idTarefa] = Math.min(num, 365);
+}
+
+function obterDuracaoLancamentoTarefa(tarefaId) {
+  const idTarefa = String(tarefaId || '');
+  const valor = parseInt(duracaoLancamentoPorTarefa[idTarefa], 10);
+  if (!Number.isFinite(valor) || valor < 1) return 0;
+  return valor;
+}
+
+function definirDuracaoLancamentoTarefa(tarefaId, valor) {
+  const idTarefa = String(tarefaId || '');
+  if (!idTarefa) return;
+  const num = parseInt(valor, 10);
+  if (!Number.isFinite(num) || num < 1) {
+    delete duracaoLancamentoPorTarefa[idTarefa];
+    return;
+  }
+  duracaoLancamentoPorTarefa[idTarefa] = Math.min(num, 365);
+}
+
 function obterDiasLancamentoSelecionados(tarefaId, diasPadrao = 'todos') {
   const idTarefa = String(tarefaId || '');
   const ordem = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
@@ -27988,6 +29416,37 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
           </div>
           <div class="tarefa-funcionarios-grid">${diasHtml}</div>
         </div>
+        <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-repeticao">
+          <span class="tarefa-funcionarios-label">Repetição</span>
+          <div class="tarefa-repeticao-campos">
+            <label class="tarefa-repeticao-campo">
+              <span>A cada (dias)</span>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                step="1"
+                placeholder="1"
+                value="${obterIntervaloLancamentoTarefa(tarefa.id) > 1 ? obterIntervaloLancamentoTarefa(tarefa.id) : ''}"
+                onchange="definirIntervaloLancamentoTarefa('${tarefaIdEscapado}', this.value)"
+                title="Dias entre cada relançamento. Ex.: 1 = todos os dias, 2 = a cada 2 dias."
+              >
+            </label>
+            <label class="tarefa-repeticao-campo">
+              <span>Por (dias)</span>
+              <input
+                type="number"
+                min="1"
+                max="365"
+                step="1"
+                placeholder="365"
+                value="${obterDuracaoLancamentoTarefa(tarefa.id) > 0 ? obterDuracaoLancamentoTarefa(tarefa.id) : ''}"
+                onchange="definirDuracaoLancamentoTarefa('${tarefaIdEscapado}', this.value)"
+                title="Por quantos dias a tarefa deve se repetir. Ex.: 365 = durante um ano."
+              >
+            </label>
+          </div>
+        </div>
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-horario">
           <span class="tarefa-funcionarios-label">Hora</span>
           <label class="tarefa-lancamento-horario">
@@ -28076,7 +29535,150 @@ function obterTarefasFiltradasConsulta() {
     });
   }
 
+  // ── Filtros avançados (rodapé) ──
+  const avBusca = String(document.getElementById('filtroTarefaAvBusca')?.value || '').trim().toLowerCase();
+  if (avBusca) {
+    dados = dados.filter(item => {
+      const texto = [item.nome || '', item.descricao || ''].join(' ').toLowerCase();
+      return texto.includes(avBusca);
+    });
+  }
+
+  const avFuncionario = String(document.getElementById('filtroTarefaAvFuncionario')?.value || '').trim();
+  if (avFuncionario) {
+    dados = dados.filter(item => String(item.funcionario_id || '') === avFuncionario);
+  }
+
+  const selTarefa = document.getElementById('filtroTarefaAvTarefa');
+  if (selTarefa) {
+    const idsSelecionados = Array.from(selTarefa.selectedOptions || []).map(o => String(o.value)).filter(Boolean);
+    if (idsSelecionados.length) {
+      const setIds = new Set(idsSelecionados);
+      dados = dados.filter(item => setIds.has(String(item.id)));
+    }
+  }
+
+  const avDataInicio = String(document.getElementById('filtroTarefaAvDataInicio')?.value || '').trim();
+  const avDataFim = String(document.getElementById('filtroTarefaAvDataFim')?.value || '').trim();
+  if (avDataInicio || avDataFim) {
+    dados = dados.filter(item => {
+      const dataCad = String(item.created_at || item.criado_em || '').slice(0, 10);
+      if (!dataCad) return false; // sem data de cadastro não passa no filtro de data
+      if (avDataInicio && dataCad < avDataInicio) return false;
+      if (avDataFim && dataCad > avDataFim) return false;
+      return true;
+    });
+  }
+
   return dados;
+}
+
+function popularFiltrosAvancadosTarefas() {
+  // Evita reconstruir os selects a cada tecla (perde foco/seleção). Só refaz quando a lista de tarefas muda.
+  const assinatura = (tarefasCadastradasCache || []).map(t => String(t.id)).sort().join('|');
+  if (popularFiltrosAvancadosTarefas._assinatura === assinatura
+      && document.getElementById('filtroTarefaAvTarefa')?.options?.length) {
+    return;
+  }
+  popularFiltrosAvancadosTarefas._assinatura = assinatura;
+
+  // Funcionários (a partir do cache de funcionários ativos das tarefas + responsáveis presentes)
+  const selFunc = document.getElementById('filtroTarefaAvFuncionario');
+  if (selFunc) {
+    const valorAtual = selFunc.value;
+    const mapaFunc = new Map();
+    (funcionariosAtivosTarefa || []).forEach(f => { if (f?.id) mapaFunc.set(String(f.id), f.nome || 'Funcionário'); });
+    (tarefasCadastradasCache || []).forEach(t => {
+      if (t?.funcionario_id && t?.funcionarios?.nome) mapaFunc.set(String(t.funcionario_id), t.funcionarios.nome);
+    });
+    const ordenados = Array.from(mapaFunc.entries()).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+    selFunc.innerHTML = '<option value="">- Todos -</option>' +
+      ordenados.map(([id, nome]) => `<option value="${escaparHtmlBasico(id)}">${escaparHtmlBasico(nome)}</option>`).join('');
+    if (Array.from(selFunc.options).some(o => o.value === valorAtual)) selFunc.value = valorAtual;
+  }
+
+  // Tarefas (multi-select)
+  const selTarefa = document.getElementById('filtroTarefaAvTarefa');
+  if (selTarefa) {
+    const selecionadosAntes = new Set(Array.from(selTarefa.selectedOptions || []).map(o => String(o.value)));
+    const tarefasOrdenadas = [...(tarefasCadastradasCache || [])].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
+    selTarefa.innerHTML = tarefasOrdenadas
+      .map(t => `<option value="${escaparHtmlBasico(String(t.id))}" ${selecionadosAntes.has(String(t.id)) ? 'selected' : ''}>${escaparHtmlBasico(t.nome || 'Tarefa')}</option>`)
+      .join('');
+  }
+}
+
+function limparMarcacaoConsultaTarefas() {
+  tarefasConsultaMarcadasIds = new Set();
+  renderizarListaConsultaTarefas();
+}
+
+function limparFiltrosAvancadosTarefas() {
+  ['filtroTarefaAvDataInicio', 'filtroTarefaAvDataFim', 'filtroTarefaAvBusca', 'filtroTarefaAvFuncionario'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const selTarefa = document.getElementById('filtroTarefaAvTarefa');
+  if (selTarefa) Array.from(selTarefa.options).forEach(o => { o.selected = false; });
+  filtrarTarefasCadastradas();
+}
+
+async function excluirTarefasSelecionadas() {
+  if (!usuarioTemPermissao('excluir_tarefas_massa')) {
+    setMsg('msgTarefas', 'Seu perfil não tem permissão para excluir tarefas em massa.', 'err');
+    return;
+  }
+  if (!tarefasDisponiveis) {
+    setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
+    return;
+  }
+  const ids = Array.from(tarefasConsultaMarcadasIds);
+  if (!ids.length) {
+    setMsg('msgTarefas', 'Marque ao menos uma tarefa para excluir em massa.', 'err');
+    return;
+  }
+
+  const confirmacaoSenha = await abrirModalPin({
+    titulo: 'Exclusão em massa de tarefas',
+    subtitulo: `Digite a senha master para excluir ${ids.length} tarefa(s) selecionada(s).`,
+    textoAcao: 'Validar senha',
+    exibirUsuario: false,
+    placeholderInput: 'Digite a senha master'
+  });
+  if (!confirmacaoSenha?.pin) {
+    setMsg('msgTarefas', 'Exclusão em massa cancelada.', 'err');
+    return;
+  }
+  if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
+    setMsg('msgTarefas', 'Senha master inválida. Exclusão cancelada.', 'err');
+    return;
+  }
+  if (!confirm(`Confirma a exclusão de ${ids.length} tarefa(s)? Esta ação não pode ser desfeita.`)) return;
+
+  let sucesso = 0;
+  let falhas = 0;
+  for (const id of ids) {
+    try {
+      const { error: errLanc } = await sb.from('checklist_lancamentos').delete().eq('tarefa_id', id);
+      if (errLanc && !isMissingLancamentosTableError(errLanc)) throw errLanc;
+      const { error: errExec } = await sb.from('checklist_execucoes').update({ tarefa_id: null }).eq('tarefa_id', id);
+      if (errExec) throw errExec;
+      const { error: errDel } = await sb.from('tarefas').delete().eq('id', id);
+      if (errDel) throw errDel;
+      sucesso++;
+      if (tarefaEmEdicaoId === id) limparFormularioTarefa();
+    } catch (error) {
+      console.error('Erro ao excluir tarefa em massa:', id, error);
+      falhas++;
+    }
+  }
+
+  tarefasConsultaMarcadasIds = new Set();
+  tarefasSelecionadasIds = new Set();
+  setMsg('msgTarefas', `Exclusão concluída: ${sucesso} excluída(s)${falhas ? `, ${falhas} com erro` : ''}.`, falhas ? 'err' : 'ok');
+  carregarTarefas();
+  carregarChecklistsTarefas();
+  carregarChecklists();
 }
 
 function atualizarResumoConsultaTarefas(totalFiltrado = 0) {
@@ -28269,6 +29871,7 @@ function renderizarListaTarefas() {
 
 function filtrarTarefasCadastradas() {
   if (!Array.isArray(tarefasCadastradasCache)) return;
+  popularFiltrosAvancadosTarefas();
   renderizarListaConsultaTarefas();
   renderizarListaTarefas();
 }
@@ -28462,7 +30065,13 @@ async function carregarTarefas() {
     const { data: funcionariosAtivos } = await queryFuncionariosAtivosTarefas;
     funcionariosAtivosTarefa = funcionariosAtivos || [];
 
-    const { data, error } = await sb.from('tarefas').select('*, funcionarios(nome), checklists(nome)').order('nome');
+    // Isolamento multi-loja: só carrega tarefas da loja logada (evita vazamento entre lojas).
+    const lojaSessaoTarefas = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    let queryTarefas = sb.from('tarefas').select('*, funcionarios(nome), checklists(nome)').order('nome');
+    if (lojaSessaoTarefas) {
+      queryTarefas = queryTarefas.eq('loja_id', lojaSessaoTarefas);
+    }
+    const { data, error } = await queryTarefas;
 
     if (error) {
       console.error('Erro ao carregar tarefas:', error);
@@ -28487,11 +30096,13 @@ async function carregarChecklistsTarefas() {
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   try {
-    const { data, error } = await sb
+    let queryLancTarefas = sb
       .from('checklist_lancamentos')
       .select('id, nome, descricao, horario_limite, funcionario_id, status, lancado_em, data_programada, criado_por_nome, observacao_lancamento')
       .order('lancado_em', { ascending: false })
       .limit(300);
+    queryLancTarefas = aplicarFiltroLojaGenericoQuery(queryLancTarefas); // isolamento multi-loja
+    const { data, error } = await queryLancTarefas;
 
     if (error) {
       if (isMissingLancamentosTableError(error)) {
@@ -28669,18 +30280,35 @@ async function validarSenhaMasterParaExclusao(senha = '') {
 
   const perfilCodigo = String(usuarioSistemaLogado?.perfil?.codigo || '').toUpperCase();
   const perfilNome = String(usuarioSistemaLogado?.perfil?.nome || '').toLowerCase();
-  const adminPorPerfil = perfilCodigo === 'ADM' || perfilNome.includes('admin');
-  if (!adminPorPerfil || !usuarioSistemaLogado?.id) return false;
+  const ehAdminLoja = usuarioSistemaLogado?.tipo === 'admin_loja' || usuarioSistemaLogado?.tipo === 'admin';
+  const adminPorPerfil = perfilCodigo === 'ADM' || perfilCodigo === 'MASTER' || perfilNome.includes('admin');
+  if (!adminPorPerfil && !ehAdminLoja) return false;
+
+  const idUsuario = String(usuarioSistemaLogado?.id || '').trim();
+  const emailUsuario = String(usuarioSistemaLogado?.email || '').trim().toLowerCase();
+  if (!idUsuario && !emailUsuario) return false;
 
   try {
-    const { data, error } = await sb
-      .from('funcionarios')
-      .select('pin, ativo')
-      .eq('id', usuarioSistemaLogado.id)
-      .maybeSingle();
-    if (error || !data || data.ativo !== true) return false;
-    return String(data.pin || '') === valor;
+    // Importante: busca SEM o filtro de loja/empresa. Um admin com acesso a várias
+    // lojas tem registros diferentes por loja; estando logado em uma loja, o filtro
+    // padrão impediria de ler o registro/PIN da outra, causando "senha inválida".
+    // Aceitamos o PIN de QUALQUER registro ativo do mesmo usuário (por id ou e-mail).
+    const { data, error } = await executarSemFiltrosTenantTemporario(() => {
+      let query = sb.from('funcionarios').select('id, pin, ativo, email');
+      if (idUsuario && emailUsuario) {
+        query = query.or(`id.eq.${idUsuario},email.eq.${emailUsuario}`);
+      } else if (idUsuario) {
+        query = query.eq('id', idUsuario);
+      } else {
+        query = query.eq('email', emailUsuario);
+      }
+      return query;
+    });
+    if (error || !Array.isArray(data) || !data.length) return false;
+    // Confere o PIN em qualquer registro ATIVO do usuário.
+    return data.some(reg => reg?.ativo === true && String(reg?.pin || '') === valor);
   } catch (error) {
+    console.warn('Falha ao validar senha master para exclusão:', error);
     return false;
   }
 }
@@ -29089,6 +30717,13 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     setMsgLancamentoTarefa(id, 'Selecione pelo menos um dia no card da tarefa antes de lançar.', 'err');
     return;
   }
+  // Repetição configurada no card: intervalo (a cada X dias) e duração (por X dias).
+  const intervaloRepeticao = obterIntervaloLancamentoTarefa(id);
+  const duracaoRepeticao = obterDuracaoLancamentoTarefa(id);
+  // Quando o usuário define "por X dias", esse horizonte substitui o padrão de 7 dias.
+  const horizonteAgendamento = duracaoRepeticao > 0
+    ? (duracaoRepeticao - 1)
+    : HORIZONTE_AGENDAMENTO_MANUAL_DIAS;
   const { data: funcionarioTurno, error: erroFuncionarioTurno } = await sb
     .from('funcionarios')
     .select('id, nome, horario_trabalho_inicio, horario_trabalho_fim')
@@ -29117,7 +30752,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   const atorAuditoria = obterAtorAuditoriaAtual();
 
   const consultarLancamentosExistentes = async (comCreatedAt = true, comStatus = true) => {
-    const camposBase = comCreatedAt ? ['id', 'lancado_em', 'created_at', 'data_programada'] : ['id', 'lancado_em'];
+    const camposBase = comCreatedAt ? ['id', 'lancado_em', 'created_at', 'data_programada', 'horario_limite'] : ['id', 'lancado_em', 'horario_limite'];
     const campos = [...camposBase, ...(comStatus ? ['status'] : [])].join(', ');
     const { data, error } = await sb
       .from('checklist_lancamentos')
@@ -29145,20 +30780,31 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   const chavesExistentes = new Set(
     (existentes || [])
       .filter(item => lancamentoContaComoExistenteParaAgenda(item))
-      .map(item => obterDataProgramadaLancamento(item) || dataLocalISO(item.lancado_em || item.created_at))
+      .map(item => {
+        const data = obterDataProgramadaLancamento(item) || dataLocalISO(item.lancado_em || item.created_at);
+        if (!data) return null;
+        // Chave inclui o horário: permite a mesma tarefa em vários horários no mesmo dia.
+        const hora = horaCurta(item.horario_limite || '') || 'sem-hora';
+        return `${tarefa.id}::${funcionarioSelecionado}::${data}::${hora}`;
+      })
       .filter(Boolean)
-      .map(data => `${tarefa.id}::${funcionarioSelecionado}::${data}`)
   );
 
   const lancamentosParaCriar = [];
   let pulouHojePorHorario = false;
   let pulouHojePorTurno = false;
+  let ocorrenciaValida = -1; // contador de dias-válidos para aplicar o intervalo
 
-  for (let offset = 0; offset <= HORIZONTE_AGENDAMENTO_MANUAL_DIAS; offset++) {
+  for (let offset = 0; offset <= horizonteAgendamento; offset++) {
     const dataAlvo = new Date(hojeData);
     dataAlvo.setDate(hojeData.getDate() + offset);
     const diaToken = diaSemanaTokenDaData(dataAlvo);
     if (!diaToken || !diasPermitidos.has(diaToken)) continue;
+
+    // Conta apenas dias que batem com os dias da semana selecionados e aplica o
+    // intervalo "a cada X dias" (1 = todos, 2 = pula um, etc.).
+    ocorrenciaValida++;
+    if (intervaloRepeticao > 1 && (ocorrenciaValida % intervaloRepeticao !== 0)) continue;
 
     if (offset === 0 && ignorarHoje) {
       pulouHojePorTurno = ignorarHojePorTurno;
@@ -29167,7 +30813,8 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     }
 
     const dataIsoLocal = dataLocalISO(dataAlvo);
-    const chave = `${tarefa.id}::${funcionarioSelecionado}::${dataIsoLocal}`;
+    const horaChave = horaCurta(horarioSelecionado || '') || 'sem-hora';
+    const chave = `${tarefa.id}::${funcionarioSelecionado}::${dataIsoLocal}::${horaChave}`;
     if (chavesExistentes.has(chave)) continue;
 
     lancamentosParaCriar.push({
@@ -33991,6 +35638,264 @@ function exportarRelatorioLancamentosPDF() {
   win.document.close();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RELATÓRIO DE TAREFAS CADASTRADAS
+// Deriva os dados dos lançamentos (checklist_lancamentos) por tarefa:
+// quem cadastrou/lançou, data de cadastro, início, fim e repetição (dias + intervalo + duração).
+// ═══════════════════════════════════════════════════════════════════════════
+let _relatorioTarefasCadCache = [];
+
+function resetFiltroRelatorioTarefasCadastradas() {
+  ['filtroTarefasCadDataInicio', 'filtroTarefasCadDataFim', 'filtroTarefasCadTarefa', 'filtroTarefasCadCadastrante', 'filtroTarefasCadResponsavel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  carregarRelatorioTarefasCadastradas();
+}
+
+function detectarIntervaloDias(datasOrdenadas = []) {
+  // Detecta o menor passo (em dias) entre lançamentos consecutivos. 1 = todos os dias.
+  if (datasOrdenadas.length < 2) return null;
+  let menor = null;
+  for (let i = 1; i < datasOrdenadas.length; i++) {
+    const d1 = new Date(datasOrdenadas[i - 1] + 'T00:00:00');
+    const d2 = new Date(datasOrdenadas[i] + 'T00:00:00');
+    const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+    if (diff > 0 && (menor === null || diff < menor)) menor = diff;
+  }
+  return menor;
+}
+
+async function carregarRelatorioTarefasCadastradas() {
+  const lista = document.getElementById('listaRelatorioTarefasCad');
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
+  setMsg('msgRelatorioTarefasCad', '', '');
+
+  const dataInicio = String(document.getElementById('filtroTarefasCadDataInicio')?.value || '').trim();
+  const dataFim = String(document.getElementById('filtroTarefasCadDataFim')?.value || '').trim();
+  const filtroTarefaId = String(document.getElementById('filtroTarefasCadTarefa')?.value || '').trim();
+  const filtroCadastrante = String(document.getElementById('filtroTarefasCadCadastrante')?.value || '').trim().toLowerCase();
+  const filtroResponsavel = String(document.getElementById('filtroTarefasCadResponsavel')?.value || '').trim();
+
+  try {
+    const lojaAtual = obterLojaAtualParaIsolamento();
+
+    // Tarefas da loja (para incluir até as que não têm lançamento ainda).
+    let queryTarefas = sb.from('tarefas').select('id, nome, descricao, funcionario_id, dias_semana, created_at, funcionarios(nome)').order('nome');
+    if (lojaAtual) queryTarefas = queryTarefas.eq('loja_id', lojaAtual);
+    const { data: tarefasData, error: errTarefas } = await queryTarefas;
+    if (errTarefas && !isMissingTableError(errTarefas)) throw errTarefas;
+
+    // Lançamentos (fonte da repetição, datas e quem lançou).
+    let queryLanc = sb.from('checklist_lancamentos')
+      .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome')
+      .order('data_programada', { ascending: true })
+      .limit(5000);
+    if (lojaAtual) queryLanc = queryLanc.eq('loja_id', lojaAtual);
+    const { data: lancData, error: errLanc } = await queryLanc;
+    if (errLanc && !isMissingLancamentosTableError(errLanc)) throw errLanc;
+
+    // Funcionários para resolver nomes de responsáveis.
+    const { data: funcsData } = await sb.from('funcionarios').select('id, nome');
+    const funcMap = Object.fromEntries((funcsData || []).map(f => [String(f.id), f.nome]));
+
+    // Agrupa lançamentos por tarefa.
+    const lancPorTarefa = {};
+    (lancData || []).forEach(l => {
+      const tid = String(l.tarefa_id || '');
+      if (!tid) return;
+      (lancPorTarefa[tid] = lancPorTarefa[tid] || []).push(l);
+    });
+
+    // Monta as linhas do relatório (uma por tarefa).
+    const linhas = (tarefasData || []).map(t => {
+      const tid = String(t.id);
+      const lancs = (lancPorTarefa[tid] || []).slice().sort((a, b) =>
+        String(a.data_programada || '').localeCompare(String(b.data_programada || '')));
+      const datas = lancs.map(l => String(l.data_programada || '').slice(0, 10)).filter(Boolean);
+      const datasUnicas = [...new Set(datas)].sort();
+      const primeiroLanc = lancs.slice().sort((a, b) =>
+        new Date(a.lancado_em || 0) - new Date(b.lancado_em || 0))[0] || null;
+
+      const cadastradoEm = (primeiroLanc?.lancado_em || t.created_at || '') || '';
+      const cadastradoPor = primeiroLanc?.criado_por_nome || (t.funcionarios?.nome ? '' : '') || '';
+      const inicio = datasUnicas[0] || '';
+      const fim = datasUnicas[datasUnicas.length - 1] || '';
+      const intervalo = detectarIntervaloDias(datasUnicas);
+      const totalDias = (inicio && fim)
+        ? (Math.round((new Date(fim + 'T00:00:00') - new Date(inicio + 'T00:00:00')) / (1000 * 60 * 60 * 24)) + 1)
+        : 0;
+      const diasSemana = lancs[0]?.dias_semana || t.dias_semana || 'todos';
+
+      const repeticaoTexto = lancs.length
+        ? `${formatarDias(diasSemana)}${intervalo && intervalo > 1 ? ` · a cada ${intervalo} dia(s)` : (intervalo === 1 ? ' · diária' : '')}${totalDias ? ` · por ${totalDias} dia(s)` : ''}`
+        : 'Sem lançamento';
+
+      return {
+        tarefa_id: tid,
+        nomeTarefa: t.nome || 'Tarefa',
+        descricao: t.descricao || '',
+        responsavel_id: String(t.funcionario_id || ''),
+        responsavel: funcMap[String(t.funcionario_id || '')] || t.funcionarios?.nome || 'Sem responsável',
+        cadastradoPor: cadastradoPor || (primeiroLanc ? 'Sistema' : '—'),
+        cadastradoEm,
+        inicio,
+        fim,
+        diasSemana,
+        intervalo,
+        totalDias,
+        qtdLancamentos: lancs.length,
+        repeticaoTexto,
+      };
+    });
+
+    // Popular selects de filtro (tarefa, cadastrante, responsável).
+    popularFiltrosRelatorioTarefasCad(tarefasData || [], lancData || [], funcMap);
+
+    // Aplicar filtros.
+    let filtradas = linhas;
+    if (filtroTarefaId) filtradas = filtradas.filter(l => l.tarefa_id === filtroTarefaId);
+    if (filtroResponsavel) filtradas = filtradas.filter(l => l.responsavel_id === filtroResponsavel);
+    if (filtroCadastrante) filtradas = filtradas.filter(l => String(l.cadastradoPor || '').trim().toLowerCase() === filtroCadastrante);
+    if (dataInicio || dataFim) {
+      filtradas = filtradas.filter(l => {
+        const dataRef = String(l.cadastradoEm || '').slice(0, 10);
+        if (!dataRef) return false;
+        if (dataInicio && dataRef < dataInicio) return false;
+        if (dataFim && dataRef > dataFim) return false;
+        return true;
+      });
+    }
+
+    _relatorioTarefasCadCache = filtradas;
+
+    if (!filtradas.length) {
+      lista.innerHTML = '<div class="empty">Nenhuma tarefa cadastrada para os filtros selecionados.</div>';
+      return;
+    }
+
+    lista.innerHTML = '<div class="lista">' + filtradas.map(l => `
+      <div class="item">
+        <div class="item-info">
+          <div class="item-nome">${escaparHtmlBasico(l.nomeTarefa)}</div>
+          ${l.descricao ? `<div class="item-detalhe">${escaparHtmlBasico(l.descricao)}</div>` : ''}
+          <div class="item-detalhe">Responsável: ${escaparHtmlBasico(l.responsavel)}</div>
+          <div class="item-detalhe">Cadastrado por: ${escaparHtmlBasico(l.cadastradoPor)} · ${l.cadastradoEm ? fmtDate(l.cadastradoEm) : '—'}</div>
+          <div class="item-detalhe">Período: ${l.inicio ? formatarDataProgramadaBr(l.inicio) : '—'} até ${l.fim ? formatarDataProgramadaBr(l.fim) : '—'}</div>
+          <div class="item-detalhe">Repetição: ${escaparHtmlBasico(l.repeticaoTexto)}</div>
+        </div>
+        <div class="item-actions">
+          <span class="tag ${l.qtdLancamentos ? 'tag-green' : 'tag-amber'}">${l.qtdLancamentos ? l.qtdLancamentos + ' lançamento(s)' : 'Sem lançamento'}</span>
+        </div>
+      </div>
+    `).join('') + '</div>';
+
+    setMsg('msgRelatorioTarefasCad', `${filtradas.length} tarefa(s) no relatório.`, 'ok');
+  } catch (error) {
+    console.error('Erro ao carregar relatório de tarefas cadastradas:', error);
+    lista.innerHTML = '<div class="empty">Erro ao carregar o relatório.</div>';
+    setMsg('msgRelatorioTarefasCad', `Não foi possível carregar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+  }
+}
+
+function popularFiltrosRelatorioTarefasCad(tarefas = [], lancamentos = [], funcMap = {}) {
+  // Tarefa
+  const selTarefa = document.getElementById('filtroTarefasCadTarefa');
+  if (selTarefa) {
+    const atual = selTarefa.value;
+    const ordenadas = [...tarefas].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
+    selTarefa.innerHTML = '<option value="">- Todas as tarefas -</option>' +
+      ordenadas.map(t => `<option value="${escaparHtmlBasico(String(t.id))}">${escaparHtmlBasico(t.nome || 'Tarefa')}</option>`).join('');
+    if (Array.from(selTarefa.options).some(o => o.value === atual)) selTarefa.value = atual;
+  }
+  // Quem cadastrou
+  const selCad = document.getElementById('filtroTarefasCadCadastrante');
+  if (selCad) {
+    const atual = selCad.value;
+    const nomes = [...new Set((lancamentos || []).map(l => String(l.criado_por_nome || '').trim()).filter(Boolean))].sort();
+    selCad.innerHTML = '<option value="">- Quem cadastrou (todos) -</option>' +
+      nomes.map(n => `<option value="${escaparHtmlBasico(n.toLowerCase())}">${escaparHtmlBasico(n)}</option>`).join('');
+    if (Array.from(selCad.options).some(o => o.value === atual)) selCad.value = atual;
+  }
+  // Responsável
+  const selResp = document.getElementById('filtroTarefasCadResponsavel');
+  if (selResp) {
+    const atual = selResp.value;
+    const respIds = [...new Set((tarefas || []).map(t => String(t.funcionario_id || '')).filter(Boolean))];
+    const ordenados = respIds.map(id => [id, funcMap[id] || 'Funcionário']).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+    selResp.innerHTML = '<option value="">- Responsável (todos) -</option>' +
+      ordenados.map(([id, nome]) => `<option value="${escaparHtmlBasico(id)}">${escaparHtmlBasico(nome)}</option>`).join('');
+    if (Array.from(selResp.options).some(o => o.value === atual)) selResp.value = atual;
+  }
+}
+
+function montarLinhasExportacaoRelatorioTarefasCad() {
+  return (_relatorioTarefasCadCache || []).map(l => ({
+    Tarefa: l.nomeTarefa,
+    Descricao: l.descricao,
+    Responsavel: l.responsavel,
+    Cadastrado_por: l.cadastradoPor,
+    Data_cadastro: l.cadastradoEm ? fmtDate(l.cadastradoEm) : '',
+    Inicio: l.inicio ? formatarDataProgramadaBr(l.inicio) : '',
+    Fim: l.fim ? formatarDataProgramadaBr(l.fim) : '',
+    Dias_semana: formatarDias(l.diasSemana),
+    Intervalo_dias: l.intervalo || '',
+    Duracao_dias: l.totalDias || '',
+    Repeticao: l.repeticaoTexto,
+    Qtd_lancamentos: l.qtdLancamentos,
+  }));
+}
+
+function exportarRelatorioTarefasCadastradasExcel() {
+  const linhas = montarLinhasExportacaoRelatorioTarefasCad();
+  if (!linhas.length) {
+    setMsg('msgRelatorioTarefasCad', 'Não há tarefas para exportar.', 'err');
+    return;
+  }
+  const headers = Object.keys(linhas[0]);
+  const csv = [headers.join(';')].concat(linhas.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `relatorio-tarefas-cadastradas-${dataLocalISO()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  setMsg('msgRelatorioTarefasCad', 'Excel exportado com sucesso.', 'ok');
+}
+
+function exportarRelatorioTarefasCadastradasPDF() {
+  const linhas = montarLinhasExportacaoRelatorioTarefasCad();
+  if (!linhas.length) {
+    setMsg('msgRelatorioTarefasCad', 'Não há tarefas para exportar em PDF.', 'err');
+    return;
+  }
+  const htmlLinhas = linhas.map(row => `
+    <tr>
+      <td>${escaparHtmlBasico(row.Tarefa)}</td>
+      <td>${escaparHtmlBasico(row.Descricao)}</td>
+      <td>${escaparHtmlBasico(row.Responsavel)}</td>
+      <td>${escaparHtmlBasico(row.Cadastrado_por)}</td>
+      <td>${escaparHtmlBasico(row.Data_cadastro)}</td>
+      <td>${escaparHtmlBasico(row.Inicio)}</td>
+      <td>${escaparHtmlBasico(row.Fim)}</td>
+      <td>${escaparHtmlBasico(row.Repeticao)}</td>
+      <td>${escaparHtmlBasico(String(row.Qtd_lancamentos))}</td>
+    </tr>
+  `).join('');
+  const win = window.open('', '_blank');
+  if (!win) {
+    setMsg('msgRelatorioTarefasCad', 'O navegador bloqueou a janela de PDF.', 'err');
+    return;
+  }
+  const geradoEm = new Date().toLocaleString('pt-BR');
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de tarefas cadastradas</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}${cssRodapeRelatorioImpressao()}</style></head><body><h1>Relatório de tarefas cadastradas</h1><p>Gerado em ${escaparHtmlBasico(geradoEm)}</p><table><thead><tr><th>Tarefa</th><th>Descrição</th><th>Responsável</th><th>Cadastrado por</th><th>Data cadastro</th><th>Início</th><th>Fim</th><th>Repetição</th><th>Lançamentos</th></tr></thead><tbody>${htmlLinhas}</tbody></table>${htmlRodapeRelatorioImpressao(geradoEm, 'Filtros aplicados na tela de Relatório de tarefas cadastradas')}<script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.close();
+}
+
 function toggleRegistrosRelatorioLancamentos(forcarAberto = null) {
   const body = document.getElementById('relatorioLancamentosRegistrosBody');
   const btn = document.getElementById('btnToggleRegistrosRelatorioLancamentos');
@@ -34655,7 +36560,41 @@ async function carregarExecucoes() {
     const { data: rowsBrutas, error } = await query;
     if (error) throw error;
 
-    const rows = (rowsBrutas || []).filter(item => {
+    // Isolamento multi-loja: execucoes não têm loja_id, então filtramos pelas tarefas da loja atual.
+    let rowsIsoladas = rowsBrutas || [];
+    const lojaAtualExec = obterLojaAtualParaIsolamento();
+    if (lojaAtualExec) {
+      try {
+        const tarefaIdsExec = [...new Set((rowsBrutas || []).map(r => r.tarefa_id).filter(Boolean).map(String))];
+        const lancIdsExec = [...new Set((rowsBrutas || []).map(r => r.lancamento_id).filter(Boolean).map(String))];
+        const tarefasDaLoja = new Set();
+        const lancamentosDaLoja = new Set();
+        const consultas = [];
+        if (tarefaIdsExec.length) {
+          consultas.push(executarSemFiltroLojaTemporario(() => sb.from('tarefas').select('id, loja_id').in('id', tarefaIdsExec))
+            .then(res => (res.data || []).forEach(t => { if (String(t.loja_id || '') === lojaAtualExec) tarefasDaLoja.add(String(t.id)); })));
+        }
+        if (lancIdsExec.length) {
+          consultas.push(executarSemFiltroLojaTemporario(() => sb.from('checklist_lancamentos').select('id, loja_id').in('id', lancIdsExec))
+            .then(res => (res.data || []).forEach(l => { if (String(l.loja_id || '') === lojaAtualExec) lancamentosDaLoja.add(String(l.id)); })));
+        }
+        if (consultas.length) {
+          await Promise.all(consultas);
+          rowsIsoladas = (rowsBrutas || []).filter(r => {
+            const tOk = r.tarefa_id && tarefasDaLoja.has(String(r.tarefa_id));
+            const lOk = r.lancamento_id && lancamentosDaLoja.has(String(r.lancamento_id));
+            // Mantém se a tarefa OU o lançamento pertencem à loja atual.
+            // Registros antigos sem tarefa/lançamento vinculado permanecem visíveis para não sumir histórico.
+            if (!r.tarefa_id && !r.lancamento_id) return true;
+            return tOk || lOk;
+          });
+        }
+      } catch (eIso) {
+        console.warn('Não foi possível isolar execuções por loja (mantendo lista completa):', eIso);
+      }
+    }
+
+    const rows = rowsIsoladas.filter(item => {
       if (!execucaoPertenceAoFiltroData(item, data)) return false;
       if (!execucaoDentroDoFiltroHora(item, horaInicio, horaFim)) return false;
       if (funcionarioId && String(item.funcionario_id || '') !== String(funcionarioId)) return false;
@@ -34733,11 +36672,13 @@ async function carregarTarefasAtrasoMaster() {
 
   try {
     const carregarLancamentosPendentesAtraso = async () => {
-      const consultaCompleta = await sb
+      let consultaCompletaQuery = sb
         .from('checklist_lancamentos')
         .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, created_at, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
+      consultaCompletaQuery = aplicarFiltroLojaGenericoQuery(consultaCompletaQuery); // isolamento multi-loja
+      const consultaCompleta = await consultaCompletaQuery;
 
       if (!consultaCompleta.error) return consultaCompleta.data || [];
 
@@ -34746,11 +36687,13 @@ async function carregarTarefasAtrasoMaster() {
         throw consultaCompleta.error;
       }
 
-      const consultaFallback = await sb
+      let consultaFallbackQuery = sb
         .from('checklist_lancamentos')
         .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
+      consultaFallbackQuery = aplicarFiltroLojaGenericoQuery(consultaFallbackQuery); // isolamento multi-loja
+      const consultaFallback = await consultaFallbackQuery;
 
       if (consultaFallback.error) throw consultaFallback.error;
       return (consultaFallback.data || []).map(item => ({ ...item, created_at: null }));
@@ -34890,7 +36833,7 @@ async function finalizarExecucaoDireta(id) {
 
   const { data: execucao, error: errExecucao } = await sb
     .from('checklist_execucoes')
-    .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, status, data_execucao')
+    .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, status, data_execucao, usuario_inicio_id')
     .eq('id', id)
     .single();
 
@@ -34901,9 +36844,16 @@ async function finalizarExecucaoDireta(id) {
 
   const confirmacao = await confirmarAcaoComPin({
     funcionario: null,
-    titulo: 'Finalizar checklist',
-    subtitulo: 'Qualquer funcionário ativo pode confirmar com a própria senha para registrar a finalização.',
-    textoAcao: 'Finalizar tarefa',
+    titulo: 'Conferência para finalizar',
+    subtitulo: 'Para finalizar, outro funcionário deve conferir a tarefa e confirmar com a própria senha. Quem iniciou não pode finalizar.',
+    textoAcao: 'Conferir e finalizar',
+    // Regra de conferência validada DENTRO do modal: quem iniciou não pode finalizar.
+    validarFuncionarioConfirmado: (func) => {
+      if (execucao.usuario_inicio_id && String(func.id) === String(execucao.usuario_inicio_id)) {
+        return 'Esta tarefa foi iniciada por este mesmo funcionário. A finalização precisa ser CONFERIDA e confirmada por OUTRO funcionário. Peça a outro colega para digitar a senha dele.';
+      }
+      return null;
+    },
   });
 
   if (!confirmacao) return;
@@ -34977,6 +36927,13 @@ async function finalizarExecucaoDireta(id) {
 }
 
 async function garantirRelancamentoSemanalAposFinalizacao(execucao = {}, ator = {}) {
+  // [DESATIVADO] Regra antiga de relançamento automático semanal após a finalização.
+  // Removida porque não era segura e conflita com a nova repetição definida pelo usuário
+  // (intervalo "a cada X dias" + duração "por X dias") configurada no lançamento.
+  return null;
+}
+
+async function garantirRelancamentoSemanalAposFinalizacaoLegado(execucao = {}, ator = {}) {
   const lancamentoId = String(execucao?.lancamento_id || '').trim();
   if (!lancamentoId) return null;
 
@@ -35167,7 +37124,7 @@ async function finalizarExecucao() {
 
   const { data: execucao, error: errExecucao } = await sb
     .from('checklist_execucoes')
-    .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, status, data_execucao')
+    .select('id, lancamento_id, tarefa_id, checklist_id, funcionario_id, status, data_execucao, usuario_inicio_id')
     .eq('id', execucaoAtualId)
     .single();
 
@@ -35194,9 +37151,16 @@ async function finalizarExecucao() {
 
   const confirmacao = await confirmarAcaoComPin({
     funcionario: null,
-    titulo: 'Finalizar checklist',
-    subtitulo: 'Qualquer funcionário ativo pode confirmar com a própria senha para registrar a finalização.',
-    textoAcao: 'Finalizar tarefa',
+    titulo: 'Conferência para finalizar',
+    subtitulo: 'Para finalizar, outro funcionário deve conferir a tarefa e confirmar com a própria senha. Quem iniciou não pode finalizar.',
+    textoAcao: 'Conferir e finalizar',
+    // Regra de conferência validada DENTRO do modal: quem iniciou não pode finalizar.
+    validarFuncionarioConfirmado: (func) => {
+      if (execucao.usuario_inicio_id && String(func.id) === String(execucao.usuario_inicio_id)) {
+        return 'Esta tarefa foi iniciada por este mesmo funcionário. A finalização precisa ser CONFERIDA e confirmada por OUTRO funcionário. Peça a outro colega para digitar a senha dele.';
+      }
+      return null;
+    },
   });
 
   if (!confirmacao) return;
@@ -36207,19 +38171,57 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     await sb.from('solicitacoes_acesso').delete().eq('email', email);
 
-    const { error } = await sb.from('solicitacoes_acesso').insert([{
-      nome,
-      email,
-      pin,
-      status: 'pendente',
-    }]);
+    // Algumas instalações exigem loja_id/empresa_id (NOT NULL) na tabela de solicitações
+    // por causa do isolamento multi-loja. Tentamos resolver um tenant padrão e, se as
+    // colunas não existirem, repetimos o insert sem elas.
+    let tenantSolicitacao = { loja_id: null, empresa_id: null };
+    try {
+      tenantSolicitacao = await resolverTenantPublicoParaSolicitacao();
+    } catch (e) {
+      console.warn('Não foi possível resolver loja/empresa padrão para a solicitação:', e);
+    }
+
+    const baseSolicitacao = { nome, email, pin, status: 'pendente' };
+    const payloadComTenant = {
+      ...baseSolicitacao,
+      ...(tenantSolicitacao.loja_id ? { loja_id: tenantSolicitacao.loja_id } : {}),
+      ...(tenantSolicitacao.empresa_id ? { empresa_id: tenantSolicitacao.empresa_id } : {}),
+    };
+
+    let { error } = await sb.from('solicitacoes_acesso').insert([payloadComTenant]);
+
+    // Se o erro for por coluna inexistente (loja_id/empresa_id), refaz sem o tenant.
+    if (error) {
+      const txtErro = String(error.message || '').toLowerCase();
+      const colunaInexistente = (txtErro.includes('column') && (txtErro.includes('loja_id') || txtErro.includes('empresa_id')))
+        || String(error.code || '') === 'PGRST204';
+      if (colunaInexistente && (tenantSolicitacao.loja_id || tenantSolicitacao.empresa_id)) {
+        ({ error } = await sb.from('solicitacoes_acesso').insert([baseSolicitacao]));
+      }
+    }
 
     if (error) {
       if (isMissingAccessRequestsTableError(error)) {
         setMsg('msgSolicitacaoAcesso', 'Rode o SQL da tabela solicitacoes_acesso antes de usar este fluxo.', 'err');
         return;
       }
-      setMsg('msgSolicitacaoAcesso', 'Não foi possível enviar sua solicitação.', 'err');
+      console.error('Erro ao enviar solicitação de acesso:', error);
+      const detalhe = mensagemErroSupabase(error, '');
+      const detalheLower = String(detalhe || '').toLowerCase();
+      // Mensagens mais claras para as causas mais comuns desse insert público.
+      if (detalheLower.includes('row-level security') || detalheLower.includes('rls') || String(error.code || '') === '42501') {
+        setMsg('msgSolicitacaoAcesso', 'O banco está bloqueando o envio (política de segurança/RLS na tabela solicitacoes_acesso). Habilite a policy de INSERT público para esta tabela no Supabase.', 'err');
+        return;
+      }
+      if (detalheLower.includes('null value') || (detalheLower.includes('violates') && detalheLower.includes('not-null')) || String(error.code || '') === '23502') {
+        if (!tenantSolicitacao.empresa_id && !tenantSolicitacao.loja_id) {
+          setMsg('msgSolicitacaoAcesso', 'Não foi possível identificar a empresa/loja para registrar a solicitação. Provavelmente o acesso público de leitura às tabelas lojas/empresas está bloqueado (RLS) ou ainda não há loja cadastrada. Verifique no Supabase.', 'err');
+          return;
+        }
+        setMsg('msgSolicitacaoAcesso', `Falta um campo obrigatório no banco para registrar a solicitação${detalhe ? ` (${detalhe})` : ''}. Verifique se loja/empresa são exigidas na tabela solicitacoes_acesso.`, 'err');
+        return;
+      }
+      setMsg('msgSolicitacaoAcesso', `Não foi possível enviar sua solicitação${detalhe ? `: ${detalhe}` : '.'}`, 'err');
       return;
     }
 
