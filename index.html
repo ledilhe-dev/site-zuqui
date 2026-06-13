@@ -8893,12 +8893,8 @@
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
           <div class="page-title" style="margin:0;">Cadastro de contas a pagar</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-green" type="button" onclick="abrirLancamentoRapido()" style="display:flex;align-items:center;gap:6px;font-size:13px;">
-              ⚡ Lançamento rápido
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">
-              🗂️ Importar arquivo bancário
-            </button>
+            <button class="btn btn-green" type="button" onclick="abrirLancamentoRapido()" style="display:flex;align-items:center;gap:6px;font-size:13px;">⚡ Lançamento rápido</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🗂️ Importar arquivo bancário</button>
           </div>
         </div>
 
@@ -9668,7 +9664,7 @@
           <div id="lrTitulo" style="font-size:15px;font-weight:700;color:var(--text);">Lançamento rápido</div>
           <div id="lrSubtitulo" style="font-size:12px;color:var(--text-muted);margin-top:2px;">Fotografe o cupom ou comprovante</div>
         </div>
-        <button onclick="fecharLancamentoRapido()" style="width:32px;height:32px;border:none;background:none;color:var(--text-muted);font-size:20px;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;">✕</button>
+        <button onclick="fecharLancamentoRapido()" style="width:32px;height:32px;border:none;background:none;color:var(--text-muted);font-size:20px;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
       </div>
     </div>
     <div id="lrStepper" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:10px 16px;border-bottom:1px solid var(--border);">
@@ -9680,40 +9676,32 @@
       <span id="lrStepLabel" style="font-size:11px;color:var(--text-muted);margin-left:6px;"></span>
     </div>
     <div id="lrCorpo" style="flex:1;overflow-y:auto;padding:16px;">
-
-      <!-- STEP 1: Câmera -->
       <div id="lrStep1" class="lr-step">
         <input type="file" id="lrInputFoto" accept="image/*" capture="environment" style="display:none;" onchange="lrProcessarFoto(this)">
         <div style="background:#09090f;border-radius:12px;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;position:relative;margin-bottom:16px;cursor:pointer;" onclick="document.getElementById('lrInputFoto').click()">
           <div style="position:absolute;inset:16px;border:1.5px dashed rgba(240,165,0,.4);border-radius:8px;pointer-events:none;"></div>
-          <div style="font-size:36px;opacity:.5;">📷</div>
+          <div style="font-size:36px;opacity:.5;">&#x1F4F7;</div>
           <div style="font-size:13px;color:rgba(255,255,255,.5);">Toque para fotografar ou escolher da galeria</div>
         </div>
-        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" onclick="document.getElementById('lrInputFoto').click()">📷 Abrir câmera</button>
-        <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px;" onclick="lrAvancarSemFoto()">Lançar sem foto (digitar manualmente)</button>
+        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" onclick="document.getElementById('lrInputFoto').click()">&#x1F4F7; Abrir camera</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px;" onclick="lrAvancarSemFoto()">Lancar sem foto (digitar manualmente)</button>
       </div>
-
-      <!-- STEP 2: Analisando IA -->
       <div id="lrStep2" class="lr-step" style="display:none;">
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;text-align:center;">
-          <div id="lrSpinner" style="width:44px;height:44px;border:2px solid var(--border-bright);border-top-color:var(--accent);border-radius:50%;animation:lr-spin .8s linear infinite;"></div>
+          <div style="width:44px;height:44px;border:2px solid var(--border-bright);border-top-color:var(--accent);border-radius:50%;animation:lr-spin .8s linear infinite;"></div>
           <div id="lrAnalisandoMsg" style="font-size:13px;color:var(--text-muted);">Enviando para IA...</div>
           <div id="lrPreviewFoto" style="display:none;border-radius:8px;overflow:hidden;max-height:120px;margin-top:8px;"><img id="lrPreviewImg" style="width:100%;max-height:120px;object-fit:cover;" alt=""></div>
         </div>
       </div>
-
-      <!-- STEP 3: Fornecedor -->
       <div id="lrStep3" class="lr-step" style="display:none;">
-        <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">✦ IA identificou</div>
+        <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">IA identificou</div>
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;" id="lrFornMatchInfo"></div>
         <div id="lrFornOpcoes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
-        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" onclick="lrConfirmarFornecedor()">Confirmar →</button>
+        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" onclick="lrConfirmarFornecedor()">Confirmar</button>
       </div>
-
-      <!-- STEP 4: Valor, categoria, datas -->
       <div id="lrStep4" class="lr-step" style="display:none;">
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
-          <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">✦ Lido do cupom</div>
+          <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Lido do cupom</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span style="font-size:12px;color:var(--text-muted);">Data da compra</span>
             <input id="lrDataCompra" type="date" style="border:none;background:transparent;color:var(--text);font-size:13px;font-weight:600;text-align:right;font-family:var(--font-sans);">
@@ -9725,7 +9713,7 @@
           </div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Categoria <span style="color:var(--red)">*</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Categoria</div>
           <div id="lrCatGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
@@ -9739,21 +9727,19 @@
           <input type="date" id="lrVencCustom" style="display:none;width:100%;margin-top:8px;" oninput="lrVencCustomAlterou()">
         </div>
         <div style="margin-bottom:16px;">
-          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Observação (opcional)</label>
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Observacao (opcional)</label>
           <input id="lrObs" type="text" style="width:100%;" placeholder="Ex: compras da semana">
         </div>
         <div class="msg" id="lrMsgStep4" style="margin-bottom:8px;"></div>
-        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" onclick="lrAvancarStep4()">Avançar →</button>
+        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" onclick="lrAvancarStep4()">Avancar</button>
       </div>
-
-      <!-- STEP 5: Pagamento -->
       <div id="lrStep5" class="lr-step" style="display:none;">
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Como foi pago?</div>
         <div id="lrPagGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
         <div id="lrParcelasCard" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
-          <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">✦ Identificado no comprovante</div>
+          <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Identificado no comprovante</div>
           <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Parcelas</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="lrParcOpcoes">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="lr-parc-btn lr-pill-btn" data-parc="1" onclick="lrSelecionarParcela(this)">1x</button>
             <button class="lr-parc-btn lr-pill-btn" data-parc="2" onclick="lrSelecionarParcela(this)">2x</button>
             <button class="lr-parc-btn lr-pill-btn" data-parc="3" onclick="lrSelecionarParcela(this)">3x</button>
@@ -9763,91 +9749,44 @@
           </div>
           <div id="lrParcInfo" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
         </div>
-        <div id="lrResumo" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
           <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Resumo</div>
           <div id="lrResumoConteudo" style="font-size:13px;color:var(--text-soft);line-height:1.7;"></div>
         </div>
         <div class="msg" id="lrMsgStep5" style="margin-bottom:8px;"></div>
-        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" id="lrBtnSalvar" onclick="lrSalvar()">✓ Salvar lançamento</button>
+        <button class="btn btn-green" style="width:100%;font-size:14px;padding:13px;" id="lrBtnSalvar" onclick="lrSalvar()">Salvar lancamento</button>
         <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px;" onclick="lrSalvar(true)">Salvar e ajustar depois</button>
       </div>
-
-      <!-- STEP 6: Sucesso -->
       <div id="lrStep6" class="lr-step" style="display:none;">
         <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 20px;text-align:center;">
-          <div style="width:64px;height:64px;border-radius:50%;background:var(--green-glow);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:28px;">✓</div>
-          <div style="font-size:18px;font-weight:700;color:var(--text);">Lançado com sucesso!</div>
+          <div style="width:64px;height:64px;border-radius:50%;background:var(--green-glow);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:28px;">&#x2713;</div>
+          <div style="font-size:18px;font-weight:700;color:var(--text);">Lancado com sucesso!</div>
           <div id="lrSucessoInfo" style="font-size:13px;color:var(--text-muted);"></div>
           <div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:280px;margin-top:8px;">
-            <button class="btn btn-green" style="font-size:14px;padding:13px;" onclick="lrNovoLancamento()">+ Novo lançamento</button>
+            <button class="btn btn-green" style="font-size:14px;padding:13px;" onclick="lrNovoLancamento()">+ Novo lancamento</button>
             <button class="btn btn-ghost" style="font-size:13px;" onclick="fecharLancamentoRapido()">Fechar</button>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </div>
-
 <style>
-  @keyframes lr-spin { to { transform: rotate(360deg); } }
-  .lr-pill-btn {
-    padding: 9px 14px;
-    border: 1px solid var(--border-mid);
-    border-radius: 8px;
-    background: var(--surface3);
-    color: var(--text-muted);
-    cursor: pointer;
-    font-size: 13px;
-    font-family: var(--font-sans);
-    transition: all .15s;
-    white-space: nowrap;
-  }
-  .lr-pill-btn:hover { border-color: var(--border-bright); color: var(--text); }
-  .lr-pill-sel {
-    border-color: var(--accent) !important;
-    background: var(--accent-subtle) !important;
-    color: var(--accent) !important;
-    font-weight: 600;
-  }
-  .lr-forn-opt {
-    padding: 12px 14px;
-    border: 1px solid var(--border-mid);
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: border-color .15s;
-  }
-  .lr-forn-opt:hover { border-color: var(--border-bright); }
-  .lr-forn-opt.lr-forn-sel { border-color: var(--accent); background: var(--accent-subtle); }
-  .lr-cat-opt {
-    padding: 10px 12px;
-    border: 1px solid var(--border-mid);
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all .15s;
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-  .lr-cat-opt:hover { border-color: var(--border-bright); color: var(--text); }
-  .lr-cat-sel { border-color: var(--accent) !important; background: var(--accent-subtle) !important; color: var(--accent) !important; }
-  .lr-pag-opt {
-    padding: 12px 10px;
-    border: 1px solid var(--border-mid);
-    border-radius: 10px;
-    cursor: pointer;
-    text-align: center;
-    transition: all .15s;
-  }
-  .lr-pag-opt:hover { border-color: var(--border-bright); }
-  .lr-pag-sel { border-color: var(--accent) !important; background: var(--accent-subtle) !important; }
-  .lr-pag-opt .lr-pag-nome { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 4px; }
-  .lr-pag-opt .lr-pag-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+@keyframes lr-spin{to{transform:rotate(360deg);}}
+.lr-pill-btn{padding:9px 14px;border:1px solid var(--border-mid);border-radius:8px;background:var(--surface3);color:var(--text-muted);cursor:pointer;font-size:13px;font-family:var(--font-sans);transition:all .15s;white-space:nowrap;}
+.lr-pill-btn:hover{border-color:var(--border-bright);color:var(--text);}
+.lr-pill-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;font-weight:600;}
+.lr-forn-opt{padding:12px 14px;border:1px solid var(--border-mid);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .15s;}
+.lr-forn-opt:hover{border-color:var(--border-bright);}
+.lr-forn-opt.lr-forn-sel{border-color:var(--accent);background:var(--accent-subtle);}
+.lr-cat-opt{padding:10px 12px;border:1px solid var(--border-mid);border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;font-size:13px;color:var(--text-muted);}
+.lr-cat-opt:hover{border-color:var(--border-bright);color:var(--text);}
+.lr-cat-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+.lr-pag-opt{padding:12px 10px;border:1px solid var(--border-mid);border-radius:10px;cursor:pointer;text-align:center;transition:all .15s;}
+.lr-pag-opt:hover{border-color:var(--border-bright);}
+.lr-pag-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;}
+.lr-pag-opt .lr-pag-nome{font-size:13px;font-weight:600;color:var(--text);margin-top:4px;}
+.lr-pag-opt .lr-pag-sub{font-size:10px;color:var(--text-muted);margin-top:2px;}
 </style>
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -16668,6 +16607,7 @@ const MEU_PAINEL_WIDGETS_DISPONIVEIS = [
   // ── Atalhos — Financeiro ─────────────────────────────────────────
   { id: 'atalho_cofre',               tipo: 'atalho', ico: '🏦', label: 'Cofre',                          grupo: 'fin', pagina: 'financeiro_cofre' },
   { id: 'atalho_rel_contas_pagar',    tipo: 'atalho', ico: '📊', label: 'Relatório contas a pagar',       grupo: 'fin', pagina: 'relatorio_financeiro' },
+  { id: 'atalho_lancamento_rapido',   tipo: 'acao',   ico: '⚡', label: 'Lançamento rápido',              grupo: 'fin', acao: 'abrirLancamentoRapido' },
   { id: 'atalho_cad_contas_pagar',    tipo: 'atalho', ico: '➕', label: 'Cadastro contas a pagar',        grupo: 'fin', pagina: 'financeiro_contasapagar' },
   { id: 'atalho_baixar_contas',       tipo: 'atalho', ico: '✅', label: 'Baixar contas',                  grupo: 'fin', pagina: 'financeiro_baixar_contas' },
   { id: 'atalho_rel_recebimentos',    tipo: 'atalho', ico: '📊', label: 'Relatório recebimentos',         grupo: 'fin', pagina: 'relatorio_recebimentos' },
@@ -16997,12 +16937,16 @@ async function renderizarMeuPainel() {
   grid.innerHTML = _meuPainelConfig.map(wid => {
     const def = MEU_PAINEL_WIDGETS_DISPONIVEIS.find(w => w.id === wid);
     if (!def) return '';
-    if (def.tipo === 'atalho') {
+    if (def.tipo === 'atalho' || def.tipo === 'acao') {
+      const onclickAcao = def.tipo === 'acao'
+        ? `${def.acao}()`
+        : `abrirPaginaAtalhoMeuPainel('${def.pagina}')`;
+      const tituloAcao = def.tipo === 'acao' ? def.label : `Ir para ${def.label}`;
       return `<div class="meu-painel-widget meu-painel-atalho" data-wid="${wid}" ${DA}
-        onclick="abrirPaginaAtalhoMeuPainel('${def.pagina}')" title="Ir para ${def.label}">
+        onclick="${onclickAcao}" title="${tituloAcao}">
         <button class="meu-painel-widget-remover" onclick="event.stopPropagation();removerWidgetMeuPainel('${wid}')" title="Remover">✕</button>
         <div style="font-size:28px;margin-bottom:6px;">${def.ico}</div>
-        <div class="meu-painel-widget-label">Atalho</div>
+        <div class="meu-painel-widget-label">${def.tipo === 'acao' ? 'Ação rápida' : 'Atalho'}</div>
         <div style="font-size:14px;font-weight:700;color:var(--text);">${escaparHtmlBasico(def.label)}</div>
       </div>`;
     }
@@ -42721,506 +42665,6 @@ window.addEventListener('load', function() {
   }
 </style>
 
-<script id="lancamento-rapido-js">
-/* ════════════════════════════════════════
-   LANÇAMENTO RÁPIDO — Contas a Pagar v1.0
-════════════════════════════════════════ */
-const _lr = {
-  step: 0,
-  fotoBase64: null, fotoMime: null,
-  fornecedorId: null, fornecedorNome: null,
-  categoriaId: null, dataCompra: null, dataVencimento: null,
-  valor: null, obs: '',
-  formaPagamentoId: null, formaPagamentoNome: null,
-  isCartao: false, qtdParcelas: 1,
-  iaSugeriu: { fornecedorNome: null, valor: null, dataCompra: null, formaPagamento: null, parcelas: null, categoriaSugerida: null },
-};
-
-function abrirLancamentoRapido() {
-  Object.assign(_lr, {
-    step: 0, fotoBase64: null, fotoMime: null,
-    fornecedorId: null, fornecedorNome: null,
-    categoriaId: null, dataCompra: null, dataVencimento: null,
-    valor: null, obs: '', formaPagamentoId: null,
-    formaPagamentoNome: null, isCartao: false, qtdParcelas: 1,
-    iaSugeriu: { fornecedorNome: null, valor: null, dataCompra: null, formaPagamento: null, parcelas: null, categoriaSugerida: null },
-  });
-  if (!(fornecedoresFinanceiroCache || []).length && typeof carregarFornecedoresFinanceiro === 'function')
-    carregarFornecedoresFinanceiro().catch(() => {});
-  if (!(categoriasCompraCache || []).length && typeof carregarCategoriasCompraFinanceiro === 'function')
-    carregarCategoriasCompraFinanceiro().catch(() => {});
-  if (!(formasPagamentoFinanceiroCache || []).length && typeof carregarFormasPagamentoFinanceiro === 'function')
-    carregarFormasPagamentoFinanceiro({ render: false, silencioso: true }).catch(() => {});
-  const overlay = document.getElementById('lancamentoRapidoOverlay');
-  if (!overlay) return;
-  overlay.style.display = 'flex';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    document.getElementById('lancamentoRapidoSheet').style.transform = 'translateY(0)';
-  }));
-  lrIrStep(1);
-}
-
-function fecharLancamentoRapido() {
-  const sheet = document.getElementById('lancamentoRapidoSheet');
-  const overlay = document.getElementById('lancamentoRapidoOverlay');
-  if (!sheet || !overlay) return;
-  sheet.style.transform = 'translateY(100%)';
-  setTimeout(() => { overlay.style.display = 'none'; }, 300);
-}
-
-function lrIrStep(n) {
-  _lr.step = n;
-  document.querySelectorAll('.lr-step').forEach(s => s.style.display = 'none');
-  const el = document.getElementById('lrStep' + n);
-  if (el) el.style.display = '';
-  const labels = ['','Foto','IA lendo','Fornecedor','Valor','Pagamento',''];
-  for (let i = 1; i <= 5; i++) {
-    const dot = document.getElementById('lrDot' + i);
-    if (!dot) continue;
-    if (i < n) { dot.style.background = 'var(--green)'; dot.style.width = '8px'; dot.style.borderRadius = '4px'; }
-    else if (i === n) { dot.style.background = 'var(--accent)'; dot.style.width = '22px'; dot.style.borderRadius = '4px'; }
-    else { dot.style.background = 'var(--border-bright)'; dot.style.width = '8px'; dot.style.borderRadius = '4px'; }
-  }
-  const sl = document.getElementById('lrStepLabel');
-  if (sl) sl.textContent = n <= 5 ? `${n} de 5 — ${labels[n]}` : '';
-  const tMap = {
-    1: ['Lançamento rápido','Fotografe o cupom ou comprovante'],
-    2: ['Analisando...','A IA está lendo o documento'],
-    3: ['Fornecedor','Confirme ou escolha o fornecedor'],
-    4: ['Valor e categoria','Confirme os dados do lançamento'],
-    5: ['Forma de pagamento','Como esta compra foi paga?'],
-    6: ['Pronto!','Lançamento registrado'],
-  };
-  const t = tMap[n] || ['Lançamento rápido',''];
-  const titulo = document.getElementById('lrTitulo');
-  const sub = document.getElementById('lrSubtitulo');
-  if (titulo) titulo.textContent = t[0];
-  if (sub) sub.textContent = t[1];
-  const stepper = document.getElementById('lrStepper');
-  if (stepper) stepper.style.display = (n === 1 || n === 6) ? 'none' : 'flex';
-  if (n === 3) lrRenderizarFornecedores();
-  if (n === 4) lrRenderizarStep4();
-  if (n === 5) lrRenderizarStep5();
-}
-
-/* ── Foto ── */
-async function lrProcessarFoto(input) {
-  const file = input?.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    _lr.fotoBase64 = e.target.result.split(',')[1];
-    _lr.fotoMime = file.type || 'image/jpeg';
-    lrIrStep(2);
-    const prev = document.getElementById('lrPreviewFoto');
-    const img = document.getElementById('lrPreviewImg');
-    if (prev && img) { img.src = e.target.result; prev.style.display = ''; }
-    await lrAnalisarComIA();
-  };
-  reader.readAsDataURL(file);
-}
-
-function lrAvancarSemFoto() {
-  _lr.fotoBase64 = null;
-  const hoje = new Date().toISOString().split('T')[0];
-  _lr.dataCompra = hoje;
-  _lr.dataVencimento = hoje;
-  lrIrStep(3);
-}
-
-async function lrAnalisarComIA() {
-  const msgs = ['Enviando para IA...','Identificando fornecedor...','Lendo valor e itens...','Detectando forma de pagamento...','Verificando parcelas...','Quase pronto...'];
-  let mi = 0;
-  const msgEl = document.getElementById('lrAnalisandoMsg');
-  const intervalo = setInterval(() => {
-    mi = Math.min(mi + 1, msgs.length - 1);
-    if (msgEl) msgEl.textContent = msgs[mi];
-  }, 800);
-  try {
-    const prompt = `Você é um extrator de dados de cupons fiscais e comprovantes de pagamento brasileiros.
-Analise esta imagem e extraia as informações no formato JSON:
-{"fornecedor_nome":"nome simplificado do estabelecimento","valor_total":0.00,"data_compra":"YYYY-MM-DD ou null","forma_pagamento":"DINHEIRO, PIX, CREDITO, DEBITO ou nome do banco/cartão identificado, ou null","parcelas":null,"categoria_sugerida":"uma palavra: Mercado, Combustível, Farmácia, Restaurante, Manutenção, Serviços, etc","itens_resumo":"lista resumida ou null"}
-Responda SOMENTE com o JSON, sem texto adicional.`;
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 500,
-        messages: [{ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: _lr.fotoMime, data: _lr.fotoBase64 } },
-          { type: 'text', text: prompt },
-        ]}],
-      }),
-    });
-    clearInterval(intervalo);
-    if (resp.ok) {
-      const data = await resp.json();
-      const texto = (data?.content || []).map(c => c.text || '').join('').trim();
-      try {
-        const parsed = JSON.parse(texto.replace(/```json|```/g, '').trim());
-        _lr.iaSugeriu.fornecedorNome = String(parsed.fornecedor_nome || '').trim().toUpperCase() || null;
-        _lr.iaSugeriu.valor = parsed.valor_total || null;
-        _lr.iaSugeriu.dataCompra = parsed.data_compra || null;
-        _lr.iaSugeriu.formaPagamento = String(parsed.forma_pagamento || '').trim().toUpperCase() || null;
-        _lr.iaSugeriu.parcelas = parsed.parcelas ? Number.parseInt(parsed.parcelas, 10) || null : null;
-        _lr.iaSugeriu.categoriaSugerida = String(parsed.categoria_sugerida || '').trim() || null;
-        if (_lr.iaSugeriu.valor) _lr.valor = _lr.iaSugeriu.valor;
-        if (_lr.iaSugeriu.dataCompra) _lr.dataCompra = _lr.iaSugeriu.dataCompra;
-        else _lr.dataCompra = new Date().toISOString().split('T')[0];
-        _lr.dataVencimento = _lr.dataCompra;
-        if (_lr.iaSugeriu.parcelas) _lr.qtdParcelas = _lr.iaSugeriu.parcelas;
-      } catch (_) {
-        const hoje = new Date().toISOString().split('T')[0];
-        _lr.dataCompra = hoje; _lr.dataVencimento = hoje;
-      }
-    } else {
-      const hoje = new Date().toISOString().split('T')[0];
-      _lr.dataCompra = hoje; _lr.dataVencimento = hoje;
-    }
-  } catch (err) {
-    clearInterval(intervalo);
-    console.warn('Lançamento Rápido: erro IA', err);
-    const hoje = new Date().toISOString().split('T')[0];
-    _lr.dataCompra = hoje; _lr.dataVencimento = hoje;
-  }
-  lrIrStep(3);
-}
-
-/* ── Fornecedor ── */
-function lrRenderizarFornecedores() {
-  const container = document.getElementById('lrFornOpcoes');
-  const infoEl = document.getElementById('lrFornMatchInfo');
-  if (!container) return;
-  const nomeSugerido = _lr.iaSugeriu.fornecedorNome || '';
-  const cache = fornecedoresFinanceiroCache || [];
-  let matches = [];
-  if (nomeSugerido) {
-    const palavras = nomeSugerido.toLowerCase().split(/\s+/).filter(p => p.length > 2);
-    matches = cache.filter(f => {
-      const fn = (f.nome || '').toLowerCase();
-      const chave = (f.chave_estabelecimento || '').toLowerCase();
-      return palavras.some(p => fn.includes(p) || chave.includes(p));
-    }).slice(0, 5);
-  }
-  if (infoEl) infoEl.textContent = nomeSugerido
-    ? `Identificamos "${nomeSugerido}" no documento. Escolha o fornecedor:`
-    : 'Não identificamos o fornecedor. Escolha ou busque:';
-  let html = '';
-  matches.forEach(f => {
-    html += `<div class="lr-forn-opt" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrToggleForn(this)">
-      <div><div style="font-size:13px;font-weight:600;color:var(--text);">${escaparHtmlBasico(f.nome||'')}</div><div style="font-size:11px;color:var(--text-muted);">Cadastrado</div></div>
-      <span class="lr-forn-check" style="display:none;color:var(--accent);font-size:18px;">✓</span></div>`;
-  });
-  html += `<div style="margin-top:8px;">
-    <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Ou busque outro fornecedor:</div>
-    <input id="lrFornBusca" type="text" style="width:100%;" placeholder="Digite para buscar..." oninput="lrBuscarFornecedor(this.value)">
-    <div id="lrFornBuscaRes" style="margin-top:6px;display:flex;flex-direction:column;gap:6px;"></div>
-  </div>
-  <div class="lr-forn-opt" data-id="NOVO" data-nome="${escaparHtmlBasico(nomeSugerido||'Novo fornecedor')}" onclick="lrToggleForn(this)" style="margin-top:4px;border-style:dashed;">
-    <div><div style="font-size:13px;font-weight:600;color:var(--text-muted);">+ Pré-cadastrar "${escaparHtmlBasico(nomeSugerido||'Novo fornecedor')}"</div><div style="font-size:11px;color:var(--text-muted);">Cria cadastro simples agora</div></div>
-    <span class="lr-forn-check" style="display:none;color:var(--accent);font-size:18px;">✓</span>
-  </div>`;
-  container.innerHTML = html;
-  if (matches.length) {
-    const primeiro = container.querySelector('.lr-forn-opt');
-    if (primeiro) lrToggleForn(primeiro);
-  }
-}
-
-function lrToggleForn(el) {
-  document.querySelectorAll('#lrFornOpcoes .lr-forn-opt, #lrFornBuscaRes .lr-forn-opt').forEach(o => {
-    o.classList.remove('lr-forn-sel');
-    const chk = o.querySelector('.lr-forn-check');
-    if (chk) chk.style.display = 'none';
-  });
-  el.classList.add('lr-forn-sel');
-  const chk = el.querySelector('.lr-forn-check');
-  if (chk) chk.style.display = '';
-  _lr.fornecedorId = el.dataset.id === 'NOVO' ? null : el.dataset.id;
-  _lr.fornecedorNome = el.dataset.nome || '';
-}
-
-function lrBuscarFornecedor(termo) {
-  const res = document.getElementById('lrFornBuscaRes');
-  if (!res) return;
-  if (!termo || termo.length < 2) { res.innerHTML = ''; return; }
-  const t = termo.toLowerCase();
-  const matches = (fornecedoresFinanceiroCache || []).filter(f => (f.nome||'').toLowerCase().includes(t)).slice(0, 5);
-  res.innerHTML = matches.map(f => `
-    <div class="lr-forn-opt" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrToggleForn(this)">
-      <div><div style="font-size:13px;font-weight:600;color:var(--text);">${escaparHtmlBasico(f.nome||'')}</div></div>
-      <span class="lr-forn-check" style="display:none;color:var(--accent);font-size:18px;">✓</span>
-    </div>`).join('');
-}
-
-async function lrConfirmarFornecedor() {
-  if (!_lr.fornecedorNome) { alert('Selecione ou busque um fornecedor antes de continuar.'); return; }
-  if (!_lr.fornecedorId) {
-    try {
-      const tenant = await resolverTenantFornecedorFinanceiro();
-      const { data: novoForn, error } = await sb.from('fornecedores').insert([{
-        nome: _lr.fornecedorNome, loja_id: tenant.loja_id, empresa_id: tenant.empresa_id,
-      }]).select('id').single();
-      if (error) throw error;
-      _lr.fornecedorId = String(novoForn.id);
-      await carregarFornecedoresFinanceiro();
-    } catch (err) {
-      alert('Não foi possível pré-cadastrar o fornecedor: ' + (err?.message || 'erro desconhecido'));
-      return;
-    }
-  }
-  lrIrStep(4);
-}
-
-/* ── Step 4 ── */
-function lrRenderizarStep4() {
-  const campoValor = document.getElementById('lrValor');
-  if (campoValor && _lr.valor) campoValor.value = 'R$ ' + Number(_lr.valor).toFixed(2).replace('.', ',');
-  const campoData = document.getElementById('lrDataCompra');
-  if (campoData) campoData.value = _lr.dataCompra || new Date().toISOString().split('T')[0];
-  document.querySelectorAll('.lr-venc-btn').forEach(b => b.classList.remove('lr-pill-sel'));
-  const btnHoje = document.querySelector('.lr-venc-btn[data-dias="0"]');
-  if (btnHoje) btnHoje.classList.add('lr-pill-sel');
-  const vc = document.getElementById('lrVencCustom');
-  if (vc) vc.style.display = 'none';
-  const grid = document.getElementById('lrCatGrid');
-  if (!grid) return;
-  const cats = categoriasCompraCache || [];
-  const sugLower = (_lr.iaSugeriu.categoriaSugerida || '').toLowerCase();
-  let catAutoId = null;
-  if (sugLower) {
-    const match = cats.find(c => (c.nome||'').toLowerCase().includes(sugLower) || sugLower.includes((c.nome||'').toLowerCase()));
-    if (match) catAutoId = String(match.id);
-  }
-  grid.innerHTML = cats.map(c => {
-    const autoSel = catAutoId && String(c.id) === catAutoId;
-    if (autoSel) _lr.categoriaId = String(c.id);
-    return `<div class="lr-cat-opt${autoSel?' lr-cat-sel':''}" data-id="${c.id}" onclick="lrSelecionarCat(this)">
-      <span style="font-size:18px;">${c.icone||'🏷️'}</span><span>${escaparHtmlBasico(c.nome||'')}</span></div>`;
-  }).join('') +
-  `<div class="lr-cat-opt" data-id="" onclick="lrSelecionarCat(this)"><span style="font-size:18px;">⋯</span><span style="color:var(--text-muted);">Sem categoria</span></div>`;
-}
-
-function lrSelecionarCat(el) {
-  document.querySelectorAll('#lrCatGrid .lr-cat-opt').forEach(o => o.classList.remove('lr-cat-sel'));
-  el.classList.add('lr-cat-sel');
-  _lr.categoriaId = el.dataset.id || null;
-}
-
-function lrSelecionarVencimento(el) {
-  document.querySelectorAll('.lr-venc-btn').forEach(b => b.classList.remove('lr-pill-sel'));
-  el.classList.add('lr-pill-sel');
-  const dias = Number.parseInt(el.dataset.dias, 10);
-  const customInput = document.getElementById('lrVencCustom');
-  if (dias === -1) {
-    customInput.style.display = '';
-    customInput.value = _lr.dataVencimento || new Date().toISOString().split('T')[0];
-  } else {
-    customInput.style.display = 'none';
-    const base = new Date((_lr.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
-    base.setDate(base.getDate() + dias);
-    _lr.dataVencimento = base.toISOString().split('T')[0];
-  }
-}
-
-function lrVencCustomAlterou() {
-  const v = document.getElementById('lrVencCustom')?.value;
-  if (v) _lr.dataVencimento = v;
-}
-
-function lrFormatarValor(input) {
-  const v = input.value.replace(/[^\d,]/g, '').replace(',', '.');
-  _lr.valor = parseFloat(v) || null;
-}
-
-function lrAvancarStep4() {
-  const campoData = document.getElementById('lrDataCompra');
-  if (campoData?.value) _lr.dataCompra = campoData.value;
-  const campoVal = document.getElementById('lrValor');
-  const valTxt = (campoVal?.value || '').replace(/[R$\s]/g, '').replace(',', '.');
-  _lr.valor = parseFloat(valTxt) || null;
-  const msg = document.getElementById('lrMsgStep4');
-  if (!_lr.dataCompra) { if (msg) { msg.textContent = 'Informe a data da compra.'; msg.className = 'msg err'; } return; }
-  if (!_lr.valor || _lr.valor <= 0) { if (msg) { msg.textContent = 'Informe o valor da compra.'; msg.className = 'msg err'; } return; }
-  if (!_lr.dataVencimento) _lr.dataVencimento = _lr.dataCompra;
-  _lr.obs = String(document.getElementById('lrObs')?.value || '').trim();
-  if (msg) { msg.textContent = ''; msg.className = 'msg'; }
-  lrIrStep(5);
-}
-
-/* ── Step 5 ── */
-function lrRenderizarStep5() {
-  const grid = document.getElementById('lrPagGrid');
-  if (!grid) return;
-  const formas = formasPagamentoFinanceiroCache || [];
-  const cartoes = formas.filter(f => f.ativo !== false && f.is_cartao === true);
-  const outras = formas.filter(f => f.ativo !== false && f.is_cartao !== true);
-  const sugestaoIA = (_lr.iaSugeriu.formaPagamento || '').toUpperCase();
-  let formaAutoId = null;
-  if (sugestaoIA) {
-    const match = formas.find(f => {
-      const nome = (f.nome||'').toUpperCase();
-      return nome.includes(sugestaoIA) || sugestaoIA.includes(nome);
-    });
-    if (match) formaAutoId = String(match.id);
-  }
-  const icones = { 'DINHEIRO':'💵','PIX':'⚡','DÉBITO':'💳','DEBITO':'💳','CRÉDITO':'💳','CREDITO':'💳' };
-  let html = '';
-  outras.forEach(f => {
-    const nome = f.nome||'';
-    const ico = icones[nome.toUpperCase()]||'💳';
-    const auto = formaAutoId && String(f.id) === formaAutoId;
-    if (auto) { _lr.formaPagamentoId = String(f.id); _lr.formaPagamentoNome = nome; _lr.isCartao = false; }
-    html += `<div class="lr-pag-opt${auto?' lr-pag-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(nome)}" data-cartao="false" onclick="lrSelecionarPag(this)">
-      <div style="font-size:26px;">${ico}</div><div class="lr-pag-nome">${escaparHtmlBasico(nome)}</div></div>`;
-  });
-  cartoes.forEach(f => {
-    const nome = f.nome||'';
-    const auto = formaAutoId && String(f.id) === formaAutoId;
-    if (auto) { _lr.formaPagamentoId = String(f.id); _lr.formaPagamentoNome = nome; _lr.isCartao = true; }
-    html += `<div class="lr-pag-opt${auto?' lr-pag-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(nome)}" data-cartao="true" onclick="lrSelecionarPag(this)">
-      <div style="font-size:26px;">💳</div><div class="lr-pag-nome">${escaparHtmlBasico(nome)}</div>
-      <div class="lr-pag-sub">Cartão${auto&&sugestaoIA?' · ✦ identificado':''}</div></div>`;
-  });
-  grid.innerHTML = html || '<div style="color:var(--text-muted);font-size:13px;grid-column:span 2;">Nenhuma forma cadastrada.</div>';
-  lrAtualizarParcelasUI();
-  lrAtualizarResumo();
-}
-
-function lrSelecionarPag(el) {
-  document.querySelectorAll('#lrPagGrid .lr-pag-opt').forEach(o => o.classList.remove('lr-pag-sel'));
-  el.classList.add('lr-pag-sel');
-  _lr.formaPagamentoId = el.dataset.id || null;
-  _lr.formaPagamentoNome = el.dataset.nome || '';
-  _lr.isCartao = el.dataset.cartao === 'true';
-  lrAtualizarParcelasUI();
-  lrAtualizarResumo();
-}
-
-function lrAtualizarParcelasUI() {
-  const card = document.getElementById('lrParcelasCard');
-  if (!card) return;
-  card.style.display = _lr.isCartao ? '' : 'none';
-  if (_lr.isCartao) {
-    const qtd = _lr.qtdParcelas || 1;
-    document.querySelectorAll('.lr-parc-btn').forEach(b => {
-      b.classList.remove('lr-pill-sel');
-      if (Number(b.dataset.parc) === qtd) b.classList.add('lr-pill-sel');
-    });
-    lrAtualizarInfoParcelas();
-  }
-}
-
-function lrSelecionarParcela(el) {
-  document.querySelectorAll('.lr-parc-btn').forEach(b => b.classList.remove('lr-pill-sel'));
-  el.classList.add('lr-pill-sel');
-  _lr.qtdParcelas = Number.parseInt(el.dataset.parc, 10) || 1;
-  lrAtualizarInfoParcelas();
-  lrAtualizarResumo();
-}
-
-function lrAtualizarInfoParcelas() {
-  const info = document.getElementById('lrParcInfo');
-  if (!info || !_lr.valor || !_lr.qtdParcelas) return;
-  if (_lr.qtdParcelas <= 1) { info.textContent = ''; return; }
-  const vlrParc = (_lr.valor / _lr.qtdParcelas).toFixed(2).replace('.', ',');
-  info.textContent = `${_lr.qtdParcelas}x de R$ ${vlrParc}`;
-}
-
-function lrAtualizarResumo() {
-  const el = document.getElementById('lrResumoConteudo');
-  if (!el) return;
-  const vlr = _lr.valor ? 'R$ ' + Number(_lr.valor).toFixed(2).replace('.', ',') : '—';
-  const cat = (categoriasCompraCache||[]).find(c => String(c.id) === String(_lr.categoriaId||''))?.nome || 'Sem categoria';
-  const dtCompra = _lr.dataCompra ? _lr.dataCompra.split('-').reverse().join('/') : '—';
-  const parc = _lr.isCartao && _lr.qtdParcelas > 1 ? ` · ${_lr.qtdParcelas}x` : '';
-  el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
-      <span style="color:var(--text-muted);">Fornecedor</span><span style="font-weight:600;">${escaparHtmlBasico(_lr.fornecedorNome||'—')}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
-      <span style="color:var(--text-muted);">Valor</span><span style="font-weight:700;font-size:16px;">${vlr}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
-      <span style="color:var(--text-muted);">Categoria</span><span>${escaparHtmlBasico(cat)}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:4px 0;">
-      <span style="color:var(--text-muted);">Pagamento</span><span>${escaparHtmlBasico(_lr.formaPagamentoNome||'—')}${parc}</span></div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Compra: ${dtCompra}</div>`;
-}
-
-/* ── Salvar ── */
-async function lrSalvar(relaxar = false) {
-  const msg = document.getElementById('lrMsgStep5');
-  const btn = document.getElementById('lrBtnSalvar');
-  if (!_lr.fornecedorId) { if (msg) { msg.textContent = 'Fornecedor inválido.'; msg.className = 'msg err'; } return; }
-  if (!_lr.valor || _lr.valor <= 0) { if (msg) { msg.textContent = 'Informe um valor válido.'; msg.className = 'msg err'; } return; }
-  if (!relaxar && !_lr.categoriaId) { if (msg) { msg.textContent = 'Selecione uma categoria antes de salvar.'; msg.className = 'msg err'; } return; }
-  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
-  try {
-    const tenant = await resolverTenantFornecedorFinanceiro();
-    const ator = obterAtorAuditoriaAtual();
-    const dataCompraISO = _lr.dataCompra || new Date().toISOString().split('T')[0];
-    const dataVencISO = _lr.dataVencimento || dataCompraISO;
-    const qtd = (_lr.isCartao && _lr.qtdParcelas > 1) ? _lr.qtdParcelas : 1;
-    const grupoParcelasId = qtd > 1 ? gerarGrupoParcelasIdFinanceiro() : null;
-    let intervalo = null;
-    if (qtd > 1) {
-      intervalo = 30;
-      const fornObj = (fornecedoresFinanceiroCache||[]).find(f => String(f.id) === String(_lr.fornecedorId));
-      if (fornObj?.dia_vencimento) {
-        const baseDate = new Date(dataVencISO + 'T00:00:00');
-        const proximoMes = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, fornObj.dia_vencimento);
-        const diffDias = Math.round((proximoMes.getTime() - baseDate.getTime()) / (24*60*60*1000));
-        intervalo = diffDias > 0 ? diffDias : 30;
-      }
-    }
-    const obs = _lr.obs || (_lr.iaSugeriu.fornecedorNome ? `Lançamento rápido — ${_lr.iaSugeriu.fornecedorNome}` : 'Lançamento rápido');
-    const payloadBase = {
-      fornecedor_id: _lr.fornecedorId,
-      categoria_id: _lr.categoriaId || null,
-      loja_id: tenant.loja_id,
-      empresa_id: tenant.empresa_id,
-      data_compra: dataCompraISO,
-      valor_compra: Number(_lr.valor.toFixed(2)),
-      observacao: obs,
-      qtd_parcelas: qtd,
-      intervalo_parcelas_dias: qtd > 1 ? intervalo : null,
-    };
-    const linhas = Array.from({ length: qtd }).map((_, idx) => ({
-      ...payloadBase,
-      data_pagamento: null,
-      data_vencimento: qtd > 1 ? calcularVencimentoParcelaFinanceiro(dataVencISO, idx, intervalo) : dataVencISO,
-      numero_parcela: idx + 1,
-      grupo_parcelas_id: grupoParcelasId,
-      criado_por_id: ator?.funcionarioId || null,
-      criado_por_nome: ator?.nome || 'Lançamento Rápido',
-    }));
-    const { error } = await sb.from('contasapagar').insert(linhas);
-    if (error) throw error;
-    if (typeof carregarContasAPagarFinanceiro === 'function') carregarContasAPagarFinanceiro().catch(() => {});
-    const vlrFmt = 'R$ ' + Number(_lr.valor).toFixed(2).replace('.', ',');
-    const parcTxt = qtd > 1 ? ` (${qtd}x)` : '';
-    const infoEl = document.getElementById('lrSucessoInfo');
-    if (infoEl) infoEl.textContent = `${_lr.fornecedorNome} · ${vlrFmt}${parcTxt}`;
-    lrIrStep(6);
-  } catch (err) {
-    if (msg) { msg.textContent = `Erro ao salvar: ${err?.message||'erro desconhecido'}`; msg.className = 'msg err'; }
-    if (btn) { btn.disabled = false; btn.textContent = '✓ Salvar lançamento'; }
-  }
-}
-
-function lrNovoLancamento() {
-  const input = document.getElementById('lrInputFoto');
-  if (input) input.value = '';
-  Object.assign(_lr, {
-    fotoBase64: null, fotoMime: null, fornecedorId: null, fornecedorNome: null,
-    categoriaId: null, dataCompra: null, dataVencimento: null, valor: null, obs: '',
-    formaPagamentoId: null, formaPagamentoNome: null, isCartao: false, qtdParcelas: 1,
-    iaSugeriu: { fornecedorNome: null, valor: null, dataCompra: null, formaPagamento: null, parcelas: null, categoriaSugerida: null },
-  });
-  lrIrStep(1);
-}
-</script>
-
 </body>
 </html>
 
@@ -43230,3 +42674,32 @@ function lrNovoLancamento() {
 
 
 
+
+<script id="lancamento-rapido-js">
+/* LANCAMENTO RAPIDO v1.0 */
+const _lr={step:0,fotoBase64:null,fotoMime:null,fornecedorId:null,fornecedorNome:null,categoriaId:null,dataCompra:null,dataVencimento:null,valor:null,obs:'',formaPagamentoId:null,formaPagamentoNome:null,isCartao:false,qtdParcelas:1,iaSugeriu:{fornecedorNome:null,valor:null,dataCompra:null,formaPagamento:null,parcelas:null,categoriaSugerida:null}};
+function abrirLancamentoRapido(){Object.assign(_lr,{step:0,fotoBase64:null,fotoMime:null,fornecedorId:null,fornecedorNome:null,categoriaId:null,dataCompra:null,dataVencimento:null,valor:null,obs:'',formaPagamentoId:null,formaPagamentoNome:null,isCartao:false,qtdParcelas:1,iaSugeriu:{fornecedorNome:null,valor:null,dataCompra:null,formaPagamento:null,parcelas:null,categoriaSugerida:null}});if(!(fornecedoresFinanceiroCache||[]).length&&typeof carregarFornecedoresFinanceiro==='function')carregarFornecedoresFinanceiro().catch(()=>{});if(!(categoriasCompraCache||[]).length&&typeof carregarCategoriasCompraFinanceiro==='function')carregarCategoriasCompraFinanceiro().catch(()=>{});if(!(formasPagamentoFinanceiroCache||[]).length&&typeof carregarFormasPagamentoFinanceiro==='function')carregarFormasPagamentoFinanceiro({render:false,silencioso:true}).catch(()=>{});const o=document.getElementById('lancamentoRapidoOverlay');if(!o)return;o.style.display='flex';requestAnimationFrame(()=>requestAnimationFrame(()=>{document.getElementById('lancamentoRapidoSheet').style.transform='translateY(0)';}));lrIrStep(1);}
+function fecharLancamentoRapido(){const s=document.getElementById('lancamentoRapidoSheet'),o=document.getElementById('lancamentoRapidoOverlay');if(!s||!o)return;s.style.transform='translateY(100%)';setTimeout(()=>{o.style.display='none';},300);}
+function lrIrStep(n){_lr.step=n;document.querySelectorAll('.lr-step').forEach(s=>s.style.display='none');const el=document.getElementById('lrStep'+n);if(el)el.style.display='';const labels=['','Foto','IA lendo','Fornecedor','Valor','Pagamento',''];for(let i=1;i<=5;i++){const d=document.getElementById('lrDot'+i);if(!d)continue;if(i<n){d.style.background='var(--green)';d.style.width='8px';d.style.borderRadius='4px';}else if(i===n){d.style.background='var(--accent)';d.style.width='22px';d.style.borderRadius='4px';}else{d.style.background='var(--border-bright)';d.style.width='8px';d.style.borderRadius='4px';}}const sl=document.getElementById('lrStepLabel');if(sl)sl.textContent=n<=5?n+' de 5 - '+labels[n]:'';const tM={1:['Lancamento rapido','Fotografe o cupom ou comprovante'],2:['Analisando...','A IA esta lendo o documento'],3:['Fornecedor','Confirme ou escolha o fornecedor'],4:['Valor e categoria','Confirme os dados do lancamento'],5:['Forma de pagamento','Como esta compra foi paga?'],6:['Pronto!','Lancamento registrado']};const t=tM[n]||['Lancamento rapido',''];const tt=document.getElementById('lrTitulo'),ts=document.getElementById('lrSubtitulo');if(tt)tt.textContent=t[0];if(ts)ts.textContent=t[1];const st=document.getElementById('lrStepper');if(st)st.style.display=(n===1||n===6)?'none':'flex';if(n===3)lrRenderizarFornecedores();if(n===4)lrRenderizarStep4();if(n===5)lrRenderizarStep5();}
+async function lrProcessarFoto(input){const file=input&&input.files&&input.files[0];if(!file)return;const reader=new FileReader();reader.onload=async function(e){_lr.fotoBase64=e.target.result.split(',')[1];_lr.fotoMime=file.type||'image/jpeg';lrIrStep(2);const pv=document.getElementById('lrPreviewFoto'),pi=document.getElementById('lrPreviewImg');if(pv&&pi){pi.src=e.target.result;pv.style.display='';}await lrAnalisarComIA();};reader.readAsDataURL(file);}
+function lrAvancarSemFoto(){_lr.fotoBase64=null;const h=new Date().toISOString().split('T')[0];_lr.dataCompra=h;_lr.dataVencimento=h;lrIrStep(3);}
+async function lrAnalisarComIA(){const msgs=['Enviando para IA...','Identificando fornecedor...','Lendo valor e itens...','Detectando forma de pagamento...','Verificando parcelas...','Quase pronto...'];let mi=0;const msgEl=document.getElementById('lrAnalisandoMsg');const iv=setInterval(function(){mi=Math.min(mi+1,msgs.length-1);if(msgEl)msgEl.textContent=msgs[mi];},800);try{const prompt='Voce e um extrator de dados de cupons fiscais brasileiros. Analise esta imagem e retorne SOMENTE um JSON: {"fornecedor_nome":"nome do estabelecimento","valor_total":0.00,"data_compra":"YYYY-MM-DD ou null","forma_pagamento":"DINHEIRO, PIX, CREDITO, DEBITO ou nome do cartao, ou null","parcelas":null,"categoria_sugerida":"Mercado, Combustivel, Farmacia, Restaurante, Manutencao, Servicos, etc","itens_resumo":"lista resumida ou null"}';const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:_lr.fotoMime,data:_lr.fotoBase64}},{type:'text',text:prompt}]}]})});clearInterval(iv);if(resp.ok){const data=await resp.json();const texto=(data&&data.content||[]).map(function(c){return c.text||'';}).join('').trim();try{const p=JSON.parse(texto.replace(/```json|```/g,'').trim());_lr.iaSugeriu.fornecedorNome=String(p.fornecedor_nome||'').trim().toUpperCase()||null;_lr.iaSugeriu.valor=p.valor_total||null;_lr.iaSugeriu.dataCompra=p.data_compra||null;_lr.iaSugeriu.formaPagamento=String(p.forma_pagamento||'').trim().toUpperCase()||null;_lr.iaSugeriu.parcelas=p.parcelas?Number.parseInt(p.parcelas,10)||null:null;_lr.iaSugeriu.categoriaSugerida=String(p.categoria_sugerida||'').trim()||null;if(_lr.iaSugeriu.valor)_lr.valor=_lr.iaSugeriu.valor;_lr.dataCompra=_lr.iaSugeriu.dataCompra||new Date().toISOString().split('T')[0];_lr.dataVencimento=_lr.dataCompra;if(_lr.iaSugeriu.parcelas)_lr.qtdParcelas=_lr.iaSugeriu.parcelas;}catch(e2){const h=new Date().toISOString().split('T')[0];_lr.dataCompra=h;_lr.dataVencimento=h;}}else{const h=new Date().toISOString().split('T')[0];_lr.dataCompra=h;_lr.dataVencimento=h;}}catch(err){clearInterval(iv);const h=new Date().toISOString().split('T')[0];_lr.dataCompra=h;_lr.dataVencimento=h;}lrIrStep(3);}
+function lrRenderizarFornecedores(){const cont=document.getElementById('lrFornOpcoes'),info=document.getElementById('lrFornMatchInfo');if(!cont)return;const ns=_lr.iaSugeriu.fornecedorNome||'',cache=fornecedoresFinanceiroCache||[];let matches=[];if(ns){const pw=ns.toLowerCase().split(/\s+/).filter(function(p){return p.length>2;});matches=cache.filter(function(f){const fn=(f.nome||'').toLowerCase(),ch=(f.chave_estabelecimento||'').toLowerCase();return pw.some(function(p){return fn.includes(p)||ch.includes(p);});}).slice(0,5);}if(info)info.textContent=ns?'Identificamos "'+ns+'" no documento. Escolha o fornecedor:':'Nao identificamos. Escolha ou busque:';let html='';matches.forEach(function(f){html+='<div class="lr-forn-opt" data-id="'+f.id+'" data-nome="'+escaparHtmlBasico(f.nome||'')+'" onclick="lrToggleForn(this)"><div><div style="font-size:13px;font-weight:600;color:var(--text);">'+escaparHtmlBasico(f.nome||'')+'</div><div style="font-size:11px;color:var(--text-muted);">Cadastrado</div></div><span class="lr-forn-check" style="display:none;color:var(--accent);font-size:18px;">&#x2713;</span></div>';});html+='<div style="margin-top:8px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Ou busque outro fornecedor:</div><input id="lrFornBusca" type="text" style="width:100%;" placeholder="Digite para buscar..." oninput="lrBuscarFornecedor(this.value)"><div id="lrFornBuscaRes" style="margin-top:6px;display:flex;flex-direction:column;gap:6px;"></div></div><div class="lr-forn-opt" data-id="NOVO" data-nome="'+escaparHtmlBasico(ns||'Novo fornecedor')+'" onclick="lrToggleForn(this)" style="margin-top:4px;border-style:dashed;"><div><div style="font-size:13px;font-weight:600;color:var(--text-muted);">+ Pre-cadastrar "'+escaparHtmlBasico(ns||'Novo fornecedor')+'"</div><div style="font-size:11px;color:var(--text-muted);">Cria cadastro simples agora</div></div><span class="lr-forn-check" style="display:none;color:var(--accent);font-size:18px;">&#x2713;</span></div>';cont.innerHTML=html;if(matches.length){const p=cont.querySelector('.lr-forn-opt');if(p)lrToggleForn(p);}}
+function lrToggleForn(el){document.querySelectorAll('#lrFornOpcoes .lr-forn-opt,#lrFornBuscaRes .lr-forn-opt').forEach(function(o){o.classList.remove('lr-forn-sel');const c=o.querySelector('.lr-forn-check');if(c)c.style.display='none';});el.classList.add('lr-forn-sel');const c=el.querySelector('.lr-forn-check');if(c)c.style.display='';_lr.fornecedorId=el.dataset.id==='NOVO'?null:el.dataset.id;_lr.fornecedorNome=el.dataset.nome||'';}
+function lrBuscarFornecedor(t){const r=document.getElementById('lrFornBuscaRes');if(!r)return;if(!t||t.length<2){r.innerHTML='';return;}const tl=t.toLowerCase(),m=(fornecedoresFinanceiroCache||[]).filter(function(f){return(f.nome||'').toLowerCase().includes(tl);}).slice(0,5);r.innerHTML=m.map(function(f){return'<div class="lr-forn-opt" data-id="'+f.id+'" data-nome="'+escaparHtmlBasico(f.nome||'')+'" onclick="lrToggleForn(this)"><div><div style="font-size:13px;font-weight:600;color:var(--text);">'+escaparHtmlBasico(f.nome||'')+'</div></div><span class="lr-forn-check" style="display:none;color:var(--accent);font-size:18px;">&#x2713;</span></div>';}).join('');}
+async function lrConfirmarFornecedor(){if(!_lr.fornecedorNome){alert('Selecione ou busque um fornecedor antes de continuar.');return;}if(!_lr.fornecedorId){try{const t=await resolverTenantFornecedorFinanceiro();const res=await sb.from('fornecedores').insert([{nome:_lr.fornecedorNome,loja_id:t.loja_id,empresa_id:t.empresa_id}]).select('id').single();if(res.error)throw res.error;_lr.fornecedorId=String(res.data.id);await carregarFornecedoresFinanceiro();}catch(err){alert('Nao foi possivel pre-cadastrar: '+(err&&err.message||'erro desconhecido'));return;}}lrIrStep(4);}
+function lrRenderizarStep4(){const cv=document.getElementById('lrValor');if(cv&&_lr.valor)cv.value='R$ '+Number(_lr.valor).toFixed(2).replace('.',',');const cd=document.getElementById('lrDataCompra');if(cd)cd.value=_lr.dataCompra||new Date().toISOString().split('T')[0];document.querySelectorAll('.lr-venc-btn').forEach(function(b){b.classList.remove('lr-pill-sel');});const bh=document.querySelector('.lr-venc-btn[data-dias="0"]');if(bh)bh.classList.add('lr-pill-sel');const vc=document.getElementById('lrVencCustom');if(vc)vc.style.display='none';const grid=document.getElementById('lrCatGrid');if(!grid)return;const cats=categoriasCompraCache||[],sl=(_lr.iaSugeriu.categoriaSugerida||'').toLowerCase();let catAutoId=null;if(sl){const m=cats.find(function(c){return(c.nome||'').toLowerCase().includes(sl)||sl.includes((c.nome||'').toLowerCase());});if(m)catAutoId=String(m.id);}grid.innerHTML=cats.map(function(c){const a=catAutoId&&String(c.id)===catAutoId;if(a)_lr.categoriaId=String(c.id);return'<div class="lr-cat-opt'+(a?' lr-cat-sel':'')+'" data-id="'+c.id+'" onclick="lrSelecionarCat(this)"><span style="font-size:18px;">'+(c.icone||'&#x1F3F7;')+'</span><span>'+escaparHtmlBasico(c.nome||'')+'</span></div>';}).join('')+'<div class="lr-cat-opt" data-id="" onclick="lrSelecionarCat(this)"><span style="font-size:18px;">&#x22ef;</span><span style="color:var(--text-muted);">Sem categoria</span></div>';}
+function lrSelecionarCat(el){document.querySelectorAll('#lrCatGrid .lr-cat-opt').forEach(function(o){o.classList.remove('lr-cat-sel');});el.classList.add('lr-cat-sel');_lr.categoriaId=el.dataset.id||null;}
+function lrSelecionarVencimento(el){document.querySelectorAll('.lr-venc-btn').forEach(function(b){b.classList.remove('lr-pill-sel');});el.classList.add('lr-pill-sel');const dias=Number.parseInt(el.dataset.dias,10),ci=document.getElementById('lrVencCustom');if(dias===-1){ci.style.display='';ci.value=_lr.dataVencimento||new Date().toISOString().split('T')[0];}else{ci.style.display='none';const b=new Date((_lr.dataCompra||new Date().toISOString().split('T')[0])+'T00:00:00');b.setDate(b.getDate()+dias);_lr.dataVencimento=b.toISOString().split('T')[0];}}
+function lrVencCustomAlterou(){const v=document.getElementById('lrVencCustom')&&document.getElementById('lrVencCustom').value;if(v)_lr.dataVencimento=v;}
+function lrFormatarValor(input){const v=input.value.replace(/[^\d,]/g,'').replace(',','.');_lr.valor=parseFloat(v)||null;}
+function lrAvancarStep4(){const cd=document.getElementById('lrDataCompra');if(cd&&cd.value)_lr.dataCompra=cd.value;const cv=document.getElementById('lrValor');const vt=(cv&&cv.value||'').replace(/[R$\s]/g,'').replace(',','.');_lr.valor=parseFloat(vt)||null;const msg=document.getElementById('lrMsgStep4');if(!_lr.dataCompra){if(msg){msg.textContent='Informe a data da compra.';msg.className='msg err';}return;}if(!_lr.valor||_lr.valor<=0){if(msg){msg.textContent='Informe o valor da compra.';msg.className='msg err';}return;}if(!_lr.dataVencimento)_lr.dataVencimento=_lr.dataCompra;_lr.obs=String((document.getElementById('lrObs')&&document.getElementById('lrObs').value)||'').trim();if(msg){msg.textContent='';msg.className='msg';}lrIrStep(5);}
+function lrRenderizarStep5(){const grid=document.getElementById('lrPagGrid');if(!grid)return;const formas=formasPagamentoFinanceiroCache||[];const cartoes=formas.filter(function(f){return f.ativo!==false&&f.is_cartao===true;});const outras=formas.filter(function(f){return f.ativo!==false&&f.is_cartao!==true;});const sIA=(_lr.iaSugeriu.formaPagamento||'').toUpperCase();let autoId=null;if(sIA){const m=formas.find(function(f){const n=(f.nome||'').toUpperCase();return n.includes(sIA)||sIA.includes(n);});if(m)autoId=String(m.id);}const ico={DINHEIRO:'&#x1F4B5;',PIX:'&#x26A1;',DEBITO:'&#x1F4B3;',CREDITO:'&#x1F4B3;'};let html='';outras.forEach(function(f){const n=f.nome||'',i=ico[(n.toUpperCase().replace(/[ÉÃÁ]/g,function(x){return{E:'E',A:'A'}[x]||x}))]||'&#x1F4B3;',a=autoId&&String(f.id)===autoId;if(a){_lr.formaPagamentoId=String(f.id);_lr.formaPagamentoNome=n;_lr.isCartao=false;}html+='<div class="lr-pag-opt'+(a?' lr-pag-sel':'')+'" data-id="'+f.id+'" data-nome="'+escaparHtmlBasico(n)+'" data-cartao="false" onclick="lrSelecionarPag(this)"><div style="font-size:26px;">'+i+'</div><div class="lr-pag-nome">'+escaparHtmlBasico(n)+'</div></div>';});cartoes.forEach(function(f){const n=f.nome||'',a=autoId&&String(f.id)===autoId;if(a){_lr.formaPagamentoId=String(f.id);_lr.formaPagamentoNome=n;_lr.isCartao=true;}html+='<div class="lr-pag-opt'+(a?' lr-pag-sel':'')+'" data-id="'+f.id+'" data-nome="'+escaparHtmlBasico(n)+'" data-cartao="true" onclick="lrSelecionarPag(this)"><div style="font-size:26px;">&#x1F4B3;</div><div class="lr-pag-nome">'+escaparHtmlBasico(n)+'</div><div class="lr-pag-sub">Cartao'+(a&&sIA?' - identificado':'')+'</div></div>';});grid.innerHTML=html||'<div style="color:var(--text-muted);font-size:13px;grid-column:span 2;">Nenhuma forma cadastrada.</div>';lrAtualizarParcelasUI();lrAtualizarResumo();}
+function lrSelecionarPag(el){document.querySelectorAll('#lrPagGrid .lr-pag-opt').forEach(function(o){o.classList.remove('lr-pag-sel');});el.classList.add('lr-pag-sel');_lr.formaPagamentoId=el.dataset.id||null;_lr.formaPagamentoNome=el.dataset.nome||'';_lr.isCartao=el.dataset.cartao==='true';lrAtualizarParcelasUI();lrAtualizarResumo();}
+function lrAtualizarParcelasUI(){const card=document.getElementById('lrParcelasCard');if(!card)return;card.style.display=_lr.isCartao?'':'none';if(_lr.isCartao){const q=_lr.qtdParcelas||1;document.querySelectorAll('.lr-parc-btn').forEach(function(b){b.classList.remove('lr-pill-sel');if(Number(b.dataset.parc)===q)b.classList.add('lr-pill-sel');});lrAtualizarInfoParcelas();}}
+function lrSelecionarParcela(el){document.querySelectorAll('.lr-parc-btn').forEach(function(b){b.classList.remove('lr-pill-sel');});el.classList.add('lr-pill-sel');_lr.qtdParcelas=Number.parseInt(el.dataset.parc,10)||1;lrAtualizarInfoParcelas();lrAtualizarResumo();}
+function lrAtualizarInfoParcelas(){const i=document.getElementById('lrParcInfo');if(!i||!_lr.valor||!_lr.qtdParcelas)return;if(_lr.qtdParcelas<=1){i.textContent='';return;}i.textContent=_lr.qtdParcelas+'x de R$ '+(_lr.valor/_lr.qtdParcelas).toFixed(2).replace('.',',');}
+function lrAtualizarResumo(){const el=document.getElementById('lrResumoConteudo');if(!el)return;const vlr=_lr.valor?'R$ '+Number(_lr.valor).toFixed(2).replace('.',','):'--';const cat=(categoriasCompraCache||[]).find(function(c){return String(c.id)===String(_lr.categoriaId||'');});const catNome=(cat&&cat.nome)||'Sem categoria';const dt=_lr.dataCompra?_lr.dataCompra.split('-').reverse().join('/'):'--';const parc=_lr.isCartao&&_lr.qtdParcelas>1?' - '+_lr.qtdParcelas+'x':'';el.innerHTML='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Fornecedor</span><span style="font-weight:600;">'+escaparHtmlBasico(_lr.fornecedorNome||'--')+'</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Valor</span><span style="font-weight:700;font-size:16px;">'+vlr+'</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text-muted);">Categoria</span><span>'+escaparHtmlBasico(catNome)+'</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--text-muted);">Pagamento</span><span>'+escaparHtmlBasico(_lr.formaPagamentoNome||'--')+parc+'</span></div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Compra: '+dt+'</div>';}
+async function lrSalvar(relaxar){relaxar=relaxar||false;const msg=document.getElementById('lrMsgStep5'),btn=document.getElementById('lrBtnSalvar');if(!_lr.fornecedorId){if(msg){msg.textContent='Fornecedor invalido.';msg.className='msg err';}return;}if(!_lr.valor||_lr.valor<=0){if(msg){msg.textContent='Informe um valor valido.';msg.className='msg err';}return;}if(!relaxar&&!_lr.categoriaId){if(msg){msg.textContent='Selecione uma categoria antes de salvar.';msg.className='msg err';}return;}if(btn){btn.disabled=true;btn.textContent='Salvando...';}try{const tenant=await resolverTenantFornecedorFinanceiro(),ator=obterAtorAuditoriaAtual();const dc=_lr.dataCompra||new Date().toISOString().split('T')[0],dv=_lr.dataVencimento||dc;const qtd=(_lr.isCartao&&_lr.qtdParcelas>1)?_lr.qtdParcelas:1;const gpId=qtd>1?gerarGrupoParcelasIdFinanceiro():null;let iv=null;if(qtd>1){iv=30;const fo=(fornecedoresFinanceiroCache||[]).find(function(f){return String(f.id)===String(_lr.fornecedorId);});if(fo&&fo.dia_vencimento){const bd=new Date(dv+'T00:00:00'),pm=new Date(bd.getFullYear(),bd.getMonth()+1,fo.dia_vencimento),diff=Math.round((pm.getTime()-bd.getTime())/(24*60*60*1000));iv=diff>0?diff:30;}}const obs=_lr.obs||(_lr.iaSugeriu.fornecedorNome?'Lancamento rapido - '+_lr.iaSugeriu.fornecedorNome:'Lancamento rapido');const pb={fornecedor_id:_lr.fornecedorId,categoria_id:_lr.categoriaId||null,loja_id:tenant.loja_id,empresa_id:tenant.empresa_id,data_compra:dc,valor_compra:Number(_lr.valor.toFixed(2)),observacao:obs,qtd_parcelas:qtd,intervalo_parcelas_dias:qtd>1?iv:null};const linhas=Array.from({length:qtd}).map(function(_,i){return Object.assign({},pb,{data_pagamento:null,data_vencimento:qtd>1?calcularVencimentoParcelaFinanceiro(dv,i,iv):dv,numero_parcela:i+1,grupo_parcelas_id:gpId,criado_por_id:(ator&&ator.funcionarioId)||null,criado_por_nome:(ator&&ator.nome)||'Lancamento Rapido'});});const res=await sb.from('contasapagar').insert(linhas);if(res.error)throw res.error;if(typeof carregarContasAPagarFinanceiro==='function')carregarContasAPagarFinanceiro().catch(function(){});const ie=document.getElementById('lrSucessoInfo');if(ie)ie.textContent=_lr.fornecedorNome+' - R$ '+Number(_lr.valor).toFixed(2).replace('.',',')+(qtd>1?' ('+qtd+'x)':'');lrIrStep(6);}catch(err){if(msg){msg.textContent='Erro ao salvar: '+((err&&err.message)||'erro desconhecido');msg.className='msg err';}if(btn){btn.disabled=false;btn.textContent='Salvar lancamento';}}}
+function lrNovoLancamento(){const inp=document.getElementById('lrInputFoto');if(inp)inp.value='';Object.assign(_lr,{fotoBase64:null,fotoMime:null,fornecedorId:null,fornecedorNome:null,categoriaId:null,dataCompra:null,dataVencimento:null,valor:null,obs:'',formaPagamentoId:null,formaPagamentoNome:null,isCartao:false,qtdParcelas:1,iaSugeriu:{fornecedorNome:null,valor:null,dataCompra:null,formaPagamento:null,parcelas:null,categoriaSugerida:null}});lrIrStep(1);}
+</script>
