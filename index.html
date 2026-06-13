@@ -42723,42 +42723,31 @@ window.addEventListener('load', function() {
 
 
 <script id="lr-v5">
-/* ══ LANÇAMENTO RÁPIDO v5 ══
-   Fluxo: foto → IA lê → busca cache → match? pula para valor : mostra busca
-   Cache é carregado ANTES da foto, na abertura do overlay.
-*/
 const LR={foto64:null,fotoMime:null,fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',modo:'simples',parcelas:1,isCartao:false,pagId:null,pagNome:null,ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null}};
 
-/* ── Abre o overlay e já dispara o carregamento de cache ── */
+async function lrCarregarCache(){
+  const ps=[];
+  if(!(fornecedoresFinanceiroCache||[]).length&&typeof carregarFornecedoresFinanceiro==='function') ps.push(carregarFornecedoresFinanceiro().catch(()=>{}));
+  if(!(categoriasCompraCache||[]).length&&typeof carregarCategoriasCompra==='function') ps.push(carregarCategoriasCompra().catch(()=>{}));
+  if(!(formasPagamentoFinanceiroCache||[]).length&&typeof carregarFormasPagamentoFinanceiro==='function') ps.push(carregarFormasPagamentoFinanceiro({render:false,silencioso:true}).catch(()=>{}));
+  if(ps.length) await Promise.all(ps);
+}
+
 function lrAbrir(){
   Object.assign(LR,{foto64:null,fotoMime:null,fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',modo:'simples',parcelas:1,isCartao:false,pagId:null,pagNome:null,ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null}});
   const ov=document.getElementById('lrOverlay');if(!ov)return;
   ov.style.display='flex';
   lrIrStep(1);
-  // Carrega cache imediatamente em background — antes do usuário tirar a foto
   lrCarregarCache();
 }
 function abrirLancamentoRapido(){lrAbrir();}
 function lrFechar(){const ov=document.getElementById('lrOverlay');if(ov)ov.style.display='none';}
 
-/* ── Carrega os 3 caches necessários (fornecedores, categorias, formas) ── */
-async function lrCarregarCache(){
-  const ps=[];
-  if(!(fornecedoresFinanceiroCache||[]).length && typeof carregarFornecedoresFinanceiro==='function')
-    ps.push(carregarFornecedoresFinanceiro().catch(()=>{}));
-  if(!(categoriasCompraCache||[]).length && typeof carregarCategoriasCompra==='function')
-    ps.push(carregarCategoriasCompra().catch(()=>{}));
-  if(!(formasPagamentoFinanceiroCache||[]).length && typeof carregarFormasPagamentoFinanceiro==='function')
-    ps.push(carregarFormasPagamentoFinanceiro({render:false,silencioso:true}).catch(()=>{}));
-  if(ps.length) await Promise.all(ps);
-}
-
-/* ── Stepper visual ── */
 function lrIrStep(n){
   document.querySelectorAll('.lr-step').forEach(s=>s.style.display='none');
   const el=document.getElementById(n==='cad'?'lrSCad':'lrS'+n);if(el)el.style.display='';
   const corpo=document.getElementById('lrCorpo');if(corpo)corpo.scrollTop=0;
-  const tMap={1:['Lançamento rápido','Fotografe ou digite manualmente'],2:['Lendo cupom...','A IA está analisando o documento'],3:['Fornecedor','Vincule ou cadastre o fornecedor'],cad:['Novo fornecedor','Cadastro rápido'],4:['Valor e categoria','Confirme os dados'],5:['Pagamento','Como foi pago?'],6:['Pronto!','']};
+  const tMap={1:['Lançamento rápido','Fotografe ou digite manualmente'],2:['Lendo cupom...','Aguarde, a IA está analisando'],3:['Fornecedor','Vincule ou cadastre'],cad:['Novo fornecedor','Cadastro rápido'],4:['Valor e categoria','Confirme os dados'],5:['Pagamento','Como foi pago?'],6:['Pronto!','']};
   const t=tMap[String(n)]||['Lançamento rápido',''];
   const tt=document.getElementById('lrTitulo'),ts=document.getElementById('lrSub');
   if(tt)tt.textContent=t[0];if(ts)ts.textContent=t[1];
@@ -42773,7 +42762,6 @@ function lrIrStep(n){
   if(n===5)lrMontarS5();
 }
 
-/* ── FOTO ── */
 function lrFotoEscolhida(inp){
   const file=inp&&inp.files&&inp.files[0];if(!file)return;
   const rd=new FileReader();
@@ -42782,7 +42770,7 @@ function lrFotoEscolhida(inp){
     const pw=document.getElementById('lrPreviewWrap'),pi=document.getElementById('lrPreviewImg');
     if(pw&&pi){pi.src=e.target.result;pw.style.display='';}
     lrIrStep(2);
-    lrFluxoComFoto();
+    lrFluxoPrincipal();
   };
   rd.readAsDataURL(file);
 }
@@ -42790,69 +42778,47 @@ function lrFotoEscolhida(inp){
 function lrSemFoto(){
   LR.foto64=null;
   const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;
+  const msg=document.getElementById('lrIaMsg');if(msg)msg.textContent='Carregando...';
   lrIrStep(2);
-  const msg=document.getElementById('lrIaMsg');if(msg)msg.textContent='Carregando dados...';
-  // Garante cache e vai para fornecedor
   lrCarregarCache().then(()=>lrIrStep(3)).catch(()=>lrIrStep(3));
 }
 
-/* ── Fluxo principal com foto: garante cache → chama IA → decide próximo step ── */
-async function lrFluxoComFoto(){
-  const msg=document.getElementById('lrIaMsg');
-  const atuMsg=(t)=>{if(msg)msg.textContent=t;};
-
-  // Passo 1: garante cache (pode já estar carregado — operação rápida nesse caso)
-  atuMsg('Carregando dados...');
-  await lrCarregarCache();
-
-  // Passo 2: chama a IA
-  atuMsg('Lendo cupom...');
-  await lrChamarIA(atuMsg);
-
-  // Passo 3: tenta match automático
-  const nomIA=LR.ia.forn||'';
-  const cache=fornecedoresFinanceiroCache||[];
-  let match=null;
-
-  if(nomIA && cache.length){
-    // Busca por cada palavra do nome IA com 3+ letras
-    const palavras=nomIA.split(/\s+/).filter(p=>p.length>=3);
-    const matches=cache.filter(f=>{
-      const fn=(f.nome||'').toUpperCase();
-      const ch=(f.chave_estabelecimento||'').toUpperCase();
-      return palavras.some(p=>fn.includes(p)||ch.includes(p));
-    });
-    if(matches.length===1){
-      // Match único → vincula e pula direto para valor
-      match=matches[0];
-      LR.fornId=String(match.id);
-      LR.fornNome=match.nome||'';
-    } else if(matches.length>1){
-      // Múltiplos → mostra lista para escolher
-      lrIrStep(3);
-      return;
+async function lrFluxoPrincipal(){
+  const atuMsg=(t)=>{const el=document.getElementById('lrIaMsg');if(el)el.textContent=t;};
+  try{
+    atuMsg('Carregando dados...');
+    await lrCarregarCache();
+    atuMsg('IA lendo o cupom...');
+    await lrChamarIA();
+    atuMsg('Buscando fornecedor...');
+    const nomIA=LR.ia.forn||'';
+    const cache=fornecedoresFinanceiroCache||[];
+    if(nomIA&&cache.length){
+      const palavras=nomIA.split(/\s+/).filter(p=>p.length>=3);
+      const matches=cache.filter(f=>{
+        const fn=(f.nome||'').toUpperCase();
+        const ch=(f.chave_estabelecimento||'').toUpperCase();
+        return palavras.some(p=>fn.includes(p)||ch.includes(p));
+      });
+      if(matches.length===1){
+        LR.fornId=String(matches[0].id);LR.fornNome=matches[0].nome||'';
+        lrIrStep(4);return;
+      }
+      if(matches.length>1){lrIrStep(3);return;}
     }
-    // Se 0 matches → vai para tela de busca/cadastro
-  }
-
-  if(match){
-    lrIrStep(4); // Pulou direto!
-  } else {
-    lrIrStep(3); // Precisa escolher/cadastrar
+    lrIrStep(3);
+  }catch(e){
+    console.warn('LR fluxo erro',e);
+    lrIrStep(3);
   }
 }
 
-/* ── IA: lê o cupom e preenche LR.ia ── */
-async function lrChamarIA(atuMsg){
+async function lrChamarIA(){
   try{
-    if(atuMsg)atuMsg('Identificando fornecedor e valor...');
-    // Chama via Supabase Edge Function (chave Anthropic fica segura no servidor)
-    const resp = await sb.functions.invoke('ler-cupom', {
-      body: { imageBase64: LR.foto64, imageMime: LR.fotoMime }
-    });
-    if(resp.error) throw resp.error;
-    const p = resp.data && resp.data.data;
-    if(!p) throw new Error('Resposta vazia da IA');
+    const resp=await sb.functions.invoke('ler-cupom',{body:{imageBase64:LR.foto64,imageMime:LR.fotoMime}});
+    if(resp.error)throw new Error(JSON.stringify(resp.error));
+    const p=resp.data&&resp.data.data;
+    if(!p)throw new Error('Resposta vazia');
     LR.ia.forn=String(p.fornecedor||'').trim().toUpperCase()||null;
     LR.ia.valor=typeof p.valor==='number'?p.valor:(parseFloat(String(p.valor||'').replace(',','.'))||null);
     LR.ia.data=p.data&&/^\d{4}-\d{2}-\d{2}$/.test(p.data)?p.data:null;
@@ -42863,27 +42829,17 @@ async function lrChamarIA(atuMsg){
     LR.dataCompra=LR.ia.data||new Date().toISOString().split('T')[0];
     LR.dataVenc=LR.dataCompra;
     LR.parcelas=LR.ia.parc||1;
-    if(atuMsg)atuMsg('Leitura concluída!');
   }catch(e){
-    console.warn('LR: erro IA',e);
+    console.warn('LR IA erro',e);
     const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;
   }
 }
 
-/* ── FORNECEDOR: tela de busca/cadastro ── */
 function lrMontarForn(){
-  // Badge IA
   const badge=document.getElementById('lrIaBadge'),badgeNome=document.getElementById('lrIaBadgeNome');
-  if(badge&&badgeNome){
-    if(LR.ia.forn){badge.style.display='flex';badgeNome.textContent=LR.ia.forn;}
-    else{badge.style.display='none';}
-  }
-  // Sub-texto do botão cadastrar
-  const cs=document.getElementById('lrFornCadSub');
-  if(cs)cs.textContent=LR.ia.forn?'"'+LR.ia.forn+'" — cadastro rápido':'Adicionar novo fornecedor';
-  // Pré-preenche busca com nome da IA e executa
-  const bi=document.getElementById('lrFornBuscaInput');
-  if(bi){bi.value=LR.ia.forn||'';if(LR.ia.forn)lrBuscaForn(LR.ia.forn);}
+  if(badge&&badgeNome){if(LR.ia.forn){badge.style.display='flex';badgeNome.textContent=LR.ia.forn;}else{badge.style.display='none';}}
+  const cs=document.getElementById('lrFornCadSub');if(cs)cs.textContent=LR.ia.forn?'"'+LR.ia.forn+'" — cadastro rápido':'Adicionar novo';
+  const bi=document.getElementById('lrFornBuscaInput');if(bi){bi.value=LR.ia.forn||'';if(LR.ia.forn)lrBuscaForn(LR.ia.forn);}
 }
 
 function lrBuscaForn(t){
@@ -42892,11 +42848,8 @@ function lrBuscaForn(t){
   if(!t||!t.trim()){res.innerHTML='';return;}
   const tU=t.trim().toUpperCase();
   const m=cache.filter(f=>(f.nome||'').toUpperCase().includes(tU)||(f.chave_estabelecimento||'').toUpperCase().includes(tU)).slice(0,8);
-  if(!m.length){res.innerHTML='<div style="font-size:14px;color:var(--text-muted);padding:8px 0;">Nenhum encontrado. Use "Cadastrar" abaixo.</div>';return;}
-  res.innerHTML=m.map(f=>`<div class="lr-forn-card" onclick="lrSelecionarForn('${f.id}','${escaparHtmlBasico(f.nome||'')}')">
-    <div><div class="lr-forn-nome">${escaparHtmlBasico(f.nome||'')}</div></div>
-    <span style="color:var(--text-muted);font-size:26px;">›</span>
-  </div>`).join('');
+  if(!m.length){res.innerHTML='<div style="font-size:14px;color:var(--text-muted);padding:8px 0;">Nenhum encontrado. Cadastre abaixo.</div>';return;}
+  res.innerHTML=m.map(f=>`<div class="lr-forn-card" onclick="lrSelecionarForn('${f.id}','${escaparHtmlBasico(f.nome||'')}')"><div><div class="lr-forn-nome">${escaparHtmlBasico(f.nome||'')}</div></div><span style="color:var(--text-muted);font-size:26px;">›</span></div>`).join('');
 }
 
 function lrSelecionarForn(id,nome){LR.fornId=String(id);LR.fornNome=nome||'';lrIrStep(4);}
@@ -42910,12 +42863,11 @@ function lrIrCad(){
 async function lrCadForn(){
   const nome=String((document.getElementById('lrCadNome')||{}).value||'').trim();
   const msg=document.getElementById('lrMsgCad');
-  if(!nome){if(msg){msg.textContent='Digite o nome do fornecedor.';msg.className='msg err';}return;}
+  if(!nome){if(msg){msg.textContent='Digite o nome.';msg.className='msg err';}return;}
   try{
     const t=await resolverTenantFornecedorFinanceiro();
     const cnpjRaw=String((document.getElementById('lrCadCnpj')||{}).value||'').replace(/\D/g,'');
-    const cnpj=cnpjRaw.length>=11?cnpjRaw:null;
-    const{data:nf,error}=await sb.from('fornecedores').insert([{nome,cnpj,loja_id:t.loja_id,empresa_id:t.empresa_id}]).select('id').single();
+    const{data:nf,error}=await sb.from('fornecedores').insert([{nome,cnpj:cnpjRaw.length>=11?cnpjRaw:null,loja_id:t.loja_id,empresa_id:t.empresa_id}]).select('id').single();
     if(error)throw error;
     LR.fornId=String(nf.id);LR.fornNome=nome;
     carregarFornecedoresFinanceiro().catch(()=>{});
@@ -42923,7 +42875,6 @@ async function lrCadForn(){
   }catch(e){if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}}
 }
 
-/* ── STEP 4: Valor + Categoria ── */
 function lrMontarS4(){
   const cv=document.getElementById('lrValor');if(cv)cv.value=LR.valor?'R$ '+Number(LR.valor).toFixed(2).replace('.',','):'';
   const cd=document.getElementById('lrDataCompra');if(cd)cd.value=LR.dataCompra||new Date().toISOString().split('T')[0];
@@ -42951,14 +42902,13 @@ function lrAv4(){
   const cd=document.getElementById('lrDataCompra');if(cd&&cd.value)LR.dataCompra=cd.value;
   const cv=document.getElementById('lrValor');const vt=((cv&&cv.value)||'').replace(/[R$\s]/g,'').replace(',','.');LR.valor=parseFloat(vt)||null;
   const msg=document.getElementById('lrMsg4');
-  if(!LR.valor||LR.valor<=0){if(msg){msg.textContent='Informe o valor da compra.';msg.className='msg err';}return;}
+  if(!LR.valor||LR.valor<=0){if(msg){msg.textContent='Informe o valor.';msg.className='msg err';}return;}
   if(!LR.dataVenc)LR.dataVenc=LR.dataCompra;
   LR.obs=LR.modo==='completo'?String((document.getElementById('lrObs')||{}).value||'').trim():'';
   if(msg){msg.textContent='';msg.className='msg';}
   lrIrStep(5);
 }
 
-/* ── STEP 5: Pagamento ── */
 function lrMontarS5(){
   const grid=document.getElementById('lrPagGrid');if(!grid)return;
   const formas=formasPagamentoFinanceiroCache||[];
@@ -42981,12 +42931,12 @@ function lrMontarS5(){
     const ico=icos[Object.keys(icos).find(k=>nU.includes(k))||'']||'💳';
     html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="true" onclick="lrSelPag(this)"><div class="lr-pag-ico">${ico}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div><div class="lr-pag-sub">Cartão${a&&sIA?' ✦':''}</div></div>`;
   });
-  if(!html)html='<div style="color:var(--text-muted);font-size:14px;grid-column:span 2;padding:8px 0;">Nenhuma forma cadastrada.</div>';
+  if(!html)html='<div style="color:var(--text-muted);font-size:14px;grid-column:span 2;">Nenhuma forma cadastrada.</div>';
   grid.innerHTML=html;
   lrAtuParcelas();lrAtuResumo();
 }
 function lrSelPag(el){document.querySelectorAll('#lrPagGrid .lr-pag-card').forEach(o=>o.classList.remove('lr-sel'));el.classList.add('lr-sel');LR.pagId=el.dataset.id||null;LR.pagNome=el.dataset.nome||'';LR.isCartao=el.dataset.cartao==='true';lrAtuParcelas();lrAtuResumo();}
-function lrAtuParcelas(){const pw=document.getElementById('lrParcWrap');if(!pw)return;pw.style.display=LR.isCartao?'':'none';if(LR.isCartao){const q=LR.parcelas||1;const pl=document.getElementById('lrParcLbl');if(pl)pl.textContent=LR.ia.parc&&LR.ia.parc>1?'Parcelas  ✦ identificado':'Parcelas';document.querySelectorAll('.lr-parc-btn').forEach(b=>{b.classList.remove('lr-big-sel');if(parseInt(b.dataset.p,10)===q)b.classList.add('lr-big-sel');});lrInfoParc();}}
+function lrAtuParcelas(){const pw=document.getElementById('lrParcWrap');if(!pw)return;pw.style.display=LR.isCartao?'':'none';if(LR.isCartao){const q=LR.parcelas||1;const pl=document.getElementById('lrParcLbl');if(pl)pl.textContent=LR.ia.parc&&LR.ia.parc>1?'Parcelas ✦ identificado':'Parcelas';document.querySelectorAll('.lr-parc-btn').forEach(b=>{b.classList.remove('lr-big-sel');if(parseInt(b.dataset.p,10)===q)b.classList.add('lr-big-sel');});lrInfoParc();}}
 function lrParc(el){document.querySelectorAll('.lr-parc-btn').forEach(b=>b.classList.remove('lr-big-sel'));el.classList.add('lr-big-sel');LR.parcelas=parseInt(el.dataset.p,10)||1;lrInfoParc();lrAtuResumo();}
 function lrInfoParc(){const i=document.getElementById('lrParcInfo');if(!i||!LR.valor)return;if(LR.parcelas<=1){i.textContent='';return;}i.textContent=LR.parcelas+'x de R$ '+(LR.valor/LR.parcelas).toFixed(2).replace('.',',');}
 function lrAtuResumo(){
@@ -42998,7 +42948,6 @@ function lrAtuResumo(){
   el.innerHTML=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Fornecedor</span><span style="font-weight:700;">${escaparHtmlBasico(LR.fornNome||'—')}</span></div><div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Valor</span><span style="font-weight:700;font-size:18px;">${vlr}</span></div><div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Categoria</span><span>${escaparHtmlBasico((cat&&cat.nome)||'Sem categoria')}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--text-muted);">Pagamento</span><span>${escaparHtmlBasico(LR.pagNome||'—')}${parc}</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Compra: ${dt}</div>`;
 }
 
-/* ── SALVAR ── */
 async function lrSalvar(relaxar){
   relaxar=!!relaxar;
   const msg=document.getElementById('lrMsg5'),btn=document.getElementById('lrBtnSalvar');
@@ -43030,7 +42979,6 @@ function lrNovo(){
   lrIrStep(1);
 }
 </script>
-
 </body>
 </html>
 
