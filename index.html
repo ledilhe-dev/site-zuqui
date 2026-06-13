@@ -9654,13 +9654,13 @@
   </div>
 </div>
 
-<!-- ══ LANÇAMENTO RÁPIDO v3 ══ -->
+<!-- ══ LANÇAMENTO RÁPIDO v4 ══ -->
 <div id="lrOverlay" style="display:none;position:fixed;inset:0;z-index:9700;background:var(--bg);flex-direction:column;">
 <div id="lrSheet" style="display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;width:100%;">
 
-  <!-- Topo fixo -->
+  <!-- Topo -->
   <div style="flex-shrink:0;padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--surface);">
-    <button onclick="lrFechar()" style="width:40px;height:40px;border:none;background:var(--surface3);color:var(--text-muted);font-size:20px;cursor:pointer;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
+    <button onclick="lrFechar()" style="width:42px;height:42px;border:none;background:var(--surface3);color:var(--text);font-size:20px;cursor:pointer;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
     <div style="flex:1;">
       <div id="lrTitulo" style="font-size:18px;font-weight:700;color:var(--text);">Lançamento rápido</div>
       <div id="lrSub" style="font-size:13px;color:var(--text-muted);margin-top:1px;">Fotografe ou digite manualmente</div>
@@ -9676,7 +9676,7 @@
     <span id="lrStepLbl" style="font-size:12px;color:var(--text-muted);margin-left:6px;white-space:nowrap;"></span>
   </div>
 
-  <!-- Corpo scrollável -->
+  <!-- Corpo -->
   <div id="lrCorpo" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;background:var(--bg);">
 
     <!-- S1: Foto -->
@@ -9699,34 +9699,70 @@
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px 0;text-align:center;">
         <div style="width:54px;height:54px;border:3px solid var(--border-bright);border-top-color:var(--accent);border-radius:50%;animation:lr-spin .7s linear infinite;"></div>
-        <div id="lrIaMsg" style="font-size:16px;color:var(--text-muted);">Enviando para IA...</div>
+        <div id="lrIaMsg" style="font-size:16px;color:var(--text-muted);">Carregando fornecedores...</div>
       </div>
     </div>
 
     <!-- S3: Fornecedor -->
     <div id="lrS3" class="lr-step" style="display:none;">
-      <div id="lrFornOpts" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <!-- Badge IA -->
+      <div id="lrIaBadge" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span style="font-size:22px;">🤖</span>
+        <div>
+          <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">IA identificou</div>
+          <div id="lrIaBadgeNome" style="font-size:17px;font-weight:700;color:var(--text);"></div>
+        </div>
+      </div>
+
+      <!-- Carregando cache -->
+      <div id="lrFornCarregando" style="display:none;text-align:center;padding:20px 0;color:var(--text-muted);font-size:14px;">
+        <div style="width:32px;height:32px;border:2px solid var(--border-bright);border-top-color:var(--accent);border-radius:50%;animation:lr-spin .7s linear infinite;margin:0 auto 10px;"></div>
+        Carregando fornecedores...
+      </div>
+
+      <!-- Matches automáticos -->
+      <div id="lrFornMatches" style="display:flex;flex-direction:column;gap:10px;"></div>
+
+      <!-- Busca manual -->
+      <div id="lrFornBuscaWrap" style="margin-top:4px;">
+        <div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;" id="lrFornBuscaLabel">Ou busque pelo nome:</div>
+        <input id="lrFornBuscaInput" type="text" style="width:100%;border-radius:12px;font-size:17px;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="Digite o nome do fornecedor..." oninput="lrBuscaForn(this.value)">
+        <div id="lrFornBuscaRes" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;"></div>
+      </div>
+
+      <!-- Cadastrar -->
+      <div id="lrFornCadBtn" style="margin-top:8px;" onclick="lrIrCad()">
+        <div class="lr-forn-card" style="border-style:dashed;border-color:var(--border-bright);">
+          <div>
+            <div class="lr-forn-nome" style="color:var(--text-muted);">+ Cadastrar novo fornecedor</div>
+            <div class="lr-forn-sub" id="lrFornCadSub">Adicionar agora</div>
+          </div>
+          <span style="color:var(--text-muted);font-size:26px;">›</span>
+        </div>
+      </div>
     </div>
 
     <!-- SCad: Cadastro inline -->
     <div id="lrSCad" class="lr-step" style="display:none;">
-      <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;">
         <div style="font-size:17px;font-weight:700;color:var(--text);">Novo fornecedor</div>
-        <div style="font-size:14px;color:var(--text-muted);">Não encontramos esse fornecedor. Cadastre rapidamente:</div>
-        <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;">Nome <span style="color:var(--red)">*</span></label>
-        <input id="lrCadNome" type="text" style="width:100%;border-radius:12px;font-size:17px;padding:14px 16px;background:var(--surface2);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="Nome do fornecedor">
-        <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;">CPF / CNPJ <span style="font-weight:400;">(opcional)</span></label>
-        <input id="lrCadCnpj" type="text" inputmode="numeric" style="width:100%;border-radius:12px;font-size:17px;padding:14px 16px;background:var(--surface2);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="000.000.000-00 ou 00.000.000/0000-00">
+        <div style="font-size:14px;color:var(--text-muted);">Cadastro rápido — pode completar depois.</div>
+        <div>
+          <label style="font-size:14px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Nome <span style="color:var(--red)">*</span></label>
+          <input id="lrCadNome" type="text" style="width:100%;border-radius:12px;font-size:18px;padding:15px 16px;background:var(--surface2);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="Nome do fornecedor">
+        </div>
+        <div>
+          <label style="font-size:14px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">CPF / CNPJ <span style="font-weight:400;color:var(--text-dim);">(opcional)</span></label>
+          <input id="lrCadCnpj" type="text" inputmode="numeric" style="width:100%;border-radius:12px;font-size:18px;padding:15px 16px;background:var(--surface2);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="000.000.000-00">
+        </div>
       </div>
-      <div class="msg" id="lrMsgCad" style="margin-top:4px;"></div>
-      <button class="btn btn-green" style="padding:16px;font-size:16px;border-radius:14px;width:100%;margin-top:4px;" onclick="lrCadForn()">Cadastrar e continuar →</button>
-      <button class="btn btn-ghost" style="padding:14px;font-size:15px;border-radius:14px;width:100%;margin-top:8px;" onclick="lrIrStep(3)">← Voltar e buscar</button>
+      <div class="msg" id="lrMsgCad" style="margin-top:6px;font-size:14px;"></div>
+      <button class="btn btn-green" style="padding:17px;font-size:17px;border-radius:14px;width:100%;margin-top:8px;" onclick="lrCadForn()">Cadastrar e continuar →</button>
+      <button class="btn btn-ghost" style="padding:14px;font-size:15px;border-radius:14px;width:100%;margin-top:8px;" onclick="lrIrStep(3)">← Voltar</button>
     </div>
 
     <!-- S4: Valor + Categoria -->
     <div id="lrS4" class="lr-step" style="display:none;">
-
-      <!-- Modo simples/completo -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <button id="lrBtnSimples" class="lr-modo-btn lr-big-sel" onclick="lrSetModo('simples')" style="padding:14px 10px;border-radius:14px;text-align:center;">
           <div style="font-size:24px;margin-bottom:6px;">⚡</div>
@@ -9740,7 +9776,6 @@
         </button>
       </div>
 
-      <!-- Valor + data -->
       <div style="background:var(--surface);border:1.5px solid var(--border-mid);border-radius:16px;padding:18px;">
         <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;" id="lrValorBadge">✦ Lido do cupom</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -9754,13 +9789,11 @@
         </div>
       </div>
 
-      <!-- Categoria -->
       <div>
         <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">Categoria</div>
         <div id="lrCatGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
       </div>
 
-      <!-- Vencimento -->
       <div>
         <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">Vencimento</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -9772,13 +9805,12 @@
         <input type="date" id="lrVencCustom" style="display:none;width:100%;margin-top:10px;border-radius:12px;font-size:16px;padding:14px;" oninput="lrVencCust()">
       </div>
 
-      <!-- Obs (modo completo) -->
       <div id="lrObsWrap" style="display:none;">
         <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">Observação</div>
         <input id="lrObs" type="text" style="width:100%;border-radius:12px;font-size:16px;padding:14px 16px;" placeholder="Ex: compras da semana">
       </div>
 
-      <div class="msg" id="lrMsg4"></div>
+      <div class="msg" id="lrMsg4" style="font-size:14px;"></div>
       <button class="btn btn-green" style="padding:17px;font-size:17px;border-radius:14px;width:100%;" onclick="lrAv4()">Avançar →</button>
     </div>
 
@@ -9787,26 +9819,25 @@
       <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">Como foi pago?</div>
       <div id="lrPagGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;"></div>
 
-      <div id="lrParcWrap" style="display:none;">
+      <div id="lrParcWrap" style="display:none;margin-bottom:16px;">
         <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:8px;" id="lrParcLbl">Parcelas</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-          <button class="lr-parc-btn lr-big-btn" data-p="1" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">1x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="2" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">2x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="3" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">3x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="6" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">6x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="10" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">10x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="12" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">12x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="1" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:17px;font-weight:700;">1x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="2" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:17px;font-weight:700;">2x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="3" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:17px;font-weight:700;">3x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="6" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:17px;font-weight:700;">6x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="10" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:17px;font-weight:700;">10x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="12" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:17px;font-weight:700;">12x</button>
         </div>
         <div id="lrParcInfo" style="font-size:15px;color:var(--text-muted);margin-top:10px;text-align:center;font-weight:600;"></div>
       </div>
 
-      <!-- Resumo -->
-      <div style="background:var(--surface);border:1.5px solid var(--border-mid);border-radius:16px;padding:18px;">
+      <div style="background:var(--surface);border:1.5px solid var(--border-mid);border-radius:16px;padding:18px;margin-bottom:16px;">
         <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Resumo</div>
         <div id="lrResumo" style="font-size:15px;color:var(--text-soft);line-height:2;"></div>
       </div>
 
-      <div class="msg" id="lrMsg5"></div>
+      <div class="msg" id="lrMsg5" style="font-size:14px;"></div>
       <button class="btn btn-green" style="padding:17px;font-size:17px;border-radius:14px;width:100%;" id="lrBtnSalvar" onclick="lrSalvar()">✓ Salvar lançamento</button>
       <button class="btn btn-ghost" style="padding:14px;font-size:15px;border-radius:14px;width:100%;margin-top:8px;" onclick="lrSalvar(true)">Salvar e ajustar depois</button>
     </div>
@@ -9824,9 +9855,9 @@
       </div>
     </div>
 
-  </div><!-- fim corpo -->
-</div><!-- fim sheet -->
-</div><!-- fim overlay -->
+  </div>
+</div>
+</div>
 
 <style>
 @keyframes lr-spin{to{transform:rotate(360deg);}}
@@ -9835,11 +9866,10 @@
 .lr-big-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
 .lr-modo-btn{border:1.5px solid var(--border-mid);border-radius:14px;background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-sans);transition:all .15s;width:100%;}
 .lr-modo-btn:hover{border-color:var(--border-bright);}
-.lr-modo-sel,.lr-big-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;}
 .lr-forn-card{padding:16px 18px;border:1.5px solid var(--border-mid);border-radius:16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);}
 .lr-forn-card:active{border-color:var(--accent);background:var(--accent-subtle);}
 .lr-forn-card.lr-sel{border-color:var(--accent);background:var(--accent-subtle);}
-.lr-forn-nome{font-size:16px;font-weight:700;color:var(--text);}
+.lr-forn-nome{font-size:17px;font-weight:700;color:var(--text);}
 .lr-forn-sub{font-size:13px;color:var(--text-muted);margin-top:3px;}
 .lr-cat-card{padding:14px;border:1.5px solid var(--border-mid);border-radius:14px;background:var(--surface);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px;font-size:15px;font-weight:600;color:var(--text);}
 .lr-cat-card:active{border-color:var(--accent);background:var(--accent-subtle);}
@@ -42726,41 +42756,57 @@ window.addEventListener('load', function() {
 </style>
 
 
-<script id="lr-v3">
-/* ══ LANÇAMENTO RÁPIDO v3 ══ */
+<script id="lr-v4">
+/* ══ LANÇAMENTO RÁPIDO v4 — cache garantido ══ */
 const LR={step:0,modo:'simples',foto64:null,fotoMime:null,fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,isCartao:false,pagId:null,pagNome:null,ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null}};
+
+/* ─── CACHE: garante que fornecedores estejam carregados ─── */
+async function lrGarantirCache(){
+  // Se cache vazio, aguarda carregamento real do Supabase
+  if(!(fornecedoresFinanceiroCache||[]).length){
+    if(typeof carregarFornecedoresFinanceiro==='function'){
+      try{ await carregarFornecedoresFinanceiro(); }catch(e){}
+    }
+  }
+  if(!(categoriasCompraCache||[]).length){
+    if(typeof carregarCategoriasCompraFinanceiro==='function'){
+      try{ await carregarCategoriasCompraFinanceiro(); }catch(e){}
+    }
+  }
+  if(!(formasPagamentoFinanceiroCache||[]).length){
+    if(typeof carregarFormasPagamentoFinanceiro==='function'){
+      try{ await carregarFormasPagamentoFinanceiro({render:false,silencioso:true}); }catch(e){}
+    }
+  }
+}
 
 function lrAbrir(){
   Object.assign(LR,{step:0,modo:'simples',foto64:null,fotoMime:null,fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,isCartao:false,pagId:null,pagNome:null,ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null}});
-  if(!(fornecedoresFinanceiroCache||[]).length&&typeof carregarFornecedoresFinanceiro==='function')carregarFornecedoresFinanceiro().catch(()=>{});
-  if(!(categoriasCompraCache||[]).length&&typeof carregarCategoriasCompraFinanceiro==='function')carregarCategoriasCompraFinanceiro().catch(()=>{});
-  if(!(formasPagamentoFinanceiroCache||[]).length&&typeof carregarFormasPagamentoFinanceiro==='function')carregarFormasPagamentoFinanceiro({render:false,silencioso:true}).catch(()=>{});
   const ov=document.getElementById('lrOverlay');if(!ov)return;
   ov.style.display='flex';
   lrIrStep(1);
+  // Pré-carrega cache em background enquanto usuário vê a tela de foto
+  lrGarantirCache().catch(()=>{});
 }
 function abrirLancamentoRapido(){lrAbrir();}
 
 function lrFechar(){
-  const ov=document.getElementById('lrOverlay');
-  if(ov)ov.style.display='none';
+  const ov=document.getElementById('lrOverlay');if(ov)ov.style.display='none';
 }
 
 function lrIrStep(n){
   LR.step=n;
   document.querySelectorAll('.lr-step').forEach(s=>s.style.display='none');
-  const id=n==='cad'?'lrSCad':'lrS'+n;
-  const el=document.getElementById(id);if(el)el.style.display='';
-  // Scroll topo
+  const el=document.getElementById(n==='cad'?'lrSCad':'lrS'+n);if(el)el.style.display='';
   const corpo=document.getElementById('lrCorpo');if(corpo)corpo.scrollTop=0;
 
-  const tMap={1:['Lançamento rápido','Fotografe ou digite manualmente'],2:['Analisando...','A IA está lendo o documento'],3:['Fornecedor','Confirme quem foi a compra'],4:['Valor e categoria','Dados do lançamento'],5:['Forma de pagamento','Como foi pago?'],6:['Pronto!','Lançamento registrado'],cad:['Novo fornecedor','Cadastro rápido']};
+  const tMap={1:['Lançamento rápido','Fotografe ou digite manualmente'],2:['Analisando...','A IA está lendo o documento'],3:['Fornecedor','Confirme quem foi a compra'],cad:['Novo fornecedor','Cadastro rápido'],4:['Valor e categoria','Dados do lançamento'],5:['Forma de pagamento','Como foi pago?'],6:['Pronto!','Lançamento registrado']};
   const t=tMap[n]||['Lançamento rápido',''];
   const tt=document.getElementById('lrTitulo'),ts=document.getElementById('lrSub');
   if(tt)tt.textContent=t[0];if(ts)ts.textContent=t[1];
 
   const numMap={1:1,2:2,3:3,cad:3,4:3,5:4,6:4};
-  const sNum=numMap[n]||1;
+  const sNum=numMap[String(n)]||1;
   const lbls={1:'Foto',2:'IA',3:'Fornecedor',4:'Pagamento'};
   for(let i=1;i<=4;i++){
     const d=document.getElementById('lrD'+i);if(!d)continue;
@@ -42778,37 +42824,40 @@ function lrIrStep(n){
   if(n===5)lrMontarS5();
 }
 
-/* ── FOTO ── */
+/* ─── FOTO ─── */
 function lrFotoEscolhida(inp){
   const file=inp&&inp.files&&inp.files[0];if(!file)return;
   const rd=new FileReader();
-  rd.onload=function(e){
+  rd.onload=async function(e){
     LR.foto64=e.target.result.split(',')[1];LR.fotoMime=file.type||'image/jpeg';
     const pw=document.getElementById('lrPreviewWrap'),pi=document.getElementById('lrPreviewImg');
     if(pw&&pi){pi.src=e.target.result;pw.style.display='';}
-    lrIrStep(2);lrChamarIA();
+    lrIrStep(2);
+    // Garante cache E chama IA em paralelo
+    await Promise.all([lrGarantirCache(),lrChamarIA()]);
   };
   rd.readAsDataURL(file);
 }
-function lrSemFoto(){LR.foto64=null;const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;lrIrStep(3);}
 
-/* ── IA ── */
+function lrSemFoto(){
+  LR.foto64=null;
+  const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;
+  // Garante cache antes de ir para fornecedor
+  const msg=document.getElementById('lrIaMsg');if(msg)msg.textContent='Carregando fornecedores...';
+  lrIrStep(2);
+  lrGarantirCache().then(()=>lrIrStep(3)).catch(()=>lrIrStep(3));
+}
+
+/* ─── IA ─── */
 async function lrChamarIA(){
   const msgs=['Enviando para IA...','Lendo nome do estabelecimento...','Lendo valor e data...','Identificando cartão e parcelas...','Finalizando...'];
   let mi=0;const mel=document.getElementById('lrIaMsg');
-  const iv=setInterval(()=>{mi=Math.min(mi+1,msgs.length-1);if(mel)mel.textContent=msgs[mi];},1000);
-  // Prompt direto e agressivo - força JSON puro
-  const prompt=`Leia este cupom fiscal ou comprovante brasileiro.
-Retorne APENAS o JSON abaixo, sem nenhum texto antes ou depois, sem markdown, sem explicações:
-{"fornecedor":"NOME DO ESTABELECIMENTO EM MAIUSCULAS","valor":463.12,"data":"2026-06-10","pagamento":"MASTERCARD","parcelas":1,"categoria":"Mercado"}
+  const iv=setInterval(()=>{mi=Math.min(mi+1,msgs.length-1);if(mel)mel.textContent=msgs[mi];},900);
+  const prompt=`Analise este cupom fiscal ou comprovante e retorne SOMENTE o JSON abaixo (sem markdown, sem texto extra):
+{"fornecedor":"NOME EM MAIUSCULAS","valor":0.00,"data":"YYYY-MM-DD","pagamento":"DINHEIRO ou PIX ou nome do cartao/banco","parcelas":1,"categoria":"Mercado"}
 
-Campos:
-- fornecedor: nome simplificado em MAIUSCULAS (ex: KOCH, PADARIA CENTRAL, AUTO POSTO)
-- valor: número decimal total da compra
-- data: formato YYYY-MM-DD
-- pagamento: DINHEIRO, PIX, MASTERCARD, VISA, ELO, NUBANK, SICREDI, INTER, ITAU, BRADESCO, C6 ou nome do cartão
-- parcelas: número inteiro (1 se à vista)
-- categoria: Mercado, Combustível, Farmácia, Restaurante, Manutenção, Serviços, Alimentação, Vestuário, Saúde, Educação
+Exemplos de fornecedor: KOCH, PADARIA CENTRAL, AUTO POSTO SHELL, FARMACIA PACHECO
+Exemplos de pagamento: DINHEIRO, PIX, MASTERCARD, VISA, ELO, NUBANK, ITAU, BRADESCO, SICREDI, INTER, C6
 
 JSON:`;
   try{
@@ -42816,13 +42865,10 @@ JSON:`;
     clearInterval(iv);
     if(r.ok){
       const d=await r.json();
-      // Extrai o texto da resposta
       const raw=((d.content||[]).map(x=>x.text||'').join('')).trim();
-      // Tenta extrair JSON mesmo que venha com texto ao redor
-      const match=raw.match(/\{[\s\S]*\}/);
-      const txt=match?match[0]:raw;
+      const match=raw.match(/\{[\s\S]*?\}/);
       try{
-        const p=JSON.parse(txt);
+        const p=JSON.parse(match?match[0]:raw);
         LR.ia.forn=String(p.fornecedor||'').trim().toUpperCase()||null;
         LR.ia.valor=typeof p.valor==='number'?p.valor:(parseFloat(String(p.valor||'').replace(',','.'))||null);
         LR.ia.data=p.data||null;
@@ -42833,21 +42879,41 @@ JSON:`;
         LR.dataCompra=LR.ia.data||new Date().toISOString().split('T')[0];
         LR.dataVenc=LR.dataCompra;
         LR.parcelas=LR.ia.parc||1;
-      }catch(e){console.warn('LR: parse JSON falhou',txt,e);const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
+      }catch(e){console.warn('LR parse erro',raw,e);const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
     }else{const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
-  }catch(e){clearInterval(iv);console.warn('LR: erro IA',e);const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
-  lrIrStep(3);
+  }catch(e){clearInterval(iv);const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
+  // Não chama lrIrStep(3) aqui — Promise.all cuida disso
 }
 
-/* ── FORNECEDOR ── */
+/* ─── FORNECEDOR ─── */
 function lrMontarForn(){
-  const cont=document.getElementById('lrFornOpts');if(!cont)return;
   const cache=fornecedoresFinanceiroCache||[];
   const nomIA=LR.ia.forn||'';
 
-  // Match: qualquer palavra com 3+ letras do nome IA bate em qualquer fornecedor
+  // Badge IA
+  const badge=document.getElementById('lrIaBadge'),badgeNome=document.getElementById('lrIaBadgeNome');
+  if(badge&&badgeNome){
+    if(nomIA){badge.style.display='flex';badgeNome.textContent=nomIA;}
+    else{badge.style.display='none';}
+  }
+
+  // Hint do botão cadastrar
+  const cadSub=document.getElementById('lrFornCadSub');
+  if(cadSub)cadSub.textContent=nomIA?'"'+nomIA+'" — cadastro rápido':'Adicionar novo fornecedor';
+
+  // Pre-preenche campo de busca com nome da IA
+  const buscaInp=document.getElementById('lrFornBuscaInput');
+  if(buscaInp&&nomIA){buscaInp.value=nomIA;}
+
+  // Label de busca
+  const buscaLbl=document.getElementById('lrFornBuscaLabel');
+
+  const matchesEl=document.getElementById('lrFornMatches');
+  if(!matchesEl)return;
+
+  // Busca por qualquer palavra do nome IA no cache
   let matches=[];
-  if(nomIA){
+  if(nomIA&&cache.length){
     const palavras=nomIA.split(/\s+/).filter(p=>p.length>=3);
     matches=cache.filter(f=>{
       const fn=(f.nome||'').toUpperCase();
@@ -42856,73 +42922,56 @@ function lrMontarForn(){
     });
   }
 
-  // 1 match exato → vincula e avança direto sem mostrar nada
   if(matches.length===1){
+    // Match único → vincula e avança direto
     LR.fornId=String(matches[0].id);LR.fornNome=matches[0].nome||'';
     lrIrStep(4);return;
   }
 
-  let html='';
-  if(nomIA){
-    html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <span style="font-size:20px;">🤖</span>
-      <div><div style="font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">IA identificou</div>
-      <div style="font-size:16px;font-weight:700;color:var(--text);">${nomIA}</div></div>
-    </div>`;
-  }
-
   if(matches.length>1){
-    html+=`<div style="font-size:14px;color:var(--text-muted);margin-bottom:10px;">Encontramos ${matches.length} com esse nome. Qual foi?</div>`;
-    matches.forEach(f=>{
-      html+=`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelFornEAvancar(this)">
+    if(buscaLbl)buscaLbl.textContent='Ou busque pelo nome:';
+    matchesEl.innerHTML=`<div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">Encontramos ${matches.length} com esse nome. Qual foi?</div>`+
+      matches.map(f=>`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelecionarForn(this)">
         <div><div class="lr-forn-nome">${escaparHtmlBasico(f.nome||'')}</div></div>
-        <span style="color:var(--text-muted);font-size:22px;">›</span>
-      </div>`;
-    });
-    html+=`<div style="height:1px;background:var(--border);margin:4px 0;"></div>`;
-  }else if(nomIA){
-    html+=`<div style="font-size:14px;color:var(--text-muted);margin-bottom:10px;"><strong style="color:var(--text);">${nomIA}</strong> não está cadastrado. Busque ou cadastre:</div>`;
+        <span style="color:var(--text-muted);font-size:26px;">›</span>
+      </div>`).join('');
   }else{
-    html+=`<div style="font-size:15px;color:var(--text-muted);margin-bottom:10px;">Qual foi o fornecedor desta compra?</div>`;
+    matchesEl.innerHTML='';
+    if(buscaLbl)buscaLbl.textContent=nomIA?'Busque pelo nome ou cadastre:':'Busque pelo nome:';
   }
 
-  // Campo de busca
-  html+=`<div style="position:relative;">
-    <input id="lrFornBusca" type="text" style="width:100%;border-radius:12px;font-size:16px;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="Buscar fornecedor cadastrado..." oninput="lrBuscaForn(this.value)">
-  </div>
-  <div id="lrFornRes" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>`;
-
-  // Botão cadastrar
-  html+=`<div class="lr-forn-card" onclick="lrIrCad()" style="border-style:dashed;border-color:var(--border-bright);margin-top:4px;">
-    <div>
-      <div class="lr-forn-nome" style="color:var(--text-muted);">+ Cadastrar novo fornecedor</div>
-      <div class="lr-forn-sub">${nomIA?'"'+nomIA+'" — cadastro rápido':'Adicionar agora'}</div>
-    </div>
-    <span style="color:var(--text-muted);font-size:22px;">›</span>
-  </div>`;
-
-  cont.innerHTML=html;
+  // Executa busca com o nome da IA automaticamente
+  if(nomIA)lrBuscaForn(nomIA);
 }
 
-function lrSelFornEAvancar(el){
+function lrBuscaForn(t){
+  const res=document.getElementById('lrFornBuscaRes');if(!res)return;
+  const cache=fornecedoresFinanceiroCache||[];
+
+  if(!t||t.trim().length<1){res.innerHTML='';return;}
+  const tU=t.trim().toUpperCase();
+  // Busca por qualquer parte do nome, case insensitive
+  const m=cache.filter(f=>(f.nome||'').toUpperCase().includes(tU)).slice(0,8);
+
+  if(!m.length){
+    res.innerHTML='<div style="font-size:14px;color:var(--text-muted);padding:8px 0;">Nenhum encontrado. Use o botão de cadastrar abaixo.</div>';
+    return;
+  }
+  res.innerHTML=m.map(f=>`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelecionarForn(this)">
+    <div><div class="lr-forn-nome">${escaparHtmlBasico(f.nome||'')}</div></div>
+    <span style="color:var(--text-muted);font-size:26px;">›</span>
+  </div>`).join('');
+}
+
+function lrSelecionarForn(el){
   LR.fornId=el.dataset.id;LR.fornNome=el.dataset.nome||'';
   lrIrStep(4);
 }
 
-function lrBuscaForn(t){
-  const res=document.getElementById('lrFornRes');if(!res)return;
-  if(!t||t.length<2){res.innerHTML='';return;}
-  const tl=t.toUpperCase();
-  const m=(fornecedoresFinanceiroCache||[]).filter(f=>(f.nome||'').toUpperCase().includes(tl)).slice(0,6);
-  if(!m.length){res.innerHTML='<div style="font-size:14px;color:var(--text-muted);padding:8px 0;">Nenhum encontrado. Use o botão de cadastrar abaixo.</div>';return;}
-  res.innerHTML=m.map(f=>`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelFornEAvancar(this)">
-    <div><div class="lr-forn-nome">${escaparHtmlBasico(f.nome||'')}</div></div>
-    <span style="color:var(--text-muted);font-size:22px;">›</span>
-  </div>`).join('');
-}
-
 function lrIrCad(){
-  const ni=document.getElementById('lrCadNome');if(ni&&LR.ia.forn)ni.value=LR.ia.forn;
+  const ni=document.getElementById('lrCadNome');
+  if(ni)ni.value=LR.ia.forn||'';
+  // Pré-preenche CNPJ se IA identificou (futuro)
   const msg=document.getElementById('lrMsgCad');if(msg){msg.textContent='';msg.className='msg';}
   lrIrStep('cad');
 }
@@ -42933,9 +42982,8 @@ async function lrCadForn(){
   if(!nome){if(msg){msg.textContent='Digite o nome do fornecedor.';msg.className='msg err';}return;}
   try{
     const t=await resolverTenantFornecedorFinanceiro();
-    const cnpjEl=document.getElementById('lrCadCnpj');
-    const cnpjRaw=cnpjEl?String(cnpjEl.value||'').replace(/\D/g,''):null;
-    const cnpj=cnpjRaw&&cnpjRaw.length>=11?cnpjRaw:null;
+    const cnpjRaw=String((document.getElementById('lrCadCnpj')||{}).value||'').replace(/\D/g,'');
+    const cnpj=cnpjRaw.length>=11?cnpjRaw:null;
     const{data:nf,error}=await sb.from('fornecedores').insert([{nome,cnpj,loja_id:t.loja_id,empresa_id:t.empresa_id}]).select('id').single();
     if(error)throw error;
     LR.fornId=String(nf.id);LR.fornNome=nome;
@@ -42944,20 +42992,15 @@ async function lrCadForn(){
   }catch(e){if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}}
 }
 
-/* ── STEP 4 ── */
+/* ─── STEP 4 ─── */
 function lrMontarS4(){
-  const cv=document.getElementById('lrValor');
-  if(cv)cv.value=LR.valor?'R$ '+Number(LR.valor).toFixed(2).replace('.',','):'';
-  const cd=document.getElementById('lrDataCompra');
-  if(cd)cd.value=LR.dataCompra||new Date().toISOString().split('T')[0];
-  const vb=document.getElementById('lrValorBadge');
-  if(vb)vb.textContent=LR.foto64?'✦ Lido do cupom':'Dados da compra';
-  // vencimento default hoje
+  const cv=document.getElementById('lrValor');if(cv)cv.value=LR.valor?'R$ '+Number(LR.valor).toFixed(2).replace('.',','):'';
+  const cd=document.getElementById('lrDataCompra');if(cd)cd.value=LR.dataCompra||new Date().toISOString().split('T')[0];
+  const vb=document.getElementById('lrValorBadge');if(vb)vb.textContent=LR.foto64?'✦ Lido do cupom':'Dados da compra';
   document.querySelectorAll('.lr-venc-btn').forEach(b=>b.classList.remove('lr-big-sel'));
   const bh=document.querySelector('.lr-venc-btn[data-dias="0"]');if(bh)bh.classList.add('lr-big-sel');
   const vc=document.getElementById('lrVencCustom');if(vc)vc.style.display='none';
   if(!LR.dataVenc)LR.dataVenc=LR.dataCompra||new Date().toISOString().split('T')[0];
-  // categorias
   const grid=document.getElementById('lrCatGrid');if(!grid)return;
   const cats=categoriasCompraCache||[];
   const sugL=(LR.ia.cat||'').toLowerCase();
@@ -42968,20 +43011,9 @@ function lrMontarS4(){
     return`<div class="lr-cat-card${sel?' lr-sel':''}" data-id="${c.id}" onclick="lrSelCat(this)"><span style="font-size:24px;">${c.icone||'🏷️'}</span><span>${escaparHtmlBasico(c.nome||'')}</span></div>`;
   }).join('')+`<div class="lr-cat-card" data-id="" onclick="lrSelCat(this)"><span style="font-size:24px;">⋯</span><span style="color:var(--text-muted);">Sem categoria</span></div>`;
 }
-
-function lrSetModo(m){
-  LR.modo=m;
-  document.getElementById('lrBtnSimples').classList.toggle('lr-big-sel',m==='simples');
-  document.getElementById('lrBtnCompleto').classList.toggle('lr-big-sel',m==='completo');
-  const ow=document.getElementById('lrObsWrap');if(ow)ow.style.display=m==='completo'?'':'none';
-}
+function lrSetModo(m){LR.modo=m;document.getElementById('lrBtnSimples').classList.toggle('lr-big-sel',m==='simples');document.getElementById('lrBtnCompleto').classList.toggle('lr-big-sel',m==='completo');const ow=document.getElementById('lrObsWrap');if(ow)ow.style.display=m==='completo'?'':'none';}
 function lrSelCat(el){document.querySelectorAll('#lrCatGrid .lr-cat-card').forEach(o=>o.classList.remove('lr-sel'));el.classList.add('lr-sel');LR.catId=el.dataset.id||null;}
-function lrVenc(el){
-  document.querySelectorAll('.lr-venc-btn').forEach(b=>b.classList.remove('lr-big-sel'));el.classList.add('lr-big-sel');
-  const dias=parseInt(el.dataset.dias,10),vc=document.getElementById('lrVencCustom');
-  if(dias===-1){vc.style.display='';vc.value=LR.dataVenc||new Date().toISOString().split('T')[0];}
-  else{vc.style.display='none';const b=new Date((LR.dataCompra||new Date().toISOString().split('T')[0])+'T00:00:00');b.setDate(b.getDate()+dias);LR.dataVenc=b.toISOString().split('T')[0];}
-}
+function lrVenc(el){document.querySelectorAll('.lr-venc-btn').forEach(b=>b.classList.remove('lr-big-sel'));el.classList.add('lr-big-sel');const dias=parseInt(el.dataset.dias,10),vc=document.getElementById('lrVencCustom');if(dias===-1){vc.style.display='';vc.value=LR.dataVenc||new Date().toISOString().split('T')[0];}else{vc.style.display='none';const b=new Date((LR.dataCompra||new Date().toISOString().split('T')[0])+'T00:00:00');b.setDate(b.getDate()+dias);LR.dataVenc=b.toISOString().split('T')[0];}}
 function lrVencCust(){const v=(document.getElementById('lrVencCustom')||{}).value;if(v)LR.dataVenc=v;}
 function lrFmtValor(inp){const v=inp.value.replace(/[^\d,]/g,'').replace(',','.');LR.valor=parseFloat(v)||null;}
 function lrAv4(){
@@ -42995,7 +43027,7 @@ function lrAv4(){
   lrIrStep(5);
 }
 
-/* ── STEP 5 ── */
+/* ─── STEP 5 ─── */
 function lrMontarS5(){
   const grid=document.getElementById('lrPagGrid');if(!grid)return;
   const formas=formasPagamentoFinanceiroCache||[];
@@ -43003,41 +43035,33 @@ function lrMontarS5(){
   const outras=formas.filter(f=>f.ativo!==false&&f.is_cartao!==true);
   const sIA=(LR.ia.pag||'').toUpperCase();
   let autoId=null;
-  if(sIA){const m=formas.find(f=>{const n=(f.nome||'').toUpperCase();return n.includes(sIA)||sIA.includes(n)||sIA.split(/\s+/).some(w=>w.length>3&&n.includes(w));});if(m)autoId=String(m.id);}
-  const icos={'DINHEIRO':'💵','PIX':'⚡','DEBITO':'💳','CREDITO':'💳','MASTERCARD':'💳','VISA':'💳','ELO':'💳','NUBANK':'💜','INTER':'🟠','ITAU':'🟡','BRADESCO':'🔴','C6':'⚫','SICREDI':'🟢'};
+  if(sIA){
+    const m=formas.find(f=>{
+      const n=(f.nome||'').toUpperCase();
+      return n===sIA||n.includes(sIA)||sIA.includes(n)||sIA.split(/\s+/).some(w=>w.length>3&&n.includes(w));
+    });
+    if(m)autoId=String(m.id);
+  }
+  const icos={'DINHEIRO':'💵','PIX':'⚡','NUBANK':'💜','INTER':'🟠','ITAU':'🟡','BRADESCO':'🔴','C6':'⚫','SICREDI':'🟢'};
   let html='';
   outras.forEach(f=>{
     const n=f.nome||'',nU=n.toUpperCase(),a=autoId&&String(f.id)===autoId;
     if(a){LR.pagId=String(f.id);LR.pagNome=n;LR.isCartao=false;}
-    const ico=Object.keys(icos).find(k=>nU.includes(k));
-    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="false" onclick="lrSelPag(this)"><div class="lr-pag-ico">${icos[ico]||'💳'}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div></div>`;
+    const ico=icos[Object.keys(icos).find(k=>nU.includes(k))||'']||'💳';
+    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="false" onclick="lrSelPag(this)"><div class="lr-pag-ico">${ico}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div></div>`;
   });
   cartoes.forEach(f=>{
     const n=f.nome||'',nU=n.toUpperCase(),a=autoId&&String(f.id)===autoId;
     if(a){LR.pagId=String(f.id);LR.pagNome=n;LR.isCartao=true;}
-    const ico=Object.keys(icos).find(k=>nU.includes(k));
-    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="true" onclick="lrSelPag(this)"><div class="lr-pag-ico">${icos[ico]||'💳'}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div><div class="lr-pag-sub">Cartão${a&&sIA?' ✦':''}</div></div>`;
+    const ico=icos[Object.keys(icos).find(k=>nU.includes(k))||'']||'💳';
+    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="true" onclick="lrSelPag(this)"><div class="lr-pag-ico">${ico}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div><div class="lr-pag-sub">Cartão${a&&sIA?' ✦':''}</div></div>`;
   });
-  if(!html)html='<div style="color:var(--text-muted);font-size:14px;grid-column:span 2;padding:8px 0;">Nenhuma forma cadastrada. Vá em Formas de Pagamento e cadastre.</div>';
+  if(!html)html='<div style="color:var(--text-muted);font-size:14px;grid-column:span 2;padding:8px 0;">Nenhuma forma cadastrada.</div>';
   grid.innerHTML=html;
   lrAtuParcelas();lrAtuResumo();
 }
-function lrSelPag(el){
-  document.querySelectorAll('#lrPagGrid .lr-pag-card').forEach(o=>o.classList.remove('lr-sel'));el.classList.add('lr-sel');
-  LR.pagId=el.dataset.id||null;LR.pagNome=el.dataset.nome||'';LR.isCartao=el.dataset.cartao==='true';
-  lrAtuParcelas();lrAtuResumo();
-}
-function lrAtuParcelas(){
-  const pw=document.getElementById('lrParcWrap');if(!pw)return;
-  pw.style.display=LR.isCartao?'':'none';
-  if(LR.isCartao){
-    const q=LR.parcelas||1;
-    const pl=document.getElementById('lrParcLbl');
-    if(pl)pl.textContent=LR.ia.parc&&LR.ia.parc>1?'Parcelas  ✦ identificado no comprovante':'Parcelas';
-    document.querySelectorAll('.lr-parc-btn').forEach(b=>{b.classList.remove('lr-big-sel');if(parseInt(b.dataset.p,10)===q)b.classList.add('lr-big-sel');});
-    lrInfoParc();
-  }
-}
+function lrSelPag(el){document.querySelectorAll('#lrPagGrid .lr-pag-card').forEach(o=>o.classList.remove('lr-sel'));el.classList.add('lr-sel');LR.pagId=el.dataset.id||null;LR.pagNome=el.dataset.nome||'';LR.isCartao=el.dataset.cartao==='true';lrAtuParcelas();lrAtuResumo();}
+function lrAtuParcelas(){const pw=document.getElementById('lrParcWrap');if(!pw)return;pw.style.display=LR.isCartao?'':'none';if(LR.isCartao){const q=LR.parcelas||1;const pl=document.getElementById('lrParcLbl');if(pl)pl.textContent=LR.ia.parc&&LR.ia.parc>1?'Parcelas  ✦ identificado no comprovante':'Parcelas';document.querySelectorAll('.lr-parc-btn').forEach(b=>{b.classList.remove('lr-big-sel');if(parseInt(b.dataset.p,10)===q)b.classList.add('lr-big-sel');});lrInfoParc();}}
 function lrParc(el){document.querySelectorAll('.lr-parc-btn').forEach(b=>b.classList.remove('lr-big-sel'));el.classList.add('lr-big-sel');LR.parcelas=parseInt(el.dataset.p,10)||1;lrInfoParc();lrAtuResumo();}
 function lrInfoParc(){const i=document.getElementById('lrParcInfo');if(!i||!LR.valor)return;if(LR.parcelas<=1){i.textContent='';return;}i.textContent=LR.parcelas+'x de R$ '+(LR.valor/LR.parcelas).toFixed(2).replace('.',',');}
 function lrAtuResumo(){
@@ -43050,7 +43074,7 @@ function lrAtuResumo(){
   el.innerHTML=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Fornecedor</span><span style="font-weight:700;">${escaparHtmlBasico(LR.fornNome||'—')}</span></div><div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Valor</span><span style="font-weight:700;font-size:18px;">${vlr}</span></div><div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Categoria</span><span>${escaparHtmlBasico(catN)}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--text-muted);">Pagamento</span><span>${escaparHtmlBasico(LR.pagNome||'—')}${parc}</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Compra: ${dt}</div>`;
 }
 
-/* ── SALVAR ── */
+/* ─── SALVAR ─── */
 async function lrSalvar(relaxar){
   relaxar=!!relaxar;
   const msg=document.getElementById('lrMsg5'),btn=document.getElementById('lrBtnSalvar');
@@ -43064,23 +43088,15 @@ async function lrSalvar(relaxar){
     const qtd=LR.isCartao&&LR.parcelas>1?LR.parcelas:1;
     const gpId=qtd>1?gerarGrupoParcelasIdFinanceiro():null;
     let ivDias=null;
-    if(qtd>1){
-      ivDias=30;
-      const fo=(fornecedoresFinanceiroCache||[]).find(f=>String(f.id)===String(LR.fornId));
-      if(fo&&fo.dia_vencimento){const bd=new Date(dv+'T00:00:00'),pm=new Date(bd.getFullYear(),bd.getMonth()+1,fo.dia_vencimento),d=Math.round((pm-bd)/86400000);ivDias=d>0?d:30;}
-    }
+    if(qtd>1){ivDias=30;const fo=(fornecedoresFinanceiroCache||[]).find(f=>String(f.id)===String(LR.fornId));if(fo&&fo.dia_vencimento){const bd=new Date(dv+'T00:00:00'),pm=new Date(bd.getFullYear(),bd.getMonth()+1,fo.dia_vencimento),d=Math.round((pm-bd)/86400000);ivDias=d>0?d:30;}}
     const obs=LR.obs||(LR.ia.forn?'Lançamento rápido — '+LR.ia.forn:'Lançamento rápido');
     const pb={fornecedor_id:LR.fornId,categoria_id:LR.catId||null,loja_id:tenant.loja_id,empresa_id:tenant.empresa_id,data_compra:dc,valor_compra:Number(LR.valor.toFixed(2)),observacao:obs,qtd_parcelas:qtd,intervalo_parcelas_dias:qtd>1?ivDias:null};
     const linhas=Array.from({length:qtd}).map((_,i)=>Object.assign({},pb,{data_pagamento:null,data_vencimento:qtd>1?calcularVencimentoParcelaFinanceiro(dv,i,ivDias):dv,numero_parcela:i+1,grupo_parcelas_id:gpId,criado_por_id:(ator&&ator.funcionarioId)||null,criado_por_nome:(ator&&ator.nome)||'Lançamento Rápido'}));
     const res=await sb.from('contasapagar').insert(linhas);if(res.error)throw res.error;
     if(typeof carregarContasAPagarFinanceiro==='function')carregarContasAPagarFinanceiro().catch(()=>{});
-    const si=document.getElementById('lrSucInfo');
-    if(si)si.textContent=LR.fornNome+' · R$ '+Number(LR.valor).toFixed(2).replace('.',',')+(qtd>1?' ('+qtd+'x)':'');
+    const si=document.getElementById('lrSucInfo');if(si)si.textContent=LR.fornNome+' · R$ '+Number(LR.valor).toFixed(2).replace('.',',')+(qtd>1?' ('+qtd+'x)':'');
     lrIrStep(6);
-  }catch(e){
-    if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}
-    if(btn){btn.disabled=false;btn.textContent='✓ Salvar lançamento';}
-  }
+  }catch(e){if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}if(btn){btn.disabled=false;btn.textContent='✓ Salvar lançamento';}}
 }
 
 function lrNovo(){
