@@ -42844,39 +42844,15 @@ async function lrFluxoComFoto(){
 
 /* ── IA: lê o cupom e preenche LR.ia ── */
 async function lrChamarIA(atuMsg){
-  const prompt=`Analise este cupom fiscal ou comprovante brasileiro.
-Retorne APENAS este JSON (sem texto antes ou depois, sem markdown):
-{"fornecedor":"NOME EM MAIUSCULAS","valor":0.00,"data":"YYYY-MM-DD","pagamento":"DINHEIRO ou PIX ou nome do cartao","parcelas":1,"categoria":"Mercado"}
-
-Regras:
-- fornecedor: nome curto do estabelecimento em MAIUSCULAS (ex: KOCH, PADARIA CENTRAL, POSTO SHELL)
-- valor: número decimal total pago
-- data: formato YYYY-MM-DD
-- pagamento: DINHEIRO, PIX, MASTERCARD, VISA, ELO, NUBANK, ITAU, BRADESCO, SICREDI, INTER, C6 ou null
-- parcelas: número inteiro (1 se à vista)
-- categoria: Mercado, Combustível, Farmácia, Restaurante, Manutenção, Serviços, Alimentação, Saúde, Educação`;
-
   try{
     if(atuMsg)atuMsg('Identificando fornecedor e valor...');
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:300,
-        messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:LR.fotoMime,data:LR.foto64}},
-          {type:'text',text:prompt}
-        ]}]
-      })
+    // Chama via Supabase Edge Function (chave Anthropic fica segura no servidor)
+    const resp = await sb.functions.invoke('ler-cupom', {
+      body: { imageBase64: LR.foto64, imageMime: LR.fotoMime }
     });
-    if(!r.ok){console.warn('LR: IA retornou',r.status);return;}
-    const d=await r.json();
-    const raw=((d.content||[]).map(x=>x.text||'').join('')).trim();
-    // Extrai JSON mesmo que venha com texto ao redor
-    const match=raw.match(/\{[\s\S]*?\}/);
-    const txt=match?match[0]:raw;
-    const p=JSON.parse(txt);
+    if(resp.error) throw resp.error;
+    const p = resp.data && resp.data.data;
+    if(!p) throw new Error('Resposta vazia da IA');
     LR.ia.forn=String(p.fornecedor||'').trim().toUpperCase()||null;
     LR.ia.valor=typeof p.valor==='number'?p.valor:(parseFloat(String(p.valor||'').replace(',','.'))||null);
     LR.ia.data=p.data&&/^\d{4}-\d{2}-\d{2}$/.test(p.data)?p.data:null;
@@ -42887,6 +42863,7 @@ Regras:
     LR.dataCompra=LR.ia.data||new Date().toISOString().split('T')[0];
     LR.dataVenc=LR.dataCompra;
     LR.parcelas=LR.ia.parc||1;
+    if(atuMsg)atuMsg('Leitura concluída!');
   }catch(e){
     console.warn('LR: erro IA',e);
     const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;
