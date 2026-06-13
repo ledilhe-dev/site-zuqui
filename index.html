@@ -8851,7 +8851,7 @@
             <select id="fornecedorGrupoId" style="min-width:140px;" title="Grupo de fornecedor">
               <option value="">Sem grupo</option>
             </select>
-            <label style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--text-muted);padding:0 4px;" title="Marque se este fornecedor é um cartão (Nubank, Sicredi, etc). Aparecerá como opção de pagamento no lançamento rápido.">
+            <label style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--text-muted);padding:0 4px;" title="Marque se este fornecedor é um cartão">
               <input type="checkbox" id="fornecedorIsCartao" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
               É cartão?
             </label>
@@ -8893,7 +8893,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
           <div class="page-title" style="margin:0;">Cadastro de contas a pagar</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-green" type="button" onclick="abrirLancamentoRapido()" style="display:flex;align-items:center;gap:6px;font-size:13px;">⚡ Lançamento rápido</button>
+            <button class="btn btn-green" type="button" onclick="lrAbrir()" style="display:flex;align-items:center;gap:6px;font-size:13px;">⚡ Lançamento rápido</button>
             <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🗂️ Importar arquivo bancário</button>
           </div>
         </div>
@@ -9654,188 +9654,174 @@
   </div>
 </div>
 
-<!-- ══ LANÇAMENTO RÁPIDO OVERLAY ══ -->
-<div id="lrOverlay" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.75);align-items:flex-end;justify-content:center;">
-<div id="lrSheet" style="background:var(--surface);border-radius:22px 22px 0 0;width:min(520px,100vw);max-height:94vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.22,1,.36,1);overflow:hidden;">
+<!-- ══ LANÇAMENTO RÁPIDO v3 ══ -->
+<div id="lrOverlay" style="display:none;position:fixed;inset:0;z-index:9700;background:var(--bg);flex-direction:column;">
+<div id="lrSheet" style="display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;width:100%;">
 
-  <!-- Handle + topo -->
-  <div style="flex-shrink:0;padding:12px 18px 0;">
-    <div style="width:40px;height:4px;border-radius:2px;background:var(--border-bright);margin:0 auto 14px;"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);">
-      <div>
-        <div id="lrTitulo" style="font-size:16px;font-weight:700;color:var(--text);">Lançamento rápido</div>
-        <div id="lrSub" style="font-size:12px;color:var(--text-muted);margin-top:2px;">Fotografe o cupom ou comprovante</div>
-      </div>
-      <button onclick="lrFechar()" style="width:34px;height:34px;border:none;background:var(--surface3);color:var(--text-muted);font-size:18px;cursor:pointer;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+  <!-- Topo fixo -->
+  <div style="flex-shrink:0;padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--surface);">
+    <button onclick="lrFechar()" style="width:40px;height:40px;border:none;background:var(--surface3);color:var(--text-muted);font-size:20px;cursor:pointer;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
+    <div style="flex:1;">
+      <div id="lrTitulo" style="font-size:18px;font-weight:700;color:var(--text);">Lançamento rápido</div>
+      <div id="lrSub" style="font-size:13px;color:var(--text-muted);margin-top:1px;">Fotografe ou digite manualmente</div>
     </div>
   </div>
 
   <!-- Stepper -->
-  <div id="lrStepper" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:10px 18px 10px;border-bottom:1px solid var(--border);">
-    <div id="lrD1" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;width:20px;"></div>
-    <div id="lrD2" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;width:20px;"></div>
-    <div id="lrD3" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;width:20px;"></div>
-    <div id="lrD4" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;width:20px;"></div>
-    <span id="lrStepLbl" style="font-size:11px;color:var(--text-muted);margin-left:4px;"></span>
+  <div id="lrStepper" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);">
+    <div id="lrD1" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;flex:1;"></div>
+    <div id="lrD2" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;flex:1;"></div>
+    <div id="lrD3" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;flex:1;"></div>
+    <div id="lrD4" style="height:5px;border-radius:3px;background:var(--border-bright);transition:all .25s;flex:1;"></div>
+    <span id="lrStepLbl" style="font-size:12px;color:var(--text-muted);margin-left:6px;white-space:nowrap;"></span>
   </div>
 
   <!-- Corpo scrollável -->
-  <div id="lrCorpo" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;">
+  <div id="lrCorpo" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;background:var(--bg);">
 
-    <!-- STEP 1: foto -->
+    <!-- S1: Foto -->
     <div id="lrS1" class="lr-step">
       <input type="file" id="lrFotoInput" accept="image/*" capture="environment" style="display:none;" onchange="lrFotoEscolhida(this)">
-      <div style="background:var(--bg);border-radius:14px;height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1.5px dashed var(--border-bright);cursor:pointer;position:relative;" onclick="document.getElementById('lrFotoInput').click()">
-        <div style="font-size:48px;line-height:1;">📷</div>
-        <div style="font-size:13px;color:var(--text-muted);text-align:center;padding:0 20px;">Toque para fotografar ou escolher da galeria</div>
-        <div style="position:absolute;top:0;left:0;right:0;bottom:0;border-radius:14px;"></div>
+      <div onclick="document.getElementById('lrFotoInput').click()" style="border:2px dashed var(--border-bright);border-radius:16px;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;background:var(--surface);">
+        <div style="font-size:56px;line-height:1;opacity:.7;">📷</div>
+        <div style="font-size:15px;color:var(--text-muted);text-align:center;padding:0 24px;">Toque para fotografar<br>ou escolher da galeria</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
-        <button class="btn btn-green" style="padding:14px;font-size:15px;border-radius:12px;" onclick="document.getElementById('lrFotoInput').click()">📷 Câmera</button>
-        <button class="btn btn-ghost" style="padding:14px;font-size:15px;border-radius:12px;" onclick="lrSemFoto()">✏️ Digitar</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">
+        <button class="btn btn-green" style="padding:16px;font-size:16px;border-radius:14px;" onclick="document.getElementById('lrFotoInput').click()">📷 Câmera</button>
+        <button class="btn btn-ghost" style="padding:16px;font-size:16px;border-radius:14px;" onclick="lrSemFoto()">✏️ Digitar</button>
       </div>
     </div>
 
-    <!-- STEP 2: analisando -->
+    <!-- S2: Analisando -->
     <div id="lrS2" class="lr-step" style="display:none;">
-      <div id="lrPreviewWrap" style="display:none;border-radius:12px;overflow:hidden;max-height:140px;margin-bottom:14px;">
-        <img id="lrPreviewImg" style="width:100%;max-height:140px;object-fit:cover;" alt="">
+      <div id="lrPreviewWrap" style="display:none;border-radius:14px;overflow:hidden;max-height:180px;margin-bottom:16px;">
+        <img id="lrPreviewImg" style="width:100%;max-height:180px;object-fit:cover;" alt="">
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px 0;text-align:center;">
-        <div style="width:48px;height:48px;border:3px solid var(--border-bright);border-top-color:var(--accent);border-radius:50%;animation:lr-spin .7s linear infinite;"></div>
-        <div id="lrIaMsg" style="font-size:14px;color:var(--text-muted);">Enviando para IA...</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px 0;text-align:center;">
+        <div style="width:54px;height:54px;border:3px solid var(--border-bright);border-top-color:var(--accent);border-radius:50%;animation:lr-spin .7s linear infinite;"></div>
+        <div id="lrIaMsg" style="font-size:16px;color:var(--text-muted);">Enviando para IA...</div>
       </div>
     </div>
 
-    <!-- STEP 3: fornecedor -->
+    <!-- S3: Fornecedor -->
     <div id="lrS3" class="lr-step" style="display:none;">
-      <div id="lrFornOpts" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="lrFornOpts" style="display:flex;flex-direction:column;gap:12px;"></div>
     </div>
 
-    <!-- STEP 4: valor + categoria + modo -->
+    <!-- SCad: Cadastro inline -->
+    <div id="lrSCad" class="lr-step" style="display:none;">
+      <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:17px;font-weight:700;color:var(--text);">Novo fornecedor</div>
+        <div style="font-size:14px;color:var(--text-muted);">Não encontramos esse fornecedor. Cadastre rapidamente:</div>
+        <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;">Nome <span style="color:var(--red)">*</span></label>
+        <input id="lrCadNome" type="text" style="width:100%;border-radius:12px;font-size:17px;padding:14px 16px;background:var(--surface2);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="Nome do fornecedor">
+        <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;">CPF / CNPJ <span style="font-weight:400;">(opcional)</span></label>
+        <input id="lrCadCnpj" type="text" inputmode="numeric" style="width:100%;border-radius:12px;font-size:17px;padding:14px 16px;background:var(--surface2);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="000.000.000-00 ou 00.000.000/0000-00">
+      </div>
+      <div class="msg" id="lrMsgCad" style="margin-top:4px;"></div>
+      <button class="btn btn-green" style="padding:16px;font-size:16px;border-radius:14px;width:100%;margin-top:4px;" onclick="lrCadForn()">Cadastrar e continuar →</button>
+      <button class="btn btn-ghost" style="padding:14px;font-size:15px;border-radius:14px;width:100%;margin-top:8px;" onclick="lrIrStep(3)">← Voltar e buscar</button>
+    </div>
+
+    <!-- S4: Valor + Categoria -->
     <div id="lrS4" class="lr-step" style="display:none;">
 
-      <!-- Modo de detalhe -->
-      <div style="margin-bottom:4px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Nível de detalhe</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button id="lrModoSimples" class="lr-modo-btn lr-modo-sel" onclick="lrSetModo('simples')" style="padding:12px 8px;border-radius:12px;font-size:13px;text-align:center;">
-            <div style="font-size:22px;margin-bottom:4px;">⚡</div>
-            <div style="font-weight:600;">Simples</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Só valor e categoria</div>
-          </button>
-          <button id="lrModoCompleto" class="lr-modo-btn" onclick="lrSetModo('completo')" style="padding:12px 8px;border-radius:12px;font-size:13px;text-align:center;">
-            <div style="font-size:22px;margin-bottom:4px;">📋</div>
-            <div style="font-weight:600;">Completo</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Com observação</div>
-          </button>
-        </div>
+      <!-- Modo simples/completo -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button id="lrBtnSimples" class="lr-modo-btn lr-big-sel" onclick="lrSetModo('simples')" style="padding:14px 10px;border-radius:14px;text-align:center;">
+          <div style="font-size:24px;margin-bottom:6px;">⚡</div>
+          <div style="font-size:15px;font-weight:700;">Simples</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Valor e categoria</div>
+        </button>
+        <button id="lrBtnCompleto" class="lr-modo-btn" onclick="lrSetModo('completo')" style="padding:14px 10px;border-radius:14px;text-align:center;">
+          <div style="font-size:24px;margin-bottom:6px;">📋</div>
+          <div style="font-size:15px;font-weight:700;">Completo</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Com observação</div>
+        </button>
       </div>
 
-      <!-- Valor -->
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;" id="lrValorLabel">✦ Lido do cupom</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:13px;color:var(--text-muted);">Data da compra</span>
-          <input id="lrDataCompra" type="date" style="border:none;background:transparent;color:var(--text);font-size:13px;font-weight:600;text-align:right;font-family:var(--font-sans);max-width:140px;">
+      <!-- Valor + data -->
+      <div style="background:var(--surface);border:1.5px solid var(--border-mid);border-radius:16px;padding:18px;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;" id="lrValorBadge">✦ Lido do cupom</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <span style="font-size:15px;color:var(--text-muted);">Data da compra</span>
+          <input id="lrDataCompra" type="date" style="border:none;background:transparent;color:var(--text);font-size:15px;font-weight:600;text-align:right;font-family:var(--font-sans);">
         </div>
-        <div style="height:1px;background:var(--border);margin-bottom:10px;"></div>
+        <div style="height:1px;background:var(--border);margin-bottom:12px;"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:13px;color:var(--text-muted);">Valor total</span>
-          <input id="lrValor" type="text" inputmode="decimal" style="border:none;background:transparent;color:var(--text);font-size:26px;font-weight:700;text-align:right;width:170px;font-family:var(--font-sans);" placeholder="R$ 0,00">
+          <span style="font-size:15px;color:var(--text-muted);">Valor total</span>
+          <input id="lrValor" type="text" inputmode="decimal" style="border:none;background:transparent;color:var(--text);font-size:30px;font-weight:700;text-align:right;width:190px;font-family:var(--font-sans);" placeholder="R$ 0,00" oninput="lrFmtValor(this)">
         </div>
       </div>
 
       <!-- Categoria -->
       <div>
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Categoria</div>
-        <div id="lrCatGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+        <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">Categoria</div>
+        <div id="lrCatGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
       </div>
 
       <!-- Vencimento -->
       <div>
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Vencimento</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button class="lr-venc-btn lr-big-btn lr-big-sel" data-dias="0" onclick="lrVenc(this)">
-            <div style="font-size:18px;margin-bottom:2px;">📅</div><div>Hoje</div>
-          </button>
-          <button class="lr-venc-btn lr-big-btn" data-dias="7" onclick="lrVenc(this)">
-            <div style="font-size:18px;margin-bottom:2px;">📅</div><div>+7 dias</div>
-          </button>
-          <button class="lr-venc-btn lr-big-btn" data-dias="30" onclick="lrVenc(this)">
-            <div style="font-size:18px;margin-bottom:2px;">📅</div><div>+30 dias</div>
-          </button>
-          <button class="lr-venc-btn lr-big-btn" data-dias="-1" onclick="lrVenc(this)">
-            <div style="font-size:18px;margin-bottom:2px;">🗓️</div><div>Outra</div>
-          </button>
+        <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">Vencimento</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button class="lr-venc-btn lr-big-btn lr-big-sel" data-dias="0" onclick="lrVenc(this)" style="padding:14px;border-radius:14px;"><div style="font-size:22px;margin-bottom:4px;">📅</div><div style="font-size:15px;font-weight:600;">Hoje</div></button>
+          <button class="lr-venc-btn lr-big-btn" data-dias="7" onclick="lrVenc(this)" style="padding:14px;border-radius:14px;"><div style="font-size:22px;margin-bottom:4px;">📅</div><div style="font-size:15px;font-weight:600;">+7 dias</div></button>
+          <button class="lr-venc-btn lr-big-btn" data-dias="30" onclick="lrVenc(this)" style="padding:14px;border-radius:14px;"><div style="font-size:22px;margin-bottom:4px;">📅</div><div style="font-size:15px;font-weight:600;">+30 dias</div></button>
+          <button class="lr-venc-btn lr-big-btn" data-dias="-1" onclick="lrVenc(this)" style="padding:14px;border-radius:14px;"><div style="font-size:22px;margin-bottom:4px;">🗓️</div><div style="font-size:15px;font-weight:600;">Outra</div></button>
         </div>
-        <input type="date" id="lrVencCustom" style="display:none;width:100%;margin-top:8px;border-radius:10px;" oninput="lrVencCustom()">
+        <input type="date" id="lrVencCustom" style="display:none;width:100%;margin-top:10px;border-radius:12px;font-size:16px;padding:14px;" oninput="lrVencCust()">
       </div>
 
-      <!-- Obs (só modo completo) -->
+      <!-- Obs (modo completo) -->
       <div id="lrObsWrap" style="display:none;">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Observação</div>
-        <input id="lrObs" type="text" style="width:100%;border-radius:10px;" placeholder="Ex: compras da semana">
+        <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">Observação</div>
+        <input id="lrObs" type="text" style="width:100%;border-radius:12px;font-size:16px;padding:14px 16px;" placeholder="Ex: compras da semana">
       </div>
 
       <div class="msg" id="lrMsg4"></div>
-      <button class="btn btn-green" style="padding:15px;font-size:15px;border-radius:12px;width:100%;" onclick="lrAvancar4()">Avançar →</button>
+      <button class="btn btn-green" style="padding:17px;font-size:17px;border-radius:14px;width:100%;" onclick="lrAv4()">Avançar →</button>
     </div>
 
-    <!-- STEP 5: pagamento -->
+    <!-- S5: Pagamento -->
     <div id="lrS5" class="lr-step" style="display:none;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Como foi pago?</div>
-      <div id="lrPagGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
+      <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">Como foi pago?</div>
+      <div id="lrPagGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;"></div>
 
       <div id="lrParcWrap" style="display:none;">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;" id="lrParcLabel">Parcelas</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-          <button class="lr-parc-btn lr-big-btn" data-p="1" onclick="lrParc(this)">1x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="2" onclick="lrParc(this)">2x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="3" onclick="lrParc(this)">3x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="6" onclick="lrParc(this)">6x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="10" onclick="lrParc(this)">10x</button>
-          <button class="lr-parc-btn lr-big-btn" data-p="12" onclick="lrParc(this)">12x</button>
+        <div style="font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:8px;" id="lrParcLbl">Parcelas</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          <button class="lr-parc-btn lr-big-btn" data-p="1" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">1x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="2" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">2x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="3" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">3x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="6" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">6x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="10" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">10x</button>
+          <button class="lr-parc-btn lr-big-btn" data-p="12" onclick="lrParc(this)" style="padding:14px;border-radius:14px;font-size:16px;font-weight:700;">12x</button>
         </div>
-        <div id="lrParcInfo" style="font-size:13px;color:var(--text-muted);margin-top:8px;text-align:center;"></div>
+        <div id="lrParcInfo" style="font-size:15px;color:var(--text-muted);margin-top:10px;text-align:center;font-weight:600;"></div>
       </div>
 
-      <!-- Resumo final -->
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Resumo</div>
-        <div id="lrResumo" style="font-size:13px;color:var(--text-soft);line-height:1.9;"></div>
+      <!-- Resumo -->
+      <div style="background:var(--surface);border:1.5px solid var(--border-mid);border-radius:16px;padding:18px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Resumo</div>
+        <div id="lrResumo" style="font-size:15px;color:var(--text-soft);line-height:2;"></div>
       </div>
 
       <div class="msg" id="lrMsg5"></div>
-      <button class="btn btn-green" style="padding:15px;font-size:15px;border-radius:12px;width:100%;" id="lrBtnSalvar" onclick="lrSalvar()">✓ Salvar lançamento</button>
-      <button class="btn btn-ghost" style="padding:12px;font-size:13px;border-radius:12px;width:100%;margin-top:4px;" onclick="lrSalvar(true)">Salvar e ajustar depois</button>
+      <button class="btn btn-green" style="padding:17px;font-size:17px;border-radius:14px;width:100%;" id="lrBtnSalvar" onclick="lrSalvar()">✓ Salvar lançamento</button>
+      <button class="btn btn-ghost" style="padding:14px;font-size:15px;border-radius:14px;width:100%;margin-top:8px;" onclick="lrSalvar(true)">Salvar e ajustar depois</button>
     </div>
 
-    <!-- STEP 6: sucesso -->
+    <!-- S6: Sucesso -->
     <div id="lrS6" class="lr-step" style="display:none;">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:40px 0;text-align:center;">
-        <div style="width:72px;height:72px;border-radius:50%;background:var(--green-glow);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:34px;">✓</div>
-        <div style="font-size:20px;font-weight:700;color:var(--text);">Lançado!</div>
-        <div id="lrSucInfo" style="font-size:14px;color:var(--text-muted);"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:8px;">
-          <button class="btn btn-green" style="padding:14px;font-size:14px;border-radius:12px;" onclick="lrNovo()">+ Novo</button>
-          <button class="btn btn-ghost" style="padding:14px;font-size:14px;border-radius:12px;" onclick="lrFechar()">Fechar</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:50px 0;text-align:center;">
+        <div style="width:80px;height:80px;border-radius:50%;background:var(--green-glow);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:40px;">✓</div>
+        <div style="font-size:24px;font-weight:700;color:var(--text);">Lançado!</div>
+        <div id="lrSucInfo" style="font-size:16px;color:var(--text-muted);"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:12px;">
+          <button class="btn btn-green" style="padding:16px;font-size:16px;border-radius:14px;" onclick="lrNovo()">+ Novo</button>
+          <button class="btn btn-ghost" style="padding:16px;font-size:16px;border-radius:14px;" onclick="lrFechar()">Fechar</button>
         </div>
       </div>
-    </div>
-
-    <!-- STEP cadastro inline de fornecedor -->
-    <div id="lrSCad" class="lr-step" style="display:none;">
-      <div style="background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:14px;margin-bottom:4px;">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Novo fornecedor</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Não encontramos nenhum fornecedor com esse nome. Cadastre rapidamente:</div>
-        <input id="lrCadNome" type="text" style="width:100%;border-radius:10px;margin-bottom:8px;font-size:15px;" placeholder="Nome do fornecedor (obrigatório)">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Opcional:</div>
-        <input id="lrCadCnpj" type="text" inputmode="numeric" style="width:100%;border-radius:10px;margin-bottom:6px;" placeholder="CPF ou CNPJ">
-      </div>
-      <div class="msg" id="lrMsgCad"></div>
-      <button class="btn btn-green" style="padding:15px;font-size:15px;border-radius:12px;width:100%;" onclick="lrCadastrarFornecedor()">Cadastrar e continuar →</button>
-      <button class="btn btn-ghost" style="padding:12px;font-size:13px;border-radius:12px;width:100%;margin-top:4px;" onclick="lrIrStep(3)">← Voltar e buscar</button>
     </div>
 
   </div><!-- fim corpo -->
@@ -9844,26 +9830,26 @@
 
 <style>
 @keyframes lr-spin{to{transform:rotate(360deg);}}
-.lr-big-btn{padding:12px 8px;border:1.5px solid var(--border-mid);border-radius:12px;background:var(--surface2);color:var(--text);cursor:pointer;font-size:14px;font-weight:600;font-family:var(--font-sans);transition:all .15s;text-align:center;width:100%;}
+.lr-big-btn{border:1.5px solid var(--border-mid);border-radius:14px;background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-sans);transition:all .15s;width:100%;text-align:center;}
 .lr-big-btn:hover,.lr-big-btn:active{border-color:var(--accent);background:var(--accent-subtle);color:var(--accent);}
 .lr-big-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
-.lr-forn-card{padding:14px 16px;border:1.5px solid var(--border-mid);border-radius:14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.lr-forn-card:hover{border-color:var(--border-bright);}
-.lr-forn-card.lr-sel{border-color:var(--accent);background:var(--accent-subtle);}
-.lr-forn-card .nome{font-size:15px;font-weight:700;color:var(--text);}
-.lr-forn-card .sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
-.lr-modo-btn{border:1.5px solid var(--border-mid);border-radius:12px;background:var(--surface2);color:var(--text);cursor:pointer;font-family:var(--font-sans);transition:all .15s;width:100%;}
+.lr-modo-btn{border:1.5px solid var(--border-mid);border-radius:14px;background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-sans);transition:all .15s;width:100%;}
 .lr-modo-btn:hover{border-color:var(--border-bright);}
-.lr-modo-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;}
-.lr-cat-card{padding:12px;border:1.5px solid var(--border-mid);border-radius:12px;background:var(--surface2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--text);}
-.lr-cat-card:hover{border-color:var(--border-bright);}
-.lr-cat-card.lr-sel{border-color:var(--accent);background:var(--accent-subtle);color:var(--accent);}
-.lr-pag-card{padding:14px 10px;border:1.5px solid var(--border-mid);border-radius:14px;background:var(--surface2);cursor:pointer;transition:all .15s;text-align:center;}
-.lr-pag-card:hover{border-color:var(--border-bright);}
-.lr-pag-card.lr-sel{border-color:var(--accent);background:var(--accent-subtle);}
-.lr-pag-card .lr-pag-ico{font-size:28px;margin-bottom:6px;}
-.lr-pag-card .lr-pag-nome{font-size:13px;font-weight:700;color:var(--text);}
-.lr-pag-card .lr-pag-sub{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.lr-modo-sel,.lr-big-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;}
+.lr-forn-card{padding:16px 18px;border:1.5px solid var(--border-mid);border-radius:16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);}
+.lr-forn-card:active{border-color:var(--accent);background:var(--accent-subtle);}
+.lr-forn-card.lr-sel{border-color:var(--accent);background:var(--accent-subtle);}
+.lr-forn-nome{font-size:16px;font-weight:700;color:var(--text);}
+.lr-forn-sub{font-size:13px;color:var(--text-muted);margin-top:3px;}
+.lr-cat-card{padding:14px;border:1.5px solid var(--border-mid);border-radius:14px;background:var(--surface);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px;font-size:15px;font-weight:600;color:var(--text);}
+.lr-cat-card:active{border-color:var(--accent);background:var(--accent-subtle);}
+.lr-cat-card.lr-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+.lr-pag-card{padding:16px 12px;border:1.5px solid var(--border-mid);border-radius:16px;background:var(--surface);cursor:pointer;transition:all .15s;text-align:center;}
+.lr-pag-card:active{border-color:var(--accent);background:var(--accent-subtle);}
+.lr-pag-card.lr-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;}
+.lr-pag-ico{font-size:32px;margin-bottom:8px;}
+.lr-pag-nome{font-size:14px;font-weight:700;color:var(--text);}
+.lr-pag-sub{font-size:11px;color:var(--text-muted);margin-top:3px;}
 </style>
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -16684,7 +16670,7 @@ const MEU_PAINEL_WIDGETS_DISPONIVEIS = [
   // ── Atalhos — Financeiro ─────────────────────────────────────────
   { id: 'atalho_cofre',               tipo: 'atalho', ico: '🏦', label: 'Cofre',                          grupo: 'fin', pagina: 'financeiro_cofre' },
   { id: 'atalho_rel_contas_pagar',    tipo: 'atalho', ico: '📊', label: 'Relatório contas a pagar',       grupo: 'fin', pagina: 'relatorio_financeiro' },
-  { id: 'atalho_lancamento_rapido',   tipo: 'acao',   ico: '⚡', label: 'Lançamento rápido',              grupo: 'fin', acao: 'abrirLancamentoRapido' },
+  { id: 'atalho_lancamento_rapido',   tipo: 'acao',   ico: '⚡', label: 'Lançamento rápido',              grupo: 'fin', acao: 'lrAbrir' },
   { id: 'atalho_cad_contas_pagar',    tipo: 'atalho', ico: '➕', label: 'Cadastro contas a pagar',        grupo: 'fin', pagina: 'financeiro_contasapagar' },
   { id: 'atalho_baixar_contas',       tipo: 'atalho', ico: '✅', label: 'Baixar contas',                  grupo: 'fin', pagina: 'financeiro_baixar_contas' },
   { id: 'atalho_rel_recebimentos',    tipo: 'atalho', ico: '📊', label: 'Relatório recebimentos',         grupo: 'fin', pagina: 'relatorio_recebimentos' },
@@ -17015,9 +17001,9 @@ async function renderizarMeuPainel() {
     const def = MEU_PAINEL_WIDGETS_DISPONIVEIS.find(w => w.id === wid);
     if (!def) return '';
     if (def.tipo === 'atalho' || def.tipo === 'acao') {
-      const _lrOnclick = def.tipo === 'acao' ? `${def.acao}()` : `abrirPaginaAtalhoMeuPainel('${def.pagina}')`;
+      const _mpOnclick = def.tipo === 'acao' ? `${def.acao}()` : `abrirPaginaAtalhoMeuPainel('${def.pagina}')`;
       return `<div class="meu-painel-widget meu-painel-atalho" data-wid="${wid}" ${DA}
-        onclick="${_lrOnclick}" title="${def.label}">
+        onclick="${_mpOnclick}" title="${def.label}">
         <button class="meu-painel-widget-remover" onclick="event.stopPropagation();removerWidgetMeuPainel('${wid}')" title="Remover">✕</button>
         <div style="font-size:28px;margin-bottom:6px;">${def.ico}</div>
         <div class="meu-painel-widget-label">${def.tipo === 'acao' ? 'Ação rápida' : 'Atalho'}</div>
@@ -42740,116 +42726,126 @@ window.addEventListener('load', function() {
 </style>
 
 
-<script id="lr-js">
-/* ══ LANÇAMENTO RÁPIDO v2.0 ══ */
-const LR = {
-  step:0, modo:'simples',
-  foto64:null, fotoMime:null,
-  fornId:null, fornNome:null,
-  catId:null, dataCompra:null, dataVenc:null,
-  valor:null, obs:'', parcelas:1, isCartao:false,
-  pagId:null, pagNome:null,
-  ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null},
-};
+<script id="lr-v3">
+/* ══ LANÇAMENTO RÁPIDO v3 ══ */
+const LR={step:0,modo:'simples',foto64:null,fotoMime:null,fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,isCartao:false,pagId:null,pagNome:null,ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null}};
 
 function lrAbrir(){
   Object.assign(LR,{step:0,modo:'simples',foto64:null,fotoMime:null,fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,isCartao:false,pagId:null,pagNome:null,ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null}});
-  if(!(fornecedoresFinanceiroCache||[]).length && typeof carregarFornecedoresFinanceiro==='function') carregarFornecedoresFinanceiro().catch(()=>{});
-  if(!(categoriasCompraCache||[]).length && typeof carregarCategoriasCompraFinanceiro==='function') carregarCategoriasCompraFinanceiro().catch(()=>{});
-  if(!(formasPagamentoFinanceiroCache||[]).length && typeof carregarFormasPagamentoFinanceiro==='function') carregarFormasPagamentoFinanceiro({render:false,silencioso:true}).catch(()=>{});
-  const ov=document.getElementById('lrOverlay'); if(!ov)return;
+  if(!(fornecedoresFinanceiroCache||[]).length&&typeof carregarFornecedoresFinanceiro==='function')carregarFornecedoresFinanceiro().catch(()=>{});
+  if(!(categoriasCompraCache||[]).length&&typeof carregarCategoriasCompraFinanceiro==='function')carregarCategoriasCompraFinanceiro().catch(()=>{});
+  if(!(formasPagamentoFinanceiroCache||[]).length&&typeof carregarFormasPagamentoFinanceiro==='function')carregarFormasPagamentoFinanceiro({render:false,silencioso:true}).catch(()=>{});
+  const ov=document.getElementById('lrOverlay');if(!ov)return;
   ov.style.display='flex';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ document.getElementById('lrSheet').style.transform='translateY(0)'; }));
   lrIrStep(1);
 }
-// alias para compatibilidade com botão existente e meu painel
-function abrirLancamentoRapido(){ lrAbrir(); }
+function abrirLancamentoRapido(){lrAbrir();}
 
 function lrFechar(){
-  const sh=document.getElementById('lrSheet'), ov=document.getElementById('lrOverlay');
-  if(!sh||!ov)return;
-  sh.style.transform='translateY(100%)';
-  setTimeout(()=>{ ov.style.display='none'; },320);
+  const ov=document.getElementById('lrOverlay');
+  if(ov)ov.style.display='none';
 }
 
 function lrIrStep(n){
   LR.step=n;
   document.querySelectorAll('.lr-step').forEach(s=>s.style.display='none');
-  const el=document.getElementById(n==='cad'?'lrSCad':'lrS'+n); if(el)el.style.display='';
+  const id=n==='cad'?'lrSCad':'lrS'+n;
+  const el=document.getElementById(id);if(el)el.style.display='';
+  // Scroll topo
+  const corpo=document.getElementById('lrCorpo');if(corpo)corpo.scrollTop=0;
 
-  const tMap={1:['Lançamento rápido','Fotografe ou digite manualmente'],2:['Analisando...','A IA está lendo o documento'],3:['Fornecedor','Confirme quem foi a compra'],4:['Valor e categoria','Dados do lançamento'],5:['Forma de pagamento','Como foi pago?'],6:['Pronto!',''],cad:['Novo fornecedor','Cadastro rápido']};
+  const tMap={1:['Lançamento rápido','Fotografe ou digite manualmente'],2:['Analisando...','A IA está lendo o documento'],3:['Fornecedor','Confirme quem foi a compra'],4:['Valor e categoria','Dados do lançamento'],5:['Forma de pagamento','Como foi pago?'],6:['Pronto!','Lançamento registrado'],cad:['Novo fornecedor','Cadastro rápido']};
   const t=tMap[n]||['Lançamento rápido',''];
-  const tt=document.getElementById('lrTitulo'), ts=document.getElementById('lrSub');
-  if(tt)tt.textContent=t[0]; if(ts)ts.textContent=t[1];
+  const tt=document.getElementById('lrTitulo'),ts=document.getElementById('lrSub');
+  if(tt)tt.textContent=t[0];if(ts)ts.textContent=t[1];
 
-  const stepNum={'1':1,'2':2,'3':3,'4':4,'5':5,'6':5,'cad':3}[String(n)]||1;
-  const labels={1:'Foto',2:'IA',3:'Fornecedor',4:'Valor',5:'Pagamento'};
+  const numMap={1:1,2:2,3:3,cad:3,4:3,5:4,6:4};
+  const sNum=numMap[n]||1;
+  const lbls={1:'Foto',2:'IA',3:'Fornecedor',4:'Pagamento'};
   for(let i=1;i<=4;i++){
-    const d=document.getElementById('lrD'+i); if(!d)continue;
-    if(i<stepNum){d.style.background='var(--green)';d.style.width='20px';}
-    else if(i===stepNum){d.style.background='var(--accent)';d.style.width='40px';}
-    else{d.style.background='var(--border-bright)';d.style.width='20px';}
+    const d=document.getElementById('lrD'+i);if(!d)continue;
+    if(i<sNum){d.style.background='var(--green)';d.style.flex='1';}
+    else if(i===sNum){d.style.background='var(--accent)';d.style.flex='2';}
+    else{d.style.background='var(--border-bright)';d.style.flex='1';}
   }
   const sl=document.getElementById('lrStepLbl');
-  if(sl) sl.textContent=(stepNum<=4)?`${stepNum} de 4 — ${labels[stepNum]||''}` : '';
+  if(sl)sl.textContent=sNum<=4?sNum+' de 4 — '+(lbls[sNum]||''):'';
   const st=document.getElementById('lrStepper');
   if(st)st.style.display=(n===1||n===6)?'none':'flex';
 
-  if(n===3)lrMontarFornecedores();
-  if(n===4)lrMontarStep4();
-  if(n===5)lrMontarStep5();
+  if(n===3)lrMontarForn();
+  if(n===4)lrMontarS4();
+  if(n===5)lrMontarS5();
 }
 
-/* ── FOTO ──────────────────────────────── */
+/* ── FOTO ── */
 function lrFotoEscolhida(inp){
-  const file=inp&&inp.files&&inp.files[0]; if(!file)return;
+  const file=inp&&inp.files&&inp.files[0];if(!file)return;
   const rd=new FileReader();
   rd.onload=function(e){
-    LR.foto64=e.target.result.split(',')[1]; LR.fotoMime=file.type||'image/jpeg';
-    const pw=document.getElementById('lrPreviewWrap'), pi=document.getElementById('lrPreviewImg');
-    if(pw&&pi){pi.src=e.target.result; pw.style.display='';}
-    lrIrStep(2); lrChamarIA();
+    LR.foto64=e.target.result.split(',')[1];LR.fotoMime=file.type||'image/jpeg';
+    const pw=document.getElementById('lrPreviewWrap'),pi=document.getElementById('lrPreviewImg');
+    if(pw&&pi){pi.src=e.target.result;pw.style.display='';}
+    lrIrStep(2);lrChamarIA();
   };
   rd.readAsDataURL(file);
 }
-function lrSemFoto(){ LR.foto64=null; const h=new Date().toISOString().split('T')[0]; LR.dataCompra=h; LR.dataVenc=h; lrIrStep(3); }
+function lrSemFoto(){LR.foto64=null;const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;lrIrStep(3);}
 
-/* ── IA ────────────────────────────────── */
+/* ── IA ── */
 async function lrChamarIA(){
-  const msgs=['Enviando para IA...','Identificando fornecedor...','Lendo valor e data...','Detectando cartão e parcelas...','Quase pronto...'];
-  let mi=0; const mel=document.getElementById('lrIaMsg');
-  const iv=setInterval(()=>{ mi=Math.min(mi+1,msgs.length-1); if(mel)mel.textContent=msgs[mi]; },900);
-  const prompt='Analise este cupom/comprovante fiscal brasileiro. Retorne SOMENTE JSON sem markdown:\n{"fornecedor":"nome simplificado do estabelecimento em maiúsculas","valor":0.00,"data":"YYYY-MM-DD ou null","pagamento":"DINHEIRO, PIX, MASTERCARD, VISA, ELO, NUBANK, SICREDI, INTER ou nome do cartão identificado, ou null","parcelas":1,"categoria":"Mercado, Combustível, Farmácia, Restaurante, Manutenção, Serviços, Alimentação ou outra categoria adequada"}';
+  const msgs=['Enviando para IA...','Lendo nome do estabelecimento...','Lendo valor e data...','Identificando cartão e parcelas...','Finalizando...'];
+  let mi=0;const mel=document.getElementById('lrIaMsg');
+  const iv=setInterval(()=>{mi=Math.min(mi+1,msgs.length-1);if(mel)mel.textContent=msgs[mi];},1000);
+  // Prompt direto e agressivo - força JSON puro
+  const prompt=`Leia este cupom fiscal ou comprovante brasileiro.
+Retorne APENAS o JSON abaixo, sem nenhum texto antes ou depois, sem markdown, sem explicações:
+{"fornecedor":"NOME DO ESTABELECIMENTO EM MAIUSCULAS","valor":463.12,"data":"2026-06-10","pagamento":"MASTERCARD","parcelas":1,"categoria":"Mercado"}
+
+Campos:
+- fornecedor: nome simplificado em MAIUSCULAS (ex: KOCH, PADARIA CENTRAL, AUTO POSTO)
+- valor: número decimal total da compra
+- data: formato YYYY-MM-DD
+- pagamento: DINHEIRO, PIX, MASTERCARD, VISA, ELO, NUBANK, SICREDI, INTER, ITAU, BRADESCO, C6 ou nome do cartão
+- parcelas: número inteiro (1 se à vista)
+- categoria: Mercado, Combustível, Farmácia, Restaurante, Manutenção, Serviços, Alimentação, Vestuário, Saúde, Educação
+
+JSON:`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:LR.fotoMime,data:LR.foto64}},{type:'text',text:prompt}]}]})});
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:LR.fotoMime,data:LR.foto64}},{type:'text',text:prompt}]}]})});
     clearInterval(iv);
     if(r.ok){
       const d=await r.json();
-      const txt=((d.content||[]).map(x=>x.text||'').join('')).trim().replace(/```json|```/g,'').trim();
+      // Extrai o texto da resposta
+      const raw=((d.content||[]).map(x=>x.text||'').join('')).trim();
+      // Tenta extrair JSON mesmo que venha com texto ao redor
+      const match=raw.match(/\{[\s\S]*\}/);
+      const txt=match?match[0]:raw;
       try{
         const p=JSON.parse(txt);
         LR.ia.forn=String(p.fornecedor||'').trim().toUpperCase()||null;
-        LR.ia.valor=p.valor||null; LR.ia.data=p.data||null;
+        LR.ia.valor=typeof p.valor==='number'?p.valor:(parseFloat(String(p.valor||'').replace(',','.'))||null);
+        LR.ia.data=p.data||null;
         LR.ia.pag=String(p.pagamento||'').trim().toUpperCase()||null;
-        LR.ia.parc=p.parcelas?Math.max(1,parseInt(p.parcelas,10)||1):1;
+        LR.ia.parc=Math.max(1,parseInt(p.parcelas,10)||1);
         LR.ia.cat=String(p.categoria||'').trim()||null;
         if(LR.ia.valor)LR.valor=LR.ia.valor;
         LR.dataCompra=LR.ia.data||new Date().toISOString().split('T')[0];
         LR.dataVenc=LR.dataCompra;
         LR.parcelas=LR.ia.parc||1;
-      }catch(e){ const h=new Date().toISOString().split('T')[0]; LR.dataCompra=h; LR.dataVenc=h; }
-    } else { const h=new Date().toISOString().split('T')[0]; LR.dataCompra=h; LR.dataVenc=h; }
-  }catch(e){ clearInterval(iv); const h=new Date().toISOString().split('T')[0]; LR.dataCompra=h; LR.dataVenc=h; }
+      }catch(e){console.warn('LR: parse JSON falhou',txt,e);const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
+    }else{const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
+  }catch(e){clearInterval(iv);console.warn('LR: erro IA',e);const h=new Date().toISOString().split('T')[0];LR.dataCompra=h;LR.dataVenc=h;}
   lrIrStep(3);
 }
 
-/* ── FORNECEDOR ────────────────────────── */
-function lrMontarFornecedores(){
-  const cont=document.getElementById('lrFornOpts'); if(!cont)return;
+/* ── FORNECEDOR ── */
+function lrMontarForn(){
+  const cont=document.getElementById('lrFornOpts');if(!cont)return;
   const cache=fornecedoresFinanceiroCache||[];
   const nomIA=LR.ia.forn||'';
 
-  // Busca automática: qualquer palavra do nome IA bate em qualquer fornecedor cadastrado
+  // Match: qualquer palavra com 3+ letras do nome IA bate em qualquer fornecedor
   let matches=[];
   if(nomIA){
     const palavras=nomIA.split(/\s+/).filter(p=>p.length>=3);
@@ -42860,280 +42856,226 @@ function lrMontarFornecedores(){
     });
   }
 
-  // Se só encontrou 1 match → vincula automático e avança direto
+  // 1 match exato → vincula e avança direto sem mostrar nada
   if(matches.length===1){
-    LR.fornId=String(matches[0].id);
-    LR.fornNome=matches[0].nome||'';
-    lrIrStep(4);
-    return;
+    LR.fornId=String(matches[0].id);LR.fornNome=matches[0].nome||'';
+    lrIrStep(4);return;
   }
 
   let html='';
-
-  if(nomIA){ html+=`<div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">✦ IA identificou: ${nomIA}</div>`; }
-
-  if(matches.length>1){
-    html+=`<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Encontramos ${matches.length} fornecedores com esse nome. Qual foi?</div>`;
-    matches.forEach(f=>{
-      html+=`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelForn(this)">
-        <div><div class="nome">${escaparHtmlBasico(f.nome||'')}</div></div>
-        <span class="lr-chk" style="display:none;color:var(--accent);font-size:22px;">✓</span>
-      </div>`;
-    });
-  } else {
-    // Nenhum match — mostra busca manual
-    if(nomIA){
-      html+=`<div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Não encontramos <strong style="color:var(--text);">${nomIA}</strong> no cadastro. Busque ou cadastre:</div>`;
-    } else {
-      html+=`<div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Qual foi o fornecedor desta compra?</div>`;
-    }
+  if(nomIA){
+    html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <span style="font-size:20px;">🤖</span>
+      <div><div style="font-size:12px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">IA identificou</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text);">${nomIA}</div></div>
+    </div>`;
   }
 
-  // Sempre mostra campo de busca + botão cadastrar
-  html+=`<div style="position:relative;margin-top:${matches.length>1?'10':'0'}px;">
-    <input id="lrFornBusca" type="text" style="width:100%;border-radius:10px;padding-right:36px;" placeholder="Buscar fornecedor cadastrado..." oninput="lrBuscarForn(this.value)">
+  if(matches.length>1){
+    html+=`<div style="font-size:14px;color:var(--text-muted);margin-bottom:10px;">Encontramos ${matches.length} com esse nome. Qual foi?</div>`;
+    matches.forEach(f=>{
+      html+=`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelFornEAvancar(this)">
+        <div><div class="lr-forn-nome">${escaparHtmlBasico(f.nome||'')}</div></div>
+        <span style="color:var(--text-muted);font-size:22px;">›</span>
+      </div>`;
+    });
+    html+=`<div style="height:1px;background:var(--border);margin:4px 0;"></div>`;
+  }else if(nomIA){
+    html+=`<div style="font-size:14px;color:var(--text-muted);margin-bottom:10px;"><strong style="color:var(--text);">${nomIA}</strong> não está cadastrado. Busque ou cadastre:</div>`;
+  }else{
+    html+=`<div style="font-size:15px;color:var(--text-muted);margin-bottom:10px;">Qual foi o fornecedor desta compra?</div>`;
+  }
+
+  // Campo de busca
+  html+=`<div style="position:relative;">
+    <input id="lrFornBusca" type="text" style="width:100%;border-radius:12px;font-size:16px;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border-mid);color:var(--text);" placeholder="Buscar fornecedor cadastrado..." oninput="lrBuscaForn(this.value)">
   </div>
-  <div id="lrFornBuscaRes" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;"></div>
-  <div class="lr-forn-card" data-id="NOVO" data-nome="${escaparHtmlBasico(nomIA||'')}" onclick="lrIrCadastro()" style="margin-top:8px;border-style:dashed;border-color:var(--border-bright);">
+  <div id="lrFornRes" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>`;
+
+  // Botão cadastrar
+  html+=`<div class="lr-forn-card" onclick="lrIrCad()" style="border-style:dashed;border-color:var(--border-bright);margin-top:4px;">
     <div>
-      <div class="nome" style="color:var(--text-muted);">+ Cadastrar novo fornecedor</div>
-      <div class="sub">${nomIA?`"${nomIA}" não encontrado — cadastro rápido`:'Adicionar um fornecedor agora'}</div>
+      <div class="lr-forn-nome" style="color:var(--text-muted);">+ Cadastrar novo fornecedor</div>
+      <div class="lr-forn-sub">${nomIA?'"'+nomIA+'" — cadastro rápido':'Adicionar agora'}</div>
     </div>
     <span style="color:var(--text-muted);font-size:22px;">›</span>
   </div>`;
 
   cont.innerHTML=html;
-
-  // Pré-seleciona 1º match se houver múltiplos
-  if(matches.length>1){ const p=cont.querySelector('.lr-forn-card[data-id]'); if(p&&p.dataset.id!=='NOVO') lrSelForn(p); }
-
-  // Botão confirmar só aparece se houver múltiplos
-  if(matches.length>1){
-    cont.innerHTML+=`<button class="btn btn-green" style="padding:15px;font-size:15px;border-radius:12px;width:100%;margin-top:4px;" onclick="lrConfForn()">Confirmar →</button>`;
-  }
 }
 
-function lrSelForn(el){
-  document.querySelectorAll('#lrFornOpts .lr-forn-card, #lrFornBuscaRes .lr-forn-card').forEach(o=>{
-    o.classList.remove('lr-sel');
-    const c=o.querySelector('.lr-chk'); if(c)c.style.display='none';
-  });
-  el.classList.add('lr-sel');
-  const c=el.querySelector('.lr-chk'); if(c)c.style.display='';
-  LR.fornId=el.dataset.id==='NOVO'?null:el.dataset.id;
-  LR.fornNome=el.dataset.nome||'';
+function lrSelFornEAvancar(el){
+  LR.fornId=el.dataset.id;LR.fornNome=el.dataset.nome||'';
+  lrIrStep(4);
 }
 
-function lrBuscarForn(t){
-  const res=document.getElementById('lrFornBuscaRes'); if(!res)return;
-  if(!t||t.length<2){ res.innerHTML=''; return; }
+function lrBuscaForn(t){
+  const res=document.getElementById('lrFornRes');if(!res)return;
+  if(!t||t.length<2){res.innerHTML='';return;}
   const tl=t.toUpperCase();
   const m=(fornecedoresFinanceiroCache||[]).filter(f=>(f.nome||'').toUpperCase().includes(tl)).slice(0,6);
-  res.innerHTML=m.map(f=>`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelFornBusca(this)">
-    <div><div class="nome">${escaparHtmlBasico(f.nome||'')}</div></div>
-    <span class="lr-chk" style="display:none;color:var(--accent);font-size:22px;">✓</span>
+  if(!m.length){res.innerHTML='<div style="font-size:14px;color:var(--text-muted);padding:8px 0;">Nenhum encontrado. Use o botão de cadastrar abaixo.</div>';return;}
+  res.innerHTML=m.map(f=>`<div class="lr-forn-card" data-id="${f.id}" data-nome="${escaparHtmlBasico(f.nome||'')}" onclick="lrSelFornEAvancar(this)">
+    <div><div class="lr-forn-nome">${escaparHtmlBasico(f.nome||'')}</div></div>
+    <span style="color:var(--text-muted);font-size:22px;">›</span>
   </div>`).join('');
 }
 
-function lrSelFornBusca(el){
-  // seleciona e avança direto
-  LR.fornId=el.dataset.id; LR.fornNome=el.dataset.nome||'';
-  lrIrStep(4);
-}
-
-function lrConfForn(){
-  if(!LR.fornId){ alert('Selecione um fornecedor.'); return; }
-  lrIrStep(4);
-}
-
-function lrIrCadastro(){
-  const ni=document.getElementById('lrCadNome');
-  if(ni && LR.ia.forn) ni.value=LR.ia.forn;
-  const msg=document.getElementById('lrMsgCad'); if(msg){msg.textContent='';msg.className='msg';}
+function lrIrCad(){
+  const ni=document.getElementById('lrCadNome');if(ni&&LR.ia.forn)ni.value=LR.ia.forn;
+  const msg=document.getElementById('lrMsgCad');if(msg){msg.textContent='';msg.className='msg';}
   lrIrStep('cad');
 }
 
-async function lrCadastrarFornecedor(){
+async function lrCadForn(){
   const nome=String((document.getElementById('lrCadNome')||{}).value||'').trim();
   const msg=document.getElementById('lrMsgCad');
-  if(!nome){ if(msg){msg.textContent='Digite o nome do fornecedor.';msg.className='msg err';} return; }
+  if(!nome){if(msg){msg.textContent='Digite o nome do fornecedor.';msg.className='msg err';}return;}
   try{
     const t=await resolverTenantFornecedorFinanceiro();
-    const cnpjEl=document.getElementById('lrCadCnpj'); const cnpj=cnpjEl?(String(cnpjEl.value||'').replace(/\D/g,'')||null):null;
+    const cnpjEl=document.getElementById('lrCadCnpj');
+    const cnpjRaw=cnpjEl?String(cnpjEl.value||'').replace(/\D/g,''):null;
+    const cnpj=cnpjRaw&&cnpjRaw.length>=11?cnpjRaw:null;
     const{data:nf,error}=await sb.from('fornecedores').insert([{nome,cnpj,loja_id:t.loja_id,empresa_id:t.empresa_id}]).select('id').single();
     if(error)throw error;
-    LR.fornId=String(nf.id); LR.fornNome=nome;
+    LR.fornId=String(nf.id);LR.fornNome=nome;
     carregarFornecedoresFinanceiro().catch(()=>{});
     lrIrStep(4);
-  }catch(e){ if(msg){msg.textContent='Erro: '+(e&&e.message||'tente novamente');msg.className='msg err';} }
+  }catch(e){if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}}
 }
 
-/* ── STEP 4 ─────────────────────────────── */
-function lrMontarStep4(){
-  // Valor
-  const cv=document.getElementById('lrValor'); if(cv&&LR.valor) cv.value='R$ '+Number(LR.valor).toFixed(2).replace('.',',');
-  const cd=document.getElementById('lrDataCompra'); if(cd) cd.value=LR.dataCompra||new Date().toISOString().split('T')[0];
-  const vl=document.getElementById('lrValorLabel'); if(vl) vl.textContent=LR.foto64?'✦ Lido do cupom':'Dados da compra';
-
-  // Vencimento default hoje
+/* ── STEP 4 ── */
+function lrMontarS4(){
+  const cv=document.getElementById('lrValor');
+  if(cv)cv.value=LR.valor?'R$ '+Number(LR.valor).toFixed(2).replace('.',','):'';
+  const cd=document.getElementById('lrDataCompra');
+  if(cd)cd.value=LR.dataCompra||new Date().toISOString().split('T')[0];
+  const vb=document.getElementById('lrValorBadge');
+  if(vb)vb.textContent=LR.foto64?'✦ Lido do cupom':'Dados da compra';
+  // vencimento default hoje
   document.querySelectorAll('.lr-venc-btn').forEach(b=>b.classList.remove('lr-big-sel'));
-  const bh=document.querySelector('.lr-venc-btn[data-dias="0"]'); if(bh)bh.classList.add('lr-big-sel');
-  const vc=document.getElementById('lrVencCustom'); if(vc)vc.style.display='none';
-
-  // Categorias
-  const grid=document.getElementById('lrCatGrid'); if(!grid)return;
+  const bh=document.querySelector('.lr-venc-btn[data-dias="0"]');if(bh)bh.classList.add('lr-big-sel');
+  const vc=document.getElementById('lrVencCustom');if(vc)vc.style.display='none';
+  if(!LR.dataVenc)LR.dataVenc=LR.dataCompra||new Date().toISOString().split('T')[0];
+  // categorias
+  const grid=document.getElementById('lrCatGrid');if(!grid)return;
   const cats=categoriasCompraCache||[];
   const sugL=(LR.ia.cat||'').toLowerCase();
   let autoId=null;
-  if(sugL){ const m=cats.find(c=>(c.nome||'').toLowerCase().includes(sugL)||sugL.includes((c.nome||'').toLowerCase())); if(m)autoId=String(m.id); }
-
+  if(sugL){const m=cats.find(c=>(c.nome||'').toLowerCase().includes(sugL)||sugL.includes((c.nome||'').toLowerCase()));if(m)autoId=String(m.id);}
   grid.innerHTML=cats.map(c=>{
-    const sel=autoId&&String(c.id)===autoId; if(sel)LR.catId=String(c.id);
-    return`<div class="lr-cat-card${sel?' lr-sel':''}" data-id="${c.id}" onclick="lrSelCat(this)">
-      <span style="font-size:22px;">${c.icone||'🏷️'}</span>
-      <span>${escaparHtmlBasico(c.nome||'')}</span>
-    </div>`;
-  }).join('')+`<div class="lr-cat-card" data-id="" onclick="lrSelCat(this)"><span style="font-size:22px;">⋯</span><span style="color:var(--text-muted);">Sem categoria</span></div>`;
+    const sel=autoId&&String(c.id)===autoId;if(sel)LR.catId=String(c.id);
+    return`<div class="lr-cat-card${sel?' lr-sel':''}" data-id="${c.id}" onclick="lrSelCat(this)"><span style="font-size:24px;">${c.icone||'🏷️'}</span><span>${escaparHtmlBasico(c.nome||'')}</span></div>`;
+  }).join('')+`<div class="lr-cat-card" data-id="" onclick="lrSelCat(this)"><span style="font-size:24px;">⋯</span><span style="color:var(--text-muted);">Sem categoria</span></div>`;
 }
 
 function lrSetModo(m){
   LR.modo=m;
-  document.getElementById('lrModoSimples').classList.toggle('lr-modo-sel',m==='simples');
-  document.getElementById('lrModoCompleto').classList.toggle('lr-modo-sel',m==='completo');
-  const ow=document.getElementById('lrObsWrap'); if(ow)ow.style.display=m==='completo'?'':'none';
+  document.getElementById('lrBtnSimples').classList.toggle('lr-big-sel',m==='simples');
+  document.getElementById('lrBtnCompleto').classList.toggle('lr-big-sel',m==='completo');
+  const ow=document.getElementById('lrObsWrap');if(ow)ow.style.display=m==='completo'?'':'none';
 }
-
-function lrSelCat(el){
-  document.querySelectorAll('#lrCatGrid .lr-cat-card').forEach(o=>o.classList.remove('lr-sel'));
-  el.classList.add('lr-sel'); LR.catId=el.dataset.id||null;
-}
-
+function lrSelCat(el){document.querySelectorAll('#lrCatGrid .lr-cat-card').forEach(o=>o.classList.remove('lr-sel'));el.classList.add('lr-sel');LR.catId=el.dataset.id||null;}
 function lrVenc(el){
-  document.querySelectorAll('.lr-venc-btn').forEach(b=>b.classList.remove('lr-big-sel')); el.classList.add('lr-big-sel');
-  const dias=parseInt(el.dataset.dias,10), vc=document.getElementById('lrVencCustom');
-  if(dias===-1){ vc.style.display=''; vc.value=LR.dataVenc||new Date().toISOString().split('T')[0]; }
-  else{ vc.style.display='none'; const b=new Date((LR.dataCompra||new Date().toISOString().split('T')[0])+'T00:00:00'); b.setDate(b.getDate()+dias); LR.dataVenc=b.toISOString().split('T')[0]; }
+  document.querySelectorAll('.lr-venc-btn').forEach(b=>b.classList.remove('lr-big-sel'));el.classList.add('lr-big-sel');
+  const dias=parseInt(el.dataset.dias,10),vc=document.getElementById('lrVencCustom');
+  if(dias===-1){vc.style.display='';vc.value=LR.dataVenc||new Date().toISOString().split('T')[0];}
+  else{vc.style.display='none';const b=new Date((LR.dataCompra||new Date().toISOString().split('T')[0])+'T00:00:00');b.setDate(b.getDate()+dias);LR.dataVenc=b.toISOString().split('T')[0];}
 }
-
-function lrVencCustom(){ const v=(document.getElementById('lrVencCustom')||{}).value; if(v)LR.dataVenc=v; }
-
-function lrAvancar4(){
-  const cd=document.getElementById('lrDataCompra'); if(cd&&cd.value)LR.dataCompra=cd.value;
-  const cv=document.getElementById('lrValor'); const vt=((cv&&cv.value)||'').replace(/[R$\s]/g,'').replace(',','.'); LR.valor=parseFloat(vt)||null;
+function lrVencCust(){const v=(document.getElementById('lrVencCustom')||{}).value;if(v)LR.dataVenc=v;}
+function lrFmtValor(inp){const v=inp.value.replace(/[^\d,]/g,'').replace(',','.');LR.valor=parseFloat(v)||null;}
+function lrAv4(){
+  const cd=document.getElementById('lrDataCompra');if(cd&&cd.value)LR.dataCompra=cd.value;
+  const cv=document.getElementById('lrValor');const vt=((cv&&cv.value)||'').replace(/[R$\s]/g,'').replace(',','.');LR.valor=parseFloat(vt)||null;
   const msg=document.getElementById('lrMsg4');
-  if(!LR.valor||LR.valor<=0){ if(msg){msg.textContent='Informe o valor da compra.';msg.className='msg err';} return; }
+  if(!LR.valor||LR.valor<=0){if(msg){msg.textContent='Informe o valor da compra.';msg.className='msg err';}return;}
   if(!LR.dataVenc)LR.dataVenc=LR.dataCompra;
   LR.obs=LR.modo==='completo'?String((document.getElementById('lrObs')||{}).value||'').trim():'';
   if(msg){msg.textContent='';msg.className='msg';}
   lrIrStep(5);
 }
 
-/* ── STEP 5 ─────────────────────────────── */
-function lrMontarStep5(){
-  const grid=document.getElementById('lrPagGrid'); if(!grid)return;
+/* ── STEP 5 ── */
+function lrMontarS5(){
+  const grid=document.getElementById('lrPagGrid');if(!grid)return;
   const formas=formasPagamentoFinanceiroCache||[];
   const cartoes=formas.filter(f=>f.ativo!==false&&f.is_cartao===true);
   const outras=formas.filter(f=>f.ativo!==false&&f.is_cartao!==true);
   const sIA=(LR.ia.pag||'').toUpperCase();
-
-  // Auto-detecta forma pelo nome da IA
   let autoId=null;
-  if(sIA){ const m=formas.find(f=>{ const n=(f.nome||'').toUpperCase(); return n.includes(sIA)||sIA.includes(n); }); if(m)autoId=String(m.id); }
-
-  const ico={'DINHEIRO':'💵','PIX':'⚡','DÉBITO':'💳','DEBITO':'💳','CRÉDITO':'💳','CREDITO':'💳','MASTERCARD':'💳','VISA':'💳','ELO':'💳'};
+  if(sIA){const m=formas.find(f=>{const n=(f.nome||'').toUpperCase();return n.includes(sIA)||sIA.includes(n)||sIA.split(/\s+/).some(w=>w.length>3&&n.includes(w));});if(m)autoId=String(m.id);}
+  const icos={'DINHEIRO':'💵','PIX':'⚡','DEBITO':'💳','CREDITO':'💳','MASTERCARD':'💳','VISA':'💳','ELO':'💳','NUBANK':'💜','INTER':'🟠','ITAU':'🟡','BRADESCO':'🔴','C6':'⚫','SICREDI':'🟢'};
   let html='';
-
   outras.forEach(f=>{
-    const n=f.nome||'', i=ico[n.toUpperCase()]||'💳', a=autoId&&String(f.id)===autoId;
+    const n=f.nome||'',nU=n.toUpperCase(),a=autoId&&String(f.id)===autoId;
     if(a){LR.pagId=String(f.id);LR.pagNome=n;LR.isCartao=false;}
-    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="false" onclick="lrSelPag(this)">
-      <div class="lr-pag-ico">${i}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div>
-    </div>`;
+    const ico=Object.keys(icos).find(k=>nU.includes(k));
+    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="false" onclick="lrSelPag(this)"><div class="lr-pag-ico">${icos[ico]||'💳'}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div></div>`;
   });
   cartoes.forEach(f=>{
-    const n=f.nome||'', a=autoId&&String(f.id)===autoId;
+    const n=f.nome||'',nU=n.toUpperCase(),a=autoId&&String(f.id)===autoId;
     if(a){LR.pagId=String(f.id);LR.pagNome=n;LR.isCartao=true;}
-    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="true" onclick="lrSelPag(this)">
-      <div class="lr-pag-ico">💳</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div>
-      <div class="lr-pag-sub">Cartão${a&&sIA?' ✦':''}${a&&sIA?' · id. automaticamente':''}</div>
-    </div>`;
+    const ico=Object.keys(icos).find(k=>nU.includes(k));
+    html+=`<div class="lr-pag-card${a?' lr-sel':''}" data-id="${f.id}" data-nome="${escaparHtmlBasico(n)}" data-cartao="true" onclick="lrSelPag(this)"><div class="lr-pag-ico">${icos[ico]||'💳'}</div><div class="lr-pag-nome">${escaparHtmlBasico(n)}</div><div class="lr-pag-sub">Cartão${a&&sIA?' ✦':''}</div></div>`;
   });
-
-  if(!html)html='<div style="color:var(--text-muted);font-size:13px;grid-column:span 2;padding:8px 0;">Nenhuma forma cadastrada. Vá em Formas de Pagamento e cadastre.</div>';
+  if(!html)html='<div style="color:var(--text-muted);font-size:14px;grid-column:span 2;padding:8px 0;">Nenhuma forma cadastrada. Vá em Formas de Pagamento e cadastre.</div>';
   grid.innerHTML=html;
-
-  lrAtualizarParcelas();
-  lrAtualizarResumo();
+  lrAtuParcelas();lrAtuResumo();
 }
-
 function lrSelPag(el){
-  document.querySelectorAll('#lrPagGrid .lr-pag-card').forEach(o=>o.classList.remove('lr-sel')); el.classList.add('lr-sel');
-  LR.pagId=el.dataset.id||null; LR.pagNome=el.dataset.nome||''; LR.isCartao=el.dataset.cartao==='true';
-  lrAtualizarParcelas(); lrAtualizarResumo();
+  document.querySelectorAll('#lrPagGrid .lr-pag-card').forEach(o=>o.classList.remove('lr-sel'));el.classList.add('lr-sel');
+  LR.pagId=el.dataset.id||null;LR.pagNome=el.dataset.nome||'';LR.isCartao=el.dataset.cartao==='true';
+  lrAtuParcelas();lrAtuResumo();
 }
-
-function lrAtualizarParcelas(){
-  const pw=document.getElementById('lrParcWrap'); if(!pw)return;
+function lrAtuParcelas(){
+  const pw=document.getElementById('lrParcWrap');if(!pw)return;
   pw.style.display=LR.isCartao?'':'none';
   if(LR.isCartao){
-    const q=LR.parcelas||1; const pl=document.getElementById('lrParcLabel');
-    if(pl)pl.textContent=LR.ia.parc&&LR.ia.parc>1?'Parcelas ✦ identificado no comprovante':'Parcelas';
-    document.querySelectorAll('.lr-parc-btn').forEach(b=>{ b.classList.remove('lr-big-sel'); if(parseInt(b.dataset.p,10)===q)b.classList.add('lr-big-sel'); });
+    const q=LR.parcelas||1;
+    const pl=document.getElementById('lrParcLbl');
+    if(pl)pl.textContent=LR.ia.parc&&LR.ia.parc>1?'Parcelas  ✦ identificado no comprovante':'Parcelas';
+    document.querySelectorAll('.lr-parc-btn').forEach(b=>{b.classList.remove('lr-big-sel');if(parseInt(b.dataset.p,10)===q)b.classList.add('lr-big-sel');});
     lrInfoParc();
   }
 }
-
-function lrParc(el){
-  document.querySelectorAll('.lr-parc-btn').forEach(b=>b.classList.remove('lr-big-sel')); el.classList.add('lr-big-sel');
-  LR.parcelas=parseInt(el.dataset.p,10)||1; lrInfoParc(); lrAtualizarResumo();
-}
-
-function lrInfoParc(){
-  const i=document.getElementById('lrParcInfo'); if(!i||!LR.valor)return;
-  if(LR.parcelas<=1){i.textContent='';return;}
-  i.textContent=LR.parcelas+'x de R$ '+(LR.valor/LR.parcelas).toFixed(2).replace('.',',');
-}
-
-function lrAtualizarResumo(){
-  const el=document.getElementById('lrResumo'); if(!el)return;
+function lrParc(el){document.querySelectorAll('.lr-parc-btn').forEach(b=>b.classList.remove('lr-big-sel'));el.classList.add('lr-big-sel');LR.parcelas=parseInt(el.dataset.p,10)||1;lrInfoParc();lrAtuResumo();}
+function lrInfoParc(){const i=document.getElementById('lrParcInfo');if(!i||!LR.valor)return;if(LR.parcelas<=1){i.textContent='';return;}i.textContent=LR.parcelas+'x de R$ '+(LR.valor/LR.parcelas).toFixed(2).replace('.',',');}
+function lrAtuResumo(){
+  const el=document.getElementById('lrResumo');if(!el)return;
   const vlr=LR.valor?'R$ '+Number(LR.valor).toFixed(2).replace('.',','):'—';
   const cat=(categoriasCompraCache||[]).find(c=>String(c.id)===String(LR.catId||''));
   const catN=(cat&&cat.nome)||'Sem categoria';
   const dt=LR.dataCompra?LR.dataCompra.split('-').reverse().join('/'):'—';
-  const parc=LR.isCartao&&LR.parcelas>1?` · ${LR.parcelas}x`:'';
-  el.innerHTML=`
-    <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0;"><span style="color:var(--text-muted);">Fornecedor</span><span style="font-weight:700;">${escaparHtmlBasico(LR.fornNome||'—')}</span></div>
-    <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0;"><span style="color:var(--text-muted);">Valor</span><span style="font-weight:700;font-size:16px;">${vlr}</span></div>
-    <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0;"><span style="color:var(--text-muted);">Categoria</span><span>${escaparHtmlBasico(catN)}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:var(--text-muted);">Pagamento</span><span>${escaparHtmlBasico(LR.pagNome||'—')}${parc}</span></div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Compra: ${dt}</div>`;
+  const parc=LR.isCartao&&LR.parcelas>1?' · '+LR.parcelas+'x':'';
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Fornecedor</span><span style="font-weight:700;">${escaparHtmlBasico(LR.fornNome||'—')}</span></div><div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Valor</span><span style="font-weight:700;font-size:18px;">${vlr}</span></div><div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span style="color:var(--text-muted);">Categoria</span><span>${escaparHtmlBasico(catN)}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--text-muted);">Pagamento</span><span>${escaparHtmlBasico(LR.pagNome||'—')}${parc}</span></div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Compra: ${dt}</div>`;
 }
 
-/* ── SALVAR ─────────────────────────────── */
+/* ── SALVAR ── */
 async function lrSalvar(relaxar){
   relaxar=!!relaxar;
-  const msg=document.getElementById('lrMsg5'), btn=document.getElementById('lrBtnSalvar');
-  if(!LR.fornId){ if(msg){msg.textContent='Fornecedor inválido.';msg.className='msg err';} return; }
-  if(!LR.valor||LR.valor<=0){ if(msg){msg.textContent='Informe o valor.';msg.className='msg err';} return; }
-  if(!relaxar&&!LR.catId){ if(msg){msg.textContent='Selecione uma categoria.';msg.className='msg err';} return; }
+  const msg=document.getElementById('lrMsg5'),btn=document.getElementById('lrBtnSalvar');
+  if(!LR.fornId){if(msg){msg.textContent='Fornecedor inválido.';msg.className='msg err';}return;}
+  if(!LR.valor||LR.valor<=0){if(msg){msg.textContent='Informe o valor.';msg.className='msg err';}return;}
+  if(!relaxar&&!LR.catId){if(msg){msg.textContent='Selecione uma categoria.';msg.className='msg err';}return;}
   if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   try{
-    const tenant=await resolverTenantFornecedorFinanceiro(), ator=obterAtorAuditoriaAtual();
-    const dc=LR.dataCompra||new Date().toISOString().split('T')[0], dv=LR.dataVenc||dc;
+    const tenant=await resolverTenantFornecedorFinanceiro(),ator=obterAtorAuditoriaAtual();
+    const dc=LR.dataCompra||new Date().toISOString().split('T')[0],dv=LR.dataVenc||dc;
     const qtd=LR.isCartao&&LR.parcelas>1?LR.parcelas:1;
     const gpId=qtd>1?gerarGrupoParcelasIdFinanceiro():null;
     let ivDias=null;
     if(qtd>1){
       ivDias=30;
       const fo=(fornecedoresFinanceiroCache||[]).find(f=>String(f.id)===String(LR.fornId));
-      if(fo&&fo.dia_vencimento){ const bd=new Date(dv+'T00:00:00'),pm=new Date(bd.getFullYear(),bd.getMonth()+1,fo.dia_vencimento),d=Math.round((pm-bd)/(86400000)); ivDias=d>0?d:30; }
+      if(fo&&fo.dia_vencimento){const bd=new Date(dv+'T00:00:00'),pm=new Date(bd.getFullYear(),bd.getMonth()+1,fo.dia_vencimento),d=Math.round((pm-bd)/86400000);ivDias=d>0?d:30;}
     }
     const obs=LR.obs||(LR.ia.forn?'Lançamento rápido — '+LR.ia.forn:'Lançamento rápido');
     const pb={fornecedor_id:LR.fornId,categoria_id:LR.catId||null,loja_id:tenant.loja_id,empresa_id:tenant.empresa_id,data_compra:dc,valor_compra:Number(LR.valor.toFixed(2)),observacao:obs,qtd_parcelas:qtd,intervalo_parcelas_dias:qtd>1?ivDias:null};
     const linhas=Array.from({length:qtd}).map((_,i)=>Object.assign({},pb,{data_pagamento:null,data_vencimento:qtd>1?calcularVencimentoParcelaFinanceiro(dv,i,ivDias):dv,numero_parcela:i+1,grupo_parcelas_id:gpId,criado_por_id:(ator&&ator.funcionarioId)||null,criado_por_nome:(ator&&ator.nome)||'Lançamento Rápido'}));
-    const res=await sb.from('contasapagar').insert(linhas); if(res.error)throw res.error;
+    const res=await sb.from('contasapagar').insert(linhas);if(res.error)throw res.error;
     if(typeof carregarContasAPagarFinanceiro==='function')carregarContasAPagarFinanceiro().catch(()=>{});
-    const si=document.getElementById('lrSucInfo'); if(si)si.textContent=LR.fornNome+' · R$ '+Number(LR.valor).toFixed(2).replace('.',',')+(qtd>1?' ('+qtd+'x)':'');
+    const si=document.getElementById('lrSucInfo');
+    if(si)si.textContent=LR.fornNome+' · R$ '+Number(LR.valor).toFixed(2).replace('.',',')+(qtd>1?' ('+qtd+'x)':'');
     lrIrStep(6);
   }catch(e){
     if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}
@@ -43143,8 +43085,8 @@ async function lrSalvar(relaxar){
 
 function lrNovo(){
   Object.assign(LR,{step:0,modo:'simples',foto64:null,fotoMime:null,fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,isCartao:false,pagId:null,pagNome:null,ia:{forn:null,valor:null,data:null,pag:null,parc:null,cat:null}});
-  const fi=document.getElementById('lrFotoInput'); if(fi)fi.value='';
-  const pw=document.getElementById('lrPreviewWrap'); if(pw)pw.style.display='none';
+  const fi=document.getElementById('lrFotoInput');if(fi)fi.value='';
+  const pw=document.getElementById('lrPreviewWrap');if(pw)pw.style.display='none';
   lrIrStep(1);
 }
 </script>
