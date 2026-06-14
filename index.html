@@ -7119,7 +7119,7 @@
 
 </head>
 <body>
-<div id="appVersionBadge" class="app-version-badge">INDEX 3.1.51</div>
+<div id="appVersionBadge" class="app-version-badge" style="display:none;">INDEX 4.4</div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
 <div class="shell">
 
@@ -7442,6 +7442,7 @@
           <span class="topbar-info-label">5º dia útil</span>
           <span class="topbar-business-day-date" id="topbar-business-day-date">--/--</span>
         </div>
+        <div id="topbarVersionBadge" style="background:rgba(240,165,0,.25);border:1.5px solid #f0a500;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#f0a500;white-space:nowrap;letter-spacing:.5px;display:flex!important;align-items:center;">INDEX 4.4</div>
       </div>
       <div class="topbar-store" id="topbarStoreInfo" hidden>
         <div class="topbar-store-main">
@@ -8887,63 +8888,32 @@
       </section>
 
       <section id="financeiro_contasapagar" class="pagina">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
           <div class="page-title" style="margin:0;">Cadastro de contas a pagar</div>
-          <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">
-            🗂️ Importar arquivo bancário
-          </button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-green" type="button" onclick="ncAbrir()" style="display:flex;align-items:center;gap:8px;font-size:15px;padding:10px 20px;font-weight:700;">+ Nova conta</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🗂️ Importar arquivo bancário</button>
+          </div>
         </div>
 
-        <div class="card card-compact">
-          <div class="card-title" id="tituloContaAPagarFinanceiro">Nova conta</div>
-          <div class="financeiro-form-row">
-            <div class="campo-com-label fornecedor">
-              <label class="campo-label" for="contaFornecedorBusca">Fornecedor</label>
-              <input id="contaFornecedorBusca" type="text" list="fornecedoresFinanceiroAutoList" placeholder="Selecione o fornecedor (autobusca por nome, CPF/CNPJ, telefone ou e-mail)" autocomplete="off" oninput="atualizarFornecedorSelecionadoContaAPagar()">
-            </div>
-            <datalist id="fornecedoresFinanceiroAutoList"></datalist>
-            <input id="contaFornecedorId" type="hidden">
-            <div class="campo-com-label loja">
-              <label class="campo-label" for="contaLojaId">Loja</label>
-              <select id="contaLojaId"></select>
-            </div>
-            <div class="campo-com-label valor">
-              <label class="campo-label" for="contaValorCompra">Valor</label>
-                <input id="contaValorCompra" class="campo-curto" type="text" inputmode="decimal" placeholder="Valor" autocomplete="off" required>
-            </div>
-            <div class="campo-com-label parcela">
-              <label class="campo-label" for="contaQtdParcelas">Parcelas</label>
-              <input id="contaQtdParcelas" class="campo-curto" type="number" min="1" step="1" placeholder="">
-            </div>
-            <div class="campo-com-label intervalo">
-              <label class="campo-label" for="contaIntervaloParcelasDias">Dias entre pgto.</label>
-              <input id="contaIntervaloParcelasDias" class="campo-curto" type="number" min="1" step="1" placeholder="">
-            </div>
-          </div>
-          <div class="financeiro-form-row financeiro-form-row-secundaria">
-            <div class="campo-com-label data">
-              <label class="campo-label" for="contaDataCompra">Compra</label>
-              <input id="contaDataCompra" class="campo-curto" type="text" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off">
-            </div>
-            <div class="campo-com-label data">
-              <label class="campo-label" for="contaDataVencimento">Vencimento</label>
-              <input id="contaDataVencimento" class="campo-curto" type="text" inputmode="numeric" placeholder="dd/mm/aaaa" autocomplete="off">
-            </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="contaCategoriaId">Categoria <span style="color:var(--red,#ef4444)">*</span></label>
-              <select id="contaCategoriaId" required style="min-width:140px;">
-                <option value="">Selecione a categoria</option>
-              </select>
-            </div>
-            <div class="campo-com-label observacao">
-              <label class="campo-label" for="contaObservacao">Observação</label>
-              <input id="contaObservacao" type="text" placeholder="Observação do título (obrigatório)" required>
-            </div>
-            <button class="btn btn-green" id="btnSalvarContaAPagarFinanceiro" type="button" onclick="salvarContaAPagarFinanceiro()">Cadastrar</button>
-            <button class="btn btn-ghost" id="btnCancelarContaAPagarFinanceiro" type="button" onclick="cancelarEdicaoContaAPagarFinanceiro()" style="display:none">Cancelar</button>
-          </div>
-          <div class="msg" id="msgModoEdicaoContaAPagarFinanceiro" style="display:none"></div>
+        <!-- Campos hidden para manter compatibilidade com funções existentes -->
+        <div style="display:none">
+          <input id="contaFornecedorBusca" type="text" list="fornecedoresFinanceiroAutoList" autocomplete="off" oninput="atualizarFornecedorSelecionadoContaAPagar()">
+          <datalist id="fornecedoresFinanceiroAutoList"></datalist>
+          <input id="contaFornecedorId" type="hidden">
+          <select id="contaLojaId"></select>
+          <input id="contaValorCompra" type="text" inputmode="decimal">
+          <input id="contaQtdParcelas" type="number" min="1" step="1">
+          <input id="contaIntervaloParcelasDias" type="number" min="1" step="1">
+          <input id="contaDataCompra" type="text" inputmode="numeric">
+          <input id="contaDataVencimento" type="text" inputmode="numeric">
+          <select id="contaCategoriaId"><option value="">Selecione a categoria</option></select>
+          <input id="contaObservacao" type="text">
+          <button id="btnSalvarContaAPagarFinanceiro" type="button" onclick="salvarContaAPagarFinanceiro()">Cadastrar</button>
+          <button id="btnCancelarContaAPagarFinanceiro" type="button" onclick="cancelarEdicaoContaAPagarFinanceiro()">Cancelar</button>
+          <div class="msg" id="msgModoEdicaoContaAPagarFinanceiro"></div>
           <div class="msg" id="msgContaAPagarFinanceiro"></div>
+          <div id="tituloContaAPagarFinanceiro"></div>
         </div>
 
         <div class="card">
@@ -9649,6 +9619,127 @@
     </div>
   </div>
 </div>
+
+<!-- ══ NOVA CONTA A PAGAR SHEET ══ -->
+<div id="ncOverlay" style="display:none;position:fixed;inset:0;z-index:9700;background:var(--bg);flex-direction:column;">
+<div id="ncSheet" style="display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;width:100%;">
+
+  <!-- Topo -->
+  <div style="flex-shrink:0;padding:12px 18px 0;background:var(--surface);">
+    <div style="width:40px;height:4px;border-radius:2px;background:var(--border-bright);margin:0 auto 14px;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);">
+      <div>
+        <div id="ncTitulo" style="font-size:17px;font-weight:700;color:var(--text);">Nova conta</div>
+        <div id="ncSub" style="font-size:12px;color:var(--text-muted);margin-top:2px;">Preencha os dados abaixo</div>
+      </div>
+      <button onclick="ncFechar()" style="width:36px;height:36px;border:none;background:var(--surface3);color:var(--text-muted);font-size:18px;cursor:pointer;border-radius:10px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+  </div>
+
+  <!-- Corpo -->
+  <div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+
+    <!-- Fornecedor -->
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Fornecedor <span style="color:var(--red)">*</span></div>
+      <input id="ncFornBusca" type="text" style="width:100%;border-radius:10px;font-size:15px;padding:10px 14px;" placeholder="Digite o nome do fornecedor..." oninput="ncBuscarForn(this.value)" autocomplete="off">
+      <div id="ncFornRes" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
+      <div id="ncFornSel" style="display:none;background:var(--accent-subtle);border:1.5px solid var(--accent);border-radius:12px;padding:12px 16px;margin-top:6px;display:none;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Selecionado</div>
+          <div id="ncFornSelNome" style="font-size:16px;font-weight:700;color:var(--text);"></div>
+        </div>
+        <button onclick="ncLimparForn()" style="border:none;background:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+      </div>
+    </div>
+
+    <!-- Valor + Data compra -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Valor <span style="color:var(--red)">*</span></div>
+        <input id="ncValor" type="text" inputmode="decimal" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="R$ 0,00" oninput="ncFmtValor(this)">
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Data compra</div>
+        <input id="ncDataCompra" type="date" style="width:100%;border-radius:10px;font-size:14px;padding:10px 12px;">
+      </div>
+    </div>
+
+    <!-- Categoria -->
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Categoria <span style="color:var(--red)">*</span></div>
+      <div id="ncCatGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
+    </div>
+
+    <!-- Vencimento -->
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Vencimento</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="nc-venc-btn nc-pill" data-dias="0" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">📅</div><div style="font-size:13px;font-weight:600;">Hoje</div></button>
+        <button class="nc-venc-btn nc-pill" data-dias="7" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">📅</div><div style="font-size:13px;font-weight:600;">+7 dias</div></button>
+        <button class="nc-venc-btn nc-pill" data-dias="30" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">📅</div><div style="font-size:13px;font-weight:600;">+30 dias</div></button>
+        <button class="nc-venc-btn nc-pill" data-dias="-1" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">🗓️</div><div style="font-size:13px;font-weight:600;">Outra</div></button>
+      </div>
+      <input type="date" id="ncVencCustom" style="display:none;width:100%;margin-top:8px;border-radius:12px;font-size:15px;padding:13px;" oninput="ncVencCust()">
+    </div>
+
+    <!-- Parcelas (expansível) -->
+    <div>
+      <button onclick="ncToggleParcelas()" style="width:100%;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:var(--font-sans);">
+        <span style="font-size:14px;font-weight:600;color:var(--text-muted);">Parcelas e intervalo</span>
+        <span id="ncParcelasResume" style="font-size:13px;color:var(--text-muted);">1x · à vista</span>
+      </button>
+      <div id="ncParcelasWrap" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Nº de parcelas</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+              <button class="nc-parc-btn nc-pill nc-pill-sel" data-p="1" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">1x</button>
+              <button class="nc-parc-btn nc-pill" data-p="2" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">2x</button>
+              <button class="nc-parc-btn nc-pill" data-p="3" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">3x</button>
+              <button class="nc-parc-btn nc-pill" data-p="6" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">6x</button>
+              <button class="nc-parc-btn nc-pill" data-p="10" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">10x</button>
+              <button class="nc-parc-btn nc-pill" data-p="12" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">12x</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Dias entre pgto.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button class="nc-intv-btn nc-pill nc-pill-sel" data-d="30" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">30d</button>
+              <button class="nc-intv-btn nc-pill" data-d="15" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">15d</button>
+              <button class="nc-intv-btn nc-pill" data-d="7" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">7d</button>
+              <button class="nc-intv-btn nc-pill" data-d="-1" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">Outro</button>
+            </div>
+            <input type="number" id="ncIntvCustom" style="display:none;width:100%;margin-top:6px;border-radius:10px;font-size:14px;padding:10px;" placeholder="Ex: 45" min="1" oninput="ncIntvCust()">
+          </div>
+        </div>
+        <div id="ncParcelasInfo" style="font-size:13px;color:var(--text-muted);text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- Observação -->
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Observação</div>
+      <input id="ncObs" type="text" style="width:100%;border-radius:12px;font-size:15px;padding:13px 16px;" placeholder="Ex: fatura dezembro, aluguel...">
+    </div>
+
+    <div class="msg" id="ncMsg" style="font-size:14px;"></div>
+    <button class="btn btn-green" id="ncBtnSalvar" style="padding:16px;font-size:16px;border-radius:14px;width:100%;" onclick="ncSalvar()">✓ Cadastrar conta</button>
+    <button class="btn btn-ghost" id="ncBtnCancelar" style="display:none;padding:14px;font-size:14px;border-radius:14px;width:100%;margin-top:4px;" onclick="ncCancelarEdicao()">Cancelar edição</button>
+
+  </div>
+</div>
+</div>
+
+<style>
+.nc-pill{border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-sans);transition:all .15s;text-align:center;width:100%;}
+.nc-pill:hover,.nc-pill:active{border-color:var(--accent);background:var(--accent-subtle);color:var(--accent);}
+.nc-pill-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+.nc-forn-card{padding:12px 16px;border:1.5px solid var(--border-mid);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--surface);transition:all .15s;}
+.nc-forn-card:active{border-color:var(--accent);background:var(--accent-subtle);}
+.nc-cat-card{padding:12px;border:1.5px solid var(--border-mid);border-radius:12px;background:var(--surface);cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--text);transition:all .15s;}
+.nc-cat-card:active,.nc-cat-card.nc-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+</style>
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -17390,14 +17481,17 @@ function renderizarGraficosFinanceirosDashboard() {
     if (_dashGfEhPago(c)) meses[m].pago += v; else meses[m].pendente += v;
   });
   const maxValor = Math.max(1, ...meses.map(m => Math.max(m.pago, m.pendente)));
-  const larguraMes = 64, alturaGraf = 180, baseY = alturaGraf + 18, larguraTotal = larguraMes * 12;
+  const larguraMes = 80, alturaGraf = 180, baseY = alturaGraf + 18, larguraTotal = larguraMes * 12;
   const escala = alturaGraf / maxValor;
   let barrasSvg = `<svg viewBox="0 0 ${larguraTotal} ${baseY + 22}" width="${larguraTotal}" height="${baseY + 22}" style="min-width:${larguraTotal}px;font-family:inherit;">`;
   meses.forEach((m, i) => {
     const x = i * larguraMes;
     const hPago = Math.round(m.pago * escala);
     const hPend = Math.round(m.pendente * escala);
-    const larBarra = 22;
+    const larBarra = 28;
+    const gap = 4;
+    const totalLar = larBarra * 2 + gap;
+    const offsetX = Math.round((larguraMes - totalLar) / 2);
     const selecionado = F.mes === i;
     const dim = F.mes !== null && !selecionado;
     const op = dim ? 0.3 : 1;
@@ -17405,8 +17499,10 @@ function renderizarGraficosFinanceirosDashboard() {
     // área clicável do mês inteiro
     barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" fill="transparent" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Total: ${fmt(totalMes)} (clique para filtrar)</title></rect>`;
     if (selecionado) barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" rx="6" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.5)" pointer-events="none"/>`;
-    barrasSvg += `<rect x="${x + 8}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
-    barrasSvg += `<rect x="${x + 8 + larBarra + 3}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
+    // Barra PAGO (verde) - esquerda
+    if (hPago > 0) barrasSvg += `<rect x="${x + offsetX}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
+    // Barra PENDENTE (laranja) - direita
+    if (hPend > 0) barrasSvg += `<rect x="${x + offsetX + larBarra + gap}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
     barrasSvg += `<text x="${x + larguraMes / 2}" y="${baseY + 14}" text-anchor="middle" font-size="11" font-weight="${selecionado ? 'bold' : 'normal'}" fill="${selecionado ? 'var(--text,#fff)' : 'var(--text-muted,#888)'}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})">${_dashGfNomesMes[i]}</text>`;
   });
   barrasSvg += '</svg>';
@@ -17488,8 +17584,18 @@ function renderizarGraficosFinanceirosDashboard() {
         const pago = _dashGfEhPago(c);
         const cat = c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)] : null;
         const dv = String(c[campoDataDet] || '').slice(0, 10).split('-').reverse().join('/');
+        const dc = String(c.data_compra || '').slice(0, 10).split('-').reverse().join('/');
+        let dlanca = '—';
+        if (c.created_at) {
+          try {
+            const d = new Date(c.created_at);
+            dlanca = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+          } catch(e) { dlanca = String(c.created_at).slice(0,10); }
+        }
         return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
           <td style="padding:5px 8px;white-space:nowrap;">${escaparHtmlBasico(dv)}</td>
+          <td style="padding:5px 8px;white-space:nowrap;color:var(--text-muted);">${escaparHtmlBasico(dc||'—')}</td>
+          <td style="padding:5px 8px;white-space:nowrap;font-size:11px;color:var(--text-muted);">${escaparHtmlBasico(dlanca)}</td>
           <td style="padding:5px 8px;">${escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor')}</td>
           <td style="padding:5px 8px;">${escaparHtmlBasico(cat?.nome || 'Sem categoria')}</td>
           <td style="padding:5px 8px;">${escaparHtmlBasico(String(c.observacao || '—').slice(0, 60))}</td>
@@ -17500,10 +17606,12 @@ function renderizarGraficosFinanceirosDashboard() {
       elDetalhe.innerHTML = `
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Detalhamento dos lançamentos filtrados (${contasResumo.length}${contasResumo.length > LIMITE ? `, exibindo ${LIMITE}` : ''})</div>
         <div style="overflow-x:auto;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:640px;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:760px;">
             <thead>
               <tr style="text-align:left;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.12);">
                 <th style="padding:6px 8px;">${rotuloDataDet}</th>
+                <th style="padding:6px 8px;">Compra</th>
+                <th style="padding:6px 8px;">Lançado em</th>
                 <th style="padding:6px 8px;">Fornecedor</th>
                 <th style="padding:6px 8px;">Categoria</th>
                 <th style="padding:6px 8px;">Observação</th>
@@ -25533,7 +25641,20 @@ function obterDataISOFiltroContaAPagar(id) {
 
 function dentroDoPeriodoCadastroContaAPagar(item, dataInicio = '', dataFim = '') {
   if (!dataInicio && !dataFim) return true;
-  const dataCadastro = String(item?.created_at || '').trim().slice(0, 10);
+  // Converte created_at UTC para data local brasileira (UTC-3)
+  let dataCadastro = '';
+  if (item?.created_at) {
+    try {
+      const d = new Date(item.created_at);
+      // Ajusta para UTC-3 (Brasil)
+      d.setHours(d.getHours() - 3);
+      dataCadastro = d.toISOString().slice(0, 10);
+    } catch(e) {
+      dataCadastro = String(item.created_at).slice(0, 10);
+    }
+  }
+  // Fallback: usa data_compra se created_at não disponível
+  if (!dataCadastro) dataCadastro = String(item?.data_compra || '').slice(0, 10);
   if (!dataCadastro) return false;
   if (dataInicio && dataCadastro < dataInicio) return false;
   if (dataFim && dataCadastro > dataFim) return false;
@@ -42530,3 +42651,282 @@ window.addEventListener('load', function() {
 
 
 
+
+<script id="nc-sheet-js">
+/* ══ NOVA CONTA A PAGAR SHEET ══ */
+const NC={fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,intervalo:30,modoEdicao:false};
+
+function ncAbrir(editar){
+  if(!editar){
+    Object.assign(NC,{fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,intervalo:30,modoEdicao:false});
+    // Limpa campos
+    const fi=document.getElementById('ncFornBusca');if(fi){fi.value='';fi.style.display='';}
+    const fsr=document.getElementById('ncFornRes');if(fsr)fsr.innerHTML='';
+    const fsel=document.getElementById('ncFornSel');if(fsel)fsel.style.display='none';
+    const vi=document.getElementById('ncValor');if(vi)vi.value='';
+    const oi=document.getElementById('ncObs');if(oi)oi.value='';
+    const pw=document.getElementById('ncParcelasWrap');if(pw)pw.style.display='none';
+    // Data compra = hoje
+    const hoje=new Date().toISOString().split('T')[0];
+    const dc=document.getElementById('ncDataCompra');if(dc)dc.value=hoje;
+    NC.dataCompra=hoje;NC.dataVenc=hoje;
+    // Vencimento default hoje
+    document.querySelectorAll('.nc-venc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+    const bh=document.querySelector('.nc-venc-btn[data-dias="0"]');if(bh)bh.classList.add('nc-pill-sel');
+    const vc=document.getElementById('ncVencCustom');if(vc)vc.style.display='none';
+    // Parcelas default
+    document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+    const bp=document.querySelector('.nc-parc-btn[data-p="1"]');if(bp)bp.classList.add('nc-pill-sel');
+    document.querySelectorAll('.nc-intv-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+    const bi=document.querySelector('.nc-intv-btn[data-d="30"]');if(bi)bi.classList.add('nc-pill-sel');
+    const pr=document.getElementById('ncParcelasResume');if(pr)pr.textContent='1x · à vista';
+    // Título
+    const tt=document.getElementById('ncTitulo');if(tt)tt.textContent='Nova conta';
+    const ts=document.getElementById('ncSub');if(ts)ts.textContent='Preencha os dados abaixo';
+    const bc=document.getElementById('ncBtnCancelar');if(bc)bc.style.display='none';
+    const bs=document.getElementById('ncBtnSalvar');if(bs)bs.textContent='✓ Cadastrar conta';
+    const msg=document.getElementById('ncMsg');if(msg){msg.textContent='';msg.className='msg';}
+  }
+  // SEMPRE recarrega cache de fornecedores ao abrir (garante lista atualizada sem F5)
+  if(typeof carregarFornecedoresFinanceiro==='function'){
+    carregarFornecedoresFinanceiro().catch(()=>{});
+  }
+  if(!(categoriasCompraCache||[]).length && typeof carregarCategoriasCompra==='function'){
+    carregarCategoriasCompra().then(()=>ncMontarCategorias()).catch(()=>{});
+  }
+  // Categorias
+  ncMontarCategorias();
+  // Abre sheet
+  const ov=document.getElementById('ncOverlay');if(!ov)return;
+  ov.style.display='flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.getElementById('ncSheet').style.transform='translateY(0)';
+  }));
+}
+
+function ncFechar(){
+  const sh=document.getElementById('ncSheet'),ov=document.getElementById('ncOverlay');
+  if(!sh||!ov)return;
+  sh.style.transform='translateY(100%)';
+  setTimeout(()=>{ov.style.display='none';},300);
+}
+
+function ncMontarCategorias(){
+  const grid=document.getElementById('ncCatGrid');if(!grid)return;
+  const cats=categoriasCompraCache||[];
+  grid.innerHTML=cats.map(c=>{
+    const sel=NC.catId&&String(c.id)===String(NC.catId);
+    return`<div class="nc-cat-card${sel?' nc-sel':''}" data-id="${c.id}" onclick="ncSelCat(this)" style="padding:10px;font-size:13px;"><span style="font-size:18px;">${c.icone||'🏷️'}</span><span>${escaparHtmlBasico(c.nome||'')}</span></div>`;
+  }).join('');
+}
+
+function ncBuscarForn(t){
+  const res=document.getElementById('ncFornRes');if(!res)return;
+  if(!t||t.trim().length<1){res.innerHTML='';return;}
+  const tU=t.trim().toUpperCase();
+  const m=(fornecedoresFinanceiroCache||[]).filter(f=>(f.nome||'').toUpperCase().includes(tU)||(f.cnpj||'').includes(tU)).slice(0,6);
+  if(!m.length){res.innerHTML='<div style="font-size:13px;color:var(--text-muted);padding:6px 0;">Nenhum encontrado.</div>';return;}
+  res.innerHTML=m.map(f=>`<div class="nc-forn-card" onclick="ncSelForn('${f.id}','${escaparHtmlBasico(f.nome||'')}')"><div style="font-size:15px;font-weight:700;color:var(--text);">${escaparHtmlBasico(f.nome||'')}</div><span style="color:var(--text-muted);font-size:22px;">›</span></div>`).join('');
+}
+
+function ncSelForn(id,nome){
+  NC.fornId=String(id);NC.fornNome=nome||'';
+  // Sincroniza campos hidden
+  const fb=document.getElementById('contaFornecedorBusca');if(fb)fb.value=nome;
+  const fi=document.getElementById('contaFornecedorId');if(fi)fi.value=id;
+  // Mostra badge selecionado
+  const res=document.getElementById('ncFornRes');if(res)res.innerHTML='';
+  const bi=document.getElementById('ncFornBusca');if(bi)bi.style.display='none';
+  const sel=document.getElementById('ncFornSel'),nm=document.getElementById('ncFornSelNome');
+  if(sel&&nm){nm.textContent=nome;sel.style.display='flex';}
+}
+
+function ncLimparForn(){
+  NC.fornId=null;NC.fornNome='';
+  const fb=document.getElementById('contaFornecedorBusca');if(fb)fb.value='';
+  const fi=document.getElementById('contaFornecedorId');if(fi)fi.value='';
+  const bi=document.getElementById('ncFornBusca');if(bi){bi.style.display='';bi.value='';}
+  const sel=document.getElementById('ncFornSel');if(sel)sel.style.display='none';
+  const res=document.getElementById('ncFornRes');if(res)res.innerHTML='';
+}
+
+function ncSelCat(el){
+  document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o=>o.classList.remove('nc-sel'));
+  el.classList.add('nc-sel');NC.catId=el.dataset.id||null;
+  // Sincroniza select hidden
+  const cs=document.getElementById('contaCategoriaId');if(cs)cs.value=NC.catId||'';
+}
+
+function ncVenc(el){
+  document.querySelectorAll('.nc-venc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+  el.classList.add('nc-pill-sel');
+  const dias=parseInt(el.dataset.dias,10),vc=document.getElementById('ncVencCustom');
+  if(dias===-1){vc.style.display='';}
+  else{
+    vc.style.display='none';
+    const base=new Date((NC.dataCompra||new Date().toISOString().split('T')[0])+'T00:00:00');
+    base.setDate(base.getDate()+dias);
+    NC.dataVenc=base.toISOString().split('T')[0];
+  }
+}
+function ncVencCust(){const v=document.getElementById('ncVencCustom').value;if(v)NC.dataVenc=v;}
+
+function ncFmtValor(inp){
+  const v=inp.value.replace(/[^\d,]/g,'').replace(',','.');
+  NC.valor=parseFloat(v)||null;
+}
+
+function ncToggleParcelas(){
+  const pw=document.getElementById('ncParcelasWrap');
+  if(pw)pw.style.display=pw.style.display==='none'?'':'none';
+}
+
+function ncSelParc(el){
+  document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+  el.classList.add('nc-pill-sel');
+  NC.parcelas=parseInt(el.dataset.p,10)||1;
+  ncAtuParcelasInfo();
+}
+
+function ncSelIntv(el){
+  document.querySelectorAll('.nc-intv-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+  el.classList.add('nc-pill-sel');
+  const d=parseInt(el.dataset.d,10);
+  const ic=document.getElementById('ncIntvCustom');
+  if(d===-1){if(ic)ic.style.display='';}
+  else{if(ic)ic.style.display='none';NC.intervalo=d;}
+  ncAtuParcelasInfo();
+}
+
+function ncIntvCust(){
+  const v=parseInt(document.getElementById('ncIntvCustom').value,10)||30;
+  NC.intervalo=v;ncAtuParcelasInfo();
+}
+
+function ncAtuParcelasInfo(){
+  const pr=document.getElementById('ncParcelasResume');
+  const pi=document.getElementById('ncParcelasInfo');
+  if(NC.parcelas<=1){
+    if(pr)pr.textContent='1x · à vista';
+    if(pi)pi.textContent='';
+    return;
+  }
+  if(pr)pr.textContent=NC.parcelas+'x · '+NC.intervalo+'d entre pgtos';
+  if(pi&&NC.valor)pi.textContent=NC.parcelas+'x de R$ '+(NC.valor/NC.parcelas).toFixed(2).replace('.',',');
+  else if(pi)pi.textContent='';
+}
+
+async function ncSalvar(){
+  const msg=document.getElementById('ncMsg'),btn=document.getElementById('ncBtnSalvar');
+  // Coleta dados dos campos visuais
+  const dc=document.getElementById('ncDataCompra');if(dc&&dc.value)NC.dataCompra=dc.value;
+  const vi=document.getElementById('ncValor');const vt=((vi&&vi.value)||'').replace(/[R$\s]/g,'').replace(',','.');NC.valor=parseFloat(vt)||null;
+  const oi=document.getElementById('ncObs');NC.obs=String((oi&&oi.value)||'').trim();
+  // Validações
+  if(!NC.fornId){if(msg){msg.textContent='Selecione um fornecedor.';msg.className='msg err';}return;}
+  if(!NC.valor||NC.valor<=0){if(msg){msg.textContent='Informe o valor.';msg.className='msg err';}return;}
+  if(!NC.catId){if(msg){msg.textContent='Selecione uma categoria.';msg.className='msg err';}return;}
+  if(!NC.dataVenc){NC.dataVenc=NC.dataCompra||new Date().toISOString().split('T')[0];}
+  // Sincroniza campos hidden para usar salvarContaAPagarFinanceiro existente
+  const fb=document.getElementById('contaFornecedorBusca');if(fb)fb.value=NC.fornNome;
+  const fi=document.getElementById('contaFornecedorId');if(fi)fi.value=NC.fornId;
+  const cv=document.getElementById('contaValorCompra');if(cv)cv.value=NC.valor.toFixed(2).replace('.',',');
+  const cs=document.getElementById('contaCategoriaId');if(cs)cs.value=NC.catId||'';
+  const co=document.getElementById('contaObservacao');if(co)co.value=NC.obs||'Lançamento manual';
+  const cqp=document.getElementById('contaQtdParcelas');if(cqp)cqp.value=NC.parcelas>1?NC.parcelas:'';
+  const cip=document.getElementById('contaIntervaloParcelasDias');if(cip)cip.value=NC.parcelas>1?NC.intervalo:'';
+  // Datas no formato dd/mm/aaaa que a função espera
+  function toddmmaaaa(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
+  const cdc=document.getElementById('contaDataCompra');if(cdc)cdc.value=toddmmaaaa(NC.dataCompra);
+  const cdv=document.getElementById('contaDataVencimento');if(cdv)cdv.value=toddmmaaaa(NC.dataVenc);
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+  if(msg){msg.textContent='';msg.className='msg';}
+  // Chama a função existente
+  try{
+    await salvarContaAPagarFinanceiro();
+    // Verifica se houve erro
+    const msgOrig=document.getElementById('msgContaAPagarFinanceiro');
+    if(msgOrig&&msgOrig.textContent&&msgOrig.classList.contains('err')){
+      if(msg){msg.textContent=msgOrig.textContent;msg.className='msg err';}
+      if(btn){btn.disabled=false;btn.textContent='✓ Cadastrar conta';}
+      return;
+    }
+    // Sucesso
+    ncFechar();
+    if(typeof carregarContasAPagarFinanceiro==='function')carregarContasAPagarFinanceiro().catch(()=>{});
+  }catch(e){
+    if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}
+    if(btn){btn.disabled=false;btn.textContent='✓ Cadastrar conta';}
+  }
+}
+
+// Hook: quando editarContaAPagarFinanceiro for chamado, abre o sheet preenchido
+const _ncOrigEditar=window.editarContaAPagarFinanceiro;
+if(typeof _ncOrigEditar==='function'){
+  window.editarContaAPagarFinanceiro=function(id){
+    _ncOrigEditar.call(this,id);
+    // Após a função original preencher os campos hidden, lemos e abrimos o sheet
+    setTimeout(()=>{
+      const fb=document.getElementById('contaFornecedorBusca');
+      const fi=document.getElementById('contaFornecedorId');
+      const cv=document.getElementById('contaValorCompra');
+      const dc=document.getElementById('contaDataCompra');
+      const dv=document.getElementById('contaDataVencimento');
+      const cs=document.getElementById('contaCategoriaId');
+      const co=document.getElementById('contaObservacao');
+      const cqp=document.getElementById('contaQtdParcelas');
+      const cip=document.getElementById('contaIntervaloParcelasDias');
+      NC.fornId=fi?fi.value:'';
+      NC.fornNome=fb?fb.value:'';
+      // Valor
+      const vt=((cv&&cv.value)||'').replace(/[R$\s]/g,'').replace(',','.');NC.valor=parseFloat(vt)||null;
+      // Datas dd/mm/aaaa → yyyy-mm-dd
+      function toISO(ddmmaaaa){if(!ddmmaaaa)return'';const p=ddmmaaaa.split('/');if(p.length!==3)return'';return p[2]+'-'+p[1]+'-'+p[0];}
+      NC.dataCompra=toISO(dc?dc.value:'');
+      NC.dataVenc=toISO(dv?dv.value:'');
+      NC.catId=cs?cs.value:'';
+      NC.obs=co?co.value:'';
+      NC.parcelas=parseInt(cqp?cqp.value:'1',10)||1;
+      NC.intervalo=parseInt(cip?cip.value:'30',10)||30;
+      NC.modoEdicao=true;
+      // Abre sheet no modo edição
+      ncAbrir(true);
+      // Preenche campos visuais
+      const nvi=document.getElementById('ncValor');if(nvi&&NC.valor)nvi.value='R$ '+NC.valor.toFixed(2).replace('.',',');
+      const ndc=document.getElementById('ncDataCompra');if(ndc)ndc.value=NC.dataCompra;
+      const noi=document.getElementById('ncObs');if(noi)noi.value=NC.obs;
+      // Fornecedor
+      if(NC.fornId&&NC.fornNome){
+        const bi=document.getElementById('ncFornBusca');if(bi)bi.style.display='none';
+        const sel=document.getElementById('ncFornSel'),nm=document.getElementById('ncFornSelNome');
+        if(sel&&nm){nm.textContent=NC.fornNome;sel.style.display='flex';}
+      }
+      // Categoria
+      ncMontarCategorias();
+      // Vencimento
+      if(NC.dataVenc){
+        document.querySelectorAll('.nc-venc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+        const bOut=document.querySelector('.nc-venc-btn[data-dias="-1"]');if(bOut)bOut.classList.add('nc-pill-sel');
+        const vc=document.getElementById('ncVencCustom');if(vc){vc.style.display='';vc.value=NC.dataVenc;}
+      }
+      // Parcelas
+      if(NC.parcelas>1){
+        const pw=document.getElementById('ncParcelasWrap');if(pw)pw.style.display='';
+        document.querySelectorAll('.nc-parc-btn').forEach(b=>{b.classList.remove('nc-pill-sel');if(parseInt(b.dataset.p,10)===NC.parcelas)b.classList.add('nc-pill-sel');});
+        document.querySelectorAll('.nc-intv-btn').forEach(b=>{b.classList.remove('nc-pill-sel');if(parseInt(b.dataset.d,10)===NC.intervalo)b.classList.add('nc-pill-sel');});
+        ncAtuParcelasInfo();
+      }
+      // Título edição
+      const tt=document.getElementById('ncTitulo');if(tt)tt.textContent='Editar conta';
+      const ts=document.getElementById('ncSub');if(ts)ts.textContent='Altere os dados e salve';
+      const bc=document.getElementById('ncBtnCancelar');if(bc)bc.style.display='';
+      const bs=document.getElementById('ncBtnSalvar');if(bs)bs.textContent='✓ Salvar alterações';
+    },100);
+  };
+}
+
+function ncCancelarEdicao(){
+  if(typeof cancelarEdicaoContaAPagarFinanceiro==='function')cancelarEdicaoContaAPagarFinanceiro();
+  ncFechar();
+}
+</script>
