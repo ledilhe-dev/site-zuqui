@@ -34566,7 +34566,7 @@ function imprimirRelatorioFinanceiroPdf() {
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(g.pago + g.pendente))}</td>
         </tr>`).join('');
   } else {
-    cabecalhoCols = ['Fornecedor', 'Grupo', 'Categoria', 'Status', 'Forma', 'Vencimento', 'Valor', 'Parcela', 'Restantes', 'Observação', 'Cadastro'];
+    cabecalhoCols = ['Fornecedor', 'Categoria', 'Status', 'Forma', 'Vencimento', 'Valor', 'Parcela', 'Rest.', 'Observação', 'Cadastro'];
     linhas = itens.map(item => {
       const statusAtual = obterStatusContaRelatorioFinanceiro(item);
       const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
@@ -34575,7 +34575,6 @@ function imprimirRelatorioFinanceiroPdf() {
       return `
         <tr class="${classeLinha}">
           <td>${escaparHtmlBasico(obterNomeFornecedorRelatorioFinanceiro(item))}</td>
-          <td>${escaparHtmlBasico(obterNomeGrupoRelatorioFinanceiro(item))}</td>
           <td>${escaparHtmlBasico(obterNomeCategoriaRelatorioFinanceiro(item))}</td>
           <td>${escaparHtmlBasico(status)}</td>
           <td>${escaparHtmlBasico(obterNomeFormaRelatorioFinanceiro(item))}</td>
@@ -34601,17 +34600,28 @@ function imprimirRelatorioFinanceiroPdf() {
       <head>
         <title>Relatório de contas a pagar</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 14px; color: #111; }
-          @page { size: A4 landscape; margin: 10mm; }
-          h1 { margin: 0 0 6px; font-size: 16px; }
-          .meta { margin-bottom: 10px; font-size: 10px; color: #444; }
-          .totais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-          .box { border: 1px solid #d0d0d0; border-radius: 6px; padding: 7px; }
-          .box .label { font-size: 9px; color: #666; text-transform: uppercase; }
-          .box .valor { font-size: 14px; font-weight: bold; margin-top: 3px; }
-          table { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
-          th, td { border: 1px solid #ddd; padding: 3px 4px; text-align: left; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
-          th { background: #f5f5f5; font-size: 9px; }
+          body { font-family: Arial, sans-serif; margin: 8px; color: #111; }
+          @page { size: A4 portrait; margin: 8mm; }
+          h1 { margin: 0 0 4px; font-size: 13px; }
+          .meta { margin-bottom: 6px; font-size: 8px; color: #444; }
+          .totais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 8px; }
+          .box { border: 1px solid #d0d0d0; border-radius: 4px; padding: 4px 6px; }
+          .box .label { font-size: 7px; color: #666; text-transform: uppercase; }
+          .box .valor { font-size: 11px; font-weight: bold; margin-top: 2px; }
+          table { width: 100%; border-collapse: collapse; font-size: 7.5px; table-layout: fixed; }
+          th, td { border: 1px solid #ddd; padding: 2px 3px; text-align: left; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+          th { background: #f5f5f5; font-size: 7.5px; font-weight: bold; }
+          /* Larguras fixas — 10 colunas sem Grupo, A4 retrato ~175mm útil */
+          col.c-forn     { width: 18%; }
+          col.c-cat      { width: 13%; }
+          col.c-status   { width: 7%;  }
+          col.c-forma    { width: 9%;  }
+          col.c-venc     { width: 9%;  }
+          col.c-valor    { width: 8%;  }
+          col.c-parcela  { width: 7%;  }
+          col.c-rest     { width: 4%;  }
+          col.c-obs      { width: 16%; }
+          col.c-cad      { width: 9%;  }
           .legenda { display: flex; gap: 14px; align-items: center; margin: 0 0 12px; font-size: 11px; color: #333; }
           .legenda-item { display: inline-flex; align-items: center; gap: 6px; }
           .legenda-cor { width: 22px; height: 10px; border: 1px solid #bbb; display: inline-block; }
@@ -34637,6 +34647,11 @@ function imprimirRelatorioFinanceiroPdf() {
           <span class="legenda-item"><span class="legenda-cor excluida"></span> Conta excluída</span>
         </div>
         <table>
+          <colgroup>
+            <col class="c-forn"><col class="c-cat"><col class="c-status">
+            <col class="c-forma"><col class="c-venc"><col class="c-valor">
+            <col class="c-parcela"><col class="c-rest"><col class="c-obs"><col class="c-cad">
+          </colgroup>
           <thead>
             <tr>${cabecalhoHtml}</tr>
           </thead>
@@ -42863,6 +42878,9 @@ function ncToggleParcelas() {
   if (!pw) return;
   const aberto = pw.style.display === 'flex';
   pw.style.display = aberto ? 'none' : 'flex';
+  // Painel "Como quer lançar?" aparece sempre que o painel de parcelas estiver aberto
+  const mw = document.getElementById('ncModoParcelasWrap');
+  if (mw) mw.style.display = aberto ? 'none' : '';
 }
 
 function ncSelParc(el) {
@@ -42870,9 +42888,6 @@ function ncSelParc(el) {
   el.classList.add('nc-pill-sel');
   NC.parcelas = parseInt(el.dataset.p, 10) || 1;
   const pc = document.getElementById('ncParcCustom'); if (pc) pc.value = '';
-  // Mostra/esconde painel de modo
-  const mw = document.getElementById('ncModoParcelasWrap');
-  if (mw) mw.style.display = NC.parcelas > 1 ? '' : 'none';
   ncAtuParcelasInfo();
 }
 
@@ -42883,8 +42898,6 @@ function ncParcCust() {
     NC.parcelas = v;
     document.querySelectorAll('.nc-parc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
   }
-  const mw = document.getElementById('ncModoParcelasWrap');
-  if (mw) mw.style.display = NC.parcelas > 1 ? '' : 'none';
   ncAtuParcelasInfo();
 }
 
