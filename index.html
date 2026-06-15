@@ -9757,8 +9757,10 @@
     </div>
 
     <div class="msg" id="ncMsg" style="font-size:14px;"></div>
-    <button class="btn btn-green" id="ncBtnSalvar" style="padding:16px;font-size:16px;border-radius:14px;width:100%;" onclick="ncSalvar()">✓ Cadastrar conta</button>
-    <button class="btn btn-ghost" id="ncBtnCancelar" style="display:none;padding:14px;font-size:14px;border-radius:14px;width:100%;margin-top:4px;" onclick="ncCancelarEdicao()">Cancelar edição</button>
+    <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:env(safe-area-inset-bottom,0px);">
+      <button class="btn btn-green" id="ncBtnSalvar" style="padding:16px;font-size:16px;border-radius:14px;width:100%;" onclick="ncSalvar()">✓ Cadastrar conta</button>
+      <button class="btn btn-ghost" id="ncBtnCancelar" style="display:none;padding:14px;font-size:14px;border-radius:14px;width:100%;" onclick="ncCancelarEdicao()">Cancelar edição</button>
+    </div>
 
   </div>
 </div>
@@ -42824,6 +42826,7 @@ const NC = {
   parcelas: 1, intervalo: 30,
   modoEdicao: false,
   modo: 'total',     // 'parcela' | 'total'
+  lojaId: null,      // loja da conta em edição
 };
 
 // ── Helpers de valor ────────────────────────────────────────────
@@ -43011,7 +43014,7 @@ function ncLimparForn() {
 // ── Abrir / Fechar ──────────────────────────────────────────────
 function ncAbrir(editar) {
   if (!editar) {
-    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, modoEdicao: false, modo: 'total' });
+    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, modoEdicao: false, modo: 'total', lojaId: null });
     // Limpa campos visuais
     const fi = document.getElementById('ncFornBusca'); if (fi) { fi.value = ''; fi.style.display = ''; }
     const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
@@ -43109,6 +43112,9 @@ async function ncSalvar() {
   const cip = document.getElementById('contaIntervaloParcelasDias'); if (cip) cip.value = NC.parcelas > 1 ? NC.intervalo : '';
   const cdc = document.getElementById('contaDataCompra'); if (cdc) cdc.value = toddmmaaaa(NC.dataCompra);
   const cdv = document.getElementById('contaDataVencimento'); if (cdv) cdv.value = toddmmaaaa(NC.dataVenc);
+  // CRÍTICO: preenche a loja para salvarContaAPagarFinanceiro não barrar por loja nula
+  if (NC.lojaId) preencherSelectLojaContaAPagarFinanceiro(NC.lojaId);
+  else preencherSelectLojaContaAPagarFinanceiro('');
 
   // 6. Salva
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
@@ -43148,6 +43154,9 @@ if (typeof _ncOrigEditar === 'function') {
 
       NC.fornId = fi ? fi.value : '';
       NC.fornNome = fb ? fb.value : '';
+      // Captura loja da conta em edição do cache
+      const _itemEdit = (contasAPagarFinanceiroCache || []).find(c => String(c.id) === String(id));
+      NC.lojaId = (_itemEdit?.loja_id) ? String(_itemEdit.loja_id) : null;
       // Valor: os campos hidden já guardam o valor da parcela formatado pelo sistema
       NC.valor = ncParseValor(cv ? cv.value : '');
       function toISO(s) { if (!s) return ''; const p = s.split('/'); if (p.length !== 3) return ''; return p[2] + '-' + p[1] + '-' + p[0]; }
