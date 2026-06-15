@@ -9669,12 +9669,26 @@
     <!-- Valor + Data compra -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div>
-        <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Valor <span style="color:var(--red)">*</span></div>
-        <input id="ncValor" type="text" inputmode="decimal" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="R$ 0,00" onblur="ncFmtValor(this)" oninput="ncValorInput(this)">
+        <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Valor <span style="color:var(--red)">*</span></div>
+        <input id="ncValor" type="text" inputmode="decimal" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="0,00" oninput="ncValorInput(this)" onblur="ncValorBlur(this)" onfocus="ncValorFocus(this)">
+        <div id="ncValorTipo" style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;display:none;"></div>
       </div>
       <div>
-        <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Data compra</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Data compra</div>
         <input id="ncDataCompra" type="date" style="width:100%;border-radius:10px;font-size:14px;padding:10px 12px;">
+      </div>
+    </div>
+
+    <!-- Toggle: é parcela ou valor total? -->
+    <div id="ncModoParcelasWrap" style="display:none;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:12px 14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Como quer lançar?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button id="ncModoParc" class="nc-pill" onclick="ncSetModo('parcela')" style="padding:10px 8px;border-radius:10px;font-size:13px;font-weight:700;line-height:1.3;">
+          💳 Valor da<br>parcela
+        </button>
+        <button id="ncModoTotal" class="nc-pill nc-pill-sel" onclick="ncSetModo('total')" style="padding:10px 8px;border-radius:10px;font-size:13px;font-weight:700;line-height:1.3;">
+          🧾 Valor total<br><span style="font-size:11px;font-weight:400;">(sistema divide)</span>
+        </button>
       </div>
     </div>
 
@@ -42781,342 +42795,401 @@ window.addEventListener('load', function() {
 
 <script id="nc-sheet-js">
 /* ══ NOVA CONTA A PAGAR SHEET ══ */
-const NC={fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,intervalo:30,modoEdicao:false};
 
-function ncAbrir(editar){
-  if(!editar){
-    Object.assign(NC,{fornId:null,fornNome:null,catId:null,dataCompra:null,dataVenc:null,valor:null,obs:'',parcelas:1,intervalo:30,modoEdicao:false});
-    // Limpa campos
-    const fi=document.getElementById('ncFornBusca');if(fi){fi.value='';fi.style.display='';}
-    const fsr=document.getElementById('ncFornRes');if(fsr)fsr.innerHTML='';
-    const fsel=document.getElementById('ncFornSel');if(fsel)fsel.style.display='none';
-    const vi=document.getElementById('ncValor');if(vi)vi.value='';
-    const oi=document.getElementById('ncObs');if(oi)oi.value='';
-    const pw=document.getElementById('ncParcelasWrap');if(pw){pw.style.display='none';}
-    // Data compra = hoje
-    const hoje=new Date().toISOString().split('T')[0];
-    const dc=document.getElementById('ncDataCompra');if(dc)dc.value=hoje;
-    NC.dataCompra=hoje;NC.dataVenc=hoje;
-    // Vencimento default hoje
-    document.querySelectorAll('.nc-venc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-    const bh=document.querySelector('.nc-venc-btn[data-dias="0"]');if(bh)bh.classList.add('nc-pill-sel');
-    const vc=document.getElementById('ncVencCustom');if(vc)vc.style.display='none';
-    // Parcelas default
-    document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-    const bp=document.querySelector('.nc-parc-btn[data-p="1"]');if(bp)bp.classList.add('nc-pill-sel');
-    const pc=document.getElementById('ncParcCustom');if(pc){pc.style.display='none';pc.value='';}
-    document.querySelectorAll('.nc-intv-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-    const bi=document.querySelector('.nc-intv-btn[data-d="30"]');if(bi)bi.classList.add('nc-pill-sel');
-    const icust=document.getElementById('ncIntvCustom');if(icust){icust.style.display='none';icust.value='';}
-    const pr=document.getElementById('ncParcelasResume');if(pr)pr.textContent='1x · à vista';
-    // Título
-    const tt=document.getElementById('ncTitulo');if(tt)tt.textContent='Nova conta';
-    const ts=document.getElementById('ncSub');if(ts)ts.textContent='Preencha os dados abaixo';
-    const bc=document.getElementById('ncBtnCancelar');if(bc)bc.style.display='none';
-    const bs=document.getElementById('ncBtnSalvar');if(bs)bs.textContent='✓ Cadastrar conta';
-    const msg=document.getElementById('ncMsg');if(msg){msg.textContent='';msg.className='msg';}
-  }
-  // SEMPRE recarrega cache de fornecedores ao abrir (garante lista atualizada sem F5)
-  if(typeof carregarFornecedoresFinanceiro==='function'){
-    carregarFornecedoresFinanceiro().catch(()=>{});
-  }
-  if(!(categoriasCompraCache||[]).length && typeof carregarCategoriasCompra==='function'){
-    carregarCategoriasCompra().then(()=>ncMontarCategorias()).catch(()=>{});
-  }
-  // Categorias
-  ncMontarCategorias();
-  // Abre sheet
-  const ov=document.getElementById('ncOverlay');if(!ov)return;
-  ov.style.display='flex';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    document.getElementById('ncSheet').style.transform='translateY(0)';
-  }));
+// ═══════════════════════════════════════════════════════════════
+// NOVA CONTA A PAGAR — motor NC (reescrito limpo)
+// NC.modo: 'parcela' = o usuário digita o valor de cada parcela
+//          'total'   = o usuário digita o total e o sistema divide
+// ═══════════════════════════════════════════════════════════════
+const NC = {
+  fornId: null, fornNome: null, catId: null,
+  dataCompra: null, dataVenc: null,
+  valor: null,       // valor conforme digitado (parcela ou total, depende de NC.modo)
+  obs: '',
+  parcelas: 1, intervalo: 30,
+  modoEdicao: false,
+  modo: 'total',     // 'parcela' | 'total'
+};
+
+// ── Helpers de valor ────────────────────────────────────────────
+function ncParseValor(txt) {
+  // Aceita: "550", "550,00", "1.234,56", "R$ 1.234,56"
+  const s = String(txt || '').replace(/[R$\s]/g, '').trim();
+  if (!s) return null;
+  // Remove pontos de milhar, troca vírgula por ponto decimal
+  const norm = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(norm);
+  return (isFinite(n) && n >= 0) ? Math.round(n * 100) / 100 : null;
 }
 
-function ncFechar(){
-  const sh=document.getElementById('ncSheet'),ov=document.getElementById('ncOverlay');
-  if(!sh||!ov)return;
-  sh.style.transform='translateY(100%)';
-  setTimeout(()=>{ov.style.display='none';},300);
+function ncFmtBR(n) {
+  if (!isFinite(n) || n == null) return '';
+  return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function ncMontarCategorias(){
-  const grid=document.getElementById('ncCatGrid');if(!grid)return;
-  const cats=categoriasCompraCache||[];
-  grid.innerHTML=cats.map(c=>{
-    const sel=NC.catId&&String(c.id)===String(NC.catId);
-    return`<div class="nc-cat-card${sel?' nc-sel':''}" data-id="${c.id}" onclick="ncSelCat(this)" style="padding:10px;font-size:13px;"><span style="font-size:18px;">${c.icone||'🏷️'}</span><span>${escaparHtmlBasico(c.nome||'')}</span></div>`;
+// ── Campo Valor: eventos ────────────────────────────────────────
+function ncValorFocus(inp) {
+  // Remove formatação para edição livre
+  const s = inp.value.replace(/[R$\s]/g, '').trim();
+  inp.value = s;
+  setTimeout(() => inp.select(), 0);
+}
+
+function ncValorInput(inp) {
+  // Só sanitiza — não reescreve enquanto digita (evita travamento no celular)
+  NC.valor = ncParseValor(inp.value);
+  ncAtuParcelasInfo();
+}
+
+function ncValorBlur(inp) {
+  // Formata bonito ao sair
+  const v = ncParseValor(inp.value);
+  NC.valor = v;
+  inp.value = (v != null) ? ncFmtBR(v) : '';
+  ncAtuParcelasInfo();
+}
+
+// ── Modo: parcela ou total ──────────────────────────────────────
+function ncSetModo(modo) {
+  NC.modo = modo;
+  document.getElementById('ncModoParc')?.classList.toggle('nc-pill-sel', modo === 'parcela');
+  document.getElementById('ncModoTotal')?.classList.toggle('nc-pill-sel', modo === 'total');
+  ncAtuParcelasInfo();
+}
+
+// ── Parcelas ────────────────────────────────────────────────────
+function ncToggleParcelas() {
+  const pw = document.getElementById('ncParcelasWrap');
+  if (!pw) return;
+  const aberto = pw.style.display === 'flex';
+  pw.style.display = aberto ? 'none' : 'flex';
+}
+
+function ncSelParc(el) {
+  document.querySelectorAll('.nc-parc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+  el.classList.add('nc-pill-sel');
+  NC.parcelas = parseInt(el.dataset.p, 10) || 1;
+  const pc = document.getElementById('ncParcCustom'); if (pc) pc.value = '';
+  // Mostra/esconde painel de modo
+  const mw = document.getElementById('ncModoParcelasWrap');
+  if (mw) mw.style.display = NC.parcelas > 1 ? '' : 'none';
+  ncAtuParcelasInfo();
+}
+
+function ncParcCust() {
+  const pc = document.getElementById('ncParcCustom');
+  const v = parseInt((pc && pc.value) || '0', 10) || 0;
+  if (v >= 2) {
+    NC.parcelas = v;
+    document.querySelectorAll('.nc-parc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+  }
+  const mw = document.getElementById('ncModoParcelasWrap');
+  if (mw) mw.style.display = NC.parcelas > 1 ? '' : 'none';
+  ncAtuParcelasInfo();
+}
+
+function ncSelIntv(el) {
+  document.querySelectorAll('.nc-intv-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+  el.classList.add('nc-pill-sel');
+  const d = parseInt(el.dataset.d, 10);
+  const ic = document.getElementById('ncIntvCustom');
+  if (d === -1) {
+    if (ic) { ic.style.display = ''; ic.value = NC.intervalo || 30; }
+  } else {
+    if (ic) ic.style.display = 'none';
+    NC.intervalo = d;
+  }
+  ncAtuParcelasInfo();
+}
+
+function ncIntvCust() {
+  const v = parseInt(document.getElementById('ncIntvCustom').value, 10) || 30;
+  NC.intervalo = v; ncAtuParcelasInfo();
+}
+
+function ncAtuParcelasInfo() {
+  const pr = document.getElementById('ncParcelasResume');
+  const pi = document.getElementById('ncParcelasInfo');
+  const vt = document.getElementById('ncValorTipo');
+  if (NC.parcelas <= 1) {
+    if (pr) pr.textContent = '1x · à vista';
+    if (pi) { pi.textContent = ''; pi.style.display = 'none'; }
+    if (vt) vt.style.display = 'none';
+    return;
+  }
+  if (pr) pr.textContent = NC.parcelas + 'x · ' + NC.intervalo + 'd entre pgtos';
+  if (NC.valor != null && NC.valor > 0) {
+    const valorParcela = NC.modo === 'total' ? NC.valor / NC.parcelas : NC.valor;
+    const valorTotal   = NC.modo === 'total' ? NC.valor : NC.valor * NC.parcelas;
+    if (pi) {
+      pi.textContent = NC.parcelas + 'x de ' + ncFmtBR(valorParcela) + ' · Total: ' + ncFmtBR(valorTotal);
+      pi.style.display = '';
+    }
+    if (vt) {
+      vt.textContent = NC.modo === 'total' ? '↕ Valor total da compra' : '↕ Valor de cada parcela';
+      vt.style.display = '';
+    }
+  } else {
+    if (pi) { pi.textContent = ''; pi.style.display = 'none'; }
+    if (vt) vt.style.display = 'none';
+  }
+}
+
+// ── Vencimento ──────────────────────────────────────────────────
+function ncVenc(el) {
+  document.querySelectorAll('.nc-venc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+  el.classList.add('nc-pill-sel');
+  const dias = parseInt(el.dataset.dias, 10), vc = document.getElementById('ncVencCustom');
+  if (dias === -1) { vc.style.display = ''; }
+  else {
+    vc.style.display = 'none';
+    const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
+    base.setDate(base.getDate() + dias);
+    NC.dataVenc = base.toISOString().split('T')[0];
+  }
+}
+function ncVencCust() { const v = document.getElementById('ncVencCustom').value; if (v) NC.dataVenc = v; }
+
+// ── Categorias ──────────────────────────────────────────────────
+function ncMontarCategorias() {
+  const grid = document.getElementById('ncCatGrid'); if (!grid) return;
+  const cats = categoriasCompraCache || [];
+  grid.innerHTML = cats.map(c => {
+    const sel = NC.catId && String(c.id) === String(NC.catId);
+    return `<div class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${c.id}" onclick="ncSelCat(this)" style="padding:10px;font-size:13px;"><span style="font-size:18px;">${c.icone || '🏷️'}</span><span>${escaparHtmlBasico(c.nome || '')}</span></div>`;
   }).join('');
 }
 
-function ncBuscarForn(t){
-  const res=document.getElementById('ncFornRes');if(!res)return;
-  if(!t||t.trim().length<1){res.innerHTML='';return;}
-  const tU=t.trim().toUpperCase();
-  const m=(fornecedoresFinanceiroCache||[]).filter(f=>(f.nome||'').toUpperCase().includes(tU)||(f.cnpj||'').includes(tU)).slice(0,6);
-  if(!m.length){res.innerHTML='<div style="font-size:13px;color:var(--text-muted);padding:6px 0;">Nenhum encontrado.</div>';return;}
-  res.innerHTML=m.map(f=>`<div class="nc-forn-card" onclick="ncSelForn('${f.id}','${escaparHtmlBasico(f.nome||'')}')"><div style="font-size:15px;font-weight:700;color:var(--text);">${escaparHtmlBasico(f.nome||'')}</div><span style="color:var(--text-muted);font-size:22px;">›</span></div>`).join('');
+function ncSelCat(el) {
+  document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o => o.classList.remove('nc-sel'));
+  el.classList.add('nc-sel'); NC.catId = el.dataset.id || null;
+  const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
 }
 
-function ncSelForn(id,nome){
-  NC.fornId=String(id);NC.fornNome=nome||'';
-  // Sincroniza campos hidden
-  const fb=document.getElementById('contaFornecedorBusca');if(fb)fb.value=nome;
-  const fi=document.getElementById('contaFornecedorId');if(fi)fi.value=id;
-  // Mostra badge selecionado
-  const res=document.getElementById('ncFornRes');if(res)res.innerHTML='';
-  const bi=document.getElementById('ncFornBusca');if(bi)bi.style.display='none';
-  const sel=document.getElementById('ncFornSel'),nm=document.getElementById('ncFornSelNome');
-  if(sel&&nm){nm.textContent=nome;sel.style.display='flex';}
+// ── Fornecedor ──────────────────────────────────────────────────
+function ncBuscarForn(t) {
+  const res = document.getElementById('ncFornRes'); if (!res) return;
+  if (!t || t.trim().length < 1) { res.innerHTML = ''; return; }
+  const tU = t.trim().toUpperCase();
+  const m = (fornecedoresFinanceiroCache || []).filter(f => (f.nome || '').toUpperCase().includes(tU) || (f.cnpj || '').includes(tU)).slice(0, 6);
+  if (!m.length) { res.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:6px 0;">Nenhum encontrado.</div>'; return; }
+  res.innerHTML = m.map(f => `<div class="nc-forn-card" onclick="ncSelForn('${f.id}','${escaparHtmlBasico(f.nome || '')}')"><div style="font-size:15px;font-weight:700;color:var(--text);">${escaparHtmlBasico(f.nome || '')}</div><span style="color:var(--text-muted);font-size:22px;">›</span></div>`).join('');
 }
 
-function ncLimparForn(){
-  NC.fornId=null;NC.fornNome='';
-  const fb=document.getElementById('contaFornecedorBusca');if(fb)fb.value='';
-  const fi=document.getElementById('contaFornecedorId');if(fi)fi.value='';
-  const bi=document.getElementById('ncFornBusca');if(bi){bi.style.display='';bi.value='';}
-  const sel=document.getElementById('ncFornSel');if(sel)sel.style.display='none';
-  const res=document.getElementById('ncFornRes');if(res)res.innerHTML='';
+function ncSelForn(id, nome) {
+  NC.fornId = String(id); NC.fornNome = nome || '';
+  const fb = document.getElementById('contaFornecedorBusca'); if (fb) fb.value = nome;
+  const fi = document.getElementById('contaFornecedorId'); if (fi) fi.value = id;
+  const res = document.getElementById('ncFornRes'); if (res) res.innerHTML = '';
+  const bi = document.getElementById('ncFornBusca'); if (bi) bi.style.display = 'none';
+  const sel = document.getElementById('ncFornSel'), nm = document.getElementById('ncFornSelNome');
+  if (sel && nm) { nm.textContent = nome; sel.style.display = 'flex'; }
 }
 
-function ncSelCat(el){
-  document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o=>o.classList.remove('nc-sel'));
-  el.classList.add('nc-sel');NC.catId=el.dataset.id||null;
-  // Sincroniza select hidden
-  const cs=document.getElementById('contaCategoriaId');if(cs)cs.value=NC.catId||'';
+function ncLimparForn() {
+  NC.fornId = null; NC.fornNome = '';
+  const fb = document.getElementById('contaFornecedorBusca'); if (fb) fb.value = '';
+  const fi = document.getElementById('contaFornecedorId'); if (fi) fi.value = '';
+  const bi = document.getElementById('ncFornBusca'); if (bi) { bi.style.display = ''; bi.value = ''; }
+  const sel = document.getElementById('ncFornSel'); if (sel) sel.style.display = 'none';
+  const res = document.getElementById('ncFornRes'); if (res) res.innerHTML = '';
 }
 
-function ncVenc(el){
-  document.querySelectorAll('.nc-venc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-  el.classList.add('nc-pill-sel');
-  const dias=parseInt(el.dataset.dias,10),vc=document.getElementById('ncVencCustom');
-  if(dias===-1){vc.style.display='';}
-  else{
-    vc.style.display='none';
-    const base=new Date((NC.dataCompra||new Date().toISOString().split('T')[0])+'T00:00:00');
-    base.setDate(base.getDate()+dias);
-    NC.dataVenc=base.toISOString().split('T')[0];
+// ── Abrir / Fechar ──────────────────────────────────────────────
+function ncAbrir(editar) {
+  if (!editar) {
+    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, modoEdicao: false, modo: 'total' });
+    // Limpa campos visuais
+    const fi = document.getElementById('ncFornBusca'); if (fi) { fi.value = ''; fi.style.display = ''; }
+    const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
+    const fsel = document.getElementById('ncFornSel'); if (fsel) fsel.style.display = 'none';
+    const vi = document.getElementById('ncValor'); if (vi) vi.value = '';
+    const oi = document.getElementById('ncObs'); if (oi) oi.value = '';
+    const pw = document.getElementById('ncParcelasWrap'); if (pw) pw.style.display = 'none';
+    const mw = document.getElementById('ncModoParcelasWrap'); if (mw) mw.style.display = 'none';
+    // Modo padrão = total
+    document.getElementById('ncModoTotal')?.classList.add('nc-pill-sel');
+    document.getElementById('ncModoParc')?.classList.remove('nc-pill-sel');
+    // Data compra = hoje
+    const hoje = new Date().toISOString().split('T')[0];
+    const dc = document.getElementById('ncDataCompra'); if (dc) dc.value = hoje;
+    NC.dataCompra = hoje; NC.dataVenc = hoje;
+    // Vencimento default = hoje
+    document.querySelectorAll('.nc-venc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+    const bh = document.querySelector('.nc-venc-btn[data-dias="0"]'); if (bh) bh.classList.add('nc-pill-sel');
+    const vc = document.getElementById('ncVencCustom'); if (vc) vc.style.display = 'none';
+    // Parcelas default = 1x / 30d
+    document.querySelectorAll('.nc-parc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+    const bp = document.querySelector('.nc-parc-btn[data-p="1"]'); if (bp) bp.classList.add('nc-pill-sel');
+    const pc = document.getElementById('ncParcCustom'); if (pc) { pc.style.display = 'none'; pc.value = ''; }
+    document.querySelectorAll('.nc-intv-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+    const bi = document.querySelector('.nc-intv-btn[data-d="30"]'); if (bi) bi.classList.add('nc-pill-sel');
+    const ic = document.getElementById('ncIntvCustom'); if (ic) { ic.style.display = 'none'; ic.value = ''; }
+    const pr = document.getElementById('ncParcelasResume'); if (pr) pr.textContent = '1x · à vista';
+    // Título
+    const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Nova conta';
+    const ts = document.getElementById('ncSub'); if (ts) ts.textContent = 'Preencha os dados abaixo';
+    const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = 'none';
+    const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Cadastrar conta';
+    const msg = document.getElementById('ncMsg'); if (msg) { msg.textContent = ''; msg.className = 'msg'; }
+    const vt = document.getElementById('ncValorTipo'); if (vt) vt.style.display = 'none';
   }
-}
-function ncVencCust(){const v=document.getElementById('ncVencCustom').value;if(v)NC.dataVenc=v;}
-
-// Chamado no oninput: só extrai o número interno, sem reescrever o campo
-function ncValorInput(inp){
-  let raw = inp.value.replace(/[^\d,\.]/g, '').replace(/\./g, ',');
-  const partes = raw.split(',');
-  const reais = parseInt(partes[0] || '0', 10) || 0;
-  const centStr = partes.length > 1 ? (partes[partes.length-1]+'00').slice(0,2) : '00';
-  const cents = parseInt(centStr, 10) || 0;
-  NC.valor = reais + cents / 100;
-  ncAtuParcelasInfo();
-}
-
-// Chamado no onblur: formata bonito ao sair do campo
-function ncFmtValor(inp){
-  let raw = inp.value.replace(/[^\d,\.]/g, '').replace(/\./g, ',');
-  if (!raw) { inp.value = ''; NC.valor = null; ncAtuParcelasInfo(); return; }
-  const partes = raw.split(',');
-  const reais = parseInt(partes[0] || '0', 10) || 0;
-  const centStr = partes.length > 1 ? (partes[partes.length-1]+'00').slice(0,2) : '00';
-  const cents = parseInt(centStr, 10) || 0;
-  NC.valor = reais + cents / 100;
-  if (!isFinite(NC.valor) || NC.valor < 0) { NC.valor = null; inp.value = ''; return; }
-  const p = NC.valor.toFixed(2).split('.');
-  inp.value = 'R$ ' + parseInt(p[0], 10).toLocaleString('pt-BR') + ',' + p[1];
-  ncAtuParcelasInfo();
-}
-
-function ncToggleParcelas(){
-  const pw=document.getElementById('ncParcelasWrap');
-  if(!pw)return;
-  const aberto=pw.style.display==='flex';
-  pw.style.display=aberto?'none':'flex';
-}
-
-function ncSelParc(el){
-  document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-  el.classList.add('nc-pill-sel');
-  NC.parcelas=parseInt(el.dataset.p,10)||1;
-  // Limpa campo customizado para não conflitar
-  const pc=document.getElementById('ncParcCustom');if(pc)pc.value='';
-  ncAtuParcelasInfo();
-}
-
-function ncSelParcOutro(el){
-  document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-  el.classList.add('nc-pill-sel');
-  const pc=document.getElementById('ncParcCustom');
-  if(pc){pc.style.display='';pc.value=NC.parcelas>1?NC.parcelas:'';}
-  // Não altera NC.parcelas ainda — espera o usuário digitar
-  ncAtuParcelasInfo();
-}
-
-function ncParcCust(){
-  const pc=document.getElementById('ncParcCustom');
-  const v=parseInt((pc&&pc.value)||'0',10)||0;
-  if(v>1){
-    NC.parcelas=v;
-    // Desmarca todos os botões fixos pois usou campo livre
-    document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+  if (typeof carregarFornecedoresFinanceiro === 'function') carregarFornecedoresFinanceiro().catch(() => {});
+  if (!(categoriasCompraCache || []).length && typeof carregarCategoriasCompra === 'function') {
+    carregarCategoriasCompra().then(() => ncMontarCategorias()).catch(() => {});
   }
-  ncAtuParcelasInfo();
+  ncMontarCategorias();
+  const ov = document.getElementById('ncOverlay'); if (!ov) return;
+  ov.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const sh = document.getElementById('ncSheet'); if (sh) sh.style.transform = 'translateY(0)';
+  }));
 }
 
-function ncSelIntv(el){
-  document.querySelectorAll('.nc-intv-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-  el.classList.add('nc-pill-sel');
-  const d=parseInt(el.dataset.d,10);
-  const ic=document.getElementById('ncIntvCustom');
-  if(d===-1){
-    if(ic){ic.style.display='';ic.value=NC.intervalo||30;} // mostra com valor atual
-  } else {
-    if(ic)ic.style.display='none';
-    NC.intervalo=d;
-  }
-  ncAtuParcelasInfo();
+function ncFechar() {
+  const sh = document.getElementById('ncSheet'), ov = document.getElementById('ncOverlay');
+  if (!sh || !ov) return;
+  sh.style.transform = 'translateY(100%)';
+  setTimeout(() => { ov.style.display = 'none'; }, 300);
 }
 
-function ncIntvCust(){
-  const v=parseInt(document.getElementById('ncIntvCustom').value,10)||30;
-  NC.intervalo=v;ncAtuParcelasInfo();
-}
+// ── Salvar ──────────────────────────────────────────────────────
+async function ncSalvar() {
+  const msg = document.getElementById('ncMsg'), btn = document.getElementById('ncBtnSalvar');
+  if (msg) { msg.textContent = ''; msg.className = 'msg'; }
 
-function ncAtuParcelasInfo(){
-  const pr=document.getElementById('ncParcelasResume');
-  const pi=document.getElementById('ncParcelasInfo');
-  if(NC.parcelas<=1){
-    if(pr)pr.textContent='1x · à vista';
-    if(pi){pi.textContent='';pi.style.display='none';}
-    return;
-  }
-  if(pr)pr.textContent=NC.parcelas+'x · '+NC.intervalo+'d entre pgtos';
-  if(pi&&NC.valor){
-    pi.textContent=NC.parcelas+'x de R$ '+(NC.valor/NC.parcelas).toFixed(2).replace('.',',');
-    pi.style.display='';
-  } else if(pi){pi.textContent='';pi.style.display='none';}
-}
+  // 1. Coleta e valida valor
+  const vi = document.getElementById('ncValor');
+  // Força blur para formatar antes de ler
+  if (vi && document.activeElement === vi) vi.blur();
+  NC.valor = ncParseValor(vi ? vi.value : '');
 
-async function ncSalvar(){
-  const msg=document.getElementById('ncMsg'),btn=document.getElementById('ncBtnSalvar');
-  // Coleta dados dos campos visuais
-  const dc=document.getElementById('ncDataCompra');if(dc&&dc.value)NC.dataCompra=dc.value;
-  const vi=document.getElementById('ncValor');const vt=((vi&&vi.value)||'').replace(/[R$\s\.]/g,'').replace(',','.');NC.valor=parseFloat(vt)/100||null;
-  const oi=document.getElementById('ncObs');NC.obs=String((oi&&oi.value)||'').trim();
-  // Lê o campo de intervalo customizado se estiver visível
-  const ic=document.getElementById('ncIntvCustom');
-  if(ic&&ic.style.display!=='none'&&ic.value){NC.intervalo=parseInt(ic.value,10)||NC.intervalo||30;}
-  // Lê o campo de parcelas customizado (sempre visível, prioridade sobre botões se preenchido)
-  const pcc=document.getElementById('ncParcCustom');
-  if(pcc&&pcc.value){const pv=parseInt(pcc.value,10)||0;if(pv>=2)NC.parcelas=pv;}
-  // Validações
-  if(!NC.fornId){if(msg){msg.textContent='Selecione um fornecedor.';msg.className='msg err';}return;}
-  if(!NC.valor||NC.valor<=0){if(msg){msg.textContent='Informe o valor.';msg.className='msg err';}return;}
-  if(!NC.catId){if(msg){msg.textContent='Selecione uma categoria.';msg.className='msg err';}return;}
-  if(!NC.dataVenc){NC.dataVenc=NC.dataCompra||new Date().toISOString().split('T')[0];}
-  if(NC.parcelas>1&&(!NC.intervalo||NC.intervalo<=0)){NC.intervalo=30;}
-  // Sincroniza campos hidden para usar salvarContaAPagarFinanceiro existente
-  const fb=document.getElementById('contaFornecedorBusca');if(fb)fb.value=NC.fornNome;
-  const fi=document.getElementById('contaFornecedorId');if(fi)fi.value=NC.fornId;
-  const cv=document.getElementById('contaValorCompra');if(cv)cv.value=NC.valor.toFixed(2).replace('.',',');
-  const cs=document.getElementById('contaCategoriaId');if(cs)cs.value=NC.catId||'';
-  const co=document.getElementById('contaObservacao');if(co)co.value=NC.obs||'Lançamento manual';
-  // CRÍTICO: sempre sincroniza parcelas e intervalo, mesmo que parcelas=1
-  const cqp=document.getElementById('contaQtdParcelas');if(cqp)cqp.value=NC.parcelas>1?NC.parcelas:'';
-  const cip=document.getElementById('contaIntervaloParcelasDias');if(cip)cip.value=NC.parcelas>1?NC.intervalo:'';
-  // Datas no formato dd/mm/aaaa que a função espera
-  function toddmmaaaa(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
-  const cdc=document.getElementById('contaDataCompra');if(cdc)cdc.value=toddmmaaaa(NC.dataCompra);
-  const cdv=document.getElementById('contaDataVencimento');if(cdv)cdv.value=toddmmaaaa(NC.dataVenc);
-  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
-  if(msg){msg.textContent='';msg.className='msg';}
-  // Limpa mensagem original antes de chamar para detectar erros corretamente
-  const msgOrig=document.getElementById('msgContaAPagarFinanceiro');
-  if(msgOrig){msgOrig.textContent='';msgOrig.className='msg';}
-  // Chama a função existente
-  try{
+  // 2. Coleta outras infos
+  const dc = document.getElementById('ncDataCompra'); if (dc && dc.value) NC.dataCompra = dc.value;
+  const oi = document.getElementById('ncObs'); NC.obs = String((oi && oi.value) || '').trim();
+  const ic = document.getElementById('ncIntvCustom');
+  if (ic && ic.style.display !== 'none' && ic.value) NC.intervalo = parseInt(ic.value, 10) || NC.intervalo || 30;
+  const pcc = document.getElementById('ncParcCustom');
+  if (pcc && pcc.value) { const pv = parseInt(pcc.value, 10) || 0; if (pv >= 2) NC.parcelas = pv; }
+
+  // 3. Validações
+  if (!NC.fornId) { if (msg) { msg.textContent = 'Selecione um fornecedor.'; msg.className = 'msg err'; } return; }
+  if (NC.valor == null || NC.valor <= 0) { if (msg) { msg.textContent = 'Informe o valor corretamente.'; msg.className = 'msg err'; } return; }
+  if (!NC.catId) { if (msg) { msg.textContent = 'Selecione uma categoria.'; msg.className = 'msg err'; } return; }
+  if (!NC.dataVenc) NC.dataVenc = NC.dataCompra || new Date().toISOString().split('T')[0];
+  if (NC.parcelas > 1 && (!NC.intervalo || NC.intervalo <= 0)) NC.intervalo = 30;
+
+  // 4. Calcula valor correto por parcela
+  //    modo 'total'   → divide: valorParcela = NC.valor / NC.parcelas
+  //    modo 'parcela' → usa direto: valorParcela = NC.valor
+  const valorParcela = NC.modo === 'total' ? Math.round((NC.valor / NC.parcelas) * 100) / 100 : NC.valor;
+
+  // 5. Sincroniza campos hidden (salvarContaAPagarFinanceiro lê esses campos)
+  function toddmmaaaa(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y; }
+  const fb = document.getElementById('contaFornecedorBusca'); if (fb) fb.value = NC.fornNome;
+  const fi = document.getElementById('contaFornecedorId'); if (fi) fi.value = NC.fornId;
+  // CRÍTICO: sempre passa o valor da PARCELA, não o total
+  const cv = document.getElementById('contaValorCompra'); if (cv) cv.value = valorParcela.toFixed(2).replace('.', ',');
+  const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
+  const co = document.getElementById('contaObservacao'); if (co) co.value = NC.obs || 'Lançamento manual';
+  const cqp = document.getElementById('contaQtdParcelas'); if (cqp) cqp.value = NC.parcelas > 1 ? NC.parcelas : '';
+  const cip = document.getElementById('contaIntervaloParcelasDias'); if (cip) cip.value = NC.parcelas > 1 ? NC.intervalo : '';
+  const cdc = document.getElementById('contaDataCompra'); if (cdc) cdc.value = toddmmaaaa(NC.dataCompra);
+  const cdv = document.getElementById('contaDataVencimento'); if (cdv) cdv.value = toddmmaaaa(NC.dataVenc);
+
+  // 6. Salva
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  const msgOrig = document.getElementById('msgContaAPagarFinanceiro');
+  if (msgOrig) { msgOrig.textContent = ''; msgOrig.className = 'msg'; }
+
+  try {
     await salvarContaAPagarFinanceiro();
-    // Verifica se houve erro na função original
-    if(msgOrig&&msgOrig.textContent&&msgOrig.classList.contains('err')){
-      if(msg){msg.textContent=msgOrig.textContent;msg.className='msg err';}
-      if(btn){btn.disabled=false;btn.textContent=NC.modoEdicao?'✓ Salvar alterações':'✓ Cadastrar conta';}
+    if (msgOrig && msgOrig.textContent && msgOrig.classList.contains('err')) {
+      if (msg) { msg.textContent = msgOrig.textContent; msg.className = 'msg err'; }
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? '✓ Salvar alterações' : '✓ Cadastrar conta'; }
       return;
     }
-    // Sucesso
     ncFechar();
-    if(typeof carregarContasAPagarFinanceiro==='function')carregarContasAPagarFinanceiro().catch(()=>{});
-  }catch(e){
-    if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}
-    if(btn){btn.disabled=false;btn.textContent=NC.modoEdicao?'✓ Salvar alterações':'✓ Cadastrar conta';}
+    if (typeof carregarContasAPagarFinanceiro === 'function') carregarContasAPagarFinanceiro().catch(() => {});
+  } catch (e) {
+    if (msg) { msg.textContent = 'Erro: ' + ((e && e.message) || 'tente novamente'); msg.className = 'msg err'; }
+    if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? '✓ Salvar alterações' : '✓ Cadastrar conta'; }
   }
 }
 
-// Hook: quando editarContaAPagarFinanceiro for chamado, abre o sheet preenchido
-const _ncOrigEditar=window.editarContaAPagarFinanceiro;
-if(typeof _ncOrigEditar==='function'){
-  window.editarContaAPagarFinanceiro=function(id){
-    _ncOrigEditar.call(this,id);
-    // Após a função original preencher os campos hidden, lemos e abrimos o sheet
-    setTimeout(()=>{
-      const fb=document.getElementById('contaFornecedorBusca');
-      const fi=document.getElementById('contaFornecedorId');
-      const cv=document.getElementById('contaValorCompra');
-      const dc=document.getElementById('contaDataCompra');
-      const dv=document.getElementById('contaDataVencimento');
-      const cs=document.getElementById('contaCategoriaId');
-      const co=document.getElementById('contaObservacao');
-      const cqp=document.getElementById('contaQtdParcelas');
-      const cip=document.getElementById('contaIntervaloParcelasDias');
-      NC.fornId=fi?fi.value:'';
-      NC.fornNome=fb?fb.value:'';
-      // Valor
-      const vt=((cv&&cv.value)||'').replace(/[R$\s\.]/g,'').replace(',','.');NC.valor=parseFloat(vt)/100||null;
-      // Datas dd/mm/aaaa → yyyy-mm-dd
-      function toISO(ddmmaaaa){if(!ddmmaaaa)return'';const p=ddmmaaaa.split('/');if(p.length!==3)return'';return p[2]+'-'+p[1]+'-'+p[0];}
-      NC.dataCompra=toISO(dc?dc.value:'');
-      NC.dataVenc=toISO(dv?dv.value:'');
-      NC.catId=cs?cs.value:'';
-      NC.obs=co?co.value:'';
-      NC.parcelas=parseInt(cqp?cqp.value:'1',10)||1;
-      NC.intervalo=parseInt(cip?cip.value:'30',10)||30;
-      NC.modoEdicao=true;
-      // Abre sheet no modo edição
+// ── Hook de edição ──────────────────────────────────────────────
+const _ncOrigEditar = window.editarContaAPagarFinanceiro;
+if (typeof _ncOrigEditar === 'function') {
+  window.editarContaAPagarFinanceiro = function (id) {
+    _ncOrigEditar.call(this, id);
+    setTimeout(() => {
+      const fb = document.getElementById('contaFornecedorBusca');
+      const fi = document.getElementById('contaFornecedorId');
+      const cv = document.getElementById('contaValorCompra');
+      const dc = document.getElementById('contaDataCompra');
+      const dv = document.getElementById('contaDataVencimento');
+      const cs = document.getElementById('contaCategoriaId');
+      const co = document.getElementById('contaObservacao');
+      const cqp = document.getElementById('contaQtdParcelas');
+      const cip = document.getElementById('contaIntervaloParcelasDias');
+
+      NC.fornId = fi ? fi.value : '';
+      NC.fornNome = fb ? fb.value : '';
+      // Valor: os campos hidden já guardam o valor da parcela formatado pelo sistema
+      NC.valor = ncParseValor(cv ? cv.value : '');
+      function toISO(s) { if (!s) return ''; const p = s.split('/'); if (p.length !== 3) return ''; return p[2] + '-' + p[1] + '-' + p[0]; }
+      NC.dataCompra = toISO(dc ? dc.value : '');
+      NC.dataVenc = toISO(dv ? dv.value : '');
+      NC.catId = cs ? cs.value : '';
+      NC.obs = co ? co.value : '';
+      NC.parcelas = parseInt(cqp ? cqp.value : '1', 10) || 1;
+      NC.intervalo = parseInt(cip ? cip.value : '30', 10) || 30;
+      NC.modoEdicao = true;
+      // No modo edição, o valor já é da parcela
+      NC.modo = 'parcela';
+
       ncAbrir(true);
-      // Preenche campos visuais
-      const nvi=document.getElementById('ncValor');if(nvi&&NC.valor)nvi.value='R$ '+NC.valor.toFixed(2).replace('.',',');
-      const ndc=document.getElementById('ncDataCompra');if(ndc)ndc.value=NC.dataCompra;
-      const noi=document.getElementById('ncObs');if(noi)noi.value=NC.obs;
-      // Fornecedor
-      if(NC.fornId&&NC.fornNome){
-        const bi=document.getElementById('ncFornBusca');if(bi)bi.style.display='none';
-        const sel=document.getElementById('ncFornSel'),nm=document.getElementById('ncFornSelNome');
-        if(sel&&nm){nm.textContent=NC.fornNome;sel.style.display='flex';}
+
+      const nvi = document.getElementById('ncValor');
+      if (nvi && NC.valor != null) nvi.value = ncFmtBR(NC.valor);
+      const ndc = document.getElementById('ncDataCompra'); if (ndc) ndc.value = NC.dataCompra;
+      const noi = document.getElementById('ncObs'); if (noi) noi.value = NC.obs;
+
+      if (NC.fornId && NC.fornNome) {
+        const bi = document.getElementById('ncFornBusca'); if (bi) bi.style.display = 'none';
+        const sel = document.getElementById('ncFornSel'), nm = document.getElementById('ncFornSelNome');
+        if (sel && nm) { nm.textContent = NC.fornNome; sel.style.display = 'flex'; }
       }
-      // Categoria
+
       ncMontarCategorias();
-      // Vencimento
-      if(NC.dataVenc){
-        document.querySelectorAll('.nc-venc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
-        const bOut=document.querySelector('.nc-venc-btn[data-dias="-1"]');if(bOut)bOut.classList.add('nc-pill-sel');
-        const vc=document.getElementById('ncVencCustom');if(vc){vc.style.display='';vc.value=NC.dataVenc;}
+
+      if (NC.dataVenc) {
+        document.querySelectorAll('.nc-venc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
+        const bOut = document.querySelector('.nc-venc-btn[data-dias="-1"]'); if (bOut) bOut.classList.add('nc-pill-sel');
+        const vc = document.getElementById('ncVencCustom'); if (vc) { vc.style.display = ''; vc.value = NC.dataVenc; }
       }
-      // Parcelas
-      if(NC.parcelas>1){
-        const pw=document.getElementById('ncParcelasWrap');if(pw)pw.style.display='flex';
-        document.querySelectorAll('.nc-parc-btn').forEach(b=>{b.classList.remove('nc-pill-sel');if(parseInt(b.dataset.p,10)===NC.parcelas)b.classList.add('nc-pill-sel');});
-        document.querySelectorAll('.nc-intv-btn').forEach(b=>{b.classList.remove('nc-pill-sel');if(parseInt(b.dataset.d,10)===NC.intervalo)b.classList.add('nc-pill-sel');});
+
+      if (NC.parcelas > 1) {
+        const pw = document.getElementById('ncParcelasWrap'); if (pw) pw.style.display = 'flex';
+        const mw = document.getElementById('ncModoParcelasWrap'); if (mw) mw.style.display = '';
+        document.querySelectorAll('.nc-parc-btn').forEach(b => { b.classList.remove('nc-pill-sel'); if (parseInt(b.dataset.p, 10) === NC.parcelas) b.classList.add('nc-pill-sel'); });
+        document.querySelectorAll('.nc-intv-btn').forEach(b => { b.classList.remove('nc-pill-sel'); if (parseInt(b.dataset.d, 10) === NC.intervalo) b.classList.add('nc-pill-sel'); });
+        // Modo parcela selecionado na edição
+        document.getElementById('ncModoParc')?.classList.add('nc-pill-sel');
+        document.getElementById('ncModoTotal')?.classList.remove('nc-pill-sel');
         ncAtuParcelasInfo();
       }
-      // Título edição
-      const tt=document.getElementById('ncTitulo');if(tt)tt.textContent='Editar conta';
-      const ts=document.getElementById('ncSub');if(ts)ts.textContent='Altere os dados e salve';
-      const bc=document.getElementById('ncBtnCancelar');if(bc)bc.style.display='';
-      const bs=document.getElementById('ncBtnSalvar');if(bs)bs.textContent='✓ Salvar alterações';
-    },100);
+
+      const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Editar conta';
+      const ts = document.getElementById('ncSub'); if (ts) ts.textContent = 'Altere os dados e salve';
+      const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = '';
+      const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Salvar alterações';
+    }, 100);
   };
 }
 
-function ncCancelarEdicao(){
-  if(typeof cancelarEdicaoContaAPagarFinanceiro==='function')cancelarEdicaoContaAPagarFinanceiro();
+function ncCancelarEdicao() {
+  if (typeof cancelarEdicaoContaAPagarFinanceiro === 'function') cancelarEdicaoContaAPagarFinanceiro();
   ncFechar();
 }
 </script>
