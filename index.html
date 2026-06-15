@@ -9670,7 +9670,7 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Valor <span style="color:var(--red)">*</span></div>
-        <input id="ncValor" type="text" inputmode="decimal" pattern="[0-9]*" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="R$ 0,00" oninput="ncFmtValor(this)">
+        <input id="ncValor" type="text" inputmode="decimal" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="R$ 0,00" onblur="ncFmtValor(this)" oninput="ncValorInput(this)">
       </div>
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Data compra</div>
@@ -42900,26 +42900,29 @@ function ncVenc(el){
 }
 function ncVencCust(){const v=document.getElementById('ncVencCustom').value;if(v)NC.dataVenc=v;}
 
-function ncFmtValor(inp){
-  // Pega tudo que o usuário digitou, remove qualquer não-dígito exceto vírgula e ponto
-  let raw = inp.value.replace(/[^\d,\.]/g, '');
-  if (!raw) { inp.value = ''; NC.valor = null; ncAtuParcelasInfo(); return; }
-  // Normaliza: troca ponto por vírgula se vier do teclado decimal estrangeiro
-  // Mantém só a última vírgula como separador decimal
-  raw = raw.replace(/\./g, ',');
+// Chamado no oninput: só extrai o número interno, sem reescrever o campo
+function ncValorInput(inp){
+  let raw = inp.value.replace(/[^\d,\.]/g, '').replace(/\./g, ',');
   const partes = raw.split(',');
-  let reaisStr = partes[0] || '0';
-  let centStr = partes.length > 1 ? (partes[partes.length - 1] + '00').slice(0, 2) : '00';
-  const reais = parseInt(reaisStr, 10) || 0;
+  const reais = parseInt(partes[0] || '0', 10) || 0;
+  const centStr = partes.length > 1 ? (partes[partes.length-1]+'00').slice(0,2) : '00';
   const cents = parseInt(centStr, 10) || 0;
   NC.valor = reais + cents / 100;
-  if (!isFinite(NC.valor) || NC.valor < 0) { NC.valor = null; return; }
-  // Exibe formatado (não reescreve se o usuário ainda está digitando centavos)
-  // Só formata bonito se não terminar em vírgula (usuário ainda digitando)
-  if (!inp.value.endsWith(',') && !inp.value.match(/,\d$/)) {
-    const partes2 = NC.valor.toFixed(2).split('.');
-    inp.value = 'R$ ' + parseInt(partes2[0], 10).toLocaleString('pt-BR') + ',' + partes2[1];
-  }
+  ncAtuParcelasInfo();
+}
+
+// Chamado no onblur: formata bonito ao sair do campo
+function ncFmtValor(inp){
+  let raw = inp.value.replace(/[^\d,\.]/g, '').replace(/\./g, ',');
+  if (!raw) { inp.value = ''; NC.valor = null; ncAtuParcelasInfo(); return; }
+  const partes = raw.split(',');
+  const reais = parseInt(partes[0] || '0', 10) || 0;
+  const centStr = partes.length > 1 ? (partes[partes.length-1]+'00').slice(0,2) : '00';
+  const cents = parseInt(centStr, 10) || 0;
+  NC.valor = reais + cents / 100;
+  if (!isFinite(NC.valor) || NC.valor < 0) { NC.valor = null; inp.value = ''; return; }
+  const p = NC.valor.toFixed(2).split('.');
+  inp.value = 'R$ ' + parseInt(p[0], 10).toLocaleString('pt-BR') + ',' + p[1];
   ncAtuParcelasInfo();
 }
 
