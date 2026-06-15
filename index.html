@@ -42933,15 +42933,35 @@ function ncVenc(el){
 function ncVencCust(){const v=document.getElementById('ncVencCustom').value;if(v)NC.dataVenc=v;}
 
 function ncFmtValor(inp){
-  // Aceita valor direto em reais (ex: 550 = R$ 550,00)
-  let raw=inp.value.replace(/[R$\s\.]/g,'').replace(',','.');
-  if(!raw){inp.value='';NC.valor=null;ncAtuParcelasInfo();return;}
-  const num=parseFloat(raw);
-  if(!isFinite(num)||num<0){return;}
-  NC.valor=Math.round(num*100)/100;
-  const partes=NC.valor.toFixed(2).split('.');
-  const reaisFormatado=parseInt(partes[0],10).toLocaleString('pt-BR');
-  inp.value='R$ '+reaisFormatado+','+partes[1];
+  // Guarda posição do cursor
+  const cursorDist = inp.value.length - (inp.selectionEnd || 0);
+  // Extrai só os dígitos do que foi digitado
+  const digits = inp.value.replace(/\D/g, '');
+  if (!digits) { inp.value = ''; NC.valor = null; ncAtuParcelasInfo(); return; }
+  // Trata como centavos: "550" → 550 centavos → R$ 5,50  ← ERRADO
+  // Trata como reais inteiros: "550" → R$ 550,00          ← CERTO
+  // Estratégia: se já tem vírgula no valor original, usa decimal; senão, inteiro
+  const temVirgula = inp.value.includes(',');
+  let valor;
+  if (temVirgula) {
+    // Extrai reais e centavos separadamente
+    const partes = inp.value.replace(/[R$\s]/g, '').split(',');
+    const reaisStr = (partes[0] || '').replace(/\D/g, '');
+    const centStr = ((partes[1] || '') + '00').slice(0, 2);
+    valor = parseInt(reaisStr || '0', 10) + parseInt(centStr, 10) / 100;
+  } else {
+    // Sem vírgula: todos os dígitos são reais
+    valor = parseInt(digits, 10);
+  }
+  if (!isFinite(valor) || valor < 0) return;
+  NC.valor = Math.round(valor * 100) / 100;
+  // Formata: R$ 1.234,56
+  const partes2 = NC.valor.toFixed(2).split('.');
+  const reaisFormatado = parseInt(partes2[0], 10).toLocaleString('pt-BR');
+  inp.value = 'R$ ' + reaisFormatado + ',' + partes2[1];
+  // Restaura cursor
+  const newPos = inp.value.length - cursorDist;
+  try { inp.setSelectionRange(newPos, newPos); } catch(_) {}
   ncAtuParcelasInfo();
 }
 
@@ -43019,7 +43039,7 @@ async function ncSalvar(){
   const msg=document.getElementById('ncMsg'),btn=document.getElementById('ncBtnSalvar');
   // Coleta dados dos campos visuais
   const dc=document.getElementById('ncDataCompra');if(dc&&dc.value)NC.dataCompra=dc.value;
-  const vi=document.getElementById('ncValor');const vt=((vi&&vi.value)||'').replace(/[R$\s]/g,'').replace(',','.');NC.valor=parseFloat(vt)||null;
+  const vi=document.getElementById('ncValor');const vt=((vi&&vi.value)||'').replace(/[R$\s\.]/g,'').replace(',','.');NC.valor=parseFloat(vt)/100||null;
   const oi=document.getElementById('ncObs');NC.obs=String((oi&&oi.value)||'').trim();
   // Lê o campo de intervalo customizado se estiver visível
   const ic=document.getElementById('ncIntvCustom');
@@ -43088,7 +43108,7 @@ if(typeof _ncOrigEditar==='function'){
       NC.fornId=fi?fi.value:'';
       NC.fornNome=fb?fb.value:'';
       // Valor
-      const vt=((cv&&cv.value)||'').replace(/[R$\s]/g,'').replace(',','.');NC.valor=parseFloat(vt)||null;
+      const vt=((cv&&cv.value)||'').replace(/[R$\s\.]/g,'').replace(',','.');NC.valor=parseFloat(vt)/100||null;
       // Datas dd/mm/aaaa → yyyy-mm-dd
       function toISO(ddmmaaaa){if(!ddmmaaaa)return'';const p=ddmmaaaa.split('/');if(p.length!==3)return'';return p[2]+'-'+p[1]+'-'+p[0];}
       NC.dataCompra=toISO(dc?dc.value:'');
