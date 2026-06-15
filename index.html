@@ -44,6 +44,39 @@
   });
 })();
 </script>
+<script>
+/* ── Bloqueio global de letras em campos numéricos ── */
+document.addEventListener('keydown', function(e) {
+  const el = e.target;
+  if (!el || el.tagName !== 'INPUT') return;
+  const mode = el.getAttribute('inputmode') || '';
+  const tipo = el.type || '';
+  const isNumeric = tipo === 'number' || mode === 'numeric' || mode === 'decimal';
+  if (!isNumeric) return;
+  // Permite: dígitos, vírgula, ponto, backspace, delete, tab, enter, setas, home, end, ctrl/cmd+A/C/V/X
+  const allowedKeys = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End',',','.'];
+  const isDigit = e.key >= '0' && e.key <= '9';
+  const isAllowed = allowedKeys.includes(e.key);
+  const isCtrlCmd = e.ctrlKey || e.metaKey;
+  if (!isDigit && !isAllowed && !isCtrlCmd) {
+    e.preventDefault();
+  }
+}, true);
+
+document.addEventListener('input', function(e) {
+  const el = e.target;
+  if (!el || el.tagName !== 'INPUT') return;
+  const mode = el.getAttribute('inputmode') || '';
+  const tipo = el.type || '';
+  if (tipo === 'number') return; // browser já cuida
+  if (mode === 'numeric') {
+    // Só dígitos
+    const clean = el.value.replace(/[^\d]/g, '');
+    if (el.value !== clean) el.value = clean;
+  }
+  // decimal: deixa o handler específico de cada campo cuidar (ncFmtValor etc)
+}, true);
+</script>
   <style>
     :root {
       /* ════════════════════════════════════════════
@@ -109,6 +142,17 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Força teclado numérico em todos os inputs numéricos ── */
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
 
     body {
       background: var(--bg);
@@ -8842,8 +8886,8 @@
             <input id="fornecedorCnpj" class="campo-curto" type="text" placeholder="CPF ou CNPJ" autocomplete="off" maxlength="18" oninput="aplicarMascaraCpfCnpjFornecedorFinanceiro(this)" onblur="normalizarDocumentoFornecedorFinanceiro(this)">
             <input id="fornecedorTelefone" class="campo-curto" type="text" placeholder="Telefone" autocomplete="off">
             <input id="fornecedorEmail" type="email" placeholder="E-mail" autocomplete="off">
-            <input id="fornecedorDiaVencimento" class="campo-curto" type="number" min="1" max="31" step="1" placeholder="Dia venc." title="Dia de vencimento do cartão/fatura (1 a 31) — usado na importação OFX" autocomplete="off" style="max-width:90px;">
-            <input id="fornecedorDiaFechamento" class="campo-curto" type="number" min="1" max="31" step="1" placeholder="Dia fech." title="Dia de FECHAMENTO da fatura (1 a 31). Compras feitas a partir deste dia entram na fatura do mês seguinte — assim o valor do mês bate com a fatura do cartão." autocomplete="off" style="max-width:90px;">
+            <input id="fornecedorDiaVencimento" class="campo-curto" type="number" inputmode="numeric" min="1" max="31" step="1" placeholder="Dia venc." title="Dia de vencimento do cartão/fatura (1 a 31) — usado na importação OFX" autocomplete="off" style="max-width:90px;">
+            <input id="fornecedorDiaFechamento" class="campo-curto" type="number" inputmode="numeric" min="1" max="31" step="1" placeholder="Dia fech." title="Dia de FECHAMENTO da fatura (1 a 31). Compras feitas a partir deste dia entram na fatura do mês seguinte — assim o valor do mês bate com a fatura do cartão." autocomplete="off" style="max-width:90px;">
             <span style="display:inline-flex;align-items:center;gap:3px;" title="Cor do fornecedor — identifica este banco/cartão nos gráficos do dashboard">
               <input type="color" id="fornecedorCor" value="#3b82f6" oninput="fornecedorCorAoEscolher(this.value)" style="width:38px;height:38px;padding:2px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:transparent;opacity:.4;">
               <button class="btn btn-ghost btn-sm" type="button" onclick="fornecedorCorLimpar()" title="Sem cor (usa cor automática nos gráficos)">✕</button>
@@ -8949,6 +8993,7 @@
               <div id="dropdownCategoriasContaAPagar" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:60;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card,#0f1a2b);border:1px solid var(--border,#2a3a52);border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);"></div>
             </span>
             <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
+            <button class="btn btn-ghost btn-sm" type="button" id="btnAgruparParcelas" onclick="toggleAgruparParcelasContaAPagar()" title="Agrupar parcelas do mesmo lançamento em um único card" style="display:flex;align-items:center;gap:6px;">📦 Agrupar parcelas</button>
             <input id="filtroContaAPagarFornecedor" type="text" placeholder="Fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)">
           </div>
           <div id="filtroLojasContasAPagarFinanceiro" class="multi-loja-filter" style="margin-top:8px"></div>
@@ -9090,7 +9135,7 @@
             </div>
             <div class="campo-com-label valor">
               <label class="campo-label" for="contaFinanceiraSaldoAtual">Saldo atual</label>
-              <input id="contaFinanceiraSaldoAtual" class="campo-curto" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+              <input id="contaFinanceiraSaldoAtual" class="campo-curto" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00" autocomplete="off">
             </div>
             <button class="btn btn-green" id="btnSalvarContaFinanceira" type="button" onclick="salvarContaFinanceira()">Cadastrar</button>
             <button class="btn btn-ghost" id="btnCancelarContaFinanceira" type="button" onclick="cancelarEdicaoContaFinanceira()" style="display:none">Cancelar</button>
@@ -9137,7 +9182,7 @@
             </div>
             <div class="campo-com-label valor">
               <label class="campo-label" for="recebivelValor">Valor</label>
-              <input id="recebivelValor" class="campo-curto" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+              <input id="recebivelValor" class="campo-curto" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00" autocomplete="off">
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="recebivelContaFinanceiraId">Conta financeira</label>
@@ -9192,7 +9237,7 @@
             </div>
             <div class="campo-com-label valor">
               <label class="campo-label" for="recFuturoValor">Valor</label>
-              <input id="recFuturoValor" class="campo-curto" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+              <input id="recFuturoValor" class="campo-curto" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00" autocomplete="off">
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="recFuturoContaId">Conta</label>
@@ -9204,11 +9249,11 @@
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="recFuturoQtdParcelas">Repetições</label>
-              <input id="recFuturoQtdParcelas" class="campo-curto" type="number" min="1" max="60" placeholder="1" style="width:70px;">
+              <input id="recFuturoQtdParcelas" class="campo-curto" type="number" inputmode="numeric" min="1" max="60" placeholder="1" style="width:70px;">
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="recFuturoIntervaloDias">A cada (dias)</label>
-              <input id="recFuturoIntervaloDias" class="campo-curto" type="number" min="1" max="365" placeholder="Ex: 7" style="width:80px;">
+              <input id="recFuturoIntervaloDias" class="campo-curto" type="number" inputmode="numeric" min="1" max="365" placeholder="Ex: 7" style="width:80px;">
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="recFuturoObservacao">Observação</label>
@@ -9256,7 +9301,7 @@
                 </div>
                 <div class="campo-com-label valor">
                   <label class="campo-label">Valor recebido</label>
-                  <input id="modalConfirmarValor" type="text" inputmode="decimal" placeholder="R$ 0,00" class="campo-curto">
+                  <input id="modalConfirmarValor" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00" class="campo-curto">
                 </div>
                 <div class="campo-com-label">
                   <label class="campo-label">Conta financeira</label>
@@ -9657,7 +9702,7 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Valor <span style="color:var(--red)">*</span></div>
-        <input id="ncValor" type="text" inputmode="decimal" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="R$ 0,00" oninput="ncFmtValor(this)">
+        <input id="ncValor" type="text" inputmode="decimal" pattern="[0-9]*" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="R$ 0,00" oninput="ncFmtValor(this)">
       </div>
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Data compra</div>
@@ -9689,31 +9734,37 @@
         <span style="font-size:14px;font-weight:600;color:var(--text-muted);">Parcelas e intervalo</span>
         <span id="ncParcelasResume" style="font-size:13px;color:var(--text-muted);">1x · à vista</span>
       </button>
-      <div id="ncParcelasWrap" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div>
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Nº de parcelas</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-              <button class="nc-parc-btn nc-pill nc-pill-sel" data-p="1" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">1x</button>
-              <button class="nc-parc-btn nc-pill" data-p="2" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">2x</button>
-              <button class="nc-parc-btn nc-pill" data-p="3" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">3x</button>
-              <button class="nc-parc-btn nc-pill" data-p="6" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">6x</button>
-              <button class="nc-parc-btn nc-pill" data-p="10" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">10x</button>
-              <button class="nc-parc-btn nc-pill" data-p="12" onclick="ncSelParc(this)" style="padding:10px 6px;border-radius:10px;font-size:15px;font-weight:700;">12x</button>
-            </div>
+      <div id="ncParcelasWrap" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:14px;flex-direction:column;gap:12px;">
+        <!-- Nº de parcelas -->
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Nº de parcelas</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+            <button class="nc-parc-btn nc-pill nc-pill-sel" data-p="1" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">1x</button>
+            <button class="nc-parc-btn nc-pill" data-p="2" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">2x</button>
+            <button class="nc-parc-btn nc-pill" data-p="3" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">3x</button>
+            <button class="nc-parc-btn nc-pill" data-p="4" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">4x</button>
+            <button class="nc-parc-btn nc-pill" data-p="5" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">5x</button>
+            <button class="nc-parc-btn nc-pill" data-p="6" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">6x</button>
+            <button class="nc-parc-btn nc-pill" data-p="10" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">10x</button>
+            <button class="nc-parc-btn nc-pill" data-p="12" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">12x</button>
           </div>
-          <div>
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:600;">Dias entre pgto.</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-              <button class="nc-intv-btn nc-pill nc-pill-sel" data-d="30" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">30d</button>
-              <button class="nc-intv-btn nc-pill" data-d="15" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">15d</button>
-              <button class="nc-intv-btn nc-pill" data-d="7" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">7d</button>
-              <button class="nc-intv-btn nc-pill" data-d="-1" onclick="ncSelIntv(this)" style="padding:10px 6px;border-radius:10px;font-size:13px;font-weight:600;">Outro</button>
-            </div>
-            <input type="number" id="ncIntvCustom" style="display:none;width:100%;margin-top:6px;border-radius:10px;font-size:14px;padding:10px;" placeholder="Ex: 45" min="1" oninput="ncIntvCust()">
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Outra qtd.:</span>
+            <input type="number" id="ncParcCustom" inputmode="numeric" style="flex:1;border-radius:10px;font-size:14px;padding:8px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);" placeholder="Ex: 7, 18, 24..." min="2" max="360" oninput="ncParcCust()">
           </div>
         </div>
-        <div id="ncParcelasInfo" style="font-size:13px;color:var(--text-muted);text-align:center;"></div>
+        <!-- Dias entre pagamentos -->
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Dias entre pagamentos</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+            <button class="nc-intv-btn nc-pill nc-pill-sel" data-d="30" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">30d</button>
+            <button class="nc-intv-btn nc-pill" data-d="15" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">15d</button>
+            <button class="nc-intv-btn nc-pill" data-d="7" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">7d</button>
+            <button class="nc-intv-btn nc-pill" data-d="-1" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">Outro</button>
+          </div>
+          <input type="number" id="ncIntvCustom" inputmode="numeric" style="display:none;width:100%;margin-top:6px;border-radius:10px;font-size:14px;padding:10px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);" placeholder="Ex: 45 dias" min="1" oninput="ncIntvCust()">
+        </div>
+        <div id="ncParcelasInfo" style="font-size:14px;font-weight:600;color:var(--accent);text-align:center;padding:6px;background:var(--accent-subtle);border-radius:8px;display:none;"></div>
       </div>
     </div>
 
@@ -9809,11 +9860,11 @@
         </label>
         <label>
           Valor do título
-          <input id="editarTituloValorCompra" type="text" inputmode="decimal" placeholder="R$ 0,00">
+          <input id="editarTituloValorCompra" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00">
         </label>
         <label>
           Valor pago
-          <input id="editarTituloValorPago" type="text" inputmode="decimal" placeholder="R$ 0,00">
+          <input id="editarTituloValorPago" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00">
         </label>
         <label>
           Data de pagamento
@@ -9906,7 +9957,7 @@
 
       <label class="campo-label" id="ajusteSaldoValorLabel" for="ajusteSaldoValor">Valor</label>
       <button class="btn btn-ghost btn-sm" id="btnTransferirSaldoTotalDisponivel" type="button" onclick="preencherTransferenciaSaldoTotalDisponivel()" style="display:none;align-self:flex-start">Transferir total disponível</button>
-      <input id="ajusteSaldoValor" class="ajuste-saldo-field" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+      <input id="ajusteSaldoValor" class="ajuste-saldo-field" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00" autocomplete="off">
 
       <label class="campo-label" for="ajusteSaldoMotivo">Motivo</label>
       <textarea id="ajusteSaldoMotivo" class="ajuste-saldo-field" rows="2" placeholder="Descreva o motivo do ajuste"></textarea>
@@ -25859,6 +25910,19 @@ async function excluirContasAPagarSelecionadasFinanceiro() {
   carregarContasAPagarFinanceiro();
 }
 
+let contasAPagarAgruparParcelas = false;
+
+function toggleAgruparParcelasContaAPagar() {
+  contasAPagarAgruparParcelas = !contasAPagarAgruparParcelas;
+  const btn = document.getElementById('btnAgruparParcelas');
+  if (btn) {
+    btn.textContent = contasAPagarAgruparParcelas ? '📂 Desagrupar' : '📦 Agrupar parcelas';
+    btn.style.color = contasAPagarAgruparParcelas ? 'var(--accent)' : '';
+    btn.style.borderColor = contasAPagarAgruparParcelas ? 'var(--accent)' : '';
+  }
+  carregarContasAPagarFinanceiro();
+}
+
 async function carregarContasAPagarFinanceiro() {
   const lista = document.getElementById('listaContasAPagarFinanceiro');
   if (!lista) return;
@@ -26016,16 +26080,18 @@ async function carregarContasAPagarFinanceiro() {
   }
 
   const lojaAtualId = lojaAtualIdSelecao;
-  lista.innerHTML = '<div class="lista">' + itensFiltrados.map(item => {
+
+  // ── Função auxiliar: renderizar card individual ──
+  function renderCardContaAPagar(item) {
     const nomeFornecedor = item.fornecedores?.nome || 'Fornecedor não encontrado';
     const statusPago = !!item.data_pagamento;
     const nomeLoja = obterNomeLojaFiltroMultiLoja(item.loja_id);
-    const podeEditarNestaLoja = !item.loja_id || String(item.loja_id) === lojaAtualId;
+    const podeEditar = !item.loja_id || String(item.loja_id) === lojaAtualId;
     return `
       <div class="item">
         <div class="item-info">
           <label class="item-nome" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            ${podeEditarNestaLoja ? `<input class="checkbox-conta-apagar-financeiro" data-conta-id="${item.id}" type="checkbox" ${contasAPagarFinanceiroSelecionadasIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoContaAPagarFinanceiro('${item.id}', this.checked)">` : ''}
+            ${podeEditar ? `<input class="checkbox-conta-apagar-financeiro" data-conta-id="${item.id}" type="checkbox" ${contasAPagarFinanceiroSelecionadasIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoContaAPagarFinanceiro('${item.id}', this.checked)">` : ''}
             <span>${nomeFornecedor}</span>
           </label>
           <div class="item-detalhe">Loja: ${nomeLoja || '-'} · Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
@@ -26046,14 +26112,107 @@ async function carregarContasAPagarFinanceiro() {
         </div>
         <div class="item-actions">
           ${statusPago ? '<span class="tag tag-green">Pago</span>' : '<span class="tag tag-amber">Pendente</span>'}
-          ${podeEditarNestaLoja ? `
+          ${podeEditar ? `
             <button class="btn btn-ghost btn-sm" onclick="editarContaAPagarFinanceiro('${item.id}')">Editar</button>
             <button class="btn btn-red" onclick="excluirContaAPagarFinanceiro('${item.id}')">Excluir</button>
           ` : '<span class="tag tag-gray">Troque a loja para editar</span>'}
         </div>
+      </div>`;
+  }
+
+  // ── Função auxiliar: renderizar card agrupado (grupo de parcelas) ──
+  function renderCardAgrupado(parcelas) {
+    const primeiro = parcelas[0];
+    const nomeFornecedor = primeiro.fornecedores?.nome || 'Fornecedor não encontrado';
+    const totalValor = parcelas.reduce((s, p) => s + Number(p.valor_compra || 0), 0);
+    const qtdTotal = Number(primeiro.qtd_parcelas || parcelas.length);
+    const qtdNaLista = parcelas.length;
+    const pagas = parcelas.filter(p => !!p.data_pagamento).length;
+    const pendentes = qtdNaLista - pagas;
+    const nomeLoja = obterNomeLojaFiltroMultiLoja(primeiro.loja_id);
+    const podeEditar = !primeiro.loja_id || String(primeiro.loja_id) === lojaAtualId;
+    const nomeCategoria = escaparHtmlBasico((categoriasCompraCache || []).find(c => String(c.id) === String(primeiro.categoria_id))?.nome || 'Sem categoria');
+    const proxPendente = parcelas.find(p => !p.data_pagamento);
+    const proxVenc = proxPendente ? formatarDataBRFinanceiro(proxPendente.data_vencimento) : '-';
+    const proxVencISO = proxPendente ? proxPendente.data_vencimento : '';
+    const corVenc = pagas === qtdNaLista ? '#34d399' : '#ff5b5b';
+    const grupoId = String(primeiro.grupo_parcelas_id || '');
+    const aberto = (window._ncGruposAbertos || new Set()).has(grupoId);
+
+    const linhasParcelas = parcelas.map(p => {
+      const pPago = !!p.data_pagamento;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:${pPago ? 'rgba(52,211,153,.07)' : 'rgba(255,91,91,.05)'};border:1px solid ${pPago ? 'rgba(52,211,153,.18)' : 'rgba(255,91,91,.15)'};">
+        <span style="font-size:11px;font-weight:700;color:var(--text-muted);min-width:32px;">${p.numero_parcela || 1}/${qtdTotal}</span>
+        <span style="font-size:12px;font-weight:700;color:${pPago ? '#34d399' : '#ffd400'};">${formatarMoedaBRFinanceiro(p.valor_compra)}</span>
+        <span style="font-size:11px;color:var(--text-muted);">venc ${formatarDataBRFinanceiro(p.data_vencimento)}</span>
+        <span style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:${pPago ? 'rgba(52,211,153,.15)' : 'rgba(255,165,0,.15)'};color:${pPago ? '#34d399' : '#f0a500'};">${pPago ? 'Pago' : 'Pendente'}</span>
+        ${podeEditar ? `<button style="border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 6px;" onclick="editarContaAPagarFinanceiro('${p.id}')">Editar</button>` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="item" style="flex-direction:column;gap:0;padding:0;overflow:hidden;">
+      <div style="display:flex;align-items:stretch;width:100%;">
+        <div class="item-info" style="flex:1;">
+          <label class="item-nome" style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">📦</span>
+            <span>${nomeFornecedor}</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(240,165,0,.15);color:var(--accent);">${qtdNaLista}/${qtdTotal} parcelas</span>
+          </label>
+          <div class="item-detalhe">Loja: ${nomeLoja || '-'} · Compra: ${formatarDataBRFinanceiro(primeiro.data_compra)} · Intervalo: ${primeiro.intervalo_parcelas_dias ? primeiro.intervalo_parcelas_dias + 'd' : '-'}</div>
+          <div class="item-detalhe">Total: <strong style="color:var(--text)">${formatarMoedaBRFinanceiro(totalValor)}</strong> · ${pagas} pagas · ${pendentes} pendentes</div>
+          <div class="item-detalhe">Categoria: ${nomeCategoria} · Obs.: ${escaparHtmlBasico(primeiro.observacao || '-')}</div>
+        </div>
+        <div class="item-destaque" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;min-width:200px;padding:8px 14px;">
+          ${pendentes > 0 ? `
+          <div style="display:flex;flex-direction:column;align-items:center;line-height:1.1;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fca5a5;">Próx. vencimento</span>
+            <span style="font-size:22px;font-weight:900;color:${corVenc};text-shadow:0 0 10px rgba(255,91,91,.35);">${proxVenc}</span>
+          </div>` : `<span style="font-size:13px;font-weight:700;color:#34d399;">✓ Todas pagas</span>`}
+          <div style="display:flex;flex-direction:column;align-items:center;line-height:1.1;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fde047;">Total</span>
+            <span style="font-size:26px;font-weight:900;color:#ffd400;text-shadow:0 0 10px rgba(255,212,0,.35);">${formatarMoedaBRFinanceiro(totalValor)}</span>
+          </div>
+        </div>
+        <div class="item-actions" style="flex-direction:column;justify-content:center;gap:6px;">
+          ${pagas === qtdNaLista ? '<span class="tag tag-green">Tudo pago</span>' : pendentes === qtdNaLista ? '<span class="tag tag-amber">Pendente</span>' : '<span class="tag tag-amber">Parcial</span>'}
+          <button class="btn btn-ghost btn-sm" onclick="(function(){window._ncGruposAbertos=window._ncGruposAbertos||new Set();window._ncGruposAbertos.has('${grupoId}')?window._ncGruposAbertos.delete('${grupoId}'):window._ncGruposAbertos.add('${grupoId}');carregarContasAPagarFinanceiro();})()" style="font-size:12px;">${aberto ? '▲ Ocultar' : '▼ Ver parcelas'}</button>
+        </div>
       </div>
-    `;
-  }).join('') + '</div>';
+      ${aberto ? `<div style="padding:10px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">${linhasParcelas}</div>` : ''}
+    </div>`;
+  }
+
+  // ── Renderização: agrupada ou individual ──
+  let htmlItens;
+  if (contasAPagarAgruparParcelas) {
+    // Agrupa por grupo_parcelas_id; itens sem grupo ficam sozinhos
+    const grupos = new Map();
+    const semGrupo = [];
+    itensFiltrados.forEach(item => {
+      const gid = String(item.grupo_parcelas_id || '').trim();
+      if (gid) {
+        if (!grupos.has(gid)) grupos.set(gid, []);
+        grupos.get(gid).push(item);
+      } else {
+        semGrupo.push(item);
+      }
+    });
+    const partes = [];
+    grupos.forEach(parcelas => {
+      parcelas.sort((a, b) => Number(a.numero_parcela || 0) - Number(b.numero_parcela || 0));
+      if (parcelas.length === 1) {
+        partes.push(renderCardContaAPagar(parcelas[0]));
+      } else {
+        partes.push(renderCardAgrupado(parcelas));
+      }
+    });
+    semGrupo.forEach(item => partes.push(renderCardContaAPagar(item)));
+    htmlItens = partes.join('');
+  } else {
+    htmlItens = itensFiltrados.map(renderCardContaAPagar).join('');
+  }
+
+  lista.innerHTML = '<div class="lista">' + htmlItens + '</div>';
   atualizarEstadoListaContasAPagarFinanceiro();
   atualizarResumoSelecaoContasAPagarFinanceiro();
 }
@@ -39986,7 +40145,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
           <input id="escalaPlantaoTitulo" type="text" placeholder="Ex: Plantão manhã">
         </label>
         <label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia
-          <input id="escalaPlantaoValor" type="number" min="0" step="0.01" placeholder="Ex: 120,00">
+          <input id="escalaPlantaoValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00">
         </label>
         <label class="escala-modal-full">Observação
           <textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea>
@@ -40321,7 +40480,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     if(modal){
       if(!byId('escalaPlantaoValor')){
         var titulo=byId('escalaPlantaoTitulo');
-        if(titulo && titulo.parentElement){ var lab=document.createElement('label'); lab.id='escalaPlantaoValorWrap'; lab.setAttribute('data-permissao-valor-escala',''); lab.innerHTML='Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" placeholder="Ex: 120,00">'; titulo.parentElement.insertAdjacentElement('afterend', lab); }
+        if(titulo && titulo.parentElement){ var lab=document.createElement('label'); lab.id='escalaPlantaoValorWrap'; lab.setAttribute('data-permissao-valor-escala',''); lab.innerHTML='Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00">'; titulo.parentElement.insertAdjacentElement('afterend', lab); }
       }
       return modal;
     }
@@ -40337,7 +40496,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       '<label>Fim<input id="escalaPlantaoFim" type="time"></label>'+
       '<label>Tipo<select id="escalaPlantaoTipo"><option value="plantao">Plantão</option><option value="folga">Folga</option><option value="reuniao">Reunião</option><option value="compromisso">Compromisso</option></select></label>'+
       '<label>Título<input id="escalaPlantaoTitulo" type="text" placeholder="Ex: Plantão manhã"></label>'+
-      '<label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" placeholder="Ex: 120,00"></label>'+
+      '<label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00"></label>'+
       '<label class="escala-modal-full">Observação<textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea></label>'+
       '</div><div class="escala-modal-lista" id="escalaPlantaoListaDia"></div><div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>'+
       '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar escala</button></div>'+
@@ -42665,7 +42824,7 @@ function ncAbrir(editar){
     const fsel=document.getElementById('ncFornSel');if(fsel)fsel.style.display='none';
     const vi=document.getElementById('ncValor');if(vi)vi.value='';
     const oi=document.getElementById('ncObs');if(oi)oi.value='';
-    const pw=document.getElementById('ncParcelasWrap');if(pw)pw.style.display='none';
+    const pw=document.getElementById('ncParcelasWrap');if(pw){pw.style.display='none';}
     // Data compra = hoje
     const hoje=new Date().toISOString().split('T')[0];
     const dc=document.getElementById('ncDataCompra');if(dc)dc.value=hoje;
@@ -42677,8 +42836,10 @@ function ncAbrir(editar){
     // Parcelas default
     document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
     const bp=document.querySelector('.nc-parc-btn[data-p="1"]');if(bp)bp.classList.add('nc-pill-sel');
+    const pc=document.getElementById('ncParcCustom');if(pc){pc.style.display='none';pc.value='';}
     document.querySelectorAll('.nc-intv-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
     const bi=document.querySelector('.nc-intv-btn[data-d="30"]');if(bi)bi.classList.add('nc-pill-sel');
+    const icust=document.getElementById('ncIntvCustom');if(icust){icust.style.display='none';icust.value='';}
     const pr=document.getElementById('ncParcelasResume');if(pr)pr.textContent='1x · à vista';
     // Título
     const tt=document.getElementById('ncTitulo');if(tt)tt.textContent='Nova conta';
@@ -42772,19 +42933,51 @@ function ncVenc(el){
 function ncVencCust(){const v=document.getElementById('ncVencCustom').value;if(v)NC.dataVenc=v;}
 
 function ncFmtValor(inp){
-  const v=inp.value.replace(/[^\d,]/g,'').replace(',','.');
-  NC.valor=parseFloat(v)||null;
+  // Aceita valor direto em reais (ex: 550 = R$ 550,00)
+  let raw=inp.value.replace(/[R$\s\.]/g,'').replace(',','.');
+  if(!raw){inp.value='';NC.valor=null;ncAtuParcelasInfo();return;}
+  const num=parseFloat(raw);
+  if(!isFinite(num)||num<0){return;}
+  NC.valor=Math.round(num*100)/100;
+  const partes=NC.valor.toFixed(2).split('.');
+  const reaisFormatado=parseInt(partes[0],10).toLocaleString('pt-BR');
+  inp.value='R$ '+reaisFormatado+','+partes[1];
+  ncAtuParcelasInfo();
 }
 
 function ncToggleParcelas(){
   const pw=document.getElementById('ncParcelasWrap');
-  if(pw)pw.style.display=pw.style.display==='none'?'':'none';
+  if(!pw)return;
+  const aberto=pw.style.display==='flex';
+  pw.style.display=aberto?'none':'flex';
 }
 
 function ncSelParc(el){
   document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
   el.classList.add('nc-pill-sel');
   NC.parcelas=parseInt(el.dataset.p,10)||1;
+  // Limpa campo customizado para não conflitar
+  const pc=document.getElementById('ncParcCustom');if(pc)pc.value='';
+  ncAtuParcelasInfo();
+}
+
+function ncSelParcOutro(el){
+  document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+  el.classList.add('nc-pill-sel');
+  const pc=document.getElementById('ncParcCustom');
+  if(pc){pc.style.display='';pc.value=NC.parcelas>1?NC.parcelas:'';}
+  // Não altera NC.parcelas ainda — espera o usuário digitar
+  ncAtuParcelasInfo();
+}
+
+function ncParcCust(){
+  const pc=document.getElementById('ncParcCustom');
+  const v=parseInt((pc&&pc.value)||'0',10)||0;
+  if(v>1){
+    NC.parcelas=v;
+    // Desmarca todos os botões fixos pois usou campo livre
+    document.querySelectorAll('.nc-parc-btn').forEach(b=>b.classList.remove('nc-pill-sel'));
+  }
   ncAtuParcelasInfo();
 }
 
@@ -42793,8 +42986,12 @@ function ncSelIntv(el){
   el.classList.add('nc-pill-sel');
   const d=parseInt(el.dataset.d,10);
   const ic=document.getElementById('ncIntvCustom');
-  if(d===-1){if(ic)ic.style.display='';}
-  else{if(ic)ic.style.display='none';NC.intervalo=d;}
+  if(d===-1){
+    if(ic){ic.style.display='';ic.value=NC.intervalo||30;} // mostra com valor atual
+  } else {
+    if(ic)ic.style.display='none';
+    NC.intervalo=d;
+  }
   ncAtuParcelasInfo();
 }
 
@@ -42808,12 +43005,14 @@ function ncAtuParcelasInfo(){
   const pi=document.getElementById('ncParcelasInfo');
   if(NC.parcelas<=1){
     if(pr)pr.textContent='1x · à vista';
-    if(pi)pi.textContent='';
+    if(pi){pi.textContent='';pi.style.display='none';}
     return;
   }
   if(pr)pr.textContent=NC.parcelas+'x · '+NC.intervalo+'d entre pgtos';
-  if(pi&&NC.valor)pi.textContent=NC.parcelas+'x de R$ '+(NC.valor/NC.parcelas).toFixed(2).replace('.',',');
-  else if(pi)pi.textContent='';
+  if(pi&&NC.valor){
+    pi.textContent=NC.parcelas+'x de R$ '+(NC.valor/NC.parcelas).toFixed(2).replace('.',',');
+    pi.style.display='';
+  } else if(pi){pi.textContent='';pi.style.display='none';}
 }
 
 async function ncSalvar(){
@@ -42822,17 +43021,25 @@ async function ncSalvar(){
   const dc=document.getElementById('ncDataCompra');if(dc&&dc.value)NC.dataCompra=dc.value;
   const vi=document.getElementById('ncValor');const vt=((vi&&vi.value)||'').replace(/[R$\s]/g,'').replace(',','.');NC.valor=parseFloat(vt)||null;
   const oi=document.getElementById('ncObs');NC.obs=String((oi&&oi.value)||'').trim();
+  // Lê o campo de intervalo customizado se estiver visível
+  const ic=document.getElementById('ncIntvCustom');
+  if(ic&&ic.style.display!=='none'&&ic.value){NC.intervalo=parseInt(ic.value,10)||NC.intervalo||30;}
+  // Lê o campo de parcelas customizado (sempre visível, prioridade sobre botões se preenchido)
+  const pcc=document.getElementById('ncParcCustom');
+  if(pcc&&pcc.value){const pv=parseInt(pcc.value,10)||0;if(pv>=2)NC.parcelas=pv;}
   // Validações
   if(!NC.fornId){if(msg){msg.textContent='Selecione um fornecedor.';msg.className='msg err';}return;}
   if(!NC.valor||NC.valor<=0){if(msg){msg.textContent='Informe o valor.';msg.className='msg err';}return;}
   if(!NC.catId){if(msg){msg.textContent='Selecione uma categoria.';msg.className='msg err';}return;}
   if(!NC.dataVenc){NC.dataVenc=NC.dataCompra||new Date().toISOString().split('T')[0];}
+  if(NC.parcelas>1&&(!NC.intervalo||NC.intervalo<=0)){NC.intervalo=30;}
   // Sincroniza campos hidden para usar salvarContaAPagarFinanceiro existente
   const fb=document.getElementById('contaFornecedorBusca');if(fb)fb.value=NC.fornNome;
   const fi=document.getElementById('contaFornecedorId');if(fi)fi.value=NC.fornId;
   const cv=document.getElementById('contaValorCompra');if(cv)cv.value=NC.valor.toFixed(2).replace('.',',');
   const cs=document.getElementById('contaCategoriaId');if(cs)cs.value=NC.catId||'';
   const co=document.getElementById('contaObservacao');if(co)co.value=NC.obs||'Lançamento manual';
+  // CRÍTICO: sempre sincroniza parcelas e intervalo, mesmo que parcelas=1
   const cqp=document.getElementById('contaQtdParcelas');if(cqp)cqp.value=NC.parcelas>1?NC.parcelas:'';
   const cip=document.getElementById('contaIntervaloParcelasDias');if(cip)cip.value=NC.parcelas>1?NC.intervalo:'';
   // Datas no formato dd/mm/aaaa que a função espera
@@ -42841,14 +43048,16 @@ async function ncSalvar(){
   const cdv=document.getElementById('contaDataVencimento');if(cdv)cdv.value=toddmmaaaa(NC.dataVenc);
   if(btn){btn.disabled=true;btn.textContent='Salvando...';}
   if(msg){msg.textContent='';msg.className='msg';}
+  // Limpa mensagem original antes de chamar para detectar erros corretamente
+  const msgOrig=document.getElementById('msgContaAPagarFinanceiro');
+  if(msgOrig){msgOrig.textContent='';msgOrig.className='msg';}
   // Chama a função existente
   try{
     await salvarContaAPagarFinanceiro();
-    // Verifica se houve erro
-    const msgOrig=document.getElementById('msgContaAPagarFinanceiro');
+    // Verifica se houve erro na função original
     if(msgOrig&&msgOrig.textContent&&msgOrig.classList.contains('err')){
       if(msg){msg.textContent=msgOrig.textContent;msg.className='msg err';}
-      if(btn){btn.disabled=false;btn.textContent='✓ Cadastrar conta';}
+      if(btn){btn.disabled=false;btn.textContent=NC.modoEdicao?'✓ Salvar alterações':'✓ Cadastrar conta';}
       return;
     }
     // Sucesso
@@ -42856,7 +43065,7 @@ async function ncSalvar(){
     if(typeof carregarContasAPagarFinanceiro==='function')carregarContasAPagarFinanceiro().catch(()=>{});
   }catch(e){
     if(msg){msg.textContent='Erro: '+((e&&e.message)||'tente novamente');msg.className='msg err';}
-    if(btn){btn.disabled=false;btn.textContent='✓ Cadastrar conta';}
+    if(btn){btn.disabled=false;btn.textContent=NC.modoEdicao?'✓ Salvar alterações':'✓ Cadastrar conta';}
   }
 }
 
@@ -42911,7 +43120,7 @@ if(typeof _ncOrigEditar==='function'){
       }
       // Parcelas
       if(NC.parcelas>1){
-        const pw=document.getElementById('ncParcelasWrap');if(pw)pw.style.display='';
+        const pw=document.getElementById('ncParcelasWrap');if(pw)pw.style.display='flex';
         document.querySelectorAll('.nc-parc-btn').forEach(b=>{b.classList.remove('nc-pill-sel');if(parseInt(b.dataset.p,10)===NC.parcelas)b.classList.add('nc-pill-sel');});
         document.querySelectorAll('.nc-intv-btn').forEach(b=>{b.classList.remove('nc-pill-sel');if(parseInt(b.dataset.d,10)===NC.intervalo)b.classList.add('nc-pill-sel');});
         ncAtuParcelasInfo();
