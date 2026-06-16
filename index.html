@@ -3174,7 +3174,6 @@
     }
 
 
-
     /* ---- AJUSTES FINAIS PONTO ADM / RELATÓRIO ---- */
     .ponto-ajuste-tipo-grid {
       display: grid;
@@ -7061,18 +7060,18 @@
     .escala-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap;}
     @media(max-width:1050px){#escala_plantoes .escala-layout{grid-template-columns:1fr;}#escala_plantoes .escala-toolbar{grid-template-columns:1fr;justify-items:stretch;}#escala_plantoes .escala-mes-titulo{text-align:left;}#escala_plantoes .escala-view-tabs{justify-self:start;}#escala_plantoes .escala-calendario{grid-template-columns:repeat(7,minmax(86px,1fr));overflow-x:auto;}#escala_plantoes .escala-dia{min-height:110px;}}
     @media(max-width:640px){#escala_plantoes .escala-calendario{grid-template-columns:repeat(7,minmax(72px,1fr));}.escala-modal-grid{grid-template-columns:1fr;}#escala_plantoes .escala-dia{min-height:96px;padding:6px;}#escala_plantoes .escala-dia-semana{height:42px;font-size:11px;}}
-  </style>
 
-<style id="patch-escala-modal-itens-seguro">
+  /* ── ESTILOS CONSOLIDADOS (patches absorvidos) ── */
+
+  /* patch-escala-modal-itens-seguro */
   .escala-modal-lista{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.14);padding:8px;display:grid;gap:6px;max-height:170px;overflow:auto;}
   .escala-modal-empty{color:var(--text-muted);font-size:12px;padding:6px;}
   .escala-modal-item{width:100%;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(34,197,94,.08);color:var(--text);padding:7px 9px;text-align:left;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .escala-modal-item:hover{border-color:rgba(34,197,94,.42);background:rgba(34,197,94,.14);}
   .escala-modal-item strong{font-size:12px;line-height:1.2;}
   .escala-modal-item span{font-size:11px;color:var(--text-muted);text-transform:capitalize;}
-</style>
 
-<style id="patch-escala-valor-relatorio">
+  /* patch-escala-valor-relatorio */
   .escala-relatorio-card{margin-top:12px;}
   .escala-relatorio-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
   .escala-relatorio-acoes{display:flex;gap:8px;flex-wrap:wrap;}
@@ -7085,49 +7084,853 @@
   .escala-relatorio-item .tipo.reuniao:before{background:#a855f7;}
   .escala-relatorio-valor{font-family:'DM Mono',monospace;color:var(--green);font-weight:800;text-align:right;}
   @media(max-width:900px){.escala-relatorio-item{grid-template-columns:1fr;}.escala-relatorio-valor{text-align:left;}}
-</style>
 
-<style id="patch-pin-acima-modal-escala">
+  /* patch-pin-acima-modal-escala */
   #pinActionOverlay.show { z-index: 999999 !important; }
   #pinActionOverlay .modal { z-index: 1000000 !important; }
   #modalEscalaPlantao.show { z-index: 99990 !important; }
-</style>
 
-<style id="bloqueio-gerenciador-senhas-css">
+  /* bloqueio-gerenciador-senhas-css */
   input.pin-secure-input,
   input[data-no-password-manager="true"] {
-    -webkit-text-security: disc;
-    text-security: disc;
+  -webkit-text-security: disc;
+  text-security: disc;
   }
   /* Correção: campos de senha (pin-secure-input) apareciam como caixa branca crua
-     porque a regra global de inputs os exclui. Reaplicamos o tema escuro
-     apenas para os campos que NÃO são da tela de login. */
+  porque a regra global de inputs os exclui. Reaplicamos o tema escuro
+  apenas para os campos que NÃO são da tela de login. */
   input.pin-secure-input:not(.login-input) {
-    background: rgba(5,10,7,0.85) !important;
-    border: 1px solid rgba(28,48,34,0.9) !important;
-    border-radius: 8px !important;
-    color: #e8f5eb !important;
-    padding: 0 10px !important;
-    box-sizing: border-box !important;
-    width: 100% !important;
-    transition: border-color .18s, box-shadow .18s;
+  background: rgba(5,10,7,0.85) !important;
+  border: 1px solid rgba(28,48,34,0.9) !important;
+  border-radius: 8px !important;
+  color: #e8f5eb !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  transition: border-color .18s, box-shadow .18s;
   }
   input.pin-secure-input:not(.login-input):focus {
-    border-color: rgba(16,217,122,0.5) !important;
-    box-shadow: 0 0 0 3px rgba(16,217,122,0.1) !important;
-    outline: none !important;
+  border-color: rgba(16,217,122,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(16,217,122,0.1) !important;
+  outline: none !important;
   }
   input.pin-secure-input:not(.login-input)::placeholder {
-    color: rgba(180,200,186,0.45) !important;
+  color: rgba(180,200,186,0.45) !important;
   }
   /* Campo de senha do cadastro de funcionário: alinhar altura/box com os demais */
   #pinFuncionario.pin-secure-input {
-    height: 32px !important;
-    max-width: none !important;
-    flex: 1 1 auto !important;
-    font-size: 12px !important;
+  height: 32px !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+  font-size: 12px !important;
   }
-</style>
+
+  /* patch-escala-somente-adm-css */
+  body.escala-somente-visualizacao #escala_plantoes .escala-side-title button { display:none !important; }
+  body.escala-somente-visualizacao #btnSalvarPlantaoEscala,
+  body.escala-somente-visualizacao #btnExcluirPlantaoEscala,
+  body.escala-somente-visualizacao [data-escala-salvar],
+  body.escala-somente-visualizacao [data-escala-excluir] { display:none !important; }
+  #modalEscalaPlantao.escala-modal-readonly input,
+  #modalEscalaPlantao.escala-modal-readonly select,
+  #modalEscalaPlantao.escala-modal-readonly textarea {
+  opacity:.82;
+  cursor:not-allowed;
+  }
+
+  /* patch-permissao-valor-escala */
+  body.sem-valor-combinado-escala .escala-relatorio-valor,
+  body.sem-valor-combinado-escala [data-permissao-valor-escala] { display: none !important; }
+
+  /* patch-feriados-definitivo-por-loja */
+  #escala_plantoes .escala-feriado-label{display:block;margin-top:4px;padding:4px 6px;border-radius:7px;border:1px solid rgba(245,158,11,.36);font-size:11px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #escala_plantoes .escala-feriado-label.feriado-nacional{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.42);color:#fbbf24;}
+  #escala_plantoes .escala-feriado-label.feriado-estadual{background:rgba(59,130,246,.16);border-color:rgba(59,130,246,.42);color:#93c5fd;}
+  #escala_plantoes .escala-feriado-label.feriado-municipal{background:rgba(236,72,153,.16);border-color:rgba(236,72,153,.42);color:#f9a8d4;}
+  #escala_plantoes .escala-dia.feriado-nacional{box-shadow:inset 4px 0 0 rgba(245,158,11,.85);}
+  #escala_plantoes .escala-dia.feriado-estadual{box-shadow:inset 4px 0 0 rgba(59,130,246,.85);}
+  #escala_plantoes .escala-dia.feriado-municipal{box-shadow:inset 4px 0 0 rgba(236,72,153,.9);}
+
+  /* patch-ponto-info-botao-css-3-1-57 */
+  .ponto-info-regra-btn{
+  width:38px!important;height:38px!important;min-width:38px!important;padding:0!important;border-radius:999px!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  font-weight:900!important;font-size:16px!important;line-height:1!important;
+  border:1px solid rgba(245,158,11,.85)!important;
+  background:rgba(245,158,11,.18)!important;
+  color:#fbbf24!important;
+  box-shadow:0 0 0 1px rgba(245,158,11,.18),0 10px 24px rgba(245,158,11,.14)!important;
+  }
+  .ponto-info-regra-btn:hover{background:rgba(245,158,11,.28)!important;border-color:rgba(251,191,36,.95)!important;color:#fde68a!important;}
+  .ponto-info-modal-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(4,8,6,.68);backdrop-filter:blur(3px);}
+  .ponto-info-modal-overlay[hidden]{display:none!important;}
+  .ponto-info-modal-card{width:min(640px,calc(100vw - 28px));max-height:calc(100dvh - 36px);overflow:auto;border-radius:18px;border:1px solid rgba(245,158,11,.42);background:#0f1a13;color:#e2f0e4;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:20px;}
+  .ponto-info-modal-card h3{margin:0 0 10px;font-size:18px;color:#fbbf24;}
+  .ponto-info-modal-card p{margin:0 0 10px;color:#a7c7aa;line-height:1.45;font-size:13px;}
+  .ponto-info-modal-card ul{margin:10px 0 14px;padding-left:20px;color:#d9f6dd;font-size:13px;line-height:1.55;}
+  .ponto-info-modal-card li{margin-bottom:6px;}
+  .ponto-info-modal-actions{display:flex;justify-content:flex-end;margin-top:12px;}
+
+  /* patch-escala-compacta-viewport */
+  #escala_plantoes{
+  padding:6px 8px 10px !important;
+  }
+  #escala_plantoes .escala-layout{
+  grid-template-columns:240px minmax(680px,1fr) !important;
+  gap:10px !important;
+  }
+  #escala_plantoes .escala-side-card,
+  #escala_plantoes .escala-calendario-card{
+  padding:10px !important;
+  border-radius:8px !important;
+  }
+  #escala_plantoes .escala-side-title{
+  min-height:28px !important;
+  padding-bottom:8px !important;
+  margin-bottom:6px !important;
+  font-size:14px !important;
+  }
+  #escala_plantoes .escala-side-title .btn{
+  width:34px !important;
+  height:34px !important;
+  }
+  #escala_plantoes .escala-check-row{
+  min-height:25px !important;
+  padding:4px 2px !important;
+  gap:7px !important;
+  font-size:12px !important;
+  }
+  #escala_plantoes .escala-check-row input{
+  width:14px !important;
+  height:14px !important;
+  }
+  #escala_plantoes .escala-toolbar{
+  gap:8px !important;
+  margin-bottom:8px !important;
+  }
+  #escala_plantoes .escala-nav{
+  gap:5px !important;
+  }
+  #escala_plantoes .escala-nav .btn{
+  min-width:36px !important;
+  height:34px !important;
+  padding:0 10px !important;
+  border-radius:8px !important;
+  font-size:14px !important;
+  }
+  #escala_plantoes .escala-nav .btn:nth-child(3){
+  min-width:56px !important;
+  }
+  #escala_plantoes .escala-total-pago{
+  min-height:32px !important;
+  min-width:142px !important;
+  padding:5px 9px !important;
+  }
+  #escala_plantoes .escala-total-pago-label{
+  font-size:8px !important;
+  }
+  #escala_plantoes .escala-total-pago-valor{
+  font-size:13px !important;
+  }
+  #escala_plantoes .escala-mes-titulo{
+  font-size:20px !important;
+  }
+  #escala_plantoes .escala-view-tabs button{
+  min-width:48px !important;
+  padding:7px 10px !important;
+  font-size:12px !important;
+  }
+  #escala_plantoes #escalaCalendarioGrid{
+  min-height:0 !important;
+  grid-template-columns:repeat(7,minmax(78px,1fr)) !important;
+  }
+  #escala_plantoes .escala-dia-semana{
+  height:34px !important;
+  font-size:12px !important;
+  }
+  #escala_plantoes .escala-dia{
+  min-height:70px !important;
+  padding:5px 6px !important;
+  }
+  #escala_plantoes .escala-dia-numero{
+  font-size:14px !important;
+  margin-bottom:4px !important;
+  }
+  #escala_plantoes .escala-feriado-label{
+  padding:3px 5px !important;
+  margin-bottom:3px !important;
+  font-size:9px !important;
+  border-radius:6px !important;
+  }
+  #escala_plantoes .escala-evento{
+  min-height:16px !important;
+  margin:2px 0 !important;
+  padding:2px 5px !important;
+  border-radius:5px !important;
+  font-size:10px !important;
+  line-height:1.15 !important;
+  }
+  #escala_plantoes .escala-evento:before{
+  width:6px !important;
+  height:6px !important;
+  margin-right:4px !important;
+  }
+  #escala_plantoes .escala-legenda{
+  margin-top:6px !important;
+  gap:5px !important;
+  font-size:10px !important;
+  }
+  #escala_plantoes .escala-legenda span{
+  padding:3px 6px !important;
+  }
+  @media (max-width:1100px){
+  #escala_plantoes .escala-layout{
+  grid-template-columns:1fr !important;
+  }
+  #escala_plantoes #escalaCalendarioGrid{
+  min-width:690px !important;
+  }
+  }
+
+  /* patch-layout-global-compacto */
+  .sidebar{
+  width:210px !important;
+  padding:10px 8px !important;
+  gap:4px !important;
+  }
+  .logo{
+  gap:8px !important;
+  padding:0 5px 10px !important;
+  margin-bottom:6px !important;
+  }
+  .logo img{
+  width:32px !important;
+  height:32px !important;
+  border-radius:9px !important;
+  }
+  .logo strong{
+  font-size:14px !important;
+  line-height:1 !important;
+  }
+  .logo span{
+  font-size:9px !important;
+  margin-top:1px !important;
+  }
+  .nav-group{
+  padding:6px 0 0 !important;
+  }
+  .nav-label{
+  padding:4px 8px 5px !important;
+  font-size:10px !important;
+  letter-spacing:1px !important;
+  }
+  .nav-btn{
+  min-height:42px !important;
+  padding:7px 9px !important;
+  gap:8px !important;
+  border-radius:8px !important;
+  }
+  .nav-btn .icon{
+  width:28px !important;
+  height:28px !important;
+  min-width:28px !important;
+  font-size:10px !important;
+  border-radius:8px !important;
+  }
+  .nav-title{
+  font-size:13px !important;
+  line-height:1.1 !important;
+  }
+  .nav-hint{
+  display:none !important;
+  }
+  .nav-submenu{
+  margin-left:38px !important;
+  }
+  .nav-sub-btn{
+  min-height:30px !important;
+  padding:5px 8px !important;
+  }
+  .topbar{
+  min-height:44px !important;
+  padding:4px 8px !important;
+  gap:8px !important;
+  }
+  .topbar-main{
+  gap:8px !important;
+  }
+  #topbarTitleWrap{
+  display:none !important;
+  }
+  .topbar-clock,
+  .topbar-business-day{
+  width:160px !important;
+  min-width:150px !important;
+  min-height:34px !important;
+  padding:5px 10px !important;
+  border-radius:9px !important;
+  }
+  .topbar-info-label{
+  font-size:8px !important;
+  letter-spacing:.7px !important;
+  }
+  .topbar-clock-time,
+  .topbar-business-day-date{
+  font-size:19px !important;
+  }
+  .topbar-store{
+  min-height:34px !important;
+  padding:5px 10px !important;
+  border-radius:9px !important;
+  }
+  .topbar-store-name,
+  .topbar-user-name{
+  font-size:13px !important;
+  }
+  .topbar-store-switch,
+  .topbar-switch-store-btn,
+  .topbar-actions .btn-sm{
+  min-height:28px !important;
+  padding:5px 8px !important;
+  border-radius:8px !important;
+  font-size:11px !important;
+  }
+  .topbar-user{
+  min-height:34px !important;
+  padding:5px 9px !important;
+  border-radius:9px !important;
+  }
+  .topbar-actions{
+  gap:6px !important;
+  }
+  .content{
+  padding:8px 10px !important;
+  }
+  .card,
+  .stat-card{
+  padding:10px !important;
+  border-radius:8px !important;
+  }
+  .stats-grid{
+  gap:8px !important;
+  margin-bottom:8px !important;
+  }
+  #escala_plantoes .escala-layout{
+  grid-template-columns:210px minmax(620px,1fr) !important;
+  gap:8px !important;
+  }
+  #escala_plantoes .escala-side-card{
+  padding:8px !important;
+  }
+  #escala_plantoes .escala-check-row{
+  font-size:11px !important;
+  }
+  #escala_plantoes .escala-calendario-card{
+  padding:8px !important;
+  }
+  #escala_plantoes #escalaCalendarioGrid{
+  grid-template-columns:repeat(7,minmax(72px,1fr)) !important;
+  }
+  @media(max-width:1050px){
+  .sidebar{
+  width:190px !important;
+  }
+  #escala_plantoes .escala-layout{
+  grid-template-columns:1fr !important;
+  }
+  }
+
+  /* patch-ponto-dashboard-compacto */
+  .dashboard-prod-grid{
+  grid-template-columns:150px 1fr !important;
+  gap:12px !important;
+  align-items:start !important;
+  }
+  .prod-pie{
+  width:140px !important;
+  height:140px !important;
+  }
+  .prod-pie-center{
+  width:86px !important;
+  height:86px !important;
+  gap:2px !important;
+  }
+  .prod-pie-value{
+  font-size:22px !important;
+  }
+  .prod-pie-label{
+  font-size:9px !important;
+  }
+  .prod-stats{
+  gap:6px !important;
+  }
+  .prod-stat{
+  padding:6px 8px !important;
+  border-radius:7px !important;
+  }
+  .prod-stat-label{
+  font-size:9px !important;
+  letter-spacing:.35px !important;
+  }
+  .prod-stat-value{
+  margin-top:2px !important;
+  font-size:14px !important;
+  }
+  .prod-period-info{
+  margin-top:6px !important;
+  font-size:11px !important;
+  }
+  .prod-func-list{
+  margin-top:8px !important;
+  padding-top:8px !important;
+  gap:5px !important;
+  }
+  .prod-func-title{
+  font-size:9px !important;
+  }
+  .prod-func-row{
+  font-size:12px !important;
+  gap:7px !important;
+  }
+  .prod-func-dot{
+  width:8px !important;
+  height:8px !important;
+  }
+  .dashboard-period-tabs{
+  gap:5px !important;
+  margin-bottom:8px !important;
+  }
+  .dashboard-period-btn{
+  padding:5px 9px !important;
+  font-size:11px !important;
+  min-height:28px !important;
+  }
+  #bater_ponto{
+  font-size:12px !important;
+  }
+  #bater_ponto .ponto-topo-grid{
+  grid-template-columns:minmax(470px,1fr) minmax(430px,460px) !important;
+  gap:8px !important;
+  align-items:start !important;
+  margin-bottom:8px !important;
+  }
+  #bater_ponto .ponto-topo-grid > .card{
+  min-height:0 !important;
+  align-self:start !important;
+  }
+  #bater_ponto .ponto-topo-grid > .card:first-child{
+  position:relative !important;
+  }
+  #bater_ponto .card-title{
+  font-size:11px !important;
+  letter-spacing:.6px !important;
+  margin-bottom:5px !important;
+  line-height:1.1 !important;
+  }
+  #bater_ponto .ponto-registro-row{
+  display:flex !important;
+  align-items:center !important;
+  gap:6px !important;
+  flex-wrap:wrap !important;
+  }
+  #pontoPinInput{
+  flex:0 1 150px !important;
+  min-width:140px !important;
+  max-width:160px !important;
+  height:32px !important;
+  padding:6px 9px !important;
+  font-size:13px !important;
+  letter-spacing:4px !important;
+  }
+  #bater_ponto .ponto-registro-row .btn{
+  min-height:32px !important;
+  height:32px !important;
+  padding:6px 10px !important;
+  border-radius:7px !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  }
+  #btnAjusteManualAdminPonto{
+  order:4 !important;
+  flex:0 0 auto !important;
+  max-width:145px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  }
+  #bater_ponto .ponto-info-regra-btn{
+  position:absolute !important;
+  top:10px !important;
+  left:135px !important;
+  width:16px !important;
+  height:16px !important;
+  min-width:16px !important;
+  min-height:16px !important;
+  margin:0 !important;
+  align-self:center !important;
+  order:0 !important;
+  font-size:8px !important;
+  padding:0 !important;
+  border-radius:999px !important;
+  vertical-align:middle !important;
+  transform:none !important;
+  z-index:2 !important;
+  }
+  #bater_ponto #msgPonto,
+  #bater_ponto #msgTempoAvisoPonto,
+  #bater_ponto #dash-horas-msg{
+  margin-top:6px !important;
+  font-size:11px !important;
+  line-height:1.25 !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-card{
+  padding:8px 10px !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row{
+  grid-template-columns:minmax(116px,1fr) auto auto auto auto !important;
+  gap:5px !important;
+  align-items:center !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row label{
+  font-size:9px !important;
+  line-height:1.2 !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row input{
+  min-height:30px !important;
+  height:30px !important;
+  padding:5px 8px !important;
+  font-size:10px !important;
+  border-radius:7px !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-row .btn{
+  min-height:30px !important;
+  height:30px !important;
+  padding:6px 9px !important;
+  border-radius:7px !important;
+  font-size:10px !important;
+  white-space:nowrap !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-status{
+  grid-column:auto !important;
+  grid-row:auto !important;
+  justify-content:flex-start !important;
+  min-height:30px !important;
+  font-size:9px !important;
+  order:20 !important;
+  }
+  #bater_ponto .ponto-tempo-aviso-valor{
+  padding:4px 7px !important;
+  gap:3px !important;
+  }
+  #bater_ponto .ponto-tempo-info-icon{
+  width:16px !important;
+  height:16px !important;
+  font-size:8px !important;
+  flex:0 0 16px !important;
+  }
+  #bater_ponto .ponto-horas-card{
+  padding:10px !important;
+  }
+  #bater_ponto .ponto-horas-tabs{
+  gap:5px !important;
+  margin-bottom:8px !important;
+  }
+  #bater_ponto .ponto-horas-tabs .dashboard-period-btn{
+  min-width:54px !important;
+  min-height:28px !important;
+  padding:5px 8px !important;
+  border-radius:8px !important;
+  font-size:11px !important;
+  }
+  #bater_ponto .ponto-horas-grid{
+  grid-template-columns:145px minmax(0,1fr) !important;
+  gap:12px !important;
+  }
+  #horasPieDashboard.ponto-horas-pie{
+  width:138px !important;
+  height:138px !important;
+  }
+  #bater_ponto .ponto-horas-card .prod-stats{
+  margin-bottom:6px !important;
+  }
+  #bater_ponto .ponto-horas-card .prod-func-list{
+  margin-top:6px !important;
+  }
+  #bater_ponto .ponto-resumo-dia-tabs{
+  margin-bottom:6px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-lista{
+  gap:6px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-linha{
+  padding:7px 8px !important;
+  border-radius:8px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-nome{
+  font-size:12px !important;
+  }
+  #pontoResumoHoje .ponto-resumo-sequencia,
+  #pontoResumoHoje .ponto-resumo-metricas,
+  #pontoResumoHoje .ponto-resumo-tag{
+  font-size:11px !important;
+  }
+  @media(max-width:980px){
+  #bater_ponto .ponto-topo-grid,
+  #bater_ponto .ponto-horas-grid,
+  .dashboard-prod-grid{
+  grid-template-columns:1fr !important;
+  }
+  #horasPieDashboard.ponto-horas-pie,
+  .prod-pie{
+  width:128px !important;
+  height:128px !important;
+  }
+  }
+
+  /* patch-ponto-info-no-titulo */
+  #bater_ponto .ponto-topo-grid > .card:first-child .card-title{
+  display:flex !important;
+  align-items:center !important;
+  gap:5px !important;
+  }
+  #bater_ponto .ponto-info-regra-btn{
+  position:static !important;
+  width:16px !important;
+  height:16px !important;
+  min-width:16px !important;
+  min-height:16px !important;
+  margin:0 !important;
+  padding:0 !important;
+  font-size:8px !important;
+  line-height:1 !important;
+  border-radius:999px !important;
+  transform:none !important;
+  box-shadow:none !important;
+  }
+
+  /* patch-ponto-remover-espaco-vazio */
+  #bater_ponto .ponto-topo-grid{
+  align-items:start !important;
+  }
+  #bater_ponto .ponto-topo-grid > .card{
+  height:auto !important;
+  min-height:0 !important;
+  padding:8px 10px !important;
+  }
+  #bater_ponto .ponto-topo-grid .ponto-tempo-aviso-card{
+  min-height:0 !important;
+  }
+  #bater_ponto #msgPonto:empty,
+  #bater_ponto #msgTempoAvisoPonto:empty{
+  display:none !important;
+  min-height:0 !important;
+  height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  }
+  #bater_ponto .ponto-registro-row{
+  margin-bottom:0 !important;
+  }
+
+  /* patch-status-ponto-tabs-compacto */
+  #bater_ponto .card:has(#pontoResumoHoje){
+  padding:8px 10px !important;
+  }
+  #bater_ponto .card:has(#pontoResumoHoje) #pontoResumoTitulo{
+  display:inline-flex !important;
+  align-items:center !important;
+  margin:0 10px 0 0 !important;
+  line-height:28px !important;
+  vertical-align:middle !important;
+  }
+  #bater_ponto .ponto-resumo-dia-tabs{
+  display:inline-flex !important;
+  vertical-align:middle !important;
+  margin:0 0 6px 0 !important;
+  gap:5px !important;
+  }
+  #bater_ponto .ponto-resumo-dia-tabs .dashboard-period-btn{
+  min-height:28px !important;
+  padding:5px 10px !important;
+  font-size:11px !important;
+  border-radius:999px !important;
+  }
+  #pontoResumoHoje{
+  margin-top:2px !important;
+  }
+
+  /* patch-contas-pagar-filtros-compactos */
+  #financeiro_contasapagar > .card:has(#btnToggleContasAPagarLista) {
+  padding: 10px 12px 10px !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row {
+  display: grid !important;
+  grid-template-columns: max-content 122px repeat(4, 112px) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 36px !important;
+  margin: 0 0 8px !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .card-title {
+  align-self: center !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row #btnToggleContasAPagarLista {
+  align-self: center !important;
+  justify-self: start !important;
+  width: 122px !important;
+  min-width: 122px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto {
+  align-self: center !important;
+  display: grid !important;
+  grid-template-rows: 10px 28px !important;
+  gap: 2px !important;
+  width: 112px !important;
+  min-width: 112px !important;
+  max-width: 112px !important;
+  height: 40px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto label {
+  display: block !important;
+  height: 10px !important;
+  margin: 0 !important;
+  color: var(--text-muted) !important;
+  font-size: 7px !important;
+  font-weight: 800 !important;
+  letter-spacing: .25px !important;
+  line-height: 10px !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  }
+  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto input[type="date"] {
+  display: block !important;
+  width: 112px !important;
+  min-width: 112px !important;
+  max-width: 112px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  padding: 3px 7px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  }
+  #financeiro_contasapagar .financeiro-filtros-row {
+  display: grid !important;
+  grid-template-columns: minmax(360px, 1fr) 180px 84px 220px !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  }
+  #financeiro_contasapagar .financeiro-filtros-row input,
+  #financeiro_contasapagar .financeiro-filtros-row select,
+  #financeiro_contasapagar .financeiro-filtros-row .btn {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 4px 9px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  }
+  #financeiro_contasapagar #filtroLojasContasAPagarFinanceiro {
+  margin-top: 6px !important;
+  padding: 8px 10px !important;
+  min-height: 0 !important;
+  }
+  #financeiro_contasapagar .financeiro-selecao-contas-row {
+  grid-template-columns: 166px 186px minmax(0, 1fr) !important;
+  margin-top: 6px !important;
+  }
+
+  /* patch-relatorio-ponto-filtro-funcionarios */
+  #relatorio_ponto .card:has(#filtroPontoFuncionario) {
+  overflow: visible !important;
+  }
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1.25fr) minmax(126px, 1fr) minmax(126px, 1fr) 112px 112px auto auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  }
+  #relatorio_ponto #filtroPontoFuncionario {
+  min-width: 0 !important;
+  width: 100% !important;
+  }
+  #relatorio_ponto #filtroPontoFuncionario .relatorio-check-filter-head {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  }
+  #relatorio_ponto #filtroPontoFuncionario .relatorio-check-filter-query {
+  text-align: left !important;
+  font-size: 12px !important;
+  }
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) input[type="date"],
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) input[type="time"] {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 6px 9px !important;
+  font-size: 12px !important;
+  }
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) .btn {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  }
+  @media (max-width: 1100px) {
+  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) {
+  grid-template-columns: 1fr 1fr !important;
+  }
+  }
+
+
+  /* ajuste-espaco-calendario-escala + escala-calendario-apenas-mes-atual-fix */
+#escala_plantoes .escala-dia-vazio{
+    background:rgba(255,255,255,.015) !important;
+    cursor:default !important;
+    pointer-events:none !important;
+    box-shadow:none !important;
+  }
+  #escala_plantoes .escala-dia-vazio:hover{
+    background:rgba(255,255,255,.015) !important;
+    box-shadow:none !important;
+  }
+
+  /* patch-escala-modal-final-seguro — regras novas apenas */
+
+  /* correções de z-index e cursor do modal escala */
+  .escala-modal-overlay{z-index:99999;}
+  .escala-modal-overlay.show{display:flex!important;}
+  #escalaCalendarioGrid .escala-dia:not(.escala-dia-vazio){cursor:pointer!important;}
+  @media(max-width:640px){.escala-modal-grid{grid-template-columns:1fr;}}
+  .escala-modal-lista{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.14);padding:8px;display:grid;gap:6px;max-height:170px;overflow:auto;}
+  .escala-modal-empty{color:var(--text-muted);font-size:12px;padding:6px;}
+  .escala-modal-item{width:100%;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(34,197,94,.08);color:var(--text);padding:7px 9px;text-align:left;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .escala-modal-item:hover{border-color:rgba(34,197,94,.42);background:rgba(34,197,94,.14);}
+  .escala-modal-item strong{font-size:12px;line-height:1.2;}
+  .escala-modal-item span{font-size:11px;color:var(--text-muted);text-transform:capitalize;}
+  </style>
+
+
+
 
 </head>
 <body>
@@ -9642,10 +10445,9 @@
     <div style="width:40px;height:4px;border-radius:2px;background:var(--border-bright);margin:0 auto 14px;"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);">
       <div>
-        <div id="ncTitulo" style="font-size:17px;font-weight:700;color:var(--text);">Nova conta</div>
-        <div id="ncSub" style="font-size:12px;color:var(--text-muted);margin-top:2px;">Preencha os dados abaixo</div>
+        <div id="ncTitulo" style="font-size:14px;font-weight:700;color:var(--text);">Nova conta</div>
       </div>
-      <button onclick="ncFechar()" style="width:36px;height:36px;border:none;background:var(--surface3);color:var(--text-muted);font-size:18px;cursor:pointer;border-radius:10px;display:flex;align-items:center;justify-content:center;">✕</button>
+      <button onclick="ncFechar()" style="width:28px;height:28px;border:none;background:var(--surface3);color:var(--text-muted);font-size:13px;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
   </div>
 
@@ -9679,81 +10481,65 @@
       </div>
     </div>
 
-    <!-- Toggle: é parcela ou valor total? -->
-    <div id="ncModoParcelasWrap" style="display:none;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:12px 14px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Como quer lançar?</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button id="ncModoParc" class="nc-pill" onclick="ncSetModo('parcela')" style="padding:10px 8px;border-radius:10px;font-size:13px;font-weight:700;line-height:1.3;">
-          💳 Valor da<br>parcela
-        </button>
-        <button id="ncModoTotal" class="nc-pill nc-pill-sel" onclick="ncSetModo('total')" style="padding:10px 8px;border-radius:10px;font-size:13px;font-weight:700;line-height:1.3;">
-          🧾 Valor total<br><span style="font-size:11px;font-weight:400;">(sistema divide)</span>
-        </button>
-      </div>
-    </div>
-
     <!-- Categoria -->
     <div>
       <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Categoria <span style="color:var(--red)">*</span></div>
       <div id="ncCatGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
     </div>
 
-    <!-- Vencimento -->
-    <div>
-      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Vencimento</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button class="nc-venc-btn nc-pill" data-dias="0" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">📅</div><div style="font-size:13px;font-weight:600;">Hoje</div></button>
-        <button class="nc-venc-btn nc-pill" data-dias="7" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">📅</div><div style="font-size:13px;font-weight:600;">+7 dias</div></button>
-        <button class="nc-venc-btn nc-pill" data-dias="30" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">📅</div><div style="font-size:13px;font-weight:600;">+30 dias</div></button>
-        <button class="nc-venc-btn nc-pill" data-dias="-1" onclick="ncVenc(this)" style="padding:9px;border-radius:10px;"><div style="font-size:16px;margin-bottom:2px;">🗓️</div><div style="font-size:13px;font-weight:600;">Outra</div></button>
+    <!-- Vencimento + Parcelas lado a lado -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+      <!-- Dias para vencimento -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Dias p/ vencimento <span style="color:var(--red)">*</span></div>
+        <input type="number" id="ncVencDia" inputmode="numeric" pattern="[0-9]*"
+          style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
+          placeholder="30" min="0" max="999"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3); ncVencDiaInput(this.value)">
+        <div id="ncVencDiaErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
       </div>
-      <input type="date" id="ncVencCustom" style="display:none;width:100%;margin-top:8px;border-radius:12px;font-size:15px;padding:13px;" oninput="ncVencCust()">
+
+      <!-- Qtda Parcelas -->
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Qtda parcelas <span style="color:var(--red)">*</span></div>
+        <input type="number" id="ncParcCustom" inputmode="numeric" pattern="[0-9]*"
+          style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
+          placeholder="1" min="1" max="360"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3); ncParcCust()">
+        <div id="ncParcErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
+      </div>
     </div>
 
-    <!-- Parcelas (expansível) -->
+    <!-- Data de vencimento (calendário) -->
     <div>
-      <button onclick="ncToggleParcelas()" style="width:100%;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:var(--font-sans);">
-        <span style="font-size:14px;font-weight:600;color:var(--text-muted);">Parcelas e intervalo</span>
-        <span id="ncParcelasResume" style="font-size:13px;color:var(--text-muted);">1x · à vista</span>
-      </button>
-      <div id="ncParcelasWrap" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:14px;flex-direction:column;gap:12px;">
-        <!-- Nº de parcelas -->
-        <div>
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Nº de parcelas</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-            <button class="nc-parc-btn nc-pill nc-pill-sel" data-p="1" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">1x</button>
-            <button class="nc-parc-btn nc-pill" data-p="2" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">2x</button>
-            <button class="nc-parc-btn nc-pill" data-p="3" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">3x</button>
-            <button class="nc-parc-btn nc-pill" data-p="4" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">4x</button>
-            <button class="nc-parc-btn nc-pill" data-p="5" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">5x</button>
-            <button class="nc-parc-btn nc-pill" data-p="6" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">6x</button>
-            <button class="nc-parc-btn nc-pill" data-p="10" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">10x</button>
-            <button class="nc-parc-btn nc-pill" data-p="12" onclick="ncSelParc(this)" style="padding:10px 4px;border-radius:10px;font-size:14px;font-weight:700;">12x</button>
-          </div>
-          <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Outra qtd.:</span>
-            <input type="number" id="ncParcCustom" inputmode="numeric" style="flex:1;border-radius:10px;font-size:14px;padding:8px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);" placeholder="Ex: 7, 18, 24..." min="2" max="360" oninput="ncParcCust()">
-          </div>
-        </div>
-        <!-- Dias entre pagamentos -->
-        <div>
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Dias entre pagamentos</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-            <button class="nc-intv-btn nc-pill nc-pill-sel" data-d="30" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">30d</button>
-            <button class="nc-intv-btn nc-pill" data-d="15" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">15d</button>
-            <button class="nc-intv-btn nc-pill" data-d="7" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">7d</button>
-            <button class="nc-intv-btn nc-pill" data-d="-1" onclick="ncSelIntv(this)" style="padding:10px 4px;border-radius:10px;font-size:13px;font-weight:600;">Outro</button>
-          </div>
-          <input type="number" id="ncIntvCustom" inputmode="numeric" style="display:none;width:100%;margin-top:6px;border-radius:10px;font-size:14px;padding:10px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);" placeholder="Ex: 45 dias" min="1" oninput="ncIntvCust()">
-        </div>
-        <div id="ncParcelasInfo" style="font-size:14px;font-weight:600;color:var(--accent);text-align:center;padding:6px;background:var(--accent-subtle);border-radius:8px;display:none;"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Data de vencimento <span style="color:var(--red)">*</span></div>
+      <input type="date" id="ncVencCustom"
+        style="width:100%;border-radius:10px;font-size:15px;padding:11px 14px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);"
+        oninput="ncVencCust()">
+    </div>
+
+    <!-- Toggle: valor da parcela ou valor total -->
+    <div id="ncModoParcelasWrap" style="background:var(--surface2);border:1px solid var(--border-mid);border-radius:12px;padding:12px 14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Como quer lançar?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button id="ncModoParc" class="nc-pill" onclick="ncSetModo('parcela')" style="padding:9px 8px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.3;">
+          💳 Valor da<br>parcela
+        </button>
+        <button id="ncModoTotal" class="nc-pill nc-pill-sel" onclick="ncSetModo('total')" style="padding:9px 8px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.3;">
+          🧾 Valor total<br><span style="font-size:10px;font-weight:400;">(sistema divide)</span>
+        </button>
       </div>
     </div>
+
+    <!-- Info parcelas calculado -->
+    <div id="ncParcelasInfo" style="font-size:14px;font-weight:600;color:var(--accent);text-align:center;padding:6px;background:var(--accent-subtle);border-radius:8px;display:none;"></div>
 
     <!-- Observação -->
     <div>
-      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Observação</div>
-      <input id="ncObs" type="text" style="width:100%;border-radius:12px;font-size:15px;padding:13px 16px;" placeholder="Ex: fatura dezembro, aluguel...">
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Observação <span style="color:var(--red)">*</span></div>
+      <input id="ncObs" type="text" style="width:100%;border-radius:12px;font-size:15px;padding:13px 16px;" placeholder="Ex: fatura dezembro, aluguel..." oninput="ncObsInput(this)">
+      <div id="ncObsErr" style="display:none;color:var(--red);font-size:12px;font-weight:600;margin-top:4px;">Campo obrigatório</div>
     </div>
 
     <div class="msg" id="ncMsg" style="font-size:14px;"></div>
@@ -15323,7 +16109,6 @@ function renderizarListaNotificacoes() {
 }
 
 
-
 function togglePainelNotificacoes(force = null) {
   const panel = document.getElementById('notificationPanel');
   if (!panel) return;
@@ -15334,7 +16119,6 @@ function togglePainelNotificacoes(force = null) {
     renderizarListaNotificacoes();
   }
 }
-
 
 
 function obterCaminhosAudioNotificacao() {
@@ -16117,7 +16901,6 @@ async function abrirNotificacao(index) {
     abrirPagina(item.page, botao);
   }
 }
-
 
 
 async function carregarNotificacoes() {
@@ -19191,7 +19974,6 @@ async function resolverTenantParaCadastroFuncionario() {
     empresa_id: String(lojaPadrao.empresa_id || '').trim() || null,
   };
 }
-
 
 
 // ── GERENCIADOR DE VÍNCULOS EMPRESA → LOJAS ──────────────────────────────
@@ -24617,10 +25399,6 @@ function exportarExtratoCofrePdf() {
           <tbody>${linhas}</tbody>
         </table>
       
-
-
-
-
 
 
 </body>
@@ -34663,10 +35441,6 @@ function imprimirRelatorioFinanceiroPdf() {
       
 
 
-
-
-
-
 </body>
     </html>
   `);
@@ -35810,10 +36584,6 @@ function imprimirRelatorioAjusteSaldoPdf() {
       
 
 
-
-
-
-
 </body>
     </html>
   `);
@@ -35913,10 +36683,6 @@ function exportarRelatorioLancamentosPDF() {
   }
   const geradoEm = new Date().toLocaleString('pt-BR');
   win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de tarefas</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}${cssRodapeRelatorioImpressao()}</style></head><body><h1>Relatório de tarefas</h1><p>Gerado em ${escaparHtmlBasico(geradoEm)}</p><table><thead><tr><th>Tarefa</th><th>Status</th><th>Responsável</th><th>Observação</th><th>Descrição</th><th>Data</th><th>Horário</th><th>Início</th><th>Iniciado pelo usuário</th><th>Fim</th><th>Finalizado pelo usuário</th><th>Lançado pelo usuário</th></tr></thead><tbody>${htmlLinhas}</tbody></table>${htmlRodapeRelatorioImpressao(geradoEm, 'Filtros aplicados na tela de Relatório de tarefas')}<script>window.onload=function(){window.print();}<\/script>
-
-
-
-
 
 
 </body></html>`);
@@ -39576,10 +40342,6 @@ function exportarRelatorioPontoPDF() {
   win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de ponto</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f1f5f9}${cssRodapeRelatorioImpressao()}</style></head><body><h1>Relatório de ponto</h1><p>${escapeHtmlPonto(window.__relatorioPontoUltimoPeriodo || '')}</p><table><thead><tr><th>Funcionário</th><th>Data</th><th>Entrada</th><th>Intervalos</th><th>Saída</th><th>Status</th><th>Total</th><th>Ajustes ADM</th></tr></thead><tbody>${htmlLinhas}</tbody></table>${htmlRodapeRelatorioImpressao(geradoEm, filtrosRodape)}<script>window.onload=function(){window.print();}<\/script>
 
 
-
-
-
-
 </body></html>`);
   win.document.close();
 }
@@ -39587,9 +40349,6 @@ function exportarRelatorioPontoPDF() {
   configurarAberturaAutomaticaDatePicker();
   configurarEnterCadastrosFinanceiros();
   // Verificação obrigatória de versão desativada temporariamente.
-
-
-
 
 
 /* === FIX 3.1.38: ponto com 2 intervalos reais no front ===
@@ -40160,86 +40919,6 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     </div>
   </div>
 
-<style id="patch-calendario-real-zuqui">
-  @media (min-width: 901px) {
-    .sidebar { width: 230px !important; }
-    .main { min-width: 0 !important; }
-  }
-  #escala_plantoes .escala-layout{
-    display:grid !important;
-    grid-template-columns: 260px minmax(720px, 1fr) !important;
-    gap:16px !important;
-    align-items:start !important;
-  }
-  #escala_plantoes .escala-toolbar{
-    grid-template-columns:auto auto 1fr auto !important;
-  }
-  #escala_plantoes .escala-calendario-card{overflow:auto !important;}
-  #escala_plantoes #escalaCalendarioGrid{
-    display:grid !important;
-    grid-template-columns:repeat(7,minmax(96px,1fr)) !important;
-    border-top:1px solid rgba(226,240,228,.18) !important;
-    border-left:1px solid rgba(226,240,228,.18) !important;
-    background:var(--bg) !important;
-    min-height:620px !important;
-    width:100% !important;
-  }
-  #escala_plantoes .escala-dia-semana{
-    height:54px !important;display:flex !important;align-items:center !important;justify-content:center !important;
-    font-weight:800 !important;border-right:1px solid rgba(226,240,228,.18) !important;border-bottom:1px solid rgba(226,240,228,.18) !important;
-  }
-  #escala_plantoes .escala-dia{
-    min-height:122px !important;border-right:1px solid rgba(226,240,228,.18) !important;border-bottom:1px solid rgba(226,240,228,.18) !important;
-    padding:8px !important;cursor:pointer !important;background:rgba(10,15,13,.8) !important;overflow:hidden !important;
-  }
-  #escala_plantoes .escala-dia:hover{box-shadow:inset 0 0 0 2px rgba(34,197,94,.55) !important;}
-  #escala_plantoes .escala-dia.fora-mes{opacity:.42 !important;background:rgba(255,255,255,.02) !important;}
-  #escala_plantoes .escala-dia.domingo{background:rgba(20,184,166,.14) !important;}
-  #escala_plantoes .escala-dia.feriado{background:rgba(245,158,11,.16) !important;box-shadow:inset 4px 0 0 rgba(245,158,11,.8) !important;}
-  #escala_plantoes .escala-dia.hoje{outline:2px solid rgba(34,197,94,.8) !important;outline-offset:-2px !important;}
-  #escala_plantoes .escala-dia-numero{text-align:center !important;font-weight:800 !important;font-size:15px !important;margin-bottom:7px !important;}
-  #escala_plantoes .escala-feriado-label{font-size:11px !important;color:#fbbf24 !important;font-weight:800 !important;line-height:1.15 !important;margin-bottom:5px !important;}
-  #escala_plantoes .escala-evento{display:block !important;width:100% !important;margin:3px 0 !important;border:none !important;border-radius:6px !important;padding:3px 5px !important;background:rgba(34,197,94,.12) !important;color:var(--text) !important;font-size:11px !important;text-align:left !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important;}
-  #escala_plantoes .escala-evento.plantao{background:rgba(239,68,68,.16) !important;}
-  #escala_plantoes .escala-evento.folga,
-  #escala_plantoes .escala-evento-folga{
-    background:rgba(220,38,38,.28) !important;
-    border:1px solid rgba(248,113,113,.72) !important;
-    color:#fecaca !important;
-    font-weight:800 !important;
-    box-shadow:0 0 0 1px rgba(127,29,29,.32) inset !important;
-  }
-  #escala_plantoes .escala-evento.reuniao{background:rgba(168,85,247,.16) !important;}
-  #escala_plantoes .escala-total-pago{
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    gap:8px !important;
-    min-height:38px !important;
-    min-width:158px !important;
-    margin:0 !important;
-    padding:6px 10px !important;
-    border-radius:8px !important;
-    border:1px solid rgba(34,197,94,.55) !important;
-    background:rgba(34,197,94,.12) !important;
-    box-shadow:0 0 0 1px rgba(34,197,94,.12) inset !important;
-  }
-  #escala_plantoes .escala-total-pago-label{
-    color:#86efac !important;
-    font-size:9px !important;
-    font-weight:900 !important;
-    text-transform:uppercase !important;
-    letter-spacing:.4px !important;
-  }
-  #escala_plantoes .escala-total-pago-valor{
-    color:#f0fdf4 !important;
-    font-size:14px !important;
-    font-weight:900 !important;
-    line-height:1 !important;
-    white-space:nowrap !important;
-  }
-  @media(max-width:1100px){#escala_plantoes .escala-layout{grid-template-columns:1fr !important;}#escala_plantoes .escala-toolbar{grid-template-columns:1fr !important;}#escala_plantoes .escala-total-pago{justify-self:start !important;}#escala_plantoes .escala-calendario-card{overflow-x:auto !important;}#escala_plantoes #escalaCalendarioGrid{min-width:760px !important;}}
-</style>
 <script id="patch-calendario-real-zuqui-script">
 (function(){
   function h(v){
@@ -40359,96 +41038,10 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 })();
 </script>
 
-<style id="ajuste-espaco-calendario-escala">
-  /* Ajuste solicitado: laterais mais compactas para dar mais espaço ao calendário */
-  @media (min-width: 901px) {
-    .sidebar {
-      width: 200px !important;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
-    }
-    .logo { gap: 8px !important; padding-left: 4px !important; padding-right: 4px !important; }
-    .logo img { width: 34px !important; height: 34px !important; border-radius: 10px !important; }
-    .logo strong { font-size: 15px !important; }
-    .logo span { font-size: 10px !important; }
-    .nav-btn { padding: 8px 8px !important; gap: 8px !important; }
-    .nav-btn .icon { width: 28px !important; height: 28px !important; font-size: 10px !important; }
-    .nav-title { font-size: 13px !important; }
-    .nav-hint { font-size: 10px !important; }
-  }
-  #escala_plantoes { padding-left: 8px !important; padding-right: 8px !important; }
-  #escala_plantoes .escala-layout {
-    grid-template-columns: 220px minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-  #escala_plantoes .escala-side-card,
-  #escala_plantoes .escala-calendario-card {
-    padding: 10px !important;
-  }
-  #escala_plantoes .escala-side-title {
-    font-size: 14px !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 6px !important;
-  }
-  #escala_plantoes .escala-check-row {
-    min-height: 30px !important;
-    padding: 6px 2px !important;
-    gap: 7px !important;
-    font-size: 13px !important;
-  }
-  #escala_plantoes .escala-check-row input { width: 15px !important; height: 15px !important; }
-  #escala_plantoes .escala-toolbar { gap: 8px !important; margin-bottom: 10px !important; }
-  #escala_plantoes .escala-nav { gap: 6px !important; }
-  #escala_plantoes .escala-nav .btn { min-width: 36px !important; height: 36px !important; }
-  #escala_plantoes .escala-nav .btn:nth-child(3) { min-width: 62px !important; }
-  #escala_plantoes .escala-mes-titulo { font-size: 22px !important; }
-  #escala_plantoes .escala-view-tabs button { min-width: 48px !important; padding: 8px 10px !important; }
-  #escala_plantoes .escala-calendario {
-    grid-template-columns: repeat(7, minmax(86px, 1fr)) !important;
-    min-height: 570px !important;
-  }
-  #escala_plantoes .escala-dia-semana { height: 52px !important; font-size: 13px !important; }
-  #escala_plantoes .escala-dia { min-height: 118px !important; padding: 7px !important; }
-  @media (max-width: 1050px) {
-    #escala_plantoes .escala-layout { grid-template-columns: 1fr !important; }
-  }
-</style>
 
-
-<style id="escala-calendario-apenas-mes-atual-fix">
-  #escala_plantoes .escala-dia-vazio{
-    background:rgba(255,255,255,.015) !important;
-    cursor:default !important;
-    pointer-events:none !important;
-    box-shadow:none !important;
-  }
-  #escala_plantoes .escala-dia-vazio:hover{
-    background:rgba(255,255,255,.015) !important;
-    box-shadow:none !important;
-  }
-</style>
-
-<style id="patch-escala-modal-salvar-zuqui">
-  @media (min-width: 901px){
-    .sidebar{width:210px !important;}
-    #escala_plantoes .escala-layout{grid-template-columns:220px minmax(760px,1fr) !important;gap:12px !important;}
-  }
-  #escala_plantoes .escala-side-card{padding:12px !important;}
-  #escala_plantoes .escala-dia-vazio{background:rgba(255,255,255,.012) !important;cursor:default !important;box-shadow:none !important;}
-  #escala_plantoes .escala-dia-vazio:hover{background:rgba(255,255,255,.012) !important;box-shadow:none !important;}
-</style>
 
 
 <!-- PATCH SEGURO: calendário escala abre modal e salva por loja sem mexer no login/ponto -->
-<style id="patch-escala-modal-final-seguro">
-  .escala-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:99999;display:none;align-items:center;justify-content:center;padding:18px}
-  .escala-modal-overlay.show{display:flex!important}
-  .escala-modal-card{width:min(560px,calc(100vw - 28px));background:var(--surface,#111a14);border:1px solid var(--border,#1f2e22);border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);color:var(--text,#e2f0e4)}
-  .escala-modal-title{font-size:20px;font-weight:900;margin-bottom:4px}.escala-modal-sub{font-size:13px;color:var(--green,#22c55e);margin-bottom:14px}
-  .escala-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.escala-modal-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:800;color:var(--text-muted,#6b8f70);text-transform:uppercase;letter-spacing:.3px}.escala-modal-grid input,.escala-modal-grid select,.escala-modal-grid textarea{width:100%;min-height:40px;border:1px solid var(--border,#1f2e22);border-radius:10px;background:var(--bg,#0a0f0d);color:var(--text,#e2f0e4);padding:8px 10px;font-family:inherit;font-size:14px}.escala-modal-grid textarea{min-height:76px;resize:vertical}.escala-modal-full{grid-column:1/-1}.escala-modal-lista{margin-top:10px;border:1px solid var(--border,#1f2e22);border-radius:10px;background:rgba(0,0,0,.14);padding:8px;display:grid;gap:6px;max-height:170px;overflow:auto}.escala-modal-empty{color:var(--text-muted,#6b8f70);font-size:12px;padding:6px}.escala-modal-item{width:100%;border:1px solid rgba(34,197,94,.18);border-radius:8px;background:rgba(34,197,94,.08);color:var(--text,#e2f0e4);padding:7px 9px;text-align:left;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}.escala-modal-item:hover{border-color:rgba(34,197,94,.42);background:rgba(34,197,94,.14)}.escala-modal-item strong{font-size:12px;line-height:1.2}.escala-modal-item span{font-size:11px;color:var(--text-muted,#6b8f70);text-transform:capitalize}.escala-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
-  #escalaCalendarioGrid .escala-dia:not(.escala-dia-vazio){cursor:pointer!important}
-  @media(max-width:640px){.escala-modal-grid{grid-template-columns:1fr}}
-</style>
 <script id="patch-escala-modal-final-seguro-script">
 (function(){
   'use strict';
@@ -41126,24 +41719,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   }, 3000);
 })();
 </script>
-<style id="patch-escala-somente-adm-css">
-  body.escala-somente-visualizacao #escala_plantoes .escala-side-title button { display:none !important; }
-  body.escala-somente-visualizacao #btnSalvarPlantaoEscala,
-  body.escala-somente-visualizacao #btnExcluirPlantaoEscala,
-  body.escala-somente-visualizacao [data-escala-salvar],
-  body.escala-somente-visualizacao [data-escala-excluir] { display:none !important; }
-  #modalEscalaPlantao.escala-modal-readonly input,
-  #modalEscalaPlantao.escala-modal-readonly select,
-  #modalEscalaPlantao.escala-modal-readonly textarea {
-    opacity:.82;
-    cursor:not-allowed;
-  }
-</style>
 
-<style id="patch-permissao-valor-escala">
-  body.sem-valor-combinado-escala .escala-relatorio-valor,
-  body.sem-valor-combinado-escala [data-permissao-valor-escala] { display: none !important; }
-</style>
 
 
 <script id="patch-relatorio-escala-administrador-final">
@@ -41279,194 +41855,6 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   }
   document.addEventListener('DOMContentLoaded',function(){setTimeout(ajustarVisibilidade,800); setTimeout(function(){if(byId('relatorio_plantao')&&byId('relatorio_plantao').classList.contains('ativa'))renderRelatorioEscala();},1000);});
   setTimeout(ajustarVisibilidade,1500);
-})();
-</script>
-
-
-
-<style id="patch-feriados-calendario-completo-zuqui">
-  #escala_plantoes .escala-feriado-label.feriado-nacional{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.42);color:#fbbf24;}
-  #escala_plantoes .escala-feriado-label.feriado-estadual{background:rgba(59,130,246,.16);border-color:rgba(59,130,246,.42);color:#93c5fd;}
-  #escala_plantoes .escala-feriado-label.feriado-municipal{background:rgba(236,72,153,.16);border-color:rgba(236,72,153,.42);color:#f9a8d4;}
-  #escala_plantoes .escala-dia.feriado-estadual{box-shadow:inset 4px 0 0 rgba(59,130,246,.85);}
-  #escala_plantoes .escala-dia.feriado-municipal{box-shadow:inset 4px 0 0 rgba(236,72,153,.85);}
-</style>
-<script id="patch-feriados-calendario-completo-zuqui-script">
-(function(){
-  const MUNICIPAIS_FIXOS = {
-    'SC|ITAPEMA': [
-      { mes: 2, dia: 2, nome: 'Nossa Senhora dos Navegantes', tipo: 'municipal' },
-      { mes: 4, dia: 21, nome: 'Aniversário de Itapema', tipo: 'municipal' },
-      { mes: 6, dia: 13, nome: 'Santo Antônio - Padroeiro de Itapema', tipo: 'municipal' },
-      { mes: 12, dia: 8, nome: 'Imaculada Conceição - Itapema', tipo: 'municipal' }
-    ]
-  };
-  const ESTADUAIS_FIXOS = {
-    'SC': [
-      { mes: 8, dia: 11, nome: 'Dia de Santa Catarina', tipo: 'estadual' },
-      { mes: 11, dia: 25, nome: 'Santa Catarina de Alexandria', tipo: 'estadual' }
-    ]
-  };
-  function esc(v){
-    if(typeof escapeHtml === 'function') return escapeHtml(v);
-    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-  function isoData(d){
-    const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  }
-  function addDias(d,n){ const x=new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; }
-  function pascoa(ano){
-    const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1;
-    return new Date(ano, mes-1, dia);
-  }
-  function chave(ano, mes, dia){ return `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`; }
-  function norm(txt){ return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase(); }
-  function addFeriado(map, dataIso, nome, tipo){
-    if(!dataIso || !nome) return;
-    if(!map[dataIso]) map[dataIso] = [];
-    if(!map[dataIso].some(f => norm(f.nome) === norm(nome))) map[dataIso].push({ nome, tipo: tipo || 'feriado' });
-  }
-  function feriadosNacionaisCompletos(ano){
-    const p=pascoa(ano); const map={};
-    [
-      [chave(ano,1,1),'Confraternização Universal'],
-      [chave(ano,4,21),'Tiradentes'],
-      [chave(ano,5,1),'Dia do Trabalhador'],
-      [chave(ano,9,7),'Independência do Brasil'],
-      [chave(ano,10,12),'Nossa Senhora Aparecida'],
-      [chave(ano,11,2),'Finados'],
-      [chave(ano,11,15),'Proclamação da República'],
-      [chave(ano,11,20),'Consciência Negra'],
-      [chave(ano,12,25),'Natal'],
-      [isoData(addDias(p,-2)),'Sexta-feira Santa'],
-      [isoData(addDias(p,60)),'Corpus Christi']
-    ].forEach(([data,nome]) => addFeriado(map,data,nome,'nacional'));
-    return map;
-  }
-  async function obterLojaCalendarioFeriados(){
-    const lojaId = String((typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || window.lojaAtualId || '').trim();
-    const cache = window.__lojaFeriadosEscalaCache;
-    if(cache && cache.loja_id === lojaId) return cache;
-    let loja = { loja_id: lojaId, cidade: '', estado: '', cep: '' };
-    try{
-      if(lojaId && typeof sb !== 'undefined' && sb?.from){
-        const consulta = () => sb.from('lojas').select('id, nome, cep, cidade, estado, uf, municipio').eq('id', lojaId).maybeSingle();
-        const resp = typeof executarSemFiltroLojaTemporario === 'function' ? await executarSemFiltroLojaTemporario(consulta) : await consulta();
-        if(!resp?.error && resp?.data){
-          loja = {
-            loja_id: lojaId,
-            cidade: String(resp.data.cidade || resp.data.municipio || '').trim(),
-            estado: String(resp.data.estado || resp.data.uf || '').trim().toUpperCase(),
-            cep: String(resp.data.cep || '').trim()
-          };
-        }
-      }
-    }catch(e){ console.warn('Não foi possível carregar cidade/estado da loja para feriados:', e); }
-    if(!loja.cidade) loja.cidade = String(usuarioSistemaLogado?.cidade || usuarioSistemaLogado?.loja_cidade || '').trim();
-    if(!loja.estado) loja.estado = String(usuarioSistemaLogado?.estado || usuarioSistemaLogado?.uf || usuarioSistemaLogado?.loja_estado || '').trim().toUpperCase();
-    window.__lojaFeriadosEscalaCache = loja;
-    return loja;
-  }
-  async function buscarFeriadosTabela(ano, loja){
-    const map = {};
-    try{
-      if(typeof sb === 'undefined' || !sb?.from) return map;
-      let resp = await sb.from('feriados_calendario').select('nome,tipo,ano,mes,dia,data,uf,estado,cidade,municipio,ativo').or(`ano.is.null,ano.eq.${ano}`);
-      if(resp?.error) return map;
-      const ufLoja = norm(loja.estado);
-      const cidadeLoja = norm(loja.cidade);
-      (resp.data || []).forEach(item => {
-        if(item.ativo === false) return;
-        const tipo = String(item.tipo || '').toLowerCase() || 'feriado';
-        const uf = norm(item.uf || item.estado || '');
-        const cidade = norm(item.cidade || item.municipio || '');
-        const aplica = tipo === 'nacional' || (!uf || uf === ufLoja) && (!cidade || cidade === cidadeLoja);
-        if(!aplica) return;
-        let dataIso = String(item.data || '').slice(0,10);
-        if(!dataIso && item.mes && item.dia) dataIso = chave(ano, Number(item.mes), Number(item.dia));
-        addFeriado(map, dataIso, item.nome, tipo);
-      });
-    }catch(e){ console.warn('Tabela feriados_calendario não disponível:', e); }
-    return map;
-  }
-  async function montarFeriadosEscalaCompleto(ano){
-    const loja = await obterLojaCalendarioFeriados();
-    const map = feriadosNacionaisCompletos(ano);
-    const uf = norm(loja.estado);
-    const cidade = norm(loja.cidade);
-    (ESTADUAIS_FIXOS[uf] || []).forEach(f => addFeriado(map, chave(ano,f.mes,f.dia), f.nome, 'estadual'));
-    (MUNICIPAIS_FIXOS[`${uf}|${cidade}`] || []).forEach(f => addFeriado(map, chave(ano,f.mes,f.dia), f.nome, 'municipal'));
-    const extras = await buscarFeriadosTabela(ano, loja);
-    Object.entries(extras).forEach(([data, lista]) => (lista || []).forEach(f => addFeriado(map, data, f.nome, f.tipo)));
-    window.__feriadosEscalaCache = { ano, loja, map };
-    return map;
-  }
-  function eventosPorDiaEscala(){
-    const fonte = window.escalaPlantoesEventos || (typeof escalaPlantoesEventos !== 'undefined' ? escalaPlantoesEventos : []);
-    return (fonte || []).reduce((acc,item)=>{
-      if(item.deleted_at) return acc;
-      const k=String(item.data_plantao || '').slice(0,10); if(!k) return acc;
-      (acc[k] ||= []).push(item); return acc;
-    },{});
-  }
-  function nomeFuncionarioEvento(ev){ return ev.funcionario_nome || ev.funcionarios?.nome || ev.titulo || 'Funcionário'; }
-  async function renderizarCalendarioEscalaCompleto(){
-    const grid=document.getElementById('escalaCalendarioGrid');
-    const titulo=document.getElementById('escalaMesTitulo');
-    if(!grid) return;
-    const ref = (window.escalaPlantoesDataReferencia instanceof Date && !Number.isNaN(window.escalaPlantoesDataReferencia.getTime())) ? window.escalaPlantoesDataReferencia : new Date();
-    window.escalaPlantoesDataReferencia = ref;
-    const ano=ref.getFullYear(), mes=ref.getMonth();
-    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    if(titulo) titulo.textContent = `${meses[mes]} de ${ano}`;
-    const showFeriados = document.getElementById('escalaFiltroFeriados')?.checked !== false;
-    const showDomingos = document.getElementById('escalaFiltroDomingos')?.checked !== false;
-    const feriados = showFeriados ? await montarFeriadosEscalaCompleto(ano) : {};
-    const primeiro = new Date(ano, mes, 1);
-    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-    const blanksAntes = primeiro.getDay();
-    const totalCelulas = Math.ceil((blanksAntes + diasNoMes) / 7) * 7;
-    const hoje = isoData(new Date());
-    const evDia = eventosPorDiaEscala();
-    const dias=['DOM.','SEG.','TER.','QUA.','QUI.','SEX.','SÁB.'];
-    let html = dias.map(d=>`<div class="escala-dia-semana">${d}</div>`).join('');
-    for(let i=0;i<totalCelulas;i++){
-      const diaMes = i - blanksAntes + 1;
-      if(diaMes < 1 || diaMes > diasNoMes){ html += `<div class="escala-dia escala-dia-vazio" aria-hidden="true"></div>`; continue; }
-      const data = new Date(ano, mes, diaMes);
-      const dataIso = isoData(data);
-      const domingo = data.getDay() === 0;
-      const listaFeriados = feriados[dataIso] || [];
-      const tipoPrincipal = listaFeriados.some(f=>f.tipo==='municipal') ? 'municipal' : listaFeriados.some(f=>f.tipo==='estadual') ? 'estadual' : listaFeriados.length ? 'nacional' : '';
-      const classes = ['escala-dia', domingo && showDomingos ? 'domingo' : '', listaFeriados.length ? 'feriado' : '', tipoPrincipal ? `feriado-${tipoPrincipal}` : '', dataIso===hoje ? 'hoje' : ''].filter(Boolean).join(' ');
-      const feriadoHtml = listaFeriados.map(f=>`<div class="escala-feriado-label feriado-${esc(f.tipo || 'feriado')}" title="${esc(f.nome)}">${esc(f.nome)}</div>`).join('');
-      const eventos = evDia[dataIso] || [];
-      const eventosHtml = eventos.slice(0,4).map(ev=>{
-        const ini=String(ev.inicio_hora || '').slice(0,5);
-        const nome=nomeFuncionarioEvento(ev);
-        const texto=`${ini} ${nome}`.trim();
-        return `<button class="escala-evento ${esc(ev.tipo||'plantao')}" type="button" title="${esc(texto)}" onclick="event.stopPropagation(); abrirModalEditarPlantaoEscala('${esc(ev.id)}')">${esc(texto)}</button>`;
-      }).join('');
-      const mais = eventos.length > 4 ? `<button class="escala-evento" type="button" onclick="event.stopPropagation()">mais +${eventos.length-4}</button>` : '';
-      html += `<div class="${classes}" data-data="${dataIso}" onclick="abrirModalCadastroPlantaoEscala('${dataIso}')"><div class="escala-dia-numero">${diaMes}</div>${feriadoHtml}${eventosHtml}${mais}</div>`;
-    }
-    grid.innerHTML = html;
-  }
-  const renderAnterior = window.renderizarEscalaPlantoes;
-  window.renderizarEscalaPlantoes = function(){ renderizarCalendarioEscalaCompleto().catch(e => { console.error('Erro ao renderizar feriados da escala:', e); if(typeof renderAnterior === 'function') renderAnterior(); }); };
-  const carregarAnterior = window.carregarEscalaPlantoes;
-  window.carregarEscalaPlantoes = async function(){
-    if(typeof carregarAnterior === 'function') await carregarAnterior();
-    await renderizarCalendarioEscalaCompleto();
-  };
-  const mudarAnterior = window.mudarMesEscalaPlantoes;
-  window.mudarMesEscalaPlantoes = function(delta){
-    const r = window.escalaPlantoesDataReferencia || new Date();
-    window.escalaPlantoesDataReferencia = new Date(r.getFullYear(), r.getMonth() + Number(delta || 0), 1);
-    if(typeof window.carregarEscalaPlantoes === 'function') window.carregarEscalaPlantoes();
-  };
-  document.addEventListener('DOMContentLoaded', () => setTimeout(() => { if(document.getElementById('escalaCalendarioGrid')) window.renderizarEscalaPlantoes(); }, 600));
 })();
 </script>
 
@@ -41617,16 +42005,6 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 </script>
 
 
-
-<style id="patch-feriados-definitivo-por-loja">
-  #escala_plantoes .escala-feriado-label{display:block;margin-top:4px;padding:4px 6px;border-radius:7px;border:1px solid rgba(245,158,11,.36);font-size:11px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  #escala_plantoes .escala-feriado-label.feriado-nacional{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.42);color:#fbbf24;}
-  #escala_plantoes .escala-feriado-label.feriado-estadual{background:rgba(59,130,246,.16);border-color:rgba(59,130,246,.42);color:#93c5fd;}
-  #escala_plantoes .escala-feriado-label.feriado-municipal{background:rgba(236,72,153,.16);border-color:rgba(236,72,153,.42);color:#f9a8d4;}
-  #escala_plantoes .escala-dia.feriado-nacional{box-shadow:inset 4px 0 0 rgba(245,158,11,.85);}
-  #escala_plantoes .escala-dia.feriado-estadual{box-shadow:inset 4px 0 0 rgba(59,130,246,.85);}
-  #escala_plantoes .escala-dia.feriado-municipal{box-shadow:inset 4px 0 0 rgba(236,72,153,.9);}
-</style>
 <script id="patch-feriados-definitivo-por-loja">
 (function(){
   // Feriados definitivos por loja/ano. Não altera login, ponto ou permissões.
@@ -41887,7 +42265,6 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 </script>
 
 
-
 <script id="patch-ponto-atualizar-primeiro-clique">
 (function patchPontoAtualizarPrimeiroClique() {
   function obterFuncionarioFiltroPontoSeguro() {
@@ -41973,26 +42350,6 @@ window.addEventListener('load', function() {
 </script>
 
 
-<style id="patch-ponto-info-botao-css-3-1-57">
-  .ponto-info-regra-btn{
-    width:38px!important;height:38px!important;min-width:38px!important;padding:0!important;border-radius:999px!important;
-    display:inline-flex!important;align-items:center!important;justify-content:center!important;
-    font-weight:900!important;font-size:16px!important;line-height:1!important;
-    border:1px solid rgba(245,158,11,.85)!important;
-    background:rgba(245,158,11,.18)!important;
-    color:#fbbf24!important;
-    box-shadow:0 0 0 1px rgba(245,158,11,.18),0 10px 24px rgba(245,158,11,.14)!important;
-  }
-  .ponto-info-regra-btn:hover{background:rgba(245,158,11,.28)!important;border-color:rgba(251,191,36,.95)!important;color:#fde68a!important;}
-  .ponto-info-modal-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(4,8,6,.68);backdrop-filter:blur(3px);}
-  .ponto-info-modal-overlay[hidden]{display:none!important;}
-  .ponto-info-modal-card{width:min(640px,calc(100vw - 28px));max-height:calc(100dvh - 36px);overflow:auto;border-radius:18px;border:1px solid rgba(245,158,11,.42);background:#0f1a13;color:#e2f0e4;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:20px;}
-  .ponto-info-modal-card h3{margin:0 0 10px;font-size:18px;color:#fbbf24;}
-  .ponto-info-modal-card p{margin:0 0 10px;color:#a7c7aa;line-height:1.45;font-size:13px;}
-  .ponto-info-modal-card ul{margin:10px 0 14px;padding-left:20px;color:#d9f6dd;font-size:13px;line-height:1.55;}
-  .ponto-info-modal-card li{margin-bottom:6px;}
-  .ponto-info-modal-actions{display:flex;justify-content:flex-end;margin-top:12px;}
-</style>
 <script id="patch-ponto-info-botao-3-1-57">
 (function(){
   function byId(id){ return document.getElementById(id); }
@@ -42045,546 +42402,9 @@ window.addEventListener('load', function() {
 })();
 </script>
 
-<style id="patch-escala-compacta-viewport">
-  #escala_plantoes{
-    padding:6px 8px 10px !important;
-  }
-  #escala_plantoes .escala-layout{
-    grid-template-columns:240px minmax(680px,1fr) !important;
-    gap:10px !important;
-  }
-  #escala_plantoes .escala-side-card,
-  #escala_plantoes .escala-calendario-card{
-    padding:10px !important;
-    border-radius:8px !important;
-  }
-  #escala_plantoes .escala-side-title{
-    min-height:28px !important;
-    padding-bottom:8px !important;
-    margin-bottom:6px !important;
-    font-size:14px !important;
-  }
-  #escala_plantoes .escala-side-title .btn{
-    width:34px !important;
-    height:34px !important;
-  }
-  #escala_plantoes .escala-check-row{
-    min-height:25px !important;
-    padding:4px 2px !important;
-    gap:7px !important;
-    font-size:12px !important;
-  }
-  #escala_plantoes .escala-check-row input{
-    width:14px !important;
-    height:14px !important;
-  }
-  #escala_plantoes .escala-toolbar{
-    gap:8px !important;
-    margin-bottom:8px !important;
-  }
-  #escala_plantoes .escala-nav{
-    gap:5px !important;
-  }
-  #escala_plantoes .escala-nav .btn{
-    min-width:36px !important;
-    height:34px !important;
-    padding:0 10px !important;
-    border-radius:8px !important;
-    font-size:14px !important;
-  }
-  #escala_plantoes .escala-nav .btn:nth-child(3){
-    min-width:56px !important;
-  }
-  #escala_plantoes .escala-total-pago{
-    min-height:32px !important;
-    min-width:142px !important;
-    padding:5px 9px !important;
-  }
-  #escala_plantoes .escala-total-pago-label{
-    font-size:8px !important;
-  }
-  #escala_plantoes .escala-total-pago-valor{
-    font-size:13px !important;
-  }
-  #escala_plantoes .escala-mes-titulo{
-    font-size:20px !important;
-  }
-  #escala_plantoes .escala-view-tabs button{
-    min-width:48px !important;
-    padding:7px 10px !important;
-    font-size:12px !important;
-  }
-  #escala_plantoes #escalaCalendarioGrid{
-    min-height:0 !important;
-    grid-template-columns:repeat(7,minmax(78px,1fr)) !important;
-  }
-  #escala_plantoes .escala-dia-semana{
-    height:34px !important;
-    font-size:12px !important;
-  }
-  #escala_plantoes .escala-dia{
-    min-height:70px !important;
-    padding:5px 6px !important;
-  }
-  #escala_plantoes .escala-dia-numero{
-    font-size:14px !important;
-    margin-bottom:4px !important;
-  }
-  #escala_plantoes .escala-feriado-label{
-    padding:3px 5px !important;
-    margin-bottom:3px !important;
-    font-size:9px !important;
-    border-radius:6px !important;
-  }
-  #escala_plantoes .escala-evento{
-    min-height:16px !important;
-    margin:2px 0 !important;
-    padding:2px 5px !important;
-    border-radius:5px !important;
-    font-size:10px !important;
-    line-height:1.15 !important;
-  }
-  #escala_plantoes .escala-evento:before{
-    width:6px !important;
-    height:6px !important;
-    margin-right:4px !important;
-  }
-  #escala_plantoes .escala-legenda{
-    margin-top:6px !important;
-    gap:5px !important;
-    font-size:10px !important;
-  }
-  #escala_plantoes .escala-legenda span{
-    padding:3px 6px !important;
-  }
-  @media (max-width:1100px){
-    #escala_plantoes .escala-layout{
-      grid-template-columns:1fr !important;
-    }
-    #escala_plantoes #escalaCalendarioGrid{
-      min-width:690px !important;
-    }
-  }
-</style>
 
-<style id="patch-layout-global-compacto">
-  .sidebar{
-    width:210px !important;
-    padding:10px 8px !important;
-    gap:4px !important;
-  }
-  .logo{
-    gap:8px !important;
-    padding:0 5px 10px !important;
-    margin-bottom:6px !important;
-  }
-  .logo img{
-    width:32px !important;
-    height:32px !important;
-    border-radius:9px !important;
-  }
-  .logo strong{
-    font-size:14px !important;
-    line-height:1 !important;
-  }
-  .logo span{
-    font-size:9px !important;
-    margin-top:1px !important;
-  }
-  .nav-group{
-    padding:6px 0 0 !important;
-  }
-  .nav-label{
-    padding:4px 8px 5px !important;
-    font-size:10px !important;
-    letter-spacing:1px !important;
-  }
-  .nav-btn{
-    min-height:42px !important;
-    padding:7px 9px !important;
-    gap:8px !important;
-    border-radius:8px !important;
-  }
-  .nav-btn .icon{
-    width:28px !important;
-    height:28px !important;
-    min-width:28px !important;
-    font-size:10px !important;
-    border-radius:8px !important;
-  }
-  .nav-title{
-    font-size:13px !important;
-    line-height:1.1 !important;
-  }
-  .nav-hint{
-    display:none !important;
-  }
-  .nav-submenu{
-    margin-left:38px !important;
-  }
-  .nav-sub-btn{
-    min-height:30px !important;
-    padding:5px 8px !important;
-  }
-  .topbar{
-    min-height:44px !important;
-    padding:4px 8px !important;
-    gap:8px !important;
-  }
-  .topbar-main{
-    gap:8px !important;
-  }
-  #topbarTitleWrap{
-    display:none !important;
-  }
-  .topbar-clock,
-  .topbar-business-day{
-    width:160px !important;
-    min-width:150px !important;
-    min-height:34px !important;
-    padding:5px 10px !important;
-    border-radius:9px !important;
-  }
-  .topbar-info-label{
-    font-size:8px !important;
-    letter-spacing:.7px !important;
-  }
-  .topbar-clock-time,
-  .topbar-business-day-date{
-    font-size:19px !important;
-  }
-  .topbar-store{
-    min-height:34px !important;
-    padding:5px 10px !important;
-    border-radius:9px !important;
-  }
-  .topbar-store-name,
-  .topbar-user-name{
-    font-size:13px !important;
-  }
-  .topbar-store-switch,
-  .topbar-switch-store-btn,
-  .topbar-actions .btn-sm{
-    min-height:28px !important;
-    padding:5px 8px !important;
-    border-radius:8px !important;
-    font-size:11px !important;
-  }
-  .topbar-user{
-    min-height:34px !important;
-    padding:5px 9px !important;
-    border-radius:9px !important;
-  }
-  .topbar-actions{
-    gap:6px !important;
-  }
-  .content{
-    padding:8px 10px !important;
-  }
-  .card,
-  .stat-card{
-    padding:10px !important;
-    border-radius:8px !important;
-  }
-  .stats-grid{
-    gap:8px !important;
-    margin-bottom:8px !important;
-  }
-  #escala_plantoes .escala-layout{
-    grid-template-columns:210px minmax(620px,1fr) !important;
-    gap:8px !important;
-  }
-  #escala_plantoes .escala-side-card{
-    padding:8px !important;
-  }
-  #escala_plantoes .escala-check-row{
-    font-size:11px !important;
-  }
-  #escala_plantoes .escala-calendario-card{
-    padding:8px !important;
-  }
-  #escala_plantoes #escalaCalendarioGrid{
-    grid-template-columns:repeat(7,minmax(72px,1fr)) !important;
-  }
-  @media(max-width:1050px){
-    .sidebar{
-      width:190px !important;
-    }
-    #escala_plantoes .escala-layout{
-      grid-template-columns:1fr !important;
-    }
-  }
-</style>
 
-<style id="patch-ponto-dashboard-compacto">
-  .dashboard-prod-grid{
-    grid-template-columns:150px 1fr !important;
-    gap:12px !important;
-    align-items:start !important;
-  }
-  .prod-pie{
-    width:140px !important;
-    height:140px !important;
-  }
-  .prod-pie-center{
-    width:86px !important;
-    height:86px !important;
-    gap:2px !important;
-  }
-  .prod-pie-value{
-    font-size:22px !important;
-  }
-  .prod-pie-label{
-    font-size:9px !important;
-  }
-  .prod-stats{
-    gap:6px !important;
-  }
-  .prod-stat{
-    padding:6px 8px !important;
-    border-radius:7px !important;
-  }
-  .prod-stat-label{
-    font-size:9px !important;
-    letter-spacing:.35px !important;
-  }
-  .prod-stat-value{
-    margin-top:2px !important;
-    font-size:14px !important;
-  }
-  .prod-period-info{
-    margin-top:6px !important;
-    font-size:11px !important;
-  }
-  .prod-func-list{
-    margin-top:8px !important;
-    padding-top:8px !important;
-    gap:5px !important;
-  }
-  .prod-func-title{
-    font-size:9px !important;
-  }
-  .prod-func-row{
-    font-size:12px !important;
-    gap:7px !important;
-  }
-  .prod-func-dot{
-    width:8px !important;
-    height:8px !important;
-  }
-  .dashboard-period-tabs{
-    gap:5px !important;
-    margin-bottom:8px !important;
-  }
-  .dashboard-period-btn{
-    padding:5px 9px !important;
-    font-size:11px !important;
-    min-height:28px !important;
-  }
-  #bater_ponto{
-    font-size:12px !important;
-  }
-  #bater_ponto .ponto-topo-grid{
-    grid-template-columns:minmax(470px,1fr) minmax(430px,460px) !important;
-    gap:8px !important;
-    align-items:start !important;
-    margin-bottom:8px !important;
-  }
-  #bater_ponto .ponto-topo-grid > .card{
-    min-height:0 !important;
-    align-self:start !important;
-  }
-  #bater_ponto .ponto-topo-grid > .card:first-child{
-    position:relative !important;
-  }
-  #bater_ponto .card-title{
-    font-size:11px !important;
-    letter-spacing:.6px !important;
-    margin-bottom:5px !important;
-    line-height:1.1 !important;
-  }
-  #bater_ponto .ponto-registro-row{
-    display:flex !important;
-    align-items:center !important;
-    gap:6px !important;
-    flex-wrap:wrap !important;
-  }
-  #pontoPinInput{
-    flex:0 1 150px !important;
-    min-width:140px !important;
-    max-width:160px !important;
-    height:32px !important;
-    padding:6px 9px !important;
-    font-size:13px !important;
-    letter-spacing:4px !important;
-  }
-  #bater_ponto .ponto-registro-row .btn{
-    min-height:32px !important;
-    height:32px !important;
-    padding:6px 10px !important;
-    border-radius:7px !important;
-    font-size:11px !important;
-    line-height:1 !important;
-    white-space:nowrap !important;
-  }
-  #btnAjusteManualAdminPonto{
-    order:4 !important;
-    flex:0 0 auto !important;
-    max-width:145px !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-  }
-  #bater_ponto .ponto-info-regra-btn{
-    position:absolute !important;
-    top:10px !important;
-    left:135px !important;
-    width:16px !important;
-    height:16px !important;
-    min-width:16px !important;
-    min-height:16px !important;
-    margin:0 !important;
-    align-self:center !important;
-    order:0 !important;
-    font-size:8px !important;
-    padding:0 !important;
-    border-radius:999px !important;
-    vertical-align:middle !important;
-    transform:none !important;
-    z-index:2 !important;
-  }
-  #bater_ponto #msgPonto,
-  #bater_ponto #msgTempoAvisoPonto,
-  #bater_ponto #dash-horas-msg{
-    margin-top:6px !important;
-    font-size:11px !important;
-    line-height:1.25 !important;
-  }
-  #bater_ponto .ponto-tempo-aviso-card{
-    padding:8px 10px !important;
-  }
-  #bater_ponto .ponto-tempo-aviso-row{
-    grid-template-columns:minmax(116px,1fr) auto auto auto auto !important;
-    gap:5px !important;
-    align-items:center !important;
-  }
-  #bater_ponto .ponto-tempo-aviso-row label{
-    font-size:9px !important;
-    line-height:1.2 !important;
-  }
-  #bater_ponto .ponto-tempo-aviso-row input{
-    min-height:30px !important;
-    height:30px !important;
-    padding:5px 8px !important;
-    font-size:10px !important;
-    border-radius:7px !important;
-  }
-  #bater_ponto .ponto-tempo-aviso-row .btn{
-    min-height:30px !important;
-    height:30px !important;
-    padding:6px 9px !important;
-    border-radius:7px !important;
-    font-size:10px !important;
-    white-space:nowrap !important;
-  }
-  #bater_ponto .ponto-tempo-aviso-status{
-    grid-column:auto !important;
-    grid-row:auto !important;
-    justify-content:flex-start !important;
-    min-height:30px !important;
-    font-size:9px !important;
-    order:20 !important;
-  }
-  #bater_ponto .ponto-tempo-aviso-valor{
-    padding:4px 7px !important;
-    gap:3px !important;
-  }
-  #bater_ponto .ponto-tempo-info-icon{
-    width:16px !important;
-    height:16px !important;
-    font-size:8px !important;
-    flex:0 0 16px !important;
-  }
-  #bater_ponto .ponto-horas-card{
-    padding:10px !important;
-  }
-  #bater_ponto .ponto-horas-tabs{
-    gap:5px !important;
-    margin-bottom:8px !important;
-  }
-  #bater_ponto .ponto-horas-tabs .dashboard-period-btn{
-    min-width:54px !important;
-    min-height:28px !important;
-    padding:5px 8px !important;
-    border-radius:8px !important;
-    font-size:11px !important;
-  }
-  #bater_ponto .ponto-horas-grid{
-    grid-template-columns:145px minmax(0,1fr) !important;
-    gap:12px !important;
-  }
-  #horasPieDashboard.ponto-horas-pie{
-    width:138px !important;
-    height:138px !important;
-  }
-  #bater_ponto .ponto-horas-card .prod-stats{
-    margin-bottom:6px !important;
-  }
-  #bater_ponto .ponto-horas-card .prod-func-list{
-    margin-top:6px !important;
-  }
-  #bater_ponto .ponto-resumo-dia-tabs{
-    margin-bottom:6px !important;
-  }
-  #pontoResumoHoje .ponto-resumo-lista{
-    gap:6px !important;
-  }
-  #pontoResumoHoje .ponto-resumo-linha{
-    padding:7px 8px !important;
-    border-radius:8px !important;
-  }
-  #pontoResumoHoje .ponto-resumo-nome{
-    font-size:12px !important;
-  }
-  #pontoResumoHoje .ponto-resumo-sequencia,
-  #pontoResumoHoje .ponto-resumo-metricas,
-  #pontoResumoHoje .ponto-resumo-tag{
-    font-size:11px !important;
-  }
-  @media(max-width:980px){
-    #bater_ponto .ponto-topo-grid,
-    #bater_ponto .ponto-horas-grid,
-    .dashboard-prod-grid{
-      grid-template-columns:1fr !important;
-    }
-    #horasPieDashboard.ponto-horas-pie,
-    .prod-pie{
-      width:128px !important;
-      height:128px !important;
-    }
-  }
-</style>
 
-<style id="patch-ponto-info-no-titulo">
-  #bater_ponto .ponto-topo-grid > .card:first-child .card-title{
-    display:flex !important;
-    align-items:center !important;
-    gap:5px !important;
-  }
-  #bater_ponto .ponto-info-regra-btn{
-    position:static !important;
-    width:16px !important;
-    height:16px !important;
-    min-width:16px !important;
-    min-height:16px !important;
-    margin:0 !important;
-    padding:0 !important;
-    font-size:8px !important;
-    line-height:1 !important;
-    border-radius:999px !important;
-    transform:none !important;
-    box-shadow:none !important;
-  }
-</style>
 <script id="patch-ponto-info-no-titulo-script">
 (function(){
   function moverInfoParaTitulo(){
@@ -42602,239 +42422,35 @@ window.addEventListener('load', function() {
 })();
 </script>
 
-<style id="patch-ponto-remover-espaco-vazio">
-  #bater_ponto .ponto-topo-grid{
-    align-items:start !important;
-  }
-  #bater_ponto .ponto-topo-grid > .card{
-    height:auto !important;
-    min-height:0 !important;
-    padding:8px 10px !important;
-  }
-  #bater_ponto .ponto-topo-grid .ponto-tempo-aviso-card{
-    min-height:0 !important;
-  }
-  #bater_ponto #msgPonto:empty,
-  #bater_ponto #msgTempoAvisoPonto:empty{
-    display:none !important;
-    min-height:0 !important;
-    height:0 !important;
-    margin:0 !important;
-    padding:0 !important;
-  }
-  #bater_ponto .ponto-registro-row{
-    margin-bottom:0 !important;
-  }
-</style>
-
-<style id="patch-status-ponto-tabs-compacto">
-  #bater_ponto .card:has(#pontoResumoHoje){
-    padding:8px 10px !important;
-  }
-  #bater_ponto .card:has(#pontoResumoHoje) #pontoResumoTitulo{
-    display:inline-flex !important;
-    align-items:center !important;
-    margin:0 10px 0 0 !important;
-    line-height:28px !important;
-    vertical-align:middle !important;
-  }
-  #bater_ponto .ponto-resumo-dia-tabs{
-    display:inline-flex !important;
-    vertical-align:middle !important;
-    margin:0 0 6px 0 !important;
-    gap:5px !important;
-  }
-  #bater_ponto .ponto-resumo-dia-tabs .dashboard-period-btn{
-    min-height:28px !important;
-    padding:5px 10px !important;
-    font-size:11px !important;
-    border-radius:999px !important;
-  }
-  #pontoResumoHoje{
-    margin-top:2px !important;
-  }
-</style>
 
 
-<style id="patch-contas-pagar-filtros-compactos">
-  #financeiro_contasapagar > .card:has(#btnToggleContasAPagarLista) {
-    padding: 10px 12px 10px !important;
-  }
-  #financeiro_contasapagar .financeiro-card-title-row {
-    display: grid !important;
-    grid-template-columns: max-content 122px repeat(4, 112px) minmax(0, 1fr) !important;
-    align-items: center !important;
-    gap: 8px !important;
-    min-height: 36px !important;
-    margin: 0 0 8px !important;
-  }
-  #financeiro_contasapagar .financeiro-card-title-row .card-title {
-    align-self: center !important;
-    margin: 0 !important;
-    font-size: 13px !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
-  }
-  #financeiro_contasapagar .financeiro-card-title-row #btnToggleContasAPagarLista {
-    align-self: center !important;
-    justify-self: start !important;
-    width: 122px !important;
-    min-width: 122px !important;
-    height: 28px !important;
-    min-height: 28px !important;
-    margin: 0 !important;
-    padding: 4px 8px !important;
-    border-radius: 8px !important;
-    font-size: 11px !important;
-    line-height: 1 !important;
-  }
-  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto {
-    align-self: center !important;
-    display: grid !important;
-    grid-template-rows: 10px 28px !important;
-    gap: 2px !important;
-    width: 112px !important;
-    min-width: 112px !important;
-    max-width: 112px !important;
-    height: 40px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto label {
-    display: block !important;
-    height: 10px !important;
-    margin: 0 !important;
-    color: var(--text-muted) !important;
-    font-size: 7px !important;
-    font-weight: 800 !important;
-    letter-spacing: .25px !important;
-    line-height: 10px !important;
-    text-transform: uppercase !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-  #financeiro_contasapagar .financeiro-card-title-row .financeiro-filtro-compacto input[type="date"] {
-    display: block !important;
-    width: 112px !important;
-    min-width: 112px !important;
-    max-width: 112px !important;
-    height: 28px !important;
-    min-height: 28px !important;
-    max-height: 28px !important;
-    padding: 3px 7px !important;
-    border-radius: 8px !important;
-    font-size: 11px !important;
-    line-height: 1 !important;
-    box-sizing: border-box !important;
-  }
-  #financeiro_contasapagar .financeiro-filtros-row {
-    display: grid !important;
-    grid-template-columns: minmax(360px, 1fr) 180px 84px 220px !important;
-    gap: 6px !important;
-    margin: 0 !important;
-  }
-  #financeiro_contasapagar .financeiro-filtros-row input,
-  #financeiro_contasapagar .financeiro-filtros-row select,
-  #financeiro_contasapagar .financeiro-filtros-row .btn {
-    height: 30px !important;
-    min-height: 30px !important;
-    padding: 4px 9px !important;
-    border-radius: 8px !important;
-    font-size: 12px !important;
-  }
-  #financeiro_contasapagar #filtroLojasContasAPagarFinanceiro {
-    margin-top: 6px !important;
-    padding: 8px 10px !important;
-    min-height: 0 !important;
-  }
-  #financeiro_contasapagar .financeiro-selecao-contas-row {
-    grid-template-columns: 166px 186px minmax(0, 1fr) !important;
-    margin-top: 6px !important;
-  }
-</style>
 
-<style id="patch-relatorio-ponto-filtro-funcionarios">
-  #relatorio_ponto .card:has(#filtroPontoFuncionario) {
-    overflow: visible !important;
-  }
-  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) {
-    display: grid !important;
-    grid-template-columns: minmax(220px, 1.25fr) minmax(126px, 1fr) minmax(126px, 1fr) 112px 112px auto auto !important;
-    align-items: center !important;
-    gap: 8px !important;
-  }
-  #relatorio_ponto #filtroPontoFuncionario {
-    min-width: 0 !important;
-    width: 100% !important;
-  }
-  #relatorio_ponto #filtroPontoFuncionario .relatorio-check-filter-head {
-    height: 34px !important;
-    min-height: 34px !important;
-    max-height: 34px !important;
-  }
-  #relatorio_ponto #filtroPontoFuncionario .relatorio-check-filter-query {
-    text-align: left !important;
-    font-size: 12px !important;
-  }
-  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) input[type="date"],
-  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) input[type="time"] {
-    min-width: 0 !important;
-    width: 100% !important;
-    height: 34px !important;
-    min-height: 34px !important;
-    padding: 6px 9px !important;
-    font-size: 12px !important;
-  }
-  #relatorio_ponto .form-row:has(#filtroPontoFuncionario) .btn {
-    height: 34px !important;
-    min-height: 34px !important;
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-    white-space: nowrap !important;
-  }
-  @media (max-width: 1100px) {
-    #relatorio_ponto .form-row:has(#filtroPontoFuncionario) {
-      grid-template-columns: 1fr 1fr !important;
-    }
-  }
-</style>
+
 
 </body>
 </html>
 
 
-
-
-
-
-
-
 <script id="nc-sheet-js">
 /* ══ NOVA CONTA A PAGAR SHEET ══ */
 
-// ═══════════════════════════════════════════════════════════════
-// NOVA CONTA A PAGAR — motor NC (reescrito limpo)
-// NC.modo: 'parcela' = o usuário digita o valor de cada parcela
-//          'total'   = o usuário digita o total e o sistema divide
-// ═══════════════════════════════════════════════════════════════
+// NC.modo: 'parcela' = usuário digita valor de cada parcela
+//          'total'   = usuário digita o total e o sistema divide
 const NC = {
   fornId: null, fornNome: null, catId: null,
   dataCompra: null, dataVenc: null,
-  valor: null,       // valor conforme digitado (parcela ou total, depende de NC.modo)
+  valor: null,
   obs: '',
   parcelas: 1, intervalo: 30,
   modoEdicao: false,
-  modo: 'total',     // 'parcela' | 'total'
-  lojaId: null,      // loja da conta em edição
+  modo: 'total',
+  lojaId: null,
 };
 
 // ── Helpers de valor ────────────────────────────────────────────
 function ncParseValor(txt) {
-  // Aceita: "550", "550,00", "1.234,56", "R$ 1.234,56"
   const s = String(txt || '').replace(/[R$\s]/g, '').trim();
   if (!s) return null;
-  // Remove pontos de milhar, troca vírgula por ponto decimal
   const norm = s.replace(/\./g, '').replace(',', '.');
   const n = parseFloat(norm);
   return (isFinite(n) && n >= 0) ? Math.round(n * 100) / 100 : null;
@@ -42845,29 +42461,20 @@ function ncFmtBR(n) {
   return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// ── Campo Valor: eventos ────────────────────────────────────────
+// ── Campo Valor ──────────────────────────────────────────────────
 function ncValorFocus(inp) {
-  // Remove formatação para edição livre
-  const s = inp.value.replace(/[R$\s]/g, '').trim();
-  inp.value = s;
+  inp.value = inp.value.replace(/[R$\s]/g, '').trim();
   setTimeout(() => inp.select(), 0);
 }
-
-function ncValorInput(inp) {
-  // Só sanitiza — não reescreve enquanto digita (evita travamento no celular)
-  NC.valor = ncParseValor(inp.value);
-  ncAtuParcelasInfo();
-}
-
+function ncValorInput(inp) { NC.valor = ncParseValor(inp.value); ncAtuParcelasInfo(); }
 function ncValorBlur(inp) {
-  // Formata bonito ao sair
   const v = ncParseValor(inp.value);
   NC.valor = v;
   inp.value = (v != null) ? ncFmtBR(v) : '';
   ncAtuParcelasInfo();
 }
 
-// ── Modo: parcela ou total ──────────────────────────────────────
+// ── Modo: valor da parcela ou valor total ────────────────────────
 function ncSetModo(modo) {
   NC.modo = modo;
   document.getElementById('ncModoParc')?.classList.toggle('nc-pill-sel', modo === 'parcela');
@@ -42875,65 +42482,62 @@ function ncSetModo(modo) {
   ncAtuParcelasInfo();
 }
 
-// ── Parcelas ────────────────────────────────────────────────────
-function ncToggleParcelas() {
-  const pw = document.getElementById('ncParcelasWrap');
-  if (!pw) return;
-  const aberto = pw.style.display === 'flex';
-  pw.style.display = aberto ? 'none' : 'flex';
-  // Painel "Como quer lançar?" aparece sempre que o painel de parcelas estiver aberto
-  const mw = document.getElementById('ncModoParcelasWrap');
-  if (mw) mw.style.display = aberto ? 'none' : '';
-}
-
-function ncSelParc(el) {
-  document.querySelectorAll('.nc-parc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-  el.classList.add('nc-pill-sel');
-  NC.parcelas = parseInt(el.dataset.p, 10) || 1;
-  const pc = document.getElementById('ncParcCustom'); if (pc) pc.value = '';
-  ncAtuParcelasInfo();
-}
-
+// ── Parcelas (input direto) ──────────────────────────────────────
 function ncParcCust() {
   const pc = document.getElementById('ncParcCustom');
   const v = parseInt((pc && pc.value) || '0', 10) || 0;
-  if (v >= 2) {
-    NC.parcelas = v;
-    document.querySelectorAll('.nc-parc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-  }
+  if (v >= 1) NC.parcelas = v;
+  const e = document.getElementById('ncParcErr');
+  if (e) e.style.display = (v < 1) ? '' : 'none';
   ncAtuParcelasInfo();
+  // Mostrar toggle modo quando há mais de 1 parcela
+  const mw = document.getElementById('ncModoParcelasWrap');
+  if (mw) mw.style.opacity = v > 1 ? '1' : '0.5';
 }
 
-function ncSelIntv(el) {
-  document.querySelectorAll('.nc-intv-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-  el.classList.add('nc-pill-sel');
-  const d = parseInt(el.dataset.d, 10);
-  const ic = document.getElementById('ncIntvCustom');
-  if (d === -1) {
-    if (ic) { ic.style.display = ''; ic.value = NC.intervalo || 30; }
-  } else {
-    if (ic) ic.style.display = 'none';
-    NC.intervalo = d;
+// ── Vencimento ──────────────────────────────────────────────────
+// ncVencDia: calcula dataVenc somando X dias a partir de hoje
+function ncVencDiaInput(val) {
+  const dias = parseInt(val, 10);
+  const e = document.getElementById('ncVencDiaErr');
+  if (isNaN(dias) || dias < 0) {
+    if (e) e.style.display = '';
+    return;
   }
-  ncAtuParcelasInfo();
+  if (e) e.style.display = 'none';
+  const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
+  base.setDate(base.getDate() + dias);
+  NC.dataVenc = base.toISOString().split('T')[0];
+  // Atualiza o calendário visualmente
+  const vc = document.getElementById('ncVencCustom');
+  if (vc) vc.value = NC.dataVenc;
 }
 
-function ncIntvCust() {
-  const v = parseInt(document.getElementById('ncIntvCustom').value, 10) || 30;
-  NC.intervalo = v; ncAtuParcelasInfo();
+// ncVencCust: usuário escolhe data direto no calendário
+function ncVencCust() {
+  const vc = document.getElementById('ncVencCustom');
+  if (vc && vc.value) {
+    NC.dataVenc = vc.value;
+    // Recalcular "dias para vencimento" para manter os dois sincronizados
+    const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+    const venc = new Date(vc.value + 'T00:00:00');
+    const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
+    const vdEl = document.getElementById('ncVencDia');
+    if (vdEl) vdEl.value = diff >= 0 ? diff : '';
+    const e = document.getElementById('ncVencDiaErr');
+    if (e) e.style.display = 'none';
+  }
 }
 
+// ── Info de parcelas calculado ───────────────────────────────────
 function ncAtuParcelasInfo() {
-  const pr = document.getElementById('ncParcelasResume');
   const pi = document.getElementById('ncParcelasInfo');
   const vt = document.getElementById('ncValorTipo');
   if (NC.parcelas <= 1) {
-    if (pr) pr.textContent = '1x · à vista';
     if (pi) { pi.textContent = ''; pi.style.display = 'none'; }
     if (vt) vt.style.display = 'none';
     return;
   }
-  if (pr) pr.textContent = NC.parcelas + 'x · ' + NC.intervalo + 'd entre pgtos';
   if (NC.valor != null && NC.valor > 0) {
     const valorParcela = NC.modo === 'total' ? NC.valor / NC.parcelas : NC.valor;
     const valorTotal   = NC.modo === 'total' ? NC.valor : NC.valor * NC.parcelas;
@@ -42951,20 +42555,11 @@ function ncAtuParcelasInfo() {
   }
 }
 
-// ── Vencimento ──────────────────────────────────────────────────
-function ncVenc(el) {
-  document.querySelectorAll('.nc-venc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-  el.classList.add('nc-pill-sel');
-  const dias = parseInt(el.dataset.dias, 10), vc = document.getElementById('ncVencCustom');
-  if (dias === -1) { vc.style.display = ''; }
-  else {
-    vc.style.display = 'none';
-    const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
-    base.setDate(base.getDate() + dias);
-    NC.dataVenc = base.toISOString().split('T')[0];
-  }
+// ── Observação ───────────────────────────────────────────────────
+function ncObsInput(inp) {
+  const e = document.getElementById('ncObsErr');
+  if (e) e.style.display = inp.value.trim() ? 'none' : '';
 }
-function ncVencCust() { const v = document.getElementById('ncVencCustom').value; if (v) NC.dataVenc = v; }
 
 // ── Categorias ──────────────────────────────────────────────────
 function ncMontarCategorias() {
@@ -43020,9 +42615,7 @@ function ncAbrir(editar) {
     const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
     const fsel = document.getElementById('ncFornSel'); if (fsel) fsel.style.display = 'none';
     const vi = document.getElementById('ncValor'); if (vi) vi.value = '';
-    const oi = document.getElementById('ncObs'); if (oi) oi.value = '';
-    const pw = document.getElementById('ncParcelasWrap'); if (pw) pw.style.display = 'none';
-    const mw = document.getElementById('ncModoParcelasWrap'); if (mw) mw.style.display = 'none';
+    const oi = document.getElementById('ncObs'); if (oi) { oi.value = ''; oi.style.borderColor = ''; }
     // Modo padrão = total
     document.getElementById('ncModoTotal')?.classList.add('nc-pill-sel');
     document.getElementById('ncModoParc')?.classList.remove('nc-pill-sel');
@@ -43030,25 +42623,23 @@ function ncAbrir(editar) {
     const hoje = new Date().toISOString().split('T')[0];
     const dc = document.getElementById('ncDataCompra'); if (dc) dc.value = hoje;
     NC.dataCompra = hoje; NC.dataVenc = hoje;
-    // Vencimento default = hoje
-    document.querySelectorAll('.nc-venc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-    const bh = document.querySelector('.nc-venc-btn[data-dias="0"]'); if (bh) bh.classList.add('nc-pill-sel');
-    const vc = document.getElementById('ncVencCustom'); if (vc) vc.style.display = 'none';
-    // Parcelas default = 1x / 30d
-    document.querySelectorAll('.nc-parc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-    const bp = document.querySelector('.nc-parc-btn[data-p="1"]'); if (bp) bp.classList.add('nc-pill-sel');
-    const pc = document.getElementById('ncParcCustom'); if (pc) { pc.style.display = 'none'; pc.value = ''; }
-    document.querySelectorAll('.nc-intv-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-    const bi = document.querySelector('.nc-intv-btn[data-d="30"]'); if (bi) bi.classList.add('nc-pill-sel');
-    const ic = document.getElementById('ncIntvCustom'); if (ic) { ic.style.display = 'none'; ic.value = ''; }
-    const pr = document.getElementById('ncParcelasResume'); if (pr) pr.textContent = '1x · à vista';
+    // Vencimento default = 30 dias
+    const vdEl = document.getElementById('ncVencDia'); if (vdEl) vdEl.value = '30';
+    ncVencDiaInput('30');
+    // Parcelas default = 1
+    const pc = document.getElementById('ncParcCustom'); if (pc) pc.value = '1';
+    NC.parcelas = 1;
+    // Limpar erros
+    ['ncVencDiaErr','ncParcErr','ncObsErr'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
     // Título
     const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Nova conta';
-    const ts = document.getElementById('ncSub'); if (ts) ts.textContent = 'Preencha os dados abaixo';
     const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = 'none';
     const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Cadastrar conta';
     const msg = document.getElementById('ncMsg'); if (msg) { msg.textContent = ''; msg.className = 'msg'; }
     const vt = document.getElementById('ncValorTipo'); if (vt) vt.style.display = 'none';
+    const pi = document.getElementById('ncParcelasInfo'); if (pi) { pi.textContent = ''; pi.style.display = 'none'; }
   }
   if (typeof carregarFornecedoresFinanceiro === 'function') carregarFornecedoresFinanceiro().catch(() => {});
   if (!(categoriasCompraCache || []).length && typeof carregarCategoriasCompra === 'function') {
@@ -43076,35 +42667,62 @@ async function ncSalvar() {
 
   // 1. Coleta e valida valor
   const vi = document.getElementById('ncValor');
-  // Força blur para formatar antes de ler
   if (vi && document.activeElement === vi) vi.blur();
   NC.valor = ncParseValor(vi ? vi.value : '');
 
-  // 2. Coleta outras infos
+  // 2. Coleta dias para vencimento e recalcula data
+  const vdEl = document.getElementById('ncVencDia');
+  if (vdEl && vdEl.value !== '') ncVencDiaInput(vdEl.value);
+  // Se o usuário alterou direto no calendário, ncVencCust() já atualizou NC.dataVenc
+
+  // 3. Coleta parcelas
+  const pcc = document.getElementById('ncParcCustom');
+  if (pcc && pcc.value) { const pv = parseInt(pcc.value, 10) || 0; if (pv >= 1) NC.parcelas = pv; }
+
+  // 4. Coleta data de compra e observação
   const dc = document.getElementById('ncDataCompra'); if (dc && dc.value) NC.dataCompra = dc.value;
   const oi = document.getElementById('ncObs'); NC.obs = String((oi && oi.value) || '').trim();
-  const ic = document.getElementById('ncIntvCustom');
-  if (ic && ic.style.display !== 'none' && ic.value) NC.intervalo = parseInt(ic.value, 10) || NC.intervalo || 30;
-  const pcc = document.getElementById('ncParcCustom');
-  if (pcc && pcc.value) { const pv = parseInt(pcc.value, 10) || 0; if (pv >= 2) NC.parcelas = pv; }
 
-  // 3. Validações
+  // 5. Validações com erros inline
+  let temErro = false;
+
+  const vdErr = document.getElementById('ncVencDiaErr');
+  if (!NC.dataVenc) {
+    if (vdErr) vdErr.style.display = '';
+    temErro = true;
+  } else { if (vdErr) vdErr.style.display = 'none'; }
+
+  const parcErr = document.getElementById('ncParcErr');
+  if (!NC.parcelas || NC.parcelas < 1) {
+    if (parcErr) parcErr.style.display = '';
+    temErro = true;
+  } else { if (parcErr) parcErr.style.display = 'none'; }
+
+  const obsErr = document.getElementById('ncObsErr');
+  if (!NC.obs) {
+    if (obsErr) obsErr.style.display = '';
+    if (oi) oi.style.borderColor = 'var(--red)';
+    temErro = true;
+  } else {
+    if (obsErr) obsErr.style.display = 'none';
+    if (oi) oi.style.borderColor = '';
+  }
+
   if (!NC.fornId) { if (msg) { msg.textContent = 'Selecione um fornecedor.'; msg.className = 'msg err'; } return; }
   if (NC.valor == null || NC.valor <= 0) { if (msg) { msg.textContent = 'Informe o valor corretamente.'; msg.className = 'msg err'; } return; }
   if (!NC.catId) { if (msg) { msg.textContent = 'Selecione uma categoria.'; msg.className = 'msg err'; } return; }
+  if (temErro) { if (msg) { msg.textContent = 'Preencha os campos obrigatórios.'; msg.className = 'msg err'; } return; }
+
   if (!NC.dataVenc) NC.dataVenc = NC.dataCompra || new Date().toISOString().split('T')[0];
   if (NC.parcelas > 1 && (!NC.intervalo || NC.intervalo <= 0)) NC.intervalo = 30;
 
-  // 4. Calcula valor correto por parcela
-  //    modo 'total'   → divide: valorParcela = NC.valor / NC.parcelas
-  //    modo 'parcela' → usa direto: valorParcela = NC.valor
+  // 6. Calcula valor correto por parcela
   const valorParcela = NC.modo === 'total' ? Math.round((NC.valor / NC.parcelas) * 100) / 100 : NC.valor;
 
-  // 5. Sincroniza campos hidden (salvarContaAPagarFinanceiro lê esses campos)
+  // 7. Sincroniza campos hidden
   function toddmmaaaa(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y; }
   const fb = document.getElementById('contaFornecedorBusca'); if (fb) fb.value = NC.fornNome;
   const fi = document.getElementById('contaFornecedorId'); if (fi) fi.value = NC.fornId;
-  // CRÍTICO: sempre passa o valor da PARCELA, não o total
   const cv = document.getElementById('contaValorCompra'); if (cv) cv.value = valorParcela.toFixed(2).replace('.', ',');
   const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
   const co = document.getElementById('contaObservacao'); if (co) co.value = NC.obs || 'Lançamento manual';
@@ -43112,11 +42730,10 @@ async function ncSalvar() {
   const cip = document.getElementById('contaIntervaloParcelasDias'); if (cip) cip.value = NC.parcelas > 1 ? NC.intervalo : '';
   const cdc = document.getElementById('contaDataCompra'); if (cdc) cdc.value = toddmmaaaa(NC.dataCompra);
   const cdv = document.getElementById('contaDataVencimento'); if (cdv) cdv.value = toddmmaaaa(NC.dataVenc);
-  // CRÍTICO: preenche a loja para salvarContaAPagarFinanceiro não barrar por loja nula
   if (NC.lojaId) preencherSelectLojaContaAPagarFinanceiro(NC.lojaId);
   else preencherSelectLojaContaAPagarFinanceiro('');
 
-  // 6. Salva
+  // 8. Salva
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
   const msgOrig = document.getElementById('msgContaAPagarFinanceiro');
   if (msgOrig) { msgOrig.textContent = ''; msgOrig.className = 'msg'; }
@@ -43154,10 +42771,8 @@ if (typeof _ncOrigEditar === 'function') {
 
       NC.fornId = fi ? fi.value : '';
       NC.fornNome = fb ? fb.value : '';
-      // Captura loja da conta em edição do cache
       const _itemEdit = (contasAPagarFinanceiroCache || []).find(c => String(c.id) === String(id));
       NC.lojaId = (_itemEdit?.loja_id) ? String(_itemEdit.loja_id) : null;
-      // Valor: os campos hidden já guardam o valor da parcela formatado pelo sistema
       NC.valor = ncParseValor(cv ? cv.value : '');
       function toISO(s) { if (!s) return ''; const p = s.split('/'); if (p.length !== 3) return ''; return p[2] + '-' + p[1] + '-' + p[0]; }
       NC.dataCompra = toISO(dc ? dc.value : '');
@@ -43167,7 +42782,6 @@ if (typeof _ncOrigEditar === 'function') {
       NC.parcelas = parseInt(cqp ? cqp.value : '1', 10) || 1;
       NC.intervalo = parseInt(cip ? cip.value : '30', 10) || 30;
       NC.modoEdicao = true;
-      // No modo edição, o valor já é da parcela
       NC.modo = 'parcela';
 
       ncAbrir(true);
@@ -43185,25 +42799,24 @@ if (typeof _ncOrigEditar === 'function') {
 
       ncMontarCategorias();
 
+      // Preencher data de vencimento e dias
       if (NC.dataVenc) {
-        document.querySelectorAll('.nc-venc-btn').forEach(b => b.classList.remove('nc-pill-sel'));
-        const bOut = document.querySelector('.nc-venc-btn[data-dias="-1"]'); if (bOut) bOut.classList.add('nc-pill-sel');
-        const vc = document.getElementById('ncVencCustom'); if (vc) { vc.style.display = ''; vc.value = NC.dataVenc; }
+        const vc = document.getElementById('ncVencCustom'); if (vc) vc.value = NC.dataVenc;
+        const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+        const venc = new Date(NC.dataVenc + 'T00:00:00');
+        const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
+        const vdEl = document.getElementById('ncVencDia'); if (vdEl) vdEl.value = diff >= 0 ? diff : '';
       }
 
-      if (NC.parcelas > 1) {
-        const pw = document.getElementById('ncParcelasWrap'); if (pw) pw.style.display = 'flex';
-        const mw = document.getElementById('ncModoParcelasWrap'); if (mw) mw.style.display = '';
-        document.querySelectorAll('.nc-parc-btn').forEach(b => { b.classList.remove('nc-pill-sel'); if (parseInt(b.dataset.p, 10) === NC.parcelas) b.classList.add('nc-pill-sel'); });
-        document.querySelectorAll('.nc-intv-btn').forEach(b => { b.classList.remove('nc-pill-sel'); if (parseInt(b.dataset.d, 10) === NC.intervalo) b.classList.add('nc-pill-sel'); });
-        // Modo parcela selecionado na edição
-        document.getElementById('ncModoParc')?.classList.add('nc-pill-sel');
-        document.getElementById('ncModoTotal')?.classList.remove('nc-pill-sel');
-        ncAtuParcelasInfo();
-      }
+      // Preencher parcelas
+      const pcEl = document.getElementById('ncParcCustom'); if (pcEl) pcEl.value = NC.parcelas;
+
+      // Modo parcela na edição
+      document.getElementById('ncModoParc')?.classList.add('nc-pill-sel');
+      document.getElementById('ncModoTotal')?.classList.remove('nc-pill-sel');
+      ncAtuParcelasInfo();
 
       const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Editar conta';
-      const ts = document.getElementById('ncSub'); if (ts) ts.textContent = 'Altere os dados e salve';
       const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = '';
       const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Salvar alterações';
     }, 100);
