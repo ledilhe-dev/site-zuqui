@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.72 - Login multi-loja estável após validação
+    Versão 3.1.72 - Login multi-loja estável após validação + reforço recebíveis multi-loja
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7932,6 +7932,32 @@
 
 
 
+
+<style id="patch-rec-futuros-checkbox-visivel">
+  .checkbox-rec-futuro-financeiro,
+  .checkbox-recebivel-financeiro {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    appearance: auto !important;
+    -webkit-appearance: checkbox !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+    accent-color: #22c55e !important;
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 5 !important;
+  }
+  .financeiro-selecao-rec-futuros-row,
+  .financeiro-selecao-recebiveis-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+  }
+  .item-rec-futuro-selecionavel {
+    border-left: 3px solid rgba(34, 197, 94, .55) !important;
+  }
+</style>
 </head>
 <body>
 <div id="appVersionBadge" class="app-version-badge" style="display:none;">INDEX 4.4</div>
@@ -9381,13 +9407,9 @@
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(7)">Próx. 7 dias</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(15)">Próx. 15 dias</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(30)">Próx. 30 dias</button>
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:8px;">
-              <input type="checkbox" id="contasSomarFuturosAcoes" style="margin:0;" onchange="recalcularFaltaQuitar()">
-              Somar recebimentos futuros ao saldo
-            </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--amber);cursor:pointer;">
-              <input type="checkbox" id="contasSomarPendentesAcoes" style="margin:0;" onchange="recalcularFaltaQuitar()">
-              + Provisionados pendentes
+            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--amber);cursor:pointer;margin-left:8px;">
+              <input type="checkbox" id="contasSomarRecebiveisAbertosAcoes" style="margin:0;" onchange="recalcularFaltaQuitar()">
+              Somar recebíveis em aberto no período
             </label>
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
               <input type="checkbox" id="relFinanceiroAgrupar" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
@@ -9413,10 +9435,10 @@
           <div class="stat-card rf-saldo-contas-card">
             <div class="s-label">Saldo total em contas (R$)</div>
             <div class="s-value" id="rfSaldoContas">R$ 0,00</div>
-            <div class="s-desc">Soma dos saldos das contas financeiras</div>
+            <div class="s-desc">Soma dos saldos da(s) loja(s) filtrada(s)</div>
           </div>
           <div class="stat-card rf-falta-quitar-btn" style="cursor:default;">
-            <div class="s-label">Falta para quitar (R$)</div>
+            <div class="s-label" id="rfFaltaQuitarLabel">Falta para quitar (R$)</div>
             <div class="s-value" id="rfFaltaQuitar">R$ 0,00</div>
             <div class="s-desc" id="rfFaltaQuitarDesc">Total pendente menos saldo disponível</div>
           </div>
@@ -9966,6 +9988,11 @@
             <button class="btn btn-ghost btn-sm" type="button" onclick="mostrarTodosRecebiveisFinanceiro()">Todos</button>
             <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltroRecebiveisFinanceiro()">Limpar</button>
           </div>
+          <div class="form-row financeiro-filtros-row financeiro-selecao-recebiveis-row" id="acoesSelecaoRecebiveisFinanceiro" style="margin-top:8px">
+            <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecebiveisFinanceiro" type="button" onclick="toggleSelecionarTodosRecebiveisFinanceiro()">Marcar todos</button>
+            <button class="btn btn-red btn-sm" id="btnExcluirRecebiveisSelecionadosFinanceiro" type="button" onclick="excluirRecebiveisSelecionadosFinanceiro()" disabled>Excluir selecionados</button>
+            <div class="item-detalhe" id="resumoSelecaoRecebiveisFinanceiro" style="align-self:center">Nenhum recebível selecionado.</div>
+          </div>
           <div id="listaRecebiveisFinanceiro"><div class="empty">Carregando...</div></div>
         </div>
 
@@ -9985,6 +10012,11 @@
             <input id="filtroRecFuturoInicio" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
             <input id="filtroRecFuturoFim" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
           </div>
+          <div class="form-row financeiro-filtros-row financeiro-selecao-rec-futuros-row" id="acoesSelecaoRecFuturos" style="margin-bottom:8px;gap:8px;align-items:center;">
+            <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecFuturos" type="button" onclick="toggleSelecionarTodosRecFuturos()">Marcar todos</button>
+            <button class="btn btn-red btn-sm" id="btnExcluirRecFuturosSelecionados" type="button" onclick="excluirRecFuturosSelecionados()" disabled>Excluir selecionados</button>
+            <div class="item-detalhe" id="resumoSelecaoRecFuturos" style="align-self:center">Nenhum recebimento selecionado.</div>
+          </div>
           <div id="listaRecFuturos"><div class="empty">Carregando...</div></div>
         </div>
 
@@ -9997,6 +10029,7 @@
             </div>
             <div style="padding:16px;">
               <input id="modalConfirmarRecFuturoId" type="hidden">
+              <div id="modalConfirmarPrevistoResumo" style="margin-bottom:12px;padding:10px 12px;border:1px solid rgba(59,130,246,0.35);border-radius:12px;background:rgba(37,99,235,0.10);color:var(--text);font-size:13px;line-height:1.45;"></div>
               <div class="financeiro-form-row">
                 <div class="campo-com-label">
                   <label class="campo-label">Data do recebimento</label>
@@ -10569,6 +10602,23 @@
         style="width:100%;border-radius:10px;font-size:15px;padding:11px 14px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);">
     </div>
 
+    <!-- Dia da semana fixo -->
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Dia da semana específico</div>
+      <select id="recebivelDiaSemanaFixo"
+        style="width:100%;border-radius:10px;font-size:15px;padding:11px 14px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);">
+        <option value="">Sem dia fixo — usar intervalo em dias</option>
+        <option value="1">Segunda-feira</option>
+        <option value="2">Terça-feira</option>
+        <option value="3">Quarta-feira</option>
+        <option value="4">Quinta-feira</option>
+        <option value="5">Sexta-feira</option>
+        <option value="6">Sábado</option>
+        <option value="0">Domingo</option>
+      </select>
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.4;margin-top:5px;">Use para recebíveis como iFood: escolha quarta-feira e intervalo 7 dias. A primeira data vira a primeira quarta em/apos a data prevista.</div>
+    </div>
+
     <!-- Observação -->
     <div>
       <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Observação <span style="color:var(--red)">*</span></div>
@@ -10874,7 +10924,7 @@
 <script>
 // ---- SUPABASE CLIENT ----
 const APP_VERSION = '3.1.51';
-const APP_VERSION_LABEL = '3.1.64-confirmar-rec-futuro-fix';
+const APP_VERSION_LABEL = '3.1.67-recebiveis-recorrencia-dia-semana';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -11453,6 +11503,8 @@ let extratoContaFinanceiraCache = [];
 let cofreMovimentacoesCache = [];
 let cofreExtratoVisivel = false;
 let recebiveisFinanceiroCache = [];
+let recebiveisFinanceiroVisiveisIds = [];
+let recebiveisFinanceiroSelecionadosIds = new Set();
 let recebiveisFinanceiroListaVisivel = false;
 let recebiveisSaldoGerenciadoBancoCache = null;
 let solicitacaoAcessoVisivel = false;
@@ -22379,6 +22431,8 @@ function limparFormularioRecebivelFinanceiro() {
   if (campoDias) campoDias.value = '30';
   if (campoObs) { campoObs.value = ''; campoObs.style.borderColor = ''; }
   if (campoVal) campoVal.value = '';
+  const campoDiaSemana = document.getElementById('recebivelDiaSemanaFixo');
+  if (campoDiaSemana) campoDiaSemana.value = '';
   ['recebivelObsErr','nrQtdErr','nrDiasErr'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
@@ -22393,6 +22447,95 @@ function recebivelObsInput(inp) {
   const e = document.getElementById('recebivelObsErr');
   if (e) e.style.display = inp.value.trim() ? 'none' : '';
   if (inp) inp.style.borderColor = inp.value.trim() ? '' : 'var(--red)';
+}
+
+
+function obterNomeDiaSemanaRecebivelFinanceiro(valor) {
+  const mapa = {
+    '0': 'Domingo',
+    '1': 'Segunda-feira',
+    '2': 'Terça-feira',
+    '3': 'Quarta-feira',
+    '4': 'Quinta-feira',
+    '5': 'Sexta-feira',
+    '6': 'Sábado',
+  };
+  return mapa[String(valor)] || '';
+}
+
+function calcularDataRecorrenciaRecebivelFinanceiro(baseISO, indice = 0, intervaloDias = 7, diaSemanaFixo = '') {
+  const base = String(baseISO || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return base;
+  const nIntervalo = Number.parseInt(String(intervaloDias || ''), 10);
+  const intervalo = Number.isFinite(nIntervalo) && nIntervalo > 0 ? nIntervalo : 7;
+  const alvoBruto = String(diaSemanaFixo ?? '').trim();
+  const alvo = alvoBruto === '' ? null : Number.parseInt(alvoBruto, 10);
+
+  let data = new Date(`${base}T12:00:00`);
+  if (Number.isNaN(data.getTime())) return base;
+
+  if (Number.isInteger(alvo) && alvo >= 0 && alvo <= 6) {
+    data.setDate(data.getDate() + (Number.parseInt(String(indice || 0), 10) || 0) * intervalo);
+    const deslocamentoAteDia = (alvo - data.getDay() + 7) % 7;
+    data.setDate(data.getDate() + deslocamentoAteDia);
+  } else {
+    data.setDate(data.getDate() + (Number.parseInt(String(indice || 0), 10) || 0) * intervalo);
+  }
+
+  const iso = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+  return (typeof ajustarVencimentoParaDiaUtilFinanceiro === 'function')
+    ? ajustarVencimentoParaDiaUtilFinanceiro(iso)
+    : iso;
+}
+
+async function salvarRecebiveisFuturosRecorrentesFinanceiro({
+  pagadorId,
+  formaPagamentoId,
+  contaFinanceiraId,
+  valorRecebivel,
+  qtdParcelas,
+  diasIntervalo,
+  dataPrevista,
+  observacao,
+  empresaIdSessao,
+  lojaIdSessao,
+}) {
+  const qtd = Math.max(1, Number.parseInt(String(qtdParcelas || 1), 10) || 1);
+  const intervalo = Math.max(1, Number.parseInt(String(diasIntervalo || 7), 10) || 7);
+  const diaSemanaFixo = String(document.getElementById('recebivelDiaSemanaFixo')?.value || '').trim();
+  const nomeDiaFixo = obterNomeDiaSemanaRecebivelFinanceiro(diaSemanaFixo);
+  const criadoPorNome = obterNomeAdminAtual?.() || usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Usuario';
+
+  const obsBase = String(observacao || '').trim();
+  const linhas = Array.from({ length: qtd }, (_, i) => {
+    const dataPrevistaParcela = calcularDataRecorrenciaRecebivelFinanceiro(dataPrevista, i, intervalo, diaSemanaFixo);
+    const obsPartes = [obsBase, `${i + 1}/${qtd}`];
+    if (nomeDiaFixo) obsPartes.push(`Dia fixo: ${nomeDiaFixo}`);
+    return {
+      pagador_id: pagadorId,
+      forma_pagamento_id: formaPagamentoId,
+      conta_financeira_id: contaFinanceiraId,
+      valor: Number(valorRecebivel.toFixed(2)),
+      data_prevista: dataPrevistaParcela,
+      numero_recorrencia: i + 1,
+      qtd_recorrencias: qtd,
+      intervalo_dias: intervalo,
+      ativo: true,
+      confirmado_em: null,
+      confirmado_por_nome: null,
+      valor_confirmado: null,
+      observacao: obsPartes.filter(Boolean).join(' · '),
+      empresa_id: empresaIdSessao,
+      loja_id: lojaIdSessao,
+      criado_por_nome: criadoPorNome,
+    };
+  });
+
+  if (!lojaIdSessao || !empresaIdSessao) {
+    return { data: null, error: { message: 'Loja/empresa da sessão não identificada para lançar recebíveis futuros.' } };
+  }
+  const linhasEscopadas = linhas.map(linha => ({ ...linha, empresa_id: empresaIdSessao, loja_id: lojaIdSessao }));
+  return executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').insert(linhasEscopadas).select('id'));
 }
 
 let salvandoRecebivelFinanceiroEmAndamento = false;
@@ -22410,6 +22553,8 @@ async function salvarRecebivelFinanceiro() {
     const valorRecebivel = lerValorMonetarioFinanceiro(valorTexto);
     const qtdParcelas = parseInt(document.getElementById('recebivelQtdParcelas')?.value || '1', 10) || 1;
     const diasIntervalo = parseInt(document.getElementById('recebivelDiasIntervalo')?.value || '30', 10) || 30;
+    const dataPrevistaRecebivel = String(document.getElementById('nrDataPrevista')?.value || '').trim() || new Date().toISOString().slice(0, 10);
+    const diaSemanaFixoRecebivel = String(document.getElementById('recebivelDiaSemanaFixo')?.value || '').trim();
     const observacao = String(document.getElementById('recebivelObservacao')?.value || '').trim();
 
     if (!pagadorId) {
@@ -22430,6 +22575,18 @@ async function salvarRecebivelFinanceiro() {
     }
     if (!Number.isFinite(valorRecebivel) || valorRecebivel <= 0) {
       setMsg('msgRecebivelFinanceiro', 'Informe um valor válido para o recebível.', 'err');
+      return;
+    }
+    if (qtdParcelas > 1 && (!diasIntervalo || diasIntervalo < 1)) {
+      setMsg('msgRecebivelFinanceiro', 'Informe o intervalo em dias para recebíveis recorrentes.', 'err');
+      return;
+    }
+    if (qtdParcelas > 1 && !/^\d{4}-\d{2}-\d{2}$/.test(dataPrevistaRecebivel)) {
+      setMsg('msgRecebivelFinanceiro', 'Informe a 1ª data prevista para os recebíveis recorrentes.', 'err');
+      return;
+    }
+    if (diaSemanaFixoRecebivel && !['0','1','2','3','4','5','6'].includes(diaSemanaFixoRecebivel)) {
+      setMsg('msgRecebivelFinanceiro', 'Dia da semana específico inválido.', 'err');
       return;
     }
     if (!observacao) {
@@ -22467,6 +22624,34 @@ async function salvarRecebivelFinanceiro() {
       observacao: observacao || null,
     };
     const editando = !!recebivelFinanceiroEmEdicaoId;
+
+    if (!editando && qtdParcelas > 1) {
+      const { error: erroFuturos } = await salvarRecebiveisFuturosRecorrentesFinanceiro({
+        pagadorId,
+        formaPagamentoId,
+        contaFinanceiraId,
+        valorRecebivel,
+        qtdParcelas,
+        diasIntervalo,
+        dataPrevista: dataPrevistaRecebivel,
+        observacao,
+        empresaIdSessao,
+        lojaIdSessao,
+      });
+      if (erroFuturos) {
+        setMsg('msgRecebivelFinanceiro', `Não foi possível lançar os recebíveis provisionados: ${mensagemErroSupabase(erroFuturos, 'erro desconhecido')}`, 'err');
+        return;
+      }
+      const nomeDiaFixo = obterNomeDiaSemanaRecebivelFinanceiro(diaSemanaFixoRecebivel);
+      nrFechar();
+      limparFormularioRecebivelFinanceiro();
+      setMsg('msgRecebivelFinanceiro', nomeDiaFixo
+        ? `${qtdParcelas} recebíveis provisionados lançados para ${nomeDiaFixo}, a cada ${diasIntervalo} dia(s).`
+        : `${qtdParcelas} recebíveis provisionados lançados a cada ${diasIntervalo} dia(s).`, 'ok');
+      if (typeof carregarRecFuturos === 'function') await carregarRecFuturos();
+      if (typeof carregarRecebiveisFinanceiro === 'function') await carregarRecebiveisFinanceiro();
+      return;
+    }
     const payload = editando
       ? payloadBase
       : {
@@ -22614,7 +22799,10 @@ function resetarFiltrosRecebiveisFinanceiro({ manterListaVisivel = false } = {})
   if (fim) fim.value = '';
   if (usuario) usuario.value = '';
   recebiveisFinanceiroListaVisivel = !!manterListaVisivel;
+  recebiveisFinanceiroSelecionadosIds.clear();
+  recebiveisFinanceiroVisiveisIds = [];
   atualizarEstadoListaRecebiveisFinanceiro();
+  atualizarResumoSelecaoRecebiveisFinanceiro();
 }
 
 function limparFiltroRecebiveisFinanceiro() {
@@ -22658,6 +22846,49 @@ function filtrarRecebiveisPorTenantAtual(itens = [], { ignorarLoja = false } = {
     if (empresaId && itemEmpresa && itemEmpresa !== empresaId) return false;
     return true;
   });
+}
+
+
+function atualizarResumoSelecaoRecebiveisFinanceiro() {
+  const totalVisiveis = recebiveisFinanceiroVisiveisIds.length;
+  const selecionadosVisiveis = recebiveisFinanceiroVisiveisIds.filter(id => recebiveisFinanceiroSelecionadosIds.has(String(id)));
+  const qtdSelecionados = selecionadosVisiveis.length;
+  const btnSelecionar = document.getElementById('btnSelecionarTodosRecebiveisFinanceiro');
+  const btnExcluir = document.getElementById('btnExcluirRecebiveisSelecionadosFinanceiro');
+  const resumo = document.getElementById('resumoSelecaoRecebiveisFinanceiro');
+  if (btnSelecionar) {
+    btnSelecionar.textContent = totalVisiveis && qtdSelecionados === totalVisiveis ? 'Desmarcar todos' : 'Marcar todos';
+    btnSelecionar.disabled = !totalVisiveis;
+  }
+  if (btnExcluir) btnExcluir.disabled = !qtdSelecionados;
+  if (resumo) {
+    resumo.textContent = qtdSelecionados
+      ? `${qtdSelecionados} recebível(is) selecionado(s) de ${totalVisiveis}.`
+      : (totalVisiveis ? `${totalVisiveis} recebível(is) no filtro. Nenhum selecionado.` : 'Nenhum recebível selecionado.');
+  }
+}
+
+function atualizarSelecaoRecebivelFinanceiro(id, marcado) {
+  const chave = String(id || '');
+  if (!chave) return;
+  if (marcado) recebiveisFinanceiroSelecionadosIds.add(chave);
+  else recebiveisFinanceiroSelecionadosIds.delete(chave);
+  atualizarResumoSelecaoRecebiveisFinanceiro();
+}
+
+function toggleSelecionarTodosRecebiveisFinanceiro() {
+  if (!recebiveisFinanceiroVisiveisIds.length) return;
+  const todosSelecionados = recebiveisFinanceiroVisiveisIds.every(id => recebiveisFinanceiroSelecionadosIds.has(String(id)));
+  recebiveisFinanceiroVisiveisIds.forEach(id => {
+    const chave = String(id);
+    if (todosSelecionados) recebiveisFinanceiroSelecionadosIds.delete(chave);
+    else recebiveisFinanceiroSelecionadosIds.add(chave);
+  });
+  document.querySelectorAll('.checkbox-recebivel-financeiro').forEach(input => {
+    const id = input.getAttribute('data-recebivel-id');
+    input.checked = recebiveisFinanceiroSelecionadosIds.has(String(id));
+  });
+  atualizarResumoSelecaoRecebiveisFinanceiro();
 }
 
 async function carregarRecebiveisFinanceiro(opcoes = {}) {
@@ -22714,9 +22945,15 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
     return true;
   });
 
+  recebiveisFinanceiroVisiveisIds = itens.map(item => String(item.id)).filter(Boolean);
+  recebiveisFinanceiroSelecionadosIds = new Set(
+    Array.from(recebiveisFinanceiroSelecionadosIds).filter(id => recebiveisFinanceiroVisiveisIds.includes(String(id)))
+  );
+
   if (!itens.length) {
     lista.innerHTML = '<div class="empty">Nenhum recebível encontrado com os filtros atuais. Use "Mostrar todos" para limpar os filtros e exibir a lista completa.</div>';
     atualizarEstadoListaRecebiveisFinanceiro();
+    atualizarResumoSelecaoRecebiveisFinanceiro();
     return;
   }
 
@@ -22727,14 +22964,17 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
     return `
       <div class="item">
         <div class="item-info">
-          <div class="item-nome">${pagador}</div>
+          <label class="item-nome" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input class="checkbox-recebivel-financeiro" data-recebivel-id="${item.id}" type="checkbox" ${recebiveisFinanceiroSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecebivelFinanceiro('${item.id}', this.checked)">
+            <span>${pagador}</span>
+          </label>
           <div class="item-detalhe">Valor: ${formatarMoedaBRFinanceiro(item.valor || 0)} · Forma de pagamento: ${forma}</div>
           <div class="item-detalhe">Conta financeira: ${conta} · Cadastro: ${formatarDataBRFinanceiro(String(item.created_at || '').slice(0, 10))}</div>
           <div class="item-detalhe">Lançado por: ${escaparHtmlBasico(obterNomeUsuarioRecebivelFinanceiro(item))} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
           ${item.provisionado ? `<div class="item-detalhe" style="color:var(--amber);">📅 Recebível futuro · Previsto: ${formatarDataBRFinanceiro(String(item.data_prevista||'').slice(0,10))} · Confirmado: ${formatarDataBRFinanceiro(String(item.confirmado_em||'').slice(0,10))}</div>` : ''}
         </div>
         <div class="item-actions">
-          ${item.formas_pagamento?.ativo === false ? '<span class="tag">Forma inativa</span>' : '<span class="tag tag-green">Ativo</span>'}
+          ${item.formas_pagamento?.ativo === false ? '<span class="tag tag-green">Recebido confirmado</span><span class="tag">Forma inativa</span>' : '<span class="tag tag-green">Recebido confirmado</span>'}
           <button class="btn btn-ghost btn-sm" onclick="editarRecebivelFinanceiro('${item.id}')">Editar</button>
           <button class="btn btn-red" onclick="excluirRecebivelFinanceiro('${item.id}')">Excluir</button>
         </div>
@@ -22742,6 +22982,7 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
     `;
   }).join('') + '</div>';
   atualizarEstadoListaRecebiveisFinanceiro();
+  atualizarResumoSelecaoRecebiveisFinanceiro();
 }
 
 function editarRecebivelFinanceiro(id) {
@@ -22781,6 +23022,209 @@ function editarRecebivelFinanceiro(id) {
 // ══════════════════════════════════════════════════════════════════
 let recFuturoEmEdicaoId = null;
 let recFuturosCache = [];
+let recFuturosSelecionadosIds = new Set();
+let recFuturosVisiveisIds = [];
+
+function atualizarResumoSelecaoRecFuturos() {
+  const totalVisiveis = recFuturosVisiveisIds.length;
+  const selecionadosVisiveis = recFuturosVisiveisIds.filter(id => recFuturosSelecionadosIds.has(String(id)));
+  const qtdSelecionados = selecionadosVisiveis.length;
+  const btnSelecionar = document.getElementById('btnSelecionarTodosRecFuturos');
+  const btnExcluir = document.getElementById('btnExcluirRecFuturosSelecionados');
+  const resumo = document.getElementById('resumoSelecaoRecFuturos');
+  if (btnSelecionar) {
+    btnSelecionar.textContent = totalVisiveis && qtdSelecionados === totalVisiveis ? 'Desmarcar todos' : 'Marcar todos';
+    btnSelecionar.disabled = !totalVisiveis;
+  }
+  if (btnExcluir) btnExcluir.disabled = !qtdSelecionados;
+  if (resumo) {
+    resumo.textContent = qtdSelecionados
+      ? `${qtdSelecionados} recebimento(s) selecionado(s) de ${totalVisiveis}.`
+      : (totalVisiveis ? `${totalVisiveis} recebimento(s) no filtro. Nenhum selecionado.` : 'Nenhum recebimento selecionado.');
+  }
+}
+
+function atualizarSelecaoRecFuturo(id, marcado) {
+  const chave = String(id || '');
+  if (!chave) return;
+  if (marcado) recFuturosSelecionadosIds.add(chave);
+  else recFuturosSelecionadosIds.delete(chave);
+  atualizarResumoSelecaoRecFuturos();
+}
+
+function toggleSelecionarTodosRecFuturos() {
+  if (!recFuturosVisiveisIds.length) return;
+  const todosSelecionados = recFuturosVisiveisIds.every(id => recFuturosSelecionadosIds.has(String(id)));
+  recFuturosVisiveisIds.forEach(id => {
+    const chave = String(id);
+    if (todosSelecionados) recFuturosSelecionadosIds.delete(chave);
+    else recFuturosSelecionadosIds.add(chave);
+  });
+  document.querySelectorAll('.checkbox-rec-futuro-financeiro').forEach(input => {
+    const id = input.getAttribute('data-rec-futuro-id');
+    input.checked = recFuturosSelecionadosIds.has(String(id));
+  });
+  atualizarResumoSelecaoRecFuturos();
+}
+
+
+
+async function obterFuncionarioFinanceiroComPerfilPorPin(pin) {
+  const pinNormalizado = String(pin || '').trim();
+  if (!pinNormalizado) return null;
+
+  const funcionarioBasico = typeof obterFuncionarioAtivoPorPinEmpresa === 'function'
+    ? await obterFuncionarioAtivoPorPinEmpresa(pinNormalizado)
+    : null;
+  if (!funcionarioBasico?.id) return null;
+
+  // Admin global sem registro em funcionarios: usa a própria sessão.
+  if (String(funcionarioBasico.id) === 'admin' || usuarioSistemaLogado?.tipo === 'admin') {
+    if (String(usuarioSistemaLogado?.pin || '').trim() === pinNormalizado || String(funcionarioBasico.id) === 'admin') {
+      return {
+        id: funcionarioBasico.id || usuarioSistemaLogado?.id || 'admin',
+        nome: funcionarioBasico.nome || usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Administrador',
+        ativo: true,
+        é_administrador: true,
+        perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador', permissoes: obterPermissoesBase('ADM') }),
+      };
+    }
+  }
+
+  try {
+    const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
+      .from('funcionarios')
+      .select('*, é_administrador, perfis(nome, codigo, permissoes)')
+      .eq('id', funcionarioBasico.id)
+      .maybeSingle());
+    if (!error && data) return data;
+  } catch (e) {
+    console.warn('Falha ao carregar perfil do usuário do PIN:', e);
+  }
+
+  return funcionarioBasico;
+}
+
+function funcionarioTemPermissaoRecebiveisFinanceiro(funcionario = {}) {
+  if (!funcionario) return false;
+  if (funcionario.é_administrador === true || funcionario.is_admin === true) return true;
+
+  const perfil = normalizarPerfilUsuario(funcionario.perfis || funcionario.perfil || null);
+  const codigo = normalizarCodigoPerfil(perfil?.codigo || '');
+  if (codigo === 'ADM' || codigo === 'MASTER') return true;
+
+  const permissoes = {
+    ...obterPermissoesBase(codigo || 'FUNCIONARIO'),
+    ...normalizarPermissoesPerfil(perfil?.permissoes),
+  };
+
+  // Permissão principal da tela. Mantive relatorio_recebimentos como fallback para perfis antigos.
+  if (permissoes.financeiro_recebiveis === true) return true;
+  if (permissoes.relatorio_recebimentos === true && permissoes.financeiro_recebiveis !== false) return true;
+
+  // Fallback seguro: se o PIN pertence ao usuário logado, usa as permissões atuais da sessão.
+  if (String(funcionario.id || '') && String(funcionario.id || '') === String(usuarioSistemaLogado?.id || '')) {
+    return usuarioTemPermissao('financeiro_recebiveis') || usuarioEhAdminOuPerfilAdmin();
+  }
+  return false;
+}
+
+async function solicitarConfirmacaoExclusaoRecebiveisComPin({ quantidade = 1, tipo = 'recebível', detalhe = '' } = {}) {
+  const plural = quantidade === 1 ? tipo : `${tipo}s`;
+  const confirmacao = await abrirConfirmacaoSistema({
+    title: `Excluir ${plural}`,
+    subtitle: 'Esta ação não pode ser desfeita.',
+    body: `
+      <div class="confirmacao-destaque-box" style="border-color:rgba(239,68,68,.45);background:rgba(127,29,29,.18)">
+        <strong style="color:#fecaca">${quantidade} ${plural} selecionado(s)</strong>
+        ${detalhe ? `<span>${escaparHtmlBasico(detalhe)}</span>` : ''}
+      </div>
+      <div style="color:var(--text-muted);font-size:13px;line-height:1.45">
+        Confirme para prosseguir. Na próxima etapa será solicitada a senha/PIN de um usuário com permissão em <strong style="color:var(--text)">Financeiro - Recebíveis</strong>.
+      </div>
+    `,
+    cancelText: 'Cancelar',
+    confirmText: 'Continuar exclusão',
+    confirmClass: 'btn-red',
+  });
+
+  if (!confirmacao?.confirmado) return null;
+
+  let mensagemErro = '';
+  while (true) {
+    const respostaPin = await abrirModalPin({
+      titulo: 'Confirmar exclusão',
+      subtitulo: 'Digite o PIN/senha de um usuário com permissão financeira.',
+      textoAcao: 'Excluir agora',
+      placeholderInput: 'PIN ou senha',
+      mensagem: mensagemErro,
+      tipoMensagem: 'err',
+      exibirUsuario: true,
+    });
+
+    if (!respostaPin) return null;
+    const pin = String(respostaPin.pin || '').trim();
+    if (!pin) {
+      mensagemErro = 'Digite o PIN/senha para continuar.';
+      continue;
+    }
+
+    const funcionario = await obterFuncionarioFinanceiroComPerfilPorPin(pin);
+    if (funcionario?.id && funcionarioTemPermissaoRecebiveisFinanceiro(funcionario)) {
+      return {
+        funcionarioId: funcionario.id,
+        nomeFuncionario: funcionario.nome || 'Usuário autorizado',
+        confirmadoEm: new Date().toISOString(),
+      };
+    }
+
+    mensagemErro = 'PIN inválido ou usuário sem permissão para excluir recebíveis.';
+  }
+}
+
+async function excluirRecFuturosSelecionados() {
+  const idsSelecionados = recFuturosVisiveisIds
+    .filter(id => recFuturosSelecionadosIds.has(String(id)))
+    .map(String);
+
+  if (!idsSelecionados.length) {
+    setMsg('msgRecebivelFinanceiro', 'Selecione pelo menos um recebimento provisionado para excluir.', 'err');
+    return;
+  }
+
+  const autorizado = await solicitarConfirmacaoExclusaoRecebiveisComPin({
+    quantidade: idsSelecionados.length,
+    tipo: 'recebimento provisionado',
+    detalhe: idsSelecionados.length === recFuturosVisiveisIds.length
+      ? 'Todos os recebimentos do filtro atual serão excluídos.'
+      : 'Somente os itens marcados serão excluídos.',
+  });
+  if (!autorizado) return;
+
+  const btnExcluir = document.getElementById('btnExcluirRecFuturosSelecionados');
+  const btnSelecionar = document.getElementById('btnSelecionarTodosRecFuturos');
+  const textoOriginal = btnExcluir?.textContent || 'Excluir selecionados';
+  if (btnExcluir) {
+    btnExcluir.disabled = true;
+    btnExcluir.textContent = 'Excluindo...';
+  }
+  if (btnSelecionar) btnSelecionar.disabled = true;
+
+  try {
+    const { error } = await executarSemFiltroLojaTemporario(() =>
+      sb.from('recebiveis_futuros').delete().in('id', idsSelecionados)
+    );
+    if (error) throw error;
+    idsSelecionados.forEach(id => recFuturosSelecionadosIds.delete(String(id)));
+    await carregarRecFuturos();
+    setMsg('msgRecebivelFinanceiro', `${idsSelecionados.length} recebimento(s) provisionado(s) excluído(s) por ${autorizado.nomeFuncionario}.`, 'ok');
+  } catch(e) {
+    setMsg('msgRecebivelFinanceiro', 'Erro ao excluir selecionados: ' + (mensagemErroSupabase(e, e?.message || '')), 'err');
+  } finally {
+    if (btnExcluir) btnExcluir.textContent = textoOriginal;
+    atualizarResumoSelecaoRecFuturos();
+  }
+}
 
 async function iniciarTelaRecFuturos() {
   cancelarEdicaoRecFuturo();
@@ -22880,6 +23324,7 @@ async function salvarRecFuturo() {
     observacao: observacao || null,
     intervalo_dias: intervaloDias,
     qtd_recorrencias: qtd,
+    ativo: true,
     empresa_id: empresaId,
     loja_id: lojaId,
     criado_por_nome: criadoPorNome,
@@ -22934,8 +23379,9 @@ async function carregarRecFuturos() {
   try {
     const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     let query = sb.from('recebiveis_futuros')
-      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, confirmado_em, confirmado_por_nome, valor_confirmado, conta_financeira_confirmada_id, observacao, criado_por_nome, created_at, intervalo_dias, qtd_recorrencias, numero_recorrencia, loja_id, empresa_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
-      .eq('ativo', true)
+      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, confirmado_em, confirmado_por_nome, valor_confirmado, conta_financeira_confirmada_id, observacao, criado_por_nome, created_at, intervalo_dias, qtd_recorrencias, numero_recorrencia, loja_id, empresa_id, ativo, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
+      // Compatibilidade: alguns recebimentos antigos podem ter ativo = null. Trata null como ativo para não sumirem do filtro.
+      .or('ativo.is.null,ativo.eq.true')
       .order('data_prevista', { ascending: true });
     if (soAbertos) query = query.is('confirmado_em', null);
     if (lojaSessao) query = query.eq('loja_id', lojaSessao);
@@ -22954,8 +23400,14 @@ async function carregarRecFuturos() {
       return true;
     });
 
+    recFuturosVisiveisIds = recFuturosCache.map(item => String(item.id)).filter(Boolean);
+    recFuturosSelecionadosIds = new Set(
+      Array.from(recFuturosSelecionadosIds).filter(id => recFuturosVisiveisIds.includes(String(id)))
+    );
+
     if (!recFuturosCache.length) {
       lista.innerHTML = '<div class="empty">Nenhum recebimento provisionado encontrado.</div>';
+      atualizarResumoSelecaoRecFuturos();
       return;
     }
 
@@ -22981,7 +23433,10 @@ async function carregarRecFuturos() {
           ? `<span class="tag tag-red">Atrasado</span>`
           : `<span class="tag tag-amber">Pendente</span>`;
       return `
-        <div class="item">
+        <div class="item item-rec-futuro-selecionavel" style="align-items:flex-start;gap:10px;">
+          <label title="Selecionar recebimento" style="display:flex;align-items:center;justify-content:center;padding:4px 2px 0 0;cursor:pointer;flex:0 0 30px;">
+            <input class="checkbox-rec-futuro-financeiro" data-rec-futuro-id="${item.id}" type="checkbox" ${recFuturosSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecFuturo('${item.id}', this.checked)" style="width:22px;height:22px;min-width:22px;accent-color:#22c55e;cursor:pointer;margin:0;appearance:auto;-webkit-appearance:auto;opacity:1;position:relative;z-index:2;">
+          </label>
           <div class="item-info">
             <div class="item-nome">${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador não encontrado')}</div>
             <div class="item-detalhe">
@@ -23008,6 +23463,7 @@ async function carregarRecFuturos() {
           </div>
         </div>`;
     }).join('') + '</div>';
+    atualizarResumoSelecaoRecFuturos();
   } catch(e) {
     lista.innerHTML = `<div class="empty">Erro ao carregar: ${mensagemErroSupabase(e, e?.message || '')}</div>`;
   }
@@ -23023,12 +23479,23 @@ function configurarCampoValorRecFuturo(valor = 0) {
 }
 
 async function excluirRecFuturo(id) {
-  if (!confirm('Excluir este provisionamento?')) return;
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  const autorizado = await solicitarConfirmacaoExclusaoRecebiveisComPin({
+    quantidade: 1,
+    tipo: 'recebimento provisionado',
+    detalhe: item ? `${item.fornecedores?.nome || 'Pagador'} · ${formatarMoedaBRFinanceiro(item.valor || 0)} · ${formatarDataBRFinanceiro(String(item.data_prevista || '').slice(0,10))}` : '',
+  });
+  if (!autorizado) return;
+
   try {
     const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').delete().eq('id', id));
     if (error) throw error;
+    recFuturosSelecionadosIds.delete(String(id));
     await carregarRecFuturos();
-  } catch(e) { alert('Erro ao excluir: ' + (e?.message || '')); }
+    setMsg('msgRecebivelFinanceiro', `Recebimento provisionado excluído por ${autorizado.nomeFuncionario}.`, 'ok');
+  } catch(e) {
+    setMsg('msgRecebivelFinanceiro', 'Erro ao excluir: ' + (mensagemErroSupabase(e, e?.message || '')), 'err');
+  }
 }
 
 function abrirModalConfirmarRecFuturo(id) {
@@ -23037,6 +23504,16 @@ function abrirModalConfirmarRecFuturo(id) {
   const modal = document.getElementById('modalConfirmarRecFuturo');
   if (!modal) return;
   document.getElementById('modalConfirmarRecFuturoId').value = id;
+  const resumoPrevisto = document.getElementById('modalConfirmarPrevistoResumo');
+  if (resumoPrevisto) {
+    const previsto = Number(item.valor || 0);
+    const dataPrev = String(item.data_prevista || '').slice(0, 10);
+    resumoPrevisto.innerHTML = `
+      <strong style="color:var(--blue,#60a5fa);">Valor previsto/original:</strong> ${formatarMoedaBRFinanceiro(previsto)}
+      ${dataPrev ? ` · <strong>Previsto para:</strong> ${formatarDataBRFinanceiro(dataPrev)}` : ''}
+      <br><span style="color:var(--text-muted);">Confira o valor real recebido antes de confirmar. Se veio maior ou menor, altere o campo abaixo.</span>
+    `;
+  }
   // Pré-preencher com valores previstos
   const hoje = new Date().toISOString().slice(0, 10);
   document.getElementById('modalConfirmarData').value = hoje;
@@ -23092,14 +23569,20 @@ async function confirmarRecebimentoFuturo() {
       valor_confirmado: valorConfirmado,
       conta_financeira_confirmada_id: contaId,
     };
-    let { error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id)
-    );
+    let { error: erroUpdate } = await executarSemFiltroLojaTemporario(() => {
+      let qConfirmar = sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id);
+      if (lojaId) qConfirmar = qConfirmar.eq('loja_id', lojaId);
+      if (empresaId) qConfirmar = qConfirmar.eq('empresa_id', empresaId);
+      return qConfirmar;
+    });
     // Fallback para bancos sem as colunas de auditoria da confirmação
     if (erroUpdate && isMissingColumnError(erroUpdate)) {
-      const tentativaMinima = await executarSemFiltroLojaTemporario(() =>
-        sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id)
-      );
+      const tentativaMinima = await executarSemFiltroLojaTemporario(() => {
+        let qConfirmarMin = sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id);
+        if (lojaId) qConfirmarMin = qConfirmarMin.eq('loja_id', lojaId);
+        if (empresaId) qConfirmarMin = qConfirmarMin.eq('empresa_id', empresaId);
+        return qConfirmarMin;
+      });
       erroUpdate = tentativaMinima.error;
     }
     if (erroUpdate) throw erroUpdate;
@@ -23107,7 +23590,17 @@ async function confirmarRecebimentoFuturo() {
     // 2. Criar o recebível real para aparecer na tela de Recebíveis
     const pagadorNome = item?.fornecedores?.nome || 'pagador';
     const formaNome = item?.formas_pagamento?.nome || 'forma de pagamento';
-    const payloadRecebivelBase = {
+    const valorOriginalPrevisto = Number(item.valor || 0);
+    const dataPrevistaOriginal = String(item.data_prevista || '').slice(0, 10) || null;
+    const observacaoRecebivel = [
+      item.observacao ? `Previsão: ${item.observacao}` : '',
+      `Valor previsto/original: ${formatarMoedaBRFinanceiro(valorOriginalPrevisto)}`,
+      `Valor real recebido: ${formatarMoedaBRFinanceiro(valorConfirmado)}`,
+      dataPrevistaOriginal ? `Data prevista: ${formatarDataBRFinanceiro(dataPrevistaOriginal)}` : '',
+      obs ? `Obs confirmação: ${obs}` : '',
+    ].filter(Boolean).join(' · ');
+
+    const payloadRecebivelEssencial = {
       pagador_id: item.pagador_id,
       forma_pagamento_id: item.forma_pagamento_id,
       conta_financeira_id: contaId,
@@ -23115,29 +23608,43 @@ async function confirmarRecebimentoFuturo() {
       empresa_id: empresaId,
       loja_id: lojaId,
     };
-    const payloadRecebivel = {
-      ...payloadRecebivelBase,
+    const payloadRecebivelHistorico = {
+      ...payloadRecebivelEssencial,
+      valor_original: Number(valorOriginalPrevisto.toFixed(2)),
+      recebivel_futuro_id: id,
+      data_prevista_original: dataPrevistaOriginal,
+      observacao: observacaoRecebivel,
+    };
+    const payloadUsuario = {
       criado_por_id: obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null,
       criado_por_nome: confirmadoPorNome,
     };
+    const payloadRecebivel = { ...payloadRecebivelHistorico, ...payloadUsuario };
+    const payloadRecebivelFallback = { ...payloadRecebivelEssencial, ...payloadUsuario };
     const inserirRecebivel = (dados) => executarSemFiltroLojaTemporario(() =>
       sb.from('recebiveis').insert([dados]).select('id').maybeSingle()
     );
     let { data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivel);
     if (erroRecebivel && isMissingColumnError(erroRecebivel)) {
-      ({ data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivelBase));
+      ({ data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivelFallback));
+    }
+    if (erroRecebivel && isMissingColumnError(erroRecebivel)) {
+      ({ data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivelEssencial));
     }
     if (erroRecebivel) {
       // Desfaz a confirmação para não deixar o registro pela metade
       try {
-        await executarSemFiltroLojaTemporario(() =>
-          sb.from('recebiveis_futuros').update({
+        await executarSemFiltroLojaTemporario(() => {
+          let qRollback = sb.from('recebiveis_futuros').update({
             confirmado_em: null,
             confirmado_por_nome: null,
             valor_confirmado: null,
             conta_financeira_confirmada_id: null,
-          }).eq('id', id)
-        );
+          }).eq('id', id);
+          if (lojaId) qRollback = qRollback.eq('loja_id', lojaId);
+          if (empresaId) qRollback = qRollback.eq('empresa_id', empresaId);
+          return qRollback;
+        });
       } catch (eRollback) {
         console.warn('Falha ao desfazer confirmação do recebimento futuro:', eRollback);
       }
@@ -23178,104 +23685,140 @@ async function confirmarRecebimentoFuturo() {
 }
 // ══════════════════════════════════════════════════════════════════
 async function recalcularFaltaQuitar() {
-  const chk = document.getElementById('contasSomarFuturosAcoes');
-  const chkPend = document.getElementById('contasSomarPendentesAcoes');
+  const chkAbertos = document.getElementById('contasSomarRecebiveisAbertosAcoes');
+  // Compatibilidade com versões antigas carregadas em cache/local: se ainda existirem,
+  // qualquer uma das flags antigas liga a mesma regra nova.
+  const chkFuturosAntigo = document.getElementById('contasSomarFuturosAcoes');
+  const chkPendentesAntigo = document.getElementById('contasSomarPendentesAcoes');
   const elFaltaQuitar = document.getElementById('rfFaltaQuitar');
+  const labelFaltaQuitar = document.getElementById('rfFaltaQuitarLabel');
   const desc = document.getElementById('rfFaltaQuitarDesc');
   if (!elFaltaQuitar) return;
 
   const { totalPendente = 0, saldoTotalContas = 0 } = window._contasFaltaCache || {};
-  const somarFuturos = chk?.checked === true;
-  const somarPendentes = chkPend?.checked === true;
+  const totalDividaPeriodo = Number(totalPendente || 0);
+  const saldoAtualCofre = Number(saldoTotalContas || 0);
+  const somarRecebiveisAbertos = chkAbertos?.checked === true || chkFuturosAntigo?.checked === true || chkPendentesAntigo?.checked === true;
+  const faltaBase = Math.max(0, Number((totalDividaPeriodo - saldoAtualCofre).toFixed(2)));
+  const sobraBase = Math.max(0, Number((saldoAtualCofre - totalDividaPeriodo).toFixed(2)));
 
-  if (!somarFuturos && !somarPendentes) {
-    const falta = Math.max(0, totalPendente - saldoTotalContas);
-    elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(falta);
-    if (desc) desc.textContent = 'Total pendente menos saldo disponível';
+  const aplicarBase = (motivo = 'Total pendente menos saldo disponível') => {
+    if (sobraBase > 0) {
+      if (labelFaltaQuitar) labelFaltaQuitar.textContent = 'Sobra em caixa (R$)';
+      elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(sobraBase);
+      elFaltaQuitar.style.color = 'var(--green)';
+    } else {
+      if (labelFaltaQuitar) labelFaltaQuitar.textContent = 'Falta para quitar (R$)';
+      elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(faltaBase);
+      elFaltaQuitar.style.color = faltaBase === 0 ? 'var(--green)' : 'var(--red)';
+    }
+    if (desc) {
+      desc.textContent = [
+        `A pagar no período: ${formatarMoedaBRFinanceiro(totalDividaPeriodo)}`,
+        `Saldo atual/cofre disponível: ${formatarMoedaBRFinanceiro(saldoAtualCofre)}`,
+        motivo,
+        sobraBase > 0 ? `✓ Sobra: ${formatarMoedaBRFinanceiro(sobraBase)}` : `Falta: ${formatarMoedaBRFinanceiro(faltaBase)}`
+      ].join(' | ');
+    }
+  };
+
+  if (!somarRecebiveisAbertos) {
+    aplicarBase('sem simular recebíveis em aberto');
     return;
   }
 
   try {
     const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasRelatorioFinanceiro');
     if (!Array.isArray(lojasPermitidasIds) || !lojasPermitidasIds.length) {
-      const falta = Math.max(0, totalPendente - saldoTotalContas);
-      elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(falta);
-      if (desc) desc.textContent = 'Não foi possível identificar a loja';
+      aplicarBase('não foi possível identificar a loja');
       return;
     }
 
-    const futInicio = String(document.getElementById('filtroRelFinanceiroDataInicio')?.value || '').trim();
-    const futFim = String(document.getElementById('filtroRelFinanceiroDataFim')?.value || '').trim();
+    const dataInicio = String(document.getElementById('filtroRelFinanceiroDataInicio')?.value || '').trim();
+    const dataFim = String(document.getElementById('filtroRelFinanceiroDataFim')?.value || '').trim();
     const idsPermitidos = new Set(lojasPermitidasIds.map(id => String(id)));
 
-    let totalFuturosConfirmados = 0;
-    let totalProvisionadosPendentes = 0;
+    // Regra nova:
+    // - O saldo atual do cofre já inclui recebimentos confirmados.
+    // - Portanto, para simular caixa futuro, só entram recebíveis EM ABERTO.
+    // - Recebíveis abertos = recebiveis_futuros ativo/null e confirmado_em IS NULL.
+    // - A soma respeita empresa_id, loja_id e o mesmo período filtrado no relatório.
+    let totalRecebiveisAbertosPeriodo = 0;
+    let qtdRecebiveisAbertosPeriodo = 0;
+    const { data: recebimentosAbertos, error: erroAbertos } = await executarSemFiltroLojaTemporario(() => {
+      let q = sb.from('recebiveis_futuros')
+        .select('id, valor, loja_id, empresa_id, data_prevista, ativo, confirmado_em')
+        .or('ativo.is.null,ativo.eq.true')
+        .is('confirmado_em', null);
+      if (dataInicio) q = q.gte('data_prevista', dataInicio);
+      if (dataFim) q = q.lte('data_prevista', dataFim);
+      const empresaSessao = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
+      if (empresaSessao && typeof q.eq === 'function') q = q.eq('empresa_id', empresaSessao);
+      return aplicarFiltroLojasFinanceirasPermitidas(q, lojasPermitidasIds);
+    });
+    if (erroAbertos) throw erroAbertos;
 
-    // ── Futuros confirmados no período (checkbox original) ──────────
-    if (somarFuturos) {
-      const { data: futuros, error: erroFuturos } = await executarSemFiltroLojaTemporario(() => {
-        let q = sb.from('recebiveis_futuros')
-          .select('valor, loja_id, data_prevista')
-          .eq('ativo', true)
-          .is('confirmado_em', null);
-        if (futInicio) q = q.gte('data_prevista', futInicio);
-        if (futFim)    q = q.lte('data_prevista', futFim);
-        return aplicarFiltroLojasFinanceirasPermitidas(q, lojasPermitidasIds);
-      });
-      if (!erroFuturos) {
-        totalFuturosConfirmados = (futuros || [])
-          .filter(f => idsPermitidos.has(String(f.loja_id || '')))
-          .filter(f => {
-            const dp = String(f.data_prevista || '').slice(0, 10);
-            if (futInicio && dp < futInicio) return false;
-            if (futFim && dp > futFim) return false;
-            return true;
-          })
-          .reduce((s, f) => s + Number(f.valor || 0), 0);
-      }
+    const mapaUnico = new Map();
+    (recebimentosAbertos || []).forEach(item => {
+      const id = String(item.id || '').trim();
+      if (!id || mapaUnico.has(id)) return;
+      if (!idsPermitidos.has(String(item.loja_id || ''))) return;
+      if (item.confirmado_em) return;
+      const ativo = item.ativo;
+      if (ativo === false) return;
+      const dp = String(item.data_prevista || '').slice(0, 10);
+      if (dataInicio && dp < dataInicio) return;
+      if (dataFim && dp > dataFim) return;
+      mapaUnico.set(id, item);
+    });
+
+    qtdRecebiveisAbertosPeriodo = mapaUnico.size;
+    totalRecebiveisAbertosPeriodo = Number(Array.from(mapaUnico.values())
+      .reduce((s, item) => s + Number(item.valor || 0), 0).toFixed(2));
+    window.__debugFaltaQuitarRecebiveisAbertos = Array.from(mapaUnico.values()).map(item => ({
+      id: item.id,
+      data_prevista: item.data_prevista,
+      valor: Number(item.valor || 0) || 0,
+      loja_id: item.loja_id,
+      empresa_id: item.empresa_id,
+      confirmado_em: item.confirmado_em,
+      ativo: item.ativo,
+    }));
+
+    // Regra correta para a flag:
+    // Falta para quitar = Total pendente do período - Saldo atual/cofre - Recebíveis futuros em aberto do período.
+    // Recebíveis confirmados continuam fora da soma, pois já devem estar refletidos no saldo/cofre.
+    const saldoSimuladoTotal = Number((saldoAtualCofre + totalRecebiveisAbertosPeriodo).toFixed(2));
+    const faltaFinal = Math.max(0, Number((totalDividaPeriodo - saldoSimuladoTotal).toFixed(2)));
+    const sobraFinal = Math.max(0, Number((saldoSimuladoTotal - totalDividaPeriodo).toFixed(2)));
+
+    if (sobraFinal > 0) {
+      if (labelFaltaQuitar) labelFaltaQuitar.textContent = 'Sobra simulada (R$)';
+      elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(sobraFinal);
+      elFaltaQuitar.style.color = 'var(--green)';
+    } else {
+      if (labelFaltaQuitar) labelFaltaQuitar.textContent = 'Falta para quitar (R$)';
+      elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(faltaFinal);
+      elFaltaQuitar.style.color = faltaFinal === 0 ? 'var(--green)' : 'var(--red)';
     }
 
-    // ── Provisionados pendentes — TODOS (sem filtro de data) ────────
-    // O usuário quer saber tudo que tem a receber, independente do período.
-    if (somarPendentes) {
-      try {
-        const { data: pendentes } = await executarSemFiltroLojaTemporario(() =>
-          aplicarFiltroLojasFinanceirasPermitidas(
-            sb.from('recebiveis_futuros')
-              .select('valor, loja_id')
-              .eq('ativo', true)
-              .is('confirmado_em', null),
-            lojasPermitidasIds
-          )
-        );
-        totalProvisionadosPendentes = (pendentes || [])
-          .filter(f => idsPermitidos.has(String(f.loja_id || '')))
-          .reduce((s, f) => s + Number(f.valor || 0), 0);
-      } catch(e) { console.warn('Erro ao buscar provisionados:', e); }
+    const partes = [
+      `A pagar no período: ${formatarMoedaBRFinanceiro(totalDividaPeriodo)}`,
+      `Saldo atual/cofre: ${formatarMoedaBRFinanceiro(saldoAtualCofre)}`,
+      `Recebíveis em aberto no período: ${formatarMoedaBRFinanceiro(totalRecebiveisAbertosPeriodo)} (${qtdRecebiveisAbertosPeriodo})`,
+      `Disponível simulado: ${formatarMoedaBRFinanceiro(saldoAtualCofre)} + ${formatarMoedaBRFinanceiro(totalRecebiveisAbertosPeriodo)} = ${formatarMoedaBRFinanceiro(saldoSimuladoTotal)}`
+    ];
+    if (sobraFinal > 0) {
+      partes.push(`✓ Sobra simulada: ${formatarMoedaBRFinanceiro(sobraFinal)}`);
+    } else {
+      partes.push(`Falta: ${formatarMoedaBRFinanceiro(faltaFinal)}`);
     }
-
-    const totalReceber = totalFuturosConfirmados + totalProvisionadosPendentes;
-    const saldoTotal = saldoTotalContas + totalReceber;
-    const faltaFinal = Math.max(0, totalPendente - saldoTotal);
-    const sobraFinal = Math.max(0, saldoTotal - totalPendente);
-
-    elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(faltaFinal);
-    elFaltaQuitar.style.color = faltaFinal === 0 ? 'var(--green)' : 'var(--red)';
-
-    const partes = [`Saldo: ${formatarMoedaBRFinanceiro(saldoTotalContas)}`];
-    if (somarFuturos && totalFuturosConfirmados > 0)
-      partes.push(`futuros no período: +${formatarMoedaBRFinanceiro(totalFuturosConfirmados)}`);
-    if (somarPendentes && totalProvisionadosPendentes > 0)
-      partes.push(`provisionados pendentes: +${formatarMoedaBRFinanceiro(totalProvisionadosPendentes)}`);
-    if (faltaFinal === 0)
-      partes.push(`✓ Sobra: ${formatarMoedaBRFinanceiro(sobraFinal)}`);
     if (desc) desc.textContent = partes.join(' | ');
-
   } catch(e) {
     console.warn('Erro ao recalcular falta:', e);
+    aplicarBase('erro ao somar recebíveis em aberto; exibindo cálculo sem previsão');
   }
 }
-
 
 // ══════════════════════════════════════════════════════════════════
 // GRUPOS DE FORNECEDOR
@@ -24749,6 +25292,131 @@ async function excluirRecebivelFinanceiro(id) {
   if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
     await carregarCofreFinanceiro();
   }
+}
+
+
+async function excluirRecebivelFinanceiroInterno(id, { atualizarTela = true } = {}) {
+  let item = recebiveisFinanceiroCache.find(recebivel => String(recebivel.id) === String(id)) || null;
+  if (!item) {
+    const { data: recebidoBanco, error: erroBuscaRecebivel } = await executarSemFiltroLojaTemporario(() => sb
+      .from('recebiveis')
+      .select('id, conta_financeira_id, valor')
+      .eq('id', id)
+      .maybeSingle());
+    if (erroBuscaRecebivel) {
+      setMsg('msgRecebivelFinanceiro', `Não foi possível carregar o recebível para exclusão: ${mensagemErroSupabase(erroBuscaRecebivel, 'erro desconhecido')}`, 'err');
+      return false;
+    }
+    item = recebidoBanco || null;
+  }
+
+  const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+  if (!saldoGerenciadoNoBanco && item?.conta_financeira_id && Number(item.valor || 0) > 0) {
+    const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({
+      contaFinanceiraId: item.conta_financeira_id,
+      recebivelId: id,
+      tipo: 'estorno',
+      valor: Number(item.valor || 0),
+      descricao: 'Estorno por exclusão de recebível',
+    });
+    if (erroEstorno) {
+      setMsg('msgRecebivelFinanceiro', `Não foi possível estornar a conta financeira: ${mensagemErroSupabase(erroEstorno, 'erro desconhecido')}`, 'err');
+      return false;
+    }
+  }
+
+  const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').delete().eq('id', id));
+  if (error) {
+    if (!saldoGerenciadoNoBanco && item?.conta_financeira_id && Number(item.valor || 0) > 0) {
+      const { error: erroRollbackEstorno } = await registrarMovimentacaoContaFinanceira({
+        contaFinanceiraId: item.conta_financeira_id,
+        recebivelId: id,
+        tipo: 'entrada',
+        valor: Number(item.valor || 0),
+        descricao: 'Desfaz estorno: exclusão de recebível não concluída',
+      });
+      if (erroRollbackEstorno) {
+        console.warn('Falha ao desfazer estorno apos erro na exclusao de recebivel:', erroRollbackEstorno);
+      }
+    }
+    if (isMissingRecebiveisTableError(error)) {
+      setMsg('msgRecebivelFinanceiro', 'Rode o SQL de recebíveis antes de usar esta tela.', 'err');
+      return false;
+    }
+    setMsg('msgRecebivelFinanceiro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return false;
+  }
+
+  if (String(recebivelFinanceiroEmEdicaoId || '') === String(id)) limparFormularioRecebivelFinanceiro();
+  recebiveisFinanceiroSelecionadosIds.delete(String(id));
+  if (atualizarTela) {
+    setMsg('msgRecebivelFinanceiro', 'Recebível excluído.', 'ok');
+    recebiveisFinanceiroListaVisivel = true;
+    await carregarContasFinanceiras({ render: false, silencioso: true });
+    await carregarRecebiveisFinanceiro();
+    if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
+      await carregarCofreFinanceiro();
+    }
+  }
+  return true;
+}
+
+async function excluirRecebivelFinanceiro(id) {
+  const item = recebiveisFinanceiroCache.find(recebivel => String(recebivel.id) === String(id));
+  const autorizado = await solicitarConfirmacaoExclusaoRecebiveisComPin({
+    quantidade: 1,
+    tipo: 'recebível cadastrado',
+    detalhe: item ? `${item.fornecedores?.nome || 'Pagador'} · ${formatarMoedaBRFinanceiro(item.valor || 0)}` : '',
+  });
+  if (!autorizado) return;
+  const ok = await excluirRecebivelFinanceiroInterno(id, { atualizarTela: true });
+  if (ok) setMsg('msgRecebivelFinanceiro', `Recebível excluído por ${autorizado.nomeFuncionario}.`, 'ok');
+}
+
+async function excluirRecebiveisSelecionadosFinanceiro() {
+  const idsSelecionados = recebiveisFinanceiroVisiveisIds
+    .filter(id => recebiveisFinanceiroSelecionadosIds.has(String(id)))
+    .map(String);
+
+  if (!idsSelecionados.length) {
+    setMsg('msgRecebivelFinanceiro', 'Selecione pelo menos um recebível para excluir.', 'err');
+    return;
+  }
+
+  const autorizado = await solicitarConfirmacaoExclusaoRecebiveisComPin({
+    quantidade: idsSelecionados.length,
+    tipo: 'recebível cadastrado',
+    detalhe: idsSelecionados.length === recebiveisFinanceiroVisiveisIds.length
+      ? 'Todos os recebíveis do filtro atual serão excluídos.'
+      : 'Somente os itens marcados serão excluídos.',
+  });
+  if (!autorizado) return;
+
+  const btnExcluir = document.getElementById('btnExcluirRecebiveisSelecionadosFinanceiro');
+  const btnSelecionar = document.getElementById('btnSelecionarTodosRecebiveisFinanceiro');
+  const textoOriginal = btnExcluir?.textContent || 'Excluir selecionados';
+  if (btnExcluir) {
+    btnExcluir.disabled = true;
+    btnExcluir.textContent = 'Excluindo...';
+  }
+  if (btnSelecionar) btnSelecionar.disabled = true;
+
+  let excluidos = 0;
+  for (const id of idsSelecionados) {
+    const ok = await excluirRecebivelFinanceiroInterno(id, { atualizarTela: false });
+    if (ok) excluidos += 1;
+  }
+
+  recebiveisFinanceiroListaVisivel = true;
+  await carregarContasFinanceiras({ render: false, silencioso: true });
+  await carregarRecebiveisFinanceiro();
+  if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
+    await carregarCofreFinanceiro();
+  }
+  setMsg('msgRecebivelFinanceiro', `${excluidos} recebível(is) excluído(s) por ${autorizado.nomeFuncionario}.`, excluidos ? 'ok' : 'err');
+
+  if (btnExcluir) btnExcluir.textContent = textoOriginal;
+  atualizarResumoSelecaoRecebiveisFinanceiro();
 }
 
 function atualizarResumoCofreFinanceiro({ saldoTotal = 0, movimentos = [] } = {}) {
@@ -27262,18 +27930,46 @@ function tagStatusContaRelatorioFinanceiro(status = '') {
   return '<span class="tag tag-amber">Pendente</span>';
 }
 
-async function obterSaldoTotalContasFinanceiras() {
-  const { data, error } = await sb
-    .from('contas_financeiras')
-    .select('saldo_atual, ativo');
+async function obterSaldoTotalContasFinanceiras(lojasFiltroIds = null) {
+  // Regra multi-loja: o saldo usado no “Falta para quitar” precisa ser o saldo
+  // da(s) loja(s) selecionada(s) no relatório financeiro, não o saldo geral da empresa.
+  const lojasIds = Array.isArray(lojasFiltroIds) && lojasFiltroIds.length
+    ? lojasFiltroIds.map(id => String(id || '').trim()).filter(Boolean)
+    : obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasRelatorioFinanceiro');
+  const idsPermitidos = new Set((lojasIds || []).map(id => String(id || '').trim()).filter(Boolean));
+  const empresaSessao = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
+
+  const { data, error } = await executarSemFiltroLojaTemporario(() => {
+    let query = sb
+      .from('contas_financeiras')
+      .select('id, nome, saldo_atual, ativo, loja_id, empresa_id')
+      .or('ativo.is.null,ativo.eq.true');
+    if (empresaSessao && typeof query.eq === 'function') query = query.eq('empresa_id', empresaSessao);
+    query = aplicarFiltroLojasFinanceirasPermitidas(query, lojasIds);
+    return query;
+  });
+
   if (error) {
     if (isMissingContasFinanceirasTableError(error)) return 0;
     throw error;
   }
-  return (data || []).reduce((acc, item) => {
-    if (item?.ativo === false) return acc;
-    return acc + (Number(item.saldo_atual || 0) || 0);
-  }, 0);
+
+  const contasFiltradas = (data || []).filter(item => {
+    if (item?.ativo === false) return false;
+    if (empresaSessao && String(item?.empresa_id || '') !== String(empresaSessao)) return false;
+    if (idsPermitidos.size && !idsPermitidos.has(String(item?.loja_id || ''))) return false;
+    return true;
+  });
+
+  window.__debugFaltaQuitarContasFinanceiras = contasFiltradas.map(item => ({
+    id: item.id,
+    nome: item.nome,
+    saldo_atual: Number(item.saldo_atual || 0) || 0,
+    loja_id: item.loja_id,
+    empresa_id: item.empresa_id,
+  }));
+
+  return Number(contasFiltradas.reduce((acc, item) => acc + (Number(item.saldo_atual || 0) || 0), 0).toFixed(2));
 }
 
 function contaBaixadaSemMovimentacaoSaldo(item = null) {
@@ -36049,12 +36745,14 @@ async function carregarRelatorioFinanceiro() {
     const totalGeral = totalPendente;
     let saldoTotalContas = 0;
     try {
-      saldoTotalContas = await obterSaldoTotalContasFinanceiras();
+      // Usa exatamente a(s) loja(s) selecionada(s) no filtro do relatório.
+      saldoTotalContas = await obterSaldoTotalContasFinanceiras(lojasSelecionadas);
     } catch (erroSaldo) {
       console.warn('Erro ao carregar saldo total das contas financeiras:', erroSaldo);
       saldoTotalContas = 0;
     }
-    const faltaParaQuitar = Math.max(0, totalPendente - saldoTotalContas);
+    const faltaParaQuitar = Math.max(0, Number((totalPendente - saldoTotalContas).toFixed(2)));
+    const sobraEmCaixa = Math.max(0, Number((saldoTotalContas - totalPendente).toFixed(2)));
     if (seqRelFin !== window.__relFinSeq) return;
     // Guardar para recalcular quando checkbox mudar
     window._contasFaltaCache = { totalPendente, saldoTotalContas };
@@ -36067,14 +36765,30 @@ async function carregarRelatorioFinanceiro() {
     const elTotalSomado = document.getElementById('rfTotalSomado');
     if (elTotalSomado) elTotalSomado.textContent = formatarMoedaBRFinanceiro(totalSomado);
     if (elSaldoContas) elSaldoContas.textContent = formatarMoedaBRFinanceiro(saldoTotalContas);
-    if (elFaltaQuitar) elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(faltaParaQuitar);
-    // Mantém a escolha do usuário: se "Somar recebimentos futuros ao saldo"
-    // estiver marcado, recalcula o "Falta para quitar" somando os futuros.
-    const chkAcoesFuturos = document.getElementById('contasSomarFuturosAcoes');
+    const labelFaltaQuitarPrincipal = document.getElementById('rfFaltaQuitarLabel');
+    if (elFaltaQuitar) {
+      if (sobraEmCaixa > 0) {
+        if (labelFaltaQuitarPrincipal) labelFaltaQuitarPrincipal.textContent = 'Sobra em caixa (R$)';
+        elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(sobraEmCaixa);
+        elFaltaQuitar.style.color = 'var(--green)';
+      } else {
+        if (labelFaltaQuitarPrincipal) labelFaltaQuitarPrincipal.textContent = 'Falta para quitar (R$)';
+        elFaltaQuitar.textContent = formatarMoedaBRFinanceiro(faltaParaQuitar);
+        elFaltaQuitar.style.color = faltaParaQuitar === 0 ? 'var(--green)' : 'var(--red)';
+      }
+    }
+    // Mantém a escolha do usuário: se "Somar recebíveis em aberto no período"
+    // estiver marcado, recalcula o "Falta para quitar" simulando apenas valores ainda não confirmados.
+    const chkAcoesAbertos = document.getElementById('contasSomarRecebiveisAbertosAcoes');
     const desc = document.getElementById('rfFaltaQuitarDesc');
-    if (desc) desc.textContent = 'Total pendente menos saldo disponível';
-    const chkAcoesPend = document.getElementById('contasSomarPendentesAcoes');
-    if (chkAcoesFuturos?.checked === true || chkAcoesPend?.checked === true) await recalcularFaltaQuitar();
+    if (desc) {
+      desc.textContent = [
+        `A pagar no período: ${formatarMoedaBRFinanceiro(totalPendente)}`,
+        `Saldo atual/cofre: ${formatarMoedaBRFinanceiro(saldoTotalContas)}`,
+        sobraEmCaixa > 0 ? `✓ Sobra: ${formatarMoedaBRFinanceiro(sobraEmCaixa)}` : `Falta: ${formatarMoedaBRFinanceiro(faltaParaQuitar)}`
+      ].join(' | ');
+    }
+    if (chkAcoesAbertos?.checked === true) await recalcularFaltaQuitar();
     if (elQtdTitulos) elQtdTitulos.textContent = String(qtdTitulos);
 
     renderizarDashboardFornecedoresRelatorioFinanceiro(itensFiltrados);
@@ -36233,12 +36947,16 @@ async function buscarDadosRelatorioRecebimentos() {
   const incluirFuturos = document.getElementById('filtroRelRecebIncluirFuturos')?.checked === true;
   if (incluirFuturos && !res.error) {
     try {
-      const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
-        sb.from('recebiveis_futuros')
-          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
+      const { data: futuros } = await executarSemFiltroLojaTemporario(() => {
+        let qFuturos = sb.from('recebiveis_futuros')
+          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, loja_id, empresa_id, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
           .not('confirmado_em', 'is', null)
-          .order('confirmado_em', { ascending: false })
-      );
+          .order('confirmado_em', { ascending: false });
+        qFuturos = aplicarFiltroLojasFinanceirasPermitidas(qFuturos, obterIdsLojasFinanceirasPermitidas());
+        const empresaSessao = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
+        if (empresaSessao && typeof qFuturos.eq === 'function') qFuturos = qFuturos.eq('empresa_id', empresaSessao);
+        return qFuturos;
+      });
       if (futuros?.length) {
         const normalizados = futuros.map(f => ({
           ...f,
@@ -36258,13 +36976,14 @@ async function buscarDadosRelatorioRecebimentos() {
   const incluirPendentes = document.getElementById('filtroRelRecebIncluirPendentes')?.checked === true;
   if (incluirPendentes && !res.error) {
     try {
-      const lojaSessao = String(window?.usuarioSistemaLogado?.loja_id || '').trim();
+      const empresaSessao = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
       let qPend = sb.from('recebiveis_futuros')
-        .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, observacao, criado_por_nome, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)')
-        .eq('ativo', true)
+        .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, observacao, criado_por_nome, ativo, loja_id, empresa_id, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)')
+        .or('ativo.is.null,ativo.eq.true')
         .is('confirmado_em', null)
         .order('data_prevista', { ascending: true });
-      if (lojaSessao) qPend = qPend.eq('loja_id', lojaSessao);
+      qPend = aplicarFiltroLojasFinanceirasPermitidas(qPend, obterIdsLojasFinanceirasPermitidas());
+      if (empresaSessao && typeof qPend.eq === 'function') qPend = qPend.eq('empresa_id', empresaSessao);
       const { data: pendentes } = await qPend;
       if (pendentes?.length) {
         const normalizados = pendentes.map(f => ({
@@ -43239,6 +43958,7 @@ function nrAbrir(editar) {
     const qtdEl = document.getElementById('recebivelQtdParcelas'); if (qtdEl) qtdEl.value = '1';
     const diasEl = document.getElementById('recebivelDiasIntervalo'); if (diasEl) diasEl.value = '30';
     const dataEl = document.getElementById('nrDataPrevista'); if (dataEl) dataEl.value = new Date().toISOString().slice(0, 10);
+    const diaSemanaEl = document.getElementById('recebivelDiaSemanaFixo'); if (diaSemanaEl) diaSemanaEl.value = '';
     // Limpar erros
     ['nrQtdErr','nrDiasErr','recebivelObsErr'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     // Título e botões
