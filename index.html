@@ -10424,13 +10424,13 @@
 
       <!-- Dias para vencimento -->
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Dias p/ vencimento <span style="color:var(--red)">*</span></div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Dias entre parcelas <span style="color:var(--red)">*</span></div>
         <input type="number" id="ncVencDia" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
-          placeholder="30" min="0" max="999"
+          placeholder="30" min="1" max="999"
           oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3); ncVencDiaInput(this.value)">
         <div id="ncVencDiaErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
-        <div id="ncVencDiaAviso" style="display:none;color:var(--text-muted);font-size:10px;margin-top:3px;">ℹ️ Na edição use o calendário abaixo</div>
+        <div id="ncVencDiaAviso" style="display:none;color:var(--text-muted);font-size:10px;margin-top:3px;">ℹ️ Intervalo usado para repetir as parcelas. A data abaixo é apenas o 1º vencimento.</div>
       </div>
 
       <!-- Qtda Parcelas -->
@@ -10477,7 +10477,8 @@
 
     <div class="msg" id="ncMsg" style="font-size:14px;"></div>
     <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:env(safe-area-inset-bottom,0px);">
-      <button class="btn btn-green" id="ncBtnSalvar" style="padding:16px;font-size:16px;border-radius:14px;width:100%;" onclick="ncSalvar()">✓ Cadastrar conta</button>
+      <button class="btn btn-green" id="ncBtnSalvar" style="padding:16px;font-size:16px;border-radius:14px;width:100%;" onclick="ncSalvar(false)">✓ Cadastrar conta</button>
+      <button class="btn btn-ghost" id="ncBtnSalvarNovo" style="padding:15px;font-size:15px;border-radius:14px;width:100%;border-color:rgba(96,165,250,0.45);background:rgba(37,99,235,0.16);color:#dbeafe;" onclick="ncSalvar(true)">✓ Cadastrar e lançar novo</button>
       <button class="btn btn-ghost" id="ncBtnCancelar" style="display:none;padding:14px;font-size:14px;border-radius:14px;width:100%;" onclick="ncCancelarEdicao()">Cancelar edição</button>
     </div>
 
@@ -26329,21 +26330,12 @@ function ajustarVencimentoParaDiaUtilFinanceiro(dataISO) {
 // Qualquer outro intervalo (15, 45...) continua somando dias exatos.
 // idx pode ser negativo (recálculo de parcelas anteriores na edição).
 function calcularVencimentoParcelaFinanceiro(baseISO, idx, intervaloDias) {
-  const n = Number.parseInt(String(intervaloDias ?? ''), 10);
-  const ehMensal = !Number.isFinite(n) || n <= 0 || n === 30;
-  if (!ehMensal) {
-    return ajustarVencimentoParaDiaUtilFinanceiro(adicionarDiasDataISOFinanceiro(baseISO, idx * n) || baseISO);
-  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(baseISO || ''))) return baseISO;
-  const [ano, mes, dia] = baseISO.split('-').map(Number);
-  const alvo = (mes - 1) + idx;
-  const anoV = ano + Math.floor(alvo / 12);
-  const mesV = ((alvo % 12) + 12) % 12 + 1;
-  const ultimo = new Date(anoV, mesV, 0).getDate();
-  const diaV = Math.min(dia, ultimo);
-  // O dia âncora vem SEMPRE do vencimento base (ex.: dia 10), mês a mês —
-  // o ajuste de fim de semana de um mês não desloca os meses seguintes.
-  return ajustarVencimentoParaDiaUtilFinanceiro(`${anoV}-${String(mesV).padStart(2, '0')}-${String(diaV).padStart(2, '0')}`);
+  const nInformado = Number.parseInt(String(intervaloDias ?? ''), 10);
+  const intervalo = Number.isFinite(nInformado) && nInformado > 0 ? nInformado : 30;
+  const deslocamento = (Number.parseInt(String(idx || 0), 10) || 0) * intervalo;
+  const vencimento = adicionarDiasDataISOFinanceiro(baseISO, deslocamento) || baseISO;
+  return ajustarVencimentoParaDiaUtilFinanceiro(vencimento);
 }
 
 async function salvarContaAPagarFinanceiro() {
@@ -42775,37 +42767,27 @@ function ncParcCust() {
 }
 
 // ── Vencimento ──────────────────────────────────────────────────
-// ncVencDia: calcula dataVenc somando X dias a partir de hoje
+// ncVencDia: intervalo livre em dias entre parcelas; não mexe no calendário
 function ncVencDiaInput(val) {
   const dias = parseInt(val, 10);
   const e = document.getElementById('ncVencDiaErr');
-  if (isNaN(dias) || dias < 0) {
+  if (isNaN(dias) || dias <= 0) {
     if (e) e.style.display = '';
     return;
   }
   if (e) e.style.display = 'none';
-  // Na edição, o campo "dias" é apenas informativo.
-  // O usuário deve alterar a data diretamente no calendário.
-  if (NC.modoEdicao) return;
-  const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
-  base.setDate(base.getDate() + dias);
-  NC.dataVenc = base.toISOString().split('T')[0];
-  // Atualiza o calendário visualmente
-  const vc = document.getElementById('ncVencCustom');
-  if (vc) vc.value = NC.dataVenc;
+  // Este campo agora é LIVRE e representa o intervalo entre as parcelas.
+  // Ele não recalcula a data do calendário. O calendário define somente o 1º vencimento.
+  NC.intervalo = dias;
 }
 
 // ncVencCust: usuário escolhe data direto no calendário
 function ncVencCust() {
   const vc = document.getElementById('ncVencCustom');
   if (vc && vc.value) {
+    // A data do calendário é somente o 1º vencimento.
+    // Não altera o intervalo/dias entre parcelas.
     NC.dataVenc = vc.value;
-    // Recalcular "dias para vencimento" para manter os dois sincronizados
-    const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
-    const venc = new Date(vc.value + 'T00:00:00');
-    const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
-    const vdEl = document.getElementById('ncVencDia');
-    if (vdEl) vdEl.value = diff >= 0 ? diff : '';
     const e = document.getElementById('ncVencDiaErr');
     if (e) e.style.display = 'none';
   }
@@ -42905,17 +42887,22 @@ function ncAbrir(editar) {
     const hoje = new Date().toISOString().split('T')[0];
     const dc = document.getElementById('ncDataCompra'); if (dc) dc.value = hoje;
     NC.dataCompra = hoje; NC.dataVenc = hoje;
-    // Vencimento default = 30 dias
+    // Intervalo default = 30 dias; calendário = 1º vencimento.
     const vdEl = document.getElementById('ncVencDia');
     if (vdEl) {
       vdEl.value = '30';
       vdEl.style.opacity = '';
       vdEl.style.pointerEvents = '';
-      vdEl.title = '';
+      vdEl.title = 'Intervalo em dias usado para gerar as próximas parcelas';
     }
+    NC.intervalo = 30;
     const avisoVd = document.getElementById('ncVencDiaAviso');
     if (avisoVd) avisoVd.style.display = 'none';
-    ncVencDiaInput('30');
+    const vencDefault = new Date(hoje + 'T00:00:00');
+    vencDefault.setDate(vencDefault.getDate() + 30);
+    NC.dataVenc = vencDefault.toISOString().split('T')[0];
+    const vcDefault = document.getElementById('ncVencCustom');
+    if (vcDefault) vcDefault.value = NC.dataVenc;
     // Parcelas default = 1
     const pc = document.getElementById('ncParcCustom'); if (pc) pc.value = '1';
     NC.parcelas = 1;
@@ -42926,7 +42913,7 @@ function ncAbrir(editar) {
     // Título
     const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Nova conta';
     const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = 'none';
-    const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Cadastrar conta';
+    ncResetarBotoesSalvar();
     const msg = document.getElementById('ncMsg'); if (msg) { msg.textContent = ''; msg.className = 'msg'; }
     const vt = document.getElementById('ncValorTipo'); if (vt) vt.style.display = 'none';
     const pi = document.getElementById('ncParcelasInfo'); if (pi) { pi.textContent = ''; pi.style.display = 'none'; }
@@ -42946,6 +42933,7 @@ function ncAbrir(editar) {
 
 function ncFechar() {
   const sh = document.getElementById('ncSheet'), ov = document.getElementById('ncOverlay');
+  ncResetarBotoesSalvar();
   if (!sh || !ov) return;
   sh.style.transform = 'translateY(100%)';
   setTimeout(() => {
@@ -42955,9 +42943,30 @@ function ncFechar() {
   }, 300);
 }
 
+function ncTextoBotaoSalvar() {
+  return NC.modoEdicao ? '✓ Salvar alterações' : '✓ Cadastrar conta';
+}
+
+function ncResetarBotoesSalvar() {
+  const btnSalvar = document.getElementById('ncBtnSalvar');
+  const btnNovo = document.getElementById('ncBtnSalvarNovo');
+  if (btnSalvar) {
+    btnSalvar.disabled = false;
+    btnSalvar.textContent = ncTextoBotaoSalvar();
+  }
+  if (btnNovo) {
+    btnNovo.disabled = false;
+    btnNovo.textContent = '✓ Cadastrar e lançar novo';
+    btnNovo.style.display = NC.modoEdicao ? 'none' : '';
+  }
+}
+
 // ── Salvar ──────────────────────────────────────────────────────
-async function ncSalvar() {
-  const msg = document.getElementById('ncMsg'), btn = document.getElementById('ncBtnSalvar');
+async function ncSalvar(manterAberto = false) {
+  manterAberto = !!manterAberto && !NC.modoEdicao;
+  const msg = document.getElementById('ncMsg');
+  const btn = document.getElementById('ncBtnSalvar');
+  const btnNovo = document.getElementById('ncBtnSalvarNovo');
   if (msg) { msg.textContent = ''; msg.className = 'msg'; }
 
   // 1. Coleta e valida valor
@@ -42965,15 +42974,20 @@ async function ncSalvar() {
   if (vi && document.activeElement === vi) vi.blur();
   NC.valor = ncParseValor(vi ? vi.value : '');
 
-  // 2. Data de vencimento — vem do calendário (ncVencCustom via ncVencCust)
-  //    Na edição, NÃO recalcular pelos dias (campo informativo apenas)
-  //    No novo cadastro, o calendário já foi atualizado por ncVencDiaInput ao digitar os dias
+  // 2. Data de vencimento: o calendário define somente a 1ª parcela.
+  //    O campo "dias entre parcelas" é livre e não é recalculado pelo calendário.
   const vcEl = document.getElementById('ncVencCustom');
   if (vcEl && vcEl.value) NC.dataVenc = vcEl.value;
 
-  // 3. Coleta parcelas
+  // 3. Coleta parcelas e intervalo livre entre parcelas
   const pcc = document.getElementById('ncParcCustom');
-  if (pcc && pcc.value) { const pv = parseInt(pcc.value, 10) || 0; if (pv >= 1) NC.parcelas = pv; }
+  if (pcc && pcc.value) {
+    const pv = parseInt(pcc.value, 10) || 0;
+    if (pv >= 1) NC.parcelas = pv;
+  }
+  const vdInput = document.getElementById('ncVencDia');
+  const intervaloDigitado = parseInt(String(vdInput?.value || '').trim(), 10);
+  if (Number.isFinite(intervaloDigitado) && intervaloDigitado > 0) NC.intervalo = intervaloDigitado;
 
   // 4. Coleta data de compra e observação
   const dc = document.getElementById('ncDataCompra'); if (dc && dc.value) NC.dataCompra = dc.value;
@@ -42993,6 +43007,12 @@ async function ncSalvar() {
     if (parcErr) parcErr.style.display = '';
     temErro = true;
   } else { if (parcErr) parcErr.style.display = 'none'; }
+
+  const intervaloErr = document.getElementById('ncVencDiaErr');
+  if (NC.parcelas > 1 && (!NC.intervalo || NC.intervalo <= 0)) {
+    if (intervaloErr) intervaloErr.style.display = '';
+    temErro = true;
+  }
 
   const obsErr = document.getElementById('ncObsErr');
   if (!NC.obs) {
@@ -43015,7 +43035,7 @@ async function ncSalvar() {
   // 6. Calcula valor correto por parcela
   const valorParcela = NC.modo === 'total' ? Math.round((NC.valor / NC.parcelas) * 100) / 100 : NC.valor;
 
-  // 7. Sincroniza campos hidden
+  // 7. Sincroniza campos da tela original usada pela rotina principal
   function toddmmaaaa(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y; }
   const fb = document.getElementById('contaFornecedorBusca'); if (fb) fb.value = NC.fornNome;
   const fi = document.getElementById('contaFornecedorId'); if (fi) fi.value = NC.fornId;
@@ -43029,8 +43049,9 @@ async function ncSalvar() {
   if (NC.lojaId) preencherSelectLojaContaAPagarFinanceiro(NC.lojaId);
   else preencherSelectLojaContaAPagarFinanceiro('');
 
-  // 8. Salva
+  // 8. Salva com trava anti duplo-clique, mas libera ao reabrir/continuar
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  if (btnNovo) { btnNovo.disabled = true; btnNovo.textContent = 'Salvando...'; }
   const msgOrig = document.getElementById('msgContaAPagarFinanceiro');
   if (msgOrig) { msgOrig.textContent = ''; msgOrig.className = 'msg'; }
 
@@ -43038,14 +43059,27 @@ async function ncSalvar() {
     await salvarContaAPagarFinanceiro();
     if (msgOrig && msgOrig.textContent && msgOrig.classList.contains('err')) {
       if (msg) { msg.textContent = msgOrig.textContent; msg.className = 'msg err'; }
-      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? '✓ Salvar alterações' : '✓ Cadastrar conta'; }
+      ncResetarBotoesSalvar();
       return;
     }
-    ncFechar();
+
     if (typeof carregarContasAPagarFinanceiro === 'function') carregarContasAPagarFinanceiro().catch(() => {});
+
+    if (manterAberto) {
+      // Reabre o sheet limpo para novo lançamento, sem precisar atualizar a página.
+      ncAbrir(false);
+      ncResetarBotoesSalvar();
+      const msgNovo = document.getElementById('ncMsg');
+      if (msgNovo) { msgNovo.textContent = 'Conta cadastrada. Pronto para lançar a próxima.'; msgNovo.className = 'msg ok'; }
+      setTimeout(() => document.getElementById('ncFornBusca')?.focus(), 80);
+      return;
+    }
+
+    ncResetarBotoesSalvar();
+    ncFechar();
   } catch (e) {
     if (msg) { msg.textContent = 'Erro: ' + ((e && e.message) || 'tente novamente'); msg.className = 'msg err'; }
-    if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? '✓ Salvar alterações' : '✓ Cadastrar conta'; }
+    ncResetarBotoesSalvar();
   }
 }
 
@@ -43095,23 +43129,19 @@ if (typeof _ncOrigEditar === 'function') {
 
       ncMontarCategorias();
 
-      // Preencher data de vencimento e dias
+      // Preencher data de vencimento e intervalo livre entre parcelas.
+      // O calendário é apenas o 1º vencimento; o campo de dias permanece editável.
       if (NC.dataVenc) {
-        // Calendário é o campo soberano na edição
         const vc = document.getElementById('ncVencCustom'); if (vc) vc.value = NC.dataVenc;
-        // Campo de dias: exibir diferença em relação a hoje (apenas informativo na edição)
-        const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
-        const venc = new Date(NC.dataVenc + 'T00:00:00');
-        const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
         const vdEl = document.getElementById('ncVencDia');
         if (vdEl) {
-          vdEl.value = diff >= 0 ? diff : '';
-          vdEl.title = 'Na edição, altere a data diretamente no campo calendário abaixo';
-          vdEl.style.opacity = '0.55';
-          vdEl.style.pointerEvents = 'none';
+          vdEl.value = String(NC.intervalo || 30);
+          vdEl.title = 'Intervalo em dias usado para gerar/recalcular parcelas';
+          vdEl.style.opacity = '';
+          vdEl.style.pointerEvents = '';
         }
         const avisoEl = document.getElementById('ncVencDiaAviso');
-        if (avisoEl) avisoEl.style.display = '';
+        if (avisoEl) avisoEl.style.display = 'none';
       }
 
       // Preencher parcelas
@@ -43124,7 +43154,7 @@ if (typeof _ncOrigEditar === 'function') {
 
       const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Editar conta';
       const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = '';
-      const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Salvar alterações';
+      ncResetarBotoesSalvar();
     }, 100);
   };
 }
@@ -43285,6 +43315,147 @@ function nrFechar() {
       if (el) observer.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
     });
   });
+})();
+</script>
+
+
+
+<!-- PATCH SAFE: destaque de observações sem alterar funções do financeiro -->
+<style id="patch-observacao-destaque-safe">
+  :root {
+    --obs-destaque-cor: #ff4d6d;
+    --obs-destaque-bg: rgba(127, 29, 29, 0.18);
+    --obs-destaque-border: rgba(255, 77, 109, 0.70);
+  }
+
+  .obs-destaque-texto,
+  .obs-destaque-label {
+    color: var(--obs-destaque-cor) !important;
+    font-weight: 900 !important;
+    text-shadow: 0 0 10px rgba(255, 77, 109, 0.16) !important;
+  }
+
+  .obs-destaque-campo,
+  #contaObservacao,
+  #recebivelObservacao,
+  #editarTituloObservacao,
+  #descTarefa,
+  #escalaPlantaoObservacao {
+    color: #ffe4e6 !important;
+    font-weight: 900 !important;
+    border-color: var(--obs-destaque-border) !important;
+    background: var(--obs-destaque-bg) !important;
+    box-shadow: 0 0 0 1px rgba(255, 77, 109, 0.18) !important;
+  }
+
+  .obs-destaque-campo::placeholder,
+  #contaObservacao::placeholder,
+  #recebivelObservacao::placeholder,
+  #editarTituloObservacao::placeholder,
+  #descTarefa::placeholder,
+  #escalaPlantaoObservacao::placeholder {
+    color: rgba(255, 228, 230, 0.78) !important;
+    font-weight: 800 !important;
+  }
+
+  .obs-destaque-campo:focus,
+  #contaObservacao:focus,
+  #recebivelObservacao:focus,
+  #editarTituloObservacao:focus,
+  #descTarefa:focus,
+  #escalaPlantaoObservacao:focus {
+    border-color: #ff2f58 !important;
+    box-shadow: 0 0 0 3px rgba(255, 47, 88, 0.22) !important;
+  }
+</style>
+<script id="patch-observacao-destaque-safe">
+(function patchObservacaoDestaqueSafe(){
+  if (window.__patchObservacaoDestaqueSafe) return;
+  window.__patchObservacaoDestaqueSafe = true;
+
+  const regexObs = /(^|\b)(obs\.?|observa[cç][aã]o|observacao)(\b|\s*:|\s*\*)/i;
+  const camposDiretos = [
+    'contaObservacao',
+    'recebivelObservacao',
+    'editarTituloObservacao',
+    'descTarefa',
+    'escalaPlantaoObservacao'
+  ];
+
+  function textoCurto(el) {
+    if (!el) return '';
+    const texto = String(el.textContent || '').replace(/\s+/g, ' ').trim();
+    return texto.length <= 160 ? texto : '';
+  }
+
+  function destacarCampo(campo) {
+    if (!campo || campo.dataset.obsDestaqueSafe === '1') return;
+    campo.dataset.obsDestaqueSafe = '1';
+    campo.classList.add('obs-destaque-campo');
+
+    const id = campo.id;
+    if (id && window.CSS && CSS.escape) {
+      document.querySelectorAll('label[for="' + CSS.escape(id) + '"]').forEach(label => {
+        label.classList.add('obs-destaque-label');
+      });
+    }
+
+    const bloco = campo.closest('.campo-com-label, .financeiro-observacao-row, .form-group, .field, .sheet-field, .modal-field, label');
+    if (bloco) {
+      bloco.querySelectorAll('label, .campo-label, .field-label, .form-label, small, span, strong, div').forEach(el => {
+        if (regexObs.test(textoCurto(el))) el.classList.add('obs-destaque-label');
+      });
+    }
+  }
+
+  function aplicar(root) {
+    const base = root && root.querySelectorAll ? root : document;
+
+    camposDiretos.forEach(id => destacarCampo(document.getElementById(id)));
+
+    base.querySelectorAll('input, textarea, select').forEach(campo => {
+      const alvo = [campo.id, campo.name, campo.placeholder, campo.getAttribute('aria-label')].join(' ');
+      if (regexObs.test(alvo)) destacarCampo(campo);
+    });
+
+    base.querySelectorAll('label, .campo-label, .field-label, .form-label, .item-detalhe, th, td, small, strong, span, p, div').forEach(el => {
+      if (el.dataset.obsTextoSafe === '1') return;
+      if (regexObs.test(textoCurto(el))) {
+        el.dataset.obsTextoSafe = '1';
+        el.classList.add('obs-destaque-texto');
+      }
+    });
+  }
+
+  let timer = null;
+  function agendar(root) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      aplicar(root || document);
+    }, 80);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => aplicar(document), { once: true });
+  } else {
+    aplicar(document);
+  }
+
+  const observer = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      if (mutation.type !== 'childList') continue;
+      for (const node of mutation.addedNodes || []) {
+        if (node && node.nodeType === 1) {
+          agendar(node);
+          return;
+        }
+      }
+    }
+  });
+
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  window.destacarObservacoesFinanceiro = () => aplicar(document);
 })();
 </script>
 
