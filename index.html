@@ -8588,13 +8588,25 @@
             <div class="card-title" style="margin:0">Checklists lancados</div>
           </div>
           <div class="form-row">
-            <select id="filtroChecklistFuncionario" onchange="carregarChecklists()">
+            <select id="filtroChecklistFuncionario" onchange="carregarChecklists({ forcarRender: true })">
               <option value="">- Todos os funcionarios -</option>
             </select>
-            <select id="filtroChecklistTarefa" onchange="carregarChecklists()">
+            <select id="filtroChecklistTarefa" onchange="carregarChecklists({ forcarRender: true })">
               <option value="">- Todas as tarefas -</option>
             </select>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosChecklists()">Limpar filtros</button>
+          </div>
+          <div class="form-row checklist-periodo-filtro" style="margin-top:8px;align-items:flex-end;">
+            <div class="campo-com-label" style="flex:0 0 180px;min-width:160px;">
+              <label class="campo-label" for="filtroChecklistDataInicio">Data inicial</label>
+              <input id="filtroChecklistDataInicio" type="date" onclick="this.showPicker?.()">
+            </div>
+            <div class="campo-com-label" style="flex:0 0 180px;min-width:160px;">
+              <label class="campo-label" for="filtroChecklistDataFim">Data final</label>
+              <input id="filtroChecklistDataFim" type="date" onclick="this.showPicker?.()">
+            </div>
+            <button class="btn btn-green" type="button" onclick="filtrarPeriodoChecklists()">Filtrar período</button>
+            <button class="btn btn-ghost" type="button" onclick="limparPeriodoChecklists()">Limpar período</button>
           </div>
           <div class="msg" id="msgChecklists"></div>
           <div id="listaChecklists"><div class="empty">Carregando...</div></div>
@@ -19353,13 +19365,19 @@ async function carregarChecklists(opcoes = {}) {
 
   const filtroFuncionarioId = String(document.getElementById('filtroChecklistFuncionario')?.value || '');
   const filtroTarefaId = String(document.getElementById('filtroChecklistTarefa')?.value || '');
-  const usandoFiltros = !!(filtroFuncionarioId || filtroTarefaId);
+  const filtroChecklistDataInicio = String(document.getElementById('filtroChecklistDataInicio')?.value || '').trim();
+  const filtroChecklistDataFim = String(document.getElementById('filtroChecklistDataFim')?.value || '').trim();
+  const usandoFiltroPeriodoChecklists = !!(filtroChecklistDataInicio || filtroChecklistDataFim);
+  const usandoFiltros = !!(filtroFuncionarioId || filtroTarefaId || usandoFiltroPeriodoChecklists);
 
   if (usandoFiltros) {
     rows = rows.filter(t => {
       const bateFuncionario = !filtroFuncionarioId || String(t.funcionario_id || '') === filtroFuncionarioId;
       const bateTarefa = !filtroTarefaId || String(t.tarefa_id || '') === filtroTarefaId;
-      return bateFuncionario && bateTarefa;
+      const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
+      const bateDataInicio = !filtroChecklistDataInicio || dataReferencia >= filtroChecklistDataInicio;
+      const bateDataFim = !filtroChecklistDataFim || dataReferencia <= filtroChecklistDataFim;
+      return bateFuncionario && bateTarefa && bateDataInicio && bateDataFim;
     });
   }
 
@@ -19407,6 +19425,17 @@ async function carregarChecklists(opcoes = {}) {
       </div>
     </div>`;
   }).join('') + '</div>';
+
+  if (usandoFiltroPeriodoChecklists) {
+    const textoInicio = filtroChecklistDataInicio ? formatarDataProgramadaBr(filtroChecklistDataInicio) : 'sem data inicial';
+    const textoFim = filtroChecklistDataFim ? formatarDataProgramadaBr(filtroChecklistDataFim) : 'sem data final';
+    const htmlResumoPeriodo = `<div class="checklists-periodo-resumo" style="margin:10px 0 12px;padding:10px 12px;border:1px solid rgba(34,197,94,.22);border-radius:10px;background:rgba(34,197,94,.06);color:#bbf7d0;font-size:13px;font-weight:700;">Período filtrado: ${textoInicio} até ${textoFim} · ${rows.length} tarefa(s)</div>`;
+    const htmlFinalPeriodo = htmlResumoPeriodo + renderizarCardsChecklist(rows);
+    if (!forcarRender && assinaturaRenderChecklists === htmlFinalPeriodo) return;
+    assinaturaRenderChecklists = htmlFinalPeriodo;
+    lista.innerHTML = htmlFinalPeriodo;
+    return;
+  }
 
   const rowsHoje = rows.filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
@@ -19549,14 +19578,44 @@ async function carregarOpcoesFiltroChecklists() {
   selTarefa.value = [...selTarefa.options].some(opt => opt.value === valorTarefaAtual) ? valorTarefaAtual : '';
 }
 
+function filtrarPeriodoChecklists() {
+  const campoInicio = document.getElementById('filtroChecklistDataInicio');
+  const campoFim = document.getElementById('filtroChecklistDataFim');
+  const inicio = String(campoInicio?.value || '').trim();
+  const fim = String(campoFim?.value || '').trim();
+  if (inicio && fim && inicio > fim) {
+    setMsg('msgChecklists', 'A data inicial não pode ser maior que a data final.', 'err');
+    return;
+  }
+  if (!inicio && !fim) {
+    setMsg('msgChecklists', 'Informe uma data inicial ou final para filtrar o período.', 'err');
+    return;
+  }
+  setMsg('msgChecklists', '', '');
+  carregarChecklists({ forcarRender: true });
+}
+
+function limparPeriodoChecklists() {
+  const campoInicio = document.getElementById('filtroChecklistDataInicio');
+  const campoFim = document.getElementById('filtroChecklistDataFim');
+  if (campoInicio) campoInicio.value = '';
+  if (campoFim) campoFim.value = '';
+  setMsg('msgChecklists', '', '');
+  carregarChecklists({ forcarRender: true });
+}
+
 function limparFiltrosChecklists() {
   const campoFuncionario = document.getElementById('filtroChecklistFuncionario');
   const campoTarefa = document.getElementById('filtroChecklistTarefa');
+  const campoInicio = document.getElementById('filtroChecklistDataInicio');
+  const campoFim = document.getElementById('filtroChecklistDataFim');
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoId();
   const funcionarioFiltroId = funcionarioRestritoId || (!usuarioPodeVerTodosChecklists() && usuarioSistemaLogado?.id ? String(usuarioSistemaLogado.id || '') : '');
   if (campoFuncionario) campoFuncionario.value = funcionarioFiltroId || '';
   if (campoTarefa) campoTarefa.value = '';
-  carregarChecklists();
+  if (campoInicio) campoInicio.value = '';
+  if (campoFim) campoFim.value = '';
+  carregarChecklists({ forcarRender: true });
 }
 
 async function criarChecklist() {
@@ -27031,16 +27090,39 @@ function ajustarVencimentoParaDiaUtilFinanceiro(dataISO) {
 }
 
 // Vencimento da parcela idx (0-based) a partir do vencimento base.
-// Intervalo vazio ou 30 = MENSAL: mantém o DIA do vencimento base mês a mês
-// (ex.: base 08/07 → 08/08, 08/09... ajustando meses curtos como fevereiro).
-// Qualquer outro intervalo (15, 45...) continua somando dias exatos.
+// REGRA CORRETA PARA CARTÕES / CONTAS MENSAIS:
+// - intervalo vazio, inválido ou 30 = MENSAL POR DIA FIXO. Mantém o DIA do vencimento base
+//   em todos os meses (ex.: base 17/07 -> 17/08 -> 17/09 -> 17/10...).
+// - Depois de calcular o dia fixo, se cair em sábado, domingo ou feriado, empurra para
+//   o PRÓXIMO DIA ÚTIL, sem alterar a base das próximas parcelas.
+// - Intervalos diferentes de 30 (ex.: 7 do iFood, 15, 45...) continuam somando dias exatos.
 // idx pode ser negativo (recálculo de parcelas anteriores na edição).
 function calcularVencimentoParcelaFinanceiro(baseISO, idx, intervaloDias) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(baseISO || ''))) return baseISO;
-  const nInformado = Number.parseInt(String(intervaloDias ?? ''), 10);
-  const intervalo = Number.isFinite(nInformado) && nInformado > 0 ? nInformado : 30;
-  const deslocamento = (Number.parseInt(String(idx || 0), 10) || 0) * intervalo;
-  const vencimento = adicionarDiasDataISOFinanceiro(baseISO, deslocamento) || baseISO;
+  const base = String(baseISO || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(base)) return baseISO;
+
+  const indice = Number.parseInt(String(idx || 0), 10) || 0;
+  const intervaloTexto = String(intervaloDias ?? '').trim();
+  const intervaloInformado = Number.parseInt(intervaloTexto, 10);
+  const mensalPorDiaFixo = !intervaloTexto || !Number.isFinite(intervaloInformado) || intervaloInformado <= 0 || intervaloInformado === 30;
+
+  if (mensalPorDiaFixo) {
+    const [anoTxt, mesTxt, diaTxt] = base.split('-');
+    const anoBase = Number.parseInt(anoTxt, 10);
+    const mesBaseZero = (Number.parseInt(mesTxt, 10) || 1) - 1;
+    const diaBase = Number.parseInt(diaTxt, 10) || 1;
+
+    const alvoPrimeiroDia = new Date(anoBase, mesBaseZero + indice, 1);
+    const anoAlvo = alvoPrimeiroDia.getFullYear();
+    const mesAlvoZero = alvoPrimeiroDia.getMonth();
+    const ultimoDiaMes = new Date(anoAlvo, mesAlvoZero + 1, 0).getDate();
+    const diaAlvo = Math.min(diaBase, ultimoDiaMes);
+    const vencimentoMensal = `${anoAlvo}-${String(mesAlvoZero + 1).padStart(2, '0')}-${String(diaAlvo).padStart(2, '0')}`;
+    return ajustarVencimentoParaDiaUtilFinanceiro(vencimentoMensal);
+  }
+
+  const deslocamento = indice * intervaloInformado;
+  const vencimento = adicionarDiasDataISOFinanceiro(base, deslocamento) || base;
   return ajustarVencimentoParaDiaUtilFinanceiro(vencimento);
 }
 
@@ -27234,14 +27316,10 @@ async function salvarContaAPagarFinanceiro() {
   }
   let intervaloParcelasDiasFinal = null;
   if (qtdParcelasValidada > 1) {
-    if (intervaloInformado) {
-      intervaloParcelasDiasFinal = intervaloParcelasDias;
-    } else {
-      const dtCompra = new Date(`${dataCompra}T00:00:00`);
-      const dtVenc = new Date(`${dataVencimento}T00:00:00`);
-      const diffDias = Math.round((dtVenc.getTime() - dtCompra.getTime()) / (24 * 60 * 60 * 1000));
-      intervaloParcelasDiasFinal = diffDias > 0 ? diffDias : 30;
-    }
+    // Para contas a pagar parceladas, intervalo vazio significa mensal por dia fixo.
+    // Não usamos mais a diferença entre data da compra e primeiro vencimento, porque isso
+    // quebra cartões com vencimento fixo (ex.: compra 19/06, vencimento 17/07, parcelas todo dia 17).
+    intervaloParcelasDiasFinal = intervaloInformado ? intervaloParcelasDias : 30;
   }
 
   if (contaAPagarFinanceiroEmEdicaoId) {
@@ -45593,6 +45671,16 @@ function nrFechar() {
 
 <script id="patch-checklist-operador-v28">
 console.log('[Checklist v28] regra de operador/admin corrigida');
+</script>
+
+<script id="checklist-periodo-v29">
+console.log('[Checklist v29] filtro por período dos checklists lançados carregado');
+</script>
+
+<script id="patch-financeiro-vencimento-cartao-v30">
+(function(){
+  console.log('[Financeiro v30] parcelas mensais por dia fixo corrigidas');
+})();
 </script>
 </body>
 </html>
