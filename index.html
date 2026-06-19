@@ -40512,8 +40512,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       if (!vinculosFuncionario.error && Array.isArray(vinculosFuncionario.data) && vinculosFuncionario.data.length > 0) {
         const idsLojas = [...new Set(vinculosFuncionario.data.filter(v => v?.ativo !== false).map(v => String(v.loja_id||'').trim()).filter(Boolean))];
         if (idsLojas.length > 0) {
-            const paramsLojas = {'select':'*','id':'in.('+idsLojas.join(',')+')'};
-            // Não filtrar por empresa aqui — permitir que vínculos tragam lojas de múltiplas empresas
+            const quotedIds = idsLojas.map(id => '"' + id + '"').join(',');
+            const paramsLojas = {'select':'*','id':'in.(' + quotedIds + ')'};
             const lojasRes = await fetchSupabaseLogin('lojas', paramsLojas);
             if (!lojasRes.error && Array.isArray(lojasRes.data)) lojasRes.data.forEach(adicionarLoja);
           }
