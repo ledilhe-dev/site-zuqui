@@ -12,6 +12,6 @@ window.APP_CONFIG = {
   emailFunctionName: 'notificar-alertas-email',
   authEmailFunctionName: 'autenticacao-email',
   authRedirectUrl: 'https://checkdiario.com.br/',
-  appVersion: '3.1.72',
-  appVersionLabel: '3.1.72-login-multiloja-estavel',
+  appVersion: '3.1.78',
+  appVersionLabel: '3.1.78-agenda-v33-feriados-seguro',
 };
