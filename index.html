@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="admin-fouc-pendente">
 <head>
   <meta charset="UTF-8">
   <meta name="autocomplete" content="off">
@@ -8,15 +8,30 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.1.72-login-multiloja-estavel">
+  <meta name="app-version" content="3.1.77-agenda-v17-estavel">
   <meta name="theme-color" content="#090b10">
+  <style id="admin-fouc-guard-v17">
+    /* v17: evita o pisca de itens administrativos no F5 sem esconder a tela inteira.
+       Remove sozinho por JS/timeout, então não trava a interface. */
+    html.admin-fouc-pendente #menuSaasGroup,
+    html.admin-fouc-pendente [data-page="empresas_saas"],
+    html.admin-fouc-pendente [data-page="lojas_saas"],
+    html.admin-fouc-pendente [data-page="usuarios_saas"],
+    html.admin-fouc-pendente [data-page="solicitacoes"],
+    html.admin-fouc-pendente [data-page="emails"],
+    html.admin-fouc-pendente [data-page="forcar_atualizacao_geral"] {
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+  </style>
+
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.1.72 - Login multi-loja estável após validação + reforço recebíveis multi-loja
+    Versão 3.1.77 - Agenda v17 estável: rollback do travamento + correções seguras
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -7986,7 +8001,7 @@
       <div data-nav-item-id="escala_plantoes" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="escala_plantoes" onclick="abrirPagina('escala_plantoes', this)">
         <span class="icon">EP</span>
         <span class="nav-copy">
-          <span class="nav-title">Escalas</span>
+          <span class="nav-title">Agenda</span>
           <span class="nav-hint">Calendário de turnos, domingos e feriados</span>
         </span>
       </button></div>
@@ -8521,10 +8536,10 @@
 
       <!--  ESCALAS  -->
       <section id="escala_plantoes" class="pagina">
-        <div class="page-title">Escalas</div>
+        <div class="page-title">Agenda</div>
         <div class="escala-layout">
           <aside class="escala-side-card">
-            <div class="escala-side-title"><span>Agendas</span><button class="btn btn-green btn-sm" type="button" onclick="abrirModalCadastroPlantaoEscala()">+</button></div>
+            <div class="escala-side-title"><span>Agendas</span><button class="btn btn-green btn-sm" type="button" onclick="abrirModalCadastroTipoAgenda()" title="Cadastrar tipos de agenda" aria-label="Cadastrar tipos de agenda">+</button></div>
             <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot plantao"></span> Plantões</label>
             <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot folga"></span> Folgas</label>
             <label class="escala-check-row"><input type="checkbox" checked onchange="renderizarEscalaPlantoes()"> <span class="escala-dot reuniao"></span> Reunião</label>
@@ -12178,7 +12193,7 @@ const PERFIL_PERMISSOES = [
   { key: 'meu_painel', label: 'Meu Painel (personalizado)' },
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
-  { key: 'escala_plantoes', label: 'Escalas' },
+  { key: 'escala_plantoes', label: 'Agenda' },
   { key: 'cadastro_plantao', label: 'Cadastro de plantão' },
   { key: 'relatorio_plantao', label: 'Relatório de plantão' },
   { key: 'escala_valor_combinado', label: 'Escala - ver valor combinado' },
@@ -12386,7 +12401,7 @@ const topTitles = {
   dashboard: ['Dashboard', 'Visao geral do sistema'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
-  escala_plantoes: ['Escalas', 'Calendário de trabalho, folgas, domingos e feriados'],
+  escala_plantoes: ['Agenda', 'Calendário de agendas, plantões, folgas, domingos e feriados'],
   relatorio_plantao: ['Relatório escala/plantões', 'Plantões lançados, valores combinados e exportações'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
@@ -15077,8 +15092,31 @@ async function registrarEventoLancamento({
 }
 
 function obterFuncionarioOperadorAtual() {
-  if (usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id) {
-    return { id: usuarioSistemaLogado.id, nome: usuarioSistemaLogado.nome || 'Funcionário', origem: 'sistema' };
+  // Regra correta:
+  // - PERFIL Administrador/ADM/Master concede permissões de operação;
+  // - USUÁRIO administrador do sistema/loja (flag é_administrador/is_admin ou tipo admin/admin_loja)
+  //   também pode operar tarefas de checklist;
+  // - o operador é a pessoa logada, não apenas sessões com tipo='funcionario'.
+  if (!usuarioSistemaLogado?.id) return null;
+
+  const tipo = String(usuarioSistemaLogado?.tipo || '').trim();
+  const perfil = normalizarPerfilUsuario(usuarioSistemaLogado?.perfil || null);
+  const codigoPerfil = normalizarCodigoPerfil(perfil?.codigo || '');
+  const ehFuncionario = tipo === 'funcionario';
+  const ehAdminLoja = tipo === 'admin_loja';
+  const ehAdminSistema = tipo === 'admin';
+  const ehFlagAdmin = usuarioSistemaLogado?.é_administrador === true || usuarioSistemaLogado?.is_admin === true;
+  const ehPerfilAdmin = codigoPerfil === 'ADM' || codigoPerfil === 'MASTER';
+
+  if (ehFuncionario || ehAdminLoja || ehAdminSistema || ehFlagAdmin || ehPerfilAdmin) {
+    return {
+      id: usuarioSistemaLogado.id,
+      nome: usuarioSistemaLogado.nome || usuarioSistemaLogado.username || usuarioSistemaLogado.email || 'Usuário',
+      origem: ehAdminSistema ? 'admin_sistema' : (ehAdminLoja || ehFlagAdmin || ehPerfilAdmin ? 'admin_loja' : 'sistema'),
+      tipo,
+      perfil_codigo: codigoPerfil || null,
+      é_administrador: ehFlagAdmin || ehAdminSistema || ehAdminLoja || ehPerfilAdmin,
+    };
   }
 
   return null;
@@ -17596,7 +17634,7 @@ const MEU_PAINEL_WIDGETS_DISPONIVEIS = [
   { id: 'atalho_alertas',             tipo: 'atalho', ico: '⚡', label: 'Alertas rápidos',                grupo: 'op', pagina: 'tarefas_rapidas' },
   { id: 'atalho_checklist',           tipo: 'atalho', ico: '✅', label: 'Iniciar checklist',              grupo: 'op', pagina: 'checklists' },
   { id: 'atalho_cad_checklist',       tipo: 'atalho', ico: '📝', label: 'Cadastro checklist',             grupo: 'op', pagina: 'tarefas' },
-  { id: 'atalho_escalas',             tipo: 'atalho', ico: '📆', label: 'Escalas',                        grupo: 'op', pagina: 'escala_plantoes' },
+  { id: 'atalho_escalas',             tipo: 'atalho', ico: '📆', label: 'Agenda',                         grupo: 'op', pagina: 'escala_plantoes' },
   { id: 'atalho_rel_escalas',         tipo: 'atalho', ico: '📊', label: 'Relatório escala/plantões',      grupo: 'op', pagina: 'relatorio_plantao' },
   { id: 'atalho_rel_tarefas',         tipo: 'atalho', ico: '📊', label: 'Relatório tarefas',              grupo: 'op', pagina: 'relatorio_lancamentos' },
   // ── Atalhos — Administração ──────────────────────────────────────
@@ -25144,7 +25182,7 @@ const PAGINAS_TELA_PREFERIDA = [
   { value: 'checklists', label: 'Checklist' },
   { value: 'bater_ponto', label: 'Bater Ponto' },
   { value: 'tarefas_rapidas', label: 'Alertas Rápidos' },
-  { value: 'escala_plantoes', label: 'Escalas' },
+  { value: 'escala_plantoes', label: 'Agenda' },
   { value: 'relatorio_financeiro', label: 'Contas a pagar' },
   { value: 'relatorio_recebimentos', label: 'Recebimentos' },
   { value: 'financeiro_cofre', label: 'Cofre' },
@@ -39517,7 +39555,7 @@ window.setTimeout(() => {
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div class="login-brand-title">CHECK DIARIO</div>
       <div class="login-brand-sub">ROTINA · CHECKLIST · OPERAÇÃO</div>
-      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.1.72</div>
+      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.1.73</div>
     </div>
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->
@@ -39587,7 +39625,7 @@ window.setTimeout(() => {
 
     <!-- FOOTER -->
     <div class="login-footer">
-      Desenvolvido por Patrick Dilhe · Versão 3.1.72<br>
+      Desenvolvido por Patrick Dilhe · Versão 3.1.73<br>
       <a href="mailto:ledilhe@gmail.com" style="color:var(--text-dim); text-decoration:none;">ledilhe@gmail.com</a>
     </div>
 
@@ -40341,6 +40379,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
   window.__loginContextoPendente = null;
   window.__loginLojasPermitidasAtual = [];
+  window.__loginModoTrocaLojaSessao = false;
 
   function normalizarLojaLogin(loja) {
     if (!loja) return null;
@@ -40454,10 +40493,13 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   function limparSelecaoLojaLogin() {
     window.__loginContextoPendente = null;
     window.__loginLojasPermitidasAtual = [];
+    window.__loginModoTrocaLojaSessao = false;
     const picker = document.getElementById('loginStorePicker');
     const lista = document.getElementById('loginStoreList');
     const busca = document.getElementById('loginStoreSearch');
-    if (picker) picker.classList.remove('show');
+    const fase1 = document.getElementById('loginFase1');
+    if (picker) picker.classList.remove('show', 'saindo', 'entrando');
+    if (fase1) fase1.classList.remove('saindo', 'entrando');
     if (lista) lista.innerHTML = '';
     if (busca) busca.value = '';
   }
@@ -40477,17 +40519,48 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     Promise.all([carregarOrdemNavMenu(), carregarTemaUsuario()]).then(() => restaurarPaginaAtivaSalvaOuPadrao());
   }
 
-  function mostrarSelecaoLojaLogin(contexto, lojasPermitidas) {
+  function mostrarSelecaoLojaLogin(contexto, lojasPermitidas, opcoes = {}) {
     window.__loginContextoPendente = contexto;
     window.__loginLojasPermitidasAtual = Array.isArray(lojasPermitidas) ? lojasPermitidas : [];
+    window.__loginModoTrocaLojaSessao = opcoes?.modoTrocaSessao === true;
     const picker = document.getElementById('loginStorePicker');
     const fase1 = document.getElementById('loginFase1');
     const busca = document.getElementById('loginStoreSearch');
     const subtitle = document.getElementById('loginStoreSubtitle');
+    const solicitacao = document.getElementById('solicitacaoAcessoBox');
+    const authBox = document.getElementById('authTokenBox');
+    const authContent = document.getElementById('authTokenContent');
     if (!picker) return;
 
-    // Animar saída da fase 1
+    if (solicitacao) solicitacao.style.display = 'none';
+    if (authBox) authBox.style.display = 'none';
+    if (authContent) authContent.style.display = 'none';
+    if (busca) {
+      busca.value = '';
+      busca.oninput = () => renderizarListaLojasLogin();
+    }
+
+    // Quando vem do botão Trocar da topbar, não existe uma fase 1 visível para animar.
+    // Abre diretamente o seletor para evitar a tela preta com o shell escondido.
+    if (window.__loginModoTrocaLojaSessao) {
+      if (fase1) {
+        fase1.style.display = 'none';
+        fase1.classList.remove('saindo', 'entrando');
+      }
+      picker.classList.add('show');
+      picker.classList.remove('saindo');
+      picker.classList.add('entrando');
+      setTimeout(() => picker.classList.remove('entrando'), 350);
+      if (subtitle) subtitle.textContent = 'Selecione o Painel Administrativo ou uma loja vinculada.';
+      renderizarListaLojasLogin();
+      window.setTimeout(() => busca?.focus(), 80);
+      setMsg('msgLogin', '', '');
+      return;
+    }
+
+    // Animar saída da fase 1 apenas no fluxo normal de login.
     if (fase1) {
+      fase1.style.display = '';
       fase1.classList.add('saindo');
       setTimeout(() => {
         fase1.style.display = 'none';
@@ -40495,10 +40568,6 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         picker.classList.add('show');
         picker.classList.add('entrando');
         setTimeout(() => picker.classList.remove('entrando'), 350);
-        if (busca) {
-          busca.value = '';
-          busca.oninput = () => renderizarListaLojasLogin();
-        }
         renderizarListaLojasLogin();
         if (subtitle && contexto?.funcionario?.nome) {
           subtitle.textContent = 'Olá, ' + contexto.funcionario.nome.split(' ')[0] + '! Selecione a loja.';
@@ -40507,17 +40576,34 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       }, 280);
     } else {
       picker.classList.add('show');
-      if (busca) {
-        busca.value = '';
-        busca.oninput = () => renderizarListaLojasLogin();
-      }
       renderizarListaLojasLogin();
       window.setTimeout(() => busca?.focus(), 80);
     }
     setMsg('msgLogin', '', '');
   }
 
+  function cancelarTrocaLojaTopbar() {
+    const loginScreen = document.getElementById('loginScreen');
+    const shell = document.querySelector('.shell');
+    const fase1 = document.getElementById('loginFase1');
+    const picker = document.getElementById('loginStorePicker');
+    if (picker) picker.classList.remove('show', 'saindo', 'entrando');
+    if (fase1) {
+      fase1.style.display = 'none';
+      fase1.classList.remove('saindo', 'entrando');
+    }
+    limparSelecaoLojaLogin();
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (shell) shell.style.display = 'flex';
+    atualizarUsuarioTopbar();
+    atualizarBotaoTrocarLojaTopbar();
+  }
+
   function voltarParaLoginFase1() {
+    if (window.__loginModoTrocaLojaSessao) {
+      cancelarTrocaLojaTopbar();
+      return;
+    }
     const picker = document.getElementById('loginStorePicker');
     const fase1 = document.getElementById('loginFase1');
     if (!picker || !fase1) return;
@@ -40533,25 +40619,25 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const lista = document.getElementById('loginStoreList');
     const busca = document.getElementById('loginStoreSearch');
     if (!lista) return;
+
+    // Botão "PAINEL ADMINISTRATIVO" só aparece se a flag é_administrador=true estiver marcada.
+    // Perfil ADM/MASTER sozinho NÃO concede este acesso — é completamente separado.
+    const contexto = window.__loginContextoPendente || {};
+    const ehAdminFlag = contexto.funcionario?.é_administrador === true;
+    const ehMasterLogin = ehAdminFlag;
+
     const termo = normalizarTextoComparacao(busca?.value || '');
     const lojas = (window.__loginLojasPermitidasAtual || []).filter(loja => {
       const alvo = normalizarTextoComparacao(`${loja.nome || ''} ${loja.codigo || ''} ${loja.id || ''}`);
       return !termo || alvo.includes(termo);
     });
-    if (!lojas.length) {
+
+    if (!lojas.length && !ehMasterLogin) {
       lista.innerHTML = '<div class="login-store-empty">Nenhuma loja vinculada encontrada para este usuário.</div>';
       return;
     }
 
-    // Botão "PAINEL ADMINISTRATIVO" só aparece se a flag é_administrador=true estiver marcada.
-    // Perfil ADM/MASTER sozinho NÃO concede este acesso — é completamente separado.
-    const contexto = window.__loginContextoPendente || {};
-    const perfilFuncionario = contexto.perfilFuncionario || null;
-    const codigoPerfil = perfilFuncionario ? normalizarCodigoPerfil(perfilFuncionario.codigo || '') : '';
-    const ehAdminFlag = contexto.funcionario?.é_administrador === true;
-    const ehMasterLogin = ehAdminFlag;
-
-    lista.innerHTML = (ehMasterLogin ? `
+    const htmlAdmin = ehMasterLogin ? `
       <button type="button" class="login-store-option login-store-admin-panel" data-admin-panel="true">
         <div class="login-store-icon">⚙️</div>
         <div class="login-store-info">
@@ -40560,7 +40646,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         </div>
         <span class="login-store-arrow">›</span>
       </button>
-    ` : '') + lojas.map(loja => `
+    ` : '';
+
+    const htmlLojas = lojas.map(loja => `
       <button type="button" class="login-store-option" data-loja-id="${escaparHtmlBasico(loja.id)}">
         <div class="login-store-icon">🏪</div>
         <div class="login-store-info">
@@ -40570,6 +40658,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         <span class="login-store-arrow">›</span>
       </button>
     `).join('');
+
+    lista.innerHTML = htmlAdmin + htmlLojas;
     lista.querySelectorAll('[data-loja-id]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = String(btn.getAttribute('data-loja-id') || '');
@@ -40581,7 +40671,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         finalizarLoginFuncionarioComLoja(window.__loginContextoPendente, loja);
       });
     });
-    // evento para abrir o painel administrativo direto do login
+    // evento para abrir o painel administrativo direto do login/topbar
     const adminBtn = lista.querySelector('[data-admin-panel]');
     if (adminBtn) {
       adminBtn.addEventListener('click', () => {
@@ -40601,12 +40691,24 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     // Cria sessão administrativa baseada no funcionário que entrou (apenas front-end)
     const nomeUsuario = contexto.funcionario?.nome || contexto.username || 'Administrador';
-    salvarPreferenciasLogin({ username: contexto.username || '', password: contexto.password || '', salvarSenha: contexto.salvarSenha, manterConectado: contexto.manterConectado });
-    salvarSessaoSistema({ tipo: 'admin', username: nomeUsuario, perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador', permissoes: obterPermissoesBase('ADM') }) }, { manterConectado: !!contexto.manterConectado });
+    if (!contexto.preservarPreferenciasLogin) {
+      salvarPreferenciasLogin({ username: contexto.username || '', password: contexto.password || '', salvarSenha: contexto.salvarSenha, manterConectado: contexto.manterConectado });
+    }
+    salvarSessaoSistema({
+      tipo: 'admin',
+      id: contexto.funcionario?.id || null,
+      username: nomeUsuario,
+      nome: nomeUsuario,
+      é_administrador: true,
+      perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador', permissoes: obterPermissoesBase('ADM') }),
+      lojas_permitidas: Array.isArray(window.__loginLojasPermitidasAtual) ? window.__loginLojasPermitidasAtual : []
+    }, { manterConectado: !!contexto.manterConectado });
     setSistemaLogado(true);
     aplicarPermissoesSistema();
     carregarNotificacoes();
     limparSelecaoLojaLogin();
+    atualizarUsuarioTopbar();
+    atualizarBotaoTrocarLojaTopbar();
     // Abrir a página de administração de empresas por padrão
     abrirPagina('empresas_saas');
   }
@@ -40623,35 +40725,171 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
   function atualizarBotaoTrocarLojaTopbar() {
     const lojaContainer = document.getElementById('topbarStoreInfo');
+    const switchBtn = document.getElementById('topbarStoreSwitchBtn');
     const btnLegado = document.getElementById('btnTrocarLojaSessao');
     if (btnLegado) btnLegado.remove();
     if (!lojaContainer || !usuarioSistemaLogado) return;
 
     const lojas = obterLojasPermitidasSessao();
-    const podeTrocar = lojas.length > 1;
+    const podeAbrirPainelAdmin = usuarioSistemaLogado?.é_administrador === true;
+    const podeTrocar = lojas.length > 1 || podeAbrirPainelAdmin;
+
     lojaContainer.classList.toggle('is-switchable', podeTrocar);
-    lojaContainer.title = podeTrocar ? 'Trocar loja' : 'Loja logada';
+    lojaContainer.title = podeTrocar ? 'Trocar loja / painel administrativo' : 'Loja logada';
     lojaContainer.onclick = podeTrocar ? abrirTrocaLojaTopbar : null;
+
+    if (switchBtn) {
+      switchBtn.style.display = podeTrocar ? '' : 'none';
+      switchBtn.disabled = !podeTrocar;
+      switchBtn.title = podeTrocar ? 'Trocar loja / painel administrativo' : '';
+    }
   }
 
-  function abrirTrocaLojaTopbar() {
-    const lojas = obterLojasPermitidasSessao();
-    if (lojas.length <= 1) return;
-    const contexto = {
+  function obterContextoTrocaLojaTopbar() {
+    const manterConectado = !!(
+      localStorage.getItem('zuqui_auth') ||
+      localStorage.getItem('check_diario_auth_persistente') ||
+      sessionStorage.getItem('zuqui_auth') ||
+      sessionStorage.getItem('check_diario_auth_persistente')
+    );
+    return {
       funcionario: usuarioSistemaLogado,
-      perfilFuncionario: usuarioSistemaLogado.perfil,
-      username: usuarioSistemaLogado.nome || usuarioSistemaLogado.username || '',
+      perfilFuncionario: usuarioSistemaLogado?.perfil,
+      username: usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || '',
       password: '',
       salvarSenha: false,
-      manterConectado: !!(localStorage.getItem('zuqui_auth') || localStorage.getItem('check_diario_auth_persistente')),
+      manterConectado,
       preservarPreferenciasLogin: true
     };
-    const loginScreen = document.getElementById('loginScreen');
-    const shell = document.querySelector('.shell');
-    if (shell) shell.style.display = 'none';
-    if (loginScreen) loginScreen.style.display = 'flex';
-    mostrarSelecaoLojaLogin(contexto, lojas);
   }
+
+  function fecharModalTrocaLojaTopbar() {
+    const overlay = document.getElementById('modalTrocaLojaTopbar');
+    if (overlay) overlay.remove();
+    window.__trocaLojaTopbarAberta = false;
+  }
+
+  function criarBotaoTrocaLojaTopbar({ icone = '🏪', titulo = '', subtitulo = '', onClick, classeExtra = '' } = {}) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `login-store-option ${classeExtra}`.trim();
+    btn.style.cssText = 'width:100%;display:flex;align-items:center;gap:10px;text-align:left;margin:0;border-radius:12px;padding:11px 12px;';
+    btn.innerHTML = `
+      <div class="login-store-icon">${icone}</div>
+      <div class="login-store-info">
+        <strong>${escaparHtmlBasico(titulo || '')}</strong>
+        <span>${escaparHtmlBasico(subtitulo || '')}</span>
+      </div>
+      <span class="login-store-arrow">›</span>
+    `;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function renderizarModalTrocaLojaTopbar({ lojas = [], contexto = {} } = {}) {
+    const lista = document.getElementById('modalTrocaLojaTopbarLista');
+    const busca = document.getElementById('modalTrocaLojaTopbarBusca');
+    if (!lista) return;
+
+    const termo = normalizarTextoComparacao(busca?.value || '');
+    const lojasFiltradas = (Array.isArray(lojas) ? lojas : []).filter(loja => {
+      const alvo = normalizarTextoComparacao(`${loja?.nome || ''} ${loja?.codigo || ''} ${loja?.slug || ''} ${loja?.id || ''}`);
+      return !termo || alvo.includes(termo);
+    });
+    const ehAdmin = contexto?.funcionario?.é_administrador === true || usuarioSistemaLogado?.é_administrador === true;
+
+    lista.innerHTML = '';
+
+    if (ehAdmin) {
+      lista.appendChild(criarBotaoTrocaLojaTopbar({
+        icone: '⚙️',
+        titulo: 'PAINEL ADMINISTRATIVO',
+        subtitulo: 'Acessar empresas, lojas e usuários',
+        classeExtra: 'login-store-admin-panel',
+        onClick: () => {
+          window.__loginContextoPendente = contexto;
+          window.__loginLojasPermitidasAtual = Array.isArray(lojas) ? lojas : [];
+          window.__loginModoTrocaLojaSessao = true;
+          fecharModalTrocaLojaTopbar();
+          abrirPainelAdministrativoLogin();
+        }
+      }));
+    }
+
+    lojasFiltradas.forEach(loja => {
+      lista.appendChild(criarBotaoTrocaLojaTopbar({
+        icone: '🏪',
+        titulo: loja?.nome || 'Loja',
+        subtitulo: loja?.codigo || loja?.slug || loja?.id || '',
+        onClick: () => {
+          window.__loginContextoPendente = contexto;
+          window.__loginLojasPermitidasAtual = Array.isArray(lojas) ? lojas : [];
+          window.__loginModoTrocaLojaSessao = true;
+          fecharModalTrocaLojaTopbar();
+          finalizarLoginFuncionarioComLoja(contexto, loja);
+        }
+      }));
+    });
+
+    if (!lista.children.length) {
+      lista.innerHTML = '<div class="login-store-empty">Nenhuma loja vinculada encontrada para este usuário.</div>';
+    }
+  }
+
+  function abrirTrocaLojaTopbar(event) {
+    try {
+      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+      if (!usuarioSistemaLogado) return;
+
+      const lojas = obterLojasPermitidasSessao();
+      const podeAbrirPainelAdmin = usuarioSistemaLogado?.é_administrador === true;
+      if (!podeAbrirPainelAdmin && lojas.length <= 1) return;
+
+      fecharModalTrocaLojaTopbar();
+      const contexto = obterContextoTrocaLojaTopbar();
+
+      // Importante: não esconder a .shell e não reaproveitar a tela de login.
+      // O fluxo antigo deixava o sistema com tela preta quando a fase 1 do login já estava oculta.
+      const overlay = document.createElement('div');
+      overlay.id = 'modalTrocaLojaTopbar';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);';
+      overlay.innerHTML = `
+        <div class="login-card" style="width:min(430px,calc(100vw - 32px));max-height:min(640px,calc(100dvh - 32px));padding:24px;">
+          <div class="login-store-header" style="margin-bottom:16px;">
+            <button type="button" id="modalTrocaLojaTopbarFechar" class="login-store-back-btn" title="Fechar" aria-label="Fechar troca de loja" style="font-size:22px;font-weight:900;line-height:1;color:#fecaca;border-color:rgba(248,113,113,.45);background:rgba(127,29,29,.18);">&times;</button>
+            <div class="login-store-title-block">
+              <div class="login-store-title">Trocar loja</div>
+              <div class="login-store-subtitle">Selecione o painel administrativo ou uma loja vinculada.</div>
+            </div>
+            <div class="login-store-badge">🏪</div>
+          </div>
+          <input type="text" id="modalTrocaLojaTopbarBusca" class="login-store-search" placeholder="Buscar loja..." autocomplete="off">
+          <div id="modalTrocaLojaTopbarLista" class="login-store-list" style="max-height:360px;"></div>
+        </div>
+      `;
+      overlay.addEventListener('click', ev => {
+        if (ev.target === overlay) fecharModalTrocaLojaTopbar();
+      });
+      document.body.appendChild(overlay);
+      window.__trocaLojaTopbarAberta = true;
+
+      const fechar = document.getElementById('modalTrocaLojaTopbarFechar');
+      const busca = document.getElementById('modalTrocaLojaTopbarBusca');
+      if (fechar) fechar.addEventListener('click', fecharModalTrocaLojaTopbar);
+      if (busca) busca.addEventListener('input', () => renderizarModalTrocaLojaTopbar({ lojas, contexto }));
+      renderizarModalTrocaLojaTopbar({ lojas, contexto });
+      window.setTimeout(() => busca?.focus(), 80);
+    } catch (erro) {
+      console.error('Falha ao abrir troca de loja:', erro);
+      const shell = document.querySelector('.shell');
+      const loginScreen = document.getElementById('loginScreen');
+      if (shell) shell.style.display = 'flex';
+      if (loginScreen && usuarioSistemaLogado) loginScreen.style.display = 'none';
+      alert('Não foi possível abrir a troca de loja. Veja o console para detalhes.');
+    }
+  }
+  window.abrirTrocaLojaTopbar = abrirTrocaLojaTopbar;
+  window.fecharModalTrocaLojaTopbar = fecharModalTrocaLojaTopbar;
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -41872,7 +42110,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 </script>
   <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
     <div class="escala-modal-card">
-      <div class="escala-modal-title">Novo item da escala</div>
+      <div class="escala-modal-title">Novo item da agenda</div>
       <input id="escalaPlantaoEventoId" type="hidden">
       <div class="escala-modal-sub" id="escalaModalDataTexto">Selecione o dia no calendário.</div>
       <div class="escala-modal-grid">
@@ -41908,7 +42146,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       <div class="escala-modal-actions">
         <button class="btn btn-ghost" type="button" onclick="fecharModalCadastroPlantaoEscala()">Cancelar</button>
         <button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" onclick="excluirPlantaoEscala()" style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button>
-        <button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" onclick="salvarPlantaoEscala()">Salvar escala</button>
+        <button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" onclick="salvarPlantaoEscala()">Salvar agenda</button>
       </div>
     </div>
   </div>
@@ -41975,7 +42213,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
         const nome=ev.funcionario_nome || ev.funcionarios?.nome || 'Funcionário';
         const ini=String(ev.inicio_hora||'').slice(0,5);
         const txt=`${ini} ${nome}`.trim();
-        return `<button class="escala-evento ${h(ev.tipo||'plantao')}" type="button" title="${h(txt)}">${h(txt)}</button>`;
+        return `<button class="escala-evento ${h(ev.tipo||'plantao')}" type="button" title="${h(txt)}" data-escala-editar="${h(ev.id||'')}" onclick="event.stopPropagation(); abrirModalEditarPlantaoEscala('${h(ev.id||'')}')">${h(txt)}</button>`;
       }).join('');
       const mais=eventos.length>4?`<button class="escala-evento" type="button">mais +${eventos.length-4}</button>`:'';
       html += `<div class="${classes}" data-data="${k}" onclick="abrirModalCadastroPlantaoEscala('${k}')"><div class="escala-dia-numero">${data.getDate()}</div>${feriadoHtml}${eventosHtml}${mais}</div>`;
@@ -42085,7 +42323,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       '<label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00"></label>'+
       '<label class="escala-modal-full">Observação<textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea></label>'+
       '</div><div class="escala-modal-lista" id="escalaPlantaoListaDia"></div><div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>'+
-      '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar escala</button></div>'+
+      '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar agenda</button></div>'+
       '</div></div>';
     document.body.appendChild(wrap.firstChild);
     return byId('modalEscalaPlantao');
@@ -42452,7 +42690,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     }).join('');
     var w=window.open('','_blank'); if(!w){ msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err'); return; }
     var geradoEm=new Date().toLocaleString('pt-BR'), filtrosRodape='Período: '+dataBR(faixa.inicio)+' até '+dataBR(faixa.fim);
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px}.meta{margin-bottom:16px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f2f2f2}.plantao,.folga{color:#dc2626}.folga{font-weight:bold}.reuniao{color:#7c3aed}.compromisso{color:#0284c7}.total{margin-top:14px;font-weight:bold}'+cssRodapeRelatorioImpressao()+'</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(faixa.inicio))+' até '+esc(dataBR(faixa.fim))+(podeVerValor ? ' · Total combinado: '+esc(moedaBR(total)) : '')+' · Gerado em '+esc(geradoEm)+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(podeVerValor ? '<th>Valor</th>' : '')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+linhas+'</tbody></table>'+htmlRodapeRelatorioImpressao(geradoEm,filtrosRodape)+'</body></html>');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Agenda</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 6px}.meta{margin-bottom:16px;color:#555}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f2f2f2}.plantao,.folga{color:#dc2626}.folga{font-weight:bold}.reuniao{color:#7c3aed}.compromisso{color:#0284c7}.total{margin-top:14px;font-weight:bold}'+cssRodapeRelatorioImpressao()+'</style></head><body><h1>Relatório de Agenda</h1><div class="meta">Período: '+esc(dataBR(faixa.inicio))+' até '+esc(dataBR(faixa.fim))+(podeVerValor ? ' · Total combinado: '+esc(moedaBR(total)) : '')+' · Gerado em '+esc(geradoEm)+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(podeVerValor ? '<th>Valor</th>' : '')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+linhas+'</tbody></table>'+htmlRodapeRelatorioImpressao(geradoEm,filtrosRodape)+'</body></html>');
     w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
   };
   var originalCarregar = window.carregarEscalaPlantoes;
@@ -42470,10 +42708,11 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     if(diaNumero){
       var diaCell=diaNumero.closest('#escalaCalendarioGrid .escala-dia');
       var dataFiltro=diaCell && diaCell.getAttribute('data-data');
-      if(dataFiltro && typeof window.atualizarTotalPagoPlantaoEscala === 'function'){
+      if(dataFiltro){
         ev.preventDefault();
         ev.stopPropagation();
-        window.atualizarTotalPagoPlantaoEscala(dataFiltro);
+        if(typeof window.atualizarTotalPagoPlantaoEscala === 'function') window.atualizarTotalPagoPlantaoEscala(dataFiltro);
+        if(typeof window.abrirModalCadastroPlantaoEscala === 'function') window.abrirModalCadastroPlantaoEscala(dataFiltro);
         return;
       }
     }
@@ -42487,7 +42726,13 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
         var m=onclickTxt.match(/abrirModalEditarPlantaoEscala\(['"]([^'"]+)['"]\)/);
         if(m) idEditar=m[1];
       }
-      if(idEditar && typeof window.abrirModalEditarPlantaoEscala === 'function') window.abrirModalEditarPlantaoEscala(idEditar);
+      if(idEditar && typeof window.abrirModalEditarPlantaoEscala === 'function') {
+        window.abrirModalEditarPlantaoEscala(idEditar);
+      } else {
+        var diaDoEvento = evBtn.closest && evBtn.closest('#escalaCalendarioGrid .escala-dia[data-data]');
+        var dataDoEvento = diaDoEvento && diaDoEvento.getAttribute('data-data');
+        if(dataDoEvento && typeof window.abrirModalCadastroPlantaoEscala === 'function') window.abrirModalCadastroPlantaoEscala(dataDoEvento);
+      }
       return;
     }
     var cell=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-dia');
@@ -42832,7 +43077,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var rows=eventos.map(function(it){var del=!!it.deleted_at;return '<tr style="'+(del?'color:#991b1b;text-decoration:line-through;':'')+'"><td>'+esc(dataBR(it.data_plantao))+'</td><td>'+esc(diaSemanaBR(it.data_plantao))+'</td><td>'+esc(it.funcionario_nome||it.titulo||'Funcionário')+'</td><td>'+esc(tipoLabel(it.tipo))+'</td><td>'+esc(hora(it.inicio_hora))+' → '+esc(hora(it.fim_hora))+'</td>'+(verValor?'<td>'+esc(moeda(it.valor_combinado))+'</td>':'')+'<td>'+esc(status(it))+'</td><td>'+esc(excluidoPor(it))+'</td><td>'+esc(it.observacao||'')+'</td></tr>';}).join('');
     var w=window.open('','_blank'); if(!w){msg('msgEscalaPlantoes','Pop-up bloqueado. Permita pop-ups para exportar PDF.','err');return;}
     var geradoEm=new Date().toLocaleString('pt-BR'), filtrosRodape='Período: '+dataBR(f.inicio)+' até '+dataBR(f.fim);
-    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Escala</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f3f4f6}.meta{color:#555;margin-bottom:16px}'+cssRodapeRelatorioImpressao()+'</style></head><body><h1>Relatório de Escalas</h1><div class="meta">Período: '+esc(dataBR(f.inicio))+' até '+esc(dataBR(f.fim))+(verValor?' · Total ativo: '+esc(moeda(total)):'')+' · Gerado em '+esc(geradoEm)+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(verValor?'<th>Valor</th>':'')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+rows+'</tbody></table>'+htmlRodapeRelatorioImpressao(geradoEm,filtrosRodape)+'</body></html>');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Agenda</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;font-size:12px;text-align:left}th{background:#f3f4f6}.meta{color:#555;margin-bottom:16px}'+cssRodapeRelatorioImpressao()+'</style></head><body><h1>Relatório de Agenda</h1><div class="meta">Período: '+esc(dataBR(f.inicio))+' até '+esc(dataBR(f.fim))+(verValor?' · Total ativo: '+esc(moeda(total)):'')+' · Gerado em '+esc(geradoEm)+'</div><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Funcionário</th><th>Tipo</th><th>Horário</th>'+(verValor?'<th>Valor</th>':'')+'<th>Status</th><th>Excluído por</th><th>Observação</th></tr></thead><tbody>'+rows+'</tbody></table>'+htmlRodapeRelatorioImpressao(geradoEm,filtrosRodape)+'</body></html>');
     w.document.close(); w.focus(); setTimeout(function(){w.print();},300);
   };
   function ajustarVisibilidade(){
@@ -43146,7 +43391,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       const tipo=lista.some(f=>f.tipo==='municipal')?'municipal':lista.some(f=>f.tipo==='estadual')?'estadual':lista.length?'nacional':'';
       const classes=['escala-dia',domingo&&showD?'domingo':'',lista.length?'feriado':'',tipo?`feriado-${tipo}`:'',data===hoje?'hoje':''].filter(Boolean).join(' ');
       const ferHtml=lista.map(f=>`<div class="escala-feriado-label feriado-${esc(f.tipo||'feriado')}" title="${esc(f.nome)}">${esc(f.nome)}</div>`).join('');
-      const eventos=(evs[data]||[]); const eventosHtml=eventos.slice(0,4).map(it=>`<button type="button" class="escala-evento escala-evento-${esc(it.tipo||'plantao')}" onclick="event.stopPropagation(); abrirModalEditarPlantaoEscala('${esc(it.id)}')"><span>${esc(h(it.inicio_hora))} ${esc(nomeEv(it))}</span></button>`).join('');
+      const eventos=(evs[data]||[]); const eventosHtml=eventos.slice(0,4).map(it=>`<button type="button" class="escala-evento escala-evento-${esc(it.tipo||'plantao')}" data-escala-editar="${esc(it.id||'')}" onclick="event.stopPropagation(); abrirModalEditarPlantaoEscala('${esc(it.id)}')"><span>${esc(h(it.inicio_hora))} ${esc(nomeEv(it))}</span></button>`).join('');
       const mais=eventos.length>4?`<button type="button" class="escala-evento" onclick="event.stopPropagation()">mais +${eventos.length-4}</button>`:'';
       html+=`<div class="${classes}" data-data="${data}" onclick="abrirModalCadastroPlantaoEscala('${data}')"><div class="escala-dia-numero">${dia}</div>${ferHtml}${eventosHtml}${mais}</div>`;
     }
@@ -44179,6 +44424,1176 @@ function nrFechar() {
 })();
 </script>
 
+
+
+<script id="patch-agenda-v14-limpo">
+(function(){
+  'use strict';
+  if (window.__PATCH_AGENDA_V14_LIMPO__) return;
+  window.__PATCH_AGENDA_V14_LIMPO__ = true;
+  console.log('[Agenda v17] patch limpo carregado');
+
+  var ESTADO = { id:'', data:'', eventos:[], funcionarios:[], tipos:[] };
+  var ultimaAbertura = 0;
+  var tiposPadrao = [
+    { slug:'plantao', nome:'Plantão', cor:'#ef4444', padrao:true },
+    { slug:'folga', nome:'Folga', cor:'#dc2626', padrao:true },
+    { slug:'reuniao', nome:'Reunião', cor:'#a855f7', padrao:true },
+    { slug:'compromisso', nome:'Compromisso', cor:'#38bdf8', padrao:true }
+  ];
+
+  function byId(id){ return document.getElementById(id); }
+  function client(){ try { return window.sb || (typeof sb !== 'undefined' ? sb : null); } catch(_e){ return window.sb || null; } }
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>'"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]; }); }
+  function somenteData(v){ return String(v || '').slice(0,10); }
+  function hora(v){ return String(v || '').slice(0,5); }
+  function fmtData(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function hojeIso(){ return fmtData(new Date()); }
+  function dataBR(v){ var p=somenteData(v).split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : String(v||''); }
+  function normalizarSlug(txt){
+    return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'agenda';
+  }
+  function moeda(v){ var n=Number(String(v == null ? 0 : v).replace(',','.')) || 0; try { return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); } catch(_e){ return 'R$ '+n.toFixed(2).replace('.',','); } }
+  function setMsg(id, texto, tipo){
+    try { if (typeof window.setMsg === 'function') { window.setMsg(id, texto || '', tipo || ''); return; } } catch(_e) {}
+    try { if (typeof window.msg === 'function') { window.msg(id, texto || '', tipo || ''); return; } } catch(_e) {}
+    var el=byId(id); if(el) el.textContent=texto||'';
+  }
+  function lojaIdAtual(){
+    try { if (typeof window.obterLojaIdSessao === 'function') { var x=window.obterLojaIdSessao(); if(x) return String(x); } } catch(_e) {}
+    try { if (window.usuarioSistemaLogado && window.usuarioSistemaLogado.loja_id) return String(window.usuarioSistemaLogado.loja_id); } catch(_e) {}
+    try { if (window.lojaAtualId) return String(window.lojaAtualId); } catch(_e) {}
+    try { var u=JSON.parse(localStorage.getItem('zuqui_usuario_logado') || localStorage.getItem('usuarioSistemaLogado') || 'null'); if(u && u.loja_id) return String(u.loja_id); } catch(_e) {}
+    return '';
+  }
+  function empresaIdAtual(){
+    try { if (typeof window.obterEmpresaIdSessao === 'function') { var x=window.obterEmpresaIdSessao(); if(x) return String(x); } } catch(_e) {}
+    try { if (window.usuarioSistemaLogado && window.usuarioSistemaLogado.empresa_id) return String(window.usuarioSistemaLogado.empresa_id); } catch(_e) {}
+    try { var u=JSON.parse(localStorage.getItem('zuqui_usuario_logado') || localStorage.getItem('usuarioSistemaLogado') || 'null'); if(u && u.empresa_id) return String(u.empresa_id); } catch(_e) {}
+    return '';
+  }
+  function eventosAtuais(){
+    try { if (Array.isArray(window.escalaPlantoesEventos)) return window.escalaPlantoesEventos; } catch(_e) {}
+    try { if (typeof escalaPlantoesEventos !== 'undefined' && Array.isArray(escalaPlantoesEventos)) return escalaPlantoesEventos; } catch(_e) {}
+    return ESTADO.eventos || [];
+  }
+  function definirEventos(lista){
+    var arr=Array.isArray(lista) ? lista : [];
+    ESTADO.eventos = arr;
+    window.escalaPlantoesEventos = arr;
+    try { escalaPlantoesEventos = arr; } catch(_e) {}
+  }
+  function nomeFuncionario(ev){ return ev && (ev.funcionario_nome || (ev.funcionarios && ev.funcionarios.nome) || ev.nome_funcionario || ev.titulo) || 'Funcionário'; }
+  function tipoPorSlug(slug){ slug=String(slug||'plantao'); return (ESTADO.tipos||[]).find(function(t){ return String(t.slug)===slug; }) || tiposPadrao.find(function(t){ return t.slug===slug; }) || { slug:slug, nome:slug, cor:'#38bdf8' }; }
+  function tipoLabel(slug){ return tipoPorSlug(slug).nome || slug || 'Agenda'; }
+  function chaveLocalTipos(){ return 'agenda_tipos_v17_' + (lojaIdAtual() || 'global'); }
+  function tiposLocais(){ try { return JSON.parse(localStorage.getItem(chaveLocalTipos()) || '[]') || []; } catch(_e){ return []; } }
+  function salvarTiposLocais(lista){ try { localStorage.setItem(chaveLocalTipos(), JSON.stringify(lista || [])); } catch(_e) {} }
+  function mesRef(){ return window.escalaPlantoesDataReferencia instanceof Date ? window.escalaPlantoesDataReferencia : new Date(); }
+  function inicioFimMes(){ var r=mesRef(); return { inicio: fmtData(new Date(r.getFullYear(), r.getMonth(), 1)), fim: fmtData(new Date(r.getFullYear(), r.getMonth()+1, 0)) }; }
+
+  function garantirEstilo(){
+    if(byId('agendaV14Style')) return;
+    var st=document.createElement('style'); st.id='agendaV14Style';
+    st.textContent = ''+
+      '#agendaV14Overlay,#agendaTipoV14Overlay{position:fixed;inset:0;z-index:2147483200;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,6,12,.72);backdrop-filter:blur(4px)}'+
+      '#agendaV14Overlay.show,#agendaTipoV14Overlay.show{display:flex!important}'+
+      '#agendaV14Card,#agendaTipoV14Card{width:min(700px,calc(100vw - 28px));max-height:calc(100dvh - 36px);overflow:auto;border:1px solid rgba(45,212,191,.42);border-radius:18px;background:#0f1724;color:#fff;box-shadow:0 28px 90px rgba(0,0,0,.62);padding:18px}'+
+      '#agendaV14Card .v14-head,#agendaTipoV14Card .v14-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}'+
+      '#agendaV14Card .v14-title,#agendaTipoV14Card .v14-title{font-size:20px;font-weight:900;line-height:1.1}'+
+      '#agendaV14Card .v14-sub,#agendaTipoV14Card .v14-sub{font-size:13px;color:#2dd4bf;margin-top:4px}'+
+      '#agendaV14Card .v14-close,#agendaTipoV14Card .v14-close{width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#fff;font-size:22px;line-height:1;cursor:pointer}'+
+      '#agendaV14Card .v14-grid,#agendaTipoV14Card .v14-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}'+
+      '#agendaV14Card label,#agendaTipoV14Card label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:800;color:#cbd5e1;text-transform:uppercase;letter-spacing:.3px}'+
+      '#agendaV14Card input,#agendaV14Card select,#agendaV14Card textarea,#agendaTipoV14Card input,#agendaTipoV14Card select,#agendaTipoV14Card textarea{width:100%;min-height:42px;border:1px solid rgba(148,163,184,.32);border-radius:10px;background:#070b14;color:#fff;padding:9px 10px;font:inherit;font-size:14px}'+
+      '#agendaV14Card textarea,#agendaTipoV14Card textarea{min-height:82px;resize:vertical}'+
+      '#agendaV14Card .v14-full,#agendaTipoV14Card .v14-full{grid-column:1/-1}'+
+      '#agendaV14Card .v14-actions,#agendaTipoV14Card .v14-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:14px}'+
+      '#agendaV14Card .v14-btn,#agendaTipoV14Card .v14-btn{min-height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.18);padding:9px 13px;background:rgba(255,255,255,.06);color:#fff;font-weight:800;cursor:pointer}'+
+      '#agendaV14Card .v14-save,#agendaTipoV14Card .v14-save{background:#22c55e;color:#04110a;border-color:#22c55e}'+
+      '#agendaV14Card .v14-delete,#agendaTipoV14Card .v14-delete{color:#fecaca;border-color:rgba(239,68,68,.55);background:rgba(127,29,29,.22)}'+
+      '#agendaV14Excluir{display:none}'+
+      '#agendaV14Msg,#agendaTipoV14Msg{font-size:13px;margin-top:10px;color:#fbbf24;min-height:18px}'+
+      '#agendaV14Lista,#agendaTipoV14Lista{margin-top:12px;border:1px solid rgba(148,163,184,.2);border-radius:12px;background:rgba(0,0,0,.18);padding:8px;display:grid;gap:6px;max-height:180px;overflow:auto}'+
+      '.agendaV14Item,.agendaTipoV14Item{width:100%;border:1px solid rgba(45,212,191,.22);border-radius:9px;background:rgba(45,212,191,.08);color:#fff;padding:8px 10px;text-align:left;cursor:pointer;font:inherit;display:flex;justify-content:space-between;gap:10px;align-items:center}'+
+      '.agendaV14Item:hover,.agendaTipoV14Item:hover{background:rgba(45,212,191,.15);border-color:rgba(45,212,191,.55)}'+
+      '.agendaV14Empty{color:#94a3b8;font-size:12px;padding:6px}'+
+      '.agendaTipoV14Dot{width:10px;height:10px;border-radius:999px;display:inline-block;flex:0 0 auto;background:#38bdf8;margin-right:7px}'+
+      '.agendaTipoV14Linha{display:flex;align-items:center;gap:7px;min-width:0}'+
+      '.agendaTipoV14Linha strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+      '.agenda-tipos-lateral{margin-top:8px;display:grid;gap:6px}'+
+      '.agenda-tipo-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);padding:3px 4px}'+
+      '@media(max-width:680px){#agendaV14Card .v14-grid,#agendaTipoV14Card .v14-grid{grid-template-columns:1fr}}';
+    document.head.appendChild(st);
+  }
+
+  function garantirModalAgenda(){
+    garantirEstilo();
+    var ov=byId('agendaV14Overlay'); if(ov) return ov;
+    ov=document.createElement('div'); ov.id='agendaV14Overlay'; ov.setAttribute('aria-hidden','true');
+    ov.innerHTML = '<div id="agendaV14Card" role="dialog" aria-modal="true">'+
+      '<div class="v14-head"><div><div class="v14-title" id="agendaV14Titulo">Lançar agenda</div><div class="v14-sub" id="agendaV14Sub">Selecione um dia no calendário.</div></div><button class="v14-close" type="button" data-agenda-v14-cancelar title="Fechar">×</button></div>'+
+      '<input id="agendaV14Id" type="hidden">'+
+      '<div class="v14-grid">'+
+      '<label>Data agendada<input id="agendaV14Data" type="date"></label>'+
+      '<label>Funcionário<select id="agendaV14Funcionario"><option value="">Carregando...</option></select></label>'+
+      '<label>Horário inicial<input id="agendaV14Inicio" type="time"></label>'+
+      '<label>Horário final<input id="agendaV14Fim" type="time"></label>'+
+      '<label>Tipo<select id="agendaV14Tipo"></select></label>'+
+      '<label>Valor combinado<input id="agendaV14Valor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00"></label>'+
+      '<label class="v14-full">Observação<textarea id="agendaV14Observacao" placeholder="Opcional"></textarea></label>'+
+      '</div><div id="agendaV14Lista"></div><div id="agendaV14Msg"></div><div class="v14-actions">'+
+      '<button class="v14-btn" type="button" data-agenda-v14-cancelar>Cancelar</button>'+
+      '<button class="v14-btn v14-delete" id="agendaV14Excluir" type="button">Excluir</button>'+
+      '<button class="v14-btn v14-save" id="agendaV14Salvar" type="button">Salvar agenda</button>'+
+      '</div></div>';
+    document.body.appendChild(ov);
+    return ov;
+  }
+
+  function garantirModalTipo(){
+    garantirEstilo();
+    var ov=byId('agendaTipoV14Overlay'); if(ov) return ov;
+    ov=document.createElement('div'); ov.id='agendaTipoV14Overlay'; ov.setAttribute('aria-hidden','true');
+    ov.innerHTML = '<div id="agendaTipoV14Card" role="dialog" aria-modal="true">'+
+      '<div class="v14-head"><div><div class="v14-title">Cadastro de agendas</div><div class="v14-sub">Crie tipos para usar no campo Tipo da agenda.</div></div><button class="v14-close" type="button" data-agenda-tipo-v14-cancelar title="Fechar">×</button></div>'+
+      '<div class="v14-grid">'+
+      '<label>Nome da agenda<input id="agendaTipoV14Nome" type="text" placeholder="Ex: Treinamento, Entrega, Reunião externa"></label>'+
+      '<label>Cor<input id="agendaTipoV14Cor" type="color" value="#38bdf8"></label>'+
+      '</div><div id="agendaTipoV14Msg"></div><div id="agendaTipoV14Lista"></div><div class="v14-actions">'+
+      '<button class="v14-btn" type="button" data-agenda-tipo-v14-cancelar>Cancelar</button>'+
+      '<button class="v14-btn v14-save" id="agendaTipoV14Salvar" type="button">Salvar tipo</button>'+
+      '</div></div>';
+    document.body.appendChild(ov);
+    return ov;
+  }
+
+  function fecharModalAgenda(){ var ov=byId('agendaV14Overlay'); if(ov){ ov.classList.remove('show'); ov.setAttribute('aria-hidden','true'); } }
+  function fecharModalTipo(){ var ov=byId('agendaTipoV14Overlay'); if(ov){ ov.classList.remove('show'); ov.setAttribute('aria-hidden','true'); } }
+  function msgModal(texto){ var el=byId('agendaV14Msg'); if(el) el.textContent=texto || ''; }
+  function msgTipo(texto){ var el=byId('agendaTipoV14Msg'); if(el) el.textContent=texto || ''; }
+  function fecharModalAntigo(){ try { var old=byId('modalEscalaPlantao'); if(old){ old.classList.remove('show'); old.setAttribute('aria-hidden','true'); } } catch(_e) {} }
+
+  async function carregarTiposAgenda(){
+    var mapa={};
+    tiposPadrao.forEach(function(t){ mapa[t.slug]=Object.assign({},t); });
+    tiposLocais().forEach(function(t){ if(t && t.slug) mapa[String(t.slug)] = Object.assign({}, t, { local:true }); });
+    var c=client(); var loja=lojaIdAtual();
+    if(c && c.from){
+      try{
+        var q=c.from('agenda_tipos').select('id,loja_id,empresa_id,nome,slug,cor,ativo').eq('ativo', true).order('nome',{ascending:true});
+        if(loja) q=q.eq('loja_id',loja);
+        var r=await q;
+        if(!r.error) (r.data||[]).forEach(function(t){ if(t && t.slug) mapa[String(t.slug)] = Object.assign({}, t, { banco:true }); });
+      }catch(_e){}
+    }
+    ESTADO.tipos=Object.keys(mapa).map(function(k){ return mapa[k]; });
+    preencherSelectTipo();
+    renderTiposLateral();
+    renderListaTipos();
+    return ESTADO.tipos;
+  }
+
+  function preencherSelectTipo(){
+    var sel=byId('agendaV14Tipo'); if(!sel) return;
+    var atual=sel.value || 'plantao';
+    var tipos=(ESTADO.tipos && ESTADO.tipos.length ? ESTADO.tipos : tiposPadrao);
+    sel.innerHTML=tipos.map(function(t){ return '<option value="'+esc(t.slug)+'">'+esc(t.nome)+'</option>'; }).join('');
+    if([].some.call(sel.options, function(o){ return o.value===atual; })) sel.value=atual;
+    else sel.value='plantao';
+  }
+
+  function renderTiposLateral(){
+    var card=document.querySelector('#escala_plantoes .escala-side-card'); if(!card) return;
+    var box=byId('agendaTiposV14Lateral');
+    if(!box){
+      box=document.createElement('div'); box.id='agendaTiposV14Lateral'; box.className='agenda-tipos-lateral';
+      var msg=byId('msgEscalaPlantoes'); if(msg && msg.parentNode) msg.parentNode.insertBefore(box, msg); else card.appendChild(box);
+    }
+    var tipos=(ESTADO.tipos && ESTADO.tipos.length ? ESTADO.tipos : tiposPadrao);
+    box.innerHTML=tipos.map(function(t){ return '<div class="agenda-tipo-chip"><span class="agendaTipoV14Dot" style="background:'+esc(t.cor || '#38bdf8')+'"></span><span>'+esc(t.nome)+'</span></div>'; }).join('');
+  }
+
+  function renderListaTipos(){
+    var lista=byId('agendaTipoV14Lista'); if(!lista) return;
+    var tipos=(ESTADO.tipos && ESTADO.tipos.length ? ESTADO.tipos : tiposPadrao);
+    lista.innerHTML=tipos.map(function(t){
+      var locked=t.padrao ? '<span style="color:#94a3b8;font-size:12px">padrão</span>' : '<button class="v14-btn v14-delete" type="button" data-agenda-tipo-excluir="'+esc(t.slug)+'">Excluir</button>';
+      return '<div class="agendaTipoV14Item"><span class="agendaTipoV14Linha"><span class="agendaTipoV14Dot" style="background:'+esc(t.cor || '#38bdf8')+'"></span><strong>'+esc(t.nome)+'</strong></span>'+locked+'</div>';
+    }).join('');
+  }
+
+  async function abrirModalTipo(){
+    garantirModalTipo();
+    byId('agendaTipoV14Nome').value='';
+    byId('agendaTipoV14Cor').value='#38bdf8';
+    msgTipo('');
+    await carregarTiposAgenda();
+    var ov=byId('agendaTipoV14Overlay'); ov.classList.add('show'); ov.setAttribute('aria-hidden','false');
+    setTimeout(function(){ try{ byId('agendaTipoV14Nome').focus(); }catch(_e){} }, 30);
+  }
+
+  async function salvarTipoAgenda(){
+    var nome=String(byId('agendaTipoV14Nome') && byId('agendaTipoV14Nome').value || '').trim();
+    var cor=String(byId('agendaTipoV14Cor') && byId('agendaTipoV14Cor').value || '#38bdf8').trim();
+    if(!nome){ msgTipo('Informe o nome da agenda.'); return; }
+    var slug=normalizarSlug(nome);
+    if(tiposPadrao.some(function(t){ return t.slug===slug; })){ msgTipo('Esse tipo já existe como padrão.'); return; }
+    var loja=lojaIdAtual(); var empresa=empresaIdAtual();
+    var payload={ loja_id:loja || null, empresa_id:empresa || null, nome:nome, slug:slug, cor:cor, ativo:true };
+    var salvoNoBanco=false; var c=client();
+    if(c && c.from){
+      try{
+        var r=await c.from('agenda_tipos').upsert([payload], { onConflict:'loja_id,slug' });
+        if(!r.error) salvoNoBanco=true;
+        else console.warn('[Agenda v17] agenda_tipos indisponível, usando localStorage:', r.error);
+      }catch(e){ console.warn('[Agenda v17] agenda_tipos indisponível, usando localStorage:', e); }
+    }
+    if(!salvoNoBanco){
+      var locais=tiposLocais().filter(function(t){ return t.slug!==slug; });
+      locais.push(Object.assign({}, payload, { local:true }));
+      salvarTiposLocais(locais);
+      msgTipo('Tipo salvo localmente. Para salvar no banco, rode o SQL da tabela agenda_tipos.');
+    } else {
+      msgTipo('Tipo salvo no banco.');
+    }
+    await carregarTiposAgenda();
+    byId('agendaTipoV14Nome').value='';
+  }
+
+  async function excluirTipoAgenda(slug){
+    slug=String(slug||''); if(!slug || tiposPadrao.some(function(t){ return t.slug===slug; })) return;
+    if(!window.confirm('Excluir este tipo de agenda? As agendas já salvas continuam no calendário.')) return;
+    var locais=tiposLocais().filter(function(t){ return t.slug!==slug; }); salvarTiposLocais(locais);
+    var c=client(); var loja=lojaIdAtual();
+    if(c && c.from){
+      try{ var q=c.from('agenda_tipos').update({ativo:false}).eq('slug',slug); if(loja) q=q.eq('loja_id',loja); await q; }catch(_e){}
+    }
+    await carregarTiposAgenda();
+    msgTipo('Tipo removido da lista.');
+  }
+
+  async function carregarFuncionarios(){
+    var sel=byId('agendaV14Funcionario');
+    if(sel) sel.innerHTML='<option value="">Carregando funcionários...</option>';
+    var c=client(); var loja=lojaIdAtual();
+    if(!c || !c.from){ if(sel) sel.innerHTML='<option value="">Supabase indisponível</option>'; return; }
+
+    async function executarQuery(q){
+      try{
+        if(typeof window.executarSemFiltroLojaTemporario === 'function'){
+          return await window.executarSemFiltroLojaTemporario(function(){ return q; });
+        }
+      }catch(_e){}
+      return await q;
+    }
+
+    var tentativas=[
+      { cols:'id,nome,ativo,loja_id,empresa_id', filtraLoja:true, filtraAtivo:true },
+      { cols:'id,nome,ativo,loja_id', filtraLoja:true, filtraAtivo:true },
+      { cols:'id,nome,loja_id,empresa_id', filtraLoja:true, filtraAtivo:false },
+      { cols:'id,nome,loja_id', filtraLoja:true, filtraAtivo:false },
+      { cols:'id,nome_completo,ativo,loja_id,empresa_id', filtraLoja:true, filtraAtivo:true },
+      { cols:'id,nome_completo,loja_id', filtraLoja:true, filtraAtivo:false },
+      { cols:'id,nome,ativo', filtraLoja:false, filtraAtivo:true },
+      { cols:'id,nome', filtraLoja:false, filtraAtivo:false },
+      { cols:'id,nome_completo', filtraLoja:false, filtraAtivo:false }
+    ];
+
+    var dados=[]; var ultimoErro=null;
+    for(var i=0;i<tentativas.length;i++){
+      var t=tentativas[i];
+      try{
+        var q=c.from('funcionarios').select(t.cols);
+        if(t.filtraAtivo) q=q.eq('ativo', true);
+        if(loja && t.filtraLoja) q=q.eq('loja_id', loja);
+        var campoOrdenacao=t.cols.indexOf('nome_completo')>=0 && t.cols.indexOf('nome,')<0 ? 'nome_completo' : 'nome';
+        q=q.order(campoOrdenacao,{ascending:true});
+        var r=await executarQuery(q);
+        if(!r.error){ dados=r.data || []; break; }
+        ultimoErro=r.error;
+      }catch(e){ ultimoErro=e; }
+    }
+
+    // Fallback final: reaproveita cache do módulo antigo da escala, quando existir.
+    if(!dados.length){
+      try{
+        if(Array.isArray(window.escalaPlantoesFuncionariosCache) && window.escalaPlantoesFuncionariosCache.length){
+          dados=window.escalaPlantoesFuncionariosCache;
+        }
+      }catch(_e){}
+    }
+
+    ESTADO.funcionarios=(dados||[]).filter(function(f){
+      if(!f || !f.id) return false;
+      if(f.ativo === false) return false;
+      if(loja && f.loja_id && String(f.loja_id) !== String(loja)) return false;
+      return true;
+    });
+
+    if(sel){
+      if(ESTADO.funcionarios.length){
+        sel.innerHTML='<option value="">Selecione...</option>'+ESTADO.funcionarios.map(function(f){ return '<option value="'+esc(f.id)+'">'+esc(f.nome || f.nome_completo || 'Funcionário')+'</option>'; }).join('');
+      } else {
+        sel.innerHTML='<option value="">Nenhum funcionário encontrado</option>';
+      }
+    }
+    if(!ESTADO.funcionarios.length && ultimoErro){ console.warn('[Agenda v17] funcionários não carregaram:', ultimoErro); }
+  }
+
+  function eventosDoDia(data){ return eventosAtuais().filter(function(ev){ return ev && !ev.deleted_at && somenteData(ev.data_plantao) === data; }); }
+  function renderListaDia(){
+    var lista=byId('agendaV14Lista'); if(!lista) return;
+    var itens=eventosDoDia(ESTADO.data);
+    if(!itens.length){ lista.innerHTML='<div class="agendaV14Empty">Nenhuma agenda cadastrada neste dia.</div>'; return; }
+    lista.innerHTML=itens.map(function(ev){
+      var txt=(hora(ev.inicio_hora) ? hora(ev.inicio_hora)+' · ' : '') + nomeFuncionario(ev);
+      return '<button type="button" class="agendaV14Item" data-agenda-v14-editar="'+esc(ev.id)+'"><span><strong>'+esc(txt)+'</strong><br><small>'+esc(tipoLabel(ev.tipo))+(ev.valor_combinado ? ' · '+esc(moeda(ev.valor_combinado)) : '')+'</small></span><span>Editar</span></button>';
+    }).join('');
+  }
+
+  function limparFormulario(data){
+    ESTADO.id=''; ESTADO.data=somenteData(data) || hojeIso();
+    byId('agendaV14Id').value=''; byId('agendaV14Data').value=ESTADO.data;
+    byId('agendaV14Inicio').value=''; byId('agendaV14Fim').value=''; byId('agendaV14Valor').value=''; byId('agendaV14Observacao').value='';
+    preencherSelectTipo(); var tipo=byId('agendaV14Tipo'); if(tipo) tipo.value='plantao';
+    var del=byId('agendaV14Excluir'); if(del) del.style.display='none';
+    byId('agendaV14Titulo').textContent='Lançar agenda'; byId('agendaV14Sub').textContent='Data selecionada: '+dataBR(ESTADO.data); msgModal(''); renderListaDia();
+  }
+
+  function preencherEdicao(ev){
+    if(!ev) return;
+    ESTADO.id=String(ev.id || ''); ESTADO.data=somenteData(ev.data_plantao) || hojeIso();
+    byId('agendaV14Id').value=ESTADO.id; byId('agendaV14Data').value=ESTADO.data;
+    var func=byId('agendaV14Funcionario'); if(func) func.value=ev.funcionario_id || '';
+    byId('agendaV14Inicio').value=hora(ev.inicio_hora); byId('agendaV14Fim').value=hora(ev.fim_hora);
+    preencherSelectTipo(); byId('agendaV14Tipo').value=ev.tipo || 'plantao';
+    byId('agendaV14Valor').value=ev.valor_combinado == null ? '' : ev.valor_combinado;
+    byId('agendaV14Observacao').value=ev.observacao || '';
+    var del=byId('agendaV14Excluir'); if(del) del.style.display='inline-flex';
+    byId('agendaV14Titulo').textContent='Editar agenda'; byId('agendaV14Sub').textContent='Editando: '+dataBR(ESTADO.data); msgModal(''); renderListaDia();
+  }
+
+  async function carregarEventosMes(){
+    var c=client(); if(!c || !c.from) return;
+    var faixa=inicioFimMes(); var loja=lojaIdAtual();
+    try{
+      var cols='id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at';
+      var q=c.from('escala_plantoes').select(cols).gte('data_plantao',faixa.inicio).lte('data_plantao',faixa.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
+      if(loja) q=q.eq('loja_id',loja);
+      var r=await q;
+      if(r.error){
+        cols='id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado';
+        q=c.from('escala_plantoes').select(cols).gte('data_plantao',faixa.inicio).lte('data_plantao',faixa.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
+        if(loja) q=q.eq('loja_id',loja);
+        r=await q;
+      }
+      if(r.error){ console.warn('[Agenda v17] erro ao recarregar eventos:', r.error); return; }
+      var dados=(r.data||[]).filter(function(ev){ return !ev.deleted_at; });
+      var ids=[].filter.call(dados.map(function(ev){ return ev.funcionario_id; }), Boolean).filter(function(v,i,a){ return a.indexOf(v)===i; });
+      var nomes={};
+      if(ids.length){
+        try{ var rf=await c.from('funcionarios').select('id,nome,nome_completo').in('id',ids); if(!rf.error) (rf.data||[]).forEach(function(f){ nomes[String(f.id)]=f.nome || f.nome_completo || ''; }); }catch(_e){}
+      }
+      definirEventos(dados.map(function(ev){ return Object.assign({}, ev, { funcionario_nome: nomes[String(ev.funcionario_id)] || ev.funcionario_nome || ev.titulo || 'Funcionário' }); }));
+    }catch(e){ console.warn('[Agenda v17] carregarEventosMes falhou:', e); }
+  }
+
+  async function atualizarCalendario(){
+    try { await carregarEventosMes(); } catch(_e) {}
+    try { if(typeof window.renderizarEscalaPlantoes === 'function') window.renderizarEscalaPlantoes(); } catch(e){ console.warn('[Agenda v17] render falhou:', e); }
+  }
+
+  async function abrirPorDia(data){
+    var agora=Date.now(); if(agora-ultimaAbertura<80) return; ultimaAbertura=agora;
+    data=somenteData(data) || hojeIso();
+    console.log('[Agenda v17] abrir cadastro', data);
+    garantirModalAgenda(); fecharModalAntigo();
+    limparFormulario(data);
+    var ov=byId('agendaV14Overlay'); ov.classList.add('show'); ov.setAttribute('aria-hidden','false');
+    carregarTiposAgenda().then(function(){ var tipo=byId('agendaV14Tipo'); if(tipo && !tipo.value) tipo.value='plantao'; });
+    carregarFuncionarios();
+    setTimeout(function(){ try{ byId('agendaV14Funcionario').focus(); }catch(_e){} }, 30);
+  }
+
+  async function abrirPorId(id){
+    id=String(id || '').trim(); if(!id) return;
+    console.log('[Agenda v17] abrir edição', id);
+    garantirModalAgenda(); fecharModalAntigo();
+    var ev=eventosAtuais().find(function(x){ return String(x.id) === id; });
+    if(!ev && client() && client().from){
+      try{ var r=await client().from('escala_plantoes').select('id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at').eq('id',id).maybeSingle(); if(!r.error) ev=r.data; }catch(_e){}
+    }
+    if(!ev){ setMsg('msgEscalaPlantoes','Não encontrei essa agenda para edição. Recarregue o calendário.','err'); return; }
+    ESTADO.data=somenteData(ev.data_plantao) || hojeIso();
+    var ov=byId('agendaV14Overlay'); ov.classList.add('show'); ov.setAttribute('aria-hidden','false');
+    await carregarTiposAgenda(); await carregarFuncionarios(); preencherEdicao(ev);
+  }
+
+  async function salvarAgenda(){
+    var c=client(); if(!c || !c.from){ msgModal('Supabase indisponível.'); return; }
+    var data=somenteData(byId('agendaV14Data').value) || ESTADO.data || hojeIso();
+    var funcionario=String(byId('agendaV14Funcionario').value || '').trim();
+    if(!funcionario){ msgModal('Selecione o funcionário.'); return; }
+    var inicio=hora(byId('agendaV14Inicio').value); var fim=hora(byId('agendaV14Fim').value);
+    if(!inicio || !fim){ msgModal('Informe horário inicial e final.'); return; }
+    var tipo=String(byId('agendaV14Tipo').value || 'plantao').trim();
+    var valorTxt=String(byId('agendaV14Valor').value || '').replace(',','.').trim();
+    var valor=valorTxt === '' ? null : Number(valorTxt);
+    var obs=String(byId('agendaV14Observacao').value || '').trim();
+    var loja=lojaIdAtual(); var empresa=empresaIdAtual();
+    var payload={ loja_id:loja || null, funcionario_id:funcionario, data_plantao:data, inicio_hora:inicio, fim_hora:fim, tipo:tipo, titulo:tipoLabel(tipo), observacao:obs || null, valor_combinado:valor };
+    if(empresa) payload.empresa_id=empresa;
+    var id=String(byId('agendaV14Id').value || ESTADO.id || '').trim();
+    try{
+      var r;
+      if(id){ var q=c.from('escala_plantoes').update(payload).eq('id',id); if(loja) q=q.eq('loja_id',loja); r=await q; }
+      else { r=await c.from('escala_plantoes').insert([payload]); }
+      if(r.error && String(r.error.message || '').toLowerCase().includes('empresa_id')){ delete payload.empresa_id; if(id){ var q2=c.from('escala_plantoes').update(payload).eq('id',id); if(loja) q2=q2.eq('loja_id',loja); r=await q2; } else { r=await c.from('escala_plantoes').insert([payload]); } }
+      if(r.error) throw r.error;
+      msgModal('Agenda salva.'); setMsg('msgEscalaPlantoes','Agenda salva no calendário.','ok'); fecharModalAgenda(); await atualizarCalendario();
+    }catch(e){ console.warn('[Agenda v17] erro ao salvar:', e); msgModal('Não foi possível salvar: '+(e.message || e.details || 'erro desconhecido')+'.'); }
+  }
+
+  async function excluirAgenda(){
+    var id=String(byId('agendaV14Id').value || ESTADO.id || '').trim(); if(!id){ msgModal('Nenhuma agenda selecionada.'); return; }
+    if(!window.confirm('Excluir esta agenda?')) return;
+    var c=client(); if(!c || !c.from){ msgModal('Supabase indisponível.'); return; }
+    var loja=lojaIdAtual();
+    try{
+      var q=c.from('escala_plantoes').update({ deleted_at:new Date().toISOString() }).eq('id',id); if(loja) q=q.eq('loja_id',loja);
+      var r=await q;
+      if(r.error){ var q2=c.from('escala_plantoes').delete().eq('id',id); if(loja) q2=q2.eq('loja_id',loja); r=await q2; }
+      if(r.error) throw r.error;
+      fecharModalAgenda(); setMsg('msgEscalaPlantoes','Agenda excluída.','ok'); await atualizarCalendario();
+    }catch(e){ console.warn('[Agenda v17] erro ao excluir:', e); msgModal('Não foi possível excluir: '+(e.message || e.details || 'erro desconhecido')+'.'); }
+  }
+
+  function idEventoDoAlvo(el){
+    if(!el) return '';
+    var id=el.getAttribute('data-agenda-v14-editar') || el.getAttribute('data-escala-editar') || '';
+    if(id) return id;
+    var onclick=String(el.getAttribute('onclick') || '');
+    var m=onclick.match(/abrirModalEditarPlantaoEscala\(['\"]([^'\"]+)['\"]\)/);
+    return m ? m[1] : '';
+  }
+
+  function interceptarCalendario(ev){
+    var t=ev.target; if(!t || !t.closest) return;
+    var modal=byId('agendaV14Overlay');
+    if(modal && modal.classList.contains('show') && t.closest('#agendaV14Overlay')) return;
+    if(t.closest('#agendaTipoV14Overlay')) return;
+    var editar=t.closest('#escalaCalendarioGrid .escala-evento, #escalaPlantaoListaDia [data-escala-editar], .agendaV14Item, [data-agenda-v14-editar], [data-escala-editar]');
+    if(editar){ var id=idEventoDoAlvo(editar); if(id){ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); abrirPorId(id); return; } }
+    var cell=t.closest('#escalaCalendarioGrid .escala-dia[data-data]');
+    if(cell && !cell.classList.contains('escala-dia-vazio')){ var data=cell.getAttribute('data-data'); if(data){ ev.preventDefault(); ev.stopPropagation(); if(ev.stopImmediatePropagation) ev.stopImmediatePropagation(); abrirPorDia(data); return; } }
+  }
+
+  function ajustarTextos(){
+    try { document.querySelectorAll('[data-page="escala_plantoes"] .nav-title').forEach(function(el){ el.textContent='Agenda'; }); } catch(_e) {}
+    var title=document.querySelector('#escala_plantoes .page-title'); if(title) title.textContent='Agenda';
+    var side=document.querySelector('#escala_plantoes .escala-side-title span'); if(side) side.textContent='Agendas';
+    var btn=document.querySelector('#escala_plantoes .escala-side-title .btn'); if(btn){ btn.title='Cadastrar tipos de agenda'; btn.setAttribute('aria-label','Cadastrar tipos de agenda'); btn.setAttribute('onclick','abrirModalCadastroTipoAgenda()'); }
+    var modalTitle=byId('modalEscalaPlantao') && byId('modalEscalaPlantao').querySelector('.escala-modal-title'); if(modalTitle) modalTitle.textContent='Novo item da agenda';
+    var oldSave=byId('btnSalvarPlantaoEscala'); if(oldSave) oldSave.textContent='Salvar agenda';
+  }
+
+  function instalar(){
+    garantirModalAgenda(); garantirModalTipo(); ajustarTextos(); carregarTiposAgenda();
+    document.addEventListener('click', interceptarCalendario, true);
+    document.addEventListener('pointerup', interceptarCalendario, true);
+    document.addEventListener('dblclick', interceptarCalendario, true);
+    document.addEventListener('keydown', function(ev){ if(ev.key === 'Escape'){ fecharModalAgenda(); fecharModalTipo(); } });
+    document.addEventListener('click', function(ev){
+      var t=ev.target; if(!t || !t.closest) return;
+      if(t.closest('[data-agenda-v14-cancelar]')){ ev.preventDefault(); ev.stopPropagation(); fecharModalAgenda(); return; }
+      if(t.id === 'agendaV14Salvar'){ ev.preventDefault(); ev.stopPropagation(); salvarAgenda(); return; }
+      if(t.id === 'agendaV14Excluir'){ ev.preventDefault(); ev.stopPropagation(); excluirAgenda(); return; }
+      if(t === byId('agendaV14Overlay')){ fecharModalAgenda(); return; }
+      var item=t.closest('.agendaV14Item[data-agenda-v14-editar]'); if(item){ ev.preventDefault(); ev.stopPropagation(); abrirPorId(item.getAttribute('data-agenda-v14-editar')); return; }
+      if(t.closest('[data-agenda-tipo-v14-cancelar]')){ ev.preventDefault(); ev.stopPropagation(); fecharModalTipo(); return; }
+      if(t.id === 'agendaTipoV14Salvar'){ ev.preventDefault(); ev.stopPropagation(); salvarTipoAgenda(); return; }
+      var ex=t.closest('[data-agenda-tipo-excluir]'); if(ex){ ev.preventDefault(); ev.stopPropagation(); excluirTipoAgenda(ex.getAttribute('data-agenda-tipo-excluir')); return; }
+      if(t === byId('agendaTipoV14Overlay')){ fecharModalTipo(); return; }
+    }, true);
+    document.addEventListener('change', function(ev){ if(ev.target && ev.target.id === 'agendaV14Data'){ ESTADO.data=somenteData(ev.target.value) || ESTADO.data; var s=byId('agendaV14Sub'); if(s) s.textContent=(ESTADO.id?'Editando: ':'Data selecionada: ')+dataBR(ESTADO.data); renderListaDia(); } });
+    window.abrirModalCadastroPlantaoEscala = function(data){ abrirPorDia(data || hojeIso()); };
+    window.abrirModalEditarPlantaoEscala = abrirPorId;
+    window.abrirModalCadastroTipoAgenda = abrirModalTipo;
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', instalar, { once:true }); else instalar();
+})();
+</script>
+
+
+
+
+<script id="patch-agenda-v17-estabilizacao">
+(function(){
+  'use strict';
+  if(window.__PATCH_AGENDA_V17_ESTABILIZACAO__) return;
+  window.__PATCH_AGENDA_V17_ESTABILIZACAO__ = true;
+  console.log('[Agenda v17] estabilização carregada');
+
+  function liberarGuard(){
+    try { document.documentElement.classList.remove('admin-fouc-pendente'); } catch(_e) {}
+  }
+
+  // Anti-flash seguro: não esconde a tela inteira e sempre libera por timeout.
+  setTimeout(liberarGuard, 900);
+  setTimeout(liberarGuard, 1800);
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(liberarGuard, 500); });
+
+  // Quando as permissões forem aplicadas, libera o guard e reforça o nome Agenda.
+  (function envolverPermissoes(){
+    var tentativas=0;
+    var timer=setInterval(function(){
+      tentativas++;
+      try{
+        if(typeof window.aplicarPermissoesSistema === 'function' && !window.aplicarPermissoesSistema.__agendaV17Guard){
+          var original=window.aplicarPermissoesSistema;
+          window.aplicarPermissoesSistema=function(){
+            var ret=original.apply(this, arguments);
+            setTimeout(function(){ reforcarNomeAgendaV17(); liberarGuard(); }, 0);
+            return ret;
+          };
+          window.aplicarPermissoesSistema.__agendaV17Guard=true;
+          clearInterval(timer);
+        }
+      }catch(_e){}
+      if(tentativas>80){ clearInterval(timer); liberarGuard(); }
+    },50);
+  })();
+
+  function byId(id){ return document.getElementById(id); }
+  function textoContemCarregandoLoja(){
+    var pag=document.querySelector('.pagina.ativa');
+    if(!pag) return false;
+    var txt=String(pag.textContent || '').toLowerCase();
+    return txt.indexOf('carregando dados da loja') >= 0 || txt.indexOf('carregando...') >= 0;
+  }
+  function paginaAtiva(){ return document.querySelector('.pagina.ativa')?.id || ''; }
+  function chamar(nome){
+    try{ if(typeof window[nome] === 'function') { window[nome](); return true; } }catch(e){ console.warn('[Agenda v17] falha ao chamar '+nome, e); }
+    return false;
+  }
+  function recarregarPaginaSeTravou(){
+    try{
+      if(!window.usuarioSistemaLogado) return;
+      if(!textoContemCarregandoLoja()) return;
+      var id=paginaAtiva();
+      if(id === 'meu_painel') chamar('carregarMeuPainel');
+      else if(id === 'dashboard') chamar('carregarDashboard');
+      else if(id === 'checklists') chamar('carregarChecklists');
+      else if(id === 'bater_ponto') chamar('carregarBaterPonto');
+      else if(id === 'escala_plantoes') chamar('carregarEscalaPlantoes');
+      else if(id === 'tarefas_rapidas') chamar('carregarTarefasRapidas');
+      else if(id === 'tarefas_atraso') chamar('carregarTarefasAtrasoMaster');
+      else if(id === 'execucoes') chamar('carregarExecucoes');
+      else if(id === 'funcionarios') chamar('carregarFuncionarios');
+    }catch(e){ console.warn('[Agenda v17] recuperação de tela falhou:', e); }
+  }
+  setTimeout(recarregarPaginaSeTravou, 2200);
+  setTimeout(recarregarPaginaSeTravou, 5000);
+
+  function reforcarNomeAgendaV17(){
+    try{
+      document.querySelectorAll('[data-page="escala_plantoes"] .nav-title').forEach(function(el){ el.textContent='Agenda'; });
+      var btn=document.querySelector('[data-page="escala_plantoes"]');
+      if(btn){ btn.setAttribute('aria-label','Agenda'); btn.title='Agenda'; }
+      var pageTitle=document.querySelector('#escala_plantoes .page-title'); if(pageTitle) pageTitle.textContent='Agenda';
+      var side=document.querySelector('#escala_plantoes .escala-side-title span'); if(side) side.textContent='Agendas';
+      var plus=document.querySelector('#escala_plantoes .escala-side-title .btn');
+      if(plus){ plus.title='Cadastrar tipos de agenda'; plus.setAttribute('aria-label','Cadastrar tipos de agenda'); }
+    }catch(_e){}
+  }
+  document.addEventListener('DOMContentLoaded', reforcarNomeAgendaV17);
+  setTimeout(reforcarNomeAgendaV17, 300);
+  setTimeout(reforcarNomeAgendaV17, 1500);
+})();
+</script>
+
+
+
+<script id="checklist-funcionarios-v27-clean-final">
+(function(){
+  'use strict';
+  if (window.__CHECKLIST_FUNCIONARIOS_V27_CLEAN__) return;
+  window.__CHECKLIST_FUNCIONARIOS_V27_CLEAN__ = true;
+
+  console.log('[Checklist v27] seleção de funcionários com modal persistente carregada');
+
+  const estado = {
+    tarefaId: '',
+    selecionadoId: '',
+    funcionarios: []
+  };
+
+  function esc(valor) {
+    return String(valor ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function texto(valor) {
+    return String(valor ?? '').trim();
+  }
+
+  function primeiroValor() {
+    for (let i = 0; i < arguments.length; i++) {
+      const v = texto(arguments[i]);
+      if (v && v !== 'null' && v !== 'undefined') return v;
+    }
+    return '';
+  }
+
+  function lerUsuarioLocalStorage() {
+    try {
+      return JSON.parse(localStorage.getItem('zuqui_usuario_logado') || localStorage.getItem('usuarioSistemaLogado') || 'null') || null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function obterLojaIdV26() {
+    let usuarioLS = lerUsuarioLocalStorage();
+    let v1 = '', v2 = '', v3 = '', v4 = '', v5 = '', v6 = '';
+    try { if (typeof obterLojaIdSessao === 'function') v1 = obterLojaIdSessao(); } catch (_e) {}
+    try { if (typeof usuarioSistemaLogado !== 'undefined' && usuarioSistemaLogado) v2 = usuarioSistemaLogado.loja_id || usuarioSistemaLogado.lojaId || usuarioSistemaLogado.loja?.id || ''; } catch (_e) {}
+    try { v3 = usuarioLS?.loja_id || usuarioLS?.lojaId || usuarioLS?.loja?.id || ''; } catch (_e) {}
+    try { v4 = window.lojaAtualId || window.loja_id || ''; } catch (_e) {}
+    try { v5 = localStorage.getItem('loja_id') || localStorage.getItem('lojaAtualId') || localStorage.getItem('zuqui_loja_id') || ''; } catch (_e) {}
+    try { v6 = sessionStorage.getItem('loja_id') || sessionStorage.getItem('lojaAtualId') || sessionStorage.getItem('zuqui_loja_id') || ''; } catch (_e) {}
+    return primeiroValor(v1, v2, v3, v4, v5, v6);
+  }
+
+  function obterEmpresaIdV26() {
+    let usuarioLS = lerUsuarioLocalStorage();
+    let v1 = '', v2 = '', v3 = '';
+    try { if (typeof obterEmpresaIdSessao === 'function') v1 = obterEmpresaIdSessao(); } catch (_e) {}
+    try { if (typeof usuarioSistemaLogado !== 'undefined' && usuarioSistemaLogado) v2 = usuarioSistemaLogado.empresa_id || usuarioSistemaLogado.empresaId || ''; } catch (_e) {}
+    try { v3 = usuarioLS?.empresa_id || usuarioLS?.empresaId || ''; } catch (_e) {}
+    return primeiroValor(v1, v2, v3);
+  }
+
+  function getSupabaseV26() {
+    try { if (typeof sb !== 'undefined' && sb) return sb; } catch (_e) {}
+    try { if (window.sb) return window.sb; } catch (_e) {}
+    return null;
+  }
+
+  function normalizarFuncionarios(arr) {
+    const mapa = new Map();
+    (Array.isArray(arr) ? arr : []).forEach(f => {
+      const id = texto(f?.id || f?.funcionario_id);
+      const nome = texto(f?.nome || f?.nome_completo || f?.funcionario_nome || f?.username || f?.email);
+      if (!id || !nome) return;
+      if (Object.prototype.hasOwnProperty.call(f, 'ativo') && f.ativo === false) return;
+      mapa.set(id, { ...f, id, nome });
+    });
+    return Array.from(mapa.values()).sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+  }
+
+  async function consultarFuncionariosPorIds(ids) {
+    const client = getSupabaseV26();
+    const unicos = Array.from(new Set((ids || []).map(texto).filter(Boolean)));
+    if (!client || !unicos.length) return [];
+
+    const selects = ['id,nome,ativo,loja_id,empresa_id', 'id,nome,loja_id,empresa_id', 'id,nome'];
+    for (const select of selects) {
+      try {
+        const { data, error } = await client.from('funcionarios').select(select).in('id', unicos).order('nome');
+        if (!error) return normalizarFuncionarios(data);
+        console.warn('[Checklist v27] funcionários por ids falhou:', select, error.message || error);
+      } catch (e) {
+        console.warn('[Checklist v27] erro funcionários por ids:', select, e);
+      }
+    }
+    return [];
+  }
+
+  async function consultarFuncionariosPorCampo(campo, valor) {
+    const client = getSupabaseV26();
+    if (!client || !campo || !texto(valor)) return [];
+    const selects = ['id,nome,ativo,loja_id,empresa_id', 'id,nome,loja_id,empresa_id', 'id,nome'];
+    for (const select of selects) {
+      try {
+        const { data, error } = await client.from('funcionarios').select(select).eq(campo, valor).order('nome');
+        if (!error) return normalizarFuncionarios(data);
+        console.warn('[Checklist v27] funcionários por campo falhou:', campo, select, error.message || error);
+      } catch (e) {
+        console.warn('[Checklist v27] erro funcionários por campo:', campo, select, e);
+      }
+    }
+    return [];
+  }
+
+  async function consultarFuncionariosVinculadosPorLoja(lojaId) {
+    const client = getSupabaseV26();
+    if (!client || !texto(lojaId)) return [];
+
+    const selects = ['funcionario_id, ativo', 'funcionario_id'];
+    for (const select of selects) {
+      try {
+        const { data, error } = await client.from('funcionario_lojas').select(select).eq('loja_id', lojaId);
+        if (error) {
+          console.warn('[Checklist v27] funcionario_lojas falhou:', select, error.message || error);
+          continue;
+        }
+        const ids = (data || [])
+          .filter(v => !Object.prototype.hasOwnProperty.call(v, 'ativo') || v.ativo !== false)
+          .map(v => v.funcionario_id)
+          .filter(Boolean);
+        const funcionarios = await consultarFuncionariosPorIds(ids);
+        if (funcionarios.length) return funcionarios;
+      } catch (e) {
+        console.warn('[Checklist v27] erro funcionario_lojas:', select, e);
+      }
+    }
+    return [];
+  }
+
+  function funcionariosCacheAtual() {
+    try {
+      if (typeof funcionariosAtivosTarefa !== 'undefined' && Array.isArray(funcionariosAtivosTarefa) && funcionariosAtivosTarefa.length) {
+        return normalizarFuncionarios(funcionariosAtivosTarefa);
+      }
+    } catch (_e) {}
+    return [];
+  }
+
+  async function carregarFuncionariosDaLojaLogadaV26() {
+    const lojaId = obterLojaIdV26();
+    const empresaId = obterEmpresaIdV26();
+    let funcionarios = [];
+
+    if (lojaId) {
+      funcionarios = await consultarFuncionariosVinculadosPorLoja(lojaId);
+      if (funcionarios.length) return funcionarios;
+
+      funcionarios = await consultarFuncionariosPorCampo('loja_id', lojaId);
+      if (funcionarios.length) return funcionarios;
+    }
+
+    const cache = funcionariosCacheAtual();
+    if (cache.length) {
+      if (lojaId) {
+        const filtradosLoja = cache.filter(f => String(f.loja_id || '') === String(lojaId));
+        if (filtradosLoja.length) return filtradosLoja;
+      }
+      return cache;
+    }
+
+    if (empresaId) {
+      funcionarios = await consultarFuncionariosPorCampo('empresa_id', empresaId);
+      if (funcionarios.length) return funcionarios;
+    }
+
+    return [];
+  }
+
+  function injetarCssV26() {
+    if (document.getElementById('checklist-funcionarios-v26-css')) return;
+    const style = document.createElement('style');
+    style.id = 'checklist-funcionarios-v26-css';
+    style.textContent = `
+      #tarefaFuncionariosOverlay.checklist-funcionarios-v26-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 12000 !important;
+        display: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 22px !important;
+        background: rgba(0,0,0,.72) !important;
+        backdrop-filter: blur(5px) !important;
+      }
+      #tarefaFuncionariosOverlay.checklist-funcionarios-v26-overlay.show { display: flex !important; }
+      #tarefaFuncionariosOverlay .checklist-funcionarios-v26-modal {
+        width: min(620px, calc(100vw - 36px)) !important;
+        max-height: min(760px, calc(100vh - 42px)) !important;
+        background: var(--surface, #0f0f1a) !important;
+        border: 1px solid var(--border-bright, #30304a) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 24px 70px rgba(0,0,0,.55) !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      #tarefaFuncionariosOverlay .checklist-funcionarios-v26-header,
+      #tarefaFuncionariosOverlay .checklist-funcionarios-v26-footer {
+        padding: 16px 20px !important;
+        border-bottom: 1px solid var(--border, #1e1e2e) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+      }
+      #tarefaFuncionariosOverlay .checklist-funcionarios-v26-footer {
+        border-bottom: 0 !important;
+        border-top: 1px solid var(--border, #1e1e2e) !important;
+        justify-content: flex-end !important;
+      }
+      #tarefaFuncionariosOverlay .checklist-funcionarios-v26-body {
+        padding: 18px 20px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        min-height: 0 !important;
+      }
+      #tarefaFuncionariosBusca {
+        width: 100% !important;
+        min-height: 40px !important;
+        display: block !important;
+        padding: 10px 12px !important;
+        border: 1px solid var(--border-bright, #30304a) !important;
+        border-radius: 10px !important;
+        background: var(--bg-alt, #0c0c14) !important;
+        color: var(--text, #fff) !important;
+        font-family: inherit !important;
+        font-size: 14px !important;
+        box-sizing: border-box !important;
+      }
+      #tarefaFuncionariosLista {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        max-height: 340px !important;
+        overflow: auto !important;
+        padding-right: 4px !important;
+      }
+      #tarefaFuncionariosLista .checklist-funcionarios-v26-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: 100% !important;
+        min-height: 44px !important;
+        padding: 10px 12px !important;
+        border: 1px solid var(--border, #1e1e2e) !important;
+        border-radius: 10px !important;
+        background: rgba(255,255,255,.025) !important;
+        cursor: pointer !important;
+        color: var(--text, #fff) !important;
+        font-weight: 700 !important;
+      }
+      #tarefaFuncionariosLista .checklist-funcionarios-v26-item:hover {
+        border-color: rgba(34,197,94,.38) !important;
+        background: rgba(34,197,94,.07) !important;
+      }
+      .checklist-funcionarios-v26-resumo-card {
+        display: block !important;
+        margin-top: 6px !important;
+        font-size: 12px !important;
+        line-height: 1.35 !important;
+        color: var(--text-muted, #9292ab) !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function garantirModalV26() {
+    injetarCssV26();
+    const antigo = document.getElementById('tarefaFuncionariosOverlay');
+    if (antigo && !antigo.classList.contains('checklist-funcionarios-v26-overlay')) {
+      antigo.remove();
+    }
+    let overlay = document.getElementById('tarefaFuncionariosOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'tarefaFuncionariosOverlay';
+      document.body.appendChild(overlay);
+    }
+
+    // Importante: não reconstruir o modal a cada renderização da lista.
+    // O v26 abria, chamava renderizarListaModalFuncionariosLancamentoTarefaV26(),
+    // reconstruía o overlay sem a classe .show e por isso o modal piscava e fechava.
+    overlay.classList.add('overlay', 'checklist-funcionarios-v26-overlay');
+    if (overlay.dataset.v27Pronto === '1') {
+      return overlay;
+    }
+
+    const estavaAberto = overlay.classList.contains('show');
+    overlay.className = 'overlay checklist-funcionarios-v26-overlay';
+    if (estavaAberto) overlay.classList.add('show');
+    overlay.innerHTML = `
+      <div class="checklist-funcionarios-v26-modal" role="dialog" aria-modal="true" aria-labelledby="tarefaFuncionariosTitulo">
+        <div class="checklist-funcionarios-v26-header">
+          <div>
+            <h3 id="tarefaFuncionariosTitulo" style="margin:0;font-size:18px">Selecionar funcionário(s)</h3>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Escolha o responsável para esta tarefa.</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" type="button" data-v26-fechar-funcionarios>X Fechar</button>
+        </div>
+        <div class="checklist-funcionarios-v26-body">
+          <input id="tarefaFuncionariosBusca" type="text" placeholder="Buscar funcionário por nome" autocomplete="off">
+          <div id="tarefaFuncionariosResumo" class="item-detalhe" style="margin-top:0">Nenhum funcionário selecionado</div>
+          <div id="tarefaFuncionariosLista"><div class="empty">Carregando...</div></div>
+          <div id="tarefaFuncionariosMsg" class="msg" style="margin-top:0"></div>
+        </div>
+        <div class="checklist-funcionarios-v26-footer">
+          <button class="btn btn-ghost" type="button" data-v26-cancelar-funcionarios>Cancelar</button>
+          <button class="btn btn-green" type="button" data-v26-aplicar-funcionarios>Aplicar</button>
+        </div>
+      </div>
+    `;
+    overlay.dataset.v27Pronto = '1';
+
+    overlay.addEventListener('click', function(ev) {
+      if (ev.target === overlay || ev.target.closest('[data-v26-fechar-funcionarios], [data-v26-cancelar-funcionarios]')) {
+        ev.preventDefault();
+        fecharModalFuncionariosV26();
+      }
+      if (ev.target.closest('[data-v26-aplicar-funcionarios]')) {
+        ev.preventDefault();
+        aplicarModalFuncionariosLancamentoTarefaV26();
+      }
+    });
+    overlay.querySelector('#tarefaFuncionariosBusca')?.addEventListener('input', renderizarListaModalFuncionariosLancamentoTarefaV26);
+    overlay.querySelector('#tarefaFuncionariosLista')?.addEventListener('change', function(ev) {
+      const input = ev.target?.closest?.('input[data-funcionario-id]');
+      if (!input) return;
+      selecionarFuncionarioLancamentoModalV26(input.dataset.funcionarioId || '', input.checked);
+    });
+    return overlay;
+  }
+
+  function obterNomeFuncionarioSelecionadoV26() {
+    const id = texto(estado.selecionadoId);
+    if (!id) return '';
+    return texto(estado.funcionarios.find(f => String(f.id) === String(id))?.nome || '');
+  }
+
+  function renderizarListaModalFuncionariosLancamentoTarefaV26() {
+    const overlay = garantirModalV26();
+    const lista = overlay.querySelector('#tarefaFuncionariosLista');
+    const buscaEl = overlay.querySelector('#tarefaFuncionariosBusca');
+    const resumoEl = overlay.querySelector('#tarefaFuncionariosResumo');
+    const busca = texto(buscaEl?.value).toLowerCase();
+    const selecionado = texto(estado.selecionadoId);
+    const filtrados = estado.funcionarios.filter(f => !busca || String(f.nome || '').toLowerCase().includes(busca));
+
+    const nomeSelecionado = obterNomeFuncionarioSelecionadoV26();
+    if (resumoEl) resumoEl.textContent = nomeSelecionado ? `Selecionado: ${nomeSelecionado}` : 'Nenhum funcionário selecionado';
+
+    if (!lista) return;
+    if (!filtrados.length) {
+      lista.innerHTML = '<div class="empty">Nenhum funcionário encontrado para esta loja/busca.</div>';
+      return;
+    }
+
+    lista.innerHTML = filtrados.map(f => {
+      const id = texto(f.id);
+      const checked = String(id) === String(selecionado) ? 'checked' : '';
+      return `
+        <label class="checklist-funcionarios-v26-item">
+          <input type="checkbox" data-funcionario-id="${esc(id)}" ${checked}>
+          <span>${esc(f.nome || 'Funcionário')}</span>
+        </label>
+      `;
+    }).join('');
+  }
+
+  function selecionarFuncionarioLancamentoModalV26(funcionarioId, marcado) {
+    const id = texto(funcionarioId);
+    if (!id) return;
+    estado.selecionadoId = marcado ? id : '';
+    document.querySelectorAll('#tarefaFuncionariosLista input[data-funcionario-id]').forEach(input => {
+      input.checked = String(input.dataset.funcionarioId || '') === String(estado.selecionadoId || '');
+    });
+    renderizarListaModalFuncionariosLancamentoTarefaV26();
+  }
+
+  function obterSelecionadoAtualDoSistema(tarefaId) {
+    const id = texto(tarefaId);
+    try { if (typeof obterFuncionarioLancamentoSelecionado === 'function') return texto(obterFuncionarioLancamentoSelecionado(id, '')); } catch (_e) {}
+    try { if (typeof selecaoFuncionarioLancamentoPorTarefa !== 'undefined') return texto(selecaoFuncionarioLancamentoPorTarefa[id]); } catch (_e) {}
+    return '';
+  }
+
+  async function abrirModalFuncionariosLancamentoTarefaV26(tarefaId) {
+    const id = texto(tarefaId);
+    if (!id) {
+      console.warn('[Checklist v27] clique em selecionar funcionário sem tarefaId.');
+      return;
+    }
+
+    const overlay = garantirModalV26();
+    estado.tarefaId = id;
+    estado.selecionadoId = obterSelecionadoAtualDoSistema(id);
+    estado.funcionarios = [];
+
+    const busca = overlay.querySelector('#tarefaFuncionariosBusca');
+    const lista = overlay.querySelector('#tarefaFuncionariosLista');
+    const msg = overlay.querySelector('#tarefaFuncionariosMsg');
+    const resumo = overlay.querySelector('#tarefaFuncionariosResumo');
+    if (busca) busca.value = '';
+    if (msg) { msg.textContent = ''; msg.className = 'msg'; }
+    if (resumo) resumo.textContent = 'Nenhum funcionário selecionado';
+    if (lista) lista.innerHTML = '<div class="empty">Carregando funcionários da loja logada...</div>';
+
+    overlay.classList.add('show');
+
+    try {
+      estado.funcionarios = await carregarFuncionariosDaLojaLogadaV26();
+      if (!estado.funcionarios.length && msg) {
+        msg.textContent = 'Nenhum funcionário encontrado para a loja logada.';
+        msg.className = 'msg err';
+      }
+      renderizarListaModalFuncionariosLancamentoTarefaV26();
+      setTimeout(() => overlay.querySelector('#tarefaFuncionariosBusca')?.focus(), 60);
+    } catch (e) {
+      console.error('[Checklist v27] falha ao carregar funcionários:', e);
+      if (lista) lista.innerHTML = '<div class="empty">Não foi possível carregar os funcionários.</div>';
+      if (msg) { msg.textContent = 'Erro ao carregar funcionários. Veja o console.'; msg.className = 'msg err'; }
+    }
+  }
+
+  function fecharModalFuncionariosV26() {
+    const overlay = document.getElementById('tarefaFuncionariosOverlay');
+    if (overlay) overlay.classList.remove('show');
+    estado.tarefaId = '';
+    estado.selecionadoId = '';
+    estado.funcionarios = [];
+  }
+
+  function aplicarModalFuncionariosLancamentoTarefaV26() {
+    const tarefaId = texto(estado.tarefaId);
+    if (!tarefaId) {
+      fecharModalFuncionariosV26();
+      return;
+    }
+    try {
+      if (typeof selecaoFuncionarioLancamentoPorTarefa !== 'undefined') {
+        if (estado.selecionadoId) selecaoFuncionarioLancamentoPorTarefa[tarefaId] = estado.selecionadoId;
+        else delete selecaoFuncionarioLancamentoPorTarefa[tarefaId];
+      }
+    } catch (e) {
+      console.warn('[Checklist v27] não foi possível gravar seleção no estado original:', e);
+    }
+    atualizarResumoFuncionarioLancamentoNoCardV26(tarefaId);
+    fecharModalFuncionariosV26();
+  }
+
+  function obterResumoSelecaoV26(tarefaId) {
+    const idSelecionado = obterSelecionadoAtualDoSistema(tarefaId);
+    if (!idSelecionado) return 'Funcionário: nenhum selecionado';
+    const f = estado.funcionarios.find(item => String(item.id) === String(idSelecionado));
+    const nome = texto(f?.nome) || idSelecionado;
+    return `Funcionário: ${nome}`;
+  }
+
+  function atualizarResumoFuncionarioLancamentoNoCardV26(tarefaId) {
+    const id = texto(tarefaId);
+    if (!id) return;
+    try { if (typeof atualizarResumoFuncionarioLancamentoNoCard === 'function') atualizarResumoFuncionarioLancamentoNoCard(id); } catch (_e) {}
+
+    const btns = Array.from(document.querySelectorAll('button')).filter(btn => {
+      const t = String(btn.textContent || '').toLowerCase();
+      const on = String(btn.getAttribute('onclick') || '');
+      const data = String(btn.getAttribute('data-tarefa-id') || '');
+      return t.includes('selecionar funcionário') && (data === id || on.includes(id));
+    });
+    btns.forEach(btn => {
+      const bloco = btn.closest('.tarefa-lancamento-bloco-funcionarios') || btn.parentElement;
+      if (!bloco) return;
+      let resumo = bloco.querySelector('.checklist-funcionarios-v26-resumo-card');
+      if (!resumo) {
+        resumo = document.createElement('div');
+        resumo.className = 'checklist-funcionarios-v26-resumo-card';
+        bloco.appendChild(resumo);
+      }
+      resumo.textContent = obterResumoSelecaoV26(id);
+    });
+  }
+
+  function extrairTarefaIdDoBotao(btn) {
+    if (!btn) return '';
+    const data = texto(btn.getAttribute('data-tarefa-id') || btn.dataset?.tarefaId || '');
+    if (data) return data;
+    const on = String(btn.getAttribute('onclick') || '');
+    const m = on.match(/abrirModalFuncionariosLancamentoTarefa\((['"])(.*?)\1\)/);
+    if (m && m[2]) return m[2];
+    return '';
+  }
+
+  function botaoSelecionarFuncionario(btn) {
+    if (!btn || btn.tagName !== 'BUTTON') return false;
+    return String(btn.textContent || '').trim().toLowerCase().includes('selecionar funcionário');
+  }
+
+  function instalarCliqueDelegadoV26() {
+    if (window.__CHECKLIST_FUNCIONARIOS_V27_CLICK__) return;
+    window.__CHECKLIST_FUNCIONARIOS_V27_CLICK__ = true;
+    document.addEventListener('click', function(ev) {
+      const btn = ev.target?.closest?.('button');
+      if (!botaoSelecionarFuncionario(btn)) return;
+      const tarefaId = extrairTarefaIdDoBotao(btn);
+      if (!tarefaId) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      abrirModalFuncionariosLancamentoTarefaV26(tarefaId);
+    }, true);
+  }
+
+  function envolverRenderizadorV26() {
+    try {
+      if (typeof renderizarSelecaoFuncionariosLancamento !== 'function' || renderizarSelecaoFuncionariosLancamento.__v26Clean) return;
+      const original = renderizarSelecaoFuncionariosLancamento;
+      const novo = function(tarefa) {
+        let html = String(original.apply(this, arguments) || '');
+        const id = esc(tarefa?.id || '');
+        if (id && !html.includes('data-tarefa-id=')) {
+          html = html.replace(
+            /<button([^>]*?)onclick="abrirModalFuncionariosLancamentoTarefa\('([^']+)'\)"([^>]*)>/,
+            `<button$1data-tarefa-id="$2" onclick="abrirModalFuncionariosLancamentoTarefa('$2'); return false;"$3>`
+          );
+        }
+        if (id && !html.includes('checklist-funcionarios-v26-resumo-card')) {
+          html = html.replace(
+            /(<\/div>\s*<\/div>\s*\$\{botaoLancarDesktop\})/,
+            `$1`
+          );
+          html = html.replace(
+            /(<div class="tarefa-funcionario-acoes">[\s\S]*?<\/div>)(\s*<\/div>)/,
+            `$1<div class="checklist-funcionarios-v26-resumo-card">Funcionário: nenhum selecionado</div>$2`
+          );
+        }
+        return html;
+      };
+      novo.__v26Clean = true;
+      renderizarSelecaoFuncionariosLancamento = novo;
+      window.renderizarSelecaoFuncionariosLancamento = novo;
+    } catch (e) {
+      console.warn('[Checklist v27] não foi possível envolver renderizador original:', e);
+    }
+  }
+
+  // Expor exatamente os nomes que o HTML original chama.
+  window.abrirModalFuncionariosLancamentoTarefa = abrirModalFuncionariosLancamentoTarefaV26;
+  window.cancelarModalFuncionariosLancamentoTarefa = fecharModalFuncionariosV26;
+  window.aplicarModalFuncionariosLancamentoTarefa = aplicarModalFuncionariosLancamentoTarefaV26;
+  window.renderizarListaModalFuncionariosLancamentoTarefa = renderizarListaModalFuncionariosLancamentoTarefaV26;
+  window.selecionarFuncionarioLancamentoModal = selecionarFuncionarioLancamentoModalV26;
+
+  instalarCliqueDelegadoV26();
+  document.addEventListener('DOMContentLoaded', function() {
+    garantirModalV26();
+    envolverRenderizadorV26();
+  });
+  setTimeout(function() {
+    garantirModalV26();
+    envolverRenderizadorV26();
+  }, 300);
+})();
+</script>
+
+<script id="patch-checklist-operador-v28">
+console.log('[Checklist v28] regra de operador/admin corrigida');
+</script>
 </body>
 </html>
 
