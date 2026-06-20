@@ -7968,6 +7968,159 @@
     visibility: hidden !important;
     pointer-events: none !important;
   }
+  /* patch-dashboard-financeiro-responsivo-mobile-tablet */
+  .main,
+  .topbar,
+  .topbar-main,
+  #cardDashboardGraficosFinanceiros,
+  #cardDashboardGraficosFinanceiros > * {
+    min-width: 0;
+  }
+  #topbarVersionBadge {
+    flex: 0 0 auto;
+    min-height: 18px !important;
+    padding: 2px 5px !important;
+    border-width: 1px !important;
+    border-radius: 5px !important;
+    font-size: 8px !important;
+    line-height: 1 !important;
+    letter-spacing: .15px !important;
+    opacity: .78;
+  }
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar {
+    min-width: 0;
+  }
+  #cardDashboardGraficosFinanceiros .dash-gf-scroll {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) rgba(255,255,255,.08);
+  }
+  #cardDashboardGraficosFinanceiros .dash-gf-scroll::-webkit-scrollbar {
+    height: 7px;
+  }
+  #cardDashboardGraficosFinanceiros .dash-gf-scroll::-webkit-scrollbar-track {
+    background: rgba(255,255,255,.06);
+    border-radius: 99px;
+  }
+  #cardDashboardGraficosFinanceiros .dash-gf-scroll::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 99px;
+  }
+  .dash-gf-mobile-hint { display: none; }
+
+  @media (max-width: 1100px) {
+    .topbar {
+      flex-wrap: wrap;
+      align-items: center !important;
+    }
+    .topbar-main {
+      flex: 1 1 300px;
+      flex-wrap: wrap;
+    }
+    .topbar-clock,
+    .topbar-business-day {
+      width: 142px !important;
+      min-width: 132px !important;
+    }
+    .topbar-store {
+      flex: 1 1 210px;
+      width: auto !important;
+      min-width: 180px !important;
+      max-width: 270px !important;
+    }
+    .topbar-actions {
+      flex: 0 1 auto;
+    }
+    #cardDashboardGraficosFinanceiros .card-title.dash-gf-header {
+      align-items: stretch !important;
+    }
+    #cardDashboardGraficosFinanceiros .dash-gf-toolbar {
+      width: 100%;
+      justify-content: flex-start;
+    }
+    #cardDashboardGraficosFinanceiros .dash-gf-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .dash-gf-mobile-hint {
+      display: inline;
+      color: var(--accent);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .topbar-main {
+      display: grid !important;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center !important;
+      width: 100%;
+    }
+    .topbar-clock,
+    .topbar-business-day {
+      grid-column: 1 / -1;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+    #topbarVersionBadge {
+      grid-column: 3;
+      grid-row: 1;
+      justify-self: end;
+    }
+    .topbar-store {
+      order: 2;
+      width: 100% !important;
+      max-width: none !important;
+    }
+    .topbar-actions {
+      order: 3;
+    }
+    #cardDashboardGraficosFinanceiros {
+      padding: 10px !important;
+      overflow: hidden;
+    }
+    #cardDashboardGraficosFinanceiros .dash-gf-toolbar {
+      gap: 6px !important;
+    }
+    #cardDashboardGraficosFinanceiros .dash-gf-toolbar > * {
+      max-width: 100%;
+    }
+    #dashGfModoBtns,
+    #dashGfStatusBtns {
+      max-width: 100%;
+    }
+    #dashGfModoBtns .btn,
+    #dashGfStatusBtns .btn {
+      min-height: 34px !important;
+      padding: 5px 8px !important;
+      font-size: 10px !important;
+    }
+    #dashGfResumo {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px 10px !important;
+      font-size: 11px !important;
+    }
+    #dashGfTopCategorias button {
+      grid-template-columns: 22px minmax(0, 1fr) auto !important;
+      gap: 5px !important;
+      padding: 7px 5px !important;
+      font-size: 10px;
+    }
+    #dashGfTopCategorias button > span:nth-child(3) {
+      display: none !important;
+    }
+    #dashGfRosca,
+    #dashGfRoscaCategoria {
+      justify-content: center;
+    }
+  }
   </style>
 
 
@@ -8293,7 +8446,7 @@
           <span class="topbar-info-label">5º dia útil</span>
           <span class="topbar-business-day-date" id="topbar-business-day-date">--/--</span>
         </div>
-        <div id="topbarVersionBadge" style="background:rgba(240,165,0,.25);border:1.5px solid #f0a500;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#f0a500;white-space:nowrap;letter-spacing:.5px;display:flex!important;align-items:center;">INDEX 4.4</div>
+        <div id="topbarVersionBadge" title="Versão do sistema" style="background:rgba(240,165,0,.25);border:1.5px solid #f0a500;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#f0a500;white-space:nowrap;letter-spacing:.5px;display:flex!important;align-items:center;">INDEX 4.4</div>
       </div>
       <div class="topbar-store" id="topbarStoreInfo" hidden>
         <div class="topbar-store-main">
@@ -8401,9 +8554,9 @@
 
       <section id="dashboard" class="pagina">
         <div class="card" id="cardDashboardGraficosFinanceiros">
-          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div class="card-title dash-gf-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <span>Análise financeira — contas a pagar</span>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div class="dash-gf-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <div id="dashGfModoBtns" style="display:inline-flex;border:1px solid rgba(255,255,255,0.18);border-radius:8px;overflow:hidden;" title="Escolha qual data agrupa os gráficos: vencimento (fatura) ou data da compra">
                 <button class="btn btn-ghost btn-sm" type="button" id="dashGfModoVenc" onclick="dashGfMudarModoData('vencimento')" style="border-radius:0;border:none;">📅 Vencimento</button>
                 <button class="btn btn-ghost btn-sm" type="button" id="dashGfModoCompra" onclick="dashGfMudarModoData('compra')" style="border-radius:0;border:none;">🛒 Compra</button>
@@ -8443,20 +8596,20 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr;gap:20px;">
             <div>
-              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Por mês (pago vs pendente) · <span style="opacity:.8;">clique em um mês para filtrar</span></div>
-              <div id="dashGfBarras" style="width:100%;overflow-x:auto;"></div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Por mês (pago vs pendente) · <span style="opacity:.8;">clique em um mês para filtrar</span> <span class="dash-gf-mobile-hint">← deslize para os lados →</span></div>
+              <div id="dashGfBarras" class="dash-gf-scroll" style="width:100%;overflow-x:auto;"></div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
+            <div class="dash-gf-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
               <div>
                 <div id="dashGfTopCategoriasTitulo" style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Top 10 categorias com maior gasto · <span style="opacity:.8;">clique para filtrar</span></div>
                 <div id="dashGfTopCategorias"></div>
               </div>
               <div>
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;" id="dashGfCurvaTitulo">Curva mensal da categoria líder</div>
-                <div id="dashGfCurvaCategoria" style="width:100%;overflow-x:auto;"></div>
+                <div id="dashGfCurvaCategoria" class="dash-gf-scroll" style="width:100%;overflow-x:auto;"></div>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
+            <div class="dash-gf-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
               <div>
                 <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Gasto por fornecedor · <span style="opacity:.8;">clique para filtrar</span></div>
                 <div id="dashGfRosca" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;"></div>
