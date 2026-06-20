@@ -12336,6 +12336,7 @@ const PERFIL_PERMISSOES = [
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'escala_plantoes', label: 'Escalas' },
   { key: 'cadastro_plantao', label: 'Cadastro de plantão' },
+  { key: 'excluir_agenda_cadastrada', label: 'Agenda - excluir item cadastrado com PIN' },
   { key: 'relatorio_plantao', label: 'Relatório de plantão' },
   { key: 'escala_valor_combinado', label: 'Escala - ver valor combinado' },
   { key: 'relatorio_ponto', label: 'Relatório de ponto' },
@@ -12397,6 +12398,7 @@ function obterPermissoesBase(codigo) {
       bater_ponto: false,
       escala_plantoes: false,
       cadastro_plantao: false,
+      excluir_agenda_cadastrada: false,
       relatorio_plantao: false,
       escala_valor_combinado: false,
       relatorio_ponto: false,
@@ -12445,6 +12447,7 @@ function obterPermissoesBase(codigo) {
       bater_ponto: true,
       escala_plantoes: true,
       cadastro_plantao: true,
+      excluir_agenda_cadastrada: true,
       relatorio_plantao: true,
       escala_valor_combinado: false,
       relatorio_ponto: true,
@@ -12493,6 +12496,7 @@ function obterPermissoesBase(codigo) {
     bater_ponto: true,
     escala_plantoes: false,
     cadastro_plantao: false,
+    excluir_agenda_cadastrada: false,
     relatorio_plantao: false,
     escala_valor_combinado: true,
     relatorio_ponto: false,
@@ -13024,12 +13028,20 @@ async function excluirPlantaoEscala(){
   const id=String(document.getElementById('escalaPlantaoEventoId')?.value||'').trim();
   if(!id){setMsg('msgModalEscalaPlantao','Nenhum item selecionado para excluir.','err');return;}
   const respostaPin = typeof abrirModalPin === 'function'
-    ? await abrirModalPin({ titulo:'Excluir escala', subtitulo:'Informe o PIN/senha de quem está excluindo.', textoAcao:'Excluir', placeholderInput:'PIN ou senha' })
+    ? await abrirModalPin({ titulo:'Excluir escala', subtitulo:'Informe o PIN de um usuário autorizado.', textoUsuario:'Apenas perfis com permissão para excluir itens da Agenda podem confirmar.', textoAcao:'Excluir', placeholderInput:'PIN' })
     : { pin: window.prompt('Digite o PIN/senha para excluir:') };
   if(!respostaPin || !respostaPin.pin){setMsg('msgModalEscalaPlantao','Exclusão cancelada.','err');return;}
-  const usuarioExclusao = typeof obterFuncionarioAtivoPorPin === 'function' ? await obterFuncionarioAtivoPorPin(respostaPin.pin) : null;
-  if(!usuarioExclusao?.id){setMsg('msgModalEscalaPlantao','PIN/senha inválido. A escala não foi excluída.','err');return;}
   const lojaId=String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const autorizacaoExclusao = typeof validarPinExclusaoAgenda === 'function'
+    ? await validarPinExclusaoAgenda(respostaPin.pin, lojaId)
+    : { funcionario: null, motivo: 'pin_invalido' };
+  const usuarioExclusao = autorizacaoExclusao.funcionario;
+  if(!usuarioExclusao?.id){
+    const texto = autorizacaoExclusao.motivo === 'sem_permissao'
+      ? 'PIN reconhecido, mas este perfil não permite excluir itens da Agenda.'
+      : 'PIN inválido ou usuário sem vínculo ativo com esta loja.';
+    setMsg('msgModalEscalaPlantao', texto + ' A escala não foi excluída.','err');return;
+  }
   let q=sb.from('escala_plantoes').update({
     deleted_at: new Date().toISOString(),
     deleted_by_funcionario_id: usuarioExclusao.id,
@@ -15268,6 +15280,7 @@ function abrirModalPin({
   textoAcao = 'Confirmar',
   mensagem = '',
   exibirUsuario = true,
+  textoUsuario = '',
   placeholderInput = 'Digite seu PIN',
   tipoMensagem = 'err'
 } = {}) {
@@ -15286,7 +15299,7 @@ function abrirModalPin({
 
   title.textContent = titulo;
   subtitle.textContent = subtitulo;
-  userName.textContent = nomeFuncionario ? `Usuário sugerido: ${nomeFuncionario}` : 'Qualquer funcionário pode confirmar com o próprio PIN.';
+  userName.textContent = textoUsuario || (nomeFuncionario ? `Usuário sugerido: ${nomeFuncionario}` : 'Informe o PIN do usuário autorizado.');
   userName.style.display = exibirUsuario ? '' : 'none';
   input.placeholder = placeholderInput;
   input.value = '';
@@ -15640,6 +15653,60 @@ async function obterFuncionarioAtivoPorPin(pin) {
     .filter(funcionarioPertenceLojaAtualPonto)
     .find(item => String(item.pin || '').trim() === pinNormalizado) || null;
   return funcionario;
+}
+
+function perfilPermiteExcluirAgenda(perfil) {
+  if (!perfil) return false;
+  const perfilNormalizado = normalizarPerfilUsuario(perfil);
+  const codigo = normalizarCodigoPerfil(perfilNormalizado?.codigo || perfil?.codigo || '');
+  if (codigo === 'MASTER' || codigo === 'ADM') return true;
+  const permissoes = { ...obterPermissoesBase(codigo), ...(perfilNormalizado?.permissoes || {}) };
+  return permissoes.excluir_agenda_cadastrada === true;
+}
+
+async function validarPinExclusaoAgenda(pin, lojaId) {
+  const pinNormalizado = String(pin || '').trim();
+  const loja = String(lojaId || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  if (!pinNormalizado || !loja) return { funcionario: null, motivo: 'pin_invalido' };
+
+  const candidatosRes = await executarSemFiltrosTenantTemporario(() => sb
+    .from('funcionarios')
+    .select('id, nome, pin, ativo, loja_id, perfil_id, é_administrador')
+    .eq('ativo', true)
+    .eq('pin', pinNormalizado));
+  if (candidatosRes.error || !(candidatosRes.data || []).length) {
+    return { funcionario: null, motivo: 'pin_invalido' };
+  }
+
+  let encontrouNaLoja = false;
+  for (const funcionario of candidatosRes.data || []) {
+    if (funcionario.é_administrador === true) return { funcionario, motivo: '' };
+
+    const vinculoRes = await executarSemFiltrosTenantTemporario(() => sb
+      .from('funcionario_lojas')
+      .select('perfil_id, ativo')
+      .eq('funcionario_id', funcionario.id)
+      .eq('loja_id', loja)
+      .eq('ativo', true)
+      .maybeSingle());
+    const pertenceDireto = String(funcionario.loja_id || '') === loja;
+    const pertencePorVinculo = !!vinculoRes.data;
+    if (!pertenceDireto && !pertencePorVinculo) continue;
+    encontrouNaLoja = true;
+
+    const perfilId = vinculoRes.data?.perfil_id || funcionario.perfil_id || null;
+    if (!perfilId) continue;
+    const perfilRes = await executarSemFiltrosTenantTemporario(() => sb
+      .from('perfis')
+      .select('id, nome, codigo, permissoes')
+      .eq('id', perfilId)
+      .maybeSingle());
+    if (!perfilRes.error && perfilPermiteExcluirAgenda(perfilRes.data)) {
+      return { funcionario, perfil: perfilRes.data, motivo: '' };
+    }
+  }
+
+  return { funcionario: null, motivo: encontrouNaLoja ? 'sem_permissao' : 'fora_da_loja' };
 }
 
 // Busca o funcionário pelo PIN dentro da EMPRESA, sem prender ao filtro de
@@ -20243,7 +20310,8 @@ function obterPerfisAtribuiveisFuncionario() {
   return _perfisCache.filter(perfil => {
     const codigo = normalizarCodigoPerfil(perfil?.codigo || '');
     if (codigo === 'ADM' || codigo === 'MASTER') return false;
-    const permissoesPerfil = normalizarPerfilUsuario(perfil)?.permissoes || {};
+    const perfilNormalizado = normalizarPerfilUsuario(perfil);
+    const permissoesPerfil = { ...obterPermissoesBase(codigo), ...(perfilNormalizado?.permissoes || {}) };
     return Object.entries(permissoesPerfil).every(([chave, ativa]) => ativa !== true || permissoesAtor?.[chave] === true);
   });
 }
@@ -42162,27 +42230,32 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     if (typeof window.abrirModalPin === 'function') {
       resp = await window.abrirModalPin({
         titulo:'Excluir escala',
-        subtitulo:'Informe o PIN/senha de quem está excluindo.',
+        subtitulo:'Informe o PIN de um usuário autorizado.',
+        textoUsuario:'Apenas perfis com permissão para excluir itens da Agenda podem confirmar.',
         textoAcao:'Excluir',
-        placeholderInput:'PIN ou senha'
+        placeholderInput:'PIN'
       });
     } else {
       resp = { pin: window.prompt('Digite o PIN/senha para excluir:') };
     }
     if(!resp || !resp.pin){ msg('msgModalEscalaPlantao','Exclusão cancelada.','err'); return; }
 
-    var usuarioExclusao = null;
+    var loja=lojaIdAtual();
+    var autorizacaoExclusao = { funcionario:null, motivo:'pin_invalido' };
     try {
-      if (typeof window.obterFuncionarioAtivoPorPin === 'function') {
-        usuarioExclusao = await window.obterFuncionarioAtivoPorPin(resp.pin);
+      if (typeof window.validarPinExclusaoAgenda === 'function') {
+        autorizacaoExclusao = await window.validarPinExclusaoAgenda(resp.pin, loja);
       }
     } catch(_e) {}
+    var usuarioExclusao = autorizacaoExclusao.funcionario;
     if(!usuarioExclusao || !usuarioExclusao.id){
-      msg('msgModalEscalaPlantao','PIN/senha inválido. A escala não foi excluída.','err');
+      var textoNegado = autorizacaoExclusao.motivo === 'sem_permissao'
+        ? 'PIN reconhecido, mas este perfil não permite excluir itens da Agenda.'
+        : 'PIN inválido ou usuário sem vínculo ativo com esta loja.';
+      msg('msgModalEscalaPlantao',textoNegado+' A escala não foi excluída.','err');
       return;
     }
 
-    var loja=lojaIdAtual();
     var nomeExclusao=usuarioExclusao.nome || usuarioExclusao.nome_completo || 'Funcionário';
 
     async function tentarUpdate(payload){
@@ -42482,6 +42555,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
   function ehAdmEscala(){
     try {
       if (typeof usuarioEhAdministrador === 'function' && usuarioEhAdministrador()) return true;
+      if (typeof usuarioTemPermissao === 'function' && usuarioTemPermissao('cadastro_plantao')) return true;
       var u = window.usuarioSistemaLogado || (typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null);
       var codigo = normalizar(u && u.perfil && u.perfil.codigo || u && u.perfil_codigo || u && u.tipo || '');
       return codigo === 'ADM' || codigo === 'ADMIN' || codigo === 'ADMINISTRADOR' || codigo === 'MASTER';
@@ -42490,6 +42564,15 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     }
   }
   window.usuarioPodeGerenciarEscala = ehAdmEscala;
+
+  function podeExcluirAgenda(){
+    try {
+      if (typeof usuarioEhAdministrador === 'function' && usuarioEhAdministrador()) return true;
+      if (typeof usuarioTemPermissao === 'function') return usuarioTemPermissao('excluir_agenda_cadastrada');
+      return false;
+    } catch (_e) { return false; }
+  }
+  window.usuarioPodeExcluirAgenda = podeExcluirAgenda;
 
   function msgModal(texto, tipo){
     try {
@@ -42503,6 +42586,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 
   function aplicarModoEscala(){
     var pode = ehAdmEscala();
+    var podeExcluir = podeExcluirAgenda();
     document.body.classList.toggle('escala-somente-visualizacao', !pode);
 
     document.querySelectorAll('#escala_plantoes .escala-side-title button, #escala_plantoes button[onclick="abrirModalCadastroPlantaoEscala()"], #escala_plantoes button[onclick^="abrirModalCadastroPlantaoEscala("]').forEach(function(btn){
@@ -42522,7 +42606,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     var btnSalvar = document.getElementById('btnSalvarPlantaoEscala');
     var btnExcluir = document.getElementById('btnExcluirPlantaoEscala');
     if (btnSalvar) btnSalvar.style.display = pode ? '' : 'none';
-    if (btnExcluir) btnExcluir.style.display = pode ? btnExcluir.style.display : 'none';
+    if (btnExcluir) btnExcluir.style.display = podeExcluir ? btnExcluir.style.display : 'none';
 
     var titulo = document.getElementById('escalaModalTitulo');
     if (titulo && !pode) titulo.textContent = 'Visualizar escala';
@@ -42548,7 +42632,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return async function(dataIso){
       await original.apply(this, arguments);
       aplicarModoEscala();
-      if (!ehAdmEscala()) msgModal('Visualização apenas. Somente perfil ADM pode lançar, editar ou excluir escala.', 'ok');
+      if (!ehAdmEscala()) msgModal('Visualização apenas. Seu perfil não permite lançar ou editar a Agenda.', 'ok');
     };
   });
 
@@ -42556,7 +42640,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return async function(id){
       await original.apply(this, arguments);
       aplicarModoEscala();
-      if (!ehAdmEscala()) msgModal('Visualização apenas. Somente perfil ADM pode editar ou excluir escala.', 'ok');
+      if (!ehAdmEscala()) msgModal('Visualização apenas. Seu perfil não permite editar a Agenda.', 'ok');
     };
   });
 
@@ -42564,7 +42648,7 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return async function(){
       if (!ehAdmEscala()) {
         aplicarModoEscala();
-        msgModal('Sem permissão. Somente perfil ADM pode salvar escala.', 'err');
+        msgModal('Sem permissão para salvar itens da Agenda.', 'err');
         return;
       }
       return await original.apply(this, arguments);
@@ -42573,9 +42657,9 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
 
   envolver('excluirPlantaoEscala', function(original){
     return async function(){
-      if (!ehAdmEscala()) {
+      if (!podeExcluirAgenda()) {
         aplicarModoEscala();
-        msgModal('Sem permissão. Somente perfil ADM pode excluir escala.', 'err');
+        msgModal('Seu perfil não permite excluir itens da Agenda.', 'err');
         return;
       }
       return await original.apply(this, arguments);
@@ -42589,12 +42673,13 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       ev.stopPropagation();
       return false;
     }
-    var acaoModal = ev.target.closest && ev.target.closest('#btnSalvarPlantaoEscala, #btnExcluirPlantaoEscala, [data-escala-salvar], [data-escala-excluir]');
-    if (acaoModal && !ehAdmEscala()) {
+    var acaoSalvar = ev.target.closest && ev.target.closest('#btnSalvarPlantaoEscala, [data-escala-salvar]');
+    var acaoExcluir = ev.target.closest && ev.target.closest('#btnExcluirPlantaoEscala, [data-escala-excluir]');
+    if ((acaoSalvar && !ehAdmEscala()) || (acaoExcluir && !podeExcluirAgenda())) {
       ev.preventDefault();
       ev.stopPropagation();
       aplicarModoEscala();
-      msgModal('Sem permissão. Somente perfil ADM pode alterar escala.', 'err');
+      msgModal(acaoExcluir ? 'Seu perfil não permite excluir itens da Agenda.' : 'Seu perfil não permite alterar a Agenda.', 'err');
       return false;
     }
   }, true);
