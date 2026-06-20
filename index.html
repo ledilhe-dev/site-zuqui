@@ -4894,6 +4894,32 @@
     .perm-item:hover { background: rgba(34,197,94,0.06); border-color: rgba(34,197,94,0.14); }
     .perm-item[hidden] { display: none !important; }
     .perm-item input { width: 16px; height: 16px; }
+    #perfis .permissoes-grid { max-height: 62vh; padding: 8px; gap: 8px; }
+    .perm-modulo { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; background: rgba(255,255,255,.015); }
+    .perm-modulo[hidden] { display: none !important; }
+    .perm-modulo-titulo { width: 100%; min-height: 36px; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--border); background: var(--surface2); color: var(--accent); display: flex; align-items: center; justify-content: space-between; font: 800 11px/1.2 var(--font-sans); letter-spacing: .7px; text-transform: uppercase; cursor: pointer; }
+    .perm-modulo-seta { transition: transform .15s ease; }
+    .perm-modulo.recolhido .perm-modulo-seta { transform: rotate(-90deg); }
+    .perm-modulo.recolhido .perm-matriz { display: none; }
+    .perm-matriz { min-width: 620px; }
+    .perm-matriz-cabecalho,
+    .perm-matriz-linha { display: grid; grid-template-columns: minmax(220px, 1fr) repeat(4, 92px); align-items: center; }
+    .perm-matriz-cabecalho { min-height: 32px; color: var(--text-muted); background: rgba(255,255,255,.025); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .perm-matriz-cabecalho span { text-align: center; padding: 6px; }
+    .perm-matriz-cabecalho span:first-child { text-align: left; padding-left: 12px; }
+    .perm-matriz-linha { min-height: 38px; border-top: 1px solid rgba(255,255,255,.055); }
+    .perm-matriz-linha[hidden] { display: none !important; }
+    .perm-recurso-nome { min-width: 0; padding: 7px 12px; color: var(--text); font-size: 12px; font-weight: 600; }
+    .perm-celula { align-self: stretch; display: flex; align-items: center; justify-content: center; border-left: 1px solid rgba(255,255,255,.05); cursor: pointer; }
+    .perm-celula:hover { background: rgba(34,197,94,.07); }
+    .perm-celula input { width: 17px; height: 17px; cursor: pointer; }
+    .perm-celula.indisponivel { color: var(--text-dim); cursor: default; opacity: .45; }
+    .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+    @media (max-width: 760px) {
+      #perfis .permissoes-grid { overflow-x: auto; }
+      .perm-matriz-cabecalho,
+      .perm-matriz-linha { grid-template-columns: minmax(180px, 1fr) repeat(4, 74px); }
+    }
     #perfis .card,
     #funcionarios .card {
       padding: 12px 14px;
@@ -9073,11 +9099,11 @@
         <div class="page-title">Perfis</div>
 
         <div class="card">
-          <div class="card-title">Perfis cadastrados</div>
+          <div class="card-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center;"><span>Perfis cadastrados</span><span id="perfilLojaContexto" class="tag tag-green"></span></div>
           <div id="listaPerfis"><div class="empty">Carregando⬦</div></div>
         </div>
 
-        <div class="card">
+        <div class="card" id="cardFormularioPerfil">
           <div class="form-row perfil-form-row">
             <div class="card-title perfil-titulo-inline" id="tituloFormularioPerfil">Novo perfil</div>
             <input id="nomePerfil" type="text" placeholder="Nome do perfil">
@@ -11116,11 +11142,11 @@ const TABELAS_COM_EMPRESA_ID = new Set([
   'contas_financeiras_ajustes_saldo',
   'recebiveis','recebiveis_futuros','escala_plantoes',
   'fatura_categoria_memoria','fatura_importacoes_log',
-  'categorias_compra','grupos_fornecedor'
+  'categorias_compra','grupos_fornecedor','perfis'
 ]);
 
 const TABELAS_COM_LOJA_ID = new Set([
-  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','categorias_compra','grupos_fornecedor'
+  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','categorias_compra','grupos_fornecedor','perfis'
 ]);
 
 let filtroLojaSuspensoTemporariamente = false;
@@ -12382,6 +12408,79 @@ const PERFIL_PERMISSOES = [
   { key: 'excluir_tarefas_massa', label: 'Excluir tarefas em massa (Cadastro de checklist)' },
   { key: 'excluir_checklist_lancado', label: 'Excluir checklist lançado individualmente' },
   { key: 'aprovar_solicitacao_acesso', label: 'Aprovar solicitação de acesso (definir lojas/perfil)' },
+];
+
+const PERFIL_ACOES_COLUNAS = [
+  { key: 'visualizar', label: 'Visualizar' },
+  { key: 'criar', label: 'Criar' },
+  { key: 'editar', label: 'Editar' },
+  { key: 'excluir', label: 'Excluir' },
+];
+
+const PERFIL_MODULOS_MATRIZ_BASE = [
+  { nome: 'Operação diária', recursos: [
+    { nome: 'Dashboard', visualizar: 'dashboard' },
+    { nome: 'Meu Painel', visualizar: 'meu_painel', editar: 'meu_painel_editar' },
+    { nome: 'Execução de checklist', visualizar: 'checklists', criar: 'nova_execucao_manual', editar: 'checklists_editar', excluir: 'excluir_checklist_lancado' },
+    { nome: 'Agenda / Escalas', visualizar: 'escala_plantoes', criar: 'cadastro_plantao', editar: 'agenda_editar', excluir: 'excluir_agenda_cadastrada' },
+    { nome: 'Alertas rápidos', visualizar: 'tarefas_rapidas', criar: 'enviar_alertas_rapidas', editar: 'confirmar_alertas_rapidas', excluir: 'excluir_alertas_rapidas' },
+    { nome: 'Ponto', visualizar: 'bater_ponto', editar: 'ponto_ajustes' },
+  ]},
+  { nome: 'Cadastros', recursos: [
+    { nome: 'Funcionários', visualizar: 'funcionarios', criar: 'funcionarios_criar', editar: 'funcionarios_editar', excluir: 'funcionarios_excluir' },
+    { nome: 'Perfis de acesso', visualizar: 'perfis', criar: 'perfis_criar', editar: 'perfis_editar', excluir: 'perfis_excluir' },
+    { nome: 'Checklists / Tarefas', visualizar: 'tarefas', criar: 'tarefas_criar', editar: 'tarefas_editar', excluir: 'excluir_tarefas_massa' },
+    { nome: 'Lojas', visualizar: 'cadastro_lojas', criar: 'criar_lojas', editar: 'configuracoes', excluir: 'lojas_excluir' },
+    { nome: 'Administradores de loja', visualizar: 'cadastro_admins_loja', criar: 'admins_loja_criar', editar: 'admins_loja_editar', excluir: 'admins_loja_excluir' },
+  ]},
+  { nome: 'Financeiro', recursos: [
+    { nome: 'Contas a pagar', visualizar: 'financeiro_contasapagar', criar: 'contasapagar_criar', editar: 'contasapagar_editar', excluir: 'contasapagar_excluir' },
+    { nome: 'Baixa de contas', visualizar: 'financeiro_baixar_contas', editar: 'financeiro_baixar_contas_editar', excluir: 'financeiro_baixar_contas_estornar' },
+    { nome: 'Recebíveis', visualizar: 'financeiro_recebiveis', criar: 'recebiveis_criar', editar: 'recebiveis_editar', excluir: 'recebiveis_excluir' },
+    { nome: 'Fornecedores', visualizar: 'financeiro_fornecedores', criar: 'fornecedores_criar', editar: 'fornecedores_editar', excluir: 'fornecedores_excluir' },
+    { nome: 'Formas de pagamento', visualizar: 'financeiro_formas_pagamento', criar: 'formas_pagamento_criar', editar: 'formas_pagamento_editar', excluir: 'formas_pagamento_excluir' },
+    { nome: 'Contas financeiras', visualizar: 'financeiro_conta_financeira', criar: 'contas_financeiras_criar', editar: 'contas_financeiras_editar', excluir: 'contas_financeiras_excluir' },
+    { nome: 'Categorias de compra', visualizar: 'financeiro_categorias_compra', criar: 'categorias_compra_criar', editar: 'categorias_compra_editar', excluir: 'categorias_compra_excluir' },
+    { nome: 'Grupos de fornecedor', visualizar: 'financeiro_grupo_fornecedor', criar: 'grupos_fornecedor_criar', editar: 'grupos_fornecedor_editar', excluir: 'grupos_fornecedor_excluir' },
+    { nome: 'Cofre', visualizar: 'financeiro_cofre', editar: 'financeiro_cofre_editar' },
+  ]},
+  { nome: 'Relatórios', recursos: [
+    { nome: 'Agenda / Plantão', visualizar: 'relatorio_plantao' },
+    { nome: 'Ponto', visualizar: 'relatorio_ponto' },
+    { nome: 'Lançamentos e tarefas', visualizar: 'relatorio_lancamentos' },
+    { nome: 'Tarefas cadastradas', visualizar: 'relatorio_tarefas_cadastradas' },
+    { nome: 'Contas a pagar', visualizar: 'relatorio_financeiro' },
+    { nome: 'Recebimentos', visualizar: 'relatorio_recebimentos' },
+    { nome: 'Ajustes de saldo', visualizar: 'relatorio_ajuste_saldo' },
+  ]},
+  { nome: 'Administração', recursos: [
+    { nome: 'Solicitações de acesso', visualizar: 'solicitacoes', editar: 'aprovar_solicitacao_acesso' },
+    { nome: 'Envio de e-mail', visualizar: 'emails', criar: 'emails_enviar' },
+    { nome: 'Empresas / clientes', visualizar: 'gerenciar_empresas', criar: 'empresas_criar', editar: 'empresas_editar', excluir: 'empresas_excluir' },
+    { nome: 'Gestão global de lojas', visualizar: 'gerenciar_lojas', criar: 'lojas_globais_criar', editar: 'lojas_globais_editar', excluir: 'lojas_globais_excluir' },
+    { nome: 'Atualização geral', editar: 'forcar_atualizacao_geral' },
+  ]},
+];
+
+const chavesMatrizPerfil = new Set();
+PERFIL_MODULOS_MATRIZ_BASE.forEach(modulo => modulo.recursos.forEach(recurso => {
+  PERFIL_ACOES_COLUNAS.forEach(acao => {
+    const chave = recurso[acao.key];
+    if (!chave) return;
+    chavesMatrizPerfil.add(chave);
+    if (!PERFIL_PERMISSOES.some(item => item.key === chave)) {
+      PERFIL_PERMISSOES.push({ key: chave, label: `${recurso.nome} - ${acao.label}` });
+    }
+  });
+}));
+
+const permissoesAvancadasMatriz = PERFIL_PERMISSOES
+  .filter(item => !chavesMatrizPerfil.has(item.key))
+  .map(item => ({ nome: item.label, visualizar: item.key }));
+
+const PERFIL_MODULOS_MATRIZ = [
+  ...PERFIL_MODULOS_MATRIZ_BASE,
+  ...(permissoesAvancadasMatriz.length ? [{ nome: 'Permissões complementares', recursos: permissoesAvancadasMatriz }] : []),
 ];
 
 function obterPermissoesBase(codigo) {
@@ -21151,7 +21250,7 @@ async function recarregarLojasAprovacao() {
     const [resLojas, resEmpresas, resPerfis] = await Promise.all([
       executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, codigo, cidade, uf, empresa_id, ativo').order('nome')),
       executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome, ativo').order('nome')),
-      executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome, codigo').order('nome')),
+      executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome, codigo, loja_id').eq('ativo', true).order('nome')),
     ]);
     _aprovacaoLojasCache = (resLojas.data || []).filter(l => l.ativo !== false);
     _aprovacaoEmpresasCache = resEmpresas.data || [];
@@ -21183,9 +21282,6 @@ function renderizarLojasAprovacao() {
     return;
   }
 
-  const perfisOpts = '<option value="">Perfil padrão</option>' +
-    _aprovacaoPerfisCache.map(p => `<option value="${escaparHtmlBasico(p.id)}">${escaparHtmlBasico(p.nome)}</option>`).join('');
-
   // Agrupar por empresa
   const porEmpresa = {};
   lojasFiltradas.forEach(l => {
@@ -21200,6 +21296,9 @@ function renderizarLojasAprovacao() {
       <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">🏢 ${escaparHtmlBasico(emp.nome)}</div>
       ${emp.lojas.map(loja => {
         const marcada = Object.prototype.hasOwnProperty.call(_aprovacaoSelecao, loja.id);
+        const perfisOpts = '<option value="">Perfil padrão</option>' + _aprovacaoPerfisCache
+          .filter(p => String(p.loja_id || '') === String(loja.id))
+          .map(p => `<option value="${escaparHtmlBasico(p.id)}">${escaparHtmlBasico(p.nome)}</option>`).join('');
         return `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--border);">
           <label style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;cursor:pointer;">
@@ -30674,33 +30773,53 @@ function renderizarPermissoesPerfil(permissoes = null) {
   if (!grid) return;
   const codigo = document.getElementById('codigoPerfil')?.value || 'FUNCIONARIO';
   const base = permissoes || obterPermissoesBase(codigo);
-  grid.innerHTML = PERFIL_PERMISSOES.map(p => `
-    <label class="perm-item" data-label="${escaparHtmlBasico(normalizarTextoFiltroPermissao(p.label))}">
-      <input type="checkbox" data-permissao="${p.key}" ${base[p.key] ? 'checked' : ''} onchange="atualizarBotaoMarcarPermissoesPerfil()">
-      <span>${p.label}</span>
-    </label>
+  grid.innerHTML = PERFIL_MODULOS_MATRIZ.map((modulo, indiceModulo) => `
+    <section class="perm-modulo" data-modulo="${escaparHtmlBasico(normalizarTextoFiltroPermissao(modulo.nome))}">
+      <button class="perm-modulo-titulo" type="button" onclick="this.parentElement.classList.toggle('recolhido')">
+        <span>${escaparHtmlBasico(modulo.nome)}</span><span class="perm-modulo-seta">▾</span>
+      </button>
+      <div class="perm-matriz">
+        <div class="perm-matriz-cabecalho"><span>Função</span>${PERFIL_ACOES_COLUNAS.map(acao => `<span>${acao.label}</span>`).join('')}</div>
+        ${modulo.recursos.map(recurso => {
+          const filtro = normalizarTextoFiltroPermissao(`${modulo.nome} ${recurso.nome}`);
+          return `<div class="perm-matriz-linha" data-label="${escaparHtmlBasico(filtro)}">
+            <span class="perm-recurso-nome">${escaparHtmlBasico(recurso.nome)}</span>
+            ${PERFIL_ACOES_COLUNAS.map(acao => {
+              const chave = recurso[acao.key];
+              return chave
+                ? `<label class="perm-celula" title="${acao.label}: ${escaparHtmlBasico(recurso.nome)}"><input type="checkbox" data-permissao="${chave}" ${base[chave] ? 'checked' : ''} onchange="atualizarBotaoMarcarPermissoesPerfil()"><span class="sr-only">${acao.label}</span></label>`
+                : '<span class="perm-celula indisponivel">—</span>';
+            }).join('')}
+          </div>`;
+        }).join('')}
+      </div>
+    </section>
   `).join('');
   filtrarPermissoesPerfil();
 }
 
 function filtrarPermissoesPerfil() {
   const termo = normalizarTextoFiltroPermissao(document.getElementById('filtroPermissoesPerfil')?.value || '');
-  document.querySelectorAll('#permissoesPerfilGrid .perm-item').forEach(item => {
+  document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha').forEach(item => {
     const texto = String(item.dataset.label || '').trim();
     item.hidden = !!termo && !texto.includes(termo);
+  });
+  document.querySelectorAll('#permissoesPerfilGrid .perm-modulo').forEach(modulo => {
+    modulo.hidden = !modulo.querySelector('.perm-matriz-linha:not([hidden])');
+    if (termo && !modulo.hidden) modulo.classList.remove('recolhido');
   });
   atualizarBotaoMarcarPermissoesPerfil();
 }
 
 function marcarPermissoesPerfil(marcado = true) {
-  document.querySelectorAll('#permissoesPerfilGrid .perm-item:not([hidden]) [data-permissao]').forEach(input => {
+  document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha:not([hidden]) [data-permissao]').forEach(input => {
     input.checked = !!marcado;
   });
   atualizarBotaoMarcarPermissoesPerfil();
 }
 
 function todasPermissoesVisiveisMarcadas() {
-  const inputs = Array.from(document.querySelectorAll('#permissoesPerfilGrid .perm-item:not([hidden]) [data-permissao]'));
+  const inputs = Array.from(document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha:not([hidden]) [data-permissao]'));
   if (!inputs.length) return false;
   return inputs.every(input => input.checked);
 }
@@ -30723,12 +30842,51 @@ function coletarPermissoesPerfil() {
   return permissoes;
 }
 
+function usuarioPodeAcaoCadastroPerfis(acao = 'visualizar') {
+  if (usuarioEhAdministrador()) return true;
+  const permissoes = obterPermissoesUsuario();
+  const chave = {
+    visualizar: 'perfis',
+    criar: 'perfis_criar',
+    editar: 'perfis_editar',
+    excluir: 'perfis_excluir',
+  }[acao] || 'perfis';
+  if (Object.prototype.hasOwnProperty.call(permissoes, chave)) return permissoes[chave] === true;
+  return permissoes.perfis === true;
+}
+
+function obterContextoLojaCadastroPerfil() {
+  return {
+    lojaId: String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim(),
+    empresaId: String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim(),
+    lojaNome: String(usuarioSistemaLogado?.loja_nome || document.getElementById('topbar-store-name')?.textContent || '').trim(),
+  };
+}
+
+function aplicarPermissoesCadastroPerfisUI() {
+  const podeCriar = usuarioPodeAcaoCadastroPerfis('criar');
+  const podeEditar = usuarioPodeAcaoCadastroPerfis('editar');
+  const card = document.getElementById('cardFormularioPerfil');
+  if (card) card.style.display = (podeCriar || podeEditar) ? '' : 'none';
+  const btnSalvar = document.getElementById('btnSalvarPerfil');
+  if (btnSalvar) btnSalvar.style.display = (perfilEmEdicaoId ? podeEditar : podeCriar) ? '' : 'none';
+  const contexto = obterContextoLojaCadastroPerfil();
+  const tag = document.getElementById('perfilLojaContexto');
+  if (tag) tag.textContent = contexto.lojaId ? `Loja: ${contexto.lojaNome || 'selecionada'}` : 'Selecione uma loja';
+}
+
 async function carregarPerfis() {
   const lista = document.getElementById('listaPerfis');
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
-  const resposta = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('*').order('nome'));
+  const contexto = obterContextoLojaCadastroPerfil();
+  aplicarPermissoesCadastroPerfisUI();
+  if (!contexto.lojaId) {
+    lista.innerHTML = '<div class="empty">Selecione uma loja no topo para visualizar e administrar seus perfis.</div>';
+    return;
+  }
+  const resposta = await sb.from('perfis').select('*').eq('ativo', true).order('nome');
   const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
@@ -30748,10 +30906,11 @@ async function carregarPerfis() {
     <div class="item">
       <div class="item-info">
         <div class="item-nome">${p.nome}</div>
-        <div class="item-detalhe">Codigo: ${p.codigo || '-'}</div>
+        <div class="item-detalhe">Código: ${p.codigo || '-'} · Perfil exclusivo desta loja</div>
       </div>
       <div class="item-actions">
-        <button class="btn btn-ghost btn-sm" onclick="editarPerfil('${p.id}')">Editar</button>
+        ${usuarioPodeAcaoCadastroPerfis('editar') ? `<button class="btn btn-ghost btn-sm" onclick="editarPerfil('${p.id}')">Editar</button>` : ''}
+        ${usuarioPodeAcaoCadastroPerfis('excluir') ? `<button class="btn btn-red btn-sm" onclick="excluirPerfil('${p.id}')">Excluir</button>` : ''}
       </div>
     </div>
   `).join('') + '</div>';
@@ -30760,13 +30919,13 @@ async function carregarPerfis() {
 async function carregarSelectPerfisFuncionario() {
   // Atualizar cache de perfis para o gerenciador de vínculos
   try {
-    const { data } = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome, codigo, permissoes').order('nome'));
+    const { data } = await sb.from('perfis').select('id, nome, codigo, permissoes, loja_id').eq('ativo', true).order('nome');
     if (data) _perfisCache = data;
   } catch(e) {}
   const sel = document.getElementById('perfilFuncionario');
   if (!sel) return;
   sel.innerHTML = '<option value="">- Selecione o perfil -</option>';
-  const resposta = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome, codigo').order('nome'));
+  const resposta = await sb.from('perfis').select('id, nome, codigo, loja_id').eq('ativo', true).order('nome');
   const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
@@ -30818,13 +30977,17 @@ function atualizarFuncionarioAdminToggle() {
 async function criarPerfil() {
   const nome = document.getElementById('nomePerfil').value.trim();
   const codigo = document.getElementById('codigoPerfil').value;
+  const editandoAgora = !!perfilEmEdicaoId;
+  const acao = editandoAgora ? 'editar' : 'criar';
+  if (!usuarioPodeAcaoCadastroPerfis(acao)) { setMsg('msgPerfis', `Seu usuário não tem permissão para ${acao} perfis.`, 'err'); return; }
+  const contexto = obterContextoLojaCadastroPerfil();
+  if (!contexto.lojaId || !contexto.empresaId) { setMsg('msgPerfis', 'Selecione uma loja no topo antes de salvar o perfil.', 'err'); return; }
   if (!nome) { setMsg('msgPerfis', 'Digite o nome do perfil.', 'err'); return; }
 
-  const payloadBase = { nome, codigo, permissoes: coletarPermissoesPerfil() };
-  const editandoAgora = !!perfilEmEdicaoId;
-  const resposta = await executarSemFiltroLojaTemporario(() => editandoAgora
+  const payloadBase = { nome, codigo, permissoes: coletarPermissoesPerfil(), loja_id: contexto.lojaId, empresa_id: contexto.empresaId, ativo: true };
+  const resposta = editandoAgora
     ? sb.from('perfis').update(payloadBase).eq('id', perfilEmEdicaoId)
-    : sb.from('perfis').insert([payloadBase]));
+    : sb.from('perfis').insert([payloadBase]);
 
   const { error } = resposta;
   if (error) {
@@ -30832,7 +30995,7 @@ async function criarPerfil() {
       setMsg('msgPerfis', 'Rode o SQL da tabela perfis antes de usar esta tela.', 'err');
       return;
     }
-    setMsg('msgPerfis', editandoAgora ? 'Erro ao salvar perfil.' : 'Erro ao cadastrar perfil.', 'err');
+    setMsg('msgPerfis', `${editandoAgora ? 'Erro ao salvar perfil' : 'Erro ao cadastrar perfil'}: ${mensagemErroSupabase(error, 'verifique se já existe um perfil com este código na loja')}.`, 'err');
     return;
   }
 
@@ -30861,7 +31024,8 @@ function limparFormularioPerfil() {
 }
 
 async function editarPerfil(id) {
-  const { data: perfil, error } = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('*').eq('id', id).single());
+  if (!usuarioPodeAcaoCadastroPerfis('editar')) { setMsg('msgPerfis', 'Seu usuário pode visualizar, mas não editar perfis.', 'err'); return; }
+  const { data: perfil, error } = await sb.from('perfis').select('*').eq('id', id).single();
   if (error || !perfil) {
     setMsg('msgPerfis', 'Não foi possível carregar o perfil.', 'err');
     return;
@@ -30878,7 +31042,27 @@ async function editarPerfil(id) {
   if (titulo) titulo.textContent = `Editando perfil: ${perfil.nome || '-'}`;
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  aplicarPermissoesCadastroPerfisUI();
   document.getElementById('nomePerfil')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function excluirPerfil(id) {
+  if (!usuarioPodeAcaoCadastroPerfis('excluir')) { setMsg('msgPerfis', 'Seu usuário não tem permissão para excluir perfis.', 'err'); return; }
+  const perfilRes = await sb.from('perfis').select('id, nome, codigo').eq('id', id).maybeSingle();
+  if (perfilRes.error || !perfilRes.data) { setMsg('msgPerfis', 'Perfil não encontrado nesta loja.', 'err'); return; }
+  const [vinculosRes, funcionariosRes] = await Promise.all([
+    executarSemFiltrosTenantTemporario(() => sb.from('funcionario_lojas').select('id', { count: 'exact', head: true }).eq('perfil_id', id)),
+    executarSemFiltrosTenantTemporario(() => sb.from('funcionarios').select('id', { count: 'exact', head: true }).eq('perfil_id', id)),
+  ]);
+  const emUso = Number(vinculosRes.count || 0) + Number(funcionariosRes.count || 0);
+  if (emUso > 0) { setMsg('msgPerfis', `O perfil "${perfilRes.data.nome}" está vinculado a ${emUso} usuário(s). Troque esses vínculos antes de excluir.`, 'err'); return; }
+  if (!confirm(`Excluir o perfil "${perfilRes.data.nome}" desta loja?`)) return;
+  const { error } = await sb.from('perfis').delete().eq('id', id);
+  if (error) { setMsg('msgPerfis', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}.`, 'err'); return; }
+  if (perfilEmEdicaoId === id) limparFormularioPerfil();
+  setMsg('msgPerfis', 'Perfil excluído desta loja.', 'ok');
+  await carregarPerfis();
+  await carregarSelectPerfisFuncionario();
 }
 
 function cancelarEdicaoPerfil() {
@@ -40417,13 +40601,38 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     if (busca) busca.value = '';
   }
 
-  function finalizarLoginFuncionarioComLoja(contexto, lojaEscolhida) {
+  async function obterPerfilFuncionarioParaLoja(funcionario, lojaEscolhida, perfilFallback) {
+    const funcionarioId = String(funcionario?.id || '').trim();
+    const lojaId = String(lojaEscolhida?.id || lojaEscolhida?.loja_id || '').trim();
+    if (!funcionarioId || !lojaId) return perfilFallback;
+    try {
+      const vinculoRes = await executarSemFiltrosTenantTemporario(() => sb.from('funcionario_lojas')
+        .select('perfil_id, ativo')
+        .eq('funcionario_id', funcionarioId)
+        .eq('loja_id', lojaId)
+        .eq('ativo', true)
+        .maybeSingle());
+      const perfilId = vinculoRes.data?.perfil_id || funcionario?.perfil_id || null;
+      if (!perfilId) return perfilFallback;
+      const perfilRes = await executarSemFiltrosTenantTemporario(() => sb.from('perfis')
+        .select('id, nome, codigo, permissoes, loja_id, empresa_id')
+        .eq('id', perfilId)
+        .maybeSingle());
+      return perfilRes.data ? normalizarPerfilUsuario(perfilRes.data) : perfilFallback;
+    } catch (erro) {
+      console.warn('Não foi possível carregar o perfil específico da loja:', erro);
+      return perfilFallback;
+    }
+  }
+
+  async function finalizarLoginFuncionarioComLoja(contexto, lojaEscolhida) {
     const { funcionario, perfilFuncionario, username, password, salvarSenha, manterConectado, preservarPreferenciasLogin = false } = contexto;
     limparDadosVisuaisDaSessao('Carregando dados da loja...');
     if (!preservarPreferenciasLogin) {
       salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
     }
-    salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionario, perfilFuncionario, lojaEscolhida), { manterConectado });
+    const perfilDaLoja = await obterPerfilFuncionarioParaLoja(funcionario, lojaEscolhida, perfilFuncionario);
+    salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionario, perfilDaLoja, lojaEscolhida), { manterConectado });
     limparSelecaoLojaLogin();
     setSistemaLogado(true);
     aplicarPermissoesSistema();
@@ -40526,14 +40735,14 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       </button>
     `).join('');
     lista.querySelectorAll('[data-loja-id]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = String(btn.getAttribute('data-loja-id') || '');
         const loja = (window.__loginLojasPermitidasAtual || []).find(item => String(item.id) === id);
         if (!loja || !window.__loginContextoPendente) {
           setMsg('msgLogin', 'Loja inválida. Tente novamente.', 'err');
           return;
         }
-        finalizarLoginFuncionarioComLoja(window.__loginContextoPendente, loja);
+        await finalizarLoginFuncionarioComLoja(window.__loginContextoPendente, loja);
       });
     });
     // evento para abrir o painel administrativo direto do login
@@ -40809,7 +41018,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return;
     }
 
-    finalizarLoginFuncionarioComLoja(contextoLoginFuncionario, lojasPermitidas[0] || null);
+    await finalizarLoginFuncionarioComLoja(contextoLoginFuncionario, lojasPermitidas[0] || null);
   }
 
   renderizarPermissoesPerfil(obterPermissoesBase('FUNCIONARIO'));
