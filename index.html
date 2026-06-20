@@ -18270,10 +18270,7 @@ async function carregarGraficosFinanceirosDashboard() {
       .is('excluido_em', null)
       .gte(campoData, inicio)
       .lte(campoData, fim);
-    const [resContasTentativa, resCategorias] = await Promise.all([
-      consultarContasDash(true),
-      sb.from('categorias_compra').select('id, nome, cor, icone')
-    ]);
+    const resContasTentativa = await consultarContasDash(true);
     // Fallback: banco ainda sem a coluna fornecedores.cor (ALTER não rodado).
     let resContas = resContasTentativa;
     if (resContas.error && /\bcor\b|column/i.test(String(resContas.error.message || ''))) {
@@ -18284,8 +18281,37 @@ async function carregarGraficosFinanceirosDashboard() {
     _dashGfDados = resContas.data || [];
     _dashGfCarregadoAno = ano;
 
+    // Busca somente as categorias efetivamente referenciadas pelas contas visíveis.
+    // Categorias históricas podem ter loja_id nulo/diferente e desaparecer com o
+    // filtro automático, embora a conta continue apontando corretamente para elas.
+    const categoriaIdsDash = [...new Set(_dashGfDados
+      .map(c => String(c.categoria_id || '').trim())
+      .filter(Boolean))];
+    let categoriasDash = [];
+    if (categoriaIdsDash.length) {
+      const consultaNormal = await sb.from('categorias_compra')
+        .select('id, nome, cor, icone')
+        .in('id', categoriaIdsDash);
+      categoriasDash = consultaNormal.data || [];
+
+      const idsEncontrados = new Set(categoriasDash.map(c => String(c.id)));
+      const idsFaltantes = categoriaIdsDash.filter(id => !idsEncontrados.has(id));
+      if (consultaNormal.error || idsFaltantes.length) {
+        const consultaHistorica = await executarSemFiltrosTenantTemporario(() => sb
+          .from('categorias_compra')
+          .select('id, nome, cor, icone')
+          .in('id', idsFaltantes.length ? idsFaltantes : categoriaIdsDash));
+        if (consultaHistorica.error) {
+          console.warn('Não foi possível recuperar categorias históricas do dashboard:', consultaHistorica.error);
+        } else {
+          categoriasDash = [...new Map([...categoriasDash, ...(consultaHistorica.data || [])]
+            .map(c => [String(c.id), c])).values()];
+        }
+      }
+    }
+
     _dashGfCategoriasMapa = {};
-    (resCategorias.data || []).forEach(c => {
+    categoriasDash.forEach(c => {
       _dashGfCategoriasMapa[String(c.id)] = { nome: c.nome || 'Categoria', cor: c.cor || null, icone: c.icone || null };
     });
 
