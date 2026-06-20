@@ -11632,6 +11632,7 @@ let adminLojaCadastroEmEdicaoId = null;
 let funcionarioEmEdicaoId = null;
 let funcionarioNomeOriginalEdicao = '';
 let funcionarioEmailOriginalEdicao = '';
+let funcionarioPerfilOriginalEdicao = '';
 let funcionarioEmailVerificacaoPendente = { id: '', nome: '', email: '' };
 let cadastroFuncionarioAberto = false;
 let perfilEmEdicaoId = null;
@@ -19724,6 +19725,26 @@ async function carregarFuncionarios() {
     }
 
     let funcionariosVisiveis = data || [];
+    const ehAdminSistema = usuarioEhAdministrador();
+    const lojasPermitidasGestao = obterIdsLojasPermitidasGestaoFuncionarios();
+    const funcionariosVinculadosPermitidos = new Set();
+    if (!ehAdminSistema) {
+      if (!lojasPermitidasGestao.size) {
+        funcionariosVisiveis = [];
+      } else {
+        const { data: vinculosPermitidos, error: erroVinculosPermitidos } = await executarSemFiltrosTenantTemporario(() => sb
+          .from('funcionario_lojas')
+          .select('funcionario_id, loja_id, ativo')
+          .in('loja_id', [...lojasPermitidasGestao])
+          .eq('ativo', true));
+        if (erroVinculosPermitidos) throw erroVinculosPermitidos;
+        (vinculosPermitidos || []).forEach(v => funcionariosVinculadosPermitidos.add(String(v.funcionario_id || '')));
+        funcionariosVisiveis = funcionariosVisiveis.filter(f =>
+          f?.é_administrador !== true
+          && (lojasPermitidasGestao.has(String(f?.loja_id || '')) || funcionariosVinculadosPermitidos.has(String(f?.id || '')))
+        );
+      }
+    }
     if (lojasSelecionadas.length) {
       const idsLojasFiltro = lojasSelecionadas.map(String);
       const idsVinculados = new Set();
@@ -19751,13 +19772,17 @@ async function carregarFuncionarios() {
     }
 
     const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-    const ehAdminGlobal = usuarioEhAdminOuPerfilAdmin();
+    const ehAdminGlobal = usuarioEhAdministrador();
     lista.innerHTML = '<div class="lista">' + funcionariosVisiveis.map(f => {
       const nomeLoja = f?.é_administrador === true
         ? 'Todas as lojas (Administrador do Sistema)'
         : (obterNomeLojaFiltroMultiLoja(f.loja_id) || (!f.loja_id ? 'Acesso por vínculos' : '-'));
       // Admin global pode editar qualquer funcionário (não tem loja_id vinculada).
-      const podeEditarNestaLoja = ehAdminGlobal || !f.loja_id || String(f.loja_id) === lojaAtualId;
+      const podeEditarNestaLoja = ehAdminGlobal || (
+        f?.é_administrador !== true
+        && String(f?.id || '') !== String(usuarioSistemaLogado?.id || '')
+        && (lojasPermitidasGestao.has(String(f?.loja_id || '')) || funcionariosVinculadosPermitidos.has(String(f?.id || '')))
+      );
       return `
       <div class="item tarefa-cadastrada-item">
         <div class="item-info">
@@ -20191,15 +20216,103 @@ let _empresasCacheVinculos = [];
 let _lojasCacheVinculos = [];
 let _perfisCache = [];
 
+function obterIdsLojasPermitidasGestaoFuncionarios() {
+  const ids = new Set();
+  const lojas = Array.isArray(usuarioSistemaLogado?.lojas_permitidas) ? usuarioSistemaLogado.lojas_permitidas : [];
+  lojas.forEach(loja => {
+    const id = String(loja?.id || loja?.loja_id || '').trim();
+    if (id) ids.add(id);
+  });
+  const lojaAtual = String(usuarioSistemaLogado?.loja_id || obterLojaIdSessao?.() || '').trim();
+  if (lojaAtual) ids.add(lojaAtual);
+  return ids;
+}
+
+function usuarioPodeGerenciarAcessosFuncionarios() {
+  return usuarioEhAdministrador() || usuarioPodeAcessar('funcionarios');
+}
+
+function usuarioPodeGerenciarLojaFuncionario(lojaId) {
+  if (usuarioEhAdministrador()) return true;
+  return obterIdsLojasPermitidasGestaoFuncionarios().has(String(lojaId || '').trim());
+}
+
+function obterPerfisAtribuiveisFuncionario() {
+  if (usuarioEhAdministrador()) return _perfisCache;
+  const permissoesAtor = obterPermissoesUsuario();
+  return _perfisCache.filter(perfil => {
+    const codigo = normalizarCodigoPerfil(perfil?.codigo || '');
+    if (codigo === 'ADM' || codigo === 'MASTER') return false;
+    const permissoesPerfil = normalizarPerfilUsuario(perfil)?.permissoes || {};
+    return Object.entries(permissoesPerfil).every(([chave, ativa]) => ativa !== true || permissoesAtor?.[chave] === true);
+  });
+}
+
+function usuarioPodeAtribuirPerfilFuncionario(perfilId) {
+  const id = String(perfilId || '').trim();
+  if (!id) return true;
+  return obterPerfisAtribuiveisFuncionario().some(perfil => String(perfil.id) === id);
+}
+
+async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas = false } = {}) {
+  if (!usuarioPodeGerenciarAcessosFuncionarios()) {
+    return { ok: false, motivo: 'Seu perfil não permite gerenciar funcionários.' };
+  }
+  if (usuarioEhAdministrador()) return { ok: true };
+
+  const alvoId = String(funcionarioId || '').trim();
+  if (!alvoId) return { ok: false, motivo: 'Funcionário não identificado.' };
+  if (alvoId === String(usuarioSistemaLogado?.id || '').trim()) {
+    return { ok: false, motivo: 'Você não pode alterar o próprio perfil ou acesso às lojas. Solicite a um Administrador do Sistema.' };
+  }
+
+  const alvoRes = await executarSemFiltrosTenantTemporario(() => sb.from('funcionarios')
+    .select('id, loja_id, perfil_id, é_administrador')
+    .eq('id', alvoId)
+    .maybeSingle());
+  if (alvoRes.error || !alvoRes.data?.id) {
+    return { ok: false, motivo: 'Não foi possível validar o funcionário selecionado.' };
+  }
+  if (alvoRes.data.é_administrador === true) {
+    return { ok: false, motivo: 'Somente outro Administrador do Sistema pode alterar este usuário.' };
+  }
+
+  const lojasPermitidas = obterIdsLojasPermitidasGestaoFuncionarios();
+  if (!lojasPermitidas.size) return { ok: false, motivo: 'Sua sessão não possui lojas autorizadas para esta operação.' };
+  const vinculosRes = await executarSemFiltrosTenantTemporario(() => sb.from('funcionario_lojas')
+    .select('loja_id, ativo')
+    .eq('funcionario_id', alvoId)
+    .eq('ativo', true));
+  const lojasAlvo = new Set((vinculosRes.data || []).map(v => String(v.loja_id || '')).filter(Boolean));
+  const lojaPrincipal = String(alvoRes.data.loja_id || '').trim();
+  if (lojaPrincipal) lojasAlvo.add(lojaPrincipal);
+  if (![...lojasAlvo].some(id => lojasPermitidas.has(id))) {
+    return { ok: false, motivo: 'Este funcionário não pertence a uma loja que você pode administrar.' };
+  }
+  if (exigirTodasLojas && [...lojasAlvo].some(id => !lojasPermitidas.has(id))) {
+    return { ok: false, motivo: 'Este funcionário também possui acesso a outra loja. Somente um Administrador do Sistema pode alterar seus dados gerais.' };
+  }
+  return { ok: true, funcionario: alvoRes.data, lojasPermitidas };
+}
+
   async function atualizarSelectLojasFuncionario() {
     // Carrega empresas no select de adicionar vínculo
     try {
-      const [resEmpresas, resLojas] = await Promise.all([
-        executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome').eq('ativo', true).order('nome')),
-        executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo').eq('ativo', true).order('nome')),
-      ]);
-      _empresasCacheVinculos = resEmpresas.data || [];
+      const idsPermitidos = [...obterIdsLojasPermitidasGestaoFuncionarios()];
+      let resLojas;
+      if (usuarioEhAdministrador()) {
+        resLojas = await executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo').eq('ativo', true).order('nome'));
+      } else if (idsPermitidos.length) {
+        resLojas = await executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo').eq('ativo', true).in('id', idsPermitidos).order('nome'));
+      } else {
+        resLojas = { data: [], error: null };
+      }
       _lojasCacheVinculos = resLojas.data || [];
+      const empresasPermitidas = [...new Set(_lojasCacheVinculos.map(loja => String(loja.empresa_id || '')).filter(Boolean))];
+      const resEmpresas = empresasPermitidas.length
+        ? await executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome').eq('ativo', true).in('id', empresasPermitidas).order('nome'))
+        : { data: [], error: null };
+      _empresasCacheVinculos = resEmpresas.data || [];
 
       const sel = document.getElementById('selectEmpresaVinculo');
       if (sel) {
@@ -20215,9 +20328,11 @@ let _perfisCache = [];
     const container = document.getElementById('listaVinculosEmpresas');
     const btnGerenciar = document.getElementById('btnAbrirSeletorLojas');
     if (!container) return;
-    const ehAdmin = usuarioSistemaLogado?.tipo === 'admin';
+    const ehAdmin = usuarioEhAdministrador();
+    const podeGerenciar = usuarioPodeGerenciarAcessosFuncionarios()
+      && (ehAdmin || String(funcionarioId || '') !== String(usuarioSistemaLogado?.id || ''));
     const alvoEhAdminSistema = document.getElementById('funcionarioAdmin')?.checked === true;
-    if (btnGerenciar) btnGerenciar.style.display = (ehAdmin && funcionarioId && !alvoEhAdminSistema) ? '' : 'none';
+    if (btnGerenciar) btnGerenciar.style.display = (podeGerenciar && funcionarioId && !alvoEhAdminSistema) ? '' : 'none';
     if (!funcionarioId) {
       container.innerHTML = '<div class="empty" style="font-size:11px;">Selecione ou edite um funcionário para gerenciar acessos.</div>';
       return;
@@ -20229,13 +20344,18 @@ let _perfisCache = [];
     }
     container.innerHTML = '<div class="empty" style="font-size:11px;">Carregando⬦</div>';
     try {
-      let resVinculos = await executarSemFiltroLojaTemporario(() =>
-        sb.from('funcionario_lojas').select('id, loja_id, perfil_id, ativo').eq('funcionario_id', funcionarioId).eq('ativo', true)
-      );
+      const lojasPermitidas = [...obterIdsLojasPermitidasGestaoFuncionarios()];
+      let resVinculos = await executarSemFiltrosTenantTemporario(() => {
+        let query = sb.from('funcionario_lojas').select('id, loja_id, perfil_id, ativo').eq('funcionario_id', funcionarioId).eq('ativo', true);
+        if (!ehAdmin) query = lojasPermitidas.length ? query.in('loja_id', lojasPermitidas) : query.in('loja_id', ['__sem_loja_permitida__']);
+        return query;
+      });
       if (resVinculos.error && isMissingColumnError(resVinculos.error)) {
-        resVinculos = await executarSemFiltroLojaTemporario(() =>
-          sb.from('funcionario_lojas').select('id, loja_id, ativo').eq('funcionario_id', funcionarioId).eq('ativo', true)
-        );
+        resVinculos = await executarSemFiltrosTenantTemporario(() => {
+          let query = sb.from('funcionario_lojas').select('id, loja_id, ativo').eq('funcionario_id', funcionarioId).eq('ativo', true);
+          if (!ehAdmin) query = lojasPermitidas.length ? query.in('loja_id', lojasPermitidas) : query.in('loja_id', ['__sem_loja_permitida__']);
+          return query;
+        });
       }
       if (resVinculos.error) throw resVinculos.error;
       const vinculosBase = resVinculos.data || [];
@@ -20268,10 +20388,10 @@ let _perfisCache = [];
       if (!_vinculosFuncionarioAtual.length) {
         container.innerHTML = alvoEhAdminSistema
           ? '<div style="padding:10px;border:1px solid rgba(245,158,11,.45);border-radius:8px;background:rgba(245,158,11,.08);color:var(--amber);font-size:11px;font-weight:700;">Usuário administrador: acesso global a todas as empresas, lojas e ao painel SaaS. Não depende de vínculos individuais.</div>'
-          : '<div class="empty" style="font-size:11px;">Nenhum acesso configurado.' + (ehAdmin ? ' Clique em "Gerenciar lojas".' : '') + '</div>';
+          : '<div class="empty" style="font-size:11px;">Nenhum acesso configurado.' + (podeGerenciar ? ' Clique em "Gerenciar lojas".' : '') + '</div>';
         return;
       }
-      const perfisOpts = '<option value="">Perfil padrão</option>' + _perfisCache.map(p => `<option value="${p.id}">${escaparHtmlBasico(p.nome)}</option>`).join('');
+      const perfisOpts = '<option value="">Perfil padrão</option>' + obterPerfisAtribuiveisFuncionario().map(p => `<option value="${p.id}">${escaparHtmlBasico(p.nome)}</option>`).join('');
       const avisoGlobal = alvoEhAdminSistema
         ? '<div style="padding:10px;margin-bottom:8px;border:1px solid rgba(245,158,11,.45);border-radius:8px;background:rgba(245,158,11,.08);color:var(--amber);font-size:11px;font-weight:700;">Usuário administrador: acesso global ativo. Os vínculos abaixo são legados e não limitam seu acesso.</div>'
         : '';
@@ -20284,7 +20404,7 @@ let _perfisCache = [];
                 <span style="font-size:11px;color:var(--text);">🏪 ${escaparHtmlBasico(loja.loja_nome)}</span>
                 ${loja.loja_cidade ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px;">${escaparHtmlBasico(loja.loja_cidade)}</span>` : ''}
               </div>
-              ${ehAdmin ? `
+              ${podeGerenciar ? `
               <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
                 <select style="font-size:10px;padding:1px 4px;height:22px;max-width:120px;" onchange="alterarPerfilVinculo('${loja.vinculo_id}', this.value)" data-vinculo-perfil="${loja.vinculo_id}">${perfisOpts}</select>
                 <button class="btn btn-red btn-sm" style="padding:1px 7px;font-size:10px;height:22px;" onclick="removerVinculoLoja('${loja.vinculo_id}')">✕</button>
@@ -20293,7 +20413,7 @@ let _perfisCache = [];
           `).join('')}
         </div>
       `).join('');
-      if (ehAdmin) {
+      if (podeGerenciar) {
         container.querySelectorAll('[data-vinculo-perfil]').forEach(sel => {
           const vinculoId = sel.dataset.vinculoPerfil;
           const loja = _vinculosFuncionarioAtual.flatMap(e => e.lojas).find(l => l.vinculo_id === vinculoId);
@@ -20308,6 +20428,11 @@ let _perfisCache = [];
 
   function abrirSeletorLojas() {
     if (!funcionarioEmEdicaoId) { alert('Salve o funcionário primeiro.'); return; }
+    if (!usuarioPodeGerenciarAcessosFuncionarios()) { alert('Seu perfil não permite gerenciar acessos.'); return; }
+    if (!usuarioEhAdministrador() && String(funcionarioEmEdicaoId) === String(usuarioSistemaLogado?.id || '')) {
+      alert('Você não pode alterar o próprio acesso. Solicite a um Administrador do Sistema.');
+      return;
+    }
     const modal = document.getElementById('modalSeletorLojas');
     const nomeEl = document.getElementById('seletorLojasFuncionarioNome');
     const filtro = document.getElementById('filtroSeletorLojas');
@@ -20332,7 +20457,7 @@ let _perfisCache = [];
       const alvo = [l.nome, l.codigo, l.cidade, l.uf, l.municipio].join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
       return alvo.includes(termo);
     });
-    const perfisOpts = '<option value="">Perfil padrão</option>' + _perfisCache.map(p => `<option value="${p.id}">${escaparHtmlBasico(p.nome)}</option>`).join('');
+    const perfisOpts = '<option value="">Perfil padrão</option>' + obterPerfisAtribuiveisFuncionario().map(p => `<option value="${p.id}">${escaparHtmlBasico(p.nome)}</option>`).join('');
     if (!lojasFiltradas.length) {
       lista.innerHTML = '<div class="empty" style="font-size:12px;">Nenhuma loja encontrada.</div>';
       return;
@@ -20372,6 +20497,10 @@ let _perfisCache = [];
   async function adicionarVinculoLoja(lojaId) {
     const perfilId = document.getElementById('perfilSeletor_' + lojaId)?.value || null;
     try {
+      const escopo = await validarEscopoGestaoFuncionario(funcionarioEmEdicaoId);
+      if (!escopo.ok) throw new Error(escopo.motivo);
+      if (!usuarioPodeGerenciarLojaFuncionario(lojaId)) throw new Error('Você não pode conceder acesso a esta loja.');
+      if (!usuarioPodeAtribuirPerfilFuncionario(perfilId)) throw new Error('Você não pode atribuir um perfil com permissões superiores às suas.');
       const { error } = await executarSemFiltroLojaTemporario(() =>
         sb.from('funcionario_lojas').insert([{ funcionario_id: funcionarioEmEdicaoId, loja_id: lojaId, perfil_id: perfilId, ativo: true }])
       );
@@ -20391,6 +20520,10 @@ let _perfisCache = [];
   async function removerVinculoLoja(vinculoId) {
     if (!confirm('Remover este acesso?')) return;
     try {
+      const escopo = await validarEscopoGestaoFuncionario(funcionarioEmEdicaoId);
+      if (!escopo.ok) throw new Error(escopo.motivo);
+      const vinculoAtual = _vinculosFuncionarioAtual.flatMap(e => e.lojas).find(l => String(l.vinculo_id) === String(vinculoId));
+      if (!vinculoAtual || !usuarioPodeGerenciarLojaFuncionario(vinculoAtual.loja_id)) throw new Error('Você não pode remover o acesso desta loja.');
       const { error } = await executarSemFiltroLojaTemporario(() =>
         sb.from('funcionario_lojas').update({ ativo: false }).eq('id', vinculoId)
       );
@@ -20401,6 +20534,11 @@ let _perfisCache = [];
 
   async function alterarPerfilVinculo(vinculoId, perfilId) {
     try {
+      const escopo = await validarEscopoGestaoFuncionario(funcionarioEmEdicaoId);
+      if (!escopo.ok) throw new Error(escopo.motivo);
+      const vinculoAtual = _vinculosFuncionarioAtual.flatMap(e => e.lojas).find(l => String(l.vinculo_id) === String(vinculoId));
+      if (!vinculoAtual || !usuarioPodeGerenciarLojaFuncionario(vinculoAtual.loja_id)) throw new Error('Você não pode alterar o perfil desta loja.');
+      if (!usuarioPodeAtribuirPerfilFuncionario(perfilId)) throw new Error('Você não pode atribuir um perfil com permissões superiores às suas.');
       const { error } = await executarSemFiltroLojaTemporario(() =>
         sb.from('funcionario_lojas').update({ perfil_id: perfilId || null }).eq('id', vinculoId)
       );
@@ -20411,6 +20549,14 @@ let _perfisCache = [];
 
   async function criarFuncionario() {
   try {
+    if (!usuarioPodeGerenciarAcessosFuncionarios()) {
+      setMsg('msgFuncionarios', 'Seu perfil não permite cadastrar ou editar funcionários.', 'err');
+      return;
+    }
+    if (funcionarioEmEdicaoId && !usuarioEhAdministrador()) {
+      const escopoEdicao = await validarEscopoGestaoFuncionario(funcionarioEmEdicaoId, { exigirTodasLojas: true });
+      if (!escopoEdicao.ok) { setMsg('msgFuncionarios', escopoEdicao.motivo, 'err'); return; }
+    }
     const nome = document.getElementById('nomeFuncionario').value.trim();
     const email = document.getElementById('emailFuncionario').value.trim().toLowerCase();
     const pin = document.getElementById('pinFuncionario').value.trim();
@@ -20435,6 +20581,14 @@ let _perfisCache = [];
     const funcionarioAdmin = chkAdmin?.disabled
       ? chkAdmin?.checked === true  // mantém o valor que foi carregado do banco
       : !!chkAdmin?.checked;
+    if (funcionarioAdmin && !usuarioEhAdministrador()) {
+      setMsg('msgFuncionarios', 'Somente um Administrador do Sistema pode conceder acesso global.', 'err');
+      return;
+    }
+    if (!editandoAgora && !usuarioPodeAtribuirPerfilFuncionario(perfilId)) {
+      setMsg('msgFuncionarios', 'Você não pode atribuir um perfil com permissões superiores às suas.', 'err');
+      return;
+    }
     // lojaId agora é gerenciado via vínculos — não bloqueia mais o cadastro
     if (!perfilId && !funcionarioAdmin) { setMsg('msgFuncionarios', 'Selecione o perfil ou marque Funcionário admin para usar o perfil ADM padrão.', 'err'); return; }
     const mensagemDuplicidade = await validarDuplicidadeCadastro({
@@ -20472,6 +20626,7 @@ let _perfisCache = [];
         const perfilAdmin = await buscarPerfilAdminPadraoParaFuncionario();
         return perfilAdmin?.id || perfilId;
       }
+      if (editandoAgora && !usuarioEhAdministrador()) return funcionarioPerfilOriginalEdicao || perfilId;
       return perfilId;
     })();
 
@@ -20618,11 +20773,13 @@ function limparFormularioFuncionario() {
   funcionarioEmEdicaoId = null;
   funcionarioNomeOriginalEdicao = '';
   funcionarioEmailOriginalEdicao = '';
+  funcionarioPerfilOriginalEdicao = '';
   document.getElementById('nomeFuncionario').value = '';
   document.getElementById('emailFuncionario').value = '';
   document.getElementById('pinFuncionario').value = '';
 
   document.getElementById('perfilFuncionario').value = '';
+  document.getElementById('perfilFuncionario').disabled = false;
   atualizarVisibilidadeCheckboxAdmin();
   const funcionarioAdmin = document.getElementById('funcionarioAdmin');
   if (funcionarioAdmin) {
@@ -20661,15 +20818,22 @@ async function editarFuncionario(id) {
     return;
   }
 
+  if (!usuarioEhAdministrador()) {
+    const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true });
+    if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
+  }
+
   funcionarioEmEdicaoId = id;
   funcionarioNomeOriginalEdicao = funcionario.nome || '';
   funcionarioEmailOriginalEdicao = funcionario.email || '';
+  funcionarioPerfilOriginalEdicao = funcionario.perfil_id || '';
   cadastroFuncionarioAberto = true;
   document.getElementById('nomeFuncionario').value = funcionario.nome || '';
   document.getElementById('emailFuncionario').value = funcionario.email || '';
   document.getElementById('pinFuncionario').value = '';
 
   document.getElementById('perfilFuncionario').value = funcionario.perfil_id || '';
+  document.getElementById('perfilFuncionario').disabled = !usuarioEhAdministrador();
   atualizarVisibilidadeCheckboxAdmin();
   const funcionarioAdmin = document.getElementById('funcionarioAdmin');
   if (funcionarioAdmin) {
@@ -20696,6 +20860,8 @@ function cancelarEdicaoFuncionario() {
 }
 
 async function excluirFuncionario(id) {
+  const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true });
+  if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   if (!confirm('Excluir este funcionário?')) return;
   // Busca SEM filtro de loja: funcionários órfãos (sem loja) ou de outra loja
   // não seriam encontrados pelo filtro padrão, impedindo a exclusão.
@@ -20748,6 +20914,8 @@ async function excluirFuncionario(id) {
 }
 
 async function toggleFuncionario(id, ativo) {
+  const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true });
+  if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   const executarToggle = usuarioSistemaLogado?.tipo === 'admin' ? executarSemFiltrosTenantTemporario : executarSemFiltroLojaTemporario;
   await executarToggle(() => sb.from('funcionarios').update({ ativo: !ativo }).eq('id', id));
   carregarFuncionarios();
@@ -30524,7 +30692,7 @@ async function carregarPerfis() {
 async function carregarSelectPerfisFuncionario() {
   // Atualizar cache de perfis para o gerenciador de vínculos
   try {
-    const { data } = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome').order('nome'));
+    const { data } = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome, codigo, permissoes').order('nome'));
     if (data) _perfisCache = data;
   } catch(e) {}
   const sel = document.getElementById('perfilFuncionario');
@@ -30538,13 +30706,17 @@ async function carregarSelectPerfisFuncionario() {
     }
     return;
   }
-  (data || []).forEach(p => {
+  const perfisVisiveis = usuarioEhAdministrador()
+    ? (data || [])
+    : (data || []).filter(p => obterPerfisAtribuiveisFuncionario().some(item => String(item.id) === String(p.id)));
+  perfisVisiveis.forEach(p => {
     const o = document.createElement('option');
     o.value = p.id;
     if (p.codigo) o.dataset.codigo = p.codigo;
     o.textContent = p.nome;
     sel.appendChild(o);
   });
+  sel.disabled = false;
 }
 
 function atualizarFuncionarioAdminCheckbox() {
