@@ -8121,6 +8121,62 @@
       justify-content: center;
     }
   }
+
+  /* Menu lateral recolhível em desktop e tablet deitado. */
+  @media (min-width: 901px) {
+    .sidebar {
+      transition: width .22s ease, padding .22s ease, border-color .22s ease;
+    }
+    body.sidebar-collapsed .sidebar {
+      width: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      border-right-color: transparent !important;
+    }
+    .sidebar-collapse-toggle {
+      display: inline-flex;
+      position: fixed;
+      top: 50%;
+      left: 210px;
+      z-index: 88;
+      width: 22px;
+      height: 48px;
+      min-width: 22px;
+      min-height: 48px;
+      padding: 0;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-1px, -50%);
+      border: 1px solid var(--border-bright);
+      border-left: 0;
+      border-radius: 0 9px 9px 0;
+      background: var(--surface3);
+      color: var(--text-soft);
+      box-shadow: 5px 0 14px rgba(0,0,0,.28);
+      font: 800 14px/1 var(--font-sans);
+      cursor: pointer;
+      transition: left .22s ease, background .15s ease, color .15s ease;
+    }
+    .sidebar-collapse-toggle:hover {
+      background: var(--accent);
+      color: #111;
+    }
+    body.sidebar-collapsed .sidebar-collapse-toggle {
+      left: 0;
+    }
+  }
+  @media (min-width: 901px) and (max-width: 1050px) {
+    .sidebar-collapse-toggle { left: 190px; }
+  }
+  @media (max-width: 900px) {
+    .sidebar-collapse-toggle { display: none !important; }
+    #dashGfTopCategorias button {
+      grid-template-columns: 24px minmax(0, 1fr) auto !important;
+    }
+    #dashGfTopCategorias button > span:nth-child(3) {
+      display: none !important;
+    }
+  }
   </style>
 
 
@@ -8130,6 +8186,7 @@
 <body>
 <div id="appVersionBadge" class="app-version-badge" style="display:none;">INDEX 4.4</div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
+<button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" type="button" onclick="toggleDesktopSidebar()" aria-label="Esconder menu lateral" aria-expanded="true" title="Esconder menu lateral">‹</button>
 <div class="shell">
 
   <!-- SIDEBAR -->
@@ -11314,6 +11371,7 @@ let controleVersaoSistemaInicializado = false;
 let controleVersaoUltimoTokenRecebido = '';
 let controleVersaoIgnorarProximoToken = '';
 let intervaloControleVersaoSistema = null;
+let eventosControleVersaoConfigurados = false;
 
 function obterChaveTokenControleVersaoSistema() {
   const empresaId = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || 'global';
@@ -11390,14 +11448,54 @@ function normalizarVersaoControleSistema(valor) {
 }
 
 async function verificarControleVersaoSistema(silencioso = true) {
-  // Validação obrigatória de versão DESATIVADA: causava loop de recarregamento
-  // quando a versão obrigatória no banco não batia com a do arquivo.
-  return;
+  if (!usuarioSistemaLogado) return;
+
+  const { data, error } = await sb
+    .from('sistema_controle')
+    .select('token_atualizacao, atualizado_em')
+    .eq('id', 'global')
+    .maybeSingle();
+
+  if (error) {
+    if (!silencioso) console.warn('Falha ao consultar atualização geral:', error);
+    return;
+  }
+
+  const tokenAtual = String(data?.token_atualizacao || data?.atualizado_em || '').trim();
+  await processarTokenAtualizacaoGeral(tokenAtual);
+}
+
+async function processarTokenAtualizacaoGeral(tokenAtual) {
+  if (!tokenAtual || !usuarioSistemaLogado) return;
+
+  const chaveToken = obterChaveTokenControleVersaoSistema();
+  let tokenSalvo = '';
+  try { tokenSalvo = localStorage.getItem(chaveToken) || ''; } catch (_) {}
+
+  if (controleVersaoIgnorarProximoToken === tokenAtual) {
+    try { localStorage.setItem(chaveToken, tokenAtual); } catch (_) {}
+    controleVersaoIgnorarProximoToken = '';
+    controleVersaoUltimoTokenRecebido = tokenAtual;
+    return;
+  }
+
+  // Primeiro contato apenas registra a referência atual. Assim um usuário novo
+  // não entra em ciclo de logout por uma atualização solicitada no passado.
+  if (!tokenSalvo) {
+    try { localStorage.setItem(chaveToken, tokenAtual); } catch (_) {}
+    controleVersaoUltimoTokenRecebido = tokenAtual;
+    return;
+  }
+
+  if (tokenSalvo === tokenAtual || controleVersaoUltimoTokenRecebido === tokenAtual) return;
+
+  // Persiste antes de deslogar para impedir repetição caso o navegador demore a recarregar.
+  try { localStorage.setItem(chaveToken, tokenAtual); } catch (_) {}
+  controleVersaoUltimoTokenRecebido = tokenAtual;
+  await executarAtualizacaoObrigatoriaSistema('Atualização geral solicitada pelo administrador');
 }
 
 function configurarRealtimeControleVersaoSistema() {
-  // TEMPORÁRIO: realtime da trava de versão desativado.
-  return;
   if (canalControleVersaoSistema) return;
 
   try {
@@ -11410,30 +11508,8 @@ function configurarRealtimeControleVersaoSistema() {
         filter: 'id=eq.global',
       }, async (payload) => {
         const novo = payload?.new || {};
-        const versaoObrigatoria = String(novo.versao_obrigatoria || '').trim();
-        const tokenAtual = String(novo.token_atualizacao || `${versaoObrigatoria}:${novo.atualizado_em || ''}`).trim();
-        if (!tokenAtual) return;
-
-        const chaveToken = obterChaveTokenControleVersaoSistema();
-        const tokenSalvo = localStorage.getItem(chaveToken) || '';
-
-        if (controleVersaoIgnorarProximoToken === tokenAtual) {
-          localStorage.setItem(chaveToken, tokenAtual);
-          controleVersaoIgnorarProximoToken = '';
-          return;
-        }
-
-        if (versaoObrigatoria && versaoObrigatoria !== APP_VERSION) {
-          await executarAtualizacaoObrigatoriaSistema(`Nova versão obrigatória disponível (${versaoObrigatoria})`);
-          return;
-        }
-
-        if (tokenSalvo && tokenSalvo !== tokenAtual) {
-          localStorage.setItem(chaveToken, tokenAtual);
-          await executarAtualizacaoObrigatoriaSistema('Atualização geral solicitada pelo administrador');
-        } else if (!tokenSalvo) {
-          localStorage.setItem(chaveToken, tokenAtual);
-        }
+        const tokenAtual = String(novo.token_atualizacao || novo.atualizado_em || '').trim();
+        await processarTokenAtualizacaoGeral(tokenAtual);
       })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') {
@@ -11465,6 +11541,16 @@ function configurarControleVersaoSistema() {
   verificarControleVersaoSistema(true);
   configurarRealtimeControleVersaoSistema();
   iniciarPollingControleVersaoSistema();
+
+  if (!eventosControleVersaoConfigurados) {
+    eventosControleVersaoConfigurados = true;
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && usuarioSistemaLogado) verificarControleVersaoSistema(true);
+    });
+    window.addEventListener('online', () => {
+      if (usuarioSistemaLogado) verificarControleVersaoSistema(true);
+    });
+  }
 }
 
 async function forcarAtualizacaoGeralUsuarios() {
@@ -11485,6 +11571,7 @@ async function forcarAtualizacaoGeralUsuarios() {
   if (!confirmacao.confirmado) return;
 
   const tokenNovo = `${APP_VERSION}-${Date.now()}`;
+  controleVersaoIgnorarProximoToken = tokenNovo;
   const payload = {
     id: 'global',
     versao_obrigatoria: APP_VERSION,
@@ -11499,6 +11586,7 @@ async function forcarAtualizacaoGeralUsuarios() {
     .upsert(payload, { onConflict: 'id' });
 
   if (error) {
+    controleVersaoIgnorarProximoToken = '';
     console.error('Erro ao forçar atualização geral:', error);
     alert(`Não foi possível forçar a atualização.\n\nDetalhe: ${error.message || 'verifique a tabela sistema_controle e as policies RLS.'}`);
     return;
@@ -12608,6 +12696,35 @@ function toggleMobileMenu() {
   if (!sidebar) return;
   const aberto = sidebar.classList.toggle('open');
   document.body.classList.toggle('mobile-nav-open', aberto);
+}
+
+function atualizarBotaoDesktopSidebar() {
+  const botao = document.getElementById('sidebarCollapseToggle');
+  if (!botao) return;
+  const recolhido = document.body.classList.contains('sidebar-collapsed');
+  botao.textContent = recolhido ? '›' : '‹';
+  botao.setAttribute('aria-expanded', String(!recolhido));
+  botao.setAttribute('aria-label', recolhido ? 'Mostrar menu lateral' : 'Esconder menu lateral');
+  botao.title = recolhido ? 'Mostrar menu lateral' : 'Esconder menu lateral';
+}
+
+function toggleDesktopSidebar() {
+  const recolhido = document.body.classList.toggle('sidebar-collapsed');
+  try { localStorage.setItem('checkdiario:sidebar-recolhida', recolhido ? '1' : '0'); } catch (_) {}
+  atualizarBotaoDesktopSidebar();
+}
+
+function inicializarDesktopSidebar() {
+  let recolhido = false;
+  try { recolhido = localStorage.getItem('checkdiario:sidebar-recolhida') === '1'; } catch (_) {}
+  document.body.classList.toggle('sidebar-collapsed', recolhido);
+  atualizarBotaoDesktopSidebar();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', inicializarDesktopSidebar);
+} else {
+  inicializarDesktopSidebar();
 }
 
 function forcarCampoObservacaoTarefaEmBranco() {
@@ -18485,7 +18602,8 @@ function renderizarGraficosFinanceirosDashboard() {
     if (_dashGfEhPago(c)) meses[m].pago += v; else meses[m].pendente += v;
   });
   const maxValor = Math.max(1, ...meses.map(m => Math.max(m.pago, m.pendente)));
-  const larguraMes = 80, alturaGraf = 180, baseY = alturaGraf + 18, larguraTotal = larguraMes * 12;
+  const larguraMes = window.matchMedia('(max-width: 900px)').matches ? 68 : 80;
+  const alturaGraf = 180, baseY = alturaGraf + 18, larguraTotal = larguraMes * 12;
   const escala = alturaGraf / maxValor;
   let barrasSvg = `<svg viewBox="0 0 ${larguraTotal} ${baseY + 22}" width="${larguraTotal}" height="${baseY + 22}" style="min-width:${larguraTotal}px;font-family:inherit;">`;
   meses.forEach((m, i) => {
@@ -18708,6 +18826,16 @@ function renderizarGraficosFinanceirosDashboard() {
     }
   }
 }
+
+let _dashGfResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_dashGfResizeTimer);
+  _dashGfResizeTimer = setTimeout(() => {
+    if (_dashGfDados.length && document.getElementById('dashboard')?.classList.contains('ativa')) {
+      renderizarGraficosFinanceirosDashboard();
+    }
+  }, 180);
+}, { passive: true });
 
 function widgetDragEnd(e) {
   document.querySelectorAll('[data-wid]').forEach(el => {
