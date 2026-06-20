@@ -39587,7 +39587,11 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         console.warn('Não foi possível revalidar o administrador do sistema:', error);
         return null;
       }
-      return !!(data?.id && data?.ativo !== false && data?.é_administrador === true);
+      // Ausência temporária por RLS, renovação de sessão ou retomada da aba
+      // não significa revogação. Só retorna false quando o banco devolve o
+      // cadastro explicitamente inativo ou sem a permissão administrativa.
+      if (!data?.id) return null;
+      return data.ativo !== false && data.é_administrador === true;
     } catch (erro) {
       console.warn('Não foi possível revalidar o administrador do sistema:', erro);
       return null;
@@ -39612,10 +39616,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     try {
       const usuario = JSON.parse(salvo);
       const autoridadeAdmin = await validarAutoridadeAdminSistemaNoBanco(usuario);
-      if (usuario?.tipo === 'admin' && autoridadeAdmin !== true) {
-        throw new Error(autoridadeAdmin === false
-          ? 'A autorização de administrador do sistema foi revogada.'
-          : 'Não foi possível validar a autorização administrativa. Faça login novamente.');
+      if (usuario?.tipo === 'admin' && autoridadeAdmin === false) {
+        throw new Error('A autorização de administrador do sistema foi revogada.');
       }
       usuarioSistemaLogado = {
         ...usuario,
