@@ -1,0 +1,7 @@
+_site/
+.tmp-*.png
+site-zuqui-publish/
+backup/codigo-antigo/site-zuqui-publish.worktrees/
+supabase/.temp/
+tools/__pycache__/
+*.pyc

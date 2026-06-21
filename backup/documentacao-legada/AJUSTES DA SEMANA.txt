@@ -1,0 +1,13 @@
+
+Acabando uma tarefa ele já ira relançar novamente na tela de próximas tarefas.
+
+Quando tento excluir o alerta rápido ele não exclui, deve excluir com funcionario admmistrador e da tela do usuário (Zuqui perfil funcionário ), mesmo deixando todas funções de alerta habilitado no perfil o alerta só vai para o zuqui, para os demais funcionários não vai.
+
+Criar uma nova aba de cadastro de escala, trazer as funções de configuração de horário do funcionário para essa nova tela.
+Deixar o cadastro de funcionários limpo apenas com os cadastros padrões, nome, telefone, emial e senha conforme esta la, só as configurações de dia da semana, horário de intervalo, essas regras devem serem migradas para essa nova pagina de cadastro de escala.
+
+Vai funcionar assim, vai ter uma tela listando os dias da semana em formato de calendário e nela eu vou clicar no dia do calendário e definir. Funcionário, hoario de incio, intervalo 1, intervalo 2, intervalo 3 se for preciso, horário de fim.
+
+Lembrando que isso depois terá que ter ligação com o ponto do funcionário, as regras se mantem as mesmas.
+
+Colocar nas telas aonde tem alguma configuração de TIMER, da regra ( pode ser um botão pequeno laranja como já tem hoje de I ) que trás a regra que foi configurada, isso para todas telas que possuem algum detalhe de tempo, pois hoje criamos muitas regras e realmente não lembro.

@@ -1,0 +1,7 @@
+.nc-pill{border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-sans);transition:all .15s;text-align:center;width:100%;}
+.nc-pill:hover,.nc-pill:active{border-color:var(--accent);background:var(--accent-subtle);color:var(--accent);}
+.nc-pill-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+.nc-forn-card{padding:12px 16px;border:1.5px solid var(--border-mid);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--surface);transition:all .15s;}
+.nc-forn-card:active{border-color:var(--accent);background:var(--accent-subtle);}
+.nc-cat-card{padding:12px;border:1.5px solid var(--border-mid);border-radius:12px;background:var(--surface);cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--text);transition:all .15s;}
+.nc-cat-card:active,.nc-cat-card.nc-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
