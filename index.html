@@ -8528,6 +8528,60 @@
       grid-template-columns: minmax(82px, 1fr) repeat(4, 43px) !important;
     }
   }
+
+  /* densidade-global-e-perfis-20260621 */
+  body { font-size:13px; }
+  .content { padding:12px 14px; }
+  .page-title { font-size:19px; margin-bottom:10px; }
+  .card { padding:12px 14px; margin-bottom:10px; }
+  .card-title { font-size:11px; margin-bottom:8px; }
+  .btn { min-height:32px; padding:6px 10px; font-size:12px; }
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { min-height:32px; padding:6px 9px; font-size:12px; }
+  .item-nome,.item-title,.lista-item-titulo { font-size:13px; }
+  .item-detalhe,.item-sub,.lista-item-detalhe,.empty,.msg { font-size:11px; }
+  .topbar { padding:7px 14px; }
+  .topbar h1 { font-size:14px; }
+  .topbar-store-name,.topbar-user-name { font-size:13px; }
+  .nav-btn { padding-top:7px; padding-bottom:7px; }
+  .nav-title { font-size:12px; }
+  #perfis .perfil-form-row { gap:6px; }
+  #perfis .card { padding:10px 12px; }
+  #perfis .perfil-titulo-inline { min-width:82px; }
+  #nomePerfil { max-width:165px; flex-basis:165px!important; }
+  #codigoPerfil { max-width:150px; flex-basis:150px!important; }
+  #perfis input,#perfis select { min-height:32px; font-size:12px; }
+  #perfis .permissoes-grid { max-height:68vh; padding:5px; gap:5px; overflow:auto!important; overscroll-behavior:contain; scrollbar-gutter:stable; scrollbar-color:var(--border-bright) var(--surface); }
+  #perfis .permissoes-grid::-webkit-scrollbar,#perfis .perm-matriz::-webkit-scrollbar { width:9px; height:9px; }
+  #perfis .permissoes-grid::-webkit-scrollbar-thumb,#perfis .perm-matriz::-webkit-scrollbar-thumb { background:var(--border-bright); border-radius:8px; }
+  #perfis .perm-modulo { overflow:hidden; }
+  #perfis .perm-modulo-titulo { min-height:31px; padding:6px 10px; font-size:10px; }
+  #perfis .perm-modulo-contagem { margin-left:auto; margin-right:9px; padding:2px 6px; border:1px solid var(--border); border-radius:999px; color:var(--text-muted); font-size:9px; letter-spacing:0; }
+  #perfis .perm-modulo:not(.recolhido) .perm-matriz { max-height:min(340px,46vh); overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+  #perfis .perm-matriz-cabecalho { position:sticky; top:0; z-index:2; min-height:27px; }
+  #perfis .perm-matriz-linha { min-height:32px; }
+  #perfis .perm-recurso-nome { padding:5px 10px; font-size:11px; }
+  #perfis .perm-celula input { width:15px; height:15px; }
+  @media (max-width:900px) {
+    .content { padding:9px 10px max(14px,env(safe-area-inset-bottom)); }
+    .page-title { font-size:17px; }
+    .card { padding:10px; }
+    #perfis .permissoes-grid { max-height:64dvh; }
+    #perfis .perm-modulo:not(.recolhido) .perm-matriz { max-height:44dvh; }
+  }
+  @media (max-width:700px) {
+    .content { padding:6px 7px max(12px,env(safe-area-inset-bottom))!important; }
+    .page-title { font-size:16px; margin-bottom:7px; }
+    .card,.stat-card { padding:8px!important; margin-bottom:7px!important; }
+    .form-row { gap:6px!important; }
+    #perfis .perfil-form-row { grid-template-columns:minmax(0,1fr)!important; gap:6px!important; }
+    #perfis .perfil-form-row>* { grid-column:1!important; }
+    #perfis .perfil-form-row input:not([type="checkbox"]),#perfis .perfil-form-row select { height:40px!important; min-height:40px!important; max-height:40px!important; }
+    #perfis .perfil-form-row .btn { min-height:38px!important; }
+    #perfis .permissoes-grid { max-height:none; overflow:visible!important; padding:3px!important; gap:4px; }
+    #perfis .perm-modulo-titulo { min-height:34px; }
+    #perfis .perm-modulo:not(.recolhido) .perm-matriz { max-height:55dvh; overflow-y:auto; overflow-x:hidden; }
+    #perfis .perm-matriz-linha { min-height:34px; }
+  }
   </style>
 
 
@@ -11047,9 +11101,10 @@
     </div>
 
     <div class="msg" id="ncMsg" style="font-size:14px;"></div>
-    <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:env(safe-area-inset-bottom,0px);">
-      <button class="btn btn-green" id="ncBtnSalvar" style="padding:16px;font-size:16px;border-radius:14px;width:100%;" onclick="ncSalvar()">✓ Cadastrar conta</button>
-      <button class="btn btn-ghost" id="ncBtnCancelar" style="display:none;padding:14px;font-size:14px;border-radius:14px;width:100%;" onclick="ncCancelarEdicao()">Cancelar edição</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:env(safe-area-inset-bottom,0px);">
+      <button class="btn btn-ghost" id="ncBtnSalvar" style="padding:14px 10px;font-size:14px;border-radius:14px;width:100%;" onclick="ncSalvar(false)">Salvar</button>
+      <button class="btn btn-green" id="ncBtnSalvarNovo" style="padding:14px 10px;font-size:14px;border-radius:14px;width:100%;" onclick="ncSalvar(true)">Salvar e novo</button>
+      <button class="btn btn-ghost" id="ncBtnCancelar" style="display:none;grid-column:1/-1;padding:14px;font-size:14px;border-radius:14px;width:100%;" onclick="ncCancelarEdicao()">Cancelar edição</button>
     </div>
 
   </div>
@@ -31098,10 +31153,11 @@ function renderizarPermissoesPerfil(permissoes = null) {
   if (!grid) return;
   const codigo = document.getElementById('codigoPerfil')?.value || 'FUNCIONARIO';
   const base = permissoes || obterPermissoesBase(codigo);
+  const layoutCompacto = window.matchMedia('(max-width: 700px)').matches;
   grid.innerHTML = PERFIL_MODULOS_MATRIZ.map((modulo, indiceModulo) => `
-    <section class="perm-modulo" data-modulo="${escaparHtmlBasico(normalizarTextoFiltroPermissao(modulo.nome))}">
-      <button class="perm-modulo-titulo" type="button" onclick="this.parentElement.classList.toggle('recolhido')">
-        <span>${escaparHtmlBasico(modulo.nome)}</span><span class="perm-modulo-seta">▾</span>
+    <section class="perm-modulo${layoutCompacto && indiceModulo > 0 ? ' recolhido' : ''}" data-modulo="${escaparHtmlBasico(normalizarTextoFiltroPermissao(modulo.nome))}">
+      <button class="perm-modulo-titulo" type="button" onclick="alternarModuloPermissoesPerfil(this)" aria-expanded="${layoutCompacto && indiceModulo > 0 ? 'false' : 'true'}">
+        <span>${escaparHtmlBasico(modulo.nome)}</span><span class="perm-modulo-contagem">${modulo.recursos.length} ${modulo.recursos.length === 1 ? 'função' : 'funções'}</span><span class="perm-modulo-seta" aria-hidden="true">▾</span>
       </button>
       <div class="perm-matriz">
         <div class="perm-matriz-cabecalho"><span>Função</span>${PERFIL_ACOES_COLUNAS.map(acao => `<span>${acao.label}</span>`).join('')}</div>
@@ -31123,6 +31179,13 @@ function renderizarPermissoesPerfil(permissoes = null) {
   filtrarPermissoesPerfil();
 }
 
+function alternarModuloPermissoesPerfil(botao) {
+  const modulo = botao?.closest('.perm-modulo');
+  if (!modulo) return;
+  const recolhido = modulo.classList.toggle('recolhido');
+  botao.setAttribute('aria-expanded', String(!recolhido));
+}
+
 function filtrarPermissoesPerfil() {
   const termo = normalizarTextoFiltroPermissao(document.getElementById('filtroPermissoesPerfil')?.value || '');
   document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha').forEach(item => {
@@ -31131,7 +31194,10 @@ function filtrarPermissoesPerfil() {
   });
   document.querySelectorAll('#permissoesPerfilGrid .perm-modulo').forEach(modulo => {
     modulo.hidden = !modulo.querySelector('.perm-matriz-linha:not([hidden])');
-    if (termo && !modulo.hidden) modulo.classList.remove('recolhido');
+    if (termo && !modulo.hidden) {
+      modulo.classList.remove('recolhido');
+      modulo.querySelector('.perm-modulo-titulo')?.setAttribute('aria-expanded', 'true');
+    }
   });
   atualizarBotaoMarcarPermissoesPerfil();
 }
@@ -43953,6 +44019,7 @@ const NC = {
   modoEdicao: false,
   modo: 'total',
   lojaId: null,
+  salvando: false,
 };
 
 // ── Helpers de valor ────────────────────────────────────────────
@@ -44117,7 +44184,7 @@ function ncLimparForn() {
 // ── Abrir / Fechar ──────────────────────────────────────────────
 function ncAbrir(editar) {
   if (!editar) {
-    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, modoEdicao: false, modo: 'total', lojaId: null });
+    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, modoEdicao: false, modo: 'total', lojaId: null, salvando: false });
     // Limpa campos visuais
     const fi = document.getElementById('ncFornBusca'); if (fi) { fi.value = ''; fi.style.display = ''; }
     const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
@@ -44144,7 +44211,10 @@ function ncAbrir(editar) {
     // Título
     const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Nova conta';
     const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = 'none';
-    const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Cadastrar conta';
+    const bs = document.getElementById('ncBtnSalvar');
+    if (bs) { bs.disabled = false; bs.style.gridColumn = ''; bs.textContent = 'Salvar'; }
+    const bsn = document.getElementById('ncBtnSalvarNovo');
+    if (bsn) { bsn.disabled = false; bsn.style.display = ''; bsn.textContent = 'Salvar e novo'; }
     const msg = document.getElementById('ncMsg'); if (msg) { msg.textContent = ''; msg.className = 'msg'; }
     const vt = document.getElementById('ncValorTipo'); if (vt) vt.style.display = 'none';
     const pi = document.getElementById('ncParcelasInfo'); if (pi) { pi.textContent = ''; pi.style.display = 'none'; }
@@ -44169,8 +44239,11 @@ function ncFechar() {
 }
 
 // ── Salvar ──────────────────────────────────────────────────────
-async function ncSalvar() {
-  const msg = document.getElementById('ncMsg'), btn = document.getElementById('ncBtnSalvar');
+async function ncSalvar(salvarENovo = false) {
+  if (NC.salvando) return;
+  const msg = document.getElementById('ncMsg');
+  const btn = document.getElementById('ncBtnSalvar');
+  const btnNovo = document.getElementById('ncBtnSalvarNovo');
   if (msg) { msg.textContent = ''; msg.className = 'msg'; }
 
   // 1. Coleta e valida valor
@@ -44242,7 +44315,9 @@ async function ncSalvar() {
   else preencherSelectLojaContaAPagarFinanceiro('');
 
   // 8. Salva
+  NC.salvando = true;
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  if (btnNovo) { btnNovo.disabled = true; btnNovo.textContent = 'Salvando...'; }
   const msgOrig = document.getElementById('msgContaAPagarFinanceiro');
   if (msgOrig) { msgOrig.textContent = ''; msgOrig.className = 'msg'; }
 
@@ -44250,14 +44325,29 @@ async function ncSalvar() {
     await salvarContaAPagarFinanceiro();
     if (msgOrig && msgOrig.textContent && msgOrig.classList.contains('err')) {
       if (msg) { msg.textContent = msgOrig.textContent; msg.className = 'msg err'; }
-      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? '✓ Salvar alterações' : '✓ Cadastrar conta'; }
+      NC.salvando = false;
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alterações' : 'Salvar'; }
+      if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
       return;
     }
-    ncFechar();
-    if (typeof carregarContasAPagarFinanceiro === 'function') carregarContasAPagarFinanceiro().catch(() => {});
+    const estavaEditando = NC.modoEdicao;
+    if (salvarENovo && !estavaEditando) {
+      ncAbrir();
+      const msgNovo = document.getElementById('ncMsg');
+      if (msgNovo) { msgNovo.textContent = 'Conta salva. Preencha os dados da próxima conta.'; msgNovo.className = 'msg ok'; }
+      document.getElementById('ncFornBusca')?.focus();
+    } else {
+      NC.salvando = false;
+      ncFechar();
+      if (typeof abrirPagina === 'function') {
+        abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));
+      }
+    }
   } catch (e) {
     if (msg) { msg.textContent = 'Erro: ' + ((e && e.message) || 'tente novamente'); msg.className = 'msg err'; }
-    if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? '✓ Salvar alterações' : '✓ Cadastrar conta'; }
+    NC.salvando = false;
+    if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alterações' : 'Salvar'; }
+    if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
   }
 }
 
@@ -44326,7 +44416,10 @@ if (typeof _ncOrigEditar === 'function') {
 
       const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Editar conta';
       const bc = document.getElementById('ncBtnCancelar'); if (bc) bc.style.display = '';
-      const bs = document.getElementById('ncBtnSalvar'); if (bs) bs.textContent = '✓ Salvar alterações';
+      const bs = document.getElementById('ncBtnSalvar');
+      if (bs) { bs.disabled = false; bs.style.gridColumn = '1 / -1'; bs.textContent = 'Salvar alterações'; }
+      const bsn = document.getElementById('ncBtnSalvarNovo');
+      if (bsn) bsn.style.display = 'none';
     }, 100);
   };
 }
