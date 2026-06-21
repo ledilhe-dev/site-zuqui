@@ -1,7 +1,10 @@
-const CACHE_NAME = 'check-diario-pwa-v20';
+const CACHE_NAME = 'check-diario-pwa-v38-modular';
+const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
   './index.html',
+  './config.js',
+  ASSET_MANIFEST,
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -11,7 +14,12 @@ const CORE_ASSETS = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS))
+    caches.open(CACHE_NAME).then(async cache => {
+      const response = await fetch(ASSET_MANIFEST, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Manifesto de módulos indisponível.');
+      const moduleAssets = await response.json();
+      await cache.addAll([...CORE_ASSETS, ...moduleAssets]);
+    })
   );
   self.skipWaiting();
 });
@@ -43,6 +51,24 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Módulos mudam independentemente do index.html. Busca a versão de rede
+  // primeiro e usa o cache apenas quando estiver offline, evitando misturas
+  // entre arquivos antigos e novos depois de uma publicação.
+  if (requestUrl.pathname.includes('/assets/') || requestUrl.pathname.endsWith('/config.js')) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const cloned = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, cloned));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }

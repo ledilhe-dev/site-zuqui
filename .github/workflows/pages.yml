@@ -1,0 +1,90 @@
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Validar e preparar site
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v7
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Validar projeto modular
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check service-worker-v4.js
+          find assets/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          root = Path('.')
+          html = (root / 'index.html').read_text(encoding='utf-8')
+          refs = re.findall(r'(?:src|href)="(\./assets/[^"]+)"', html)
+          missing = [ref for ref in refs if not (root / ref.removeprefix('./')).is_file()]
+          if missing:
+              raise SystemExit(f'Referências ausentes: {missing}')
+
+          manifest = json.loads((root / 'assets/manifest.json').read_text(encoding='utf-8'))
+          if sorted(manifest) != sorted(refs):
+              raise SystemExit('assets/manifest.json não corresponde ao index.html')
+          print(f'Projeto modular válido: {len(refs)} recursos.')
+          PY
+
+      - name: Montar artefato público
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+
+          cp index.html _site/
+          cp config.js _site/
+          cp manifest.webmanifest _site/
+          cp service-worker-v4.js _site/
+          cp CNAME _site/
+          cp favicon-check-diario.svg _site/
+          cp logo-check-diario.svg _site/
+          cp icon-192.png _site/
+          cp icon-512.png _site/
+          cp -R assets _site/
+          cp -R media _site/
+
+          touch _site/.nojekyll
+
+      - name: Enviar artefato do Pages
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    name: Publicar
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
