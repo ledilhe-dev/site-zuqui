@@ -798,7 +798,7 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
     { nome: 'Execução de checklist', visualizar: 'checklists', criar: 'nova_execucao_manual', editar: 'checklists_editar', excluir: 'excluir_checklist_lancado' },
     { nome: 'Agenda / Escalas', visualizar: 'escala_plantoes', criar: 'cadastro_plantao', editar: 'agenda_editar', excluir: 'excluir_agenda_cadastrada' },
     { nome: 'Alertas rápidos', visualizar: 'tarefas_rapidas', criar: 'enviar_alertas_rapidas', editar: 'confirmar_alertas_rapidas', excluir: 'excluir_alertas_rapidas' },
-    { nome: 'Ponto', visualizar: 'bater_ponto', editar: 'ponto_ajustes' },
+    { nome: 'Bater ponto', visualizar: 'bater_ponto', editar: 'ponto_ajustes' },
   ]},
   { nome: 'Cadastros', recursos: [
     { nome: 'Funcionários', visualizar: 'funcionarios', criar: 'funcionarios_criar', editar: 'funcionarios_editar', excluir: 'funcionarios_excluir' },

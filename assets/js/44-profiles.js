@@ -102,9 +102,7 @@ function usuarioPodeAcaoCadastroPerfis(acao = 'visualizar') {
     editar: 'perfis_editar',
     excluir: 'perfis_excluir',
   }[acao] || 'perfis';
-  if (acao === 'criar') return permissoes.perfis === true || permissoes.perfis_criar === true;
-  if (Object.prototype.hasOwnProperty.call(permissoes, chave)) return permissoes[chave] === true;
-  return permissoes.perfis === true;
+  return permissoes[chave] === true;
 }
 
 function obterContextoLojaCadastroPerfil() {
@@ -174,6 +172,12 @@ function aplicarPermissoesCadastroPerfisUI() {
 async function carregarPerfis() {
   const lista = document.getElementById('listaPerfis');
   if (!lista) return;
+  if (!usuarioPodeAcaoCadastroPerfis('visualizar')) {
+    lista.innerHTML = '<div class="empty">Seu perfil não possui permissão para visualizar perfis.</div>';
+    const card = document.getElementById('cardFormularioPerfil');
+    if (card) card.style.display = 'none';
+    return;
+  }
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
   const contexto = obterContextoLojaCadastroPerfil();
@@ -182,7 +186,11 @@ async function carregarPerfis() {
     lista.innerHTML = '<div class="empty">Selecione uma loja no topo para visualizar e administrar seus perfis.</div>';
     return;
   }
-  const resposta = await sb.from('perfis').select('*').eq('ativo', true).order('nome');
+  const resposta = await sb.from('perfis')
+    .select('*')
+    .eq('ativo', true)
+    .eq('loja_id', contexto.lojaId)
+    .order('nome');
   const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {
@@ -213,15 +221,25 @@ async function carregarPerfis() {
 }
 
 async function carregarSelectPerfisFuncionario() {
+  const contexto = obterContextoLojaCadastroPerfil();
+  if (!contexto.lojaId) return;
   // Atualizar cache de perfis para o gerenciador de vínculos
   try {
-    const { data } = await sb.from('perfis').select('id, nome, codigo, permissoes, loja_id').eq('ativo', true).order('nome');
+    const { data } = await sb.from('perfis')
+      .select('id, nome, codigo, permissoes, loja_id')
+      .eq('ativo', true)
+      .eq('loja_id', contexto.lojaId)
+      .order('nome');
     if (data) _perfisCache = data;
   } catch(e) {}
   const sel = document.getElementById('perfilFuncionario');
   if (!sel) return;
   sel.innerHTML = '<option value="">- Selecione o perfil -</option>';
-  const resposta = await sb.from('perfis').select('id, nome, codigo, loja_id').eq('ativo', true).order('nome');
+  const resposta = await sb.from('perfis')
+    .select('id, nome, codigo, loja_id')
+    .eq('ativo', true)
+    .eq('loja_id', contexto.lojaId)
+    .order('nome');
   const { data, error } = resposta;
   if (error) {
     if (isMissingProfilesTableError(error)) {

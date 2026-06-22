@@ -1106,6 +1106,19 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
 
     if (unicos.length < 4) return registro;
 
+    // Uma quantidade ímpar de batidas significa jornada ainda aberta.
+    // Antes, a 5ª batida (retorno do 2º intervalo) era copiada para saida_em,
+    // criando visualmente um período duplicado como "15:54 → 15:54".
+    if (unicos.length % 2 === 1) {
+      return {
+        ...registro,
+        entrada_em: unicos[0] || registro?.entrada_em || null,
+        inicio_intervalo_em: unicos[1] || registro?.inicio_intervalo_em || null,
+        retorno_intervalo_em: unicos[2] || registro?.retorno_intervalo_em || null,
+        saida_em: null,
+      };
+    }
+
     return {
       ...registro,
       entrada_em: unicos[0] || registro?.entrada_em || null,
