@@ -854,6 +854,21 @@ function _dashGfMesDe(c) { return parseInt(String(c[_dashGfCampoData()] || '').s
 function _dashGfEhPago(c) { return !!c.pago_confirmado_em || !!c.data_pagamento; }
 function _dashGfValorDe(c) { return Number(c.valor_pago ?? c.valor_compra ?? 0) || Number(c.valor_compra || 0); }
 
+function _dashGfValorCompacto(valor = 0) {
+  const numero = Number(valor || 0);
+  if (!numero) return 'R$ 0';
+  try {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(numero).replace(/\s+/g, ' ');
+  } catch (_) {
+    return formatarMoedaBRFinanceiro(numero);
+  }
+}
+
 // Desenha uma rosca SVG clicável. itens: [{chave, nome, valor, cor, selecionado}]
 function _dashGfDesenharRosca(itens, total, fnToggleNome, temSelecao) {
   const fmt = (n) => formatarMoedaBRFinanceiro(n);
@@ -963,37 +978,55 @@ function renderizarGraficosFinanceirosDashboard() {
     if (_dashGfEhPago(c)) meses[m].pago += v; else meses[m].pendente += v;
   });
   const maxValor = Math.max(1, ...meses.map(m => Math.max(m.pago, m.pendente)));
-  const larguraMes = window.matchMedia('(max-width: 900px)').matches ? 68 : 80;
-  const alturaGraf = 180, baseY = alturaGraf + 18, larguraTotal = larguraMes * 12;
-  const escala = alturaGraf / maxValor;
-  let barrasSvg = `<svg viewBox="0 0 ${larguraTotal} ${baseY + 22}" width="${larguraTotal}" height="${baseY + 22}" style="min-width:${larguraTotal}px;font-family:inherit;">`;
-  meses.forEach((m, i) => {
-    const x = i * larguraMes;
-    const hPago = Math.round(m.pago * escala);
-    const hPend = Math.round(m.pendente * escala);
-    const larBarra = 28;
-    const gap = 4;
+  const elBarras = document.getElementById('dashGfBarras');
+  const modoMesesCompacto = window.matchMedia('(max-width: 700px)').matches;
+  let barrasSvg = '';
+
+  if (modoMesesCompacto) {
+    barrasSvg = `<div class="dash-gf-meses-mobile">${meses.map((m, i) => {
+      const selecionado = F.mes === i;
+      const dim = F.mes !== null && !selecionado;
+      const pagoPct = Math.max(m.pago > 0 ? 4 : 0, (m.pago / maxValor) * 100);
+      const pendPct = Math.max(m.pendente > 0 ? 4 : 0, (m.pendente / maxValor) * 100);
+      return `<button type="button" class="dash-gf-mes-card${selecionado ? ' selecionado' : ''}" style="opacity:${dim ? '.42' : '1'}" onclick="dashGfToggleMes(${i})">
+        <strong>${_dashGfNomesMes[i]}</strong>
+        <span class="dash-gf-mini-barras" aria-hidden="true"><i style="width:${pagoPct.toFixed(1)}%;background:#22c55e"></i><i style="width:${pendPct.toFixed(1)}%;background:#f59e0b"></i></span>
+        <span class="dash-gf-mes-valor pago"><b>Pago</b>${fmt(m.pago)}</span>
+        <span class="dash-gf-mes-valor pendente"><b>Pendente</b>${fmt(m.pendente)}</span>
+      </button>`;
+    }).join('')}</div>`;
+  } else {
+    const larguraDisponivel = Math.max(600, Math.floor(elBarras?.clientWidth || 960));
+    const larguraMes = larguraDisponivel / 12;
+    const alturaGraf = 190, baseY = alturaGraf + 28, larguraTotal = larguraDisponivel;
+    const escala = alturaGraf / maxValor;
+    const larBarra = Math.max(12, Math.min(25, (larguraMes - 12) / 2));
+    const gap = Math.max(3, Math.min(6, larguraMes * .06));
     const totalLar = larBarra * 2 + gap;
-    const offsetX = Math.round((larguraMes - totalLar) / 2);
-    const selecionado = F.mes === i;
-    const dim = F.mes !== null && !selecionado;
-    const op = dim ? 0.3 : 1;
-    const totalMes = m.pago + m.pendente;
-    // área clicável do mês inteiro
-    barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" fill="transparent" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Total: ${fmt(totalMes)} (clique para filtrar)</title></rect>`;
-    if (selecionado) barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" rx="6" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.5)" pointer-events="none"/>`;
-    // Barra PAGO (verde) - esquerda
-    if (hPago > 0) barrasSvg += `<rect x="${x + offsetX}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
-    // Barra PENDENTE (laranja) - direita
-    if (hPend > 0) barrasSvg += `<rect x="${x + offsetX + larBarra + gap}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
-    barrasSvg += `<text x="${x + larguraMes / 2}" y="${baseY + 14}" text-anchor="middle" font-size="11" font-weight="${selecionado ? 'bold' : 'normal'}" fill="${selecionado ? 'var(--text,#fff)' : 'var(--text-muted,#888)'}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})">${_dashGfNomesMes[i]}</text>`;
-  });
-  barrasSvg += '</svg>';
-  barrasSvg += `<div style="display:flex;gap:16px;font-size:11px;margin-top:6px;">
+    barrasSvg = `<svg viewBox="0 0 ${larguraTotal} ${baseY + 24}" width="100%" height="${baseY + 24}" preserveAspectRatio="xMidYMid meet" style="display:block;max-width:100%;font-family:inherit;">`;
+    meses.forEach((m, i) => {
+      const x = i * larguraMes;
+      const hPago = Math.round(m.pago * escala);
+      const hPend = Math.round(m.pendente * escala);
+      const offsetX = (larguraMes - totalLar) / 2;
+      const selecionado = F.mes === i;
+      const dim = F.mes !== null && !selecionado;
+      const op = dim ? 0.3 : 1;
+      const totalMes = m.pago + m.pendente;
+      const topoMaiorBarra = baseY - Math.max(hPago, hPend);
+      barrasSvg += `<rect x="${x + 2}" y="0" width="${Math.max(1, larguraMes - 4)}" height="${baseY + 20}" fill="transparent" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)} · Pendente: ${fmt(m.pendente)} · Total: ${fmt(totalMes)}</title></rect>`;
+      if (selecionado) barrasSvg += `<rect x="${x + 2}" y="0" width="${Math.max(1, larguraMes - 4)}" height="${baseY + 20}" rx="6" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.5)" pointer-events="none"/>`;
+      if (totalMes > 0) barrasSvg += `<text x="${x + larguraMes / 2}" y="${Math.max(10, topoMaiorBarra - 7)}" text-anchor="middle" font-size="8" font-weight="700" fill="var(--text,#fff)" opacity="${op}">${_dashGfValorCompacto(totalMes)}</text>`;
+      if (hPago > 0) barrasSvg += `<rect x="${x + offsetX}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
+      if (hPend > 0) barrasSvg += `<rect x="${x + offsetX + larBarra + gap}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
+      barrasSvg += `<text x="${x + larguraMes / 2}" y="${baseY + 16}" text-anchor="middle" font-size="10" font-weight="${selecionado ? 'bold' : 'normal'}" fill="${selecionado ? 'var(--text,#fff)' : 'var(--text-muted,#888)'}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})">${_dashGfNomesMes[i]}</text>`;
+    });
+    barrasSvg += '</svg>';
+  }
+  barrasSvg += `<div class="dash-gf-legenda-barras" style="display:flex;gap:16px;font-size:11px;margin-top:6px;">
     <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Pago</span>
     <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Pendente</span>
   </div>`;
-  const elBarras = document.getElementById('dashGfBarras');
   if (elBarras) elBarras.innerHTML = barrasSvg;
 
   // ── Rosca por fornecedor (filtrada por mês + categoria; clique filtra fornecedor) ──

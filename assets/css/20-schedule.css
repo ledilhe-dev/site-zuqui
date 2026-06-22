@@ -1037,6 +1037,46 @@
     border-radius: 99px;
   }
   .dash-gf-mobile-hint { display: none; }
+  .dash-gf-meses-mobile {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .dash-gf-mes-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--border-mid);
+    border-radius: 9px;
+    background: rgba(255,255,255,.025);
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+  }
+  .dash-gf-mes-card.selecionado {
+    border-color: var(--blue);
+    background: rgba(59,130,246,.13);
+  }
+  .dash-gf-mes-card > strong { font-size: 12px; }
+  .dash-gf-mini-barras {
+    display: grid;
+    gap: 3px;
+    height: 9px;
+  }
+  .dash-gf-mini-barras i { display: block; min-width: 0; height: 3px; border-radius: 99px; }
+  .dash-gf-mes-valor {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    min-width: 0;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+  .dash-gf-mes-valor b { font-weight: 600; }
+  .dash-gf-mes-valor.pago { color: #4ade80; }
+  .dash-gf-mes-valor.pendente { color: #fbbf24; }
 
   @media (max-width: 1100px) {
     .topbar {
@@ -1144,6 +1184,13 @@
     #dashGfRoscaCategoria {
       justify-content: center;
     }
+    #dashGfBarras { overflow-x: hidden !important; }
+    .dash-gf-mobile-hint { display: none !important; }
+    .dash-gf-legenda-barras { justify-content: center; }
+  }
+
+  @media (min-width: 520px) and (max-width: 700px) {
+    .dash-gf-meses-mobile { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 
   /* Menu lateral recolhível em desktop e tablet deitado. */
@@ -1255,6 +1302,125 @@
     #cardDashboardGraficosFinanceiros .dash-gf-scroll{width:100%!important;}
   }
   @media (max-width:380px){.topbar-main{grid-template-columns:38px minmax(0,1fr) minmax(0,1fr)!important;}#topbarVersionBadge{display:none!important;}#perfis .perm-matriz-cabecalho,#perfis .perm-matriz-linha{grid-template-columns:minmax(82px,1fr) repeat(4,43px)!important;}}
+
+  /* responsividade-estrutural-mobile-20260622 */
+  @media (max-width:700px) {
+    /* Perfis: cada função vira um cartão com as quatro ações visíveis. */
+    #perfis .permissoes-grid {
+      max-height:none!important;
+      overflow:visible!important;
+      border:0!important;
+      background:transparent!important;
+    }
+    #perfis .perfil-permissoes-tabela {
+      width:100%!important;
+      min-width:0!important;
+      display:grid!important;
+      gap:7px!important;
+    }
+    #perfis .perfil-permissoes-tabela .perm-matriz-cabecalho { display:none!important; }
+    #perfis .perfil-permissoes-tabela .perm-matriz-linha {
+      display:grid!important;
+      grid-template-columns:repeat(4,minmax(0,1fr))!important;
+      gap:0!important;
+      width:100%!important;
+      min-width:0!important;
+      min-height:0!important;
+      padding:8px!important;
+      border:1px solid var(--border-mid)!important;
+      border-radius:9px!important;
+      background:rgba(255,255,255,.018)!important;
+    }
+    #perfis .perm-modulo-coluna {
+      grid-column:1/2!important;
+      min-width:0!important;
+      padding:3px 5px!important;
+      border:0!important;
+      border-radius:5px!important;
+      font-size:7px!important;
+      overflow-wrap:anywhere!important;
+    }
+    #perfis .perfil-permissoes-tabela .perm-recurso-nome {
+      grid-column:2/-1!important;
+      min-width:0!important;
+      padding:3px 6px!important;
+      font-size:10px!important;
+      line-height:1.2!important;
+    }
+    #perfis .perm-celula {
+      grid-row:2!important;
+      min-width:0!important;
+      min-height:48px!important;
+      margin-top:7px!important;
+      padding:5px 2px!important;
+      border-top:1px solid rgba(255,255,255,.055)!important;
+      border-left:0!important;
+      display:flex!important;
+      flex-direction:column!important;
+      gap:4px!important;
+      font-size:8px!important;
+    }
+    #perfis .perm-celula:not(:last-child) { border-right:1px solid rgba(255,255,255,.055)!important; }
+    #perfis .perm-celula:nth-child(3)::before { content:'Ver'; }
+    #perfis .perm-celula:nth-child(4)::before { content:'Criar'; }
+    #perfis .perm-celula:nth-child(5)::before { content:'Editar'; }
+    #perfis .perm-celula:nth-child(6)::before { content:'Excluir'; }
+    #perfis .perm-celula input { width:19px!important;height:19px!important;min-width:19px!important; }
+
+    /* Agenda: os sete dias cabem na tela; textos internos truncam sem alargar. */
+    #escala_plantoes { width:100%!important;max-width:100%!important;padding:0!important;overflow:hidden!important; }
+    #escala_plantoes .escala-layout { width:100%!important;min-width:0!important;grid-template-columns:minmax(0,1fr)!important; }
+    #escala_plantoes .escala-side-card,
+    #escala_plantoes .escala-calendario-card { width:100%!important;min-width:0!important;padding:8px!important; }
+    #escala_plantoes .escala-toolbar { align-items:flex-start!important;flex-wrap:wrap!important; }
+    #escala_plantoes .escala-total-pago { min-width:0!important;width:auto!important; }
+    #escala_plantoes #escalaCalendarioGrid {
+      width:100%!important;
+      min-width:0!important;
+      max-width:100%!important;
+      grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    }
+    #escala_plantoes .escala-dia-semana { min-width:0!important;height:27px!important;font-size:8px!important;overflow:hidden!important; }
+    #escala_plantoes .escala-dia { min-width:0!important;min-height:54px!important;padding:3px 2px!important;overflow:hidden!important; }
+    #escala_plantoes .escala-dia-numero { font-size:11px!important;margin-bottom:2px!important; }
+    #escala_plantoes .escala-evento,
+    #escala_plantoes .escala-feriado-label { width:100%!important;max-width:100%!important;padding:2px!important;font-size:7px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important; }
+    #escala_plantoes .escala-legenda { align-items:flex-start!important;flex-wrap:wrap!important; }
+
+    /* Execuções recentes: tabela vira cartões legíveis, sem colunas escondidas. */
+    #dash-execucoes { width:100%!important;overflow:visible!important; }
+    #dash-execucoes .recent-table { display:block!important;width:100%!important;min-width:0!important; }
+    #dash-execucoes .recent-table thead { display:none!important; }
+    #dash-execucoes .recent-table tbody { display:grid!important;gap:7px!important;width:100%!important; }
+    #dash-execucoes .recent-table tr {
+      display:grid!important;
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:7px!important;
+      width:100%!important;
+      padding:8px!important;
+      border:1px solid var(--border-mid)!important;
+      border-radius:8px!important;
+      background:rgba(255,255,255,.018)!important;
+    }
+    #dash-execucoes .recent-table td {
+      display:flex!important;
+      flex-direction:column!important;
+      gap:2px!important;
+      min-width:0!important;
+      padding:0!important;
+      border:0!important;
+      font-size:10px!important;
+      overflow-wrap:anywhere!important;
+    }
+    #dash-execucoes .recent-table td::before { color:var(--text-dim);font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.35px; }
+    #dash-execucoes .recent-table td:nth-child(1) { grid-column:1/-1!important;font-weight:800; }
+    #dash-execucoes .recent-table td:nth-child(1)::before { content:'Tarefa'; }
+    #dash-execucoes .recent-table td:nth-child(2)::before { content:'Funcionário'; }
+    #dash-execucoes .recent-table td:nth-child(3)::before { content:'Início'; }
+    #dash-execucoes .recent-table td:nth-child(4)::before { content:'Fim'; }
+    #dash-execucoes .recent-table td:nth-child(5)::before { content:'Status'; }
+    #dash-execucoes .recent-table td:nth-child(6)::before { content:'Ação'; }
+  }
 
   /* densidade-global-e-perfis-20260621 */
   body { font-size: 13px; }
@@ -1390,4 +1556,17 @@
     #perfis .perfil-permissoes-tabela .perm-matriz-cabecalho,
     #perfis .perfil-permissoes-tabela .perm-matriz-linha { grid-template-columns:110px minmax(180px,1fr) repeat(4,64px)!important; }
     #perfis .permissoes-grid { max-height:62dvh; overflow:auto!important; }
+  }
+
+  /* A tabela única de perfis também precisa obedecer ao modo cartão mobile. */
+  @media (max-width:700px) {
+    #perfis .permissoes-grid { max-height:none!important;overflow:visible!important; }
+    #perfis .perfil-permissoes-tabela { width:100%!important;min-width:0!important; }
+    #perfis .perfil-permissoes-tabela .perm-matriz-cabecalho { display:none!important; }
+    #perfis .perfil-permissoes-tabela .perm-matriz-linha {
+      display:grid!important;
+      grid-template-columns:repeat(4,minmax(0,1fr))!important;
+      width:100%!important;
+      min-width:0!important;
+    }
   }
