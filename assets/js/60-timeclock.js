@@ -1517,7 +1517,7 @@ async function obterFuncionarioLogadoParaPonto() {
   if (!obterFuncionarioRestritoLogadoIdParaPonto()) return null;
   let query = sb
     .from('funcionarios')
-    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim, tempo_intervalo_minutos, loja_id, empresa_id')
+    .select('id, nome, ativo, horario_trabalho_inicio, horario_trabalho_fim, tempo_intervalo_minutos, loja_id, empresa_id')
     .eq('id', usuarioSistemaLogado.id)
     .eq('ativo', true);
   query = aplicarFiltroLojaAtualPontoQuery(query);
@@ -1540,20 +1540,17 @@ async function validarSenhaAdministradorParaAjustePonto(senhaInformada) {
   const senha = String(senhaInformada || '').trim();
   if (!senha) return false;
 
-  if (usuarioSistemaLogado?.tipo === 'admin') {
-    const username = String(usuarioSistemaLogado?.username || '').toLowerCase();
-    return predefinedUsers.some(u => String(u.username || '').toLowerCase() === username && String(u.password || '') === senha);
+  if (usuarioSistemaLogado?.tipo === 'admin_loja' && usuarioSistemaLogado?.id) {
+    const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
+      p_usuario_id: usuarioSistemaLogado.id,
+      p_pin: senha,
+    }));
+    if (error) throw error;
+    return data === true;
   }
 
   if (usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id && usuarioEhAdministrador()) {
-    const { data, error } = await sb
-      .from('funcionarios')
-      .select('id, pin, ativo')
-      .eq('id', usuarioSistemaLogado.id)
-      .eq('ativo', true)
-      .maybeSingle();
-    if (error) throw error;
-    return String(data?.pin ?? '') === senha;
+    return validarPinFuncionario(usuarioSistemaLogado.id, senha);
   }
 
   return false;

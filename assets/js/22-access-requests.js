@@ -51,7 +51,9 @@ async function carregarSolicitacoesAcesso() {
     <div class="item">
       <div class="item-info">
         <div class="item-nome">${s.nome}</div>
-        <div class="item-detalhe">${s.email} · Pedido em ${fmtDate(s.created_at)}</div>
+        <div class="item-detalhe">${s.email} · CNPJ: ${s.cnpj || '-'} · Pedido em ${fmtDate(s.created_at)}</div>
+        ${s.observacao ? `<div class="item-detalhe">Informações: ${escaparHtmlBasico(s.observacao)}</div>` : ''}
+        ${s.funcionario_localizado_id ? '<div class="item-detalhe"><span class="tag tag-green">Cadastro localizado para revinculação</span></div>' : ''}
         <div class="item-detalhe">Status: ${s.status === 'pendente' ? 'Pendente' : s.status === 'aprovada' ? 'Aprovada' : 'Rejeitada'}</div>
       </div>
       <div class="item-actions">
@@ -94,10 +96,9 @@ async function aprovarSolicitacaoAcesso(id) {
     return;
   }
 
-  const mensagemDuplicidade = await validarDuplicidadeCadastro({
+  const mensagemDuplicidade = solicitacao.funcionario_localizado_id ? '' : await validarDuplicidadeCadastro({
     nome: solicitacao.nome,
     email: solicitacao.email.toLowerCase(),
-    pin: solicitacao.pin,
     solicitacaoIdIgnorar: id,
     verificarSolicitacoesPendentes: true,
   });
@@ -112,7 +113,7 @@ async function aprovarSolicitacaoAcesso(id) {
     .eq('email', solicitacao.email.toLowerCase())
     .maybeSingle();
 
-  if (existente) {
+  if (existente && String(existente.id) !== String(solicitacao.funcionario_localizado_id || '')) {
     setMsg('msgSolicitacoes', 'Já existe um funcionário com este e-mail.', 'err');
     return;
   }
@@ -289,22 +290,26 @@ async function confirmarAprovacaoSolicitacao() {
       .select('id')
       .eq('email', solicitacao.email.toLowerCase())
       .maybeSingle();
-    if (existente) {
+    if (existente && String(existente.id) !== String(solicitacao.funcionario_localizado_id || '')) {
       setMsg('msgAprovacaoSolicitacao', 'Já existe um funcionário com este e-mail.', 'err');
       return;
     }
 
-    // 1) Cria o funcionário com loja/empresa representativas.
-    const { data: funcionarioCriado, error: errInsert } = await sb.from('funcionarios').insert([{
+    // 1) Revincula um cadastro localizado pelo CNPJ+nome ou cria um novo funcionário.
+    const dadosFuncionario = {
       nome: solicitacao.nome,
       email: solicitacao.email.toLowerCase(),
-      pin: solicitacao.pin,
       loja_id: primeiraLoja.id,
       empresa_id: primeiraLoja.empresa_id,
       perfil_id: _aprovacaoSelecao[primeiraLoja.id] || null,
       ativo: true,
       email_verificado: false,
-    }]).select('id').single();
+      senha_troca_obrigatoria: true,
+    };
+    const operacaoFuncionario = solicitacao.funcionario_localizado_id
+      ? sb.from('funcionarios').update(dadosFuncionario).eq('id', solicitacao.funcionario_localizado_id).select('id').single()
+      : sb.from('funcionarios').insert([dadosFuncionario]).select('id').single();
+    const { data: funcionarioCriado, error: errInsert } = await operacaoFuncionario;
 
     if (errInsert || !funcionarioCriado?.id) {
       setMsg('msgAprovacaoSolicitacao', `Erro ao criar o funcionário aprovado: ${mensagemErroSupabase(errInsert, 'erro desconhecido')}`, 'err');

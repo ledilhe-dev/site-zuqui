@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type AuthAction = "send_verification" | "send_password_reset" | "consume_token";
+type AuthAction = "send_verification" | "send_password_reset" | "consume_token" | "admin_set_employee_password" | "admin_set_employee_pin" | "admin_set_store_admin_password";
 
 type TokenRow = {
   id: string;
@@ -42,6 +42,38 @@ Deno.serve(async (request) => {
 
   let body: Record<string, unknown>;
   try {
+    if (action === "admin_set_employee_password" || action === "admin_set_employee_pin" || action === "admin_set_store_admin_password") {
+      const actorId = normalizeOptionalUuid(body.actorId);
+      const actorType = String(body.actorType || "").trim();
+      const actorPassword = String(body.actorPassword || "").trim();
+      const targetId = normalizeOptionalUuid(body.targetId);
+      const newPassword = String(body.newPassword || "").trim();
+      if (!actorId || !targetId || !actorPassword) {
+        return jsonResponse({ error: "Confirmação do administrador incompleta." }, 400);
+      }
+      const minimo = action === "admin_set_employee_pin" ? 4 : 8;
+      if (newPassword.length < minimo) {
+        return jsonResponse({ error: action === "admin_set_employee_pin" ? "O PIN deve ter pelo menos 4 caracteres." : "A nova senha deve ter pelo menos 8 caracteres." }, 400);
+      }
+      const authorized = await canManageCredentials(admin, actorType, actorId, actorPassword);
+      if (!authorized) {
+        return jsonResponse({ error: "Senha atual inválida ou perfil sem permissão para editar funcionários." }, 403);
+      }
+      const rpcName = action === "admin_set_employee_password"
+        ? "definir_credencial_funcionario"
+        : action === "admin_set_employee_pin"
+          ? "definir_pin_funcionario"
+          : "definir_credencial_usuario_admin";
+      const args = action === "admin_set_employee_password"
+        ? { p_funcionario_id: targetId, p_nova_senha: newPassword }
+        : action === "admin_set_employee_pin"
+          ? { p_funcionario_id: targetId, p_novo_pin: newPassword }
+          : { p_usuario_id: targetId, p_nova_senha: newPassword };
+      const { error: setError } = await admin.rpc(rpcName, args);
+      if (setError) return jsonResponse({ error: setError.message }, 500);
+      return jsonResponse({ ok: true });
+    }
+
     body = await request.json();
   } catch {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
@@ -89,10 +121,6 @@ Deno.serve(async (request) => {
 
       if (!employee) {
         return jsonResponse({ error: "Nenhum usuário encontrado para este e-mail." }, 404);
-      }
-
-      if (employee.email_verificado !== true) {
-        return jsonResponse({ error: "Valide o e-mail antes de recuperar a senha." }, 400);
       }
 
       const token = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
@@ -168,18 +196,18 @@ Deno.serve(async (request) => {
 
       if (tokenType === "reset_senha") {
         const newPassword = String(body.newPassword || "").trim();
-        if (newPassword.length < 4) {
-          return jsonResponse({ error: "A nova senha deve ter pelo menos 4 caracteres." }, 400);
+        if (newPassword.length < 8) {
+          return jsonResponse({ error: "A nova senha deve ter pelo menos 8 caracteres." }, 400);
         }
 
         if (!tokenRow.funcionario_id) {
           return jsonResponse({ error: "Funcionário do token não encontrado." }, 400);
         }
 
-        const { error: resetError } = await admin
-          .from("funcionarios")
-          .update({ pin: newPassword })
-          .eq("id", tokenRow.funcionario_id);
+        const { error: resetError } = await admin.rpc("definir_credencial_funcionario", {
+          p_funcionario_id: tokenRow.funcionario_id,
+          p_nova_senha: newPassword,
+        });
 
         if (resetError) {
           return jsonResponse({ error: resetError.message }, 500);
@@ -195,7 +223,7 @@ Deno.serve(async (request) => {
         return jsonResponse({ error: useError.message }, 500);
       }
 
-      return jsonResponse({ ok: true, tokenType });
+      return jsonResponse({ ok: true, tokenType, email: tokenRow.email });
     }
 
     return jsonResponse({ error: "Ação inválida." }, 400);
@@ -227,6 +255,40 @@ function ensureEmailProvider(apiKey: string, fromEmail: string) {
   if (!apiKey || !fromEmail) {
     throw new Error("As variáveis de e-mail não foram configuradas no backend.");
   }
+}
+
+async function canManageCredentials(
+  admin: ReturnType<typeof createClient>,
+  actorType: string,
+  actorId: string,
+  actorPassword: string,
+) {
+  if (actorType === "admin_loja") {
+    const { data: valid } = await admin.rpc("verificar_credencial_usuario_admin", {
+      p_usuario_id: actorId,
+      p_senha: actorPassword,
+    });
+    return valid === true;
+  }
+
+  const { data: valid } = await admin.rpc("verificar_credencial_funcionario", {
+    p_funcionario_id: actorId,
+    p_senha: actorPassword,
+  });
+  if (valid !== true) return false;
+
+  const { data: employee } = await admin
+    .from("funcionarios")
+    .select("id, ativo, é_administrador, perfis(codigo, permissoes)")
+    .eq("id", actorId)
+    .eq("ativo", true)
+    .maybeSingle();
+  if (!employee) return false;
+  if (employee.é_administrador === true) return true;
+  const profile = Array.isArray(employee.perfis) ? employee.perfis[0] : employee.perfis;
+  const code = String(profile?.codigo || "").toUpperCase();
+  const permissions = (profile?.permissoes || {}) as Record<string, unknown>;
+  return code === "ADM" || code === "MASTER" || permissions.funcionarios === true;
 }
 
 async function findEmployeeByEmail(admin: ReturnType<typeof createClient>, email: string, employeeId?: string) {

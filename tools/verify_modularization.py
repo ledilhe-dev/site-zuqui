@@ -1,4 +1,4 @@
-"""Verifica integridade da versão modular contra o backup monolítico."""
+"""Verifica referências, sintaxe e manifesto da versão modular atual."""
 
 from __future__ import annotations
 
@@ -9,11 +9,7 @@ import tempfile
 import json
 from pathlib import Path
 
-from split_monolith import BACKUP, CSS_DIR, INDEX, JS_DIR, split_main_script
-
-
-def normalized_asset(content: str) -> str:
-    return content.strip("\n") + "\n"
+from split_monolith import CSS_DIR, INDEX, JS_DIR
 
 
 def fail(message: str) -> None:
@@ -22,10 +18,6 @@ def fail(message: str) -> None:
 
 
 def main() -> None:
-    if not BACKUP.exists():
-        fail(f"Backup não encontrado: {BACKUP}")
-
-    original = BACKUP.read_text(encoding="utf-8")
     modular = INDEX.read_text(encoding="utf-8")
 
     inline_styles = re.findall(r"<style(?:\s[^>]*)?>", modular, re.IGNORECASE)
@@ -43,56 +35,6 @@ def main() -> None:
         path = INDEX.parent / ref.removeprefix("./")
         if not path.is_file():
             fail(f"Referência inexistente no HTML: {ref}")
-
-    # Retira scripts antes de procurar estilos: há tags <style> legítimas dentro
-    # de templates JavaScript para impressão e janelas auxiliares.
-    original_without_scripts = re.sub(
-        r"<script([^>]*)>(.*?)</script>",
-        "",
-        original,
-        flags=re.DOTALL | re.IGNORECASE,
-    )
-    original_styles = re.findall(
-        r"<style([^>]*)>(.*?)</style>",
-        original_without_scripts,
-        flags=re.DOTALL | re.IGNORECASE,
-    )
-    if len(original_styles) != len(css_refs):
-        fail(f"Quantidade CSS divergiu: original={len(original_styles)}, modular={len(css_refs)}")
-    for index, ((_, body), ref) in enumerate(zip(original_styles, css_refs, strict=True)):
-        extracted = (INDEX.parent / ref.removeprefix("./")).read_text(encoding="utf-8")
-        if extracted != normalized_asset(body):
-            fail(f"Conteúdo CSS divergente no bloco {index}: {ref}")
-
-    original_inline_scripts = []
-    for match in re.finditer(r"<script([^>]*)>(.*?)</script>", original, re.DOTALL | re.IGNORECASE):
-        if not re.search(r"\bsrc\s*=", match.group(1), re.IGNORECASE):
-            original_inline_scripts.append(match.group(2))
-
-    expected_scripts: list[str] = []
-    for body in original_inline_scripts:
-        if len(body) > 500_000:
-            expected_scripts.extend(content for _, content in split_main_script(body))
-        else:
-            expected_scripts.append(body)
-    if len(expected_scripts) != len(js_refs):
-        fail(f"Quantidade JS divergiu: esperado={len(expected_scripts)}, modular={len(js_refs)}")
-    for index, (body, ref) in enumerate(zip(expected_scripts, js_refs, strict=True)):
-        extracted = (INDEX.parent / ref.removeprefix("./")).read_text(encoding="utf-8")
-        if extracted != normalized_asset(body):
-            fail(f"Conteúdo JavaScript divergente no bloco {index}: {ref}")
-
-    # O HTML de interface deve permanecer idêntico. Remove apenas código e
-    # folhas de estilo das duas versões e compara toda a marcação restante.
-    original_markup = re.sub(r"<script([^>]*)>(.*?)</script>", "", original, flags=re.DOTALL | re.IGNORECASE)
-    original_markup = re.sub(r"<style([^>]*)>(.*?)</style>", "", original_markup, flags=re.DOTALL | re.IGNORECASE)
-    modular_markup = re.sub(r"<script([^>]*)>(.*?)</script>", "", modular, flags=re.DOTALL | re.IGNORECASE)
-    modular_markup = re.sub(r'<link(?:\s+id="[^"]+")?\s+rel="stylesheet"\s+href="\./assets/css/[^"]+">', "", modular_markup, flags=re.IGNORECASE)
-    # Scripts externos preexistentes (Supabase e config.js) existem nas duas
-    # versões; após a remoção geral, só diferenças reais de HTML permanecem.
-    canonical = lambda value: re.sub(r"\s+", " ", value).strip()
-    if canonical(original_markup) != canonical(modular_markup):
-        fail("A marcação HTML da interface divergiu do backup original")
 
     syntax_failures: list[str] = []
     with tempfile.TemporaryDirectory(prefix="checkdiario-js-") as temp_dir:

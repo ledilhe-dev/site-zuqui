@@ -182,7 +182,16 @@ function obterPreferenciasLoginSalvas() {
   const chaves = ['zuqui_login_prefs', 'check_diario_login_prefs'];
   try {
     const bruto = chaves.map(chave => localStorage.getItem(chave) || sessionStorage.getItem(chave)).find(Boolean);
-    return bruto ? JSON.parse(bruto) : {};
+    const preferencias = bruto ? JSON.parse(bruto) : {};
+    if (Object.prototype.hasOwnProperty.call(preferencias, 'password')) {
+      delete preferencias.password;
+      const seguro = JSON.stringify(preferencias);
+      chaves.forEach(chave => {
+        localStorage.setItem(chave, seguro);
+        sessionStorage.setItem(chave, seguro);
+      });
+    }
+    return preferencias;
   } catch (error) {
     chaves.forEach(chave => {
       localStorage.removeItem(chave);
@@ -197,7 +206,6 @@ function salvarPreferenciasLogin({ username = '', password = '', salvarSenha = f
     salvarSenha: !!salvarSenha,
     manterConectado: !!manterConectado,
     username: salvarSenha ? String(username || '').trim() : '',
-    password: salvarSenha ? String(password || '') : '',
   };
   const bruto = JSON.stringify(payload);
   ['zuqui_login_prefs', 'check_diario_login_prefs'].forEach(chave => {
@@ -267,10 +275,8 @@ function restaurarPreferenciasLogin() {
   if (keep) keep.checked = !!prefs.manterConectado;
   if (prefs.salvarSenha) {
     if (user) user.value = String(prefs.username || '');
-    if (pass) pass.value = String(prefs.password || '');
-  } else {
-    if (pass) pass.value = '';
   }
+  if (pass) pass.value = '';
 }
 
 function sincronizarPreferenciasLoginDaTela() {
@@ -470,11 +476,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const prefs = obterPreferenciasLoginSalvas();
     if (prefs.salvarSenha) {
       if (user) user.value = String(prefs.username || '');
-      if (pass) pass.value = String(prefs.password || '');
     } else {
       if (user) user.value = '';
-      if (pass) pass.value = '';
     }
+    if (pass) pass.value = '';
     if (save) save.checked = !!prefs.salvarSenha;
     if (chk) chk.checked = !!prefs.manterConectado;
     document.querySelectorAll('.nav-btn[data-page]').forEach(btn => { btn.style.display = ''; });
@@ -543,15 +548,22 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       });
 
       try {
-        await chamarFuncaoAutenticacao({
+        const confirmacaoEmail = await chamarFuncaoAutenticacao({
           action: 'consume_token',
           token,
           tokenType: 'verificacao_email',
         });
+        if (confirmacaoEmail?.email) {
+          await chamarFuncaoAutenticacao({
+            action: 'send_password_reset',
+            email: confirmacaoEmail.email,
+            redirectUrl: obterUrlBaseAutenticacao(),
+          });
+        }
         configurarPainelAutenticacaoEmail({
           visivel: true,
           titulo: 'E-mail validado',
-          mensagem: 'E-mail validado com sucesso. Agora você já pode entrar com nome + PIN ou com e-mail + PIN.',
+          mensagem: 'E-mail validado. Enviamos um segundo link para você criar sua senha de acesso.',
           tipoMensagem: 'ok',
           mostrarCamposSenha: false,
         });
@@ -591,8 +603,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       setMsg('msgAuthToken', 'Link de recuperação inválido.', 'err');
       return;
     }
-    if (!novaSenha || novaSenha.length < 4) {
-      setMsg('msgAuthToken', 'A nova senha deve ter pelo menos 4 caracteres.', 'err');
+    if (!novaSenha || novaSenha.length < 8) {
+      setMsg('msgAuthToken', 'A nova senha deve ter pelo menos 8 caracteres.', 'err');
       return;
     }
     if (novaSenha !== confirmarSenha) {
@@ -612,7 +624,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       configurarPainelAutenticacaoEmail({
         visivel: true,
         titulo: 'Senha atualizada',
-        mensagem: 'Senha atualizada com sucesso. Você já pode entrar com nome + PIN ou e-mail + PIN.',
+        mensagem: 'Senha atualizada. Entre usando seu e-mail e a nova senha.',
         tipoMensagem: 'ok',
         mostrarCamposSenha: false,
       });
@@ -632,7 +644,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function solicitarAcesso() {
     const nome = document.getElementById('solicitacaoNome')?.value.trim();
     const email = document.getElementById('solicitacaoEmail')?.value.trim().toLowerCase();
-    const pin = document.getElementById('solicitacaoPin')?.value.trim();
+    const cnpj = String(document.getElementById('solicitacaoCnpj')?.value || '').replace(/\D/g, '');
+    const observacao = document.getElementById('solicitacaoObservacao')?.value.trim() || '';
 
     if (!nome) {
       setMsg('msgSolicitacaoAcesso', 'Informe seu nome.', 'err');
@@ -650,15 +663,13 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       setMsg('msgSolicitacaoAcesso', 'Informe um e-mail valido e real para solicitar acesso.', 'err');
       return;
     }
-    if (!pin) {
-      setMsg('msgSolicitacaoAcesso', 'Informe um PIN desejado.', 'err');
+    if (cnpj.length !== 14) {
+      setMsg('msgSolicitacaoAcesso', 'Informe o CNPJ da loja com 14 números.', 'err');
       return;
     }
-
     const mensagemDuplicidade = await validarDuplicidadeCadastro({
       nome,
       email,
-      pin,
       verificarSolicitacoesPendentes: true,
     });
     if (mensagemDuplicidade) {
@@ -678,7 +689,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       console.warn('Não foi possível resolver loja/empresa padrão para a solicitação:', e);
     }
 
-    const baseSolicitacao = { nome, email, pin, status: 'pendente' };
+    const baseSolicitacao = { nome, email, cnpj, observacao: observacao || null, status: 'pendente' };
     const payloadComTenant = {
       ...baseSolicitacao,
       ...(tenantSolicitacao.loja_id ? { loja_id: tenantSolicitacao.loja_id } : {}),
@@ -724,7 +735,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     document.getElementById('solicitacaoNome').value = '';
     document.getElementById('solicitacaoEmail').value = '';
-    document.getElementById('solicitacaoPin').value = '';
+    document.getElementById('solicitacaoCnpj').value = '';
+    document.getElementById('solicitacaoObservacao').value = '';
     setMsg('msgSolicitacaoAcesso', 'Solicitação enviada. Aguarde a aprovação de um administrador.', 'ok');
   }
 
@@ -747,7 +759,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       }
       const emailFuncionario = String(funcionario.email || '').trim().toLowerCase();
       if (!emailFuncionario || !emailPareceValido(emailFuncionario)) {
-        setMsg('msgLogin', 'Usuário localizado, mas não há e-mail válido cadastrado para autorizar a troca de senha.', 'err');
+        setMsg('msgLogin', 'Não existe e-mail cadastrado. Cadastre um e-mail ou, caso já possua cadastro, solicite ao administrador.', 'err');
         return;
       }
       await chamarFuncaoAutenticacao({
@@ -1165,68 +1177,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     // predefinedUsers está vazio (credenciais removidas por segurança). Login exclusivo via Supabase.
 
-    let funcionario = null;
-    let error = null;
-
-    const consultarFuncionarioComPerfil = async () => {
-      if (username.includes('@')) {
-        const resposta = await sb
-          .from('funcionarios')
-          .select('*, é_administrador, perfis(nome, codigo, permissoes)')
-          .eq('ativo', true)
-          .eq('email', username.toLowerCase())
-          .maybeSingle();
-        return { funcionario: resposta.data, error: resposta.error };
-      }
-
-      const resposta = await sb
-        .from('funcionarios')
-        .select('*, é_administrador, perfis(nome, codigo, permissoes)')
-        .eq('ativo', true)
-        .ilike('nome', `%${escaparValorLike(username)}%`)
-        .limit(20);
-
-      if (resposta.error) return { funcionario: null, error: resposta.error };
-      const buscaNormalizada = normalizarTextoComparacao(username);
-      const candidatos = resposta.data || [];
-      const funcionarioEncontrado = candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
-        || candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
-        || null;
-      return { funcionario: funcionarioEncontrado, error: null };
-    };
-
-    const consultarFuncionarioSemPerfil = async () => {
-      if (username.includes('@')) {
-        const resposta = await sb
-          .from('funcionarios')
-          .select('*, é_administrador')
-          .eq('ativo', true)
-          .eq('email', username.toLowerCase())
-          .maybeSingle();
-        return { funcionario: resposta.data ? { ...resposta.data, perfis: null } : null, error: resposta.error };
-      }
-
-      const resposta = await sb
-        .from('funcionarios')
-        .select('*, é_administrador')
-        .eq('ativo', true)
-        .ilike('nome', `%${escaparValorLike(username)}%`)
-        .limit(20);
-
-      if (resposta.error) return { funcionario: null, error: resposta.error };
-      const buscaNormalizada = normalizarTextoComparacao(username);
-      const candidatos = resposta.data || [];
-      const funcionarioEncontrado = candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).startsWith(buscaNormalizada))
-        || candidatos.find(item => senhaFuncionarioLoginCombina(item, username, password) && normalizarTextoComparacao(item.nome).includes(buscaNormalizada))
-        || null;
-      return { funcionario: funcionarioEncontrado ? { ...funcionarioEncontrado, perfis: null } : null, error: null };
-    };
-
-    ({ funcionario, error } = await executarSemFiltrosTenantTemporario(() => consultarFuncionarioComPerfil()));
-    if (error) {
-      console.warn('Falha ao consultar funcionário com perfil, tentando fallback sem perfil:', error);
-      ({ funcionario, error } = await executarSemFiltrosTenantTemporario(() => consultarFuncionarioSemPerfil()));
-    }
+    const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('autenticar_funcionario', {
+      p_identificador: username,
+      p_senha: password,
+    }));
 
     if (error) {
       if (isMissingProfilesTableError(error)) {
@@ -1238,28 +1192,14 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return;
     }
 
-    if (!funcionario || !senhaFuncionarioLoginCombina(funcionario, username, password)) {
-      // Tenta login como admin de loja (usuarios_admin: usuario + pin)
+    if (!funcionario) {
+      // Tenta login como admin de loja; a senha é conferida no banco e nunca é retornada.
       if (!loginComEmail) {
-        const { data: adminsLojaPorLogin, error: erroAdminLogin } = await executarSemFiltrosTenantTemporario(() => sb
-          .from('usuarios_admin')
-          .select('id, nome, usuario, pin, ativo, loja_id, empresa_id')
-          .eq('ativo', true)
-          .or(`usuario.ilike.%${escaparValorLike(username)}%,nome.ilike.%${escaparValorLike(username)}%`)
-          .limit(20));
-
-        let adminsLoja = erroAdminLogin ? [] : (adminsLojaPorLogin || []);
-        if (!adminsLoja.length) {
-          const { data: adminsLojaPorSenha, error: erroAdminSenha } = await executarSemFiltrosTenantTemporario(() => sb
-            .from('usuarios_admin')
-            .select('id, nome, usuario, pin, ativo, loja_id, empresa_id')
-            .eq('ativo', true)
-            .eq('pin', password)
-            .limit(20));
-          if (!erroAdminSenha) adminsLoja = adminsLojaPorSenha || [];
-        }
-
-        const adminLoja = adminsLoja.find(item => loginAdminLojaCombina(item, username, password)) || null;
+        const { data: adminLoja, error: erroAdminLogin } = await executarSemFiltrosTenantTemporario(() => sb.rpc('autenticar_usuario_admin', {
+          p_identificador: username,
+          p_senha: password,
+        }));
+        if (erroAdminLogin) console.warn('Falha ao autenticar admin de loja:', erroAdminLogin);
         if (adminLoja) {
           let nomeLojaAdmin = '';
           const lojaIdAdmin = String(adminLoja.loja_id || '').trim();
@@ -1313,7 +1253,29 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
           return;
         }
       }
-      setMsg('msgLogin', 'Usuário ou senha incorretos.', 'err');
+      setMsg('msgLogin', loginComEmail
+        ? 'E-mail ou senha incorretos. Use “Esqueci minha senha” se necessário.'
+        : 'O acesso ao sistema agora é feito com e-mail e senha. Se você ainda não possui e-mail cadastrado, use “Solicitar acesso” ou peça ao administrador da loja.', 'err');
+      return;
+    }
+
+    if (funcionario.senha_troca_obrigatoria === true) {
+      const emailFuncionario = String(funcionario.email || '').trim().toLowerCase();
+      if (!emailFuncionario || !emailPareceValido(emailFuncionario)) {
+        setMsg('msgLogin', 'Seu cadastro antigo foi localizado, mas não possui e-mail válido. Use “Solicitar acesso” informando nome, CNPJ da loja e o e-mail que receberá o acesso.', 'err');
+        abrirSolicitacaoAcesso();
+        return;
+      }
+      try {
+        await chamarFuncaoAutenticacao({
+          action: 'send_password_reset',
+          email: emailFuncionario,
+          redirectUrl: obterUrlBaseAutenticacao(),
+        });
+        setMsg('msgLogin', `Por segurança, sua senha antiga precisa ser trocada. Enviamos um link para ${emailFuncionario}.`, 'ok');
+      } catch (resetError) {
+        setMsg('msgLogin', `Seu cadastro foi localizado, mas não foi possível enviar o link de troca: ${resetError.message || resetError}`, 'err');
+      }
       return;
     }
 
@@ -1344,12 +1306,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     await finalizarLoginFuncionarioComLoja(contextoLoginFuncionario, lojasPermitidas[0] || null);
   }
 
-  renderizarPermissoesPerfil(obterPermissoesBase('FUNCIONARIO'));
-  document.getElementById('codigoPerfil')?.addEventListener('change', () => {
-    if (!perfilEmEdicaoId) {
-      renderizarPermissoesPerfil(obterPermissoesBase(document.getElementById('codigoPerfil').value));
-    }
-  });
+  renderizarPermissoesPerfil(Object.fromEntries(PERFIL_PERMISSOES.map(item => [item.key, false])));
   const keepLoggedInCheckbox = document.getElementById('keepLoggedIn');
   if (keepLoggedInCheckbox) keepLoggedInCheckbox.checked = false;
   restaurarPreferenciasLogin();

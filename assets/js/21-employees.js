@@ -85,7 +85,7 @@ async function carregarFuncionarios() {
       <div class="item tarefa-cadastrada-item">
         <div class="item-info">
           <div class="item-nome">${f.nome}</div>
-          <div class="item-detalhe">Loja: ${nomeLoja || '-'} · E-mail: ${f.email || '-'} · Senha: ${f.pin ? '••••••' : '-'}${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
+          <div class="item-detalhe">Loja: ${nomeLoja || '-'} · E-mail: ${f.email || '-'} · Senha protegida${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
           <div class="item-detalhe">Turno: ${f.horario_trabalho_inicio || '--:--'} às ${f.horario_trabalho_fim || '--:--'} · Intervalos: ${resumirIntervalosSemanaFuncionario(f.intervalos_semana, f.tempo_intervalo_minutos)}</div>
         </div>
         <div class="item-actions">
@@ -859,6 +859,8 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     const nome = document.getElementById('nomeFuncionario').value.trim();
     const email = document.getElementById('emailFuncionario').value.trim().toLowerCase();
     const pin = document.getElementById('pinFuncionario').value.trim();
+    const senhaAcesso = document.getElementById('senhaAcessoFuncionario')?.value.trim() || '';
+    let senhaAtualGestor = '';
     const horarioInicio = null;
     const horarioFim = null;
     const tempoIntervaloMinutos = null;
@@ -873,6 +875,20 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     if (!nome) { setMsg('msgFuncionarios', 'Digite o nome do funcionario.', 'err'); return; }
     if (!nomePareceCompleto(nome) && !nomeMantidoComoOriginal) { setMsg('msgFuncionarios', 'Informe um nome com pelo menos 4 caracteres.', 'err'); return; }
     if (emailInformado && !emailPareceValido(email)) { setMsg('msgFuncionarios', 'Informe um e-mail valido e real do funcionario.', 'err'); return; }
+    if (pin || senhaAcesso) {
+      const confirmacao = await abrirModalPin({
+        titulo: 'Confirmar troca de senha',
+        subtitulo: 'Digite a sua própria senha para autorizar a senha deste funcionário.',
+        textoAcao: 'Autorizar alteração',
+        exibirUsuario: false,
+        placeholderInput: 'Sua senha atual',
+      });
+      if (!confirmacao?.pin) {
+        setMsg('msgFuncionarios', 'Alteração de senha cancelada.', 'err');
+        return;
+      }
+      senhaAtualGestor = confirmacao.pin;
+    }
 
     const chkAdmin = document.getElementById('funcionarioAdmin');
     // Se a checkbox está desabilitada (usuário sem permissão), preservar o valor atual do banco
@@ -938,7 +954,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       ? {
           nome,
           email: emailInformado ? email : null,
-          ...(pin ? { pin } : {}),
           loja_id: lojaId,
           é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
@@ -951,7 +966,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       : {
           nome,
           email: emailInformado ? email : null,
-          pin: pin || null,
           loja_id: lojaLogadaParaVinculo || null,
           empresa_id: lojaParaSalvar.empresa_id,
           é_administrador: funcionarioAdmin,
@@ -1013,6 +1027,43 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     }
     const funcionarioIdParaEmail = funcionarioSalvo?.id || funcionarioIdAtual || '';
     const funcionarioNomeParaEmail = funcionarioSalvo?.nome || nome;
+
+    if (pin) {
+      try {
+        await chamarFuncaoAutenticacao({
+          action: 'admin_set_employee_pin',
+          actorId: usuarioSistemaLogado?.id,
+          actorType: usuarioSistemaLogado?.tipo,
+          actorPassword: senhaAtualGestor,
+          targetId: funcionarioIdParaEmail,
+          newPassword: pin,
+        });
+      } catch (senhaError) {
+        if (!editandoAgora && funcionarioSalvo?.id) {
+          await executarSalvamentoFuncionario(() => sb.from('funcionarios').delete().eq('id', funcionarioSalvo.id));
+        }
+        setMsg('msgFuncionarios', `Não foi possível definir a senha: ${senhaError.message || senhaError}`, 'err');
+        return;
+      }
+    }
+    if (senhaAcesso) {
+      try {
+        await chamarFuncaoAutenticacao({
+          action: 'admin_set_employee_password',
+          actorId: usuarioSistemaLogado?.id,
+          actorType: usuarioSistemaLogado?.tipo,
+          actorPassword: senhaAtualGestor,
+          targetId: funcionarioIdParaEmail,
+          newPassword: senhaAcesso,
+        });
+      } catch (senhaError) {
+        if (!editandoAgora && funcionarioSalvo?.id) {
+          await executarSalvamentoFuncionario(() => sb.from('funcionarios').delete().eq('id', funcionarioSalvo.id));
+        }
+        setMsg('msgFuncionarios', `Não foi possível definir a senha de acesso: ${senhaError.message || senhaError}`, 'err');
+        return;
+      }
+    }
 
     // Vínculo automático com a loja logada (apenas em cadastro novo). Evita registro órfão sem loja.
     if (!editandoAgora && funcionarioSalvo?.id && lojaLogadaParaVinculo) {
@@ -1076,6 +1127,7 @@ function limparFormularioFuncionario() {
   document.getElementById('nomeFuncionario').value = '';
   document.getElementById('emailFuncionario').value = '';
   document.getElementById('pinFuncionario').value = '';
+  if (document.getElementById('senhaAcessoFuncionario')) document.getElementById('senhaAcessoFuncionario').value = '';
 
   document.getElementById('perfilFuncionario').value = '';
   document.getElementById('perfilFuncionario').disabled = false;
@@ -1130,6 +1182,7 @@ async function editarFuncionario(id) {
   document.getElementById('nomeFuncionario').value = funcionario.nome || '';
   document.getElementById('emailFuncionario').value = funcionario.email || '';
   document.getElementById('pinFuncionario').value = '';
+  if (document.getElementById('senhaAcessoFuncionario')) document.getElementById('senhaAcessoFuncionario').value = '';
 
   document.getElementById('perfilFuncionario').value = funcionario.perfil_id || '';
   document.getElementById('perfilFuncionario').disabled = !usuarioEhAdministrador();
