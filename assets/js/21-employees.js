@@ -113,6 +113,7 @@ function atualizarEstadoCadastroFuncionarioUI() {
   const subtitulo = document.getElementById('subtituloCadastroFuncionario');
   const labelPin = document.getElementById('labelPinFuncionario');
   const campoPin = document.getElementById('pinFuncionario');
+  const campoSenhaAcesso = document.getElementById('senhaAcessoFuncionario');
   const btnSalvar = document.getElementById('btnSalvarFuncionario');
 
   if (!conteudo || !btnToggle || !titulo || !subtitulo) return;
@@ -121,10 +122,11 @@ function atualizarEstadoCadastroFuncionarioUI() {
 
   if (funcionarioEmEdicaoId) {
     titulo.textContent = 'Editar funcionário';
-    subtitulo.textContent = 'Atualize os dados. A senha só muda se preencher o campo.';
+    subtitulo.textContent = 'Atualize os dados. PIN e senha de acesso só mudam quando seus campos forem preenchidos.';
     btnToggle.textContent = 'Fechar cadastro';
-    if (labelPin) labelPin.textContent = 'Alterar senha (opcional)';
-    if (campoPin) campoPin.placeholder = 'Nova senha';
+    if (labelPin) labelPin.textContent = 'Alterar PIN (opcional)';
+    if (campoPin) campoPin.placeholder = 'Novo PIN operacional';
+    if (campoSenhaAcesso) campoSenhaAcesso.placeholder = 'Nova senha (mínimo 8 caracteres)';
     if (btnSalvar) btnSalvar.textContent = 'Salvar';
     return;
   }
@@ -134,8 +136,9 @@ function atualizarEstadoCadastroFuncionarioUI() {
     ? 'Preencha os dados para cadastrar.'
     : 'Clique em "Novo cadastro" para abrir o formulário.';
   btnToggle.textContent = cadastroFuncionarioAberto ? 'Fechar cadastro' : 'Novo cadastro';
-  if (labelPin) labelPin.textContent = 'Senha';
-  if (campoPin) campoPin.placeholder = 'Senha';
+  if (labelPin) labelPin.textContent = 'PIN operacional';
+  if (campoPin) campoPin.placeholder = 'PIN para ponto e tarefas';
+  if (campoSenhaAcesso) campoSenhaAcesso.placeholder = 'Mínimo 8 caracteres';
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
 }
 

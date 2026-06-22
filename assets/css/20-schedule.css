@@ -109,8 +109,9 @@
   color: rgba(180,200,186,0.45) !important;
   }
   /* Campo de senha do cadastro de funcionário: alinhar altura/box com os demais */
-  #pinFuncionario.pin-secure-input {
-  height: 32px !important;
+  #pinFuncionario.pin-secure-input,
+  #senhaAcessoFuncionario.pin-secure-input {
+  height: 40px !important;
   max-width: none !important;
   flex: 1 1 auto !important;
   font-size: 12px !important;

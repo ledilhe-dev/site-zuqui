@@ -682,43 +682,45 @@
           </div>
           <div id="cadastroFuncionarioConteudo" hidden>
             <div class="funcionario-cadastro-grid">
-              <div class="campo-com-label" style="flex:2;min-width:160px;">
+              <div class="campo-com-label funcionario-campo-nome">
                 <label class="campo-label" for="nomeFuncionario">Nome</label>
                 <input id="nomeFuncionario" type="text" placeholder="Nome do funcionário" style="height:32px;">
               </div>
-              <div class="campo-com-label" style="flex:2;min-width:160px;">
+              <div class="campo-com-label funcionario-campo-email">
                 <label class="campo-label" for="emailFuncionario">E-mail</label>
                 <input id="emailFuncionario" type="email" placeholder="E-mail (opcional)" style="height:32px;" oninput="atualizarAvisoEmailFuncionarioDigitado()">
               </div>
-              <div class="campo-com-label" style="flex:1;min-width:110px;">
+              <div class="campo-com-label funcionario-campo-pin">
                 <label class="campo-label" for="pinFuncionario" id="labelPinFuncionario">PIN operacional</label>
                 <input id="pinFuncionario" class="campo-curto pin-secure-input" type="password" placeholder="PIN para ponto e tarefas" maxlength="20" style="height:32px;" autocomplete="new-password" name="pin_funcionario_novo" autocapitalize="off" autocorrect="off" spellcheck="false">
               </div>
-              <div class="campo-com-label" style="flex:1;min-width:140px;">
+              <div class="campo-com-label funcionario-campo-senha">
                 <label class="campo-label" for="senhaAcessoFuncionario">Senha de acesso</label>
                 <input id="senhaAcessoFuncionario" class="campo-curto pin-secure-input" type="password" placeholder="Mínimo 8 caracteres" maxlength="72" style="height:32px;" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false">
               </div>
-              <div class="campo-com-label" style="flex:1;min-width:140px;">
+              <div class="campo-com-label funcionario-campo-perfil">
                 <label class="campo-label" for="perfilFuncionario">Perfil</label>
                 <select id="perfilFuncionario" style="height:32px;font-size:12px;" onchange="atualizarFuncionarioAdminCheckbox()">
                   <option value="">- Perfil -</option>
                 </select>
               </div>
-              <div class="campo-com-label funcionario-admin-global-box" id="containerFuncionarioAdmin" style="display:none;">
-                <label class="campo-label" style="font-size:10px;">Acesso global</label>
-                <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;min-height:32px;">
-                  <input id="funcionarioAdmin" type="checkbox" onchange="atualizarFuncionarioAdminToggle()"> Usuário administrador
+            </div>
+            <div class="funcionario-cadastro-footer">
+              <div class="funcionario-admin-global-box" id="containerFuncionarioAdmin" style="display:none;">
+                <label class="funcionario-admin-toggle" for="funcionarioAdmin">
+                  <input id="funcionarioAdmin" type="checkbox" onchange="atualizarFuncionarioAdminToggle()">
+                  <span><strong>Acesso global</strong><small>Usuário administrador com acesso ao painel SaaS</small></span>
                 </label>
               </div>
-              <div style="display:flex;gap:6px;align-items:flex-end;flex-shrink:0;">
-                <button class="btn btn-green btn-sm" id="btnSalvarFuncionario" style="height:32px;padding:0 16px;" onclick="criarFuncionario()">Cadastrar</button>
-                <button class="btn btn-ghost btn-sm" id="btnCancelarEdicaoFuncionario" style="height:32px;display:none;" onclick="cancelarEdicaoFuncionario()">Cancelar</button>
+              <div class="funcionario-cadastro-actions">
+                <button class="btn btn-ghost btn-sm" id="btnCancelarEdicaoFuncionario" style="display:none;" onclick="cancelarEdicaoFuncionario()">Cancelar</button>
+                <button class="btn btn-green btn-sm" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
               </div>
             </div>
             <!-- Gerenciador de vínculos empresa → lojas -->
             <div id="containerVinculosFuncionario" style="margin-top:12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <div><div class="campo-label" style="margin:0;font-size:11px;">Acesso por empresa e lojas</div><div class="item-detalhe">Perfil Administrador limita-se às lojas vinculadas. A flag Usuário administrador concede acesso global e painel SaaS.</div></div>
+              <div class="funcionario-vinculos-header">
+                <div><div class="campo-label">Acesso por empresa e lojas</div><div class="item-detalhe">O perfil limita-se às lojas vinculadas. O acesso global libera todas as lojas e o painel SaaS.</div></div>
                 <button id="btnAbrirSeletorLojas" class="btn btn-ghost btn-sm" type="button" onclick="abrirSeletorLojas()" style="display:none;font-size:11px;padding:3px 10px;height:24px;">+ Gerenciar lojas</button>
               </div>
               <div id="listaVinculosEmpresas" style="display:flex;flex-direction:column;gap:4px;">
@@ -744,9 +746,6 @@
                   <button class="btn btn-ghost btn-sm" onclick="fecharSeletorLojas()">Fechar</button>
                 </div>
               </div>
-            </div>
-            <div class="form-row funcionario-form-row" style="margin-top:0;">
-
             </div>
           </div>
           <div id="avisoVerificacaoFuncionarioEmail" class="funcionario-email-verificacao-box">
@@ -2932,24 +2931,25 @@
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div class="login-brand-title">CHECK DIARIO</div>
       <div class="login-brand-sub">ROTINA · CHECKLIST · OPERAÇÃO</div>
-      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.0</div>
+      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.1</div>
     </div>
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->
     <div id="loginFase1" class="login-fase">
       <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
         <div class="login-field-group">
-          <div class="login-field-label">Usuário</div>
-          <input type="text" id="username" class="login-input" placeholder="Nome ou e-mail" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <div class="login-field-label">E-mail de acesso</div>
+          <input type="email" id="username" class="login-input" placeholder="seuemail@empresa.com.br" required autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
         </div>
         <div class="login-field-group">
-          <div class="login-field-label">PIN / Senha</div>
-          <input type="password" id="password" class="login-input pin-secure-input" placeholder="Digite seu PIN ou senha" required autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <div class="login-field-label">Senha</div>
+          <input type="password" id="password" class="login-input pin-secure-input" placeholder="Digite sua senha de acesso" required autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <div class="login-field-help">O PIN é usado somente no ponto, tarefas e confirmações internas.</div>
         </div>
         <div class="login-checks">
           <label class="login-check-label" for="savePassword">
             <input type="checkbox" id="savePassword" onchange="sincronizarPreferenciasLoginDaTela()">
-            Lembrar usuÃ¡rio
+            Lembrar e-mail
           </label>
           <label class="login-check-label" for="keepLoggedIn">
             <input type="checkbox" id="keepLoggedIn" onchange="sincronizarPreferenciasLoginDaTela()">

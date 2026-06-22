@@ -1183,6 +1183,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     }));
 
     if (error) {
+      if (String(error.code || '') === '57014' || String(error.message || '').toLowerCase().includes('statement timeout')) {
+        setMsg('msgLogin', 'A validação demorou mais que o esperado. Confirme o e-mail de acesso e tente novamente.', 'err');
+        return;
+      }
       if (isMissingProfilesTableError(error)) {
         setMsg('msgLogin', 'Tabela de perfis indisponível no momento. Tente novamente em alguns segundos.', 'err');
         return;

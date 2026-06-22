@@ -5044,14 +5044,85 @@
       padding: 0 9px;
       font-size: 11px;
     }
-    .funcionario-cadastro-grid { display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px!important;align-items:end!important;padding:14px 0 10px!important; }
-    .funcionario-cadastro-grid > :nth-child(1),.funcionario-cadastro-grid > :nth-child(2){grid-column:span 2;}
-    .funcionario-cadastro-grid > :nth-child(6){justify-content:flex-end;}
-    .funcionario-cadastro-grid input,.funcionario-cadastro-grid select{width:100%;min-width:0;height:40px!important;}
-    .funcionario-admin-global-box{padding:8px 10px;border:1px solid rgba(245,158,11,.45);border-radius:9px;background:rgba(245,158,11,.08);}
-    #containerVinculosFuncionario{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);}
-    @media(max-width:850px){.funcionario-cadastro-grid{grid-template-columns:1fr 1fr}.funcionario-cadastro-grid>*{grid-column:span 1!important}.funcionario-cadastro-grid>:nth-child(1),.funcionario-cadastro-grid>:nth-child(2),.funcionario-cadastro-grid>:nth-child(6){grid-column:1/-1!important}}
-    @media(max-width:560px){.funcionario-cadastro-grid{grid-template-columns:1fr}.funcionario-cadastro-grid>*{grid-column:1!important}}
+    .funcionario-cadastro-grid {
+      display: grid !important;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px 16px !important;
+      align-items: end !important;
+      padding: 16px 0 12px !important;
+    }
+    .funcionario-cadastro-grid > .campo-com-label {
+      width: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+    }
+    .funcionario-campo-nome { grid-column: span 6; }
+    .funcionario-campo-email { grid-column: span 6; }
+    .funcionario-campo-pin { grid-column: span 3; }
+    .funcionario-campo-senha { grid-column: span 5; }
+    .funcionario-campo-perfil { grid-column: span 4; }
+    .funcionario-cadastro-grid input,
+    .funcionario-cadastro-grid select {
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      height: 40px !important;
+      box-sizing: border-box !important;
+      font-size: 12px !important;
+    }
+    .funcionario-cadastro-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0 14px;
+      border-top: 1px solid var(--border);
+    }
+    .funcionario-admin-global-box {
+      min-width: 0;
+      padding: 9px 12px;
+      border: 1px solid rgba(245,158,11,.38);
+      border-radius: 9px;
+      background: rgba(245,158,11,.07);
+    }
+    .funcionario-admin-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      margin: 0;
+    }
+    .funcionario-admin-toggle input[type="checkbox"] {
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px;
+      accent-color: var(--accent);
+    }
+    .funcionario-admin-toggle span { display: grid; gap: 2px; }
+    .funcionario-admin-toggle strong { color: var(--text); font-size: 11px; text-transform: uppercase; letter-spacing: .35px; }
+    .funcionario-admin-toggle small { color: var(--text-muted); font-size: 10px; line-height: 1.25; }
+    .funcionario-cadastro-actions { display: flex; justify-content: flex-end; gap: 8px; margin-left: auto; }
+    .funcionario-cadastro-actions .btn { min-width: 100px; height: 36px; }
+    #containerVinculosFuncionario { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); }
+    .funcionario-vinculos-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .funcionario-vinculos-header .campo-label { margin: 0 0 3px; font-size: 11px; }
+    .login-field-help { margin-top: 6px; color: var(--text-muted); font-size: 10px; line-height: 1.35; }
+    @media (max-width: 900px) {
+      .funcionario-cadastro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .funcionario-cadastro-grid > .campo-com-label { grid-column: span 1; }
+      .funcionario-campo-perfil { grid-column: 1 / -1 !important; }
+    }
+    @media (max-width: 600px) {
+      .funcionario-cadastro-grid { grid-template-columns: 1fr; gap: 11px !important; padding-top: 12px !important; }
+      .funcionario-cadastro-grid > .campo-com-label { grid-column: 1 !important; }
+      .funcionario-cadastro-footer { align-items: stretch; flex-direction: column; }
+      .funcionario-admin-global-box { width: 100%; box-sizing: border-box; }
+      .funcionario-cadastro-actions { width: 100%; margin-left: 0; }
+      .funcionario-cadastro-actions .btn { flex: 1 1 0; }
+      .funcionario-vinculos-header { align-items: stretch; flex-direction: column; }
+      .funcionario-vinculos-header #btnAbrirSeletorLojas { width: 100%; height: 34px !important; }
+    }
 
     .tag {
       display: inline-flex;
