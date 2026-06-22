@@ -1358,7 +1358,12 @@ function selecionarTipoAjusteManualAdminPonto(tipo = 'adicionar') {
   document.getElementById('adminAjusteTipoAnular')?.classList.toggle('ativo', adminAjusteManualPontoTipoAtual === 'anular');
   const horarioLabel = document.getElementById('adminAjustePontoHorarioLabel');
   const batidaLabel = document.getElementById('adminAjustePontoBatidaLabel');
-  if (horarioLabel) horarioLabel.hidden = adminAjusteManualPontoTipoAtual === 'anular';
+  if (horarioLabel) {
+    horarioLabel.hidden = false;
+    horarioLabel.childNodes[0].textContent = adminAjusteManualPontoTipoAtual === 'anular'
+      ? 'Horário correto (substitui a batida) '
+      : 'Horário correto ';
+  }
   if (batidaLabel) batidaLabel.hidden = adminAjusteManualPontoTipoAtual !== 'anular';
   const motivo = document.getElementById('adminAjustePontoMotivo');
   if (motivo) {
@@ -1373,17 +1378,18 @@ function montarListaBatidasPonto(registro, intervalos = []) {
   const lista = [];
   if (registro?.entrada_em) lista.push({ tipo: 'entrada', iso: registro.entrada_em, label: 'Entrada' });
 
-  if (registro?.inicio_intervalo_em || registro?.retorno_intervalo_em) {
-    if (registro.inicio_intervalo_em) lista.push({ tipo: 'intervalo_inicio', iso: registro.inicio_intervalo_em, label: 'Início intervalo 1' });
-    if (registro.retorno_intervalo_em) lista.push({ tipo: 'intervalo_retorno', iso: registro.retorno_intervalo_em, label: 'Retorno intervalo 1' });
-  } else {
-    [...(intervalos || [])]
-      .sort((a, b) => (Number(a.ordem || 0) - Number(b.ordem || 0)) || (new Date(a.inicio_em || 0) - new Date(b.inicio_em || 0)))
-      .forEach((intervalo, idx) => {
-        if (intervalo.inicio_em) lista.push({ tipo: 'intervalo_inicio', iso: intervalo.inicio_em, label: `Início intervalo ${idx + 1}` });
-        if (intervalo.retorno_em) lista.push({ tipo: 'intervalo_retorno', iso: intervalo.retorno_em, label: `Retorno intervalo ${idx + 1}` });
-      });
-  }
+  if (registro?.inicio_intervalo_em) lista.push({ tipo: 'intervalo_inicio', iso: registro.inicio_intervalo_em, label: 'Início intervalo 1' });
+  if (registro?.retorno_intervalo_em) lista.push({ tipo: 'intervalo_retorno', iso: registro.retorno_intervalo_em, label: 'Retorno intervalo 1' });
+
+  [...(intervalos || [])]
+    .sort((a, b) => (Number(a.ordem || 0) - Number(b.ordem || 0)) || (new Date(a.inicio_em || 0) - new Date(b.inicio_em || 0)))
+    .forEach((intervalo, idx) => {
+      const numero = Number(intervalo.ordem || 0) || idx + 2;
+      const inicioJaIncluido = lista.some(item => item.iso && new Date(item.iso).getTime() === new Date(intervalo.inicio_em || 0).getTime());
+      const retornoJaIncluido = lista.some(item => item.iso && new Date(item.iso).getTime() === new Date(intervalo.retorno_em || 0).getTime());
+      if (intervalo.inicio_em && !inicioJaIncluido) lista.push({ tipo: 'intervalo_inicio', iso: intervalo.inicio_em, label: `Início intervalo ${numero}` });
+      if (intervalo.retorno_em && !retornoJaIncluido) lista.push({ tipo: 'intervalo_retorno', iso: intervalo.retorno_em, label: `Retorno intervalo ${numero}` });
+    });
 
   if (registro?.saida_em) lista.push({ tipo: 'saida', iso: registro.saida_em, label: 'Saída' });
   return lista.filter(item => item.iso).sort((a, b) => new Date(a.iso).getTime() - new Date(b.iso).getTime());
@@ -1433,24 +1439,40 @@ async function atualizarBatidasDisponiveisAnulacaoPonto() {
   }
 }
 
-async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso }) {
+async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso, horarioCorreto }) {
   const { registro, intervalos } = await obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataAjuste);
   if (!registro?.id) return { ok: false, mensagem: 'Nenhum registro de ponto encontrado para essa data.' };
   const batidasAtuais = montarListaBatidasPonto(registro, intervalos).map(item => item.iso);
   const alvo = new Date(batidaIso).getTime();
-  const batidas = batidasAtuais.filter(iso => new Date(iso).getTime() !== alvo);
-  if (batidas.length === batidasAtuais.length) return { ok: false, mensagem: 'Batida selecionada não foi encontrada.' };
-
-  const entradaEm = batidas[0] || null;
-  const inicioIntervaloEm = batidas[1] || null;
-  const retornoIntervaloEm = batidas[2] || null;
-  const saidaEm = batidas[3] || null;
-  const novosIntervalos = [];
-  const limite = saidaEm ? batidas.length - 1 : batidas.length;
-  for (let i = 1; i + 1 < limite; i += 2) {
-    if (i === 1) continue;
-    novosIntervalos.push({ ponto_registro_id: registro.id, ordem: novosIntervalos.length + 1, inicio_em: batidas[i], retorno_em: batidas[i + 1] });
+  const indiceAlvo = batidasAtuais.findIndex(iso => new Date(iso).getTime() === alvo);
+  if (indiceAlvo < 0) return { ok: false, mensagem: 'Batida selecionada não foi encontrada.' };
+  const horarioCorrigidoIso = typeof montarIsoAjustePonto === 'function'
+    ? montarIsoAjustePonto(dataAjuste, horarioCorreto)
+    : new Date(`${dataAjuste}T${horarioCorreto}:00`).toISOString();
+  if (!horarioCorrigidoIso || Number.isNaN(new Date(horarioCorrigidoIso).getTime())) {
+    return { ok: false, mensagem: 'Horário correto inválido.' };
   }
+  const batidas = [...batidasAtuais];
+  batidas[indiceAlvo] = horarioCorrigidoIso;
+  batidas.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+  const jornadaFechada = batidas.length % 2 === 0;
+  const entradaEm = batidas[0] || null;
+  const saidaEm = jornadaFechada ? batidas[batidas.length - 1] : null;
+  const miolo = batidas.slice(1, jornadaFechada ? -1 : batidas.length);
+  const paresIntervalo = [];
+  for (let i = 0; i < miolo.length; i += 2) {
+    paresIntervalo.push({ inicio_em: miolo[i] || null, retorno_em: miolo[i + 1] || null });
+  }
+  const primeiroIntervalo = paresIntervalo[0] || {};
+  const inicioIntervaloEm = primeiroIntervalo.inicio_em || null;
+  const retornoIntervaloEm = primeiroIntervalo.retorno_em || null;
+  const novosIntervalos = paresIntervalo.slice(1).map((item, idx) => ({
+    ponto_registro_id: registro.id,
+    ordem: idx + 2,
+    inicio_em: item.inicio_em,
+    retorno_em: item.retorno_em,
+  }));
 
   const { error: erroAtualiza } = await sb.from('ponto_registros').update({ entrada_em: entradaEm, inicio_intervalo_em: inicioIntervaloEm, retorno_intervalo_em: retornoIntervaloEm, saida_em: saidaEm }).eq('id', registro.id);
   if (erroAtualiza) return { ok: false, mensagem: mensagemErroSupabase(erroAtualiza, 'erro desconhecido') };
@@ -1463,7 +1485,29 @@ async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso }) 
     const { error: erroInsert } = await sb.from('ponto_intervalos').insert(novosIntervalos);
     if (erroInsert) return { ok: false, mensagem: `Batida anulada, mas houve erro ao recriar intervalos: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}` };
   }
-  return { ok: true, mensagem: `Batida das ${formatarHoraPonto(batidaIso)} anulada. Sequência do dia reorganizada.` };
+
+  try {
+    const { data: auditorias } = await sb.from('ponto_batidas_auditoria')
+      .select('id')
+      .eq('ponto_registro_id', registro.id)
+      .eq('registrado_em', batidaIso)
+      .limit(1);
+    const auditoriaId = auditorias?.[0]?.id;
+    if (auditoriaId) {
+      await sb.from('ponto_batidas_auditoria').update({
+        registrado_em: horarioCorrigidoIso,
+        origem_registro: 'ajuste_manual_admin',
+      }).eq('id', auditoriaId);
+    }
+  } catch (erroAuditoria) {
+    console.warn('Não foi possível atualizar a auditoria da batida corrigida:', erroAuditoria);
+  }
+
+  return {
+    ok: true,
+    mensagem: `Batida das ${formatarHoraPonto(batidaIso)} substituída por ${formatarHoraPonto(horarioCorrigidoIso)}. Jornada recalculada.`,
+    horarioCorrigidoIso,
+  };
 }
 
 async function carregarAjustesAprovadosPontoPorPeriodo(dataInicio = '', dataFim = '', funcionarioId = '') {
@@ -1557,9 +1601,9 @@ async function salvarAjusteManualAdminPonto() {
   const motivo = String(document.getElementById('adminAjustePontoMotivo')?.value || '').trim();
   const tipo = adminAjusteManualPontoTipoAtual === 'anular' ? 'anular' : 'adicionar';
 
-  if (!funcionarioId || !dataAjuste || !senha || !motivo || (tipo === 'adicionar' && !horarioAjuste) || (tipo === 'anular' && !batidaAnular)) {
+  if (!funcionarioId || !dataAjuste || !horarioAjuste || !senha || !motivo || (tipo === 'anular' && !batidaAnular)) {
     setMsg('msgAjusteManualAdminPonto', tipo === 'anular'
-      ? 'Preencha funcionário, data, batida que será anulada, senha do administrador e motivo.'
+      ? 'Preencha funcionário, data, batida errada, horário correto, senha do administrador e motivo.'
       : 'Preencha funcionário, data, horário, senha do administrador e motivo.', 'err');
     return;
   }
@@ -1602,10 +1646,10 @@ async function salvarAjusteManualAdminPonto() {
   let resultado;
   let solicitacaoManual;
   if (tipo === 'anular') {
-    resultado = await anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso: batidaAnular });
+    resultado = await anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso: batidaAnular, horarioCorreto: horarioAjuste });
     solicitacaoManual = {
       funcionario_id: funcionarioId, funcionario_nome: funcionarioNome, data_ajuste: dataAjuste,
-      horario_ajuste: formatarHoraPonto(batidaAnular), motivo: `[ANULACAO MANUAL ADMIN] ${motivo}`,
+      horario_ajuste: horarioAjuste, motivo: `[ANULACAO MANUAL ADMIN] Original ${formatarHoraPonto(batidaAnular)} substituída por ${horarioAjuste}. ${motivo}`,
       status: 'aprovado', aprovado_em: new Date().toISOString(), aprovado_por_id: obterIdAdminAtual(), aprovado_por_nome: obterNomeAdminAtual(),
     };
   } else {
@@ -1906,6 +1950,37 @@ async function registrarPontoFuncionario() {
     console.warn('Não foi possível validar bloqueio real de batida em 10 minutos:', erroValidacaoDezMinutos);
   }
 
+  // Reserva atômica no banco: impede dois cliques, abas ou dispositivos de
+  // gravarem simultaneamente antes de a auditoria da primeira batida existir.
+  let tokenReservaBatida = '';
+  try {
+    const { data: tokenReserva, error: erroReserva } = await executarSemFiltrosTenantTemporario(() => sb.rpc('reservar_batida_ponto', {
+      p_funcionario_id: funcionarioId,
+    }));
+    if (erroReserva) throw erroReserva;
+    const tokenReservaTexto = String(tokenReserva ?? '').trim();
+    tokenReservaBatida = ['null', 'undefined'].includes(tokenReservaTexto.toLowerCase()) ? '' : tokenReservaTexto;
+    if (!tokenReservaBatida) {
+      avisarBatidaBloqueada(agora);
+      return;
+    }
+    localStorage.setItem(chaveBloqueioLocal, JSON.stringify({ iso: agora, funcionarioId, nome: funcionario.nome || '' }));
+  } catch (erroReserva) {
+    setMsg('msgPonto', `Não foi possível validar o intervalo mínimo entre batidas: ${mensagemErroSupabase(erroReserva, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  async function liberarReservaBatidaSeFalhar() {
+    if (!tokenReservaBatida) return;
+    try {
+      await executarSemFiltrosTenantTemporario(() => sb.rpc('liberar_reserva_batida_ponto', {
+        p_funcionario_id: funcionarioId,
+        p_token: tokenReservaBatida,
+      }));
+    } catch (_) {}
+    tokenReservaBatida = '';
+  }
+
   async function buscarRegistroPontoAbertoOuDoDia() {
     // Regra definitiva do ponto: 1 registro por funcionário/dia em ponto_registros.
     // Não filtra por loja_id aqui, porque registros antigos/ajustados podem estar sem loja
@@ -2051,6 +2126,7 @@ async function registrarPontoFuncionario() {
         tipoAvisoPonto = 'parado';
         descricaoBatida = 'PONTO FECHADO';
       } else if (registro.saida_em) {
+        await liberarReservaBatidaSeFalhar();
         setMsg('msgPonto', 'Ponto já fechado hoje para este funcionário.', 'err');
         if (campoPin) campoPin.value = '';
         return;
@@ -2109,12 +2185,14 @@ async function registrarPontoFuncionario() {
         tipoAvisoPonto = 'parado';
         descricaoBatida = 'PONTO FECHADO';
       } else {
+        await liberarReservaBatidaSeFalhar();
         setMsg('msgPonto', 'Sequência de ponto inconsistente. Verifique o ajuste manual do dia.', 'err');
         if (campoPin) campoPin.value = '';
         return;
       }
     }
   } catch (error) {
+    await liberarReservaBatidaSeFalhar();
     setMsg('msgPonto', `Não foi possível registrar o ponto: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
