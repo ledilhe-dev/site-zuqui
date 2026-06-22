@@ -1,6 +1,13 @@
 // FUNCIONÁRIOS
 // 
 async function carregarFuncionarios() {
+  if (!usuarioPodeAcaoFuncionarios('visualizar')) {
+    const listaBloqueada = document.getElementById('listaFuncionarios');
+    if (listaBloqueada) listaBloqueada.innerHTML = '<div class="empty">Seu perfil não possui permissão para visualizar funcionários.</div>';
+    cadastroFuncionarioAberto = false;
+    atualizarEstadoCadastroFuncionarioUI();
+    return;
+  }
   atualizarSelectLojasFuncionario();
   const lista = document.getElementById('listaFuncionarios');
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
@@ -76,11 +83,13 @@ async function carregarFuncionarios() {
         ? 'Todas as lojas (Administrador do Sistema)'
         : (obterNomeLojaFiltroMultiLoja(f.loja_id) || (!f.loja_id ? 'Acesso por vínculos' : '-'));
       // Admin global pode editar qualquer funcionário (não tem loja_id vinculada).
-      const podeEditarNestaLoja = ehAdminGlobal || (
+      const dentroDoEscopoDaLoja = ehAdminGlobal || (
         f?.é_administrador !== true
         && String(f?.id || '') !== String(usuarioSistemaLogado?.id || '')
         && (lojasPermitidasGestao.has(String(f?.loja_id || '')) || funcionariosVinculadosPermitidos.has(String(f?.id || '')))
       );
+      const podeEditarNestaLoja = dentroDoEscopoDaLoja && usuarioPodeAcaoFuncionarios('editar');
+      const podeExcluirNestaLoja = dentroDoEscopoDaLoja && usuarioPodeAcaoFuncionarios('excluir');
       return `
       <div class="item tarefa-cadastrada-item">
         <div class="item-info">
@@ -91,12 +100,13 @@ async function carregarFuncionarios() {
         <div class="item-actions">
           ${f.ativo ? '' : '<span class="tag tag-gray">Inativo</span>'}
           ${!f.email ? '<span class="tag tag-gray">Sem e-mail</span>' : f.email_verificado === true ? '<span class="tag tag-green">E-mail ok</span>' : '<span class="tag tag-amber">E-mail pendente</span>'}
-          ${f.email && f.email_verificado !== true ? `<button class="btn btn-ghost btn-sm" onclick="reenviarVerificacaoFuncionarioLista('${f.id}', '${String(f.email || '').replace(/'/g, "\\'")}', '${String(f.nome || '').replace(/'/g, "\\'")}')">Reenviar e-mail</button>` : ''}
+          ${podeEditarNestaLoja && f.email && f.email_verificado !== true ? `<button class="btn btn-ghost btn-sm" onclick="reenviarVerificacaoFuncionarioLista('${f.id}', '${String(f.email || '').replace(/'/g, "\\'")}', '${String(f.nome || '').replace(/'/g, "\\'")}')">Reenviar e-mail</button>` : ''}
           ${podeEditarNestaLoja ? `
             <button class="btn btn-ghost btn-sm" onclick="editarFuncionario('${f.id}')">Editar</button>
             <button class="btn btn-amber btn-sm" onclick="toggleFuncionario('${f.id}', ${f.ativo})">${f.ativo ? 'Desativar' : 'Ativar'}</button>
-            <button class="btn btn-red" onclick="excluirFuncionario('${f.id}')">Excluir</button>
-          ` : '<span class="tag tag-gray">Troque a loja para editar</span>'}
+          ` : ''}
+          ${podeExcluirNestaLoja ? `<button class="btn btn-red" onclick="excluirFuncionario('${f.id}')">Excluir</button>` : ''}
+          ${!dentroDoEscopoDaLoja && (usuarioPodeAcaoFuncionarios('editar') || usuarioPodeAcaoFuncionarios('excluir')) ? '<span class="tag tag-gray">Troque a loja para gerenciar</span>' : ''}
         </div>
       </div>`;
     }).join('') + '</div>';
@@ -117,6 +127,12 @@ function atualizarEstadoCadastroFuncionarioUI() {
   const btnSalvar = document.getElementById('btnSalvarFuncionario');
 
   if (!conteudo || !btnToggle || !titulo || !subtitulo) return;
+
+  const podeAbrirFormulario = funcionarioEmEdicaoId
+    ? usuarioPodeAcaoFuncionarios('editar')
+    : usuarioPodeAcaoFuncionarios('criar');
+  btnToggle.style.display = podeAbrirFormulario ? '' : 'none';
+  if (!podeAbrirFormulario) cadastroFuncionarioAberto = false;
 
   conteudo.hidden = !cadastroFuncionarioAberto;
 
@@ -530,7 +546,19 @@ function obterIdsLojasPermitidasGestaoFuncionarios() {
 }
 
 function usuarioPodeGerenciarAcessosFuncionarios() {
-  return usuarioEhAdministrador() || usuarioPodeAcessar('funcionarios');
+  return usuarioPodeAcaoFuncionarios('editar');
+}
+
+function usuarioPodeAcaoFuncionarios(acao = 'visualizar') {
+  if (usuarioEhAdministrador()) return true;
+  const permissoes = obterPermissoesUsuario();
+  const chave = {
+    visualizar: 'funcionarios',
+    criar: 'funcionarios_criar',
+    editar: 'funcionarios_editar',
+    excluir: 'funcionarios_excluir',
+  }[acao] || 'funcionarios';
+  return permissoes[chave] === true;
 }
 
 function usuarioPodeGerenciarLojaFuncionario(lojaId) {
@@ -556,8 +584,8 @@ function usuarioPodeAtribuirPerfilFuncionario(perfilId) {
   return obterPerfisAtribuiveisFuncionario().some(perfil => String(perfil.id) === id);
 }
 
-async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas = false } = {}) {
-  if (!usuarioPodeGerenciarAcessosFuncionarios()) {
+async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas = false, acao = 'editar' } = {}) {
+  if (!usuarioPodeAcaoFuncionarios(acao)) {
     return { ok: false, motivo: 'Seu perfil não permite gerenciar funcionários.' };
   }
   if (usuarioEhAdministrador()) return { ok: true };
@@ -851,8 +879,9 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
 
   async function criarFuncionario() {
   try {
-    if (!usuarioPodeGerenciarAcessosFuncionarios()) {
-      setMsg('msgFuncionarios', 'Seu perfil não permite cadastrar ou editar funcionários.', 'err');
+    const acaoFuncionario = funcionarioEmEdicaoId ? 'editar' : 'criar';
+    if (!usuarioPodeAcaoFuncionarios(acaoFuncionario)) {
+      setMsg('msgFuncionarios', `Seu perfil não permite ${acaoFuncionario === 'editar' ? 'editar' : 'cadastrar'} funcionários.`, 'err');
       return;
     }
     if (funcionarioEmEdicaoId && !usuarioEhAdministrador()) {
@@ -1031,6 +1060,25 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     const funcionarioIdParaEmail = funcionarioSalvo?.id || funcionarioIdAtual || '';
     const funcionarioNomeParaEmail = funcionarioSalvo?.nome || nome;
 
+    // Ao editar na loja atual, o perfil selecionado deve atualizar também o
+    // vínculo da loja. Antes apenas funcionarios.perfil_id mudava e o vínculo
+    // antigo continuava prevalecendo no login, exibindo dois perfis conflitantes.
+    if (editandoAgora && !funcionarioAdmin && perfilIdParaSalvar) {
+      const lojaAtualPerfil = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+      if (lojaAtualPerfil) {
+        const { error: erroSincronizarPerfil } = await executarSemFiltrosTenantTemporario(() => sb
+          .from('funcionario_lojas')
+          .update({ perfil_id: perfilIdParaSalvar })
+          .eq('funcionario_id', funcionarioIdParaEmail)
+          .eq('loja_id', lojaAtualPerfil)
+          .eq('ativo', true));
+        if (erroSincronizarPerfil) {
+          setMsg('msgFuncionarios', `Os dados foram salvos, mas não foi possível sincronizar o perfil da loja: ${mensagemErroSupabase(erroSincronizarPerfil, 'erro desconhecido')}`, 'err');
+          return;
+        }
+      }
+    }
+
     if (pin) {
       try {
         await chamarFuncaoAutenticacao({
@@ -1148,6 +1196,10 @@ function limparFormularioFuncionario() {
 }
 
 async function editarFuncionario(id) {
+  if (!usuarioPodeAcaoFuncionarios('editar')) {
+    setMsg('msgFuncionarios', 'Seu perfil não permite editar funcionários.', 'err');
+    return;
+  }
   atualizarAvisoVerificacaoFuncionarioEmail({ visivel: false });
   let funcionario = null;
   let error = null;
@@ -1215,7 +1267,11 @@ function cancelarEdicaoFuncionario() {
 }
 
 async function excluirFuncionario(id) {
-  const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true });
+  if (!usuarioPodeAcaoFuncionarios('excluir')) {
+    setMsg('msgFuncionarios', 'Seu perfil não permite excluir funcionários.', 'err');
+    return;
+  }
+  const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true, acao: 'excluir' });
   if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   if (!confirm('Excluir este funcionário?')) return;
   // Busca SEM filtro de loja: funcionários órfãos (sem loja) ou de outra loja
@@ -1269,6 +1325,10 @@ async function excluirFuncionario(id) {
 }
 
 async function toggleFuncionario(id, ativo) {
+  if (!usuarioPodeAcaoFuncionarios('editar')) {
+    setMsg('msgFuncionarios', 'Seu perfil não permite ativar ou desativar funcionários.', 'err');
+    return;
+  }
   const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true });
   if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   const executarToggle = usuarioSistemaLogado?.tipo === 'admin' ? executarSemFiltrosTenantTemporario : executarSemFiltroLojaTemporario;
