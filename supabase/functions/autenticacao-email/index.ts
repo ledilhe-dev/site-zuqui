@@ -42,6 +42,14 @@ Deno.serve(async (request) => {
 
   let body: Record<string, unknown>;
   try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
+  }
+
+  const action = String(body.action || "") as AuthAction;
+
+  try {
     if (action === "admin_set_employee_password" || action === "admin_set_employee_pin" || action === "admin_set_store_admin_password") {
       const actorId = normalizeOptionalUuid(body.actorId);
       const actorType = String(body.actorType || "").trim();
@@ -74,14 +82,6 @@ Deno.serve(async (request) => {
       return jsonResponse({ ok: true });
     }
 
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400);
-  }
-
-  const action = String(body.action || "") as AuthAction;
-
-  try {
     if (action === "send_verification") {
       ensureEmailProvider(resendApiKey, fromEmail);
       const email = normalizeEmail(body.email);
