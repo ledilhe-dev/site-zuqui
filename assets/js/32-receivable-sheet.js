@@ -113,36 +113,12 @@ function nrFechar() {
 }
 
 // ════════════════════════════════════════════════════════════════
-// ADMIN FOUC GUARD - Anti-flash seguro para elementos admin
+// GUARD DE PERMISSÕES - a interface só aparece após validar a sessão no banco
 // ════════════════════════════════════════════════════════════════
 (function() {
-  function liberarGuard() {
-    try { document.documentElement.classList.remove('admin-fouc-pendente'); } catch(_e) {}
-  }
-
-  // Liberar por timeout múltiplo (segurança extra)
-  setTimeout(liberarGuard, 900);
-  setTimeout(liberarGuard, 1800);
-  document.addEventListener('DOMContentLoaded', function() { setTimeout(liberarGuard, 500); });
-
-  // Quando as permissões forem aplicadas, libera o guard
-  (function envolverPermissoes() {
-    var tentativas = 0;
-    var timer = setInterval(function() {
-      tentativas++;
-      try {
-        if (typeof window.aplicarPermissoesSistema === 'function' && !window.aplicarPermissoesSistema.__fouc) {
-          var original = window.aplicarPermissoesSistema;
-          window.aplicarPermissoesSistema = function() {
-            var ret = original.apply(this, arguments);
-            setTimeout(liberarGuard, 0);
-            return ret;
-          };
-          window.aplicarPermissoesSistema.__fouc = true;
-          clearInterval(timer);
-        }
-      } catch (e) { }
-      if (tentativas > 50) clearInterval(timer);
-    }, 50);
-  })();
+  const temSessao = localStorage.getItem('zuqui_auth')
+    || localStorage.getItem('check_diario_auth_persistente')
+    || sessionStorage.getItem('zuqui_auth')
+    || sessionStorage.getItem('check_diario_auth_persistente');
+  if (!temSessao) document.documentElement.classList.remove('admin-fouc-pendente');
 })();

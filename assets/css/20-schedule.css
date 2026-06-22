@@ -955,16 +955,42 @@
   .escala-modal-item strong{font-size:12px;line-height:1.2;}
   .escala-modal-item span{font-size:11px;color:var(--text-muted);text-transform:capitalize;}
 
-  /* ---- ADMIN FOUC GUARD (evita pisca de elementos admin) ---- */
-  html.admin-fouc-pendente #menuSaasGroup,
-  html.admin-fouc-pendente [data-page="empresas_saas"],
-  html.admin-fouc-pendente [data-page="lojas_saas"],
-  html.admin-fouc-pendente [data-page="usuarios_saas"],
-  html.admin-fouc-pendente [data-page="solicitacoes"],
-  html.admin-fouc-pendente [data-page="emails"],
-  html.admin-fouc-pendente [data-page="forcar_atualizacao_geral"] {
+  /* ---- GUARD DE PERMISSÕES (evita exibir menus antes da validação) ---- */
+  html.admin-fouc-pendente .shell {
     visibility: hidden !important;
     pointer-events: none !important;
+  }
+  .copiar-dados-acoes-selecao,
+  .copiar-dados-rodape {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .copiar-dados-opcoes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .copiar-dados-opcoes .perm-item {
+    min-width: 0;
+    margin: 0;
+  }
+  .copiar-dados-rodape {
+    justify-content: space-between;
+  }
+  .copiar-dados-rodape > span {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+  @media (max-width: 900px) {
+    .copiar-dados-opcoes { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+  }
+  @media (max-width: 560px) {
+    .copiar-dados-opcoes { grid-template-columns: 1fr; }
+    .copiar-dados-rodape .btn { width: 100%; }
   }
   /* patch-dashboard-financeiro-responsivo-mobile-tablet */
   .main,

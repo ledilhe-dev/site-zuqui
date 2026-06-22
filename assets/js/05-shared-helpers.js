@@ -866,10 +866,10 @@ function usuarioPodeAcessar(pageId) {
     return usuarioPodeAcessarAlertasRapidos();
   }
   if (pageId === 'escala_plantoes') {
-    return !!(permissoes.escala_plantoes || permissoes.cadastro_plantao || permissoes.relatorio_plantao);
+    return permissoes.agenda === true;
   }
   if (pageId === 'relatorio_plantao') {
-    return !!(permissoes.relatorio_plantao || permissoes.escala_plantoes);
+    return permissoes.relatorio_plantao === true;
   }
   return !!permissoes[pageId];
 }
@@ -1038,15 +1038,22 @@ function normalizarCodigoPerfil(codigo) {
 
 function normalizarPermissoesPerfil(permissoes) {
   if (!permissoes) return {};
+  let normalizadas = {};
   if (typeof permissoes === 'string') {
     try {
       const parsed = JSON.parse(permissoes);
-      return parsed && typeof parsed === 'object' ? parsed : {};
+      normalizadas = parsed && typeof parsed === 'object' ? { ...parsed } : {};
     } catch (e) {
       return {};
     }
+  } else if (typeof permissoes === 'object') {
+    normalizadas = { ...permissoes };
   }
-  return typeof permissoes === 'object' ? permissoes : {};
+  // Compatibilidade enquanto sessões antigas ainda carregam a chave anterior.
+  if (typeof normalizadas.agenda !== 'boolean' && typeof normalizadas.escala_plantoes === 'boolean') {
+    normalizadas.agenda = normalizadas.escala_plantoes;
+  }
+  return normalizadas;
 }
 
 function normalizarPerfilUsuario(perfil) {
@@ -1350,6 +1357,7 @@ function aplicarPermissoesSistema() {
   // Ordem do menu é carregada explicitamente antes de restaurarPaginaAtivaSalvaOuPadrao
   // Recarregar tema da loja atual sempre que as permissões são reaplicadas
   if (usuarioSistemaLogado) carregarTemaUsuario();
+  document.documentElement.classList.remove('admin-fouc-pendente');
 }
 
 async function countTable(tableName) {

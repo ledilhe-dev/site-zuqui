@@ -1380,6 +1380,12 @@ function usuarioLogadoEhTerminalCompartilhadoPonto() {
 }
 
 async function carregarBaterPonto() {
+  if (!usuarioPodeAcessar('bater_ponto')) {
+    const fallback = Array.from(document.querySelectorAll('.nav-btn[data-page]'))
+      .find(btn => btn.style.display !== 'none' && usuarioPodeAcessar(btn.dataset.page));
+    if (fallback) fallback.click();
+    return;
+  }
   configurarSegurancaCampoPinPonto();
   atualizarCardTempoAvisoPonto();
   limparCampoPinPonto();

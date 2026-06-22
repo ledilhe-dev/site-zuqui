@@ -1,5 +1,5 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.4';
+const APP_VERSION = '3.2.7';
 const APP_VERSION_LABEL = '3.1.64-confirmar-rec-futuro-fix';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
