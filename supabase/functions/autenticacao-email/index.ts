@@ -271,7 +271,7 @@ async function canManageCredentials(
     return valid === true;
   }
 
-  const { data: valid } = await admin.rpc("verificar_credencial_funcionario", {
+  const { data: valid } = await admin.rpc("verificar_senha_funcionario", {
     p_funcionario_id: actorId,
     p_senha: actorPassword,
   });
