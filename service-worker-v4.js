@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v40-funcionarios-layout';
+const CACHE_NAME = 'check-diario-pwa-v41-texto-usuario';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
