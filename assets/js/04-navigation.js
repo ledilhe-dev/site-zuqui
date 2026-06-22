@@ -4,7 +4,7 @@ const topTitles = {
   dashboard: ['Dashboard', 'Visao geral do sistema'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
-  escala_plantoes: ['Escalas', 'Calendário de trabalho, folgas, domingos e feriados'],
+  escala_plantoes: ['Agenda', 'Calendário de trabalho, folgas, domingos e feriados'],
   relatorio_plantao: ['Relatório escala/plantões', 'Plantões lançados, valores combinados e exportações'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],

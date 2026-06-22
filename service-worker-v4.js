@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v43-permissoes-estritas';
+const CACHE_NAME = 'check-diario-pwa-v46-relatorios-funcionarios';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -377,6 +377,65 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     }
   }
 
+  async function revalidarSessaoFuncionarioNoBanco(usuario = null) {
+    if (!usuario || usuario.tipo !== 'funcionario') return usuario;
+
+    const funcionarioId = String(usuario.id || '').trim();
+    const lojaId = String(usuario.loja_id || '').trim();
+    if (!funcionarioId || !lojaId) {
+      throw new Error('A sessão não possui funcionário e loja válidos.');
+    }
+
+    const funcionarioRes = await executarSemFiltrosTenantTemporario(() => sb
+      .from('funcionarios')
+      .select('id, nome, email, ativo, perfil_id, loja_id, empresa_id, é_administrador')
+      .eq('id', funcionarioId)
+      .maybeSingle());
+    if (funcionarioRes.error) throw funcionarioRes.error;
+    const funcionario = funcionarioRes.data;
+    if (!funcionario?.id || funcionario.ativo === false) {
+      throw new Error('O funcionário desta sessão não existe ou está inativo.');
+    }
+
+    const vinculoRes = await executarSemFiltrosTenantTemporario(() => sb
+      .from('funcionario_lojas')
+      .select('loja_id, perfil_id, ativo')
+      .eq('funcionario_id', funcionarioId)
+      .eq('loja_id', lojaId)
+      .eq('ativo', true)
+      .maybeSingle());
+    if (vinculoRes.error) throw vinculoRes.error;
+    if (!vinculoRes.data?.perfil_id) {
+      throw new Error('O funcionário não possui vínculo ativo com esta loja.');
+    }
+
+    const perfilRes = await executarSemFiltrosTenantTemporario(() => sb
+      .from('perfis')
+      .select('id, nome, codigo, permissoes, loja_id, empresa_id')
+      .eq('id', vinculoRes.data.perfil_id)
+      .eq('loja_id', lojaId)
+      .maybeSingle());
+    if (perfilRes.error) throw perfilRes.error;
+    if (!perfilRes.data?.id) {
+      throw new Error('O perfil vinculado ao funcionário não pertence à loja atual.');
+    }
+
+    const ehAdminSistema = funcionario.é_administrador === true;
+    return {
+      ...usuario,
+      tipo: ehAdminSistema ? 'admin' : 'funcionario',
+      id: funcionario.id,
+      nome: funcionario.nome,
+      email: funcionario.email || '',
+      username: funcionario.email || funcionario.nome || usuario.username || '',
+      é_administrador: ehAdminSistema,
+      perfil_id: perfilRes.data.id,
+      empresa_id: perfilRes.data.empresa_id || funcionario.empresa_id || usuario.empresa_id || null,
+      loja_id: lojaId,
+      perfil: normalizarPerfilUsuario(perfilRes.data),
+    };
+  }
+
   async function restaurarSessaoSistema() {
     const salvoLocal = localStorage.getItem('zuqui_auth');
     const salvoLocalBackup = localStorage.getItem('check_diario_auth_persistente');
@@ -389,15 +448,17 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       window.usuarioSistemaLogado = null;
       atualizarUsuarioTopbar();
       setSistemaLogado(false);
+      document.documentElement.classList.remove('admin-fouc-pendente');
       return false;
     }
 
     try {
-      const usuario = JSON.parse(salvo);
+      let usuario = JSON.parse(salvo);
       const autoridadeAdmin = await validarAutoridadeAdminSistemaNoBanco(usuario);
       if (usuario?.tipo === 'admin' && autoridadeAdmin === false) {
         throw new Error('A autorização de administrador do sistema foi revogada.');
       }
+      usuario = await revalidarSessaoFuncionarioNoBanco(usuario);
       usuarioSistemaLogado = {
         ...usuario,
         perfil: normalizarPerfilUsuario(usuario?.perfil),
@@ -410,6 +471,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       habilitarSomNotificacao();
       const chk = document.getElementById('keepLoggedIn');
       if (chk) chk.checked = !!(salvoLocal || salvoLocalBackup);
+      persistirSessaoSistemaAtual(!!(salvoLocal || salvoLocalBackup));
       setSistemaLogado(true);
       aplicarPermissoesSistema();
       carregarNotificacoes();
@@ -433,27 +495,44 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       window.usuarioSistemaLogado = null;
       atualizarUsuarioTopbar();
       setSistemaLogado(false);
+      document.documentElement.classList.remove('admin-fouc-pendente');
+      console.warn('Sessão encerrada durante a revalidação de segurança:', e);
       return false;
     }
   }
 
-  let revalidacaoAdminSistemaEmAndamento = false;
-  async function revalidarSessaoAdminSistemaAtiva() {
-    if (revalidacaoAdminSistemaEmAndamento || usuarioSistemaLogado?.tipo !== 'admin') return;
-    revalidacaoAdminSistemaEmAndamento = true;
+  let revalidacaoSessaoSistemaEmAndamento = false;
+  async function revalidarSessaoSistemaAtiva() {
+    if (revalidacaoSessaoSistemaEmAndamento || !usuarioSistemaLogado) return;
+    revalidacaoSessaoSistemaEmAndamento = true;
     try {
-      const autorizado = await validarAutoridadeAdminSistemaNoBanco(usuarioSistemaLogado);
-      if (autorizado === false) {
+      if (usuarioSistemaLogado.tipo === 'admin') {
+        const autorizado = await validarAutoridadeAdminSistemaNoBanco(usuarioSistemaLogado);
+        if (autorizado !== false) return;
         await logout();
         setMsg('msgLogin', 'A autorização de administrador do sistema foi revogada. Entre novamente.', 'err');
+        return;
       }
+      if (usuarioSistemaLogado.tipo !== 'funcionario') return;
+
+      const manterConectado = !!(localStorage.getItem('zuqui_auth') || localStorage.getItem('check_diario_auth_persistente'));
+      usuarioSistemaLogado = await revalidarSessaoFuncionarioNoBanco(usuarioSistemaLogado);
+      window.usuarioSistemaLogado = usuarioSistemaLogado;
+      window.__sessaoSistema = () => usuarioSistemaLogado;
+      persistirSessaoSistemaAtual(manterConectado);
+      atualizarUsuarioTopbar();
+      aplicarPermissoesSistema();
+    } catch (erro) {
+      console.warn('A sessão não pôde ser revalidada e foi encerrada:', erro);
+      await logout();
+      setMsg('msgLogin', 'Seu acesso ou perfil foi alterado. Entre novamente.', 'err');
     } finally {
-      revalidacaoAdminSistemaEmAndamento = false;
+      revalidacaoSessaoSistemaEmAndamento = false;
     }
   }
-  window.setInterval(revalidarSessaoAdminSistemaAtiva, 60000);
+  window.setInterval(revalidarSessaoSistemaAtiva, 60000);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') revalidarSessaoAdminSistemaAtiva();
+    if (document.visibilityState === 'visible') revalidarSessaoSistemaAtiva();
   });
 
   async function logout() {
@@ -1856,6 +1935,10 @@ function exportarRelatorioPontoPDF() {
    Observação: não usa mais a RPC registrar_ponto_funcionario_v2, porque ela podia estar limitada a 1 intervalo.
 */
 async function registrarPontoFuncionario() {
+  if (!usuarioPodeAcessar('bater_ponto')) {
+    setMsg('msgPonto', 'Seu perfil não possui permissão para bater ponto.', 'err');
+    return;
+  }
   const funcionarioRestritoId = obterFuncionarioRestritoLogadoIdParaPonto();
   const terminalCompartilhadoPonto = usuarioLogadoEhTerminalCompartilhadoPonto();
   const restringirPontoAoUsuarioLogado = funcionarioRestritoId && !terminalCompartilhadoPonto;

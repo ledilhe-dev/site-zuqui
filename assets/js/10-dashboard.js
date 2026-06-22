@@ -32,7 +32,7 @@ const MEU_PAINEL_WIDGETS_DISPONIVEIS = [
   { id: 'atalho_alertas',             tipo: 'atalho', ico: '⚡', label: 'Alertas rápidos',                grupo: 'op', pagina: 'tarefas_rapidas' },
   { id: 'atalho_checklist',           tipo: 'atalho', ico: '✅', label: 'Iniciar checklist',              grupo: 'op', pagina: 'checklists' },
   { id: 'atalho_cad_checklist',       tipo: 'atalho', ico: '📝', label: 'Cadastro checklist',             grupo: 'op', pagina: 'tarefas' },
-  { id: 'atalho_escalas',             tipo: 'atalho', ico: '📆', label: 'Escalas',                        grupo: 'op', pagina: 'escala_plantoes' },
+  { id: 'atalho_escalas',             tipo: 'atalho', ico: '📆', label: 'Agenda',                         grupo: 'op', pagina: 'escala_plantoes' },
   { id: 'atalho_rel_escalas',         tipo: 'atalho', ico: '📊', label: 'Relatório escala/plantões',      grupo: 'op', pagina: 'relatorio_plantao' },
   { id: 'atalho_rel_tarefas',         tipo: 'atalho', ico: '📊', label: 'Relatório tarefas',              grupo: 'op', pagina: 'relatorio_lancamentos' },
   // ── Atalhos — Administração ──────────────────────────────────────

@@ -501,6 +501,78 @@ function inicializarCopiarDadosEntreLojasSaas() {
   sincronizarSelectsCopiarDadosEntreLojas();
 }
 
+function marcarOpcoesCopiarDadosLojas(marcar = true) {
+  document.querySelectorAll('#cardCopiarDadosLojasSaas input[type="checkbox"]').forEach(input => {
+    input.checked = !!marcar;
+  });
+}
+
+function limparCamposSistemaParaCopiaLoja(registro = {}) {
+  const copia = { ...(registro || {}) };
+  ['id', 'created_at', 'updated_at', 'criado_em', 'atualizado_em'].forEach(campo => delete copia[campo]);
+  return copia;
+}
+
+async function copiarCadastroSimplesEntreLojasSaas({
+  tabela,
+  empresaId,
+  lojaOrigemId,
+  lojaDestinoId,
+  chave = item => normalizarNomeComparacao(item?.nome || ''),
+}) {
+  const { data: origem, error: erroOrigem } = await sb
+    .from(tabela)
+    .select('*')
+    .eq('empresa_id', empresaId)
+    .eq('loja_id', lojaOrigemId);
+  if (erroOrigem) throw erroOrigem;
+
+  const { data: destino, error: erroDestino } = await sb
+    .from(tabela)
+    .select('*')
+    .eq('empresa_id', empresaId)
+    .eq('loja_id', lojaDestinoId);
+  if (erroDestino) throw erroDestino;
+
+  const existentes = new Set((destino || []).map(chave).filter(Boolean));
+  const inserir = [];
+  let ignorados = 0;
+  for (const item of origem || []) {
+    const chaveItem = chave(item);
+    if (!chaveItem || existentes.has(chaveItem)) {
+      ignorados += 1;
+      continue;
+    }
+    existentes.add(chaveItem);
+    inserir.push({
+      ...limparCamposSistemaParaCopiaLoja(item),
+      empresa_id: empresaId,
+      loja_id: lojaDestinoId,
+    });
+  }
+
+  if (inserir.length) {
+    const { error: erroInsert } = await sb.from(tabela).insert(inserir);
+    if (erroInsert) throw erroInsert;
+  }
+  return { inseridos: inserir.length, ignorados };
+}
+
+async function obterMapaGruposFornecedoresEntreLojasSaas(empresaId, lojaOrigemId, lojaDestinoId) {
+  const [origemRes, destinoRes] = await Promise.all([
+    sb.from('grupos_fornecedor').select('id, nome').eq('empresa_id', empresaId).eq('loja_id', lojaOrigemId),
+    sb.from('grupos_fornecedor').select('id, nome').eq('empresa_id', empresaId).eq('loja_id', lojaDestinoId),
+  ]);
+  if (origemRes.error) throw origemRes.error;
+  if (destinoRes.error) throw destinoRes.error;
+
+  const destinoPorNome = new Map((destinoRes.data || []).map(item => [normalizarNomeComparacao(item?.nome || ''), item.id]));
+  return new Map((origemRes.data || []).map(item => [
+    String(item.id || ''),
+    destinoPorNome.get(normalizarNomeComparacao(item?.nome || '')) || null,
+  ]));
+}
+
 async function copiarFornecedoresEntreLojasSaas(empresaId = '', lojaOrigemId = '', lojaDestinoId = '') {
   const { data: fornecedoresOrigem, error: erroOrigem } = await sb
     .from('fornecedores')
@@ -527,6 +599,7 @@ async function copiarFornecedoresEntreLojasSaas(empresaId = '', lojaOrigemId = '
     if (cnpj) return `cnpj:${cnpj}`;
     return `nome:${normalizarNomeComparacao(item?.nome || '')}`;
   }));
+  const mapaGrupos = await obterMapaGruposFornecedoresEntreLojasSaas(empresaId, lojaOrigemId, lojaDestinoId);
 
   const inserir = [];
   let ignorados = 0;
@@ -542,6 +615,7 @@ async function copiarFornecedoresEntreLojasSaas(empresaId = '', lojaOrigemId = '
     const { id, created_at, updated_at, loja_id, empresa_id, ...restante } = fornecedor || {};
     inserir.push({
       ...restante,
+      grupo_id: fornecedor?.grupo_id ? (mapaGrupos.get(String(fornecedor.grupo_id)) || null) : null,
       empresa_id: empresaId,
       loja_id: lojaDestinoId,
     });
@@ -657,6 +731,10 @@ async function copiarDadosEntreLojasSaas() {
   const lojaDestinoId = String(document.getElementById('saasLojaDestinoCopiarDados')?.value || '').trim();
   const copiarFornecedores = document.getElementById('copiarDadosFornecedores')?.checked === true;
   const copiarChecklists = document.getElementById('copiarDadosChecklists')?.checked === true;
+  const copiarPerfis = document.getElementById('copiarDadosPerfis')?.checked === true;
+  const copiarGruposFornecedores = document.getElementById('copiarDadosGruposFornecedores')?.checked === true;
+  const copiarCategoriasCompra = document.getElementById('copiarDadosCategoriasCompra')?.checked === true;
+  const copiarFormasPagamento = document.getElementById('copiarDadosFormasPagamento')?.checked === true;
 
   if (!empresaId) {
     setMsg('msgCopiarDadosLojasSaas', 'Selecione a empresa para copiar dados entre lojas.', 'err');
@@ -670,7 +748,7 @@ async function copiarDadosEntreLojasSaas() {
     setMsg('msgCopiarDadosLojasSaas', 'A loja de origem deve ser diferente da loja de destino.', 'err');
     return;
   }
-  if (!copiarFornecedores && !copiarChecklists) {
+  if (![copiarFornecedores, copiarChecklists, copiarPerfis, copiarGruposFornecedores, copiarCategoriasCompra, copiarFormasPagamento].some(Boolean)) {
     setMsg('msgCopiarDadosLojasSaas', 'Selecione ao menos um tipo de dado para copiar.', 'err');
     return;
   }
@@ -699,13 +777,42 @@ async function copiarDadosEntreLojasSaas() {
       checklistsInseridos: 0,
       checklistsIgnorados: 0,
       checklistItensInseridos: 0,
+      perfis: null,
+      gruposFornecedores: null,
+      categoriasCompra: null,
+      formasPagamento: null,
     };
 
     await executarSemFiltroLojaTemporario(async () => {
+      if (copiarPerfis) {
+        resumo.perfis = await copiarCadastroSimplesEntreLojasSaas({
+          tabela: 'perfis', empresaId, lojaOrigemId, lojaDestinoId,
+          chave: item => normalizarNomeComparacao(item?.codigo || item?.nome || ''),
+        });
+      }
+
+      if (copiarGruposFornecedores) {
+        resumo.gruposFornecedores = await copiarCadastroSimplesEntreLojasSaas({
+          tabela: 'grupos_fornecedor', empresaId, lojaOrigemId, lojaDestinoId,
+        });
+      }
+
       if (copiarFornecedores) {
         const resultadoFornecedores = await copiarFornecedoresEntreLojasSaas(empresaId, lojaOrigemId, lojaDestinoId);
         resumo.fornecedoresInseridos = resultadoFornecedores.inseridos;
         resumo.fornecedoresIgnorados = resultadoFornecedores.ignorados;
+      }
+
+      if (copiarCategoriasCompra) {
+        resumo.categoriasCompra = await copiarCadastroSimplesEntreLojasSaas({
+          tabela: 'categorias_compra', empresaId, lojaOrigemId, lojaDestinoId,
+        });
+      }
+
+      if (copiarFormasPagamento) {
+        resumo.formasPagamento = await copiarCadastroSimplesEntreLojasSaas({
+          tabela: 'formas_pagamento', empresaId, lojaOrigemId, lojaDestinoId,
+        });
       }
 
       if (copiarChecklists) {
@@ -717,9 +824,13 @@ async function copiarDadosEntreLojasSaas() {
     });
 
     const partes = [];
+    if (copiarPerfis) partes.push(`Perfis: ${resumo.perfis.inseridos} copiado(s), ${resumo.perfis.ignorados} existente(s)`);
+    if (copiarGruposFornecedores) partes.push(`Grupos: ${resumo.gruposFornecedores.inseridos} copiado(s), ${resumo.gruposFornecedores.ignorados} existente(s)`);
     if (copiarFornecedores) {
       partes.push(`Fornecedores: ${resumo.fornecedoresInseridos} copiado(s), ${resumo.fornecedoresIgnorados} ignorado(s)`);
     }
+    if (copiarCategoriasCompra) partes.push(`Categorias: ${resumo.categoriasCompra.inseridos} copiada(s), ${resumo.categoriasCompra.ignorados} existente(s)`);
+    if (copiarFormasPagamento) partes.push(`Formas de pagamento: ${resumo.formasPagamento.inseridos} copiada(s), ${resumo.formasPagamento.ignorados} existente(s)`);
     if (copiarChecklists) {
       partes.push(`Checklist: ${resumo.checklistsInseridos} copiado(s), ${resumo.checklistsIgnorados} ignorado(s), ${resumo.checklistItensInseridos} item(ns) replicado(s)`);
     }

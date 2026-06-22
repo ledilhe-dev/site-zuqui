@@ -5,7 +5,7 @@ const PAGINAS_TELA_PREFERIDA = [
   { value: 'checklists', label: 'Checklist' },
   { value: 'bater_ponto', label: 'Bater Ponto' },
   { value: 'tarefas_rapidas', label: 'Alertas Rápidos' },
-  { value: 'escala_plantoes', label: 'Escalas' },
+  { value: 'escala_plantoes', label: 'Agenda' },
   { value: 'relatorio_financeiro', label: 'Contas a pagar' },
   { value: 'relatorio_recebimentos', label: 'Recebimentos' },
   { value: 'financeiro_cofre', label: 'Cofre' },
