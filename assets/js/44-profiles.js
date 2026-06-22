@@ -1,5 +1,7 @@
 // PERFIS
 // 
+let perfilEmEdicaoCodigo = null;
+
 function normalizarTextoFiltroPermissao(valor) {
   return String(valor || '')
     .normalize('NFD')
@@ -12,39 +14,31 @@ function normalizarTextoFiltroPermissao(valor) {
 function renderizarPermissoesPerfil(permissoes = null) {
   const grid = document.getElementById('permissoesPerfilGrid');
   if (!grid) return;
-  const codigo = document.getElementById('codigoPerfil')?.value || 'FUNCIONARIO';
-  const base = permissoes || obterPermissoesBase(codigo);
-  const layoutCompacto = window.matchMedia('(max-width: 700px)').matches;
-  grid.innerHTML = PERFIL_MODULOS_MATRIZ.map((modulo, indiceModulo) => `
-    <section class="perm-modulo${layoutCompacto && indiceModulo > 0 ? ' recolhido' : ''}" data-modulo="${escaparHtmlBasico(normalizarTextoFiltroPermissao(modulo.nome))}">
-      <button class="perm-modulo-titulo" type="button" onclick="alternarModuloPermissoesPerfil(this)" aria-expanded="${layoutCompacto && indiceModulo > 0 ? 'false' : 'true'}">
-        <span>${escaparHtmlBasico(modulo.nome)}</span><span class="perm-modulo-contagem">${modulo.recursos.length} ${modulo.recursos.length === 1 ? 'função' : 'funções'}</span><span class="perm-modulo-seta" aria-hidden="true">▾</span>
-      </button>
-      <div class="perm-matriz">
-        <div class="perm-matriz-cabecalho"><span>Função</span>${PERFIL_ACOES_COLUNAS.map(acao => `<span>${acao.label}</span>`).join('')}</div>
-        ${modulo.recursos.map(recurso => {
-          const filtro = normalizarTextoFiltroPermissao(`${modulo.nome} ${recurso.nome}`);
-          return `<div class="perm-matriz-linha" data-label="${escaparHtmlBasico(filtro)}">
-            <span class="perm-recurso-nome">${escaparHtmlBasico(recurso.nome)}</span>
-            ${PERFIL_ACOES_COLUNAS.map(acao => {
-              const chave = recurso[acao.key];
-              return chave
-                ? `<label class="perm-celula" title="${acao.label}: ${escaparHtmlBasico(recurso.nome)}"><input type="checkbox" data-permissao="${chave}" ${base[chave] ? 'checked' : ''} onchange="atualizarBotaoMarcarPermissoesPerfil()"><span class="sr-only">${acao.label}</span></label>`
-                : '<span class="perm-celula indisponivel">—</span>';
-            }).join('')}
-          </div>`;
-        }).join('')}
+  const base = permissoes || Object.fromEntries(PERFIL_PERMISSOES.map(item => [item.key, false]));
+  grid.innerHTML = `
+    <div class="perm-matriz perfil-permissoes-tabela">
+      <div class="perm-matriz-cabecalho">
+        <span>Módulo</span><span>Função</span>${PERFIL_ACOES_COLUNAS.map(acao => `<span>${acao.label}</span>`).join('')}
       </div>
-    </section>
-  `).join('');
+      ${PERFIL_MODULOS_MATRIZ.map(modulo => modulo.recursos.map(recurso => {
+        const filtro = normalizarTextoFiltroPermissao(`${modulo.nome} ${recurso.nome}`);
+        return `<div class="perm-matriz-linha" data-label="${escaparHtmlBasico(filtro)}" data-modulo="${escaparHtmlBasico(normalizarTextoFiltroPermissao(modulo.nome))}">
+          <span class="perm-modulo-coluna">${escaparHtmlBasico(modulo.nome)}</span>
+          <span class="perm-recurso-nome">${escaparHtmlBasico(recurso.nome)}</span>
+          ${PERFIL_ACOES_COLUNAS.map(acao => {
+            const chave = recurso[acao.key];
+            if (!chave) return '<span class="perm-celula indisponivel">—</span>';
+            const podeConceder = usuarioPodeConcederPermissaoPerfil(chave);
+            const bloqueado = podeConceder ? '' : 'disabled';
+            const titulo = podeConceder
+              ? `${acao.label}: ${recurso.nome}`
+              : `Você não possui a permissão: ${acao.label} - ${recurso.nome}`;
+            return `<label class="perm-celula${podeConceder ? '' : ' bloqueada'}" title="${escaparHtmlBasico(titulo)}"><input type="checkbox" data-permissao="${chave}" ${base[chave] ? 'checked' : ''} ${bloqueado} onchange="atualizarBotaoMarcarPermissoesPerfil()"><span class="sr-only">${acao.label}</span></label>`;
+          }).join('')}
+        </div>`;
+      }).join('')).join('')}
+    </div>`;
   filtrarPermissoesPerfil();
-}
-
-function alternarModuloPermissoesPerfil(botao) {
-  const modulo = botao?.closest('.perm-modulo');
-  if (!modulo) return;
-  const recolhido = modulo.classList.toggle('recolhido');
-  botao.setAttribute('aria-expanded', String(!recolhido));
 }
 
 function filtrarPermissoesPerfil() {
@@ -53,25 +47,18 @@ function filtrarPermissoesPerfil() {
     const texto = String(item.dataset.label || '').trim();
     item.hidden = !!termo && !texto.includes(termo);
   });
-  document.querySelectorAll('#permissoesPerfilGrid .perm-modulo').forEach(modulo => {
-    modulo.hidden = !modulo.querySelector('.perm-matriz-linha:not([hidden])');
-    if (termo && !modulo.hidden) {
-      modulo.classList.remove('recolhido');
-      modulo.querySelector('.perm-modulo-titulo')?.setAttribute('aria-expanded', 'true');
-    }
-  });
   atualizarBotaoMarcarPermissoesPerfil();
 }
 
 function marcarPermissoesPerfil(marcado = true) {
-  document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha:not([hidden]) [data-permissao]').forEach(input => {
+  document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha:not([hidden]) [data-permissao]:not(:disabled)').forEach(input => {
     input.checked = !!marcado;
   });
   atualizarBotaoMarcarPermissoesPerfil();
 }
 
 function todasPermissoesVisiveisMarcadas() {
-  const inputs = Array.from(document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha:not([hidden]) [data-permissao]'));
+  const inputs = Array.from(document.querySelectorAll('#permissoesPerfilGrid .perm-matriz-linha:not([hidden]) [data-permissao]:not(:disabled)'));
   if (!inputs.length) return false;
   return inputs.every(input => input.checked);
 }
@@ -94,6 +81,18 @@ function coletarPermissoesPerfil() {
   return permissoes;
 }
 
+function usuarioPodeConcederPermissaoPerfil(chave) {
+  if (usuarioEhAdministrador()) return true;
+  return obterPermissoesUsuario()?.[chave] === true;
+}
+
+function validarPermissoesConcedidasPerfil(permissoes) {
+  if (usuarioEhAdministrador()) return [];
+  return Object.entries(permissoes || {})
+    .filter(([chave, ativa]) => ativa === true && !usuarioPodeConcederPermissaoPerfil(chave))
+    .map(([chave]) => chave);
+}
+
 function usuarioPodeAcaoCadastroPerfis(acao = 'visualizar') {
   if (usuarioEhAdministrador()) return true;
   const permissoes = obterPermissoesUsuario();
@@ -103,16 +102,61 @@ function usuarioPodeAcaoCadastroPerfis(acao = 'visualizar') {
     editar: 'perfis_editar',
     excluir: 'perfis_excluir',
   }[acao] || 'perfis';
+  if (acao === 'criar') return permissoes.perfis === true || permissoes.perfis_criar === true;
   if (Object.prototype.hasOwnProperty.call(permissoes, chave)) return permissoes[chave] === true;
   return permissoes.perfis === true;
 }
 
 function obterContextoLojaCadastroPerfil() {
+  const lojaId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const lojasConhecidas = [
+    ...(typeof obterLojasPermitidasSessao === 'function' ? obterLojasPermitidasSessao() : []),
+    ...(Array.isArray(lojasCadastroCache) ? lojasCadastroCache : []),
+    ...(typeof lojasSaasCache !== 'undefined' && Array.isArray(lojasSaasCache) ? lojasSaasCache : []),
+  ];
+  const lojaAtual = lojasConhecidas.find(loja => String(loja?.id || loja?.loja_id || '').trim() === lojaId);
   return {
-    lojaId: String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim(),
-    empresaId: String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || '').trim(),
-    lojaNome: String(usuarioSistemaLogado?.loja_nome || document.getElementById('topbar-store-name')?.textContent || '').trim(),
+    lojaId,
+    empresaId: String(obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || lojaAtual?.empresa_id || '').trim(),
+    lojaNome: String(usuarioSistemaLogado?.loja_nome || lojaAtual?.nome || document.getElementById('topbar-store-name')?.textContent || '').trim(),
   };
+}
+
+async function completarContextoLojaCadastroPerfil(contexto) {
+  if (!contexto?.lojaId || contexto.empresaId) return contexto;
+  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.from('lojas')
+    .select('id, nome, empresa_id')
+    .eq('id', contexto.lojaId)
+    .maybeSingle());
+  if (error || !data) return contexto;
+  return {
+    ...contexto,
+    empresaId: String(data.empresa_id || '').trim(),
+    lojaNome: contexto.lojaNome || String(data.nome || '').trim(),
+  };
+}
+
+function gerarCodigoBasePerfil(nome) {
+  const slug = String(nome || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 42) || 'PERFIL';
+  return `CUSTOM_${slug}`;
+}
+
+async function gerarCodigoUnicoPerfil(nome) {
+  if (perfilEmEdicaoId && perfilEmEdicaoCodigo) return perfilEmEdicaoCodigo;
+  const base = gerarCodigoBasePerfil(nome);
+  const { data, error } = await sb.from('perfis').select('codigo');
+  if (error) throw error;
+  const usados = new Set((data || []).map(item => String(item.codigo || '').toUpperCase()));
+  if (!usados.has(base)) return base;
+  let sufixo = 2;
+  while (usados.has(`${base}_${sufixo}`)) sufixo += 1;
+  return `${base}_${sufixo}`;
 }
 
 function aplicarPermissoesCadastroPerfisUI() {
@@ -158,7 +202,7 @@ async function carregarPerfis() {
     <div class="item">
       <div class="item-info">
         <div class="item-nome">${p.nome}</div>
-        <div class="item-detalhe">Código: ${p.codigo || '-'} · Perfil exclusivo desta loja</div>
+        <div class="item-detalhe">Perfil exclusivo desta loja</div>
       </div>
       <div class="item-actions">
         ${usuarioPodeAcaoCadastroPerfis('editar') ? `<button class="btn btn-ghost btn-sm" onclick="editarPerfil('${p.id}')">Editar</button>` : ''}
@@ -228,45 +272,63 @@ function atualizarFuncionarioAdminToggle() {
 
 async function criarPerfil() {
   const nome = document.getElementById('nomePerfil').value.trim();
-  const codigo = document.getElementById('codigoPerfil').value;
   const editandoAgora = !!perfilEmEdicaoId;
   const acao = editandoAgora ? 'editar' : 'criar';
   if (!usuarioPodeAcaoCadastroPerfis(acao)) { setMsg('msgPerfis', `Seu usuário não tem permissão para ${acao} perfis.`, 'err'); return; }
-  const contexto = obterContextoLojaCadastroPerfil();
+  const contexto = await completarContextoLojaCadastroPerfil(obterContextoLojaCadastroPerfil());
   if (!contexto.lojaId || !contexto.empresaId) { setMsg('msgPerfis', 'Selecione uma loja no topo antes de salvar o perfil.', 'err'); return; }
   if (!nome) { setMsg('msgPerfis', 'Digite o nome do perfil.', 'err'); return; }
 
-  const payloadBase = { nome, codigo, permissoes: coletarPermissoesPerfil(), loja_id: contexto.lojaId, empresa_id: contexto.empresaId, ativo: true };
-  const resposta = editandoAgora
-    ? sb.from('perfis').update(payloadBase).eq('id', perfilEmEdicaoId)
-    : sb.from('perfis').insert([payloadBase]);
-
-  const { error } = resposta;
-  if (error) {
-    if (isMissingProfilesTableError(error)) {
-      setMsg('msgPerfis', 'Rode o SQL da tabela perfis antes de usar esta tela.', 'err');
-      return;
-    }
-    setMsg('msgPerfis', `${editandoAgora ? 'Erro ao salvar perfil' : 'Erro ao cadastrar perfil'}: ${mensagemErroSupabase(error, 'verifique se já existe um perfil com este código na loja')}.`, 'err');
+  const permissoes = coletarPermissoesPerfil();
+  const naoConcediveis = validarPermissoesConcedidasPerfil(permissoes);
+  if (naoConcediveis.length) {
+    setMsg('msgPerfis', 'O perfil contém permissões superiores às do seu usuário. Desmarque as funções bloqueadas.', 'err');
     return;
   }
 
-  limparFormularioPerfil();
-  setMsg('msgPerfis', editandoAgora ? 'Perfil atualizado.' : 'Perfil cadastrado.', 'ok');
-  carregarPerfis();
-  carregarSelectPerfisFuncionario();
-  if (usuarioSistemaLogado?.tipo === 'admin_loja') {
-    atualizarSessaoAdminLojaComPerfilCorreto(localStorage.getItem('zuqui_auth') != null || localStorage.getItem('check_diario_auth_persistente') != null);
-  } else {
-    aplicarPermissoesSistema();
+  const btnSalvar = document.getElementById('btnSalvarPerfil');
+  if (btnSalvar) { btnSalvar.disabled = true; btnSalvar.textContent = 'Salvando...'; }
+  try {
+    const codigo = await gerarCodigoUnicoPerfil(nome);
+    const payloadBase = { nome, codigo, permissoes, loja_id: contexto.lojaId, empresa_id: contexto.empresaId, ativo: true };
+    const resposta = editandoAgora
+      ? sb.from('perfis').update(payloadBase).eq('id', perfilEmEdicaoId)
+      : sb.from('perfis').insert([payloadBase]);
+
+    const { error } = await resposta;
+    if (error) {
+      if (isMissingProfilesTableError(error)) {
+        setMsg('msgPerfis', 'Rode o SQL da tabela perfis antes de usar esta tela.', 'err');
+        return;
+      }
+      setMsg('msgPerfis', `${editandoAgora ? 'Erro ao salvar perfil' : 'Erro ao cadastrar perfil'}: ${mensagemErroSupabase(error, 'verifique se já existe um perfil com este nome na loja')}.`, 'err');
+      return;
+    }
+
+    limparFormularioPerfil();
+    setMsg('msgPerfis', editandoAgora ? 'Perfil atualizado.' : 'Perfil cadastrado.', 'ok');
+    await carregarPerfis();
+    await carregarSelectPerfisFuncionario();
+    if (usuarioSistemaLogado?.tipo === 'admin_loja') {
+      atualizarSessaoAdminLojaComPerfilCorreto(localStorage.getItem('zuqui_auth') != null || localStorage.getItem('check_diario_auth_persistente') != null);
+    } else {
+      aplicarPermissoesSistema();
+    }
+  } catch (error) {
+    setMsg('msgPerfis', `Não foi possível salvar o perfil: ${mensagemErroSupabase(error, 'erro desconhecido')}.`, 'err');
+  } finally {
+    if (btnSalvar) {
+      btnSalvar.disabled = false;
+      btnSalvar.textContent = perfilEmEdicaoId ? 'Salvar' : 'Cadastrar';
+    }
   }
 }
 
 function limparFormularioPerfil() {
   perfilEmEdicaoId = null;
+  perfilEmEdicaoCodigo = null;
   document.getElementById('nomePerfil').value = '';
-  document.getElementById('codigoPerfil').value = 'FUNCIONARIO';
-  renderizarPermissoesPerfil(obterPermissoesBase('FUNCIONARIO'));
+  renderizarPermissoesPerfil(Object.fromEntries(PERFIL_PERMISSOES.map(item => [item.key, false])));
   const titulo = document.getElementById('tituloFormularioPerfil');
   const btnSalvar = document.getElementById('btnSalvarPerfil');
   const btnCancelar = document.getElementById('btnCancelarEdicaoPerfil');
@@ -284,10 +346,10 @@ async function editarPerfil(id) {
   }
 
   perfilEmEdicaoId = id;
+  perfilEmEdicaoCodigo = String(perfil.codigo || '').trim() || gerarCodigoBasePerfil(perfil.nome);
   document.getElementById('nomePerfil').value = perfil.nome || '';
   const codigoPerfilNormalizado = normalizarCodigoPerfil(perfil.codigo || 'FUNCIONARIO');
-  document.getElementById('codigoPerfil').value = codigoPerfilNormalizado || 'FUNCIONARIO';
-  renderizarPermissoesPerfil({ ...obterPermissoesBase(codigoPerfilNormalizado || 'FUNCIONARIO'), ...(perfil.permissoes || {}) });
+  renderizarPermissoesPerfil(perfil.permissoes || obterPermissoesBase(codigoPerfilNormalizado || 'FUNCIONARIO'));
   const titulo = document.getElementById('tituloFormularioPerfil');
   const btnSalvar = document.getElementById('btnSalvarPerfil');
   const btnCancelar = document.getElementById('btnCancelarEdicaoPerfil');

@@ -403,33 +403,6 @@ function escaparValorLike(valor) {
   return String(valor || '').replace(/[%,]/g, ' ').trim();
 }
 
-function loginAdminLojaCombina(admin = {}, username = '', password = '') {
-  const senha = String(password || '').trim();
-  if (!admin || String(admin.pin ?? '') !== senha) return false;
-
-  const busca = normalizarTextoComparacao(username);
-  if (!busca) return false;
-
-  const usuario = normalizarTextoComparacao(admin.usuario || '');
-  const nome = normalizarTextoComparacao(admin.nome || '');
-  return usuario === busca || nome === busca || usuario.includes(busca) || nome.includes(busca);
-}
-
-function senhaFuncionarioLoginCombina(funcionario = {}, username = '', password = '') {
-  const pinSalvo = String(funcionario?.pin ?? '').trim();
-  const senha = String(password || '').trim();
-  if (!pinSalvo || !senha) return false;
-  if (pinSalvo === senha) return true;
-
-  const login = normalizarTextoComparacao(username);
-  const nome = normalizarTextoComparacao(funcionario?.nome || '');
-  const email = normalizarTextoComparacao(funcionario?.email || '');
-  const loginCombina = nome === login || email === login;
-
-  // Compatibilidade com cadastros feitos quando o campo limitava senha a 6 caracteres.
-  return loginCombina && senha === login && pinSalvo.length === 6 && pinSalvo === senha.slice(0, 6);
-}
-
 async function validarDuplicidadeCadastro({
   nome,
   email,
@@ -454,14 +427,11 @@ async function validarDuplicidadeCadastro({
   }
 
   if (pinNormalizado) {
-    const { data: funcionarioPin } = await sb
-      .from('funcionarios')
-      .select('id')
-      .eq('pin', pinNormalizado)
-      .neq('id', funcionarioIdIgnorar || '00000000-0000-0000-0000-000000000000')
-      .maybeSingle();
-
-    if (funcionarioPin) return 'Já existe um usuário com este PIN.';
+    const { data: pinEmUso } = await sb.rpc('credencial_funcionario_em_uso', {
+      p_senha: pinNormalizado,
+      p_ignorar_id: funcionarioIdIgnorar || null,
+    });
+    if (pinEmUso === true) return 'Já existe um usuário com este PIN.';
   }
 
   if (nomeNormalizado) {
@@ -489,18 +459,6 @@ async function validarDuplicidadeCadastro({
       .maybeSingle();
 
     if (solicitacaoEmail) return 'Já existe uma solicitação pendente com este e-mail.';
-  }
-
-  if (pinNormalizado) {
-    const { data: solicitacaoPin } = await sb
-      .from('solicitacoes_acesso')
-      .select('id')
-      .eq('pin', pinNormalizado)
-      .eq('status', 'pendente')
-      .neq('id', solicitacaoIdIgnorar || '00000000-0000-0000-0000-000000000000')
-      .maybeSingle();
-
-    if (solicitacaoPin) return 'Já existe uma solicitação pendente com este PIN.';
   }
 
   if (nomeNormalizado) {
@@ -2092,16 +2050,11 @@ function fecharModalContaFinanceiraBaixa(resultado = null) {
 
 async function validarPinFuncionario(funcionarioId, pin) {
   if (!funcionarioId || !pin) return false;
-
-  const { data: funcionario, error } = await executarSemFiltroLojaTemporario(() => sb
-    .from('funcionarios')
-    .select('id, pin, ativo')
-    .eq('id', funcionarioId)
-    .eq('ativo', true)
-    .single());
-
-  if (error || !funcionario) return false;
-  return String(funcionario.pin || '') === String(pin);
+  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_credencial_funcionario', {
+    p_funcionario_id: funcionarioId,
+    p_senha: String(pin),
+  }));
+  return !error && data === true;
 }
 
 async function obterFuncionarioAtivoPorId(funcionarioId) {
@@ -2110,7 +2063,7 @@ async function obterFuncionarioAtivoPorId(funcionarioId) {
 
   const { data: funcionario, error } = await executarSemFiltroLojaTemporario(() => sb
     .from('funcionarios')
-    .select('id, nome, pin, ativo, loja_id, empresa_id')
+    .select('id, nome, ativo, loja_id, empresa_id')
     .eq('id', id)
     .eq('ativo', true)
     .maybeSingle());
@@ -2136,19 +2089,12 @@ async function obterFuncionarioAtivoPorPin(pin) {
 
   const pinNormalizado = String(pin).trim();
 
-  let query = sb
-    .from('funcionarios')
-    .select('id, nome, pin, ativo, horario_trabalho_inicio, horario_trabalho_fim, tempo_intervalo_minutos, loja_id, empresa_id')
-    .eq('ativo', true);
-
-  query = aplicarFiltroLojaAtualPontoQuery(query);
-
-  const { data, error } = await query;
-
+  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+    p_senha: pinNormalizado,
+  }));
   if (error) return null;
-  const funcionario = (data || [])
-    .filter(funcionarioPertenceLojaAtualPonto)
-    .find(item => String(item.pin || '').trim() === pinNormalizado) || null;
+  const funcionario = (Array.isArray(data) ? data : [])
+    .filter(funcionarioPertenceLojaAtualPonto)[0] || null;
   return funcionario;
 }
 
@@ -2166,11 +2112,9 @@ async function validarPinExclusaoAgenda(pin, lojaId) {
   const loja = String(lojaId || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
   if (!pinNormalizado || !loja) return { funcionario: null, motivo: 'pin_invalido' };
 
-  const candidatosRes = await executarSemFiltrosTenantTemporario(() => sb
-    .from('funcionarios')
-    .select('id, nome, pin, ativo, loja_id, perfil_id, é_administrador')
-    .eq('ativo', true)
-    .eq('pin', pinNormalizado));
+  const candidatosRes = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+    p_senha: pinNormalizado,
+  }));
   if (candidatosRes.error || !(candidatosRes.data || []).length) {
     return { funcionario: null, motivo: 'pin_invalido' };
   }
@@ -2223,21 +2167,25 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
     if (idLogado) {
       const { data: euAdmin } = await executarSemFiltrosTenantTemporario(() => sb
         .from('funcionarios')
-        .select('id, nome, pin, ativo, loja_id, empresa_id')
+        .select('id, nome, ativo, loja_id, empresa_id')
         .eq('id', idLogado)
         .maybeSingle());
-      if (euAdmin && euAdmin.ativo !== false && String(euAdmin.pin || '').trim() === pinNormalizado) {
+      if (euAdmin && euAdmin.ativo !== false && await validarPinFuncionario(euAdmin.id, pinNormalizado)) {
         return euAdmin;
       }
     }
-    // Fallback: admin cujo PIN está na sessão (ex.: admin global sem registro em funcionarios)
-    const pinSessao = String(usuarioSistemaLogado?.pin || '').trim();
-    if (pinSessao && pinSessao === pinNormalizado) {
+    if (usuarioSistemaLogado?.tipo === 'admin_loja' && idLogado) {
+      const { data: adminValido } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
+        p_usuario_id: idLogado,
+        p_pin: pinNormalizado,
+      }));
+      if (adminValido === true) {
       return {
         id: idLogado || usuarioSistemaLogado?.id || 'admin',
         nome: usuarioSistemaLogado?.nome || 'Administrador',
         ativo: true,
       };
+      }
     }
   }
 
@@ -2248,16 +2196,12 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
     ? obterLojasPermitidasSessao()
     : []).map(l => String(l?.id || l?.loja_id || '').trim()).filter(Boolean);
 
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => {
-    let query = sb.from('funcionarios')
-      .select('id, nome, pin, ativo, loja_id, empresa_id')
-      .eq('pin', pinNormalizado);
-    if (lojasVinculadas.length) query = query.in('loja_id', lojasVinculadas);
-    return query;
-  });
+  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+    p_senha: pinNormalizado,
+  }));
 
   if (error) { console.warn('Falha ao buscar funcionário por PIN:', error); return null; }
-  return (data || []).find(f => f.ativo !== false) || null;
+  return (Array.isArray(data) ? data : []).find(f => f.ativo !== false && (!lojasVinculadas.length || lojasVinculadas.includes(String(f.loja_id || '')))) || null;
 }
 
 function resumoNomesPendencias(pendencias = [], limite = 3) {

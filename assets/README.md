@@ -34,9 +34,8 @@ Execute na raiz do projeto:
 python tools\verify_modularization.py
 ```
 
-O verificador compara todos os blocos extraídos com
-`backup/codigo-antigo/index.monolith.backup.html`, verifica referências,
-arquivos órfãos e sintaxe.
+O verificador confere referências, arquivos órfãos, manifesto, service worker
+e a sintaxe de todos os módulos JavaScript da versão atual.
 
 `manifest.json` é gerado automaticamente e usado pelo service worker para
 disponibilizar todos os módulos offline e evitar versões misturadas no cache.

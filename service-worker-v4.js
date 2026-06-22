@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v38-modular';
+const CACHE_NAME = 'check-diario-pwa-v39-auth-segura';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

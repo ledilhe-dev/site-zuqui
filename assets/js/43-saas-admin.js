@@ -128,7 +128,7 @@ function renderizarEmpresasSaas() {
       <div class="item">
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(nome)}</div>
-          <div class="item-detalhe">${codigo ? `Identificador: ${escaparHtmlBasico(codigo)} · ` : ''}Status: ${ativa ? 'Ativa' : 'Inativa'}</div>
+          <div class="item-detalhe">${codigo ? `Identificador: ${escaparHtmlBasico(codigo)} · ` : ''}CNPJ: ${escaparHtmlBasico(item.cnpj || '-')} · Status: ${ativa ? 'Ativa' : 'Inativa'}</div>
         </div>
         <div class="item-actions">
           ${podeEditar ? `<button class="btn btn-ghost btn-sm" onclick="editarEmpresaSaas('${id}')">Editar</button>` : ''}
@@ -142,10 +142,12 @@ function renderizarEmpresasSaas() {
 function limparFormularioEmpresaSaas() {
   empresaSaasEmEdicaoId = null;
   const nome = document.getElementById('saasNomeEmpresa');
+  const cnpj = document.getElementById('saasCnpjEmpresa');
   const ativo = document.getElementById('saasAtivoEmpresa');
   const btnSalvar = document.getElementById('btnSalvarEmpresaSaas');
   const btnCancelar = document.getElementById('btnCancelarEmpresaSaas');
   if (nome) nome.value = '';
+  if (cnpj) cnpj.value = '';
   if (ativo) ativo.checked = true;
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar empresa';
   if (btnSalvar) {
@@ -167,10 +169,12 @@ function editarEmpresaSaas(id) {
   if (!item) return;
   empresaSaasEmEdicaoId = String(item.id || '');
   const nome = document.getElementById('saasNomeEmpresa');
+  const cnpj = document.getElementById('saasCnpjEmpresa');
   const ativo = document.getElementById('saasAtivoEmpresa');
   const btnSalvar = document.getElementById('btnSalvarEmpresaSaas');
   const btnCancelar = document.getElementById('btnCancelarEmpresaSaas');
   if (nome) nome.value = nomeEmpresaSaas(item);
+  if (cnpj) cnpj.value = String(item.cnpj || '');
   if (ativo) ativo.checked = empresaSaasAtiva(item);
   if (btnSalvar) btnSalvar.textContent = 'Salvar empresa';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
@@ -188,14 +192,19 @@ async function salvarEmpresaSaas() {
     return;
   }
   const nome = String(document.getElementById('saasNomeEmpresa')?.value || '').trim();
+  const cnpj = String(document.getElementById('saasCnpjEmpresa')?.value || '').replace(/\D/g, '');
   const ativo = document.getElementById('saasAtivoEmpresa')?.checked !== false;
   if (!nome) {
     setMsg('msgEmpresasSaas', 'Informe o nome da empresa.', 'err');
     return;
   }
+  if (cnpj && cnpj.length !== 14) {
+    setMsg('msgEmpresasSaas', 'Informe um CNPJ com 14 números.', 'err');
+    return;
+  }
 
   const slug = gerarSlugEmpresaSaas(nome, empresaSaasEmEdicaoId);
-  const payload = { nome, slug, ativo };
+  const payload = { nome, slug, cnpj: cnpj || null, ativo };
   const req = empresaSaasEmEdicaoId
     ? sb.from('empresas').update(payload).eq('id', empresaSaasEmEdicaoId)
     : sb.from('empresas').insert([payload]);

@@ -448,7 +448,7 @@ async function carregarAdminsLojaCadastro() {
 
   const consultarAdmins = () => sb
     .from('usuarios_admin')
-    .select('id, loja_id, nome, usuario, pin, ativo')
+    .select('id, loja_id, nome, usuario, ativo')
     .order('nome', { ascending: true });
   const { data, error } = usuarioSistemaLogado?.tipo === 'admin'
     ? await executarSemFiltroLojaTemporario(consultarAdmins)
@@ -499,18 +499,32 @@ async function salvarAdminLojaCadastro() {
     return;
   }
 
-  const registroAtual = adminsLojaCadastroCache.find(item => String(item.id || '') === String(adminLojaCadastroEmEdicaoId || ''));
-  const pin = pinInformado || String(registroAtual?.pin || '').trim();
-  if (!pin) {
+  if (!adminLojaCadastroEmEdicaoId && !pinInformado) {
     setMsg('msgAdminsCadastro', 'Informe o PIN/senha do admin.', 'err');
     return;
   }
 
-  const payload = { loja_id: lojaId, nome, usuario, pin, ativo };
+  let senhaAtualGestor = '';
+  if (pinInformado) {
+    const confirmacao = await abrirModalPin({
+      titulo: 'Confirmar senha do administrador',
+      subtitulo: 'Digite a sua própria senha para autorizar esta alteração.',
+      textoAcao: 'Autorizar alteração',
+      exibirUsuario: false,
+      placeholderInput: 'Sua senha atual',
+    });
+    if (!confirmacao?.pin) {
+      setMsg('msgAdminsCadastro', 'Alteração de senha cancelada.', 'err');
+      return;
+    }
+    senhaAtualGestor = confirmacao.pin;
+  }
+
+  const payload = { loja_id: lojaId, nome, usuario, ativo };
   const salvarAdmin = () => adminLojaCadastroEmEdicaoId
-    ? sb.from('usuarios_admin').update(payload).eq('id', adminLojaCadastroEmEdicaoId)
-    : sb.from('usuarios_admin').insert([payload]);
-  const { error } = usuarioSistemaLogado?.tipo === 'admin'
+    ? sb.from('usuarios_admin').update(payload).eq('id', adminLojaCadastroEmEdicaoId).select('id').maybeSingle()
+    : sb.from('usuarios_admin').insert([payload]).select('id').single();
+  const { data: adminSalvo, error } = usuarioSistemaLogado?.tipo === 'admin'
     ? await executarSemFiltroLojaTemporario(salvarAdmin)
     : await salvarAdmin();
   if (error) {
@@ -524,6 +538,25 @@ async function salvarAdminLojaCadastro() {
     }
     setMsg('msgAdminsCadastro', `Não foi possível salvar admin: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
+  }
+
+  if (pinInformado) {
+    try {
+      await chamarFuncaoAutenticacao({
+        action: 'admin_set_store_admin_password',
+        actorId: usuarioSistemaLogado?.id,
+        actorType: usuarioSistemaLogado?.tipo,
+        actorPassword: senhaAtualGestor,
+        targetId: adminSalvo?.id || adminLojaCadastroEmEdicaoId,
+        newPassword: pinInformado,
+      });
+    } catch (senhaError) {
+      if (!adminLojaCadastroEmEdicaoId && adminSalvo?.id) {
+        await sb.from('usuarios_admin').delete().eq('id', adminSalvo.id);
+      }
+      setMsg('msgAdminsCadastro', `Não foi possível definir a senha do admin: ${senhaError.message || senhaError}`, 'err');
+      return;
+    }
   }
 
   const editando = !!adminLojaCadastroEmEdicaoId;
@@ -555,7 +588,10 @@ function editarAdminLojaCadastro(id) {
   if (loja) loja.value = String(item.loja_id || '');
   if (nome) nome.value = String(item.nome || '');
   if (usuario) usuario.value = String(item.usuario || '');
-  if (pin) pin.value = String(item.pin || '');
+  if (pin) {
+    pin.value = '';
+    pin.placeholder = 'Deixe vazio para manter a senha';
+  }
   if (ativo) ativo.checked = item.ativo !== false;
   if (loja) loja.disabled = !usuarioPodeCriarAdminsLojasGlobais();
   if (nome) nome.disabled = false;

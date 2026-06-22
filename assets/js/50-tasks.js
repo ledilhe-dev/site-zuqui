@@ -1280,20 +1280,6 @@ async function validarSenhaMasterParaExclusao(senha = '') {
   const valor = String(senha || '').trim();
   if (!valor) return false;
 
-  const usuariosPredefinidos = (typeof predefinedUsers !== 'undefined' && Array.isArray(predefinedUsers))
-    ? predefinedUsers
-    : [];
-
-  const mestres = usuariosPredefinidos.filter(item => {
-    const username = String(item?.username || '').toLowerCase();
-    return username === 'admin' || username === 'master';
-  });
-
-  const referencia = mestres.length ? mestres : usuariosPredefinidos;
-  if (referencia.some(item => String(item?.password || '') === valor)) {
-    return true;
-  }
-
   const perfilCodigo = String(usuarioSistemaLogado?.perfil?.codigo || '').toUpperCase();
   const perfilNome = String(usuarioSistemaLogado?.perfil?.nome || '').toLowerCase();
   const ehAdminLoja = usuarioSistemaLogado?.tipo === 'admin_loja' || usuarioSistemaLogado?.tipo === 'admin';
@@ -1305,24 +1291,14 @@ async function validarSenhaMasterParaExclusao(senha = '') {
   if (!idUsuario && !emailUsuario) return false;
 
   try {
-    // Importante: busca SEM o filtro de loja/empresa. Um admin com acesso a várias
-    // lojas tem registros diferentes por loja; estando logado em uma loja, o filtro
-    // padrão impediria de ler o registro/PIN da outra, causando "senha inválida".
-    // Aceitamos o PIN de QUALQUER registro ativo do mesmo usuário (por id ou e-mail).
-    const { data, error } = await executarSemFiltrosTenantTemporario(() => {
-      let query = sb.from('funcionarios').select('id, pin, ativo, email');
-      if (idUsuario && emailUsuario) {
-        query = query.or(`id.eq.${idUsuario},email.eq.${emailUsuario}`);
-      } else if (idUsuario) {
-        query = query.eq('id', idUsuario);
-      } else {
-        query = query.eq('email', emailUsuario);
-      }
-      return query;
-    });
-    if (error || !Array.isArray(data) || !data.length) return false;
-    // Confere o PIN em qualquer registro ATIVO do usuário.
-    return data.some(reg => reg?.ativo === true && String(reg?.pin || '') === valor);
+    if (usuarioSistemaLogado?.tipo === 'admin_loja') {
+      const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
+        p_usuario_id: idUsuario,
+        p_pin: valor,
+      }));
+      return !error && data === true;
+    }
+    return validarPinFuncionario(idUsuario, valor);
   } catch (error) {
     console.warn('Falha ao validar senha master para exclusão:', error);
     return false;
