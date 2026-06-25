@@ -1,0 +1,247 @@
+  /* ═══════════════════════════════════════════════════════════
+     OBSIDIAN PRECISION DESIGN SYSTEM V3
+     Inspiração: Linear · Vercel · Stripe · Premium SaaS
+     Paleta: Preto azulado profundo + Âmbar/Cobre + Verde confirmação
+  ═══════════════════════════════════════════════════════════ */
+
+  /* ─── Scrollbar Global ─── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(240,165,0,0.25);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(240,165,0,0.5);
+  }
+
+  /* ─── Inputs com foco âmbar ─── */
+  input:not([type="checkbox"]):not([type="radio"]):not(.login-input):not(.pin-secure-input):focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(240,165,0,0.1) !important;
+    outline: none !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not(.login-input):not(.pin-secure-input),
+  select,
+  textarea {
+    background: var(--bg-alt) !important;
+    border-color: var(--border) !important;
+    color: #f0f0f8 !important;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  /* ─── Items de lista ─── */
+  .item {
+    background: var(--surface2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    transition: all .2s;
+  }
+  .item:hover {
+    border-color: rgba(240,165,0,0.18) !important;
+    background: var(--surface3) !important;
+    box-shadow: 0 2px 8px rgba(240,165,0,0.1) !important;
+  }
+
+  /* ─── Badges de notificação ─── */
+  .nav-badge {
+    background: linear-gradient(135deg, #f03e5a, #bf1b37);
+    box-shadow: 0 2px 8px rgba(240,62,90,0.3);
+    border: 1px solid rgba(240,62,90,0.3);
+  }
+
+  /* ─── Mensagens de status ─── */
+  .msg.ok { color: #22d67a; font-weight: 600; }
+  .msg.err { color: #f03e5a; font-weight: 600; }
+  .msg.warn { color: var(--accent); font-weight: 600; }
+
+  /* ─── Tabelas ─── */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  thead th {
+    background: var(--surface2) !important;
+    border-bottom: 1px solid var(--border) !important;
+    color: var(--text-dim) !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 12px !important;
+    font-family: var(--font-mono);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border-subtle, var(--border));
+    transition: background .15s;
+  }
+  tbody tr:hover {
+    background: rgba(240,165,0,0.04);
+  }
+  td {
+    padding: 10px 12px !important;
+    font-size: 13px;
+  }
+
+  /* ─── Nav de Alerta ─── */
+  .nav-btn.nav-btn-alerta {
+    background: rgba(240,62,90,0.08) !important;
+    border-color: rgba(240,62,90,0.18) !important;
+    color: #ff6680 !important;
+  }
+  .nav-btn.nav-btn-alerta:hover {
+    background: rgba(240,62,90,0.12) !important;
+    border-color: rgba(240,62,90,0.3) !important;
+  }
+  .nav-btn.nav-btn-alerta .icon {
+    background: rgba(240,62,90,0.12) !important;
+    border-color: rgba(240,62,90,0.25) !important;
+    color: #f03e5a !important;
+  }
+  .nav-btn.nav-btn-alerta.ativo {
+    background: rgba(240,62,90,0.15) !important;
+    border-color: rgba(240,62,90,0.4) !important;
+    box-shadow: 0 2px 10px rgba(240,62,90,0.12) !important;
+  }
+
+  /* ─── Headers de página ─── */
+  .page-title {
+    color: var(--text) !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.3px;
+    font-family: var(--font-sans);
+  }
+
+  /* ─── Sync/Version badges ─── */
+  .sync-status {
+    border: 1px solid var(--border) !important;
+    background: var(--surface2) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--shadow-sm);
+  }
+  .app-version-badge {
+    border: 1px solid var(--border) !important;
+    background: var(--surface2) !important;
+    box-shadow: var(--shadow-sm);
+    border-radius: 8px;
+  }
+
+  /* ─── Group separators ─── */
+  .nav-group {
+    border-top: 1px solid var(--border) !important;
+    margin-top: 4px !important;
+    padding-top: 4px !important;
+  }
+
+  /* ─── Admin Menus (Configuração/SaaS) — Destaque âmbar ─── */
+  #menuConfiguracoesGroup .nav-btn-parent,
+  #menuSaasGroup .nav-btn-parent {
+    color: var(--accent) !important;
+  }
+  #menuConfiguracoesGroup .nav-btn-parent .icon,
+  #menuSaasGroup .nav-btn-parent .icon {
+    background: rgba(240,165,0,0.12) !important;
+    border-color: rgba(240,165,0,0.22) !important;
+    color: var(--accent) !important;
+  }
+  #menuConfiguracoesGroup .nav-btn-parent:hover,
+  #menuSaasGroup .nav-btn-parent:hover {
+    background: var(--accent-subtle) !important;
+    border-color: rgba(240,165,0,0.2) !important;
+  }
+  #menuConfiguracoesGroup .nav-btn-parent.ativo,
+  #menuSaasGroup .nav-btn-parent.ativo {
+    background: var(--accent-subtle) !important;
+    border-color: rgba(240,165,0,0.35) !important;
+    box-shadow: 0 2px 10px rgba(240,165,0,0.12) !important;
+  }
+  #menuConfiguracoesGroup .nav-title,
+  #menuSaasGroup .nav-title {
+    color: var(--accent-bright) !important;
+    font-weight: 700 !important;
+  }
+  #menuConfiguracoesGroup .nav-hint,
+  #menuSaasGroup .nav-hint {
+    color: rgba(240,165,0,0.45) !important;
+  }
+  #menuConfiguracoesGroup .nav-btn-parent::before,
+  #menuSaasGroup .nav-btn-parent::before {
+    background: var(--accent-bright) !important;
+    box-shadow: 0 0 8px rgba(240,165,0,0.3) !important;
+  }
+
+  /* ─── Links ─── */
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color .15s;
+  }
+  a:hover {
+    color: var(--accent-bright);
+    text-decoration: underline;
+  }
+
+  /* ─── Checkboxes/Radios customizadas ─── */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--accent);
+  }
+
+  /* ─── Page labels ─── */
+  .pagina-label {
+    color: var(--text-muted) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-family: var(--font-mono);
+  }
+
+  /* ─── Sub-buttons no menu ─── */
+  .nav-sub-btn {
+    padding-left: 20px !important;
+    opacity: 0.8;
+    font-size: 12.5px !important;
+  }
+  .nav-sub-btn:hover { opacity: 1; }
+  .nav-sub-btn.ativo { opacity: 1; }
+
+  /* ─── Animações ─── */
+  @keyframes pulseAmber {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(240,165,0,0); }
+    50% { box-shadow: 0 0 0 8px rgba(240,165,0,0.12); }
+  }
+  @keyframes slideInDown {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ─── Page transitions ─── */
+  .pagina {
+    animation: fadeIn .25s ease;
+  }
+
+  /* ─── Shadows & depth ─── */
+  .modal-overlay {
+    background: rgba(0,0,0,0.75) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  /* ─── Text selections ─── */
+  ::selection {
+    background: rgba(240,165,0,0.3);
+    color: var(--text);
+  }

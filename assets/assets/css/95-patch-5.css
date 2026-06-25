@@ -1,0 +1,226 @@
+.nc-pill{border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);cursor:pointer;font-family:var(--font-sans);transition:all .15s;text-align:center;width:100%;}
+.nc-pill:hover,.nc-pill:active{border-color:var(--accent);background:var(--accent-subtle);color:var(--accent);}
+.nc-pill-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+.nc-forn-card{padding:12px 16px;border:1.5px solid var(--border-mid);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--surface);transition:all .15s;}
+.nc-forn-card:active{border-color:var(--accent);background:var(--accent-subtle);}
+.nc-cat-card{padding:12px;border:1.5px solid var(--border-mid);border-radius:12px;background:var(--surface);cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--text);transition:all .15s;}
+.nc-cat-card:active,.nc-cat-card.nc-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+
+
+/* =========================================================
+   CHECKDIÁRIO - PATCH MOBILE/TABLET FINANCEIRO + TAREFAS
+   Foco: não alterar desktop; apenas telas estreitas e tablets.
+   ========================================================= */
+@media (max-width: 1024px) {
+  body { overflow-x: hidden; }
+  .page, .view, main, .content, .app-main { max-width: 100%; overflow-x: hidden; }
+
+  .topbar, .header-admin, .admin-topbar, .painel-topo {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+  .topbar > *, .header-admin > *, .admin-topbar > *, .painel-topo > * {
+    min-width: 0 !important;
+  }
+
+  .card, .panel, .box, .section, .lista, .item {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Filtros financeiros e cadastros: empilha sem estourar a largura. */
+  #financeiro_contasapagar .form-grid,
+  #financeiro_recebiveis .form-grid,
+  #financeiro_contasapagar .filters,
+  #financeiro_recebiveis .filters,
+  #financeiro_contasapagar .toolbar,
+  #financeiro_recebiveis .toolbar,
+  .financeiro-toolbar,
+  .financeiro-filtros {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  #financeiro_contasapagar input,
+  #financeiro_contasapagar select,
+  #financeiro_contasapagar textarea,
+  #financeiro_recebiveis input,
+  #financeiro_recebiveis select,
+  #financeiro_recebiveis textarea,
+  #financeiro_contasapagar button,
+  #financeiro_recebiveis button {
+    max-width: 100% !important;
+  }
+
+  /* Cards de contas/recebíveis: layout horizontal vira card vertical. */
+  #financeiro_contasapagar .item,
+  #financeiro_recebiveis .item,
+  #listaContasAPagarFinanceiro .item,
+  #listaRecebiveisFinanceiro .item,
+  #listaRecFuturos .item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  #financeiro_contasapagar .item-info,
+  #financeiro_recebiveis .item-info,
+  #listaContasAPagarFinanceiro .item-info,
+  #listaRecebiveisFinanceiro .item-info,
+  #listaRecFuturos .item-info {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }
+
+  #financeiro_contasapagar .item-destaque,
+  #financeiro_recebiveis .item-destaque,
+  #financeiro_contasapagar .rec-futuro-destaque,
+  #financeiro_recebiveis .rec-futuro-destaque,
+  #listaContasAPagarFinanceiro .item-destaque,
+  #listaRecFuturos .rec-futuro-destaque {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+    background: rgba(255,255,255,.03) !important;
+  }
+
+  #financeiro_contasapagar .item-actions,
+  #financeiro_recebiveis .item-actions,
+  #listaContasAPagarFinanceiro .item-actions,
+  #listaRecebiveisFinanceiro .item-actions,
+  #listaRecFuturos .item-actions {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  #financeiro_contasapagar .item-actions .btn,
+  #financeiro_recebiveis .item-actions .btn,
+  #listaContasAPagarFinanceiro .item-actions .btn,
+  #listaRecebiveisFinanceiro .item-actions .btn,
+  #listaRecFuturos .item-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 42px !important;
+  }
+
+  #financeiro_contasapagar .item-detalhe,
+  #financeiro_recebiveis .item-detalhe,
+  #listaContasAPagarFinanceiro .item-detalhe,
+  #listaRecebiveisFinanceiro .item-detalhe,
+  #listaRecFuturos .item-detalhe {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Checklists/tarefas lançadas: evita cards gigantes em celular/tablet. */
+  .tarefa-card, .tarefa-item, .checklist-card, .checklist-item,
+  #listaTarefas .item, #listaConsultaTarefas .item, #listaChecklists .item {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body { font-size: 14px; }
+  h1, h2, h3 { line-height: 1.15 !important; overflow-wrap: anywhere; }
+  .btn { min-height: 42px; }
+
+  #financeiro_contasapagar,
+  #financeiro_recebiveis,
+  #tarefas,
+  #checklists,
+  #funcionarios,
+  #perfis {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  #financeiro_contasapagar .form-grid,
+  #financeiro_recebiveis .form-grid,
+  #financeiro_contasapagar .filters,
+  #financeiro_recebiveis .filters,
+  #financeiro_contasapagar .toolbar,
+  #financeiro_recebiveis .toolbar,
+  .financeiro-toolbar,
+  .financeiro-filtros {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  #financeiro_contasapagar input,
+  #financeiro_contasapagar select,
+  #financeiro_contasapagar textarea,
+  #financeiro_contasapagar button,
+  #financeiro_recebiveis input,
+  #financeiro_recebiveis select,
+  #financeiro_recebiveis textarea,
+  #financeiro_recebiveis button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #financeiro_contasapagar .item-nome,
+  #financeiro_recebiveis .item-nome,
+  #listaContasAPagarFinanceiro .item-nome,
+  #listaRecebiveisFinanceiro .item-nome,
+  #listaRecFuturos .item-nome {
+    font-size: 17px !important;
+    line-height: 1.15 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #financeiro_contasapagar .item-destaque span,
+  #financeiro_recebiveis .item-destaque span,
+  #financeiro_contasapagar .rec-futuro-destaque span,
+  #financeiro_recebiveis .rec-futuro-destaque span,
+  #listaContasAPagarFinanceiro .item-destaque span,
+  #listaRecFuturos .rec-futuro-destaque span {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Reduz os números destacados para caber em iPhone sem quebrar o layout. */
+  #financeiro_contasapagar .item-destaque span[style*="font-size:30px"],
+  #financeiro_contasapagar .item-destaque span[style*="font-size:34px"],
+  #financeiro_recebiveis .rec-futuro-destaque-data,
+  #financeiro_recebiveis .rec-futuro-destaque-valor,
+  #listaRecFuturos .rec-futuro-destaque-data,
+  #listaRecFuturos .rec-futuro-destaque-valor {
+    font-size: clamp(24px, 8vw, 34px) !important;
+  }
+
+  #financeiro_contasapagar .item-actions,
+  #financeiro_recebiveis .item-actions,
+  #listaContasAPagarFinanceiro .item-actions,
+  #listaRecebiveisFinanceiro .item-actions,
+  #listaRecFuturos .item-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tabelas dos relatórios em mobile: rolagem horizontal controlada, não quebra a página toda. */
+  table { max-width: 100%; }
+  .table-wrap, .tabela-wrap, .relatorio-tabela, .detalhamento-tabela {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Cards agrupados de contas: a linha interna também empilha. */
+  #listaContasAPagarFinanceiro .item > div[style*="display:flex"][style*="align-items:stretch"] {
+    flex-direction: column !important;
+  }
+}
