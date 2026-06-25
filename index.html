@@ -3,7 +3,7 @@
 <html lang="pt-br" class="admin-fouc-pendente">
 <head>
   <meta charset="UTF-8">
-  <meta name="autocomplete" content="off">
+  <meta name="autocomplete" content="on">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -2959,14 +2959,14 @@
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->
     <div id="loginFase1" class="login-fase">
-      <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+      <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="on">
         <div class="login-field-group">
           <div class="login-field-label">E-mail de acesso</div>
-          <input type="email" id="username" class="login-input" placeholder="seuemail@empresa.com.br" required autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <input type="email" id="username" name="username" class="login-input" placeholder="seuemail@empresa.com.br" required autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
         </div>
         <div class="login-field-group">
           <div class="login-field-label">Senha</div>
-          <input type="password" id="password" class="login-input pin-secure-input" placeholder="Digite sua senha de acesso" required autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <input type="password" id="password" name="password" class="login-input" placeholder="Digite sua senha de acesso" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
           <div class="login-field-help">O PIN é usado somente no ponto, tarefas e confirmações internas.</div>
         </div>
         <div class="login-checks">
