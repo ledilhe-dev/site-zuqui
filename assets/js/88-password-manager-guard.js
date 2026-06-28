@@ -1,5 +1,10 @@
 (function bloquearGerenciadorSenhasNavegador() {
+  function ehCampoLoginReal(input) {
+    return input && (input.id === 'username' || input.id === 'password' || input.closest('#loginForm'));
+  }
+
   function ehCampoSenhaOuPin(input) {
+    if (ehCampoLoginReal(input)) return false;
     var alvo = [
       input.type,
       input.name,
@@ -57,6 +62,14 @@
   function aplicarBloqueioSenha() {
     try {
       document.querySelectorAll('form').forEach(function(form) {
+        if (form.id === 'loginForm') {
+          form.setAttribute('autocomplete', 'on');
+          form.removeAttribute('data-lpignore');
+          form.removeAttribute('data-1p-ignore');
+          form.removeAttribute('data-bwignore');
+          form.setAttribute('data-form-type', 'login');
+          return;
+        }
         form.setAttribute('autocomplete', 'off');
         form.setAttribute('data-lpignore', 'true');
         form.setAttribute('data-1p-ignore', 'true');

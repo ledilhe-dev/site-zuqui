@@ -261,7 +261,8 @@ function obterFeriadosNacionaisEscala(ano){const pascoa=calcularPascoaEscala(ano
 function obterInicioFimMesEscala(){const ref=escalaPlantoesDataReferencia||new Date(),ano=ref.getFullYear(),mes=ref.getMonth();return {inicio:formatarDataIsoLocalEscala(new Date(ano,mes,1)),fim:formatarDataIsoLocalEscala(new Date(ano,mes+1,0))};}
 function normalizarHoraEscala(valor){return String(valor||'').slice(0,5);}
 function formatarDataBRSimplesEscala(dataIso){const [a,m,d]=String(dataIso||'').split('-');return d&&m&&a?`${d}/${m}/${a}`:String(dataIso||'');}
-function isMissingEscalaPlantoesTableError(error){const msg=String(error?.message||error?.details||error?.hint||error?.code||'').toLowerCase(); if(msg.includes('empresa_id') || msg.includes('loja_id') || msg.includes('column')) return false; return msg.includes('could not find the table') || (msg.includes('relation') && msg.includes('escala_plantoes') && msg.includes('does not exist')) || msg.includes('schema cache');}
+function tabelaAgenda(){return window.AGENDA_TABLE || 'agenda';}
+function isMissingEscalaPlantoesTableError(error){const msg=String(error?.message||error?.details||error?.hint||error?.code||'').toLowerCase(); if(msg.includes('empresa_id') || msg.includes('loja_id') || msg.includes('column')) return false; return msg.includes('could not find the table') || (msg.includes('relation') && (msg.includes('agenda') || msg.includes('escala_plantoes')) && msg.includes('does not exist')) || msg.includes('schema cache');}
 
 async function carregarEscalaPlantoes(){
   if(!(escalaPlantoesDataReferencia instanceof Date)||Number.isNaN(escalaPlantoesDataReferencia.getTime()))escalaPlantoesDataReferencia=new Date();
@@ -281,7 +282,7 @@ function irParaHojeEscalaPlantoes(){escalaPlantoesDataReferencia=new Date();carr
 async function carregarPlantoesEscalaMes(){
   const { inicio, fim } = obterInicioFimMesEscala();
   let query = sb
-    .from('escala_plantoes')
+    .from(tabelaAgenda())
     .select('*')
     .gte('data_plantao', inicio)
     .lte('data_plantao', fim)
@@ -294,7 +295,7 @@ async function carregarPlantoesEscalaMes(){
   if (error) {
     escalaPlantoesEventos = [];
     if (isMissingEscalaPlantoesTableError(error)) {
-      setMsg('msgEscalaPlantoes','Rode o SQL da tabela escala_plantoes para salvar e exibir plantões.','err');
+      setMsg('msgEscalaPlantoes','Rode o SQL da tabela agenda para salvar e exibir a agenda.','err');
     } else {
       setMsg('msgEscalaPlantoes',`Erro ao carregar plantões: ${mensagemErroSupabase(error,'erro desconhecido')}`,'err');
     }
@@ -394,7 +395,7 @@ async function abrirModalCadastroPlantaoEscala(dataIso=''){
   ['escalaPlantaoInicio','escalaPlantaoFim','escalaPlantaoTitulo','escalaPlantaoValor','escalaPlantaoObservacao'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';});
   const tipo=document.getElementById('escalaPlantaoTipo'); if(tipo)tipo.value='plantao';
   const btnExcluir=document.getElementById('btnExcluirPlantaoEscala'); if(btnExcluir) btnExcluir.style.display='none';
-  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar escala';
+  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar agenda';
   setMsg('msgModalEscalaPlantao','','');
   await carregarFuncionariosSelectEscala();
   renderizarItensDiaModalEscala();
@@ -409,7 +410,8 @@ function fecharModalCadastroPlantaoEscala(){
 
 async function salvarPlantaoEscala(){
   const eventoId=String(document.getElementById('escalaPlantaoEventoId')?.value||'').trim();
-  const funcionarioId=String(document.getElementById('escalaPlantaoFuncionario')?.value||'').trim();
+  const funcionarioAgendaId=String(document.getElementById('escalaPlantaoFuncionario')?.value||'').trim();
+  const funcionarioId=funcionarioAgendaId || 'agenda_loja';
   const inicio=String(document.getElementById('escalaPlantaoInicio')?.value||'').trim();
   const fim=String(document.getElementById('escalaPlantaoFim')?.value||'').trim();
   const tipo=String(document.getElementById('escalaPlantaoTipo')?.value||'plantao').trim();
@@ -427,7 +429,7 @@ async function salvarPlantaoEscala(){
   const payload={
     empresa_id: empresaId,
     loja_id: lojaId,
-    funcionario_id: funcionarioId,
+    funcionario_id: funcionarioAgendaId || null,
     data_plantao: escalaPlantoesDataSelecionada,
     inicio_hora: inicio,
     fim_hora: fim,
@@ -438,14 +440,14 @@ async function salvarPlantaoEscala(){
   };
   let resposta;
   if(eventoId){
-    let q=sb.from('escala_plantoes').update(payload).eq('id', eventoId);
+    let q=sb.from(tabelaAgenda()).update(payload).eq('id', eventoId);
     if(lojaId) q=q.eq('loja_id', lojaId);
     resposta=await q;
   } else {
-    resposta=await sb.from('escala_plantoes').insert([payload]);
+    resposta=await sb.from(tabelaAgenda()).insert([payload]);
   }
   if(resposta.error){
-    if(isMissingEscalaPlantoesTableError(resposta.error)) setMsg('msgModalEscalaPlantao','Rode o SQL da tabela escala_plantoes antes de salvar.','err');
+    if(isMissingEscalaPlantoesTableError(resposta.error)) setMsg('msgModalEscalaPlantao','Rode o SQL da tabela agenda antes de salvar.','err');
     else setMsg('msgModalEscalaPlantao',`Não foi possível salvar: ${mensagemErroSupabase(resposta.error,'erro desconhecido')}`,'err');
     return;
   }
@@ -506,7 +508,7 @@ async function excluirPlantaoEscala(){
       : 'PIN inválido ou usuário sem vínculo ativo com esta loja.';
     setMsg('msgModalEscalaPlantao', texto + ' A escala não foi excluída.','err');return;
   }
-  let q=sb.from('escala_plantoes').update({
+  let q=sb.from(tabelaAgenda()).update({
     deleted_at: new Date().toISOString(),
     deleted_by_funcionario_id: usuarioExclusao.id,
     deleted_by_nome: usuarioExclusao.nome || 'Funcionário',

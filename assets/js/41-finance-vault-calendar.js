@@ -886,6 +886,7 @@ async function salvarContaAPagarFinanceiro() {
 
       const payloadGrupoBase = {
         fornecedor_id: fornecedorId,
+        categoria_id: categoriaId || null,
         data_compra: dataCompra,
         valor_compra: Number(valorCompra.toFixed(2)),
         observacao,
@@ -1584,6 +1585,18 @@ function editarContaAPagarFinanceiro(id) {
   const campoValor = document.getElementById('contaValorCompra');
   if (campoValor) campoValor.value = formatarMoedaBRFinanceiro(item.valor_compra || 0);
   document.getElementById('contaObservacao').value = item.observacao || '';
+  const campoCategoria = document.getElementById('contaCategoriaId');
+  if (campoCategoria) {
+    const categoriaAtual = String(item.categoria_id || '').trim();
+    campoCategoria.value = categoriaAtual;
+    if (categoriaAtual && String(campoCategoria.value || '') !== categoriaAtual && typeof carregarCategoriasCompra === 'function') {
+      // Em lançamentos antigos/importados a lista de categorias pode ainda não ter sido preenchida.
+      carregarCategoriasCompra().then(() => {
+        const campoCategoriaAtualizado = document.getElementById('contaCategoriaId');
+        if (campoCategoriaAtualizado) campoCategoriaAtualizado.value = categoriaAtual;
+      }).catch(() => {});
+    }
+  }
   document.getElementById('contaQtdParcelas').value = item.qtd_parcelas ? String(item.qtd_parcelas) : '';
   document.getElementById('contaIntervaloParcelasDias').value = item.intervalo_parcelas_dias ? String(item.intervalo_parcelas_dias) : '';
   atualizarModoEdicaoContaAPagarFinanceiro(true);

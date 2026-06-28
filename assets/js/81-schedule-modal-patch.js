@@ -22,9 +22,16 @@
     try { if (window.usuarioSistemaLogado && window.usuarioSistemaLogado.empresa_id) return String(window.usuarioSistemaLogado.empresa_id); } catch(e) {}
     return '';
   }
+  function tabelaAgenda(){ return window.AGENDA_TABLE || 'agenda'; }
   function garantirModalEscala(){
     var modal=byId('modalEscalaPlantao');
     if(modal){
+      var tituloExistente = modal.querySelector('.escala-modal-title');
+      if(tituloExistente){ tituloExistente.id = 'escalaModalTitulo'; tituloExistente.textContent = 'Cadastro de Agenda'; }
+      var labelFuncionario = byId('escalaPlantaoFuncionario')?.closest('label');
+      if(labelFuncionario && labelFuncionario.childNodes.length){ labelFuncionario.childNodes[0].textContent = 'Responsável'; }
+      var btnSalvarExistente = byId('btnSalvarPlantaoEscala');
+      if(btnSalvarExistente) btnSalvarExistente.textContent = 'Salvar agenda';
       if(!byId('escalaPlantaoValor')){
         var titulo=byId('escalaPlantaoTitulo');
         if(titulo && titulo.parentElement){ var lab=document.createElement('label'); lab.id='escalaPlantaoValorWrap'; lab.setAttribute('data-permissao-valor-escala',''); lab.innerHTML='Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00">'; titulo.parentElement.insertAdjacentElement('afterend', lab); }
@@ -34,11 +41,11 @@
     var wrap=document.createElement('div');
     wrap.innerHTML = '<div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">'+
       '<div class="escala-modal-card">'+
-      '<div class="escala-modal-title" id="escalaModalTitulo">Lançar escala</div>'+
+      '<div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>'+
       '<input id="escalaPlantaoEventoId" type="hidden">'+
       '<div class="escala-modal-sub" id="escalaModalDataTexto">Selecione o dia no calendário.</div>'+
       '<div class="escala-modal-grid">'+
-      '<label class="escala-modal-full">Funcionário<select id="escalaPlantaoFuncionario"></select></label>'+
+      '<label class="escala-modal-full">Responsável<select id="escalaPlantaoFuncionario"></select></label>'+
       '<label>Início<input id="escalaPlantaoInicio" type="time"></label>'+
       '<label>Fim<input id="escalaPlantaoFim" type="time"></label>'+
       '<label>Tipo<select id="escalaPlantaoTipo"><option value="plantao">Plantão</option><option value="folga">Folga</option><option value="reuniao">Reunião</option><option value="compromisso">Compromisso</option></select></label>'+
@@ -46,7 +53,7 @@
       '<label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00"></label>'+
       '<label class="escala-modal-full">Observação<textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea></label>'+
       '</div><div class="escala-modal-lista" id="escalaPlantaoListaDia"></div><div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>'+
-      '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar escala</button></div>'+
+      '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar agenda</button></div>'+
       '</div></div>';
     document.body.appendChild(wrap.firstChild);
     return byId('modalEscalaPlantao');
@@ -96,18 +103,31 @@
         msg('msgModalEscalaPlantao','Loja logada não identificada. Reabra o sistema antes de lançar escala.','err');
         return;
       }
+      var funcionariosPorId = {};
       var q=window.sb.from('funcionarios').select('id,nome,loja_id,empresa_id,ativo').eq('ativo',true).eq('loja_id',loja).order('nome',{ascending:true});
       var r;
       if (typeof window.executarSemFiltroLojaTemporario === 'function') r = await window.executarSemFiltroLojaTemporario(function(){ return q; });
       else r = await q;
       if(r.error) throw r.error;
-      var lista=(r.data||[]).filter(function(f){return String(f.loja_id||'')===loja && f.ativo===true;});
-      if(!lista.length){ select.innerHTML='<option value="">Nenhum funcionário desta filial</option>'; return; }
-      select.innerHTML='<option value="">Selecione...</option>'+lista.map(function(f){return '<option value="'+esc(f.id)+'">'+esc(f.nome||'Funcionário')+'</option>';}).join('');
+      (r.data||[]).forEach(function(f){ if(String(f.loja_id||'')===loja && f.ativo===true) funcionariosPorId[String(f.id)] = f; });
+      try {
+        var qv=window.sb.from('funcionario_lojas').select('funcionario_id,loja_id,ativo').eq('loja_id',loja).eq('ativo',true);
+        var rv=typeof window.executarSemFiltrosTenantTemporario === 'function' ? await window.executarSemFiltrosTenantTemporario(function(){ return qv; }) : await qv;
+        var ids=[...new Set((rv.data||[]).map(function(v){return String(v.funcionario_id||'').trim();}).filter(Boolean))];
+        if(!rv.error && ids.length){
+          var qf=window.sb.from('funcionarios').select('id,nome,loja_id,empresa_id,ativo').in('id',ids).eq('ativo',true).order('nome',{ascending:true});
+          var rf=typeof window.executarSemFiltrosTenantTemporario === 'function' ? await window.executarSemFiltrosTenantTemporario(function(){ return qf; }) : await qf;
+          if(!rf.error) (rf.data||[]).forEach(function(f){ if(f.ativo===true) funcionariosPorId[String(f.id)] = f; });
+        }
+      } catch(eVinculos) {
+        console.warn('Nao foi possivel considerar vinculos multi-loja na agenda:', eVinculos);
+      }
+      var lista=Object.values(funcionariosPorId).sort(function(a,b){ return String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'); });
+      select.innerHTML='<option value="">Agenda da loja (sem responsável)</option>'+lista.map(function(f){return '<option value="'+esc(f.id)+'">'+esc(f.nome||'Funcionário')+'</option>';}).join('');
     }catch(e){
       console.warn('Erro funcionários escala:',e);
-      select.innerHTML='<option value="">Erro ao carregar funcionários</option>';
-      msg('msgModalEscalaPlantao','Erro ao carregar funcionários da filial logada.','err');
+      select.innerHTML='<option value="">Agenda da loja (sem responsável)</option>';
+      msg('msgModalEscalaPlantao','Não foi possível carregar responsáveis, mas a agenda pode ser salva pela loja.','ok');
     }
   }
   function eventosAtuais(){ return window.escalaPlantoesEventos || ESCALA_STATE.eventos || []; }
@@ -128,7 +148,7 @@
       var ref=window.escalaPlantoesDataReferencia instanceof Date ? window.escalaPlantoesDataReferencia : new Date();
       var inicio=ref.getFullYear()+'-'+String(ref.getMonth()+1).padStart(2,'0')+'-01';
       var fim=new Date(ref.getFullYear(),ref.getMonth()+1,0); fim=fim.getFullYear()+'-'+String(fim.getMonth()+1).padStart(2,'0')+'-'+String(fim.getDate()).padStart(2,'0');
-      var q=window.sb.from('escala_plantoes').select('id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at,deleted_by_nome,deleted_by_funcionario_id').gte('data_plantao',inicio).lte('data_plantao',fim).is('deleted_at', null).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
+      var q=window.sb.from(tabelaAgenda()).select('id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at,deleted_by_nome,deleted_by_funcionario_id').gte('data_plantao',inicio).lte('data_plantao',fim).is('deleted_at', null).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
       var lojaObj = await resolverLojaAtivaBlindadaEscala();
       var loja = String(lojaObj && lojaObj.id || lojaIdAtual() || '').trim();
       if(loja) q=q.eq('loja_id',loja);
@@ -156,9 +176,9 @@
     ids.forEach(function(id){ var el=byId(id); if(el) el.value=''; });
     var tipo=byId('escalaPlantaoTipo'); if(tipo) tipo.value='plantao';
     var dt=byId('escalaModalDataTexto'); if(dt) dt.textContent='Data selecionada: '+br(ESCALA_STATE.data);
-    var title=byId('escalaModalTitulo'); if(title) title.textContent='Lançar escala';
+    var title=byId('escalaModalTitulo'); if(title) title.textContent='Cadastro de Agenda';
     var bx=byId('btnExcluirPlantaoEscala'); if(bx) bx.style.display='none';
-    var bs=byId('btnSalvarPlantaoEscala'); if(bs) bs.textContent='Salvar escala';
+    var bs=byId('btnSalvarPlantaoEscala'); if(bs) bs.textContent='Salvar agenda';
     msg('msgModalEscalaPlantao','','');
     await carregarFuncionariosSelect();
     renderItensDia();
@@ -175,7 +195,7 @@
     var map={escalaPlantaoEventoId:item.id||'', escalaPlantaoFuncionario:item.funcionario_id||'', escalaPlantaoInicio:hora(item.inicio_hora), escalaPlantaoFim:hora(item.fim_hora), escalaPlantaoTipo:item.tipo||'plantao', escalaPlantaoTitulo:item.titulo||'', escalaPlantaoValor:(item.valor_combinado ?? ''), escalaPlantaoObservacao:item.observacao||''};
     Object.keys(map).forEach(function(k){ var el=byId(k); if(el) el.value=map[k]; });
     var dt=byId('escalaModalDataTexto'); if(dt) dt.textContent='Editando: '+br(ESCALA_STATE.data);
-    var title=byId('escalaModalTitulo'); if(title) title.textContent='Editar escala';
+    var title=byId('escalaModalTitulo'); if(title) title.textContent='Editar Agenda';
     var bx=byId('btnExcluirPlantaoEscala'); if(bx) bx.style.display='inline-flex';
     var bs=byId('btnSalvarPlantaoEscala'); if(bs) bs.textContent='Salvar alteração';
     renderItensDia();
@@ -195,21 +215,20 @@
     var valorCombinado=valorRaw ? Number(valorRaw) : null;
     if(valorRaw && (!Number.isFinite(valorCombinado) || valorCombinado < 0)){ msg('msgModalEscalaPlantao','Informe um valor combinado válido.','err'); return; }
     if(!ESCALA_STATE.data){ msg('msgModalEscalaPlantao','Selecione um dia no calendário.','err'); return; }
-    if(!funcionario){ msg('msgModalEscalaPlantao','Selecione o funcionário.','err'); return; }
     if(!inicio || !fim){ msg('msgModalEscalaPlantao','Informe início e fim.','err'); return; }
     if(inicio>=fim){ msg('msgModalEscalaPlantao','O horário final precisa ser maior que o inicial.','err'); return; }
     var lojaObj = await resolverLojaAtivaBlindadaEscala();
     var loja = String(lojaObj && lojaObj.id || lojaIdAtual() || '').trim();
     if(!loja){ msg('msgModalEscalaPlantao','Não consegui identificar a loja para salvar esta agenda. Reabra o sistema e tente novamente.','err'); return; }
-    var payload={ loja_id:loja, funcionario_id:funcionario, data_plantao:ESCALA_STATE.data, inicio_hora:inicio, fim_hora:fim, tipo:tipo, titulo:titulo || (tipo==='plantao'?'Plantão':tipo==='folga'?'Folga':tipo==='reuniao'?'Reunião':'Compromisso'), observacao:obs||null, valor_combinado:valorCombinado };
+    var payload={ loja_id:loja, funcionario_id:funcionario || null, data_plantao:ESCALA_STATE.data, inicio_hora:inicio, fim_hora:fim, tipo:tipo, titulo:titulo || (tipo==='plantao'?'Plantão':tipo==='folga'?'Folga':tipo==='reuniao'?'Reunião':'Compromisso'), observacao:obs||null, valor_combinado:valorCombinado };
     var emp=String(lojaObj && lojaObj.empresa_id || empresaIdAtual() || '').trim(); if(emp) payload.empresa_id=emp;
     try{
       var r;
       if(ESCALA_STATE.id || byId('escalaPlantaoEventoId')?.value){
         var id=ESCALA_STATE.id || byId('escalaPlantaoEventoId').value;
-        r=await window.sb.from('escala_plantoes').update(payload).eq('id',id).eq('loja_id',loja);
+        r=await window.sb.from(tabelaAgenda()).update(payload).eq('id',id).eq('loja_id',loja);
       } else {
-        r=await window.sb.from('escala_plantoes').insert([payload]);
+        r=await window.sb.from(tabelaAgenda()).insert([payload]);
       }
       if(r.error) throw r.error;
       window.fecharModalCadastroPlantaoEscala();
@@ -257,7 +276,7 @@
     var nomeExclusao=usuarioExclusao.nome || usuarioExclusao.nome_completo || 'Funcionário';
 
     async function tentarUpdate(payload){
-      var q=window.sb.from('escala_plantoes').update(payload).eq('id',id);
+      var q=window.sb.from(tabelaAgenda()).update(payload).eq('id',id);
       if(loja) q=q.eq('loja_id',loja);
       return await q;
     }
@@ -284,7 +303,7 @@
       // faz delete físico para não travar a operação. O relatório de excluídos depende das colunas acima.
       if(r.error){
         console.warn('Falha exclusão lógica da escala, tentando delete físico:', r.error);
-        var qDel=window.sb.from('escala_plantoes').delete().eq('id',id);
+        var qDel=window.sb.from(tabelaAgenda()).delete().eq('id',id);
         if(loja) qDel=qDel.eq('loja_id',loja);
         r = await qDel;
       }
@@ -335,7 +354,7 @@
       return (eventosAtuais()||[]).slice().filter(function(it){ var d=String(it.data_plantao||'').slice(0,10); return d>=faixa.inicio && d<=faixa.fim; });
     }
     try{
-      var q=window.sb.from('escala_plantoes')
+      var q=window.sb.from(tabelaAgenda())
         .select('id,loja_id,empresa_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,valor_combinado,deleted_at,deleted_by_nome,deleted_by_funcionario_id,created_at,updated_at')
         .gte('data_plantao',faixa.inicio)
         .lte('data_plantao',faixa.fim)

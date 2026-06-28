@@ -656,17 +656,17 @@ async function excluirTarefasSelecionadas() {
 
   const confirmacaoSenha = await abrirModalPin({
     titulo: 'Exclusão em massa de tarefas',
-    subtitulo: `Digite a senha master para excluir ${ids.length} tarefa(s) selecionada(s).`,
+    subtitulo: `Informe o PIN de um usuário com permissão para excluir ${ids.length} tarefa(s) selecionada(s).`,
     textoAcao: 'Validar senha',
     exibirUsuario: false,
-    placeholderInput: 'Digite a senha master'
+    placeholderInput: 'Informe o PIN de um usuário com permissão'
   });
   if (!confirmacaoSenha?.pin) {
     setMsg('msgTarefas', 'Exclusão em massa cancelada.', 'err');
     return;
   }
   if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
-    setMsg('msgTarefas', 'Senha master inválida. Exclusão cancelada.', 'err');
+    setMsg('msgTarefas', 'PIN inválido ou sem permissão para excluir. Exclusão cancelada.', 'err');
     return;
   }
   if (!confirm(`Confirma a exclusão de ${ids.length} tarefa(s)? Esta ação não pode ser desfeita.`)) return;
@@ -1276,31 +1276,80 @@ function redefinirCampoBuscaChecklistLancado() {
   window.setTimeout(() => forcarCampoBuscaChecklistsLancadosEmBranco(), 1200);
 }
 
+function perfilPermiteExcluirTarefasCadastro(perfil) {
+  if (!perfil) return false;
+  const perfilNormalizado = typeof normalizarPerfilUsuario === 'function' ? normalizarPerfilUsuario(perfil) : perfil;
+  const codigo = typeof normalizarCodigoPerfil === 'function'
+    ? normalizarCodigoPerfil(perfilNormalizado?.codigo || perfil?.codigo || '')
+    : String(perfilNormalizado?.codigo || perfil?.codigo || '').trim().toUpperCase();
+  if (codigo === 'MASTER' || codigo === 'ADM') return true;
+  const permissoesBase = typeof obterPermissoesBase === 'function' ? obterPermissoesBase(codigo) : {};
+  const permissoes = { ...permissoesBase, ...(perfilNormalizado?.permissoes || {}) };
+  return permissoes.excluir_tarefas_massa === true || permissoes.tarefas_excluir === true;
+}
+
 async function validarSenhaMasterParaExclusao(senha = '') {
   const valor = String(senha || '').trim();
   if (!valor) return false;
 
-  const perfilCodigo = String(usuarioSistemaLogado?.perfil?.codigo || '').toUpperCase();
-  const perfilNome = String(usuarioSistemaLogado?.perfil?.nome || '').toLowerCase();
-  const ehAdminLoja = usuarioSistemaLogado?.tipo === 'admin_loja' || usuarioSistemaLogado?.tipo === 'admin';
-  const adminPorPerfil = perfilCodigo === 'ADM' || perfilCodigo === 'MASTER' || perfilNome.includes('admin');
-  if (!adminPorPerfil && !ehAdminLoja) return false;
-
-  const idUsuario = String(usuarioSistemaLogado?.id || '').trim();
-  const emailUsuario = String(usuarioSistemaLogado?.email || '').trim().toLowerCase();
-  if (!idUsuario && !emailUsuario) return false;
+  const loja = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
 
   try {
-    if (usuarioSistemaLogado?.tipo === 'admin_loja') {
-      const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
-        p_usuario_id: idUsuario,
-        p_pin: valor,
-      }));
-      return !error && data === true;
+    // Admin/painel pode confirmar com o próprio PIN, mas ainda precisa ser admin.
+    const idUsuario = String(usuarioSistemaLogado?.id || '').trim();
+    const perfilAtual = usuarioSistemaLogado?.perfil || {};
+    const ehAdminSessao = usuarioSistemaLogado?.tipo === 'admin_loja' || usuarioSistemaLogado?.tipo === 'admin' || usuarioEhAdministrador?.();
+    if (ehAdminSessao && idUsuario) {
+      if (usuarioSistemaLogado?.tipo === 'admin_loja') {
+        const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
+          p_usuario_id: idUsuario,
+          p_pin: valor,
+        }));
+        if (!error && data === true) return true;
+      }
+      if (perfilPermiteExcluirTarefasCadastro(perfilAtual) && await validarPinFuncionario(idUsuario, valor)) return true;
     }
-    return validarPinFuncionario(idUsuario, valor);
+
+    // PIN operacional: procura o funcionário pela credencial e confere se pertence à loja
+    // e se o perfil dele herda a permissão de excluir tarefas.
+    const candidatosRes = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+      p_senha: valor,
+    }));
+    if (candidatosRes.error || !(candidatosRes.data || []).length) return false;
+
+    for (const funcionario of candidatosRes.data || []) {
+      if (funcionario.é_administrador === true || funcionario.e_administrador === true) return true;
+
+      let pertenceDireto = loja ? String(funcionario.loja_id || '') === loja : true;
+      let perfilId = funcionario.perfil_id || null;
+
+      if (loja && !pertenceDireto) {
+        const vinculoRes = await executarSemFiltrosTenantTemporario(() => sb
+          .from('funcionario_lojas')
+          .select('perfil_id, ativo')
+          .eq('funcionario_id', funcionario.id)
+          .eq('loja_id', loja)
+          .eq('ativo', true)
+          .maybeSingle());
+        if (vinculoRes.data) {
+          pertenceDireto = true;
+          perfilId = vinculoRes.data.perfil_id || perfilId;
+        }
+      }
+      if (!pertenceDireto) continue;
+      if (!perfilId) continue;
+
+      const perfilRes = await executarSemFiltrosTenantTemporario(() => sb
+        .from('perfis')
+        .select('id, nome, codigo, permissoes')
+        .eq('id', perfilId)
+        .maybeSingle());
+      if (!perfilRes.error && perfilPermiteExcluirTarefasCadastro(perfilRes.data)) return true;
+    }
+
+    return false;
   } catch (error) {
-    console.warn('Falha ao validar senha master para exclusão:', error);
+    console.warn('Falha ao validar senha/permissão para exclusão:', error);
     return false;
   }
 }
@@ -1315,10 +1364,10 @@ async function excluirChecklistsLancadosFiltrados() {
 
   const confirmacaoSenha = await abrirModalPin({
     titulo: 'Confirmação de exclusão',
-    subtitulo: 'Digite a senha master para excluir os checklists filtrados.',
+    subtitulo: 'Informe o PIN de um usuário com permissão para excluir os checklists filtrados.',
     textoAcao: 'Validar senha',
     exibirUsuario: false,
-    placeholderInput: 'Digite a senha master'
+    placeholderInput: 'Informe o PIN de um usuário com permissão'
   });
   if (!confirmacaoSenha?.pin) {
     setMsg('msgTarefas', 'Exclusão cancelada.', 'err');
@@ -1326,7 +1375,7 @@ async function excluirChecklistsLancadosFiltrados() {
   }
 
   if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
-    setMsg('msgTarefas', 'Senha master inválida. Exclusão cancelada.', 'err');
+    setMsg('msgTarefas', 'PIN inválido ou sem permissão para excluir. Exclusão cancelada.', 'err');
     return;
   }
 
@@ -1785,7 +1834,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   const lancamentosParaCriar = [];
   let pulouHojePorHorario = false;
   let pulouHojePorTurno = false;
-  let ocorrenciaValida = -1; // contador de dias-válidos para aplicar o intervalo
+  let primeiroOffsetValido = null; // base para intervalo em DIAS CORRIDOS
 
   for (let offset = 0; offset <= horizonteAgendamento; offset++) {
     const dataAlvo = new Date(hojeData);
@@ -1793,10 +1842,10 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     const diaToken = diaSemanaTokenDaData(dataAlvo);
     if (!diaToken || !diasPermitidos.has(diaToken)) continue;
 
-    // Conta apenas dias que batem com os dias da semana selecionados e aplica o
-    // intervalo "a cada X dias" (1 = todos, 2 = pula um, etc.).
-    ocorrenciaValida++;
-    if (intervaloRepeticao > 1 && (ocorrenciaValida % intervaloRepeticao !== 0)) continue;
+    // O campo "a cada X dias" agora é dias corridos, não quantidade de ocorrências.
+    // Ex.: segunda + 7 dias = toda segunda; segunda + 14 dias = segunda sim/segunda não.
+    if (primeiroOffsetValido === null) primeiroOffsetValido = offset;
+    if (intervaloRepeticao > 1 && ((offset - primeiroOffsetValido) % intervaloRepeticao !== 0)) continue;
 
     if (offset === 0 && ignorarHoje) {
       pulouHojePorTurno = ignorarHojePorTurno;
@@ -1982,10 +2031,10 @@ async function excluirTarefa(id) {
   }
   const confirmacaoSenha = await abrirModalPin({
     titulo: 'Confirmação de exclusão',
-    subtitulo: 'Digite a senha master para excluir a tarefa cadastrada.',
+    subtitulo: 'Informe o PIN de um usuário com permissão para excluir a tarefa cadastrada.',
     textoAcao: 'Validar senha',
     exibirUsuario: false,
-    placeholderInput: 'Digite a senha master'
+    placeholderInput: 'Informe o PIN de um usuário com permissão'
   });
   if (!confirmacaoSenha?.pin) {
     setMsg('msgTarefas', 'Exclusão cancelada.', 'err');
@@ -1993,7 +2042,7 @@ async function excluirTarefa(id) {
   }
 
   if (!(await validarSenhaMasterParaExclusao(confirmacaoSenha.pin))) {
-    setMsg('msgTarefas', 'Senha master inválida. Exclusão cancelada.', 'err');
+    setMsg('msgTarefas', 'PIN inválido ou sem permissão para excluir. Exclusão cancelada.', 'err');
     return;
   }
 

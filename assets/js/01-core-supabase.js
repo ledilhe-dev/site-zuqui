@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.7';
-const APP_VERSION_LABEL = '3.1.64-confirmar-rec-futuro-fix';
+const APP_VERSION = '3.2.10';
+const APP_VERSION_LABEL = '3.2.10-agenda-responsaveis-vinculo';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -22,7 +22,9 @@ const AUTH_EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).authEmailFunctionName
 const AUTH_REDIRECT_URL = (window.APP_CONFIG || {}).authRedirectUrl || 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-window.sb = sb; // compatibilidade para módulos seguros de escala/plantões
+window.sb = sb; // compatibilidade para módulos seguros de agenda
+const AGENDA_TABLE = 'agenda';
+window.AGENDA_TABLE = AGENDA_TABLE;
 
 
 // Controle de consumo: evita uma consulta ao Supabase a cada tecla digitada em filtros.
@@ -67,13 +69,13 @@ const TABELAS_COM_EMPRESA_ID = new Set([
   'contas_financeiras',
   'contas_financeiras_movimentacoes',
   'contas_financeiras_ajustes_saldo',
-  'recebiveis','recebiveis_futuros','escala_plantoes',
+  'recebiveis','recebiveis_futuros','agenda','escala_plantoes',
   'fatura_categoria_memoria','fatura_importacoes_log',
   'categorias_compra','grupos_fornecedor','perfis'
 ]);
 
 const TABELAS_COM_LOJA_ID = new Set([
-  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','categorias_compra','grupos_fornecedor','perfis'
+  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','agenda','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','categorias_compra','grupos_fornecedor','perfis'
 ]);
 
 let filtroLojaSuspensoTemporariamente = false;

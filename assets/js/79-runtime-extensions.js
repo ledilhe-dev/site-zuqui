@@ -202,16 +202,41 @@ function obterPreferenciasLoginSalvas() {
 }
 
 function salvarPreferenciasLogin({ username = '', password = '', salvarSenha = false, manterConectado = false } = {}) {
+  const emailNormalizado = String(username || '').trim().toLowerCase();
   const payload = {
-    salvarSenha: !!salvarSenha,
+    salvarSenha: !!salvarSenha || !!manterConectado,
     manterConectado: !!manterConectado,
-    username: salvarSenha ? String(username || '').trim() : '',
+    username: (salvarSenha || manterConectado) ? emailNormalizado : '',
   };
   const bruto = JSON.stringify(payload);
   ['zuqui_login_prefs', 'check_diario_login_prefs'].forEach(chave => {
     localStorage.setItem(chave, bruto);
     sessionStorage.setItem(chave, bruto);
   });
+}
+
+function obterSessaoPersistenteLoginSalva() {
+  const chaves = ['zuqui_auth', 'check_diario_auth_persistente'];
+  for (const chave of chaves) {
+    try {
+      const bruto = localStorage.getItem(chave);
+      if (!bruto) continue;
+      const sessao = JSON.parse(bruto);
+      if (sessao && (sessao.id || sessao.email || sessao.username || sessao.nome)) return sessao;
+    } catch (_) {}
+  }
+  return null;
+}
+
+function loginDigitadoConfereComSessaoPersistente(username = '') {
+  const sessao = obterSessaoPersistenteLoginSalva();
+  if (!sessao) return false;
+  const digitado = String(username || '').trim().toLowerCase();
+  if (!digitado) return true;
+  const candidatos = [sessao.email, sessao.username, sessao.usuario, sessao.nome]
+    .map(v => String(v || '').trim().toLowerCase())
+    .filter(Boolean);
+  return candidatos.includes(digitado);
 }
 
 function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
@@ -271,10 +296,12 @@ function restaurarPreferenciasLogin() {
   const save = document.getElementById('savePassword');
   const keep = document.getElementById('keepLoggedIn');
 
-  if (save) save.checked = !!prefs.salvarSenha;
-  if (keep) keep.checked = !!prefs.manterConectado;
-  if (prefs.salvarSenha) {
-    if (user) user.value = String(prefs.username || '');
+  const temSessaoPersistente = !!obterSessaoPersistenteLoginSalva();
+  if (save) save.checked = !!prefs.salvarSenha || temSessaoPersistente;
+  if (keep) keep.checked = !!prefs.manterConectado || temSessaoPersistente;
+  if ((prefs.salvarSenha || prefs.manterConectado || temSessaoPersistente) && user) {
+    const sessao = obterSessaoPersistenteLoginSalva();
+    user.value = String(prefs.username || sessao?.email || sessao?.username || '').trim();
   }
   if (pass) pass.value = '';
 }
@@ -523,7 +550,14 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       atualizarUsuarioTopbar();
       aplicarPermissoesSistema();
     } catch (erro) {
-      console.warn('A sessão não pôde ser revalidada e foi encerrada:', erro);
+      const manterConectado = !!(localStorage.getItem('zuqui_auth') || localStorage.getItem('check_diario_auth_persistente'));
+      console.warn('A sessão não pôde ser revalidada agora:', erro);
+      if (manterConectado) {
+        // Em celular/Safari a aba pode voltar sem rede ou com consulta temporariamente bloqueada por RLS.
+        // Mantém a sessão local para não obrigar o usuário a digitar senha toda hora.
+        persistirSessaoSistemaAtual(true);
+        return;
+      }
       await logout();
       setMsg('msgLogin', 'Seu acesso ou perfil foi alterado. Entre novamente.', 'err');
     } finally {
@@ -1249,8 +1283,22 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const loginComEmail = username.includes('@');
     setMsg('msgLogin', '', '');
 
-    if (!username || !password) {
-      setMsg('msgLogin', 'Preencha usuário e senha.', 'err');
+    if (!username) {
+      setMsg('msgLogin', 'Preencha o e-mail de acesso.', 'err');
+      return;
+    }
+
+    if (!password) {
+      const temSessaoPersistente = !!obterSessaoPersistenteLoginSalva();
+      if (manterConectado && temSessaoPersistente && loginDigitadoConfereComSessaoPersistente(username)) {
+        setMsg('msgLogin', 'Entrando com sessão salva...', 'ok');
+        const restaurou = await restaurarSessaoSistema();
+        if (restaurou) {
+          salvarPreferenciasLogin({ username, salvarSenha: true, manterConectado: true });
+          return;
+        }
+      }
+      setMsg('msgLogin', 'Digite a senha apenas se a sessão salva não estiver disponível.', 'err');
       return;
     }
 

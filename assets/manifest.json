@@ -36,6 +36,7 @@
   "./assets/js/82-schedule-total-patch.js",
   "./assets/js/83-schedule-access-patch.js",
   "./assets/js/84-schedule-report-patch.js",
+  "./assets/js/90-schedule-store-agenda-patch.js",
   "./assets/js/85-holidays-auto-patch.js",
   "./assets/js/86-holidays-button-patch.js",
   "./assets/js/87-holidays-store-patch.js",

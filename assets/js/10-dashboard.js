@@ -1092,13 +1092,13 @@ function renderizarGraficosFinanceirosDashboard() {
     }
   }
 
-  // Top 10 de categorias e curva mensal da categoria líder.
-  const topCategorias = ordCat.slice(0, 10);
+  // Todas as categorias com valor
+const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
   const elTopCategorias = document.getElementById('dashGfTopCategorias');
   const elTopCategoriasTitulo = document.getElementById('dashGfTopCategoriasTitulo');
   if (elTopCategoriasTitulo) elTopCategoriasTitulo.innerHTML = _dashGfOrdenacaoDetalhe === 'categoria'
     ? 'Categorias em ordem A–Z · <span style="opacity:.8;">clique para filtrar</span>'
-    : 'Top 10 categorias com maior gasto · <span style="opacity:.8;">clique para filtrar</span>';
+    : 'Categorias com gasto · <span style="opacity:.8;">clique para filtrar</span>';
   if (elTopCategorias) {
     if (!topCategorias.length) {
       elTopCategorias.innerHTML = '<div class="empty" style="padding:20px;">Sem categorias no período/filtros.</div>';
@@ -1187,31 +1187,35 @@ function renderizarGraficosFinanceirosDashboard() {
             dlanca = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
           } catch(e) { dlanca = String(c.created_at).slice(0,10); }
         }
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-          <td style="padding:5px 8px;white-space:nowrap;">${escaparHtmlBasico(dv)}</td>
-          <td style="padding:5px 8px;white-space:nowrap;color:var(--text-muted);">${escaparHtmlBasico(dc||'—')}</td>
-          <td style="padding:5px 8px;white-space:nowrap;font-size:11px;color:var(--text-muted);">${escaparHtmlBasico(dlanca)}</td>
-          <td style="padding:5px 8px;">${escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor')}</td>
-          <td style="padding:5px 8px;">${escaparHtmlBasico(cat?.nome || 'Sem categoria')}</td>
-          <td style="padding:5px 8px;">${escaparHtmlBasico(String(c.observacao || '—').slice(0, 60))}</td>
-          <td style="padding:5px 8px;"><span style="font-size:11px;padding:2px 8px;border-radius:99px;${pago ? 'background:rgba(34,197,94,0.15);color:#22c55e;' : 'background:rgba(245,158,11,0.15);color:#f59e0b;'}">${pago ? 'Pago' : 'Pendente'}</span></td>
-          <td style="padding:5px 8px;text-align:right;white-space:nowrap;"><strong>${fmt(_dashGfValorDe(c))}</strong></td>
+        const fornecedorDetalhe = escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor');
+        const categoriaDetalhe = escaparHtmlBasico(cat?.nome || 'Sem categoria');
+        const observacaoDetalhe = escaparHtmlBasico(String(c.observacao || '—').slice(0, 80));
+        return `<tr class="dash-gf-detail-row">
+          <td class="dash-gf-col-data" data-label="${escaparHtmlBasico(rotuloDataDet)}">${escaparHtmlBasico(dv)}</td>
+          <td class="dash-gf-col-valor" data-label="Valor"><strong>${fmt(_dashGfValorDe(c))}</strong></td>
+          <td class="dash-gf-col-lancado" data-label="Lançado em">${escaparHtmlBasico(dlanca)}</td>
+          <td class="dash-gf-col-fornecedor" data-label="Fornecedor" title="${fornecedorDetalhe}">${fornecedorDetalhe}</td>
+          <td class="dash-gf-col-categoria" data-label="Categoria" title="${categoriaDetalhe}">${categoriaDetalhe}</td>
+          <td class="dash-gf-col-compra" data-label="Compra">${escaparHtmlBasico(dc||'—')}</td>
+          <td class="dash-gf-col-observacao" data-label="Observação" title="${observacaoDetalhe}">${observacaoDetalhe}</td>
+          <td class="dash-gf-col-status" data-label="Status"><span class="dash-gf-status ${pago ? 'pago' : 'pendente'}">${pago ? 'Pago' : 'Pendente'}</span></td>
         </tr>`;
       }).join('');
       elDetalhe.innerHTML = `
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Detalhamento dos lançamentos filtrados (${contasResumo.length}${contasResumo.length > LIMITE ? `, exibindo ${LIMITE}` : ''})</div>
-        <div style="overflow-x:auto;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:760px;">
+        <div class="dash-gf-detail-title">Detalhamento dos lançamentos filtrados (${contasResumo.length}${contasResumo.length > LIMITE ? `, exibindo ${LIMITE}` : ''})</div>
+        <div class="dash-gf-detail-hint">No celular, arraste a tabela para o lado para ver categoria, compra, observação e status.</div>
+        <div class="dash-gf-detail-wrap">
+          <table class="dash-gf-detail-table">
             <thead>
-              <tr style="text-align:left;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.12);">
-                <th style="padding:6px 8px;">${rotuloDataDet}</th>
-                <th style="padding:6px 8px;">Compra</th>
-                <th style="padding:6px 8px;">Lançado em</th>
-                <th style="padding:6px 8px;">Fornecedor</th>
-                <th style="padding:6px 8px;">Categoria</th>
-                <th style="padding:6px 8px;">Observação</th>
-                <th style="padding:6px 8px;">Status</th>
-                <th style="padding:6px 8px;text-align:right;">Valor</th>
+              <tr>
+                <th class="dash-gf-col-data">${rotuloDataDet}</th>
+                <th class="dash-gf-col-valor">Valor</th>
+                <th class="dash-gf-col-lancado">Lançado em</th>
+                <th class="dash-gf-col-fornecedor">Fornecedor</th>
+                <th class="dash-gf-col-categoria">Categoria</th>
+                <th class="dash-gf-col-compra">Compra</th>
+                <th class="dash-gf-col-observacao">Observação</th>
+                <th class="dash-gf-col-status">Status</th>
               </tr>
             </thead>
             <tbody>${linhas}</tbody>
