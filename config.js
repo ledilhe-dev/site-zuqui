@@ -12,6 +12,6 @@ window.APP_CONFIG = {
   emailFunctionName: 'notificar-alertas-email',
   authEmailFunctionName: 'autenticacao-email',
   authRedirectUrl: 'https://checkdiario.com.br/',
-  appVersion: '3.2.10',
-  appVersionLabel: '3.2.10-agenda-responsaveis-vinculo',
+  appVersion: '3.2.11',
+  appVersionLabel: '3.2.11-contas-mobile-vencimento-fornecedor',
 };

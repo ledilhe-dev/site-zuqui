@@ -97,6 +97,51 @@ function ncVencCust() {
 }
 
 // ── Info de parcelas calculado ───────────────────────────────────
+function ncFornecedorSelecionado() {
+  const id = String(NC.fornId || document.getElementById('contaFornecedorId')?.value || '').trim();
+  if (!id) return null;
+  return (fornecedoresFinanceiroCache || []).find(f => String(f.id) === id) || null;
+}
+
+function ncDataNoMesAtualPorDia(dia) {
+  const n = parseInt(dia, 10);
+  if (!Number.isFinite(n) || n < 1) return '';
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+  const diaFinal = Math.min(n, ultimoDia);
+  return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
+}
+
+function ncAtualizarBotaoVencFornecedor() {
+  const btn = document.getElementById('ncBtnUsarVencFornecedor');
+  if (!btn) return;
+  const fornecedor = ncFornecedorSelecionado();
+  const dia = parseInt(fornecedor?.dia_vencimento, 10);
+  const podeUsar = !!fornecedor && fornecedor.is_cartao === true && Number.isFinite(dia) && dia >= 1 && dia <= 31;
+  btn.disabled = !podeUsar;
+  btn.style.display = podeUsar ? '' : 'none';
+  btn.textContent = podeUsar ? `Vence dia ${dia}` : 'Usar venc. fornecedor';
+}
+
+function ncUsarVencimentoFornecedor() {
+  const msg = document.getElementById('ncMsg');
+  const fornecedor = ncFornecedorSelecionado();
+  const dia = parseInt(fornecedor?.dia_vencimento, 10);
+  if (!fornecedor || fornecedor.is_cartao !== true || !Number.isFinite(dia) || dia < 1 || dia > 31) {
+    if (msg) { msg.textContent = 'Fornecedor sem vencimento de credito cadastrado.'; msg.className = 'msg err'; }
+    return;
+  }
+  const vencimento = ncDataNoMesAtualPorDia(dia);
+  if (!vencimento) return;
+  NC.dataVenc = vencimento;
+  const vc = document.getElementById('ncVencCustom');
+  if (vc) vc.value = vencimento;
+  ncVencCust();
+  if (msg) { msg.textContent = `Vencimento do fornecedor aplicado: dia ${dia}.`; msg.className = 'msg ok'; }
+}
+
 function ncAtuParcelasInfo() {
   const pi = document.getElementById('ncParcelasInfo');
   const vt = document.getElementById('ncValorTipo');
@@ -162,6 +207,7 @@ function ncSelForn(id, nome) {
   const bi = document.getElementById('ncFornBusca'); if (bi) bi.style.display = 'none';
   const sel = document.getElementById('ncFornSel'), nm = document.getElementById('ncFornSelNome');
   if (sel && nm) { nm.textContent = nome; sel.style.display = 'flex'; }
+  ncAtualizarBotaoVencFornecedor();
 }
 
 function ncLimparForn() {
@@ -171,6 +217,7 @@ function ncLimparForn() {
   const bi = document.getElementById('ncFornBusca'); if (bi) { bi.style.display = ''; bi.value = ''; }
   const sel = document.getElementById('ncFornSel'); if (sel) sel.style.display = 'none';
   const res = document.getElementById('ncFornRes'); if (res) res.innerHTML = '';
+  ncAtualizarBotaoVencFornecedor();
 }
 
 // ── Abrir / Fechar ──────────────────────────────────────────────
@@ -211,11 +258,12 @@ function ncAbrir(editar) {
     const vt = document.getElementById('ncValorTipo'); if (vt) vt.style.display = 'none';
     const pi = document.getElementById('ncParcelasInfo'); if (pi) { pi.textContent = ''; pi.style.display = 'none'; }
   }
-  if (typeof carregarFornecedoresFinanceiro === 'function') carregarFornecedoresFinanceiro().catch(() => {});
+  if (typeof carregarFornecedoresFinanceiro === 'function') carregarFornecedoresFinanceiro().then(() => ncAtualizarBotaoVencFornecedor()).catch(() => {});
   if (!(categoriasCompraCache || []).length && typeof carregarCategoriasCompra === 'function') {
     carregarCategoriasCompra().then(() => ncMontarCategorias()).catch(() => {});
   }
   ncMontarCategorias();
+  ncAtualizarBotaoVencFornecedor();
   const ov = document.getElementById('ncOverlay'); if (!ov) return;
   ov.style.display = 'flex';
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -386,6 +434,7 @@ if (typeof _ncOrigEditar === 'function') {
         const sel = document.getElementById('ncFornSel'), nm = document.getElementById('ncFornSelNome');
         if (sel && nm) { nm.textContent = NC.fornNome; sel.style.display = 'flex'; }
       }
+      ncAtualizarBotaoVencFornecedor();
 
       ncMontarCategorias();
 

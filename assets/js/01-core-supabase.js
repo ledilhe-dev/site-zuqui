@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.10';
-const APP_VERSION_LABEL = '3.2.10-agenda-responsaveis-vinculo';
+const APP_VERSION = '3.2.11';
+const APP_VERSION_LABEL = '3.2.11-contas-mobile-vencimento-fornecedor';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
