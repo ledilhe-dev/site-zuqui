@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v50-contas-mobile-vencimento-fornecedor';
+const CACHE_NAME = 'check-diario-pwa-v51-ajuste-mobile-contas';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
