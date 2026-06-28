@@ -119,7 +119,7 @@ function ncAtualizarBotaoVencFornecedor() {
   if (!btn) return;
   const fornecedor = ncFornecedorSelecionado();
   const dia = parseInt(fornecedor?.dia_vencimento, 10);
-  const podeUsar = !!fornecedor && fornecedor.is_cartao === true && Number.isFinite(dia) && dia >= 1 && dia <= 31;
+  const podeUsar = !!fornecedor && Number.isFinite(dia) && dia >= 1 && dia <= 31;
   btn.disabled = !podeUsar;
   btn.style.display = podeUsar ? '' : 'none';
   btn.textContent = podeUsar ? `Vence dia ${dia}` : 'Usar venc. fornecedor';
@@ -129,8 +129,8 @@ function ncUsarVencimentoFornecedor() {
   const msg = document.getElementById('ncMsg');
   const fornecedor = ncFornecedorSelecionado();
   const dia = parseInt(fornecedor?.dia_vencimento, 10);
-  if (!fornecedor || fornecedor.is_cartao !== true || !Number.isFinite(dia) || dia < 1 || dia > 31) {
-    if (msg) { msg.textContent = 'Fornecedor sem vencimento de credito cadastrado.'; msg.className = 'msg err'; }
+  if (!fornecedor || !Number.isFinite(dia) || dia < 1 || dia > 31) {
+    if (msg) { msg.textContent = 'Fornecedor sem dia de vencimento cadastrado.'; msg.className = 'msg err'; }
     return;
   }
   const vencimento = ncDataNoMesAtualPorDia(dia);

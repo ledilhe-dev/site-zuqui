@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.12';
-const APP_VERSION_LABEL = '3.2.12-ajuste-mobile-contas';
+const APP_VERSION = '3.2.13';
+const APP_VERSION_LABEL = '3.2.13-restaurar-vencimento-mobile';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
