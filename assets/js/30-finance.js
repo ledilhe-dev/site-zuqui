@@ -3534,6 +3534,7 @@ async function excluirGrupoFornecedor(id) {
 // ══════════════════════════════════════════════════════════════════
 let categoriaEmEdicaoId = null;
 let categoriasCompraCache = [];
+let categoriaInlineEmEdicaoId = null;
 
 function ehImagemCategoriaCompra(valor = '') {
   const fonte = String(valor || '').trim();
@@ -3609,7 +3610,11 @@ function renderizarListaCategoriasCompra() {
     return;
   }
 
-  lista.innerHTML = '<div class="lista">' + categoriasFiltradas.map(c => `
+  lista.innerHTML = '<div class="lista">' + categoriasFiltradas.map(c => {
+    if (String(categoriaInlineEmEdicaoId || '') === String(c.id)) {
+      return renderizarFormularioInlineCategoriaCompra(c);
+    }
+    return `
     <div class="item">
       <div class="item-info" style="display:flex;align-items:center;gap:10px;">
         <span style="width:44px;min-width:44px;display:flex;align-items:center;justify-content:center;">${htmlIconeCategoriaCompra(c.icone, 36)}</span>
@@ -3625,7 +3630,50 @@ function renderizarListaCategoriasCompra() {
         <button class="btn btn-ghost btn-sm" onclick="editarCategoriaCompra('${c.id}')">Editar</button>
         <button class="btn btn-red btn-sm" onclick="excluirCategoriaCompra('${c.id}')">Excluir</button>
       </div>
-    </div>`).join('') + '</div>';
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function renderizarFormularioInlineCategoriaCompra(categoria) {
+  const id = escaparHtmlBasico(categoria.id);
+  const nome = escaparHtmlBasico(categoria.nome || '');
+  const icone = escaparHtmlBasico(categoria.icone || '');
+  const cor = escaparHtmlBasico(categoria.cor || '#3b82f6');
+  const descricao = escaparHtmlBasico(categoria.descricao || '');
+  return `
+    <div class="item categoria-compra-inline-edit" data-categoria-id="${id}">
+      <div class="categoria-compra-inline-preview">
+        ${htmlIconeCategoriaCompra(categoria.icone, 36)}
+      </div>
+      <div class="categoria-compra-inline-grid">
+        <div class="campo-com-label">
+          <label class="campo-label" for="categoriaInlineNome_${id}">Nome</label>
+          <input id="categoriaInlineNome_${id}" type="text" value="${nome}" placeholder="Nome da categoria">
+        </div>
+        <div class="campo-com-label">
+          <label class="campo-label" for="categoriaInlineIcone_${id}">Icone, imagem ou URL</label>
+          <div class="categoria-compra-inline-icon-row">
+            <input id="categoriaInlineIcone_${id}" type="text" value="${icone}" placeholder="Emoji ou URL direta">
+            <label class="btn btn-ghost btn-sm categoria-compra-inline-file" title="Escolher uma imagem do computador">
+              Imagem
+              <input id="categoriaInlineArquivo_${id}" type="file" accept="image/png,image/jpeg,image/webp" onchange="carregarImagemCategoriaCompraInline('${id}', this)" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <div class="campo-com-label categoria-compra-inline-cor">
+          <label class="campo-label" for="categoriaInlineCor_${id}">Cor</label>
+          <input id="categoriaInlineCor_${id}" type="color" value="${cor}">
+        </div>
+        <div class="campo-com-label categoria-compra-inline-desc">
+          <label class="campo-label" for="categoriaInlineDesc_${id}">Descricao</label>
+          <input id="categoriaInlineDesc_${id}" type="text" value="${descricao}" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="item-actions categoria-compra-inline-actions">
+        <button class="btn btn-green btn-sm" type="button" onclick="salvarCategoriaCompraInline('${id}')">Salvar</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="cancelarEdicaoCategoriaCompraInline()">Cancelar</button>
+      </div>
+    </div>`;
 }
 
 function filtrarCategoriasCompraCadastradas() {
@@ -3702,6 +3750,96 @@ async function salvarCategoriaCompra() {
 }
 
 function editarCategoriaCompra(id) {
+  categoriaInlineEmEdicaoId = id;
+  if (String(categoriaEmEdicaoId || '') === String(id)) {
+    cancelarEdicaoCategoria();
+  }
+  renderizarListaCategoriasCompra();
+  setTimeout(() => {
+    const campo = document.getElementById(`categoriaInlineNome_${id}`);
+    if (campo) {
+      campo.focus();
+      campo.select?.();
+    }
+  }, 0);
+}
+
+function cancelarEdicaoCategoriaCompraInline() {
+  categoriaInlineEmEdicaoId = null;
+  renderizarListaCategoriasCompra();
+}
+
+function carregarImagemCategoriaCompraInline(id, input) {
+  const arquivo = input?.files?.[0];
+  if (!arquivo) return;
+  if (!/^image\/(?:png|jpe?g|webp)$/i.test(String(arquivo.type || ''))) {
+    setMsg('msgCategoriaCompra', 'Escolha uma imagem PNG, JPG ou WEBP.', 'err');
+    input.value = '';
+    return;
+  }
+  if (arquivo.size > 5 * 1024 * 1024) {
+    setMsg('msgCategoriaCompra', 'A imagem deve ter no maximo 5 MB.', 'err');
+    input.value = '';
+    return;
+  }
+
+  const leitor = new FileReader();
+  leitor.onerror = () => setMsg('msgCategoriaCompra', 'Nao foi possivel ler a imagem escolhida.', 'err');
+  leitor.onload = () => {
+    const imagem = new Image();
+    imagem.onerror = () => setMsg('msgCategoriaCompra', 'O arquivo escolhido nao e uma imagem valida.', 'err');
+    imagem.onload = () => {
+      const limite = 128;
+      const escala = Math.min(1, limite / Math.max(imagem.naturalWidth || 1, imagem.naturalHeight || 1));
+      const largura = Math.max(1, Math.round((imagem.naturalWidth || 1) * escala));
+      const altura = Math.max(1, Math.round((imagem.naturalHeight || 1) * escala));
+      const canvas = document.createElement('canvas');
+      canvas.width = largura;
+      canvas.height = altura;
+      const contexto = canvas.getContext('2d');
+      contexto.drawImage(imagem, 0, 0, largura, altura);
+      const campo = document.getElementById(`categoriaInlineIcone_${id}`);
+      if (campo) campo.value = canvas.toDataURL('image/webp', 0.82);
+      setMsg('msgCategoriaCompra', 'Imagem preparada. Clique em Salvar nesta linha para gravar a categoria.', 'ok');
+      input.value = '';
+    };
+    imagem.src = String(leitor.result || '');
+  };
+  leitor.readAsDataURL(arquivo);
+}
+
+async function salvarCategoriaCompraInline(id) {
+  const nome = String(document.getElementById(`categoriaInlineNome_${id}`)?.value || '').trim().toUpperCase();
+  const icone = String(document.getElementById(`categoriaInlineIcone_${id}`)?.value || '').trim();
+  const cor = String(document.getElementById(`categoriaInlineCor_${id}`)?.value || '#3b82f6').trim();
+  const desc = String(document.getElementById(`categoriaInlineDesc_${id}`)?.value || '').trim();
+  if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
+  if (/^data:image\//i.test(icone) && !ehImagemCategoriaCompra(icone)) {
+    setMsg('msgCategoriaCompra', 'Formato de imagem invalido. Use PNG, JPG ou WEBP.', 'err');
+    return;
+  }
+  if (icone.length > 150000) {
+    setMsg('msgCategoriaCompra', 'A imagem esta muito grande. Use o botao Imagem para comprimi-la antes de salvar.', 'err');
+    return;
+  }
+  let tenantCat;
+  try {
+    tenantCat = await resolverTenantFornecedorFinanceiro();
+  } catch (eTenant) {
+    setMsg('msgCategoriaCompra', eTenant?.message || 'Nao foi possivel identificar a loja/empresa. Faca login novamente ou selecione uma loja ativa.', 'err');
+    return;
+  }
+  const payload = { nome, icone: icone || null, cor, descricao: desc || null, empresa_id: tenantCat.empresa_id, loja_id: tenantCat.loja_id, ativo: true };
+  try {
+    const { error } = await sb.from('categorias_compra').update(payload).eq('id', id);
+    if (error) throw error;
+    categoriaInlineEmEdicaoId = null;
+    setMsg('msgCategoriaCompra', 'Categoria salva.', 'ok');
+    await carregarCategoriasCompra();
+  } catch(e) { setMsg('msgCategoriaCompra', 'Erro: ' + (mensagemErroSupabase(e, e?.message||'')), 'err'); }
+}
+
+function editarCategoriaCompraNoFormulario(id) {
   const c = categoriasCompraCache.find(x => x.id === id);
   if (!c) return;
   categoriaEmEdicaoId = id;
@@ -3713,6 +3851,7 @@ function editarCategoriaCompra(id) {
 
 function cancelarEdicaoCategoria() {
   categoriaEmEdicaoId = null;
+  categoriaInlineEmEdicaoId = null;
   ['categoriaNome','categoriaIcone','categoriaDesc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const cor = document.getElementById('categoriaCor'); if (cor) cor.value = '#3b82f6';
   const arquivo = document.getElementById('categoriaImagemArquivo'); if (arquivo) arquivo.value = '';
