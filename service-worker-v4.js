@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v53-inline-categorias';
+const CACHE_NAME = 'check-diario-pwa-v54-dashboard-mobile';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
