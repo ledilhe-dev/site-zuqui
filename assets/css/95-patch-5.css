@@ -660,6 +660,179 @@
   }
 }
 
+#financeiro_recebiveis,
+#financeiro_recebiveis * {
+  box-sizing: border-box;
+}
+
+.recebiveis-page-actions {
+  align-items: center;
+}
+
+.recebiveis-novo-btn {
+  justify-content: center;
+}
+
+@media (max-width: 700px) {
+  #financeiro_recebiveis {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-page-title {
+    font-size: 22px !important;
+    line-height: 1.15 !important;
+    margin-bottom: 10px !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    letter-spacing: 0 !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-page-actions {
+    justify-content: center !important;
+    width: 100%;
+    margin: 6px 0 12px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-novo-btn {
+    width: min(100%, 360px) !important;
+    min-height: 52px !important;
+    border-radius: 12px !important;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    padding: 12px 16px !important;
+    text-align: center;
+  }
+
+  #financeiro_recebiveis .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row .card-title {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+  }
+
+  #financeiro_recebiveis #btnToggleRecebiveisLista {
+    width: 100% !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-filtros-row,
+  #financeiro_recebiveis .recebiveis-futuros-filtros-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    margin-top: 10px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-filtros-row > *,
+  #financeiro_recebiveis .recebiveis-futuros-filtros-row > *,
+  #financeiro_recebiveis .recebiveis-filtros-row input,
+  #financeiro_recebiveis .recebiveis-filtros-row select,
+  #financeiro_recebiveis .recebiveis-filtros-row button,
+  #financeiro_recebiveis .recebiveis-futuros-filtros-row input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-date-filters {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 6px !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-date-filters label {
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  #financeiro_recebiveis .financeiro-selecao-recebiveis-row,
+  #financeiro_recebiveis .financeiro-selecao-rec-futuros-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  #financeiro_recebiveis .financeiro-selecao-recebiveis-row[style*="display:none"],
+  #financeiro_recebiveis .financeiro-selecao-rec-futuros-row[style*="display:none"] {
+    display: none !important;
+  }
+
+  #financeiro_recebiveis .recebivel-card {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  #financeiro_recebiveis .recebivel-card-data,
+  #financeiro_recebiveis .recebivel-card-valor {
+    padding: 10px !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebivel-card-data div:last-child,
+  #financeiro_recebiveis .recebivel-card-valor div:last-child {
+    font-size: clamp(18px, 5.8vw, 23px) !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+
+  #financeiro_recebiveis .recebivel-card-info {
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #financeiro_recebiveis .recebivel-card-check {
+    justify-content: center !important;
+    margin: 4px 0 10px !important;
+  }
+
+  #financeiro_recebiveis .recebivel-card-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebivel-card-actions .btn {
+    width: 100% !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+  }
+}
+
 .categoria-compra-inline-edit {
   align-items: flex-start;
   gap: 12px;

@@ -1556,13 +1556,13 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
     const conta = escaparHtmlBasico(item.contas_financeiras?.nome || '-');
     
     return `
-      <div style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
-        <div>
-          <div style="text-align:center;padding:12px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:12px;">
+      <div class="recebivel-card" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+        <div class="recebivel-card-main">
+          <div class="recebivel-card-data" style="text-align:center;padding:12px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:12px;">
             <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Data pagamento</div>
             <div style="font-size:24px;font-weight:700;color:var(--red,#ef4444);">${dataFormatada}</div>
           </div>
-          <div style="font-size:13px;color:var(--text);line-height:1.6;">
+          <div class="recebivel-card-info" style="font-size:13px;color:var(--text);line-height:1.6;">
             <div style="font-weight:600;margin-bottom:8px;">${pagador}</div>
             <div style="color:var(--text-muted);font-size:12px;">
               <div>Forma: ${forma}</div>
@@ -1570,16 +1570,16 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
             </div>
           </div>
         </div>
-        <div>
-          <div style="text-align:center;padding:12px;background:rgba(250,204,21,0.1);border-radius:8px;margin-bottom:12px;">
+        <div class="recebivel-card-side">
+          <div class="recebivel-card-valor" style="text-align:center;padding:12px;background:rgba(250,204,21,0.1);border-radius:8px;margin-bottom:12px;">
             <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Valor</div>
             <div style="font-size:24px;font-weight:700;color:var(--yellow,#eab308);">${valor}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div class="recebivel-card-check" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
             <input type="checkbox" class="checkbox-recebivel-financeiro" data-recebivel-id="${item.id}" ${recebiveisFinanceiroSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecebivelFinanceiro('${item.id}', this.checked)" style="width:22px;height:22px;cursor:pointer;">
             <span style="font-size:12px;color:var(--text-muted);">Marcar</span>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div class="recebivel-card-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-ghost btn-sm" onclick="editarRecebivelFinanceiro('${item.id}')" style="flex:1;font-size:12px;">Editar</button>
             <button class="btn btn-red btn-sm" onclick="excluirRecebivelFinanceiro('${item.id}')" style="flex:1;font-size:12px;">Excluir</button>
           </div>
