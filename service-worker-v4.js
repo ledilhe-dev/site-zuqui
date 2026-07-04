@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v55-recebiveis-mobile';
+const CACHE_NAME = 'check-diario-pwa-v56-venc-fechamento-sucesso';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

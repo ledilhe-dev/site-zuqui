@@ -114,6 +114,30 @@ function ncDataNoMesAtualPorDia(dia) {
   return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
 }
 
+function ncCalcularVencimentoFornecedor(fornecedor, diaVencimento) {
+  const diaFechamento = parseInt(fornecedor?.dia_fechamento, 10);
+  const temFechamento = Number.isFinite(diaFechamento) && diaFechamento >= 1 && diaFechamento <= 31;
+  const dataCompra = String(NC.dataCompra || document.getElementById('ncDataCompra')?.value || new Date().toISOString().split('T')[0]).slice(0, 10);
+  if (temFechamento && typeof faturaCalcularVencimentoPorDia === 'function') {
+    return {
+      vencimento: faturaCalcularVencimentoPorDia(dataCompra, diaVencimento, diaFechamento),
+      diaFechamento,
+      porFechamento: true,
+    };
+  }
+  return {
+    vencimento: ncDataNoMesAtualPorDia(diaVencimento),
+    diaFechamento: null,
+    porFechamento: false,
+  };
+}
+
+function ncDataBR(iso) {
+  if (!iso) return '';
+  const [y, m, d] = String(iso).split('-');
+  return (y && m && d) ? `${d}/${m}/${y}` : String(iso);
+}
+
 function ncAtualizarBotaoVencFornecedor() {
   const btn = document.getElementById('ncBtnUsarVencFornecedor');
   if (!btn) return;
@@ -133,13 +157,19 @@ function ncUsarVencimentoFornecedor() {
     if (msg) { msg.textContent = 'Fornecedor sem dia de vencimento cadastrado.'; msg.className = 'msg err'; }
     return;
   }
-  const vencimento = ncDataNoMesAtualPorDia(dia);
+  const calculo = ncCalcularVencimentoFornecedor(fornecedor, dia);
+  const vencimento = calculo.vencimento;
   if (!vencimento) return;
   NC.dataVenc = vencimento;
   const vc = document.getElementById('ncVencCustom');
   if (vc) vc.value = vencimento;
-  ncVencCust();
-  if (msg) { msg.textContent = `Vencimento do fornecedor aplicado: dia ${dia}.`; msg.className = 'msg ok'; }
+  const vdEl = document.getElementById('ncVencDia');
+  if (vdEl) vdEl.value = '';
+  if (msg) {
+    const detalhe = calculo.porFechamento ? `, fechamento dia ${calculo.diaFechamento}` : '';
+    msg.textContent = `Vencimento aplicado: ${ncDataBR(vencimento)} (vence dia ${dia}${detalhe}).`;
+    msg.className = 'msg ok';
+  }
 }
 
 function ncAtuParcelasInfo() {
@@ -168,6 +198,54 @@ function ncAtuParcelasInfo() {
 }
 
 // ── Observação ───────────────────────────────────────────────────
+function ncEsc(valor) {
+  if (typeof escaparHtmlBasico === 'function') return escaparHtmlBasico(valor || '');
+  return String(valor || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function ncNomeCategoriaSelecionada() {
+  const cat = (categoriasCompraCache || []).find(c => String(c.id) === String(NC.catId));
+  return cat?.nome || '';
+}
+
+function ncResumoSucesso(valorParcela, estavaEditando) {
+  const linhas = [
+    ['Fornecedor', NC.fornNome || ''],
+    ['Valor', ncFmtBR(valorParcela || NC.valor || 0)],
+    ['Vencimento', ncDataBR(NC.dataVenc)],
+  ];
+  const categoria = ncNomeCategoriaSelecionada();
+  if (categoria) linhas.push(['Categoria', categoria]);
+  if (NC.parcelas > 1) linhas.push(['Parcelas', `${NC.parcelas}x`]);
+  if (NC.obs) linhas.push(['Observacao', NC.obs]);
+  return { titulo: 'Gravado com sucesso', subtitulo: estavaEditando ? 'Conta atualizada.' : 'Conta a pagar cadastrada.', linhas };
+}
+
+function ncMostrarConfirmacaoSucesso(resumo) {
+  return new Promise(resolve => {
+    document.getElementById('ncSuccessOverlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'ncSuccessOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.58);padding:18px;';
+    const linhas = (resumo.linhas || []).map(([rotulo, valor]) => `
+      <div style="display:flex;gap:12px;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,.18);padding:8px 0;">
+        <span style="color:#9fb2c8;font-size:12px;text-transform:uppercase;letter-spacing:.06em;">${ncEsc(rotulo)}</span>
+        <strong style="color:#f8fafc;text-align:right;font-size:14px;max-width:65%;">${ncEsc(valor)}</strong>
+      </div>`).join('');
+    overlay.innerHTML = `
+      <div role="dialog" aria-modal="true" aria-labelledby="ncSuccessTitle" style="width:min(420px,100%);border:1px solid rgba(34,197,94,.45);border-radius:12px;background:#0b1f33;box-shadow:0 20px 60px rgba(0,0,0,.45);padding:20px;">
+        <h3 id="ncSuccessTitle" style="margin:0 0 6px;color:#22c55e;font-size:20px;">${ncEsc(resumo.titulo)}</h3>
+        <p style="margin:0 0 12px;color:#cbd5e1;font-size:14px;">${ncEsc(resumo.subtitulo)}</p>
+        <div style="margin:10px 0 16px;">${linhas}</div>
+        <button type="button" id="ncSuccessOk" style="width:100%;height:46px;border:0;border-radius:8px;background:#22c55e;color:#03131f;font-weight:800;font-size:16px;cursor:pointer;">OK</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    const fechar = () => { overlay.remove(); resolve(); };
+    overlay.querySelector('#ncSuccessOk')?.addEventListener('click', fechar, { once: true });
+    setTimeout(() => overlay.querySelector('#ncSuccessOk')?.focus(), 0);
+  });
+}
+
 function ncObsInput(inp) {
   const e = document.getElementById('ncObsErr');
   if (e) e.style.display = inp.value.trim() ? 'none' : '';
@@ -371,6 +449,8 @@ async function ncSalvar(salvarENovo = false) {
       return;
     }
     const estavaEditando = NC.modoEdicao;
+    const resumoSucesso = ncResumoSucesso(valorParcela, estavaEditando);
+    await ncMostrarConfirmacaoSucesso(resumoSucesso);
     if (salvarENovo && !estavaEditando) {
       ncAbrir();
       const msgNovo = document.getElementById('ncMsg');
