@@ -111,6 +111,21 @@ function formatarDataBRFinanceiro(valor = '') {
   return d.toLocaleDateString('pt-BR');
 }
 
+function formatarDataHoraFinanceiro(valor = '') {
+  const txt = String(valor || '').trim();
+  if (!txt) return '-';
+  const d = new Date(txt);
+  if (Number.isNaN(d.getTime())) return txt;
+  return d.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function formatarEntradaDataBRFinanceiro(valor = '') {
   const digitos = String(valor || '').replace(/\D/g, '').slice(0, 8);
   if (digitos.length <= 2) return digitos;
@@ -1248,6 +1263,7 @@ async function salvarRecebivelFinanceiro() {
     if (!editando) {
       const quantidade = Math.max(1, qtdParcelas);
       const criadoPorNome = obterNomeAdminAtual?.() || usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Usuario';
+      const dataLancamentoISO = new Date().toISOString();
       const provisionamentos = Array.from({ length: quantidade }, (_, indice) => ({
         pagador_id: pagadorId,
         forma_pagamento_id: formaPagamentoId,
@@ -1262,6 +1278,7 @@ async function salvarRecebivelFinanceiro() {
         empresa_id: empresaIdSessao,
         loja_id: lojaIdSessao,
         ativo: true,
+        created_at: dataLancamentoISO,
       }));
       const { error: erroProvisionamento } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros').insert(provisionamentos)
@@ -1278,7 +1295,7 @@ async function salvarRecebivelFinanceiro() {
       return;
     }
     const payload = editando
-      ? { ...payloadBase, created_at: new Date(`${dataPrevista}T12:00:00`).toISOString() }
+      ? payloadBase
       : {
           ...payloadBase,
           criado_por_id: obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null,
@@ -1645,7 +1662,7 @@ async function iniciarTelaRecFuturos() {
   preencherSelectsRecFuturo();
   preencherPagadoresRecFuturo();
   // Data prevista padrão: hoje
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
   const campoData = document.getElementById('recFuturoDataPrevista');
   if (campoData && !campoData.value) campoData.value = hoje;
   // Recorrência toggle
@@ -1816,7 +1833,7 @@ async function carregarRecFuturos() {
       return;
     }
 
-    const hoje = new Date().toISOString().slice(0, 10);
+    const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
     const itensPendentesFut = recFuturosCache.filter(i => !i.confirmado_em);
     const itensConfirmadosFut = recFuturosCache.filter(i => !!i.confirmado_em);
     const totalPendentesFut = itensPendentesFut.reduce((s, i) => s + Number(i.valor || 0), 0);
@@ -1915,7 +1932,7 @@ function abrirModalConfirmarRecFuturo(id) {
   if (!modal) return;
   document.getElementById('modalConfirmarRecFuturoId').value = id;
   // Pré-preencher com valores previstos
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
   document.getElementById('modalConfirmarData').value = hoje;
   document.getElementById('modalConfirmarValor').value = item.valor > 0 ? formatarMoedaBRFinanceiro(item.valor) : '';
   // Preencher select de contas
@@ -3002,7 +3019,7 @@ async function faturaProcessarOFX(file) {
     // Extrair info do arquivo. DTEND/DUEDATE vêm como timestamp OFX (ex.: 20260704000000[-3:BRT]);
     // normalizamos com ofxParseData para ISO (YYYY-MM-DD).
     const vencRaw = ofxExtrairTag(texto, 'DTEND') || ofxExtrairTag(texto, 'DUEDATE') || '';
-    const vencimento = ofxParseData(vencRaw) || new Date().toISOString().slice(0,10);
+    const vencimento = ofxParseData(vencRaw) || (typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0,10));
     const banco = ofxDetectarBanco(texto);
     _faturaBancoDetectado = banco;
     const total = lancamentos.reduce((s,l) => s + Math.abs(l.valor), 0);
@@ -3249,7 +3266,7 @@ async function faturaLancarSelecionados() {
 
       if (!fornecedorId) { throw new Error('Não foi possível resolver o fornecedor.'); }
 
-      const hojeISO = new Date().toISOString().slice(0,10);
+      const hojeISO = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0,10);
       const ehDataValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '').trim());
 
       // data_compra nunca pode ser vazia

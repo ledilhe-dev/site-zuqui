@@ -28,6 +28,20 @@ function ncFmtBR(n) {
   return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function ncHojeISO() {
+  if (typeof dataLocalISO === 'function') return dataLocalISO();
+  const agora = new Date();
+  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+}
+
+function ncSomarDiasISO(dataISO, dias) {
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(String(dataISO || '')) ? String(dataISO) : ncHojeISO();
+  const [ano, mes, dia] = base.split('-').map(Number);
+  const dt = new Date(ano, mes - 1, dia, 12, 0, 0);
+  dt.setDate(dt.getDate() + Number(dias || 0));
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
 // ── Campo Valor ──────────────────────────────────────────────────
 function ncValorFocus(inp) {
   inp.value = inp.value.replace(/[R$\s]/g, '').trim();
@@ -72,9 +86,7 @@ function ncVencDiaInput(val) {
     return;
   }
   if (e) e.style.display = 'none';
-  const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
-  base.setDate(base.getDate() + dias);
-  NC.dataVenc = base.toISOString().split('T')[0];
+  NC.dataVenc = ncSomarDiasISO(NC.dataCompra || ncHojeISO(), dias);
   // Atualiza o calendário visualmente
   const vc = document.getElementById('ncVencCustom');
   if (vc) vc.value = NC.dataVenc;
@@ -86,7 +98,7 @@ function ncVencCust() {
   if (vc && vc.value) {
     NC.dataVenc = vc.value;
     // Recalcular "dias para vencimento" para manter os dois sincronizados
-    const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+    const hoje = new Date(ncHojeISO() + 'T00:00:00');
     const venc = new Date(vc.value + 'T00:00:00');
     const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
     const vdEl = document.getElementById('ncVencDia');
@@ -117,7 +129,7 @@ function ncDataNoMesAtualPorDia(dia) {
 function ncCalcularVencimentoFornecedor(fornecedor, diaVencimento) {
   const diaFechamento = parseInt(fornecedor?.dia_fechamento, 10);
   const temFechamento = Number.isFinite(diaFechamento) && diaFechamento >= 1 && diaFechamento <= 31;
-  const dataCompra = String(NC.dataCompra || document.getElementById('ncDataCompra')?.value || new Date().toISOString().split('T')[0]).slice(0, 10);
+  const dataCompra = String(NC.dataCompra || document.getElementById('ncDataCompra')?.value || ncHojeISO()).slice(0, 10);
   if (temFechamento && typeof faturaCalcularVencimentoPorDia === 'function') {
     return {
       vencimento: faturaCalcularVencimentoPorDia(dataCompra, diaVencimento, diaFechamento),
@@ -312,7 +324,7 @@ function ncAbrir(editar) {
     document.getElementById('ncModoTotal')?.classList.add('nc-pill-sel');
     document.getElementById('ncModoParc')?.classList.remove('nc-pill-sel');
     // Data compra = hoje
-    const hoje = new Date().toISOString().split('T')[0];
+    const hoje = ncHojeISO();
     const dc = document.getElementById('ncDataCompra'); if (dc) dc.value = hoje;
     NC.dataCompra = hoje; NC.dataVenc = hoje;
     // Vencimento default = 30 dias
@@ -412,7 +424,7 @@ async function ncSalvar(salvarENovo = false) {
   if (!NC.catId) { if (msg) { msg.textContent = 'Selecione uma categoria.'; msg.className = 'msg err'; } return; }
   if (temErro) { if (msg) { msg.textContent = 'Preencha os campos obrigatórios.'; msg.className = 'msg err'; } return; }
 
-  if (!NC.dataVenc) NC.dataVenc = NC.dataCompra || new Date().toISOString().split('T')[0];
+  if (!NC.dataVenc) NC.dataVenc = NC.dataCompra || ncHojeISO();
   if (NC.parcelas > 1 && (!NC.intervalo || NC.intervalo <= 0)) NC.intervalo = 30;
 
   // 6. Calcula valor correto por parcela
@@ -521,7 +533,7 @@ if (typeof _ncOrigEditar === 'function') {
       // Preencher data de vencimento e dias
       if (NC.dataVenc) {
         const vc = document.getElementById('ncVencCustom'); if (vc) vc.value = NC.dataVenc;
-        const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+        const hoje = new Date(ncHojeISO() + 'T00:00:00');
         const venc = new Date(NC.dataVenc + 'T00:00:00');
         const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
         const vdEl = document.getElementById('ncVencDia'); if (vdEl) vdEl.value = diff >= 0 ? diff : '';

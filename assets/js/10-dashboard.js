@@ -1184,8 +1184,9 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
         let dlanca = '—';
         if (c.created_at) {
           try {
-            const d = new Date(c.created_at);
-            dlanca = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+            dlanca = typeof formatarDataHoraFinanceiro === 'function'
+              ? formatarDataHoraFinanceiro(c.created_at)
+              : new Date(c.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
           } catch(e) { dlanca = String(c.created_at).slice(0,10); }
         }
         const fornecedorDetalhe = escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor');

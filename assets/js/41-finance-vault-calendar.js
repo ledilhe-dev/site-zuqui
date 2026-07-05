@@ -77,7 +77,7 @@ function renderizarCalendarioCofre() {
 
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const totalDias = new Date(ano, mes + 1, 0).getDate();
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
   const diaHoje = new Date().getDate();
   const mesHoje = new Date().getMonth();
   const anoHoje = new Date().getFullYear();
@@ -967,6 +967,7 @@ async function salvarContaAPagarFinanceiro() {
   }
 
   const grupoParcelasId = gerarGrupoParcelasIdFinanceiro();
+  const dataLancamentoISO = new Date().toISOString();
   const payloadBase = {
     fornecedor_id: fornecedorId,
     categoria_id: categoriaId || null,
@@ -978,6 +979,7 @@ async function salvarContaAPagarFinanceiro() {
     observacao,
     qtd_parcelas: qtdParcelasValidada,
     intervalo_parcelas_dias: intervaloParcelasDiasFinal,
+    created_at: dataLancamentoISO,
   };
   const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
     ...payloadBase,
@@ -1861,7 +1863,7 @@ async function carregarBaixarContasFinanceiro() {
 
   const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
     .from('contasapagar')
-    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
+    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, created_at, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
     .is('excluido_em', null)
     .order('data_vencimento', { ascending: true }));
 
@@ -1992,7 +1994,7 @@ async function carregarBaixarContasFinanceiro() {
           ${podeSelecionar ? `<input type="checkbox" class="baixa-check" data-id="${item.id}" ${marcado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;" onchange="faturaToggleSelecaoBaixa('${item.id}', this.checked)">` : '<span style="width:13px;flex-shrink:0;"></span>'}
           <div style="flex:1;min-width:0;">
             <div class="item-nome">${escaparHtmlBasico(nomeFornecedor)}</div>
-            <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+            <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Lançado: ${formatarDataHoraFinanceiro(item.created_at)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
             <div class="item-detalhe">Valor compra: ${formatarMoedaBRFinanceiro(item.valor_compra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)} · Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || item.forma_pagamento || '-')}</div>
             <div class="item-detalhe">Conta financeira: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')} · Categoria: ${escaparHtmlBasico((categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || 'Sem categoria')}</div>
             <div class="item-detalhe">Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}${item.intervalo_parcelas_dias ? ` · intervalo ${item.intervalo_parcelas_dias} dia(s)` : ''}</div>
