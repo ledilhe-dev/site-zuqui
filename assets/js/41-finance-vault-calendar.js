@@ -1841,6 +1841,10 @@ function limparFiltrosBaixarContasFinanceiro() {
   if (campoInicio) campoInicio.value = '';
   if (campoFim) campoFim.value = '';
   if (campoStatus) campoStatus.value = 'pendente';
+  const chkFornecedor = document.getElementById('chkBaixaAgruparFornecedor');
+  const chkCategoria = document.getElementById('chkBaixaAgruparCategoria');
+  if (chkFornecedor) chkFornecedor.checked = false;
+  if (chkCategoria) chkCategoria.checked = false;
   baixarContasFiltroRapidoAtivo = '';
   atualizarAtalhosBaixarContasFinanceiro();
   carregarBaixarContasFinanceiro();
@@ -1980,8 +1984,10 @@ async function carregarBaixarContasFinanceiro() {
       </div>`
     : '';
 
-  lista.innerHTML = barraSelecao + '<div class="lista">' + itens.map(item => {
+  const nomeCategoriaBaixa = (item) => (categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || 'Sem categoria';
+  const renderItemBaixa = (item) => {
     const nomeFornecedor = item.fornecedores?.nome || 'Fornecedor não encontrado';
+    const categoriaNome = nomeCategoriaBaixa(item);
     const status = obterStatusContaBaixaFinanceiro(item);
     const valorPago = Number(item.valor_pago || 0);
     const existePagamento = !!item.data_pagamento;
@@ -1993,10 +1999,14 @@ async function carregarBaixarContasFinanceiro() {
         <div class="item-info" style="display:flex;gap:10px;align-items:flex-start;">
           ${podeSelecionar ? `<input type="checkbox" class="baixa-check" data-id="${item.id}" ${marcado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;" onchange="faturaToggleSelecaoBaixa('${item.id}', this.checked)">` : '<span style="width:13px;flex-shrink:0;"></span>'}
           <div style="flex:1;min-width:0;">
-            <div class="item-nome">${escaparHtmlBasico(nomeFornecedor)}</div>
-            <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Lançado: ${formatarDataHoraFinanceiro(item.created_at)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+            <div class="baixa-card-topline">
+              <span>Lançamento: ${escaparHtmlBasico(formatarDataHoraFinanceiro(item.created_at))}</span>
+              <span>Compra: ${escaparHtmlBasico(formatarDataBRFinanceiro(item.data_compra))}</span>
+              <strong title="${escaparHtmlBasico(nomeFornecedor)}">${escaparHtmlBasico(nomeFornecedor)}</strong>
+            </div>
+            <div class="item-detalhe">Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
             <div class="item-detalhe">Valor compra: ${formatarMoedaBRFinanceiro(item.valor_compra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)} · Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || item.forma_pagamento || '-')}</div>
-            <div class="item-detalhe">Conta financeira: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')} · Categoria: ${escaparHtmlBasico((categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || 'Sem categoria')}</div>
+            <div class="item-detalhe">Conta financeira: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')} · Categoria: ${escaparHtmlBasico(categoriaNome)}</div>
             <div class="item-detalhe">Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}${item.intervalo_parcelas_dias ? ` · intervalo ${item.intervalo_parcelas_dias} dia(s)` : ''}</div>
             <div class="item-detalhe">Obs.: ${escaparHtmlBasico(item.observacao || '-')}</div>
           </div>
@@ -2022,7 +2032,37 @@ async function carregarBaixarContasFinanceiro() {
         </div>
       </div>
     `;
-  }).join('') + '</div>';
+  };
+
+  const agruparFornecedor = !!document.getElementById('chkBaixaAgruparFornecedor')?.checked;
+  const agruparCategoria = !!document.getElementById('chkBaixaAgruparCategoria')?.checked;
+  let htmlItens;
+  if (agruparFornecedor || agruparCategoria) {
+    const grupos = new Map();
+    itens.forEach(item => {
+      const chave = agruparFornecedor
+        ? (item.fornecedores?.nome || 'Fornecedor não encontrado')
+        : nomeCategoriaBaixa(item);
+      if (!grupos.has(chave)) grupos.set(chave, { nome: chave, total: 0, itens: [] });
+      const grupo = grupos.get(chave);
+      grupo.total += Number(item.valor_compra || 0);
+      grupo.itens.push(item);
+    });
+    htmlItens = '<div class="lista">' + Array.from(grupos.values()).map(grupo => `
+      <div class="baixa-grupo-total">
+        <div>
+          <span>${agruparFornecedor ? 'Fornecedor' : 'Categoria'}</span>
+          <div style="color:var(--text);font-weight:900;font-size:16px;">${escaparHtmlBasico(grupo.nome)}</div>
+        </div>
+        <strong>${formatarMoedaBRFinanceiro(grupo.total)}</strong>
+      </div>
+      ${grupo.itens.map(renderItemBaixa).join('')}
+    `).join('') + '</div>';
+  } else {
+    htmlItens = '<div class="lista">' + itens.map(renderItemBaixa).join('') + '</div>';
+  }
+
+  lista.innerHTML = barraSelecao + htmlItens;
 
   faturaAtualizarBarraSelecaoBaixa();
 }

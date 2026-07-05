@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v57-data-lancamento-local';
+const CACHE_NAME = 'check-diario-pwa-v58-baixa-grupos';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
