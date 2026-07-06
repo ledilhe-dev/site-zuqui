@@ -508,6 +508,10 @@
   gap: 0;
 }
 
+#confirmacaoSistemaOverlay {
+  z-index: 9900;
+}
+
 .nc-confirm-line {
   display: grid;
   grid-template-columns: minmax(110px, .8fr) minmax(0, 1.2fr);

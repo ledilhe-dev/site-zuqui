@@ -485,6 +485,8 @@ async function ncSalvar(salvarENovo = false) {
       document.getElementById('ncFornBusca')?.focus();
     } else {
       NC.salvando = false;
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
       const conferencia = await ncConferirContaSalva(resumoConferencia, resultadoSalvar || {});
       if (conferencia.acao === 'corrigir' && typeof editarContaAPagarFinanceiro === 'function') {
         editarContaAPagarFinanceiro(conferencia.id);
