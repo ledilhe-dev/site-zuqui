@@ -479,6 +479,14 @@ async function ncSalvar(salvarENovo = false) {
     }
     const estavaEditando = NC.modoEdicao;
     if (salvarENovo && !estavaEditando) {
+      NC.salvando = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+      if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
+      const conferencia = await ncConferirContaSalva(resumoConferencia, resultadoSalvar || {});
+      if (conferencia.acao === 'corrigir' && typeof editarContaAPagarFinanceiro === 'function') {
+        editarContaAPagarFinanceiro(conferencia.id);
+        return;
+      }
       ncAbrir();
       const msgNovo = document.getElementById('ncMsg');
       if (msgNovo) { msgNovo.textContent = 'Conta salva. Preencha os dados da próxima conta.'; msgNovo.className = 'msg ok'; }
