@@ -357,8 +357,8 @@ async function ncConferirContaSalva(resumo = {}, resultado = {}) {
     </div>
   `;
   const decisao = await abrirConfirmacaoSistema({
-    title: 'Gravado com sucesso',
-    subtitle: 'Conta a pagar cadastrada.',
+    title: 'Conferir lançamento',
+    subtitle: 'Confira os dados antes de finalizar.',
     body,
     cancelText: 'CORRIGIR',
     cancelClass: 'btn-red',
@@ -382,8 +382,15 @@ async function ncSalvar(salvarENovo = false) {
   NC.valor = ncParseValor(vi ? vi.value : '');
 
   // 2. Coleta dias para vencimento e recalcula data
-  const vdEl = document.getElementById('ncVencDia');
-  if (vdEl && vdEl.value !== '') ncVencDiaInput(vdEl.value);
+  const dc = document.getElementById('ncDataCompra');
+  if (dc && dc.value) NC.dataCompra = dc.value;
+  const vc = document.getElementById('ncVencCustom');
+  if (vc && vc.value) {
+    NC.dataVenc = vc.value;
+  } else {
+    const vdEl = document.getElementById('ncVencDia');
+    if (vdEl && vdEl.value !== '') ncVencDiaInput(vdEl.value);
+  }
   // Se o usuário alterou direto no calendário, ncVencCust() já atualizou NC.dataVenc
 
   // 3. Coleta parcelas
@@ -398,7 +405,6 @@ async function ncSalvar(salvarENovo = false) {
   }
 
   // 4. Coleta data de compra e observação
-  const dc = document.getElementById('ncDataCompra'); if (dc && dc.value) NC.dataCompra = dc.value;
   const oi = document.getElementById('ncObs'); NC.obs = String((oi && oi.value) || '').trim();
 
   // 5. Validações com erros inline
