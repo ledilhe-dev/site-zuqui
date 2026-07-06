@@ -92,7 +92,6 @@ function ncParcCust() {
   const e = document.getElementById('ncParcErr');
   if (e) e.style.display = (v < 1) ? '' : 'none';
   ncSyncParceladoUI();
-  // Mostrar toggle modo quando há mais de 1 parcela
 }
 
 // ── Vencimento ──────────────────────────────────────────────────
@@ -147,6 +146,28 @@ function ncDataNoMesAtualPorDia(dia) {
   return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
 }
 
+function ncDataVencimentoFornecedor(fornecedor, dataCompraISO = '') {
+  const dia = parseInt(fornecedor?.dia_vencimento, 10);
+  if (!Number.isFinite(dia) || dia < 1 || dia > 31) return '';
+
+  const dataCompra = /^\d{4}-\d{2}-\d{2}$/.test(String(dataCompraISO || ''))
+    ? dataCompraISO
+    : new Date().toISOString().split('T')[0];
+
+  if (fornecedor?.is_cartao && typeof faturaCalcularVencimentoPorDia === 'function') {
+    return faturaCalcularVencimentoPorDia(dataCompra, dia, fornecedor?.dia_fechamento) || '';
+  }
+
+  const [ano, mes, diaCompra] = dataCompra.split('-').map(Number);
+  let anoV = ano;
+  let mesV = mes;
+  if (diaCompra > dia) mesV += 1;
+  while (mesV > 12) { mesV -= 12; anoV += 1; }
+  const ultimoDia = new Date(anoV, mesV, 0).getDate();
+  const diaFinal = Math.min(dia, ultimoDia);
+  return `${anoV}-${String(mesV).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
+}
+
 function ncAtualizarBotaoVencFornecedor() {
   const btn = document.getElementById('ncBtnUsarVencFornecedor');
   if (!btn) return;
@@ -166,7 +187,9 @@ function ncUsarVencimentoFornecedor() {
     if (msg) { msg.textContent = 'Fornecedor sem dia de vencimento cadastrado.'; msg.className = 'msg err'; }
     return;
   }
-  const vencimento = ncDataNoMesAtualPorDia(dia);
+  const campoDataCompra = document.getElementById('ncDataCompra');
+  if (campoDataCompra?.value) NC.dataCompra = campoDataCompra.value;
+  const vencimento = ncDataVencimentoFornecedor(fornecedor, NC.dataCompra);
   if (!vencimento) return;
   NC.dataVenc = vencimento;
   const vc = document.getElementById('ncVencCustom');
