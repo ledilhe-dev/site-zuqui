@@ -728,6 +728,372 @@
   align-items: end;
 }
 
+/* Mobile hardening: evita zoom/overflow recorrente no Chrome/Safari iOS. */
+@media (max-width: 700px) {
+  html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    touch-action: manipulation;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px !important;
+  }
+
+  .app-shell,
+  .main-content,
+  .pagina,
+  .card,
+  .modal,
+  .overlay,
+  #dashboard,
+  #financeiro_contasapagar,
+  #financeiro_baixar_contas,
+  .financeiro-contas-page,
+  .nc-overlay,
+  .nc-sheet,
+  .nc-sheet-body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .pagina {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .card {
+    padding: 10px !important;
+    border-radius: 10px !important;
+  }
+
+  #dashboard .card-title,
+  #dashboard h2,
+  #dashboard h3,
+  #dashboard [id$="Titulo"],
+  .dash-gf-detail-title {
+    max-width: 100%;
+    font-size: 15px !important;
+    line-height: 1.18 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #cardDashboardGraficosFinanceiros > div:first-child,
+  #cardDashboardGraficosFinanceiros > div:first-child > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    max-width: 100%;
+  }
+
+  #dashGfModoBtns,
+  #dashGfStatusBtns {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #dashGfStatusBtns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #dashGfModoBtns .btn,
+  #dashGfStatusBtns .btn,
+  #cardDashboardGraficosFinanceiros .btn-sm,
+  #dashGfOrdenacaoDetalhe {
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 6px 7px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  #dashGfResumo {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px !important;
+    font-size: 11px !important;
+  }
+
+  #dashGfResumo span,
+  #dashGfResumo strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .dash-gf-scroll,
+  #dashGfBarras,
+  #dashGfCurvaCategoria {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  #dashGfCurvaCategoria svg {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .dash-gf-meses-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px !important;
+  }
+
+  .dash-gf-mes-card {
+    min-width: 0 !important;
+    padding: 7px 6px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .dash-gf-mes-card strong,
+  .dash-gf-mes-card span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #dashGfRosca,
+  #dashGfRoscaCategoria {
+    display: grid !important;
+    grid-template-columns: minmax(112px, 132px) minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: start !important;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  #dashGfRosca svg,
+  #dashGfRoscaCategoria svg {
+    width: 118px !important;
+    height: 118px !important;
+    max-width: 100% !important;
+  }
+
+  #dashGfRosca > div,
+  #dashGfRoscaCategoria > div {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 11px !important;
+  }
+
+  #dashGfRosca > div > div,
+  #dashGfRoscaCategoria > div > div {
+    min-width: 0 !important;
+    padding: 2px 3px !important;
+    gap: 4px !important;
+    font-size: 11px !important;
+  }
+
+  #dashGfTopCategorias button {
+    grid-template-columns: 24px minmax(0, 1fr) 42px minmax(64px, auto) !important;
+    gap: 5px !important;
+    padding: 6px !important;
+    font-size: 11px !important;
+  }
+
+  .dash-gf-detail-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    overflow-x: scroll !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain;
+  }
+
+  .dash-gf-detail-table {
+    width: 720px !important;
+    min-width: 720px !important;
+    max-width: none !important;
+    font-size: 10px !important;
+  }
+
+  .dash-gf-detail-table th,
+  .dash-gf-detail-table td {
+    padding: 7px 6px !important;
+  }
+
+  .dash-gf-col-data { width: 74px !important; }
+  .dash-gf-col-valor { width: 88px !important; font-size: 11px !important; }
+  .dash-gf-col-lancado { width: 62px !important; }
+  .dash-gf-col-fornecedor { width: 96px !important; }
+  .dash-gf-col-categoria { width: 110px !important; }
+  .dash-gf-col-compra { width: 74px !important; }
+  .dash-gf-col-observacao { width: 130px !important; }
+
+  #financeiro_contasapagar .card,
+  #financeiro_baixar_contas .card {
+    padding: 10px !important;
+  }
+
+  #financeiro_contasapagar .financeiro-filtros-row,
+  #financeiro_baixar_contas .financeiro-filtros-row,
+  #financeiro_baixar_contas .financeiro-filtros-baixar {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+  }
+
+  #financeiro_contasapagar .item,
+  #financeiro_baixar_contas .item,
+  #listaContasAPagarFinanceiro .item,
+  #listaBaixarContasFinanceiro .item {
+    padding: 9px !important;
+    border-radius: 9px !important;
+  }
+
+  #financeiro_contasapagar .item-detalhe,
+  #financeiro_baixar_contas .item-detalhe,
+  #listaContasAPagarFinanceiro .item-detalhe,
+  #listaBaixarContasFinanceiro .item-detalhe {
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+
+  .nc-sheet-body {
+    padding: 9px 10px !important;
+    gap: 7px !important;
+  }
+
+  #ncCatGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  #ncCatGrid .nc-cat-card {
+    min-height: 48px !important;
+    padding: 7px 7px !important;
+    font-size: 11px !important;
+    line-height: 1.12 !important;
+  }
+
+  #ncCatGrid .nc-cat-card img,
+  #ncCatGrid .nc-cat-card svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .nc-grid-2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  .nc-sheet-body label,
+  .nc-sheet-body [style*="text-transform:uppercase"] {
+    font-size: 10px !important;
+    letter-spacing: .02em !important;
+  }
+
+  #ncValor,
+  #ncDataCompra,
+  #ncVencDia,
+  #ncParcCustom,
+  #ncVencCustom,
+  #ncObs {
+    min-height: 44px !important;
+    padding: 9px 10px !important;
+    font-size: 16px !important;
+    border-radius: 9px !important;
+  }
+
+  #ncModoParcelasWrap {
+    padding: 8px !important;
+    border-radius: 9px !important;
+  }
+
+  #confirmacaoSistemaOverlay {
+    padding: 8px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 22px) !important;
+    border-radius: 10px !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-header {
+    padding: 12px 14px !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-header h3 {
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-header .btn {
+    flex: 0 0 auto;
+    width: auto !important;
+    min-height: 34px !important;
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-body {
+    padding: 10px 14px !important;
+    overflow-x: hidden !important;
+  }
+
+  .nc-confirm-line {
+    grid-template-columns: minmax(82px, .74fr) minmax(0, 1.26fr) !important;
+    gap: 6px !important;
+    padding: 7px 0 !important;
+  }
+
+  .nc-confirm-line span {
+    font-size: 10px !important;
+    letter-spacing: .02em !important;
+  }
+
+  .nc-confirm-line strong {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    text-align: right !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-footer {
+    padding: 10px 14px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-footer .btn {
+    min-height: 42px !important;
+    padding: 9px 8px !important;
+    font-size: 13px !important;
+  }
+}
+
 .categoria-compra-inline-grid input[type="text"] {
   width: 100%;
   min-width: 0;

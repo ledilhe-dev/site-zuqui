@@ -601,7 +601,7 @@ async function carregarGraficosFinanceirosDashboard() {
     // + categorias de compra em paralelo.
     const campoData = _dashGfCampoData();
     const consultarContasDash = async (incluirCor) => sb.from('contasapagar')
-      .select(`id, fornecedor_id, categoria_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, fornecedores(nome${incluirCor ? ', cor' : ''})`)
+      .select(`id, fornecedor_id, categoria_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, created_at, fornecedores(nome${incluirCor ? ', cor' : ''})`)
       .is('excluido_em', null)
       .gte(campoData, inicio)
       .lte(campoData, fim);
@@ -1181,11 +1181,12 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
         const dv = String(c[campoDataDet] || '').slice(0, 10).split('-').reverse().join('/');
         const dc = String(c.data_compra || '').slice(0, 10).split('-').reverse().join('/');
         let dlanca = '—';
-        if (c.created_at) {
+        const dataLancamento = c.created_at || c.data_compra || '';
+        if (dataLancamento) {
           try {
-            const d = new Date(c.created_at);
-            dlanca = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-          } catch(e) { dlanca = String(c.created_at).slice(0,10); }
+            const d = new Date(String(dataLancamento).includes('T') ? dataLancamento : `${dataLancamento}T12:00:00`);
+            dlanca = d.toLocaleDateString('pt-BR') + (c.created_at ? ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '');
+          } catch(e) { dlanca = String(dataLancamento).slice(0,10).split('-').reverse().join('/'); }
         }
         const fornecedorDetalhe = escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor');
         const categoriaDetalhe = escaparHtmlBasico(cat?.nome || 'Sem categoria');
