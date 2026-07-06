@@ -19,11 +19,6 @@ function nrFmtBR(n) {
   if (!isFinite(n) || n == null) return '';
   return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function nrHojeISO() {
-  if (typeof dataLocalISO === 'function') return dataLocalISO();
-  const agora = new Date();
-  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
-}
 function nrValorFocus(inp) { inp.value = inp.value.replace(/[R$\s]/g, '').trim(); setTimeout(() => inp.select(), 0); }
 function nrValorInput(inp) { NR.valor = nrParseValor(inp.value); }
 function nrValorBlur(inp) {
@@ -85,8 +80,8 @@ function nrAbrir(editar = false) {
       const vEl = document.getElementById('recebivelValor'); if (vEl) vEl.value = '';
       const obsEl = document.getElementById('recebivelObservacao'); if (obsEl) { obsEl.value = ''; obsEl.style.borderColor = ''; }
       const qtdEl = document.getElementById('recebivelQtdParcelas'); if (qtdEl) qtdEl.value = '1';
-      const diasEl = document.getElementById('recebivelDiasIntervalo'); if (diasEl) diasEl.value = '30';
-      const dataPrevistaEl = document.getElementById('recebivelDataPrevista'); if (dataPrevistaEl) dataPrevistaEl.value = nrHojeISO();
+    const diasEl = document.getElementById('recebivelDiasIntervalo'); if (diasEl) diasEl.value = '30';
+    const dataPrevistaEl = document.getElementById('recebivelDataPrevista'); if (dataPrevistaEl) dataPrevistaEl.value = '';
       ['nrQtdErr','nrDiasErr','recebivelObsErr'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
       const tt = document.getElementById('nrTitulo'); if (tt) tt.textContent = 'Novo recebível';
       const bs = document.getElementById('btnSalvarRecebivelFinanceiro'); if (bs) bs.textContent = '✓ Cadastrar recebível';

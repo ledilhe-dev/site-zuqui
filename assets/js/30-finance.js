@@ -111,21 +111,6 @@ function formatarDataBRFinanceiro(valor = '') {
   return d.toLocaleDateString('pt-BR');
 }
 
-function formatarDataHoraFinanceiro(valor = '') {
-  const txt = String(valor || '').trim();
-  if (!txt) return '-';
-  const d = new Date(txt);
-  if (Number.isNaN(d.getTime())) return txt;
-  return d.toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 function formatarEntradaDataBRFinanceiro(valor = '') {
   const digitos = String(valor || '').replace(/\D/g, '').slice(0, 8);
   if (digitos.length <= 2) return digitos;
@@ -1263,7 +1248,6 @@ async function salvarRecebivelFinanceiro() {
     if (!editando) {
       const quantidade = Math.max(1, qtdParcelas);
       const criadoPorNome = obterNomeAdminAtual?.() || usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Usuario';
-      const dataLancamentoISO = new Date().toISOString();
       const provisionamentos = Array.from({ length: quantidade }, (_, indice) => ({
         pagador_id: pagadorId,
         forma_pagamento_id: formaPagamentoId,
@@ -1278,7 +1262,6 @@ async function salvarRecebivelFinanceiro() {
         empresa_id: empresaIdSessao,
         loja_id: lojaIdSessao,
         ativo: true,
-        created_at: dataLancamentoISO,
       }));
       const { error: erroProvisionamento } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros').insert(provisionamentos)
@@ -1295,7 +1278,7 @@ async function salvarRecebivelFinanceiro() {
       return;
     }
     const payload = editando
-      ? payloadBase
+      ? { ...payloadBase, created_at: new Date(`${dataPrevista}T12:00:00`).toISOString() }
       : {
           ...payloadBase,
           criado_por_id: obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null,
@@ -1573,13 +1556,13 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
     const conta = escaparHtmlBasico(item.contas_financeiras?.nome || '-');
     
     return `
-      <div class="recebivel-card" style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
-        <div class="recebivel-card-main">
-          <div class="recebivel-card-data" style="text-align:center;padding:12px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:12px;">
+      <div style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+        <div>
+          <div style="text-align:center;padding:12px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:12px;">
             <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Data pagamento</div>
             <div style="font-size:24px;font-weight:700;color:var(--red,#ef4444);">${dataFormatada}</div>
           </div>
-          <div class="recebivel-card-info" style="font-size:13px;color:var(--text);line-height:1.6;">
+          <div style="font-size:13px;color:var(--text);line-height:1.6;">
             <div style="font-weight:600;margin-bottom:8px;">${pagador}</div>
             <div style="color:var(--text-muted);font-size:12px;">
               <div>Forma: ${forma}</div>
@@ -1587,16 +1570,16 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
             </div>
           </div>
         </div>
-        <div class="recebivel-card-side">
-          <div class="recebivel-card-valor" style="text-align:center;padding:12px;background:rgba(250,204,21,0.1);border-radius:8px;margin-bottom:12px;">
+        <div>
+          <div style="text-align:center;padding:12px;background:rgba(250,204,21,0.1);border-radius:8px;margin-bottom:12px;">
             <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Valor</div>
             <div style="font-size:24px;font-weight:700;color:var(--yellow,#eab308);">${valor}</div>
           </div>
-          <div class="recebivel-card-check" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
             <input type="checkbox" class="checkbox-recebivel-financeiro" data-recebivel-id="${item.id}" ${recebiveisFinanceiroSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecebivelFinanceiro('${item.id}', this.checked)" style="width:22px;height:22px;cursor:pointer;">
             <span style="font-size:12px;color:var(--text-muted);">Marcar</span>
           </div>
-          <div class="recebivel-card-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-ghost btn-sm" onclick="editarRecebivelFinanceiro('${item.id}')" style="flex:1;font-size:12px;">Editar</button>
             <button class="btn btn-red btn-sm" onclick="excluirRecebivelFinanceiro('${item.id}')" style="flex:1;font-size:12px;">Excluir</button>
           </div>
@@ -1662,7 +1645,7 @@ async function iniciarTelaRecFuturos() {
   preencherSelectsRecFuturo();
   preencherPagadoresRecFuturo();
   // Data prevista padrão: hoje
-  const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
+  const hoje = new Date().toISOString().slice(0, 10);
   const campoData = document.getElementById('recFuturoDataPrevista');
   if (campoData && !campoData.value) campoData.value = hoje;
   // Recorrência toggle
@@ -1833,7 +1816,7 @@ async function carregarRecFuturos() {
       return;
     }
 
-    const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
+    const hoje = new Date().toISOString().slice(0, 10);
     const itensPendentesFut = recFuturosCache.filter(i => !i.confirmado_em);
     const itensConfirmadosFut = recFuturosCache.filter(i => !!i.confirmado_em);
     const totalPendentesFut = itensPendentesFut.reduce((s, i) => s + Number(i.valor || 0), 0);
@@ -1932,7 +1915,7 @@ function abrirModalConfirmarRecFuturo(id) {
   if (!modal) return;
   document.getElementById('modalConfirmarRecFuturoId').value = id;
   // Pré-preencher com valores previstos
-  const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
+  const hoje = new Date().toISOString().slice(0, 10);
   document.getElementById('modalConfirmarData').value = hoje;
   document.getElementById('modalConfirmarValor').value = item.valor > 0 ? formatarMoedaBRFinanceiro(item.valor) : '';
   // Preencher select de contas
@@ -3019,7 +3002,7 @@ async function faturaProcessarOFX(file) {
     // Extrair info do arquivo. DTEND/DUEDATE vêm como timestamp OFX (ex.: 20260704000000[-3:BRT]);
     // normalizamos com ofxParseData para ISO (YYYY-MM-DD).
     const vencRaw = ofxExtrairTag(texto, 'DTEND') || ofxExtrairTag(texto, 'DUEDATE') || '';
-    const vencimento = ofxParseData(vencRaw) || (typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0,10));
+    const vencimento = ofxParseData(vencRaw) || new Date().toISOString().slice(0,10);
     const banco = ofxDetectarBanco(texto);
     _faturaBancoDetectado = banco;
     const total = lancamentos.reduce((s,l) => s + Math.abs(l.valor), 0);
@@ -3266,7 +3249,7 @@ async function faturaLancarSelecionados() {
 
       if (!fornecedorId) { throw new Error('Não foi possível resolver o fornecedor.'); }
 
-      const hojeISO = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0,10);
+      const hojeISO = new Date().toISOString().slice(0,10);
       const ehDataValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '').trim());
 
       // data_compra nunca pode ser vazia

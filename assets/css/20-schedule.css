@@ -1185,7 +1185,6 @@
       justify-content: center;
     }
     #dashGfBarras { overflow-x: hidden !important; }
-    #dashGfDetalhe .dash-gf-detail-wrap { overflow-x: auto !important; overflow-y: hidden !important; }
     .dash-gf-mobile-hint { display: none !important; }
     .dash-gf-legenda-barras { justify-content: center; }
   }

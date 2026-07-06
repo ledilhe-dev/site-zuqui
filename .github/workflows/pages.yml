@@ -37,12 +37,13 @@ jobs:
           root = Path('.')
           html = (root / 'index.html').read_text(encoding='utf-8')
           refs = re.findall(r'(?:src|href)="(\./assets/[^"]+)"', html)
-          missing = [ref for ref in refs if not (root / ref.removeprefix('./')).is_file()]
+          refs_files = [ref.split('?', 1)[0].split('#', 1)[0] for ref in refs]
+          missing = [ref for ref in refs_files if not (root / ref.removeprefix('./')).is_file()]
           if missing:
               raise SystemExit(f'Referências ausentes: {missing}')
 
           manifest = json.loads((root / 'assets/manifest.json').read_text(encoding='utf-8'))
-          if sorted(manifest) != sorted(refs):
+          if sorted(manifest) != sorted(refs_files):
               raise SystemExit('assets/manifest.json não corresponde ao index.html')
           print(f'Projeto modular válido: {len(refs)} recursos.')
           PY

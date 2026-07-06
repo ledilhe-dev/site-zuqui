@@ -42,7 +42,7 @@
 <link id="topbar-admin-panel-indicator" rel="stylesheet" href="./assets/css/11-topbar-admin.css">
 
 <link id="obsidian-precision-design-system-v3" rel="stylesheet" href="./assets/css/12-design-system.css">
-<link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css?v=20260701-dashboard-mobile">
+<link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css">
 
 
 
@@ -1958,14 +1958,6 @@
               <option value="pago">Pagas</option>
               <option value="">Todas</option>
             </select>
-            <label class="baixa-agrupar-opcao" title="Agrupar o resultado por fornecedor">
-              <input id="chkBaixaAgruparFornecedor" type="checkbox" onchange="document.getElementById('chkBaixaAgruparCategoria').checked=false; carregarBaixarContasFinanceiro()">
-              Fornecedor
-            </label>
-            <label class="baixa-agrupar-opcao" title="Agrupar o resultado por categoria">
-              <input id="chkBaixaAgruparCategoria" type="checkbox" onchange="document.getElementById('chkBaixaAgruparFornecedor').checked=false; carregarBaixarContasFinanceiro()">
-              Categoria
-            </label>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosBaixarContasFinanceiro()">Limpar</button>
             <button class="btn btn-ghost" type="button" onclick="carregarBaixarContasFinanceiro()">Atualizar</button>
           </div>
@@ -2033,24 +2025,24 @@
       </section>
 
       <section id="financeiro_recebiveis" class="pagina">
-        <div class="page-title recebiveis-page-title">Recebíveis</div>
+        <div class="page-title">Recebíveis</div>
 
         <!-- Barra superior com botão de ação -->
-        <div class="recebiveis-page-actions" style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-          <button class="btn btn-green recebiveis-novo-btn" type="button" onclick="nrAbrir()"
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+          <button class="btn btn-green" type="button" onclick="nrAbrir()"
             style="display:flex;align-items:center;gap:8px;font-size:15px;padding:10px 20px;font-weight:700;">
             + Cadastrar recebível
           </button>
         </div>
 
         <div class="card">
-          <div class="financeiro-card-title-row recebiveis-card-title-row">
+          <div class="financeiro-card-title-row">
             <div class="card-title">Recebíveis cadastrados</div>
             <button class="btn btn-ghost btn-sm" id="btnToggleRecebiveisLista" type="button" onclick="toggleListaRecebiveisFinanceiro()" aria-expanded="false">Mostrar recebíveis</button>
           </div>
-          <div class="form-row financeiro-filtros-row financeiro-filtros-flex recebiveis-filtros-row" style="gap:6px;align-items:center;">
+          <div class="form-row financeiro-filtros-row financeiro-filtros-flex" style="gap:6px;align-items:center;">
             <input id="filtroRecebivelBusca" type="text" placeholder="Buscar por pagador, forma, conta ou valor" style="flex:1;min-width:200px;" oninput="debounceConsumo('filtro_recebiveis', () => carregarRecebiveisFinanceiro(), 700)">
-            <div class="recebiveis-date-filters" style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
               <label style="font-size:11px;color:var(--text-muted);white-space:nowrap;">De</label>
               <input id="filtroRecebivelCadastroInicio" class="campo-curto" type="date" style="width:130px;" title="Cadastro início" onchange="carregarRecebiveisFinanceiro()">
               <label style="font-size:11px;color:var(--text-muted);">até</label>
@@ -2072,7 +2064,7 @@
 
 
         <div class="card">
-          <div class="financeiro-card-title-row recebiveis-card-title-row">
+          <div class="financeiro-card-title-row">
             <div class="card-title">Recebimentos provisionados</div>
             <div style="display:flex;gap:8px;align-items:center;">
               <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
@@ -2081,7 +2073,7 @@
               <button class="btn btn-ghost btn-sm" onclick="carregarRecFuturos()">Atualizar</button>
             </div>
           </div>
-          <div class="form-row recebiveis-futuros-filtros-row" style="margin-bottom:8px;gap:8px;">
+          <div class="form-row" style="margin-bottom:8px;gap:8px;">
             <input id="filtroRecFuturoBusca" type="text" placeholder="Buscar pagador..." style="flex:1;font-size:12px;" oninput="carregarRecFuturos()">
             <input id="filtroRecFuturoInicio" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
             <input id="filtroRecFuturoFim" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
@@ -2550,7 +2542,10 @@
 
       <!-- Qtda Parcelas -->
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Qtda parcelas <span style="color:var(--red)">*</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Qtda parcelas <span style="color:var(--red)">*</span></div>
+          <button type="button" id="ncToggleParcelado" class="btn btn-ghost btn-sm" style="min-height:28px;padding:4px 8px;font-size:10px;border-radius:8px;" onclick="ncSetParcelado(!NC.parcelado)">Parcelar</button>
+        </div>
         <input type="number" id="ncParcCustom" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
           placeholder="1" min="1" max="360"
@@ -2707,7 +2702,7 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260705-baixa-grupos">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260701-inline-categorias">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -2940,14 +2935,14 @@
 <script src="./assets/js/03-core-state.js"></script>
 <script src="./assets/js/04-navigation.js"></script>
 <script src="./assets/js/05-shared-helpers.js"></script>
-<script src="./assets/js/10-dashboard.js?v=20260704-data-lancamento-local"></script>
+<script src="./assets/js/10-dashboard.js"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260704-data-lancamento-local"></script>
+<script src="./assets/js/30-finance.js?v=20260701-inline-categorias"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260705-baixa-grupos"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260706-contas-corrigir"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
@@ -3144,6 +3139,6 @@
 </html>
 
 
-<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260704-data-lancamento-local"></script>
+<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260706-contas-corrigir"></script>
 
-<script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js?v=20260704-data-lancamento-local"></script>
+<script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js"></script>

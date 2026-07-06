@@ -77,7 +77,7 @@ function renderizarCalendarioCofre() {
 
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const totalDias = new Date(ano, mes + 1, 0).getDate();
-  const hoje = typeof dataLocalISO === 'function' ? dataLocalISO() : new Date().toISOString().slice(0, 10);
+  const hoje = new Date().toISOString().slice(0, 10);
   const diaHoje = new Date().getDate();
   const mesHoje = new Date().getMonth();
   const anoHoje = new Date().getFullYear();
@@ -967,7 +967,6 @@ async function salvarContaAPagarFinanceiro() {
   }
 
   const grupoParcelasId = gerarGrupoParcelasIdFinanceiro();
-  const dataLancamentoISO = new Date().toISOString();
   const payloadBase = {
     fornecedor_id: fornecedorId,
     categoria_id: categoriaId || null,
@@ -979,7 +978,6 @@ async function salvarContaAPagarFinanceiro() {
     observacao,
     qtd_parcelas: qtdParcelasValidada,
     intervalo_parcelas_dias: intervaloParcelasDiasFinal,
-    created_at: dataLancamentoISO,
   };
   const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
     ...payloadBase,
@@ -990,7 +988,7 @@ async function salvarContaAPagarFinanceiro() {
     criado_por_id: atorAuditoria.funcionarioId || null,
     criado_por_nome: atorAuditoria.nome || 'Sistema',
   }));
-  const { error } = await sb.from('contasapagar').insert(linhas);
+  const { data: contasSalvas, error } = await sb.from('contasapagar').insert(linhas).select('id');
 
   if (error) {
     if (isMissingContasAPagarTableError(error) || isMissingFornecedoresTableError(error) || isMissingContasAPagarPagamentoColumnsError(error) || isMissingContasAPagarAuditoriaColumnsError(error) || isMissingColumnError(error)) {
@@ -1006,6 +1004,12 @@ async function salvarContaAPagarFinanceiro() {
   setMsg('msgContaAPagarFinanceiro', `${qtdParcelasValidada} conta(s) cadastrada(s) com sucesso.`, 'ok');
   resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel: true });
   carregarContasAPagarFinanceiro();
+  return {
+    ok: true,
+    ids: (contasSalvas || []).map(item => item.id).filter(Boolean),
+    quantidade: qtdParcelasValidada,
+    grupoParcelasId,
+  };
 }
 
 function cancelarEdicaoContaAPagarFinanceiro() {
@@ -1841,10 +1845,6 @@ function limparFiltrosBaixarContasFinanceiro() {
   if (campoInicio) campoInicio.value = '';
   if (campoFim) campoFim.value = '';
   if (campoStatus) campoStatus.value = 'pendente';
-  const chkFornecedor = document.getElementById('chkBaixaAgruparFornecedor');
-  const chkCategoria = document.getElementById('chkBaixaAgruparCategoria');
-  if (chkFornecedor) chkFornecedor.checked = false;
-  if (chkCategoria) chkCategoria.checked = false;
   baixarContasFiltroRapidoAtivo = '';
   atualizarAtalhosBaixarContasFinanceiro();
   carregarBaixarContasFinanceiro();
@@ -1867,7 +1867,7 @@ async function carregarBaixarContasFinanceiro() {
 
   const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
     .from('contasapagar')
-    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, created_at, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
+    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
     .is('excluido_em', null)
     .order('data_vencimento', { ascending: true }));
 
@@ -1984,10 +1984,8 @@ async function carregarBaixarContasFinanceiro() {
       </div>`
     : '';
 
-  const nomeCategoriaBaixa = (item) => (categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || 'Sem categoria';
-  const renderItemBaixa = (item) => {
+  lista.innerHTML = barraSelecao + '<div class="lista">' + itens.map(item => {
     const nomeFornecedor = item.fornecedores?.nome || 'Fornecedor não encontrado';
-    const categoriaNome = nomeCategoriaBaixa(item);
     const status = obterStatusContaBaixaFinanceiro(item);
     const valorPago = Number(item.valor_pago || 0);
     const existePagamento = !!item.data_pagamento;
@@ -1999,14 +1997,10 @@ async function carregarBaixarContasFinanceiro() {
         <div class="item-info" style="display:flex;gap:10px;align-items:flex-start;">
           ${podeSelecionar ? `<input type="checkbox" class="baixa-check" data-id="${item.id}" ${marcado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;" onchange="faturaToggleSelecaoBaixa('${item.id}', this.checked)">` : '<span style="width:13px;flex-shrink:0;"></span>'}
           <div style="flex:1;min-width:0;">
-            <div class="baixa-card-topline">
-              <span>Lançamento: ${escaparHtmlBasico(formatarDataHoraFinanceiro(item.created_at))}</span>
-              <span>Compra: ${escaparHtmlBasico(formatarDataBRFinanceiro(item.data_compra))}</span>
-              <strong title="${escaparHtmlBasico(nomeFornecedor)}">${escaparHtmlBasico(nomeFornecedor)}</strong>
-            </div>
-            <div class="item-detalhe">Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+            <div class="item-nome">${escaparHtmlBasico(nomeFornecedor)}</div>
+            <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
             <div class="item-detalhe">Valor compra: ${formatarMoedaBRFinanceiro(item.valor_compra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)} · Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || item.forma_pagamento || '-')}</div>
-            <div class="item-detalhe">Conta financeira: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')} · Categoria: ${escaparHtmlBasico(categoriaNome)}</div>
+            <div class="item-detalhe">Conta financeira: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')} · Categoria: ${escaparHtmlBasico((categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || 'Sem categoria')}</div>
             <div class="item-detalhe">Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}${item.intervalo_parcelas_dias ? ` · intervalo ${item.intervalo_parcelas_dias} dia(s)` : ''}</div>
             <div class="item-detalhe">Obs.: ${escaparHtmlBasico(item.observacao || '-')}</div>
           </div>
@@ -2032,37 +2026,7 @@ async function carregarBaixarContasFinanceiro() {
         </div>
       </div>
     `;
-  };
-
-  const agruparFornecedor = !!document.getElementById('chkBaixaAgruparFornecedor')?.checked;
-  const agruparCategoria = !!document.getElementById('chkBaixaAgruparCategoria')?.checked;
-  let htmlItens;
-  if (agruparFornecedor || agruparCategoria) {
-    const grupos = new Map();
-    itens.forEach(item => {
-      const chave = agruparFornecedor
-        ? (item.fornecedores?.nome || 'Fornecedor não encontrado')
-        : nomeCategoriaBaixa(item);
-      if (!grupos.has(chave)) grupos.set(chave, { nome: chave, total: 0, itens: [] });
-      const grupo = grupos.get(chave);
-      grupo.total += Number(item.valor_compra || 0);
-      grupo.itens.push(item);
-    });
-    htmlItens = '<div class="lista">' + Array.from(grupos.values()).map(grupo => `
-      <div class="baixa-grupo-total">
-        <div>
-          <span>${agruparFornecedor ? 'Fornecedor' : 'Categoria'}</span>
-          <div style="color:var(--text);font-weight:900;font-size:16px;">${escaparHtmlBasico(grupo.nome)}</div>
-        </div>
-        <strong>${formatarMoedaBRFinanceiro(grupo.total)}</strong>
-      </div>
-      ${grupo.itens.map(renderItemBaixa).join('')}
-    `).join('') + '</div>';
-  } else {
-    htmlItens = '<div class="lista">' + itens.map(renderItemBaixa).join('') + '</div>';
-  }
-
-  lista.innerHTML = barraSelecao + htmlItens;
+  }).join('') + '</div>';
 
   faturaAtualizarBarraSelecaoBaixa();
 }

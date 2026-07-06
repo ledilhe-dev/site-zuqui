@@ -8,11 +8,13 @@ const NC = {
   valor: null,
   obs: '',
   parcelas: 1, intervalo: 30,
+  parcelado: false,
   modoEdicao: false,
   modo: 'total',
   lojaId: null,
   salvando: false,
 };
+window.NC = NC;
 
 // ── Helpers de valor ────────────────────────────────────────────
 function ncParseValor(txt) {
@@ -26,20 +28,6 @@ function ncParseValor(txt) {
 function ncFmtBR(n) {
   if (!isFinite(n) || n == null) return '';
   return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function ncHojeISO() {
-  if (typeof dataLocalISO === 'function') return dataLocalISO();
-  const agora = new Date();
-  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
-}
-
-function ncSomarDiasISO(dataISO, dias) {
-  const base = /^\d{4}-\d{2}-\d{2}$/.test(String(dataISO || '')) ? String(dataISO) : ncHojeISO();
-  const [ano, mes, dia] = base.split('-').map(Number);
-  const dt = new Date(ano, mes - 1, dia, 12, 0, 0);
-  dt.setDate(dt.getDate() + Number(dias || 0));
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
 // ── Campo Valor ──────────────────────────────────────────────────
@@ -63,17 +51,48 @@ function ncSetModo(modo) {
   ncAtuParcelasInfo();
 }
 
+function ncSyncParceladoUI() {
+  const pc = document.getElementById('ncParcCustom');
+  const btn = document.getElementById('ncToggleParcelado');
+  const ativo = !!NC.parcelado;
+  if (pc) {
+    pc.disabled = !ativo;
+    pc.value = ativo ? String(Math.max(2, NC.parcelas || 2)) : '1';
+    pc.style.opacity = ativo ? '1' : '0.65';
+  }
+  if (btn) {
+    btn.textContent = ativo ? 'Parcelado' : 'Parcelar';
+    btn.className = `btn ${ativo ? 'btn-green' : 'btn-ghost'} btn-sm`;
+    btn.setAttribute('aria-pressed', String(ativo));
+  }
+  const mw = document.getElementById('ncModoParcelasWrap');
+  if (mw) mw.style.opacity = ativo ? '1' : '0.55';
+  ncAtuParcelasInfo();
+}
+
+function ncSetParcelado(ativo) {
+  NC.parcelado = !!ativo;
+  if (!NC.parcelado) {
+    NC.parcelas = 1;
+    NC.modo = 'total';
+    document.getElementById('ncModoTotal')?.classList.add('nc-pill-sel');
+    document.getElementById('ncModoParc')?.classList.remove('nc-pill-sel');
+  } else if (!NC.parcelas || NC.parcelas < 2) {
+    NC.parcelas = 2;
+  }
+  ncSyncParceladoUI();
+}
+
 // ── Parcelas (input direto) ──────────────────────────────────────
 function ncParcCust() {
   const pc = document.getElementById('ncParcCustom');
   const v = parseInt((pc && pc.value) || '0', 10) || 0;
+  if (v > 1) NC.parcelado = true;
   if (v >= 1) NC.parcelas = v;
   const e = document.getElementById('ncParcErr');
   if (e) e.style.display = (v < 1) ? '' : 'none';
-  ncAtuParcelasInfo();
+  ncSyncParceladoUI();
   // Mostrar toggle modo quando há mais de 1 parcela
-  const mw = document.getElementById('ncModoParcelasWrap');
-  if (mw) mw.style.opacity = v > 1 ? '1' : '0.5';
 }
 
 // ── Vencimento ──────────────────────────────────────────────────
@@ -86,7 +105,9 @@ function ncVencDiaInput(val) {
     return;
   }
   if (e) e.style.display = 'none';
-  NC.dataVenc = ncSomarDiasISO(NC.dataCompra || ncHojeISO(), dias);
+  const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
+  base.setDate(base.getDate() + dias);
+  NC.dataVenc = base.toISOString().split('T')[0];
   // Atualiza o calendário visualmente
   const vc = document.getElementById('ncVencCustom');
   if (vc) vc.value = NC.dataVenc;
@@ -98,7 +119,7 @@ function ncVencCust() {
   if (vc && vc.value) {
     NC.dataVenc = vc.value;
     // Recalcular "dias para vencimento" para manter os dois sincronizados
-    const hoje = new Date(ncHojeISO() + 'T00:00:00');
+    const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
     const venc = new Date(vc.value + 'T00:00:00');
     const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
     const vdEl = document.getElementById('ncVencDia');
@@ -126,30 +147,6 @@ function ncDataNoMesAtualPorDia(dia) {
   return `${ano}-${String(mes + 1).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
 }
 
-function ncCalcularVencimentoFornecedor(fornecedor, diaVencimento) {
-  const diaFechamento = parseInt(fornecedor?.dia_fechamento, 10);
-  const temFechamento = Number.isFinite(diaFechamento) && diaFechamento >= 1 && diaFechamento <= 31;
-  const dataCompra = String(NC.dataCompra || document.getElementById('ncDataCompra')?.value || ncHojeISO()).slice(0, 10);
-  if (temFechamento && typeof faturaCalcularVencimentoPorDia === 'function') {
-    return {
-      vencimento: faturaCalcularVencimentoPorDia(dataCompra, diaVencimento, diaFechamento),
-      diaFechamento,
-      porFechamento: true,
-    };
-  }
-  return {
-    vencimento: ncDataNoMesAtualPorDia(diaVencimento),
-    diaFechamento: null,
-    porFechamento: false,
-  };
-}
-
-function ncDataBR(iso) {
-  if (!iso) return '';
-  const [y, m, d] = String(iso).split('-');
-  return (y && m && d) ? `${d}/${m}/${y}` : String(iso);
-}
-
 function ncAtualizarBotaoVencFornecedor() {
   const btn = document.getElementById('ncBtnUsarVencFornecedor');
   if (!btn) return;
@@ -169,19 +166,13 @@ function ncUsarVencimentoFornecedor() {
     if (msg) { msg.textContent = 'Fornecedor sem dia de vencimento cadastrado.'; msg.className = 'msg err'; }
     return;
   }
-  const calculo = ncCalcularVencimentoFornecedor(fornecedor, dia);
-  const vencimento = calculo.vencimento;
+  const vencimento = ncDataNoMesAtualPorDia(dia);
   if (!vencimento) return;
   NC.dataVenc = vencimento;
   const vc = document.getElementById('ncVencCustom');
   if (vc) vc.value = vencimento;
-  const vdEl = document.getElementById('ncVencDia');
-  if (vdEl) vdEl.value = '';
-  if (msg) {
-    const detalhe = calculo.porFechamento ? `, fechamento dia ${calculo.diaFechamento}` : '';
-    msg.textContent = `Vencimento aplicado: ${ncDataBR(vencimento)} (vence dia ${dia}${detalhe}).`;
-    msg.className = 'msg ok';
-  }
+  ncVencCust();
+  if (msg) { msg.textContent = `Vencimento do fornecedor aplicado: dia ${dia}.`; msg.className = 'msg ok'; }
 }
 
 function ncAtuParcelasInfo() {
@@ -210,54 +201,6 @@ function ncAtuParcelasInfo() {
 }
 
 // ── Observação ───────────────────────────────────────────────────
-function ncEsc(valor) {
-  if (typeof escaparHtmlBasico === 'function') return escaparHtmlBasico(valor || '');
-  return String(valor || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-function ncNomeCategoriaSelecionada() {
-  const cat = (categoriasCompraCache || []).find(c => String(c.id) === String(NC.catId));
-  return cat?.nome || '';
-}
-
-function ncResumoSucesso(valorParcela, estavaEditando) {
-  const linhas = [
-    ['Fornecedor', NC.fornNome || ''],
-    ['Valor', ncFmtBR(valorParcela || NC.valor || 0)],
-    ['Vencimento', ncDataBR(NC.dataVenc)],
-  ];
-  const categoria = ncNomeCategoriaSelecionada();
-  if (categoria) linhas.push(['Categoria', categoria]);
-  if (NC.parcelas > 1) linhas.push(['Parcelas', `${NC.parcelas}x`]);
-  if (NC.obs) linhas.push(['Observacao', NC.obs]);
-  return { titulo: 'Gravado com sucesso', subtitulo: estavaEditando ? 'Conta atualizada.' : 'Conta a pagar cadastrada.', linhas };
-}
-
-function ncMostrarConfirmacaoSucesso(resumo) {
-  return new Promise(resolve => {
-    document.getElementById('ncSuccessOverlay')?.remove();
-    const overlay = document.createElement('div');
-    overlay.id = 'ncSuccessOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.58);padding:18px;';
-    const linhas = (resumo.linhas || []).map(([rotulo, valor]) => `
-      <div style="display:flex;gap:12px;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,.18);padding:8px 0;">
-        <span style="color:#9fb2c8;font-size:12px;text-transform:uppercase;letter-spacing:.06em;">${ncEsc(rotulo)}</span>
-        <strong style="color:#f8fafc;text-align:right;font-size:14px;max-width:65%;">${ncEsc(valor)}</strong>
-      </div>`).join('');
-    overlay.innerHTML = `
-      <div role="dialog" aria-modal="true" aria-labelledby="ncSuccessTitle" style="width:min(420px,100%);border:1px solid rgba(34,197,94,.45);border-radius:12px;background:#0b1f33;box-shadow:0 20px 60px rgba(0,0,0,.45);padding:20px;">
-        <h3 id="ncSuccessTitle" style="margin:0 0 6px;color:#22c55e;font-size:20px;">${ncEsc(resumo.titulo)}</h3>
-        <p style="margin:0 0 12px;color:#cbd5e1;font-size:14px;">${ncEsc(resumo.subtitulo)}</p>
-        <div style="margin:10px 0 16px;">${linhas}</div>
-        <button type="button" id="ncSuccessOk" style="width:100%;height:46px;border:0;border-radius:8px;background:#22c55e;color:#03131f;font-weight:800;font-size:16px;cursor:pointer;">OK</button>
-      </div>`;
-    document.body.appendChild(overlay);
-    const fechar = () => { overlay.remove(); resolve(); };
-    overlay.querySelector('#ncSuccessOk')?.addEventListener('click', fechar, { once: true });
-    setTimeout(() => overlay.querySelector('#ncSuccessOk')?.focus(), 0);
-  });
-}
-
 function ncObsInput(inp) {
   const e = document.getElementById('ncObsErr');
   if (e) e.style.display = inp.value.trim() ? 'none' : '';
@@ -313,7 +256,7 @@ function ncLimparForn() {
 // ── Abrir / Fechar ──────────────────────────────────────────────
 function ncAbrir(editar) {
   if (!editar) {
-    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, modoEdicao: false, modo: 'total', lojaId: null, salvando: false });
+    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, parcelado: false, modoEdicao: false, modo: 'total', lojaId: null, salvando: false });
     // Limpa campos visuais
     const fi = document.getElementById('ncFornBusca'); if (fi) { fi.value = ''; fi.style.display = ''; }
     const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
@@ -324,7 +267,7 @@ function ncAbrir(editar) {
     document.getElementById('ncModoTotal')?.classList.add('nc-pill-sel');
     document.getElementById('ncModoParc')?.classList.remove('nc-pill-sel');
     // Data compra = hoje
-    const hoje = ncHojeISO();
+    const hoje = new Date().toISOString().split('T')[0];
     const dc = document.getElementById('ncDataCompra'); if (dc) dc.value = hoje;
     NC.dataCompra = hoje; NC.dataVenc = hoje;
     // Vencimento default = 30 dias
@@ -333,6 +276,7 @@ function ncAbrir(editar) {
     // Parcelas default = 1
     const pc = document.getElementById('ncParcCustom'); if (pc) pc.value = '1';
     NC.parcelas = 1;
+    ncSyncParceladoUI();
     // Limpar erros
     ['ncVencDiaErr','ncParcErr','ncObsErr'].forEach(id => {
       const el = document.getElementById(id); if (el) el.style.display = 'none';
@@ -369,6 +313,39 @@ function ncFechar() {
 }
 
 // ── Salvar ──────────────────────────────────────────────────────
+async function ncConferirContaSalva(resumo = {}, resultado = {}) {
+  if (typeof abrirConfirmacaoSistema !== 'function') return { acao: 'ok' };
+  const linhas = [
+    ['FORNECEDOR', resumo.fornNome || '-'],
+    ['VALOR', ncFmtBR(resumo.valorParcela || resumo.valor || 0)],
+    ['VENCIMENTO', resumo.dataVencBR || '-'],
+    ['CATEGORIA', resumo.catNome || '-'],
+    ['PARCELAS', `${resumo.parcelas || 1}x`],
+    ['OBSERVACAO', resumo.obs || '-'],
+  ];
+  const body = `
+    <div class="nc-confirm-lines">
+      ${linhas.map(([label, valor]) => `
+        <div class="nc-confirm-line">
+          <span>${label}</span>
+          <strong>${escaparHtmlBasico(String(valor || '-'))}</strong>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  const decisao = await abrirConfirmacaoSistema({
+    title: 'Gravado com sucesso',
+    subtitle: 'Conta a pagar cadastrada.',
+    body,
+    cancelText: 'CORRIGIR',
+    cancelClass: 'btn-red',
+    confirmText: 'OK',
+    confirmClass: 'btn-green',
+  });
+  if (decisao?.confirmado === false && resultado?.ids?.[0]) return { acao: 'corrigir', id: resultado.ids[0] };
+  return { acao: 'ok' };
+}
+
 async function ncSalvar(salvarENovo = false) {
   if (NC.salvando) return;
   const msg = document.getElementById('ncMsg');
@@ -388,7 +365,14 @@ async function ncSalvar(salvarENovo = false) {
 
   // 3. Coleta parcelas
   const pcc = document.getElementById('ncParcCustom');
-  if (pcc && pcc.value) { const pv = parseInt(pcc.value, 10) || 0; if (pv >= 1) NC.parcelas = pv; }
+  if (!NC.parcelado) {
+    NC.parcelas = 1;
+    NC.modo = 'total';
+    if (pcc) pcc.value = '1';
+  } else if (pcc && pcc.value) {
+    const pv = parseInt(pcc.value, 10) || 0;
+    if (pv >= 1) NC.parcelas = pv;
+  }
 
   // 4. Coleta data de compra e observação
   const dc = document.getElementById('ncDataCompra'); if (dc && dc.value) NC.dataCompra = dc.value;
@@ -424,11 +408,21 @@ async function ncSalvar(salvarENovo = false) {
   if (!NC.catId) { if (msg) { msg.textContent = 'Selecione uma categoria.'; msg.className = 'msg err'; } return; }
   if (temErro) { if (msg) { msg.textContent = 'Preencha os campos obrigatórios.'; msg.className = 'msg err'; } return; }
 
-  if (!NC.dataVenc) NC.dataVenc = NC.dataCompra || ncHojeISO();
+  if (!NC.dataVenc) NC.dataVenc = NC.dataCompra || new Date().toISOString().split('T')[0];
   if (NC.parcelas > 1 && (!NC.intervalo || NC.intervalo <= 0)) NC.intervalo = 30;
 
   // 6. Calcula valor correto por parcela
   const valorParcela = NC.modo === 'total' ? Math.round((NC.valor / NC.parcelas) * 100) / 100 : NC.valor;
+  const categoriaSelecionada = (categoriasCompraCache || []).find(c => String(c.id) === String(NC.catId)) || null;
+  const resumoConferencia = {
+    fornNome: NC.fornNome,
+    valor: NC.valor,
+    valorParcela,
+    dataVencBR: toddmmaaaa(NC.dataVenc),
+    catNome: categoriaSelecionada?.nome || '',
+    parcelas: NC.parcelas,
+    obs: NC.obs,
+  };
 
   // 7. Sincroniza campos hidden
   function toddmmaaaa(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y; }
@@ -452,7 +446,7 @@ async function ncSalvar(salvarENovo = false) {
   if (msgOrig) { msgOrig.textContent = ''; msgOrig.className = 'msg'; }
 
   try {
-    await salvarContaAPagarFinanceiro();
+    const resultadoSalvar = await salvarContaAPagarFinanceiro();
     if (msgOrig && msgOrig.textContent && msgOrig.classList.contains('err')) {
       if (msg) { msg.textContent = msgOrig.textContent; msg.className = 'msg err'; }
       NC.salvando = false;
@@ -461,8 +455,6 @@ async function ncSalvar(salvarENovo = false) {
       return;
     }
     const estavaEditando = NC.modoEdicao;
-    const resumoSucesso = ncResumoSucesso(valorParcela, estavaEditando);
-    await ncMostrarConfirmacaoSucesso(resumoSucesso);
     if (salvarENovo && !estavaEditando) {
       ncAbrir();
       const msgNovo = document.getElementById('ncMsg');
@@ -470,6 +462,11 @@ async function ncSalvar(salvarENovo = false) {
       document.getElementById('ncFornBusca')?.focus();
     } else {
       NC.salvando = false;
+      const conferencia = await ncConferirContaSalva(resumoConferencia, resultadoSalvar || {});
+      if (conferencia.acao === 'corrigir' && typeof editarContaAPagarFinanceiro === 'function') {
+        editarContaAPagarFinanceiro(conferencia.id);
+        return;
+      }
       ncFechar();
       if (typeof abrirPagina === 'function') {
         abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));
@@ -511,8 +508,9 @@ if (typeof _ncOrigEditar === 'function') {
       NC.obs = co ? co.value : '';
       NC.parcelas = parseInt(cqp ? cqp.value : '1', 10) || 1;
       NC.intervalo = parseInt(cip ? cip.value : '30', 10) || 30;
+      NC.parcelado = NC.parcelas > 1;
       NC.modoEdicao = true;
-      NC.modo = 'parcela';
+      NC.modo = NC.parcelado ? 'parcela' : 'total';
 
       ncAbrir(true);
 
@@ -533,7 +531,7 @@ if (typeof _ncOrigEditar === 'function') {
       // Preencher data de vencimento e dias
       if (NC.dataVenc) {
         const vc = document.getElementById('ncVencCustom'); if (vc) vc.value = NC.dataVenc;
-        const hoje = new Date(ncHojeISO() + 'T00:00:00');
+        const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
         const venc = new Date(NC.dataVenc + 'T00:00:00');
         const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
         const vdEl = document.getElementById('ncVencDia'); if (vdEl) vdEl.value = diff >= 0 ? diff : '';
@@ -541,10 +539,11 @@ if (typeof _ncOrigEditar === 'function') {
 
       // Preencher parcelas
       const pcEl = document.getElementById('ncParcCustom'); if (pcEl) pcEl.value = NC.parcelas;
+      ncSyncParceladoUI();
 
       // Modo parcela na edição
-      document.getElementById('ncModoParc')?.classList.add('nc-pill-sel');
-      document.getElementById('ncModoTotal')?.classList.remove('nc-pill-sel');
+      document.getElementById('ncModoParc')?.classList.toggle('nc-pill-sel', NC.modo === 'parcela');
+      document.getElementById('ncModoTotal')?.classList.toggle('nc-pill-sel', NC.modo === 'total');
       ncAtuParcelasInfo();
 
       const tt = document.getElementById('ncTitulo'); if (tt) tt.textContent = 'Editar conta';
