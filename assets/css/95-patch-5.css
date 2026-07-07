@@ -1187,3 +1187,164 @@
     padding-top: 0;
   }
 }
+
+/* Dashboard financeiro filtrado no mobile: mantém tudo dentro da viewport. */
+@media (max-width: 700px) {
+  #cardDashboardGraficosFinanceiros,
+  #cardDashboardGraficosFinanceiros * {
+    box-sizing: border-box !important;
+  }
+
+  #cardDashboardGraficosFinanceiros {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    padding: 8px !important;
+  }
+
+  #dashGfBarras,
+  #dashGfCurvaCategoria,
+  #dashGfDetalhe {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #dashGfBarras {
+    overflow: hidden !important;
+  }
+
+  .dash-gf-meses-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .dash-gf-mes-card,
+  .dash-gf-mes-card.selecionado {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 74px !important;
+    padding: 5px 4px !important;
+    gap: 3px !important;
+    border-radius: 7px !important;
+    grid-column: auto !important;
+    transform: none !important;
+  }
+
+  .dash-gf-mes-card > strong {
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  .dash-gf-mini-barras {
+    height: 7px !important;
+    gap: 2px !important;
+  }
+
+  .dash-gf-mini-barras i {
+    height: 2px !important;
+  }
+
+  .dash-gf-mes-valor {
+    display: block !important;
+    font-size: 8.5px !important;
+    line-height: 1.08 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .dash-gf-mes-valor b {
+    display: block !important;
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+  }
+
+  .dash-gf-legenda-barras {
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    margin-top: 4px !important;
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  #dashGfCurvaTitulo {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    margin-top: 8px !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #dashGfCurvaCategoria {
+    overflow-x: hidden !important;
+    padding-right: 0 !important;
+  }
+
+  #dashGfCurvaCategoria svg {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
+
+  .dash-gf-detail-title {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    margin: 10px 0 4px !important;
+  }
+
+  .dash-gf-detail-hint {
+    display: block !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    margin: 0 0 6px !important;
+  }
+
+  .dash-gf-detail-wrap {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x !important;
+    border-radius: 7px !important;
+  }
+
+  .dash-gf-detail-table {
+    width: 780px !important;
+    min-width: 780px !important;
+    max-width: none !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    font-size: 10px !important;
+  }
+
+  .dash-gf-detail-table th,
+  .dash-gf-detail-table td {
+    padding: 6px 7px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .dash-gf-detail-table th {
+    font-size: 8px !important;
+    letter-spacing: .06em !important;
+  }
+
+  .dash-gf-col-data { width: 96px !important; }
+  .dash-gf-col-valor { width: 92px !important; font-size: 10px !important; }
+  .dash-gf-col-lancado { width: 92px !important; }
+  .dash-gf-col-fornecedor { width: 120px !important; }
+  .dash-gf-col-categoria { width: 130px !important; }
+  .dash-gf-col-compra { width: 86px !important; }
+  .dash-gf-col-observacao { width: 170px !important; }
+  .dash-gf-col-status { width: 82px !important; }
+}
