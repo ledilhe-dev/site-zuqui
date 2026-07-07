@@ -1128,7 +1128,11 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
         const mes = _dashGfMesDe(c);
         if (mes >= 0 && mes < 12) valoresMes[mes] += _dashGfValorDe(c);
       });
-      const largura = 620, altura = 190, margemX = 28, margemY = 20;
+      const curvaMobile = window.matchMedia('(max-width: 700px)').matches;
+      const largura = curvaMobile ? 360 : 620;
+      const altura = curvaMobile ? 160 : 190;
+      const margemX = curvaMobile ? 18 : 28;
+      const margemY = curvaMobile ? 18 : 20;
       const maximo = Math.max(1, ...valoresMes);
       const pontos = valoresMes.map((valor, indice) => ({
         x: margemX + indice * ((largura - margemX * 2) / 11),
@@ -1142,7 +1146,7 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
       const area = `${linha} L ${ultimoPonto.x.toFixed(1)} ${altura - margemY} L ${pontosCurva[0].x.toFixed(1)} ${altura - margemY} Z`;
       const cor = categoriaLider.cor || '#3b82f6';
       elCurvaTitulo.textContent = `Curva mensal: ${categoriaLider.nome} · seta indica o mês mais recente`;
-      elCurva.innerHTML = `<svg viewBox="0 0 ${largura} ${altura + 24}" width="100%" style="min-width:520px;font-family:inherit;">
+      elCurva.innerHTML = `<svg viewBox="0 0 ${largura} ${altura + 24}" width="100%" style="font-family:inherit;">
         <defs>
           <linearGradient id="dashGfCurvaArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cor}" stop-opacity=".38"/><stop offset="1" stop-color="${cor}" stop-opacity=".02"/></linearGradient>
           <marker id="dashGfCurvaSeta" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="${cor}"/></marker>
