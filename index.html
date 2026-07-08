@@ -2063,20 +2063,26 @@
         </div>
 
 
-        <div class="card">
-          <div class="financeiro-card-title-row">
+        <div class="card recebiveis-provisionados-card">
+          <div class="financeiro-card-title-row recebiveis-provisionados-title-row">
             <div class="card-title">Recebimentos provisionados</div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
+            <div class="recebiveis-provisionados-actions" style="display:flex;gap:8px;align-items:center;">
+              <label class="recebiveis-pendentes-label" style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
                 <input type="checkbox" id="filtroRecFuturoSoAbertos" checked onchange="carregarRecFuturos()"> Apenas pendentes
               </label>
               <button class="btn btn-ghost btn-sm" onclick="carregarRecFuturos()">Atualizar</button>
             </div>
           </div>
-          <div class="form-row" style="margin-bottom:8px;gap:8px;">
+          <div class="form-row recebiveis-provisionados-filtros" style="margin-bottom:8px;gap:8px;">
             <input id="filtroRecFuturoBusca" type="text" placeholder="Buscar pagador..." style="flex:1;font-size:12px;" oninput="carregarRecFuturos()">
-            <input id="filtroRecFuturoInicio" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
-            <input id="filtroRecFuturoFim" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
+            <label class="recebiveis-data-field">
+              <span>Data inicial</span>
+              <input id="filtroRecFuturoInicio" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
+            </label>
+            <label class="recebiveis-data-field">
+              <span>Data final</span>
+              <input id="filtroRecFuturoFim" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
+            </label>
           </div>
           <div class="form-row financeiro-filtros-row financeiro-selecao-rec-futuros-row" id="acoesSelecaoRecFuturos" style="margin-bottom:8px;gap:8px;align-items:center;display:none;">
             <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecFuturos" type="button" onclick="toggleSelecionarTodosRecFuturos()">Selecionar todas</button>
@@ -2702,7 +2708,7 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260708-recebiveis-mobile-fit">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260708-recebiveis-provisionados-fit">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">

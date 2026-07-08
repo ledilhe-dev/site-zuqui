@@ -1516,4 +1516,115 @@
   #acoesSelecaoRecebiveisFinanceiro[style*="display:none"] {
     display: none !important;
   }
+
+  #financeiro_recebiveis .recebiveis-provisionados-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-title-row .card-title {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 15px !important;
+    line-height: 1.18 !important;
+    letter-spacing: .04em !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    width: 100% !important;
+    align-items: center !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-pendentes-label {
+    min-width: 0 !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-actions .btn {
+    width: auto !important;
+    min-width: 82px !important;
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-filtros > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #filtroRecFuturoBusca {
+    height: 44px !important;
+    font-size: 15px !important;
+  }
+
+  .recebiveis-data-field {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 4px !important;
+    color: var(--text-muted) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+  }
+
+  .recebiveis-data-field span {
+    display: block !important;
+    white-space: nowrap !important;
+  }
+
+  .recebiveis-data-field input[type="date"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    padding: 8px 10px !important;
+    font-size: 14px !important;
+  }
+
+  #acoesSelecaoRecFuturos {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 7px !important;
+    align-items: stretch !important;
+  }
+
+  #acoesSelecaoRecFuturos[style*="display:none"] {
+    display: none !important;
+  }
+
+  #acoesSelecaoRecFuturos .btn,
+  #acoesSelecaoRecFuturos .item-detalhe {
+    width: 100% !important;
+    min-width: 0 !important;
+    text-align: center !important;
+  }
 }
