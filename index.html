@@ -2043,10 +2043,14 @@
           <div class="form-row financeiro-filtros-row financeiro-filtros-flex" style="gap:6px;align-items:center;">
             <input id="filtroRecebivelBusca" type="text" placeholder="Buscar por pagador, forma, conta ou valor" style="flex:1;min-width:200px;" oninput="debounceConsumo('filtro_recebiveis', () => carregarRecebiveisFinanceiro(), 700)">
             <div class="recebiveis-date-filters" style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-              <label style="font-size:11px;color:var(--text-muted);white-space:nowrap;">De</label>
-              <input id="filtroRecebivelCadastroInicio" class="campo-curto" type="date" style="width:130px;" title="Cadastro início" onchange="carregarRecebiveisFinanceiro()">
-              <label style="font-size:11px;color:var(--text-muted);">até</label>
-              <input id="filtroRecebivelCadastroFim" class="campo-curto" type="date" style="width:130px;" title="Cadastro fim" onchange="carregarRecebiveisFinanceiro()">
+              <label class="recebiveis-data-field">
+                <span>Cadastro inicial</span>
+                <input id="filtroRecebivelCadastroInicio" class="campo-curto" type="date" style="width:130px;" title="Cadastro início" onchange="carregarRecebiveisFinanceiro()">
+              </label>
+              <label class="recebiveis-data-field">
+                <span>Cadastro final</span>
+                <input id="filtroRecebivelCadastroFim" class="campo-curto" type="date" style="width:130px;" title="Cadastro fim" onchange="carregarRecebiveisFinanceiro()">
+              </label>
             </div>
             <select id="filtroRecebivelUsuario" class="campo-curto" style="width:140px;" title="Funcionário que lançou" onchange="carregarRecebiveisFinanceiro()">
               <option value="">- Quem lançou -</option>
@@ -2708,7 +2712,7 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260708-recebiveis-compacto">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260708-recebiveis-mobile-redesign">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">

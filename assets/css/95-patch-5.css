@@ -1780,3 +1780,201 @@
     font-size: 12px !important;
   }
 }
+
+/* Recebíveis mobile definitivo: layout limpo para 360-430px de largura. */
+@media (max-width: 700px) {
+  #financeiro_recebiveis {
+    padding-inline: 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  #financeiro_recebiveis .page-title {
+    display: none !important;
+  }
+
+  #financeiro_recebiveis .card {
+    padding: 8px !important;
+    border-radius: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .recebiveis-page-actions {
+    margin-bottom: 8px !important;
+  }
+
+  .recebiveis-novo-btn {
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row,
+  #financeiro_recebiveis .recebiveis-provisionados-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+    align-items: center !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-title-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #financeiro_recebiveis .card-title {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+    letter-spacing: .08em !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    writing-mode: horizontal-tb !important;
+  }
+
+  #btnToggleRecebiveisLista {
+    width: auto !important;
+    min-width: 72px !important;
+    max-width: 98px !important;
+    min-height: 30px !important;
+    padding: 5px 7px !important;
+    font-size: 9.5px !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex,
+  #financeiro_recebiveis .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    align-items: end !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #filtroRecebivelBusca,
+  #filtroRecebivelUsuario,
+  #filtroRecFuturoBusca {
+    grid-column: 1 / -1 !important;
+  }
+
+  #financeiro_recebiveis input,
+  #financeiro_recebiveis select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  #financeiro_recebiveis input[type="date"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    color-scheme: dark;
+    font-size: 11px !important;
+    padding: 6px 7px !important;
+  }
+
+  .recebiveis-date-filters {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .recebiveis-data-field {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 3px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    color: var(--text-muted) !important;
+    font-size: 9.5px !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+  }
+
+  .recebiveis-data-field span {
+    display: block !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex > .btn {
+    width: 100% !important;
+    min-height: 34px !important;
+    padding: 7px 8px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .recebiveis-provisionados-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .recebiveis-pendentes-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+    color: var(--text-muted) !important;
+  }
+
+  .recebiveis-pendentes-label input {
+    width: 17px !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    min-height: 17px !important;
+    padding: 0 !important;
+  }
+
+  .recebiveis-provisionados-actions .btn {
+    width: auto !important;
+    min-width: 70px !important;
+    min-height: 32px !important;
+    padding: 6px 8px !important;
+    border-radius: 8px !important;
+    font-size: 10px !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro,
+  #acoesSelecaoRecFuturos {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+    padding: 7px !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro[style*="display:none"],
+  #acoesSelecaoRecFuturos[style*="display:none"] {
+    display: none !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro .btn,
+  #acoesSelecaoRecFuturos .btn,
+  #acoesSelecaoRecebiveisFinanceiro .item-detalhe,
+  #acoesSelecaoRecFuturos .item-detalhe {
+    width: 100% !important;
+    min-height: 32px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    text-align: center !important;
+  }
+}
