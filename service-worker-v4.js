@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v54-ocr-imagem';
+const CACHE_NAME = 'check-diario-pwa-v55-ocr-review-mobile';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

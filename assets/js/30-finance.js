@@ -2692,6 +2692,207 @@ function faturaCalcularVencimentoPorDia(dataCompraISO, diaVencimento, diaFechame
     : `${anoV}-${mm}-${dd}`;
 }
 
+function faturaObterCategoriaItem(item) {
+  const id = String(item?.categoria_id || '').trim();
+  return id ? (categoriasCompraCache || []).find(c => String(c.id) === id) || null : null;
+}
+
+function faturaObterFornecedorItem(item) {
+  const id = String(item?.fornecedor_id || '').trim();
+  return id ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === id) || null : null;
+}
+
+function faturaHtmlCategoriaBotao(item) {
+  const cat = faturaObterCategoriaItem(item);
+  if (!cat) {
+    return '<span class="fatura-choice-icon vazio">+</span><span>Selecionar categoria</span>';
+  }
+  return `<span class="fatura-choice-icon" style="background:${escaparHtmlBasico(cat.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(cat.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(cat.icone, 24)}</span><span>${escaparHtmlBasico(cat.nome || 'Categoria')}</span>`;
+}
+
+function faturaHtmlFornecedorBotao(item) {
+  const fornecedor = faturaObterFornecedorItem(item);
+  if (!fornecedor) return '<span class="fatura-choice-icon vazio">+</span><span>Selecione um fornecedor</span>';
+  return `<span class="fatura-choice-icon">F</span><span>${escaparHtmlBasico(fornecedor.nome || 'Fornecedor')}</span>`;
+}
+
+function faturaAtualizarCardSelecoes(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const card = document.getElementById('faturaItem_' + itemId);
+  if (!item || !card) return;
+  const catBtn = card.querySelector('[data-fatura-cat-btn]');
+  if (catBtn) {
+    catBtn.innerHTML = faturaHtmlCategoriaBotao(item);
+    catBtn.classList.toggle('selecionado', !!item.categoria_id);
+  }
+  const fornBtn = card.querySelector('[data-fatura-forn-btn]');
+  if (fornBtn) {
+    fornBtn.innerHTML = faturaHtmlFornecedorBotao(item);
+    fornBtn.classList.toggle('selecionado', !!item.fornecedor_id);
+  }
+  const venceBtn = card.querySelector('[data-fatura-venc-fornecedor]');
+  const fornecedor = faturaObterFornecedorItem(item);
+  const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+  if (venceBtn) {
+    const pode = Number.isFinite(dia) && dia >= 1 && dia <= 31;
+    venceBtn.style.display = pode ? '' : 'none';
+    venceBtn.textContent = pode ? `Vence dia ${dia}` : 'Vence dia fornecedor';
+  }
+}
+
+function faturaFecharEscolhaOverlay() {
+  document.getElementById('faturaEscolhaOverlay')?.remove();
+}
+
+function faturaCriarEscolhaOverlay({ titulo = '', subtitulo = '', body = '' } = {}) {
+  faturaFecharEscolhaOverlay();
+  const overlay = document.createElement('div');
+  overlay.id = 'faturaEscolhaOverlay';
+  overlay.className = 'fatura-choice-overlay';
+  overlay.innerHTML = `
+    <div class="fatura-choice-sheet">
+      <div class="fatura-choice-head">
+        <div>
+          <div class="fatura-choice-title">${escaparHtmlBasico(titulo)}</div>
+          <div class="fatura-choice-subtitle">${escaparHtmlBasico(subtitulo || '')}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="faturaFecharEscolhaOverlay()">×</button>
+      </div>
+      <div class="fatura-choice-body">${body}</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function faturaAbrirCategoriasItem(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const cards = [
+    `<button type="button" class="fatura-cat-card ${!item.categoria_id ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '')">
+      <span class="fatura-cat-icone vazio">+</span>
+      <strong>Sem categoria</strong>
+    </button>`,
+    ...(categoriasCompraCache || []).map(cat => `
+      <button type="button" class="fatura-cat-card ${String(cat.id) === String(item.categoria_id || '') ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '${cat.id}')">
+        <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(cat.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(cat.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(cat.icone, 30)}</span>
+        <strong>${escaparHtmlBasico(cat.nome || 'Categoria')}</strong>
+      </button>
+    `),
+  ].join('');
+  faturaCriarEscolhaOverlay({
+    titulo: 'Categoria',
+    subtitulo: item.descricao || '',
+    body: `<div class="fatura-cat-grid">${cards}</div>`,
+  });
+}
+
+function faturaEscolherCategoriaItem(itemId, categoriaId) {
+  faturaAoSelecionarCategoria(itemId, categoriaId);
+  faturaAtualizarCardSelecoes(itemId);
+  faturaFecharEscolhaOverlay();
+}
+
+function faturaAbrirFornecedoresItem(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const opcoes = (fornecedoresFinanceiroCache || []).map(f => `
+    <button type="button" class="fatura-forn-row ${String(f.id) === String(item.fornecedor_id || '') ? 'selecionado' : ''}" data-fatura-forn-nome="${escaparHtmlBasico(String(f.nome || '').toLowerCase())}" onclick="faturaEscolherFornecedorItem('${itemId}', '${f.id}')">
+      <span>${escaparHtmlBasico(f.nome || 'Fornecedor')}</span>
+      ${f.dia_vencimento ? `<small>Vence dia ${escaparHtmlBasico(f.dia_vencimento)}</small>` : ''}
+    </button>
+  `).join('');
+  faturaCriarEscolhaOverlay({
+    titulo: 'Fornecedor',
+    subtitulo: item.descricao || '',
+    body: `
+      <input class="fatura-choice-search" type="search" placeholder="Buscar fornecedor" oninput="faturaFiltrarFornecedoresEscolha(this.value)">
+      <button type="button" class="fatura-forn-row novo ${!item.fornecedor_id ? 'selecionado' : ''}" onclick="faturaEscolherFornecedorItem('${itemId}', '')">
+        <span>Novo fornecedor</span>
+        <small>Usar o nome da compra ao lançar</small>
+      </button>
+      <div class="fatura-forn-list">${opcoes || '<div class="empty">Nenhum fornecedor cadastrado.</div>'}</div>
+    `,
+  });
+}
+
+function faturaFiltrarFornecedoresEscolha(valor) {
+  const busca = String(valor || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  document.querySelectorAll('#faturaEscolhaOverlay [data-fatura-forn-nome]').forEach(btn => {
+    const nome = String(btn.getAttribute('data-fatura-forn-nome') || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    btn.style.display = !busca || nome.includes(busca) ? '' : 'none';
+  });
+}
+
+async function faturaEscolherFornecedorItem(itemId, fornecedorId) {
+  await faturaAoSelecionarFornecedor(itemId, fornecedorId);
+  faturaAtualizarCardSelecoes(itemId);
+  faturaFecharEscolhaOverlay();
+}
+
+function faturaUsarVencimentoFornecedor(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const fornecedor = faturaObterFornecedorItem(item);
+  const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+  if (!fornecedor || !Number.isFinite(dia) || dia < 1 || dia > 31) return;
+  const venc = faturaCalcularVencimentoPorDia(item.data, dia, fornecedor?.dia_fechamento);
+  if (!venc) return;
+  faturaAoAlterarVencimento(itemId, venc);
+  const input = document.querySelector(`#faturaItem_${itemId} .fatura-input-vencimento`);
+  if (input) {
+    input.value = venc;
+    input.style.boxShadow = '0 0 0 1px var(--accent) inset';
+  }
+}
+
+function faturaAplicarInterfaceMobileRevisao() {
+  (_faturaItensExtraidos || []).forEach(item => {
+    const card = document.getElementById('faturaItem_' + item.id);
+    if (!card || card.dataset.faturaMobileUi === '1') return;
+    card.dataset.faturaMobileUi = '1';
+    card.classList.add('fatura-review-card-enhanced');
+
+    const selectCat = card.querySelector('.fatura-select-categoria');
+    if (selectCat) {
+      selectCat.style.display = 'none';
+      const btnCat = document.createElement('button');
+      btnCat.type = 'button';
+      btnCat.className = `fatura-choice-btn ${item.categoria_id ? 'selecionado' : ''}`;
+      btnCat.setAttribute('data-fatura-cat-btn', '');
+      btnCat.innerHTML = faturaHtmlCategoriaBotao(item);
+      btnCat.onclick = () => faturaAbrirCategoriasItem(item.id);
+      selectCat.insertAdjacentElement('beforebegin', btnCat);
+    }
+
+    const selectForn = card.querySelector('.fatura-select-fornecedor');
+    if (selectForn) {
+      selectForn.style.display = 'none';
+      const btnForn = document.createElement('button');
+      btnForn.type = 'button';
+      btnForn.className = `fatura-choice-btn ${item.fornecedor_id ? 'selecionado' : ''}`;
+      btnForn.setAttribute('data-fatura-forn-btn', '');
+      btnForn.innerHTML = faturaHtmlFornecedorBotao(item);
+      btnForn.onclick = () => faturaAbrirFornecedoresItem(item.id);
+      selectForn.insertAdjacentElement('beforebegin', btnForn);
+    }
+
+    const inputVenc = card.querySelector('.fatura-input-vencimento');
+    if (inputVenc && !card.querySelector('[data-fatura-venc-fornecedor]')) {
+      const fornecedor = faturaObterFornecedorItem(item);
+      const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+      const btnVenc = document.createElement('button');
+      btnVenc.type = 'button';
+      btnVenc.className = 'fatura-venc-fornecedor';
+      btnVenc.setAttribute('data-fatura-venc-fornecedor', '');
+      btnVenc.style.display = Number.isFinite(dia) && dia >= 1 && dia <= 31 ? '' : 'none';
+      btnVenc.textContent = Number.isFinite(dia) && dia >= 1 && dia <= 31 ? `Vence dia ${dia}` : 'Vence dia fornecedor';
+      btnVenc.onclick = () => faturaUsarVencimentoFornecedor(item.id);
+      inputVenc.insertAdjacentElement('beforebegin', btnVenc);
+    }
+  });
+}
+
 async function faturaExibirRevisao(resultado) {
   document.getElementById('faturaStep2').style.display = 'none';
   const s3 = document.getElementById('faturaStep3');
@@ -2854,6 +3055,7 @@ async function faturaExibirRevisao(resultado) {
 
   const footer = document.getElementById('faturaFooter');
   footer.style.display = 'flex';
+  faturaAplicarInterfaceMobileRevisao();
   faturaAtualizarFooter();
 }
 
@@ -3133,9 +3335,54 @@ function faturaSelecionarTodas(checked) {
   faturaAtualizarFooter();
 }
 
+async function faturaConfirmarLancamentoSelecionados(selecionados) {
+  if (typeof abrirConfirmacaoSistema !== 'function') return true;
+  const total = (selecionados || []).reduce((s, i) => s + Number(i.valor || 0), 0);
+  const semCategoria = selecionados.filter(i => !i.categoria_id).length;
+  const semFornecedor = selecionados.filter(i => !i.fornecedor_id).length;
+  const linhas = selecionados.slice(0, 8).map(item => {
+    const fornecedor = faturaObterFornecedorItem(item);
+    const categoria = faturaObterCategoriaItem(item);
+    return `
+      <div class="nc-confirm-line">
+        <span>${escaparHtmlBasico(item.descricao || 'Compra')}</span>
+        <strong>${formatarMoedaBRFinanceiro(item.valor)} · ${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')} · ${escaparHtmlBasico(categoria?.nome || 'Sem categoria')}</strong>
+      </div>
+    `;
+  }).join('');
+  const extras = selecionados.length > 8
+    ? `<div class="item-detalhe" style="text-align:center;">+ ${selecionados.length - 8} lançamento(s)</div>`
+    : '';
+  const avisos = [
+    semFornecedor ? `${semFornecedor} item(ns) sem fornecedor selecionado serão criados como novo fornecedor.` : '',
+    semCategoria ? `${semCategoria} item(ns) estão sem categoria.` : '',
+  ].filter(Boolean).join(' ');
+  const body = `
+    <div class="nc-confirm-lines">
+      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} item(ns) · ${formatarMoedaBRFinanceiro(total)}</strong></div>
+      ${linhas}
+      ${extras}
+    </div>
+    ${avisos ? `<div class="msg err" style="margin-top:10px;">${escaparHtmlBasico(avisos)}</div>` : ''}
+  `;
+  const decisao = await abrirConfirmacaoSistema({
+    title: 'Conferir lançamentos',
+    subtitle: 'Confira antes de salvar no contas a pagar.',
+    body,
+    cancelText: 'Voltar e ajustar',
+    cancelClass: 'btn-ghost',
+    confirmText: 'OK, lançar',
+    confirmClass: 'btn-green',
+  });
+  return decisao?.confirmado !== false;
+}
+
 async function faturaLancarSelecionados() {
   const selecionados = _faturaItensExtraidos.filter(i => i.selecionado);
   if (!selecionados.length) { alert('Selecione pelo menos um item.'); return; }
+
+  const confirmou = await faturaConfirmarLancamentoSelecionados(selecionados);
+  if (!confirmou) return;
 
   const btn = document.getElementById('btnFaturaLancar');
   if (btn) { btn.textContent = 'Lançando...'; btn.disabled = true; }

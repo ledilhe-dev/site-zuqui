@@ -14,6 +14,242 @@
   box-sizing: border-box;
 }
 
+/* Revisao mobile do importador de fatura/imagem */
+.fatura-review-card-enhanced {
+  border-radius: 12px !important;
+}
+
+.fatura-choice-btn {
+  min-height: 42px;
+  border: 1px solid var(--border-mid);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.fatura-choice-btn.selecionado {
+  border-color: rgba(34, 197, 94, .55);
+  background: rgba(34, 197, 94, .09);
+}
+
+.fatura-choice-icon {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.fatura-choice-icon.vazio {
+  border-style: dashed;
+  color: var(--accent);
+}
+
+.fatura-venc-fornecedor {
+  min-height: 28px;
+  border: 1px solid rgba(34, 197, 94, .45);
+  background: rgba(34, 197, 94, .12);
+  color: var(--green);
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fatura-choice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9900;
+  background: rgba(0, 0, 0, .62);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fatura-choice-sheet {
+  width: min(720px, 100vw);
+  max-height: 82dvh;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  border-radius: 18px 18px 0 0;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fatura-choice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fatura-choice-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.fatura-choice-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fatura-choice-body {
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.fatura-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.fatura-cat-card {
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 12px;
+  min-height: 104px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.fatura-cat-card.selecionado,
+.fatura-forn-row.selecionado {
+  border-color: rgba(34, 197, 94, .65);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, .25) inset;
+}
+
+.fatura-cat-icone {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.fatura-cat-icone.vazio {
+  border-style: dashed;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+.fatura-cat-card strong {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.fatura-choice-search {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-mid);
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 15px;
+}
+
+.fatura-forn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fatura-forn-row {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.fatura-forn-row.novo {
+  margin-bottom: 10px;
+  border-style: dashed;
+}
+
+.fatura-forn-row span {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.fatura-forn-row small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .fatura-review-card-enhanced {
+    padding: 10px !important;
+  }
+
+  .fatura-review-card-enhanced > div > div:last-child {
+    width: 100%;
+  }
+
+  .fatura-review-card-enhanced .fatura-choice-btn {
+    width: 100%;
+    min-width: 100%;
+    min-height: 46px;
+    font-size: 13px;
+  }
+
+  .fatura-review-card-enhanced .fatura-venc-fornecedor {
+    width: 100%;
+    margin: 2px 0 6px;
+  }
+
+  .fatura-choice-sheet {
+    max-height: 88dvh;
+  }
+
+  .fatura-cat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
   #modalImportarFatura {
     padding: 0 !important;
