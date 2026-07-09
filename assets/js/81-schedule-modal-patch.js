@@ -466,13 +466,9 @@
     if(evBtn){
       ev.preventDefault();
       ev.stopPropagation();
-      var idEditar=evBtn.getAttribute('data-escala-editar') || '';
-      if(!idEditar){
-        var onclickTxt=String(evBtn.getAttribute('onclick') || '');
-        var m=onclickTxt.match(/abrirModalEditarPlantaoEscala\(['"]([^'"]+)['"]\)/);
-        if(m) idEditar=m[1];
-      }
-      if(idEditar && typeof window.abrirModalEditarPlantaoEscala === 'function') window.abrirModalEditarPlantaoEscala(idEditar);
+      var diaEvento=evBtn.closest('#escalaCalendarioGrid .escala-dia');
+      var dataEvento=diaEvento && diaEvento.getAttribute('data-data');
+      if(dataEvento && typeof window.abrirModalCadastroPlantaoEscala === 'function') window.abrirModalCadastroPlantaoEscala(dataEvento);
       return;
     }
     var cell=ev.target.closest && ev.target.closest('#escalaCalendarioGrid .escala-dia');
