@@ -2807,10 +2807,10 @@ function faturaAbrirFornecedoresItem(itemId) {
     subtitulo: item.descricao || '',
     body: `
       <input class="fatura-choice-search" type="search" placeholder="Buscar fornecedor" oninput="faturaFiltrarFornecedoresEscolha(this.value)">
-      <button type="button" class="fatura-forn-row novo ${!item.fornecedor_id ? 'selecionado' : ''}" onclick="faturaEscolherFornecedorItem('${itemId}', '')">
+      ${item._exigeFornecedorManual ? '' : `<button type="button" class="fatura-forn-row novo ${!item.fornecedor_id ? 'selecionado' : ''}" onclick="faturaEscolherFornecedorItem('${itemId}', '')">
         <span>Novo fornecedor</span>
         <small>Usar o nome da compra ao lançar</small>
-      </button>
+      </button>`}
       <div class="fatura-forn-list">${opcoes || '<div class="empty">Nenhum fornecedor cadastrado.</div>'}</div>
     `,
   });
@@ -3340,6 +3340,19 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
   const total = (selecionados || []).reduce((s, i) => s + Number(i.valor || 0), 0);
   const semCategoria = selecionados.filter(i => !i.categoria_id).length;
   const semFornecedor = selecionados.filter(i => !i.fornecedor_id).length;
+  const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
+  if (semFornecedorObrigatorio.length) {
+    await abrirConfirmacaoSistema({
+      title: 'Escolha o fornecedor',
+      subtitle: 'Importação por imagem exige conferência manual.',
+      body: `<div class="msg err">Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lançar.</div>`,
+      cancelText: 'Voltar',
+      cancelClass: 'btn-ghost',
+      confirmText: 'OK',
+      confirmClass: 'btn-green',
+    });
+    return false;
+  }
   const linhas = selecionados.slice(0, 8).map(item => {
     const fornecedor = faturaObterFornecedorItem(item);
     const categoria = faturaObterCategoriaItem(item);
@@ -3380,6 +3393,11 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
 async function faturaLancarSelecionados() {
   const selecionados = _faturaItensExtraidos.filter(i => i.selecionado);
   if (!selecionados.length) { alert('Selecione pelo menos um item.'); return; }
+  const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
+  if (semFornecedorObrigatorio.length) {
+    alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lançar.`);
+    return;
+  }
 
   const confirmou = await faturaConfirmarLancamentoSelecionados(selecionados);
   if (!confirmou) return;

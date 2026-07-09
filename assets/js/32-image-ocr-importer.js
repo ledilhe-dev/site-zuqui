@@ -107,6 +107,67 @@
     const linhas = imagemCompraNormalizarTexto(texto).split('\n').map(l => l.trim()).filter(Boolean);
     if (!linhas.length) return [];
 
+    const linhaRuido = (linha) => {
+      const l = imagemCompraRemoverAcentos(linha).toLowerCase();
+      return !l
+        || /^(hoje|ontem|amanha)$/.test(l)
+        || /^\d{1,2}:?\d{2}$/.test(l)
+        || /(total|selecionad|venc|parcelas|obs|importar|arquivo|bancario|ocr|categoria|fornecedor|cartao|aprovad|final \d+)/i.test(l);
+    };
+    const limparDescricaoLinha = (linha) => imagemCompraLimparDescricao(
+      String(linha || '')
+        .replace(/(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}/g, ' ')
+        .replace(/\b\d{1,2}:?\d{2}\b/g, ' ')
+        .replace(/\b(h[aá]\s*)?\d+\s*h\b/gi, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+    );
+    const ehDescricao = (linha) => {
+      const desc = limparDescricaoLinha(linha);
+      return desc.length >= 3 && /[A-Za-zÀ-ÿ]{3,}/.test(desc) && !linhaRuido(desc);
+    };
+    const descricaoProxima = (idx, linhaAtual) => {
+      const atual = limparDescricaoLinha(linhaAtual);
+      if (ehDescricao(atual)) return atual;
+      for (let i = idx - 1; i >= Math.max(0, idx - 5); i -= 1) {
+        const candidata = limparDescricaoLinha(linhas[i]);
+        if (ehDescricao(candidata)) return candidata;
+      }
+      for (let i = idx + 1; i <= Math.min(linhas.length - 1, idx + 2); i += 1) {
+        const candidata = limparDescricaoLinha(linhas[i]);
+        if (ehDescricao(candidata)) return candidata;
+      }
+      return '';
+    };
+
+    const compras = [];
+    linhas.forEach((linha, idx) => {
+      const ehTotal = /total|subtotal|selecionad|saldo|limite/i.test(linha);
+      const matches = linha.match(/(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
+      matches.forEach(v => {
+        const valor = imagemCompraParseValor(v);
+        if (!valor || ehTotal) return;
+        const descricao = descricaoProxima(idx, linha);
+        if (!descricao) return;
+        const data = imagemCompraParseData(linha, dataPadrao);
+        compras.push({
+          data,
+          descricao,
+          valor,
+          fitid: null,
+          vencimento_fatura: data,
+          selecionado: true,
+          _obsManual: descricao,
+          _origemImagem: true,
+          _exigeFornecedorManual: true,
+        });
+      });
+    });
+    if (compras.length > 1) return compras;
+    if (compras.length === 1 && linhas.filter(l => /(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}/.test(l)).length === 1) {
+      return compras;
+    }
+
     const candidatosValor = [];
     linhas.forEach((linha, idx) => {
       const temTotal = /total|valor|debito|credito|cart[aã]o|pago|pagamento/i.test(linha);
@@ -252,6 +313,9 @@
       const itens = imagemCompraExtrairItens(texto).map((item, idx) => ({
         id: `img_${Date.now()}_${idx}`,
         ...item,
+        fornecedor_id: null,
+        _fornAuto: false,
+        _exigeFornecedorManual: true,
       }));
       if (!itens.length) {
         throw new Error('Nao encontrei valor de compra na imagem. Tente uma imagem mais nitida ou use o cadastro manual.');

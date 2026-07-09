@@ -232,13 +232,29 @@
   .fatura-review-card-enhanced .fatura-choice-btn {
     width: 100%;
     min-width: 100%;
-    min-height: 46px;
-    font-size: 13px;
+    min-height: 40px;
+    font-size: 12px;
+    padding: 6px 8px;
   }
 
   .fatura-review-card-enhanced .fatura-venc-fornecedor {
     width: 100%;
-    margin: 2px 0 6px;
+    min-height: 26px;
+    margin: 2px 0 5px;
+    font-size: 10px;
+  }
+
+  .fatura-review-card-enhanced .fatura-choice-icon {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+  }
+
+  #faturaListaItens .fatura-review-card-enhanced input[type="date"],
+  #faturaListaItens .fatura-review-card-enhanced input[type="number"],
+  #faturaListaItens .fatura-review-card-enhanced input[type="text"] {
+    min-height: 32px !important;
+    font-size: 12px !important;
   }
 
   .fatura-choice-sheet {
