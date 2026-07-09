@@ -142,6 +142,86 @@
     return true;
   }
 
+  function dataBr(dataIso){
+    var p = String(dataIso || '').slice(0, 10).split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : String(dataIso || '');
+  }
+
+  function nomeResponsavelAgenda(item){
+    var id = String(item && item.funcionario_id || '').trim();
+    var select = byId('escalaPlantaoFuncionario');
+    if (id && select) {
+      var opt = Array.from(select.options || []).find(function(o){ return String(o.value || '') === id; });
+      if (opt && opt.textContent) return String(opt.textContent).trim();
+    }
+    return String(
+      item && (item.funcionario_nome || item.funcionarios?.nome || item.titulo) ||
+      'Agenda da loja'
+    ).trim();
+  }
+
+  function eventoAtualEditado(id){
+    if (!id) return null;
+    return eventosAtuais().find(function(ev){ return String(ev.id) === String(id); }) || null;
+  }
+
+  async function buscarAgendasMesmoHorario(payload, idAtual, loja){
+    var encontrados = [];
+    try {
+      var q = window.sb.from(tabelaAgenda())
+        .select('id,loja_id,funcionario_id,data_plantao,inicio_hora,fim_hora,tipo,titulo,observacao,deleted_at')
+        .eq('loja_id', loja)
+        .eq('data_plantao', payload.data_plantao)
+        .eq('inicio_hora', payload.inicio_hora)
+        .eq('fim_hora', payload.fim_hora)
+        .is('deleted_at', null);
+      var r = await q;
+      if (!r.error) encontrados = r.data || [];
+    } catch(e) {
+      console.warn('Agenda: nao foi possivel consultar conflitos de horario:', e);
+    }
+
+    var atual = eventoAtualEditado(idAtual);
+    var mudouResponsavel = atual && String(atual.funcionario_id || '') !== String(payload.funcionario_id || '');
+    var porId = {};
+    encontrados.forEach(function(item){ if (item && item.id) porId[String(item.id)] = item; });
+    if (mudouResponsavel && atual && atual.id) porId[String(atual.id)] = atual;
+
+    return Object.values(porId).filter(function(item){
+      if (!item) return false;
+      var mesmoRegistro = idAtual && String(item.id) === String(idAtual);
+      if (mesmoRegistro && !mudouResponsavel) return false;
+      return true;
+    });
+  }
+
+  async function confirmarMesmoHorario(itens, payload){
+    if (!itens.length) return { salvar: true, inserirNovo: false };
+    var linhas = itens.map(function(item){
+      return '<div class="nc-confirm-line">'+
+        '<span>' + esc(hora(item.inicio_hora) + ' → ' + hora(item.fim_hora) + ' · ' + nomeResponsavelAgenda(item)) + '</span>'+
+        '<strong>' + esc(item.titulo || tituloPadrao(item.tipo || 'plantao')) + '<small>' + esc(item.tipo || 'plantao') + '</small></strong>'+
+      '</div>';
+    }).join('');
+    var texto = 'Já existe uma agenda para esse mesmo dia e horário. Confira o que já está cadastrado:';
+    if (typeof window.abrirConfirmacaoSistema === 'function') {
+      var decisao = await window.abrirConfirmacaoSistema({
+        title: 'Agenda no mesmo horário',
+        subtitle: dataBr(payload.data_plantao) + ' · ' + hora(payload.inicio_hora) + ' → ' + hora(payload.fim_hora),
+        body: '<div class="msg ok" style="margin-bottom:10px;">' + esc(texto) + '</div><div class="nc-confirm-lines">' + linhas + '</div>',
+        cancelText: 'Cancelar e voltar',
+        cancelClass: 'btn-ghost',
+        confirmText: 'Salvar mesmo assim',
+        confirmClass: 'btn-green'
+      });
+      return { salvar: !!decisao?.confirmado, inserirNovo: !!decisao?.confirmado };
+    }
+    var resumo = itens.map(function(item){
+      return hora(item.inicio_hora) + ' - ' + hora(item.fim_hora) + ' - ' + nomeResponsavelAgenda(item);
+    }).join('\n');
+    return { salvar: window.confirm(texto + '\n\n' + resumo + '\n\nSalvar mesmo assim?'), inserirNovo: true };
+  }
+
   async function salvarAgendaPorLoja(){
     if (!podeSalvarAgenda()) {
       msg('msgModalEscalaPlantao', 'Sem permissao para salvar itens da Agenda.', 'err');
@@ -190,7 +270,14 @@
 
     try {
       var id = state.id || String(byId('escalaPlantaoEventoId')?.value || '').trim();
-      var resp = id
+      var conflitos = await buscarAgendasMesmoHorario(payload, id, loja);
+      var decisaoConflito = await confirmarMesmoHorario(conflitos, payload);
+      if (!decisaoConflito.salvar) {
+        msg('msgModalEscalaPlantao', 'A agenda não foi salva. Ajuste as informações e tente novamente.', 'err');
+        return;
+      }
+      var deveInserirNovo = !id || decisaoConflito.inserirNovo;
+      var resp = !deveInserirNovo
         ? await window.sb.from(tabelaAgenda()).update(payload).eq('id', id).eq('loja_id', loja)
         : await window.sb.from(tabelaAgenda()).insert([payload]);
       if (resp.error) throw resp.error;
