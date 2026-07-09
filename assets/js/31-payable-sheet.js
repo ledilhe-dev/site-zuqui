@@ -490,6 +490,16 @@ async function ncSalvar(salvarENovo = false) {
       if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
       return;
     }
+    if (resultadoSalvar?.canceladoTotal) {
+      NC.salvando = false;
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
+      ncFechar();
+      if (typeof abrirPagina === 'function') {
+        abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));
+      }
+      return;
+    }
     if (msgOrig && msgOrig.textContent && msgOrig.classList.contains('err')) {
       if (msg) { msg.textContent = msgOrig.textContent; msg.className = 'msg err'; }
       NC.salvando = false;

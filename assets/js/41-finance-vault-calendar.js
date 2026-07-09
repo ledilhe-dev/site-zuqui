@@ -995,6 +995,12 @@ async function salvarContaAPagarFinanceiro() {
       const decisaoDuplicado = await financeiroDecidirDuplicidadeContas(duplicadosConta, {
         titulo: 'Conta possivelmente duplicada',
       });
+      if (decisaoDuplicado === 'cancelar_total') {
+        limparFormularioContaAPagarFinanceiro();
+        setMsg('msgContaAPagarFinanceiro', 'Lan\u00e7amento cancelado.', 'ok');
+        resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel: false });
+        return { ok: false, canceladoTotal: true };
+      }
       if (decisaoDuplicado === 'cancelar') {
         setMsg('msgContaAPagarFinanceiro', 'Revise o lanÃ§amento antes de salvar.', 'err');
         return { ok: false, cancelado: true };

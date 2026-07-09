@@ -253,6 +253,14 @@ function abrirConfirmacaoSistema(opcoes = {}) {
   const btnCancelar = document.getElementById('confirmacaoSistemaCancelar');
   const btnNeutro = document.getElementById('confirmacaoSistemaNeutro');
   const btnConfirmar = document.getElementById('confirmacaoSistemaConfirmar');
+  let btnExtra = document.getElementById('confirmacaoSistemaExtra');
+  if (!btnExtra && btnConfirmar?.parentElement) {
+    btnExtra = document.createElement('button');
+    btnExtra.type = 'button';
+    btnExtra.id = 'confirmacaoSistemaExtra';
+    btnExtra.onclick = () => resolverConfirmacaoSistema('extra');
+    btnConfirmar.parentElement.insertBefore(btnExtra, btnConfirmar);
+  }
 
   confirmacaoSistemaOpcaoAtual = {
     exigeTexto: Boolean(opcoes.exigeTexto),
@@ -274,6 +282,11 @@ function abrirConfirmacaoSistema(opcoes = {}) {
   if (btnConfirmar) {
     btnConfirmar.textContent = opcoes.confirmText || 'Confirmar';
     btnConfirmar.className = `btn ${opcoes.confirmClass || 'btn-green'}`;
+  }
+  if (btnExtra) {
+    btnExtra.textContent = opcoes.extraText || '';
+    btnExtra.className = `btn ${opcoes.extraClass || 'btn-amber'}`;
+    btnExtra.style.display = opcoes.extraText ? '' : 'none';
   }
   if (inputWrap) inputWrap.style.display = opcoes.input ? 'flex' : 'none';
   if (inputLabel) inputLabel.textContent = opcoes.inputLabel || 'Motivo';
@@ -315,6 +328,6 @@ function resolverConfirmacaoSistema(confirmado) {
   const resolver = confirmacaoSistemaResolver;
   confirmacaoSistemaResolver = null;
   confirmacaoSistemaOpcaoAtual = null;
-  const acao = confirmado === true ? 'confirmar' : confirmado === 'neutro' ? 'neutro' : 'cancelar';
+  const acao = confirmado === true ? 'confirmar' : confirmado === 'neutro' ? 'neutro' : confirmado === 'extra' ? 'extra' : 'cancelar';
   if (resolver) resolver({ confirmado: confirmado === true, acao, valor });
 }

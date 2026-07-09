@@ -3405,22 +3405,25 @@ async function financeiroDecidirDuplicidadeContas(duplicados = [], { titulo = 'C
     ? `<div class="item-detalhe" style="text-align:center;">+ ${duplicados.length - 6} duplicidade(s)</div>`
     : '';
   if (typeof abrirConfirmacaoSistema !== 'function') {
-    return window.confirm('Ja existe conta igual. Deseja lancar mesmo assim?') ? 'lancar' : 'ignorar';
+    return window.confirm('Ja existe conta igual. Deseja lancar mesmo assim?') ? 'lancar' : 'cancelar_total';
   }
   const decisao = await abrirConfirmacaoSistema({
     title: titulo,
     subtitle: 'Ja existe conta ativa com mesmo fornecedor, valor, compra e vencimento.',
     body: `<div class="nc-confirm-lines">${linhas}${extra}</div>`,
-    cancelText: 'Voltar',
-    cancelClass: 'btn-ghost',
-    neutralText: 'Ignorar duplicado(s)',
-    neutralClass: 'btn-amber',
-    confirmText: 'Lancar mesmo assim',
+    cancelText: 'Cancelar',
+    cancelClass: 'btn-red',
+    neutralText: 'Voltar',
+    neutralClass: 'btn-ghost',
+    extraText: 'Ignorar duplicado(s)',
+    extraClass: 'btn-amber',
+    confirmText: 'Lan\u00e7ar mesmo assim',
     confirmClass: 'btn-green',
   });
-  if (decisao.acao === 'neutro') return 'ignorar';
+  if (decisao.acao === 'extra') return 'ignorar';
+  if (decisao.acao === 'neutro') return 'cancelar';
   if (decisao.confirmado) return 'lancar';
-  return 'cancelar';
+  return 'cancelar_total';
 }
 
 async function faturaConfirmarLancamentoSelecionados(selecionados) {
@@ -3433,7 +3436,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     await abrirConfirmacaoSistema({
       title: 'Escolha o fornecedor',
       subtitle: 'ImportaÃ§Ã£o por imagem exige conferÃªncia manual.',
-      body: `<div class="msg err">Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lanÃ§ar.</div>`,
+      body: `<div class="msg err">Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.</div>`,
       cancelText: 'Voltar',
       cancelClass: 'btn-ghost',
       confirmText: 'OK',
@@ -3473,7 +3476,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     body,
     cancelText: 'Voltar e ajustar',
     cancelClass: 'btn-ghost',
-    confirmText: 'OK, lanÃ§ar',
+    confirmText: 'OK, lan\u00e7ar',
     confirmClass: 'btn-green',
   });
   return decisao?.confirmado !== false;
@@ -3484,7 +3487,7 @@ async function faturaLancarSelecionados() {
   if (!selecionados.length) { alert('Selecione pelo menos um item.'); return; }
   const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
   if (semFornecedorObrigatorio.length) {
-    alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lanÃ§ar.`);
+    alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.`);
     return;
   }
 
@@ -3492,7 +3495,7 @@ async function faturaLancarSelecionados() {
   if (!confirmou) return;
 
   const btn = document.getElementById('btnFaturaLancar');
-  if (btn) { btn.textContent = 'LanÃ§ando...'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Lan\u00e7ando...'; btn.disabled = true; }
 
   // Resolver loja/empresa de forma robusta (mesma lÃ³gica do cadastro manual).
   // Ã‰ a causa mais comum do erro 400: loja_id/empresa_id vindo nulo.
@@ -3500,7 +3503,7 @@ async function faturaLancarSelecionados() {
   try {
     tenant = await resolverTenantFornecedorFinanceiro();
   } catch (eTenant) {
-    if (btn) { btn.textContent = 'LanÃ§ar selecionados'; btn.disabled = false; }
+    if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
     alert(eTenant?.message || 'NÃ£o foi possÃ­vel identificar a loja/empresa. FaÃ§a login novamente ou selecione uma loja ativa.');
     return;
   }
@@ -3695,8 +3698,16 @@ async function faturaLancarSelecionados() {
         const decisaoDuplicado = await financeiroDecidirDuplicidadeContas(duplicadosConta, {
           titulo: 'Conta possivelmente duplicada',
         });
+        if (decisaoDuplicado === 'cancelar_total') {
+          if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
+          fecharImportadorFatura();
+          if (typeof abrirPagina === 'function') {
+            abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));
+          }
+          return;
+        }
         if (decisaoDuplicado === 'cancelar') {
-          if (btn) { btn.textContent = 'LanÃ§ar selecionados'; btn.disabled = false; }
+          if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
           return;
         }
         if (decisaoDuplicado === 'ignorar') {
@@ -3775,7 +3786,7 @@ async function faturaLancarSelecionados() {
     console.warn('NÃ£o foi possÃ­vel gravar o log de importaÃ§Ã£o (rode o SQL de importaÃ§Ã£o):', eLog?.message || eLog);
   }
 
-  if (btn) { btn.textContent = 'LanÃ§ar selecionados'; btn.disabled = false; }
+  if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
 
   const resumoParcelas = titulosComParcelas
     ? ` (${titulosLancados} tÃ­tulo(s), incluindo ${titulosComParcelas} parcelado(s) â†’ ${lancados} parcelas no total)`
@@ -4241,3 +4252,4 @@ async function excluirCategoriaCompra(id) {
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
