@@ -476,6 +476,20 @@ async function ncSalvar(salvarENovo = false) {
 
   try {
     const resultadoSalvar = await salvarContaAPagarFinanceiro();
+    if (resultadoSalvar?.ignorado) {
+      if (msg) { msg.textContent = msgOrig?.textContent || 'LanÃ§amento ignorado por duplicidade.'; msg.className = 'msg ok'; }
+      NC.salvando = false;
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
+      return;
+    }
+    if (resultadoSalvar?.cancelado) {
+      if (msg) { msg.textContent = msgOrig?.textContent || 'Revise o lanÃ§amento antes de salvar.'; msg.className = 'msg err'; }
+      NC.salvando = false;
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
+      return;
+    }
     if (msgOrig && msgOrig.textContent && msgOrig.classList.contains('err')) {
       if (msg) { msg.textContent = msgOrig.textContent; msg.className = 'msg err'; }
       NC.salvando = false;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v57-confirm-vencimento';
+const CACHE_NAME = 'check-diario-pwa-v58-duplicidade-contas';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

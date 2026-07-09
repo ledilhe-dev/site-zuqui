@@ -3335,6 +3335,94 @@ function faturaSelecionarTodas(checked) {
   faturaAtualizarFooter();
 }
 
+function financeiroChaveDuplicidadeConta(linha = {}) {
+  return [
+    String(linha.fornecedor_id || ''),
+    String(linha.data_compra || '').slice(0, 10),
+    String(linha.data_vencimento || '').slice(0, 10),
+    Math.round(Number(linha.valor_compra || 0) * 100),
+  ].join('|');
+}
+
+async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ignorarIds = [] } = {}) {
+  const itens = (linhas || []).filter(l =>
+    l?.fornecedor_id &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(l.data_compra || '')) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(l.data_vencimento || '')) &&
+    Number(l.valor_compra || 0) > 0
+  );
+  if (!itens.length || !lojaId) return [];
+  const ignorar = new Set((ignorarIds || []).map(id => String(id)));
+  const vistos = new Set();
+  const duplicados = [];
+
+  for (const linha of itens) {
+    const chaveLinha = financeiroChaveDuplicidadeConta(linha);
+    if (vistos.has(chaveLinha)) continue;
+    vistos.add(chaveLinha);
+    try {
+      const consultar = () => sb
+        .from('contasapagar')
+        .select('id, fornecedor_id, valor_compra, data_compra, data_vencimento, observacao, criado_por_nome, created_at, loja_id, fornecedores(nome)')
+        .eq('loja_id', lojaId)
+        .eq('fornecedor_id', linha.fornecedor_id)
+        .eq('data_compra', linha.data_compra)
+        .eq('data_vencimento', linha.data_vencimento)
+        .eq('valor_compra', Number(Number(linha.valor_compra || 0).toFixed(2)))
+        .is('excluido_em', null)
+        .limit(5);
+      const { data, error } = typeof executarSemFiltrosTenantTemporario === 'function'
+        ? await executarSemFiltrosTenantTemporario(consultar)
+        : await consultar();
+      if (error) {
+        console.warn('Nao foi possivel verificar duplicidade de conta:', error);
+        continue;
+      }
+      (data || [])
+        .filter(row => !ignorar.has(String(row.id)))
+        .forEach(row => duplicados.push({ linha, existente: row }));
+    } catch (e) {
+      console.warn('Falha ao verificar duplicidade de conta:', e?.message || e);
+    }
+  }
+  return duplicados;
+}
+
+async function financeiroDecidirDuplicidadeContas(duplicados = [], { titulo = 'Conta possivelmente duplicada' } = {}) {
+  if (!duplicados.length) return 'sem_duplicidade';
+  const linhas = duplicados.slice(0, 6).map(({ linha, existente }) => {
+    const fornecedor = existente?.fornecedores?.nome || 'Fornecedor';
+    const pessoa = existente?.criado_por_nome || 'Sistema';
+    const cadastro = formatarDataBRFinanceiro(String(existente?.created_at || '').slice(0, 10));
+    return `
+      <div class="nc-confirm-line fatura-confirm-line">
+        <span>${escaparHtmlBasico(fornecedor)}</span>
+        <strong>${formatarMoedaBRFinanceiro(linha.valor_compra)} <small>Compra: ${formatarDataBRFinanceiro(linha.data_compra)} · Venc: ${formatarDataBRFinanceiro(linha.data_vencimento)}</small><em>Lancada por ${escaparHtmlBasico(pessoa)}${cadastro ? ' em ' + escaparHtmlBasico(cadastro) : ''}</em></strong>
+      </div>
+    `;
+  }).join('');
+  const extra = duplicados.length > 6
+    ? `<div class="item-detalhe" style="text-align:center;">+ ${duplicados.length - 6} duplicidade(s)</div>`
+    : '';
+  if (typeof abrirConfirmacaoSistema !== 'function') {
+    return window.confirm('Ja existe conta igual. Deseja lancar mesmo assim?') ? 'lancar' : 'ignorar';
+  }
+  const decisao = await abrirConfirmacaoSistema({
+    title: titulo,
+    subtitle: 'Ja existe conta ativa com mesmo fornecedor, valor, compra e vencimento.',
+    body: `<div class="nc-confirm-lines">${linhas}${extra}</div>`,
+    cancelText: 'Voltar',
+    cancelClass: 'btn-ghost',
+    neutralText: 'Ignorar duplicado(s)',
+    neutralClass: 'btn-amber',
+    confirmText: 'Lancar mesmo assim',
+    confirmClass: 'btn-green',
+  });
+  if (decisao.acao === 'neutro') return 'ignorar';
+  if (decisao.confirmado) return 'lancar';
+  return 'cancelar';
+}
+
 async function faturaConfirmarLancamentoSelecionados(selecionados) {
   if (typeof abrirConfirmacaoSistema !== 'function') return true;
   const total = (selecionados || []).reduce((s, i) => s + Number(i.valor || 0), 0);
@@ -3601,6 +3689,24 @@ async function faturaLancarSelecionados() {
           criado_por_nome: criadoPorNome,
         };
       });
+
+      const duplicadosConta = await financeiroBuscarDuplicidadesContas(linhas, { lojaId });
+      if (duplicadosConta.length) {
+        const decisaoDuplicado = await financeiroDecidirDuplicidadeContas(duplicadosConta, {
+          titulo: 'Conta possivelmente duplicada',
+        });
+        if (decisaoDuplicado === 'cancelar') {
+          if (btn) { btn.textContent = 'LanÃ§ar selecionados'; btn.disabled = false; }
+          return;
+        }
+        if (decisaoDuplicado === 'ignorar') {
+          item.selecionado = false;
+          item._jaLancado = true;
+          item._motivoConciliacao = 'duplicidade';
+          marcarItemComErroNaLista(item, 'Ignorado: jÃ¡ existe conta com mesmo fornecedor, valor, compra e vencimento.');
+          continue;
+        }
+      }
 
       const { error } = await sb.from('contasapagar').insert(linhas);
       if (error) throw error;

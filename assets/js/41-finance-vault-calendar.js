@@ -988,6 +988,24 @@ async function salvarContaAPagarFinanceiro() {
     criado_por_id: atorAuditoria.funcionarioId || null,
     criado_por_nome: atorAuditoria.nome || 'Sistema',
   }));
+
+  if (typeof financeiroBuscarDuplicidadesContas === 'function' && typeof financeiroDecidirDuplicidadeContas === 'function') {
+    const duplicadosConta = await financeiroBuscarDuplicidadesContas(linhas, { lojaId: lojaSelecionada.id });
+    if (duplicadosConta.length) {
+      const decisaoDuplicado = await financeiroDecidirDuplicidadeContas(duplicadosConta, {
+        titulo: 'Conta possivelmente duplicada',
+      });
+      if (decisaoDuplicado === 'cancelar') {
+        setMsg('msgContaAPagarFinanceiro', 'Revise o lanÃ§amento antes de salvar.', 'err');
+        return { ok: false, cancelado: true };
+      }
+      if (decisaoDuplicado === 'ignorar') {
+        setMsg('msgContaAPagarFinanceiro', 'LanÃ§amento ignorado: jÃ¡ existe uma conta com mesmo fornecedor, valor, compra e vencimento.', 'ok');
+        return { ok: false, ignorado: true };
+      }
+    }
+  }
+
   const { data: contasSalvas, error } = await sb.from('contasapagar').insert(linhas).select('id');
 
   if (error) {
