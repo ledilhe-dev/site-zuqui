@@ -60,6 +60,29 @@
     }
     return hojeIso();
   }
+  function limparCadastroNovoAgenda(){
+    state.id = '';
+    [
+      'escalaPlantaoEventoId',
+      'escalaPlantaoFuncionario',
+      'escalaPlantaoInicio',
+      'escalaPlantaoFim',
+      'escalaPlantaoTitulo',
+      'escalaPlantaoValor',
+      'escalaPlantaoObservacao'
+    ].forEach(function(id){
+      var el = byId(id);
+      if (el) el.value = '';
+    });
+    var tipo = byId('escalaPlantaoTipo');
+    if (tipo) tipo.value = 'plantao';
+    var excluir = byId('btnExcluirPlantaoEscala');
+    if (excluir) excluir.style.display = 'none';
+    var salvar = byId('btnSalvarPlantaoEscala');
+    if (salvar) salvar.textContent = 'Salvar agenda';
+    var titulo = byId('escalaModalTitulo');
+    if (titulo) titulo.textContent = 'Cadastro de Agenda';
+  }
   async function executarAmplo(query){
     if (typeof window.executarSemFiltrosTenantTemporario === 'function') {
       return await window.executarSemFiltrosTenantTemporario(function(){ return query; });
@@ -301,9 +324,12 @@
     window.abrirModalCadastroPlantaoEscala = async function(dataIso){
       state.data = String(dataIso || '').slice(0, 10) || hojeIso();
       state.id = '';
+      limparCadastroNovoAgenda();
       await abrirNovo.apply(this, arguments);
+      limparCadastroNovoAgenda();
       normalizarModalAgenda();
       await carregarResponsaveisAgendaLoja();
+      limparCadastroNovoAgenda();
     };
 
     var abrirEditar = window.abrirModalEditarPlantaoEscala;
