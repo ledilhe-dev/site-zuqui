@@ -477,22 +477,22 @@ async function ncSalvar(salvarENovo = false) {
   try {
     const resultadoSalvar = await salvarContaAPagarFinanceiro();
     if (resultadoSalvar?.ignorado) {
-      if (msg) { msg.textContent = msgOrig?.textContent || 'LanÃ§amento ignorado por duplicidade.'; msg.className = 'msg ok'; }
+      if (msg) { msg.textContent = msgOrig?.textContent || 'Lançamento ignorado por duplicidade.'; msg.className = 'msg ok'; }
       NC.salvando = false;
-      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alterações' : 'Salvar'; }
       if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
       return;
     }
     if (resultadoSalvar?.cancelado) {
-      if (msg) { msg.textContent = msgOrig?.textContent || 'Revise o lanÃ§amento antes de salvar.'; msg.className = 'msg err'; }
+      if (msg) { msg.textContent = msgOrig?.textContent || 'Revise o lançamento antes de salvar.'; msg.className = 'msg err'; }
       NC.salvando = false;
-      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alterações' : 'Salvar'; }
       if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
       return;
     }
     if (resultadoSalvar?.canceladoTotal) {
       NC.salvando = false;
-      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alterações' : 'Salvar'; }
       if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
       ncFechar();
       if (typeof abrirPagina === 'function') {
@@ -523,7 +523,7 @@ async function ncSalvar(salvarENovo = false) {
       document.getElementById('ncFornBusca')?.focus();
     } else {
       NC.salvando = false;
-      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alteraÃ§Ãµes' : 'Salvar'; }
+      if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alterações' : 'Salvar'; }
       if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
       const conferencia = await ncConferirContaSalva(resumoConferencia, resultadoSalvar || {});
       if (conferencia.acao === 'corrigir' && typeof editarContaAPagarFinanceiro === 'function') {

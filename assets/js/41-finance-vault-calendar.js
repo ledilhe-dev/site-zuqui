@@ -1002,11 +1002,11 @@ async function salvarContaAPagarFinanceiro() {
         return { ok: false, canceladoTotal: true };
       }
       if (decisaoDuplicado === 'cancelar') {
-        setMsg('msgContaAPagarFinanceiro', 'Revise o lanÃ§amento antes de salvar.', 'err');
+        setMsg('msgContaAPagarFinanceiro', 'Revise o lançamento antes de salvar.', 'err');
         return { ok: false, cancelado: true };
       }
       if (decisaoDuplicado === 'ignorar') {
-        setMsg('msgContaAPagarFinanceiro', 'LanÃ§amento ignorado: jÃ¡ existe uma conta com mesmo fornecedor, valor, compra e vencimento.', 'ok');
+        setMsg('msgContaAPagarFinanceiro', 'Lançamento ignorado: já existe uma conta com mesmo fornecedor, valor, compra e vencimento.', 'ok');
         return { ok: false, ignorado: true };
       }
     }
