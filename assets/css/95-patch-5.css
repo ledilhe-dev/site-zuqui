@@ -14,6 +14,85 @@
   box-sizing: border-box;
 }
 
+@media (max-width: 720px) {
+  #modalImportarFatura {
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  #modalImportarFatura > div {
+    width: 100vw !important;
+    max-height: 100dvh !important;
+    min-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+  }
+
+  #faturaStep1 {
+    padding: 14px !important;
+  }
+
+  #faturaStep1 > div:first-child {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  #ofxDropZone,
+  #imagemCompraDropZone {
+    min-height: 164px;
+    padding: 22px 14px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #faturaStep3 > div:first-child {
+    align-items: flex-start !important;
+    gap: 8px !important;
+    flex-direction: column !important;
+  }
+
+  #faturaListaItens {
+    padding: 10px !important;
+  }
+
+  #faturaListaItens select,
+  #faturaListaItens input[type="date"],
+  #faturaListaItens input[type="number"],
+  #faturaListaItens input[type="text"] {
+    min-height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  #faturaFooter {
+    gap: 10px !important;
+    align-items: stretch !important;
+    flex-direction: column !important;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #faturaFooter > div {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  #faturaFooter .btn {
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .contas-pagar-page-actions {
+    width: 100%;
+  }
+
+  .contas-pagar-page-actions .btn {
+    min-height: 42px;
+  }
+}
+
 .contas-pagar-page-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

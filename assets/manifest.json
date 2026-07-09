@@ -17,6 +17,7 @@
   "./assets/js/22-access-requests.js",
   "./assets/js/23-email.js",
   "./assets/js/30-finance.js",
+  "./assets/js/32-image-ocr-importer.js",
   "./assets/js/31-payable-sheet.js",
   "./assets/js/32-receivable-sheet.js",
   "./assets/js/40-login-preferences.js",

@@ -1796,6 +1796,7 @@
           <div class="page-title" style="margin:0;">Cadastro de contas a pagar</div>
           <div class="contas-pagar-page-actions">
             <button class="btn btn-green contas-pagar-nova-btn" type="button" onclick="ncAbrir()">+ Nova conta</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura(); setTimeout(() => document.getElementById('imagemCompraFileInput')?.click(), 80)" style="display:flex;align-items:center;gap:6px;font-size:12px;">Importar imagem</button>
             <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🗂️ Importar arquivo bancário</button>
           </div>
         </div>
@@ -1884,7 +1885,7 @@
           <!-- Step 1: Upload -->
           <div id="faturaStep1" style="padding:20px;flex:1;overflow-y:auto;">
             <!-- Seleção de formato -->
-            <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px;">
               <!-- OFX -->
               <div id="ofxDropZone" onclick="document.getElementById('ofxFileInput').click()"
                 style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;"
@@ -1897,11 +1898,26 @@
                 <div style="margin-top:10px;font-size:10px;background:rgba(34,197,94,.1);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--green);">✓ Sem IA — direto do banco</div>
                 <input id="ofxFileInput" type="file" accept=".ofx,.qfx" style="display:none" onchange="faturaHandleFile(this.files[0],'ofx')">
               </div>
+              <!-- Imagem -->
+              <div id="imagemCompraDropZone" onclick="document.getElementById('imagemCompraFileInput').click()"
+                style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;"
+                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+                ondragleave="this.style.borderColor='var(--border-mid)'"
+                ondrop="imagemCompraHandleDrop(event)">
+                <div style="font-size:36px;margin-bottom:8px;">OCR</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Importar print ou recibo</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Foto, print, nota ou comprovante<br>Leitura local e gratuita no navegador</div>
+                <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Sem custo de API</div>
+                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
+              </div>
             </div>
             <!-- Dica OFX -->
             <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;">
               💡 <strong style="color:var(--text);">Como exportar OFX do Nubank:</strong>
               App Nubank → Cartão de crédito → Fatura → ··· → Exportar fatura → OFX
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px;">
+              <strong style="color:var(--text);">Imagem:</strong> o sistema tenta preencher valor, data e observação, mas confira antes de lançar. Prints nítidos funcionam melhor que fotos escuras ou tremidas.
             </div>
             <div class="msg" id="msgImportarFatura" style="margin-top:10px;"></div>
           </div>
@@ -2951,6 +2967,7 @@
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260701-inline-categorias"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=20260708-ocr-local"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260706-contas-corrigir"></script>
 <script src="./assets/js/42-store-settings.js"></script>
