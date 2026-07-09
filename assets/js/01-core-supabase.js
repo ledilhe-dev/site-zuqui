@@ -297,6 +297,7 @@ function abrirConfirmacaoSistema(opcoes = {}) {
 
   overlay.classList.add('show');
   overlay.style.display = 'flex';
+  overlay.style.zIndex = '100001';
 
   setTimeout(() => {
     if (opcoes.input && input) input.focus();

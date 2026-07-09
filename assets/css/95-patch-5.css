@@ -901,7 +901,7 @@
 }
 
 #confirmacaoSistemaOverlay {
-  z-index: 9900;
+  z-index: 100001 !important;
 }
 
 .nc-confirm-line {
