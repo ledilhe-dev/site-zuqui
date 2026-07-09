@@ -220,6 +220,67 @@
   font-size: 11px;
 }
 
+.fatura-confirm-line {
+  align-items: flex-start !important;
+  gap: 10px !important;
+}
+
+.fatura-confirm-line > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fatura-confirm-line > strong {
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 145px;
+  line-height: 1.15;
+}
+
+.fatura-confirm-line > strong small {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.fatura-confirm-line > strong em {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 520px) {
+  .fatura-confirm-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fatura-confirm-line > span {
+    font-size: 10.5px !important;
+  }
+
+  .fatura-confirm-line > strong {
+    min-width: 132px;
+    font-size: 11.5px !important;
+  }
+
+  .fatura-confirm-line > strong small {
+    font-size: 10px;
+  }
+
+  .fatura-confirm-line > strong em {
+    max-width: 132px;
+    font-size: 9px;
+  }
+}
+
 @media (max-width: 720px) {
   .fatura-review-card-enhanced {
     padding: 10px !important;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v56-ocr-list-compact';
+const CACHE_NAME = 'check-diario-pwa-v57-confirm-vencimento';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
