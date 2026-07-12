@@ -112,15 +112,40 @@ function aplicarFiltroLojaFuncionariosQuery(query) {
 // Loja atualmente em uso (logada ou trocada pelo admin no topo).
 function obterLojaAtualParaIsolamento() {
   try {
-    return String(
+    if (filtroLojaSuspensoTemporariamente) return '';
+    const direta = String(
       (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '')
       || usuarioSistemaLogado?.loja_id
       || (typeof window !== 'undefined' ? window.lojaAtualId : '')
       || ''
     ).trim();
+    if (direta) return direta;
+
+    const normalizar = (valor) => String(valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+    const nomeTopo = normalizar(document.getElementById('topbar-store-name')?.textContent || '');
+    const lojasPermitidas = Array.isArray(usuarioSistemaLogado?.lojas_permitidas)
+      ? usuarioSistemaLogado.lojas_permitidas
+      : [];
+    if (nomeTopo && nomeTopo !== '-' && nomeTopo !== 'PAINEL ADMINISTRATIVO') {
+      const lojaTopo = lojasPermitidas.find(loja => {
+        const id = String(loja?.id || loja?.loja_id || '').trim();
+        const nome = normalizar(loja?.nome || loja?.loja_nome || loja?.codigo || '');
+        return id && nome && nome === nomeTopo;
+      });
+      if (lojaTopo) return String(lojaTopo.id || lojaTopo.loja_id || '').trim();
+    }
+    if (lojasPermitidas.length === 1) {
+      return String(lojasPermitidas[0]?.id || lojasPermitidas[0]?.loja_id || '').trim();
+    }
   } catch (e) {
     return '';
   }
+  return '';
 }
 
 // Aplica .eq('loja_id', lojaAtual) em qualquer query que tenha coluna loja_id.
@@ -177,7 +202,7 @@ async function aplicarEmpresaRLS() {
   sb.from = function(tabela) {
     const builder = _from(tabela);
     const empresaId = obterEmpresaIdSessao();
-    const lojaId = obterLojaIdSessao();
+    const lojaId = obterLojaIdSessao() || obterLojaAtualParaIsolamento();
 
     const aplicaEmpresa = !!empresaId && TABELAS_COM_EMPRESA_ID.has(tabela);
     const aplicaLoja = !!lojaId && TABELAS_COM_LOJA_ID.has(tabela);

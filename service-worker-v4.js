@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v59-duplicidade-botoes';
+const CACHE_NAME = 'check-diario-pwa-v60-isolamento-loja-dashboard';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

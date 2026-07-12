@@ -377,6 +377,11 @@ function abrirPaginaAtalhoMeuPainel(pagina) {
   abrirPagina(pagina, botaoNav || null);
 }
 
+function aplicarLojaAtualDashboardQuery(query) {
+  const lojaId = (typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || '';
+  return lojaId && query && typeof query.eq === 'function' ? query.eq('loja_id', lojaId) : query;
+}
+
 async function carregarDadosWidgetMeuPainel(wid) {
   const elVal = document.getElementById('wval_' + wid);
   const elDesc = document.getElementById('wdesc_' + wid);
@@ -385,9 +390,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
   try {
     switch(wid) {
       case 'saldo_cofre': {
-        const { data: contas } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true)
-        );
+        const { data: contas } = await aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true));
         const total = (contas || []).reduce((s, c) => s + Number(c.saldo_atual || 0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = total >= 0 ? 'var(--green,#22c55e)' : 'var(--red,#ef4444)';
@@ -397,8 +400,8 @@ async function carregarDadosWidgetMeuPainel(wid) {
       case 'falta_quitar': {
         const hoje = new Date().toISOString().slice(0,10);
         const [{ data: contas }, { data: capagar }] = await Promise.all([
-          executarSemFiltroLojaTemporario(() => sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true)),
-          executarSemFiltroLojaTemporario(() => sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).lte('data_vencimento', hoje)),
+          aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true)),
+          aplicarLojaAtualDashboardQuery(sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).lte('data_vencimento', hoje)),
         ]);
         const saldo = (contas||[]).reduce((s,c) => s + Number(c.saldo_atual||0), 0);
         const devendo = (capagar||[]).reduce((s,c) => s + Number(c.valor_compra||0), 0);
@@ -409,7 +412,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
         break;
       }
       case 'recebiveis_futuros': {
-        const { data } = await sb.from('recebiveis_futuros').select('valor').eq('ativo', true).is('confirmado_em', null);
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('recebiveis_futuros').select('valor').eq('ativo', true).is('confirmado_em', null));
         const total = (data||[]).reduce((s,f) => s + Number(f.valor||0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = 'var(--amber,#f59e0b)';
@@ -421,9 +424,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
         const dias = wid === 'contas_vencer_7' ? 7 : 30;
         const hoje = new Date().toISOString().slice(0,10);
         const ate = new Date(Date.now() + dias * 86400000).toISOString().slice(0,10);
-        const { data } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).gte('data_vencimento', hoje).lte('data_vencimento', ate)
-        );
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).gte('data_vencimento', hoje).lte('data_vencimento', ate));
         const total = (data||[]).reduce((s,c) => s + Number(c.valor_compra||0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = dias === 7 ? 'var(--red,#ef4444)' : 'var(--amber,#f59e0b)';
@@ -434,9 +435,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
         const ini = new Date(); ini.setDate(1);
         const inicio = ini.toISOString().slice(0,10);
         const fim = new Date().toISOString().slice(0,10);
-        const { data } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('contas_financeiras_movimentacoes').select('valor').eq('tipo','entrada').gte('created_at', inicio).lte('created_at', fim + 'T23:59:59Z')
-        );
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras_movimentacoes').select('valor').eq('tipo','entrada').gte('created_at', inicio).lte('created_at', fim + 'T23:59:59Z'));
         const total = (data||[]).reduce((s,m) => s + Number(m.valor||0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = 'var(--green,#22c55e)';
@@ -600,11 +599,16 @@ async function carregarGraficosFinanceirosDashboard() {
     // Carrega todas as contas do ano (pela data escolhida: vencimento ou compra)
     // + categorias de compra em paralelo.
     const campoData = _dashGfCampoData();
-    const consultarContasDash = async (incluirCor) => sb.from('contasapagar')
-      .select(`id, fornecedor_id, categoria_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, created_at, fornecedores(nome${incluirCor ? ', cor' : ''})`)
-      .is('excluido_em', null)
-      .gte(campoData, inicio)
-      .lte(campoData, fim);
+    const lojaAtualDash = (typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || '';
+    const consultarContasDash = async (incluirCor) => {
+      let query = sb.from('contasapagar')
+        .select(`id, fornecedor_id, categoria_id, loja_id, empresa_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, created_at, fornecedores(nome${incluirCor ? ', cor' : ''})`)
+        .is('excluido_em', null)
+        .gte(campoData, inicio)
+        .lte(campoData, fim);
+      if (lojaAtualDash) query = query.eq('loja_id', lojaAtualDash);
+      return query;
+    };
     const resContasTentativa = await consultarContasDash(true);
     // Fallback: banco ainda sem a coluna fornecedores.cor (ALTER não rodado).
     let resContas = resContasTentativa;
