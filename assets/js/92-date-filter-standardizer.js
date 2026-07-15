@@ -24,7 +24,11 @@
       ['atualizacao', 'Data de atualização']
     ],
     financeiro_cofre: [
-      ['movimento', 'Data do movimento']
+      ['movimento', 'Data do movimento'], ['compra', 'Data da compra'],
+      ['vencimento', 'Data de vencimento'], ['pagamento', 'Data de pagamento'],
+      ['cadastro_conta', 'Cadastro da conta'], ['atualizacao_conta', 'Atualização da conta'],
+      ['recebimento', 'Data de recebimento'], ['atualizacao_recebimento', 'Atualização do recebimento'],
+      ['ajuste', 'Data do ajuste']
     ],
     relatorio_financeiro: [
       ['compra', 'Data da compra'], ['vencimento', 'Data de vencimento'],

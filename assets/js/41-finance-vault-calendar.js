@@ -179,6 +179,7 @@ async function carregarCofreFinanceiro() {
   const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasCofreFinanceiro');
   const filtroInicio = String(document.getElementById('filtroCofreDataInicio')?.value || '').trim();
   const filtroFim = String(document.getElementById('filtroCofreDataFim')?.value || '').trim();
+  const filtroDataTipoCofre = String(document.querySelector('#financeiro_cofre .date-filter-criterion')?.value || 'especial:movimento').replace('especial:', '');
   const { data: contas, error: erroContas } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('contas_financeiras')
@@ -237,11 +238,11 @@ async function carregarCofreFinanceiro() {
   const { data, error } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('contas_financeiras_movimentacoes')
-      .select('id, conta_financeira_id, recebivel_id, conta_apagar_id, tipo, valor, descricao, saldo_apos, created_at, loja_id, empresa_id, contas_financeiras(nome), recebiveis(id, fornecedores(nome), formas_pagamento(nome)), contasapagar(id, fornecedores(nome), formas_pagamento(nome))')
+      .select('id, conta_financeira_id, recebivel_id, conta_apagar_id, tipo, valor, descricao, saldo_apos, created_at, loja_id, empresa_id, contas_financeiras(nome), recebiveis(id, created_at, updated_at, fornecedores(nome), formas_pagamento(nome)), contasapagar(id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, fornecedores(nome), formas_pagamento(nome))')
       .order('created_at', { ascending: false });
     query = aplicarFiltroLojasFinanceirasPermitidas(query, lojasPermitidasIds);
-    if (filtroInicio) query = query.gte('created_at', `${filtroInicio}T00:00:00`);
-    if (filtroFim) query = query.lte('created_at', `${filtroFim}T23:59:59`);
+    if (filtroDataTipoCofre === 'movimento' && filtroInicio) query = query.gte('created_at', `${filtroInicio}T00:00:00`);
+    if (filtroDataTipoCofre === 'movimento' && filtroFim) query = query.lte('created_at', `${filtroFim}T23:59:59`);
     return query;
   });
 
@@ -257,10 +258,27 @@ async function carregarCofreFinanceiro() {
     return;
   }
 
-  const todos = await anexarAuditoriaAjustesCofre(data || [], filtroInicio, filtroFim);
-  cofreMovimentacoesCache = todos;
-  atualizarResumoCofreFinanceiro({ saldoTotal, movimentos: todos });
-  renderizarExtratoCofre(todos);
+  const todos = await anexarAuditoriaAjustesCofre(data || [], '', '');
+  const movimentosFiltrados = todos.filter(item => {
+    const datas = {
+      movimento:item.created_at,
+      compra:item.contasapagar?.data_compra,
+      vencimento:item.contasapagar?.data_vencimento,
+      pagamento:item.contasapagar?.data_pagamento,
+      cadastro_conta:item.contasapagar?.created_at,
+      atualizacao_conta:item.contasapagar?.updated_at,
+      recebimento:item.recebiveis?.created_at,
+      atualizacao_recebimento:item.recebiveis?.updated_at,
+      ajuste:item.ajuste_saldo?.created_at
+    };
+    const dataReferencia = String(datas[filtroDataTipoCofre] || '').slice(0, 10);
+    if (filtroInicio && (!dataReferencia || dataReferencia < filtroInicio)) return false;
+    if (filtroFim && (!dataReferencia || dataReferencia > filtroFim)) return false;
+    return true;
+  });
+  cofreMovimentacoesCache = movimentosFiltrados;
+  atualizarResumoCofreFinanceiro({ saldoTotal, movimentos: movimentosFiltrados });
+  renderizarExtratoCofre(movimentosFiltrados);
   const msgFuturos = somarFuturos && totalFuturosPendentes > 0
     ? ` (+${formatarMoedaBRFinanceiro(totalFuturosPendentes)} em recebimentos futuros pendentes)`
     : '';
