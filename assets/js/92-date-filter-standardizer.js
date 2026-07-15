@@ -24,6 +24,9 @@
   }
 
   function esconderCampo(input) {
+    if (!input) return;
+    input.dataset.dateFilterEnhanced = 'true';
+    input.classList.add('date-filter-original-hidden');
     const label = input.closest('label');
     const alvo = label && label.querySelectorAll('input[type="date"]').length === 1 ? label : input;
     alvo.classList.add('date-filter-original-hidden');
@@ -47,7 +50,7 @@
   }
 
   function aprimorarBloco(bloco, pares) {
-    if (!bloco || bloco.querySelector(':scope > .date-filter-standard')) return;
+    if (!bloco || bloco.querySelector('.date-filter-standard')) return;
     const primeiro = document.getElementById(pares[0].inicio);
     if (!primeiro) return;
     pares.forEach(par => {
@@ -66,8 +69,13 @@
   }
 
   function executar() {
+    document.querySelectorAll('.date-filter-standard').forEach((wrapper, indice, todos) => {
+      const bloco = blocoDo(wrapper);
+      const primeiro = todos.find(item => item !== wrapper && blocoDo(item) === bloco);
+      if (primeiro) wrapper.remove();
+    });
     const inicios = [...document.querySelectorAll('input[type="date"][id^="filtro"][id$="Inicio"]')]
-      .filter(input => !input.classList.contains('date-filter-original-hidden'));
+      .filter(input => input.dataset.dateFilterEnhanced !== 'true');
     const porBloco = new Map();
     inicios.forEach(inicio => {
       const base = inicio.id.slice(0, -6);
