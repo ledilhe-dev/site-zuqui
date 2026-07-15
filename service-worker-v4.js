@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v76-profile-operation-pin';
+const CACHE_NAME = 'check-diario-pwa-v77-idempotent-time-adjustment';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

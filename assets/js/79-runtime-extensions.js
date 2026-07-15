@@ -1793,8 +1793,13 @@ async function salvarAjusteManualAdminPonto() {
     return;
   }
 
-  try { await sb.from('ponto_ajustes_solicitacoes').insert([solicitacaoManual]); }
-  catch (e) { console.warn('Não foi possível registrar o ajuste manual no histórico:', e); }
+  try {
+    const { error: erroHistorico } = await sb.from('ponto_ajustes_solicitacoes').insert([solicitacaoManual]);
+    if (erroHistorico) throw erroHistorico;
+  } catch (e) {
+    setMsg('msgAjusteManualAdminPonto', `A batida foi preservada, mas o histórico não foi salvo. Corrija os dados e tente novamente; o ponto não será duplicado. ${mensagemErroSupabase(e, '')}`, 'err');
+    return;
+  }
 
   setMsg('msgPonto', `${tipo === 'anular' ? 'Batida anulada' : 'Ajuste manual aplicado'} para ${funcionarioNome}. ${resultado.mensagem}`, 'ok');
   fecharModalAjusteManualAdminPonto();
@@ -2471,9 +2476,16 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       }
     }
 
+    const batidasExistentes = ordenarUnicos(
+      montarListaBatidasPonto(registro, intervalos).map(item => item.iso)
+    );
+    const ajusteMs = new Date(ajusteIso).getTime();
+    const ajusteJaExistia = batidasExistentes.some(iso =>
+      Math.abs(new Date(iso).getTime() - ajusteMs) <= 2 * 60 * 1000
+    );
     const batidas = ordenarUnicos([
-      ...(montarListaBatidasPonto(registro, intervalos).map(item => item.iso)),
-      ajusteIso,
+      ...batidasExistentes,
+      ...(ajusteJaExistia ? [] : [ajusteIso]),
     ]);
 
     const entradaEm = batidas[0] || null;
@@ -2535,7 +2547,13 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       if (!isMissingTimeClockIntervalsTableError(erroIntervalo)) throw erroIntervalo;
     }
 
-    return { ok: true, mensagem: 'Ajuste manual aplicado editando o registro existente e reorganizando a sequência.' };
+    return {
+      ok: true,
+      ajusteJaExistia,
+      mensagem: ajusteJaExistia
+        ? 'A batida desta tentativa já estava gravada; apenas o histórico foi concluído, sem duplicar o ponto.'
+        : 'Ajuste manual aplicado editando o registro existente e reorganizando a sequência.'
+    };
   } catch (error) {
     return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
   }
