@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v71-contas-pagar-rebuild';
+const CACHE_NAME = 'check-diario-pwa-v72-mobile-date-no-overlap';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
