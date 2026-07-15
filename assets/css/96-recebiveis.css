@@ -1,4 +1,14 @@
 /* Recebíveis: componente isolado, responsivo e sem afetar outras telas. */
+.date-filter-original-hidden { display:none !important; }
+.date-filter-standard { display:grid; grid-template-columns:minmax(130px,160px) minmax(150px,210px); gap:8px; align-items:end; }
+.date-filter-standard label { display:grid; gap:4px; min-width:0; margin:0; color:var(--text-muted); font-size:11px; font-weight:700; }
+.date-filter-standard input,
+.date-filter-standard select { width:100% !important; min-width:0 !important; height:38px !important; min-height:38px !important; margin:0 !important; padding:7px 9px !important; font-size:12px !important; }
+@media (max-width:700px) {
+  .date-filter-standard { grid-template-columns:minmax(0,1fr) minmax(0,1fr); width:100%; }
+  .date-filter-standard input,
+  .date-filter-standard select { height:36px !important; min-height:36px !important; }
+}
 #financeiro_recebiveis { container-type:inline-size; }
 #financeiro_recebiveis * { box-sizing:border-box; }
 #financeiro_recebiveis .recebiveis-page-actions { display:flex; justify-content:flex-end; gap:8px; margin:0 0 12px; }
@@ -12,7 +22,9 @@
 #financeiro_recebiveis .recebiveis-pendentes-label { display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:12px; }
 #financeiro_recebiveis .recebiveis-pendentes-label input,
 #financeiro_recebiveis .rec-check input,
-#financeiro_recebiveis .rec-select-all input { width:18px !important; height:18px !important; min-width:18px !important; min-height:18px !important; padding:0 !important; margin:0 !important; appearance:auto !important; }
+#financeiro_recebiveis .rec-select-all input,
+#financeiro_recebiveis input.checkbox-rec-futuro-financeiro,
+#financeiro_recebiveis input.checkbox-recebivel-financeiro { width:16px !important; height:16px !important; min-width:16px !important; min-height:16px !important; max-width:16px !important; max-height:16px !important; padding:0 !important; margin:0 !important; appearance:auto !important; -webkit-appearance:checkbox !important; }
 #financeiro_recebiveis .recebiveis-provisionados-filtros { display:grid; grid-template-columns:minmax(220px,1fr) minmax(140px,180px) minmax(140px,180px); gap:8px; margin-bottom:10px; align-items:end; }
 #financeiro_recebiveis .rec-selection-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 11px; margin-bottom:10px; border:1px solid var(--border); border-radius:10px; background:var(--surface2); }
 #financeiro_recebiveis .rec-select-all,
@@ -26,7 +38,7 @@
 #financeiro_recebiveis .rec-card-meta { color:var(--text-muted); font-size:12px; line-height:1.45; }
 #financeiro_recebiveis .rec-card-meta strong { color:var(--text); }
 #financeiro_recebiveis .rec-card-confirmed { margin-top:4px; color:var(--green,#22c55e); }
-#financeiro_recebiveis .rec-card-future .rec-futuro-destaque { display:none; }
+#financeiro_recebiveis .rec-card-future .rec-futuro-destaque { display:none !important; }
 #financeiro_recebiveis .rec-card-future .item-detalhe { color:var(--text-muted); font-size:12px; line-height:1.45; }
 #financeiro_recebiveis .rec-card-future .item-detalhe strong { color:var(--text); }
 #financeiro_recebiveis .rec-card-actions { display:flex; align-items:center; justify-content:flex-end; gap:7px; flex-wrap:wrap; }
@@ -52,18 +64,33 @@
   #financeiro_recebiveis .recebiveis-provisionados-filtros { grid-template-columns:1fr 1fr !important; }
   #financeiro_recebiveis #filtroRecFuturoBusca { grid-column:1/-1; }
   #financeiro_recebiveis .rec-selection-bar { padding:8px 9px; font-size:12px; }
-  #financeiro_recebiveis .rec-card { grid-template-columns:1fr; gap:9px; padding:11px; }
+  #financeiro_recebiveis .rec-grid { gap:6px; }
+  #financeiro_recebiveis .rec-card { grid-template-columns:minmax(0,1fr) auto; gap:8px; padding:8px 9px; border-radius:9px; }
   #financeiro_recebiveis .rec-card-head { gap:8px; }
-  #financeiro_recebiveis .rec-card-title { font-size:14px; }
-  #financeiro_recebiveis .rec-card-value { font-size:16px; }
-  #financeiro_recebiveis .rec-card-actions { justify-content:stretch; }
-  #financeiro_recebiveis .rec-card-actions .btn { flex:1 1 auto; }
-  #financeiro_recebiveis .rec-card-actions .btn-green { flex-basis:100%; order:-1; min-height:40px; font-weight:800; }
-  #financeiro_recebiveis .rec-summary { display:grid; gap:3px; padding:10px; }
-  #financeiro_recebiveis .rec-summary strong { font-size:15px; }
+  #financeiro_recebiveis .rec-card-title { font-size:11px; line-height:1.2; }
+  #financeiro_recebiveis .rec-card-value { font-size:12px; }
+  #financeiro_recebiveis .rec-card-meta,
+  #financeiro_recebiveis .rec-card-future .item-detalhe { font-size:9.5px; line-height:1.3; }
+  #financeiro_recebiveis .rec-card-future .item-detalhe:nth-of-type(n+3) { display:none; }
+  #financeiro_recebiveis .rec-card-actions { align-content:start; justify-content:flex-end; max-width:118px; gap:4px; }
+  #financeiro_recebiveis .rec-card-actions .tag { font-size:8px; padding:3px 5px; }
+  #financeiro_recebiveis .rec-card-actions .btn { flex:1 1 48px; min-height:27px; padding:4px 6px; font-size:9px; }
+  #financeiro_recebiveis .rec-card-actions .btn-green { flex-basis:100%; order:-1; min-height:30px; font-size:9px; font-weight:800; }
+  #financeiro_recebiveis .rec-summary { display:grid; gap:2px; padding:7px 9px; margin-bottom:6px; }
+  #financeiro_recebiveis .rec-summary .item-nome,
+  #financeiro_recebiveis .rec-summary strong { font-size:11px; }
+  #financeiro_recebiveis .rec-summary .item-detalhe,
+  #financeiro_recebiveis .rec-summary span { font-size:9px; }
+  #financeiro_recebiveis #acoesSelecaoRecFuturos,
+  #financeiro_recebiveis #acoesSelecaoRecebiveisFinanceiro { grid-template-columns:1fr auto !important; padding:5px !important; gap:4px !important; }
+  #financeiro_recebiveis #acoesSelecaoRecFuturos .btn,
+  #financeiro_recebiveis #acoesSelecaoRecebiveisFinanceiro .btn { min-height:28px !important; padding:4px 6px !important; font-size:9px !important; }
+  #financeiro_recebiveis #acoesSelecaoRecFuturos .item-detalhe,
+  #financeiro_recebiveis #acoesSelecaoRecebiveisFinanceiro .item-detalhe { min-height:0 !important; padding:2px !important; font-size:9px !important; }
 }
 @media (max-width:380px) {
   #financeiro_recebiveis .recebiveis-page-actions { grid-template-columns:1fr; }
+  #financeiro_recebiveis .rec-card { grid-template-columns:minmax(0,1fr) 104px; }
   #financeiro_recebiveis .rec-card-head { display:grid; }
   #financeiro_recebiveis .rec-card-value { white-space:normal; }
 }
