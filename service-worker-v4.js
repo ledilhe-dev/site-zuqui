@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v65-recebiveis-unificados';
+const CACHE_NAME = 'check-diario-pwa-v67-filtros-data-reais-v2';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

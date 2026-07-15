@@ -17,6 +17,26 @@
     financeiro_recebiveis: [
       ['prevista', 'Data prevista'], ['cadastro', 'Data de cadastro'],
       ['recebimento', 'Data de recebimento']
+    ],
+    financeiro_contasapagar: [
+      ['compra', 'Data da compra'], ['vencimento', 'Data de vencimento'],
+      ['pagamento', 'Data de pagamento'], ['cadastro', 'Data de cadastro'],
+      ['atualizacao', 'Data de atualização']
+    ],
+    financeiro_cofre: [
+      ['movimento', 'Data do movimento']
+    ],
+    relatorio_financeiro: [
+      ['compra', 'Data da compra'], ['vencimento', 'Data de vencimento'],
+      ['pagamento', 'Data de pagamento'], ['cadastro', 'Data de cadastro'],
+      ['atualizacao', 'Data de atualização']
+    ],
+    relatorio_recebimentos: [
+      ['cadastro', 'Data de cadastro'], ['atualizacao', 'Data de atualização'],
+      ['prevista', 'Data prevista'], ['recebimento', 'Data de recebimento']
+    ],
+    relatorio_ajuste_saldo: [
+      ['ajuste', 'Data do ajuste']
     ]
   };
 
@@ -25,7 +45,8 @@
   }
 
   function rotuloDoPar(base, inicio) {
-    const fonte = normalizar(`${base} ${inicio.title || ''} ${inicio.getAttribute('aria-label') || ''}`);
+    const label = document.querySelector(`label[for="${inicio.id}"]`)?.textContent || inicio.closest('label')?.textContent || '';
+    const fonte = normalizar(`${base} ${inicio.title || ''} ${inicio.getAttribute('aria-label') || ''} ${label}`);
     const chave = Object.keys(LABELS).find(item => fonte.includes(item));
     return LABELS[chave || 'data'];
   }
@@ -38,8 +59,8 @@
     if (!input) return;
     input.dataset.dateFilterEnhanced = 'true';
     input.classList.add('date-filter-original-hidden');
-    const label = input.closest('label');
-    const alvo = label && label.querySelectorAll('input[type="date"]').length === 1 ? label : input;
+    const grupo = input.closest('.financeiro-filtro-compacto, .campo-com-label, label');
+    const alvo = grupo && grupo.querySelectorAll('input[type="date"]').length === 1 ? grupo : input;
     alvo.classList.add('date-filter-original-hidden');
   }
 
@@ -84,7 +105,7 @@
       <label class="date-filter-start-field"><span>Data inicial</span><input class="date-filter-start" type="date" aria-label="Data inicial"></label>
       <label class="date-filter-end-field"><span>Data final</span><input class="date-filter-end" type="date" aria-label="Data final"></label>
       <label class="date-filter-criterion-field"><span>Consultar por</span><select class="date-filter-criterion" aria-label="Consultar por">${opcoes.map(opcao => `<option value="${opcao.valor}">${opcao.label}</option>`).join('')}</select></label>`;
-    const ancora = primeiro.closest('label') || primeiro;
+    const ancora = primeiro.closest('.financeiro-filtro-compacto, .campo-com-label, label') || primeiro;
     ancora.parentElement.insertBefore(wrapper, ancora);
     wrapper.querySelector('.date-filter-start').value = primeiro.value || '';
     wrapper.querySelector('.date-filter-end').value = document.getElementById(pares[0].fim)?.value || '';

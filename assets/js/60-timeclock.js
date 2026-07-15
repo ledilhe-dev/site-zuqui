@@ -2911,13 +2911,12 @@ async function carregarRelatorioFinanceiro() {
   try {
     const filtroDataInicioConsulta = String(campoDataInicio?.value || '').trim();
     const filtroDataFimConsulta = String(campoDataFim?.value || '').trim();
+    const filtroDataTipo = String(document.querySelector('#relatorio_financeiro .date-filter-criterion')?.value || 'especial:vencimento').replace('especial:', '');
     const { data, error } = await executarSemFiltroLojaTemporario(() => {
       let query = sb
         .from('contasapagar')
         .select('id, fornecedor_id, categoria_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, updated_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome, grupo_id), formas_pagamento(id, nome)')
         .order('data_vencimento', { ascending: false });
-      if (filtroDataInicioConsulta) query = query.gte('data_vencimento', filtroDataInicioConsulta);
-      if (filtroDataFimConsulta) query = query.lte('data_vencimento', filtroDataFimConsulta);
       if (lojasSelecionadas.length) query = query.in('loja_id', lojasSelecionadas);
       return query;
     });
@@ -3022,7 +3021,11 @@ async function carregarRelatorioFinanceiro() {
       const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
       const formaNome = obterNomeFormaRelatorioFinanceiro(item);
       const categoriaId = String(item.categoria_id || '').trim() || '__sem__';
-      const dataReferencia = obterDataReferenciaContaRelatorioFinanceiro(item);
+      const datasFiltro = {
+        compra:item.data_compra, vencimento:item.data_vencimento, pagamento:item.data_pagamento || item.pago_confirmado_em,
+        cadastro:item.created_at, atualizacao:item.updated_at
+      };
+      const dataReferencia = String(datasFiltro[filtroDataTipo] || '').slice(0, 10);
 
       if (filtroDataInicio && (!dataReferencia || dataReferencia < filtroDataInicio)) return false;
       if (filtroDataFim && (!dataReferencia || dataReferencia > filtroDataFim)) return false;
@@ -3197,7 +3200,7 @@ function renderizarRelatorioRecebimentos(itens = []) {
 }
 
 async function buscarDadosRelatorioRecebimentos() {
-  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, criado_por_id, criado_por_nome, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)';
+  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, updated_at, criado_por_id, criado_por_nome, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)';
   const camposSemAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)';
 
   const executar = (campos) => sb
@@ -3291,9 +3294,16 @@ async function carregarRelatorioRecebimentos() {
     const filtroPagador = String(pagadorEl?.value || '').trim();
     const filtroForma = String(formaEl?.value || '').trim();
     const filtroUsuario = String(usuarioEl?.value || '').trim();
+    const filtroDataTipo = String(document.querySelector('#relatorio_recebimentos .date-filter-criterion')?.value || 'especial:cadastro').replace('especial:', '');
 
     const itens = rows.filter(item => {
-      const dataRef = String(item.created_at || '').slice(0, 10);
+      const datasFiltro = {
+        cadastro:item.created_at,
+        atualizacao:item.updated_at,
+        prevista:item._provisionadoPendente ? item.created_at : null,
+        recebimento:item._futuro ? item.created_at : (!item._provisionadoPendente ? item.created_at : null)
+      };
+      const dataRef = String(datasFiltro[filtroDataTipo] || '').slice(0, 10);
       const pagadorId = String(item.pagador_id || '').trim();
       const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
       const formaNome = obterNomeFormaRelatorioRecebimentos(item);

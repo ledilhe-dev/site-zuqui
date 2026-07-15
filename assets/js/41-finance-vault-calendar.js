@@ -1313,6 +1313,7 @@ async function carregarContasAPagarFinanceiro() {
   const filtroCadastroFim = obterDataISOFiltroContaAPagar('filtroContaAPagarCadastroFim');
   const filtroVencimentoInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoInicio');
   const filtroVencimentoFim = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoFim');
+  const filtroDataTipo = String(document.querySelector('#financeiro_contasapagar .date-filter-criterion')?.value || 'especial:cadastro').replace('especial:', '');
   const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasContasAPagarFinanceiro');
   if (filtroBuscaBruto || filtroFornecedorBruto || filtroCadastroInicio || filtroCadastroFim || filtroVencimentoInicio || filtroVencimentoFim || filtroContaAPagarCategoriasSelecionadas.size) contasAPagarListaVisivel = true;
   atualizarEstadoListaContasAPagarFinanceiro();
@@ -1345,7 +1346,7 @@ async function carregarContasAPagarFinanceiro() {
   const { data, error } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('contasapagar')
-      .select('id, fornecedor_id, categoria_id, forma_pagamento, forma_pagamento_id, conta_financeira_id, data_compra, data_vencimento, data_pagamento, valor_compra, observacao, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, created_at, criado_por_nome, loja_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
+      .select('id, fornecedor_id, categoria_id, forma_pagamento, forma_pagamento_id, conta_financeira_id, data_compra, data_vencimento, data_pagamento, valor_compra, observacao, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, created_at, updated_at, criado_por_nome, loja_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
       .is('excluido_em', null)
       .order('data_vencimento', { ascending: true });
     if (lojasSelecionadas.length) query = query.in('loja_id', lojasSelecionadas);
@@ -1425,8 +1426,15 @@ async function carregarContasAPagarFinanceiro() {
         ? filtroContaAPagarCategoriasSelecionadas.has(String(item.categoria_id))
         : filtroContaAPagarCategoriasSelecionadas.has('__sem__'));
     const bateStatus = !filtroStatus || filtroStatus === status;
-    const bateCadastro = dentroDoPeriodoCadastroContaAPagar(item, filtroCadastroInicio, filtroCadastroFim);
-    const bateVencimento = dentroDoPeriodoVencimentoContaAPagar(item, filtroVencimentoInicio, filtroVencimentoFim);
+    const datasFiltro = {
+      compra:item.data_compra, vencimento:item.data_vencimento, pagamento:item.data_pagamento,
+      cadastro:item.created_at, atualizacao:item.updated_at
+    };
+    const dataReferencia = String(datasFiltro[filtroDataTipo] || '').slice(0, 10);
+    const filtroDataInicio = filtroCadastroInicio || filtroVencimentoInicio;
+    const filtroDataFim = filtroCadastroFim || filtroVencimentoFim;
+    const bateCadastro = !filtroDataInicio || (!!dataReferencia && dataReferencia >= filtroDataInicio);
+    const bateVencimento = !filtroDataFim || (!!dataReferencia && dataReferencia <= filtroDataFim);
     let batePadrao30Dias = true;
     if (aplicarPadrao30Dias) {
       const vencISO = String(item.data_vencimento || '').trim();
