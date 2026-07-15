@@ -1345,7 +1345,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
           ? `<div>Intervalos previstos: <strong>${item.intervalosMinimosDia.map(formatarMinutosIntervaloPonto).join(' + ')}</strong></div>`
         : '';
 
-    const acaoAdmin = usuarioEhAdministrador()
+    const acaoAdmin = usuarioPodeAcessar('ponto_ajustes')
       ? `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalAjusteManualAdminPonto('${item.id}')">Ajustar</button>
          <button class="btn btn-ghost btn-sm" type="button" style="color:#fca5a5;border-color:rgba(239,68,68,0.4)" onclick="abrirModalExclusaoAjusteManualAdminPonto('${item.id}')">Excluir ajuste</button>`
       : '';
@@ -1399,7 +1399,7 @@ async function carregarBaterPonto() {
     campoPin.required = !restringirPontoAoUsuarioLogado;
   }
   const btnAjusteManualAdmin = document.getElementById('btnAjusteManualAdminPonto');
-  if (btnAjusteManualAdmin) btnAjusteManualAdmin.hidden = !usuarioEhAdministrador();
+  if (btnAjusteManualAdmin) btnAjusteManualAdmin.hidden = !usuarioPodeAcessar('ponto_ajustes');
   await carregarResumoPontoHoje(restringirPontoAoUsuarioLogado ? funcionarioRestritoId : '');
   await verificarAlertaEntradaPonto();
   await carregarHorasDashboard();
@@ -1559,17 +1559,22 @@ async function validarSenhaAdministradorParaAjustePonto(senhaInformada) {
   const senha = String(senhaInformada || '').trim();
   if (!senha) return false;
 
-  if (usuarioSistemaLogado?.tipo === 'admin_loja' && usuarioSistemaLogado?.id) {
+  // A senha de login por e-mail nunca autoriza operacoes. Qualquer perfil com
+  // ponto_ajustes (e o Global ADM) confirma com o PIN operacional do cadastro.
+  const podeAdministrar = (typeof usuarioPodeAcessar === 'function' && usuarioPodeAcessar('ponto_ajustes'))
+    || (typeof usuarioEhAdministrador === 'function' && usuarioEhAdministrador());
+  if (!podeAdministrar || !usuarioSistemaLogado?.id) return false;
+
+  if (await validarPinFuncionario(usuarioSistemaLogado.id, senha)) return true;
+
+  // Contas administrativas nativas guardam o PIN operacional em usuarios_admin.
+  if (usuarioSistemaLogado?.tipo === 'admin' || usuarioSistemaLogado?.tipo === 'admin_loja') {
     const { data, error } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
       p_usuario_id: usuarioSistemaLogado.id,
       p_pin: senha,
     }, data => data === true);
     if (error) throw error;
     return data === true;
-  }
-
-  if (usuarioSistemaLogado?.tipo === 'funcionario' && usuarioSistemaLogado?.id && usuarioEhAdministrador()) {
-    return validarPinFuncionario(usuarioSistemaLogado.id, senha);
   }
 
   return false;

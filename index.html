@@ -1157,7 +1157,7 @@
             <input id="pontoPinInput" type="text" placeholder="PIN / senha" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
             <button class="btn btn-green" type="button" onclick="registrarPontoFuncionario()">Registrar ponto</button>
             <button class="btn btn-amber" type="button" onclick="abrirModalSolicitarAjustePonto()">Solicitar ajuste</button>
-            <button class="btn btn-ghost" id="btnAjusteManualAdminPonto" type="button" onclick="abrirModalAjusteManualAdminPonto()" hidden>Ajuste manual ADM</button>
+            <button class="btn btn-ghost" id="btnAjusteManualAdminPonto" type="button" onclick="abrirModalAjusteManualAdminPonto()" hidden>Ajuste manual</button>
           </div>
           <div class="msg" id="msgPonto"></div>
         </div>
@@ -2337,7 +2337,7 @@
   <div class="ponto-ajuste-modal-overlay" id="modalAjusteManualAdminPonto" hidden>
     <div class="ponto-ajuste-modal-card">
       <div class="ponto-ajuste-modal-title">Ajuste manual de ponto</div>
-      <div class="ponto-ajuste-modal-sub">Disponível apenas para Administrador. Adicione uma batida esquecida ou anule uma batida errada mantendo o histórico do ajuste.</div>
+      <div class="ponto-ajuste-modal-sub">Disponível para perfis com permissão de ajuste de ponto. Adicione uma batida esquecida ou anule uma batida errada mantendo o histórico.</div>
       <div class="ponto-ajuste-form">
         <label>Tipo de ajuste
           <div class="ponto-ajuste-tipo-grid">
@@ -2357,8 +2357,8 @@
         <label id="adminAjustePontoBatidaLabel" hidden>Batida errada que será substituída
           <select id="adminAjustePontoBatida"></select>
         </label>
-        <label>Senha/PIN do administrador
-          <input id="adminAjustePontoSenha" type="text" maxlength="20" autocomplete="off" placeholder="Confirme sua senha" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
+        <label>PIN operacional do usuário
+          <input id="adminAjustePontoSenha" type="text" maxlength="20" autocomplete="off" placeholder="Informe seu PIN operacional" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
         </label>
         <label>Motivo do ajuste
           <textarea id="adminAjustePontoMotivo" maxlength="300" placeholder="Exemplo: funcionária esqueceu de bater; horário conferido pelo administrador"></textarea>
@@ -2934,7 +2934,7 @@
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=3.2.15"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=3.2.15"></script>
+<script src="./assets/js/60-timeclock.js?v=3.2.17"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/78-init.js"></script>
@@ -3027,7 +3027,7 @@
   </div>
 </div>
 
-<script src="./assets/js/79-runtime-extensions.js?v=3.2.16"></script>
+<script src="./assets/js/79-runtime-extensions.js?v=3.2.17"></script>
   <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
     <div class="escala-modal-card">
       <div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>

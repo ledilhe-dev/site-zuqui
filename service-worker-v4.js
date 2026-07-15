@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v75-timeclock-secure-open';
+const CACHE_NAME = 'check-diario-pwa-v76-profile-operation-pin';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

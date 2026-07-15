@@ -1676,8 +1676,8 @@ function montarHtmlAjustesPonto(ajustes = []) {
 }
 
 function abrirModalAjusteManualAdminPonto(funcionarioId = '', tipoInicial = 'adicionar', dataInicial = '') {
-  if (!usuarioEhAdministrador()) {
-    setMsg('msgPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+  if (!usuarioPodeAcessar('ponto_ajustes')) {
+    setMsg('msgPonto', 'Seu perfil não possui permissão para ajustar o ponto.', 'err');
     return;
   }
   const modal = document.getElementById('modalAjusteManualAdminPonto');
@@ -1715,8 +1715,8 @@ function abrirModalAjusteManualAdminPonto(funcionarioId = '', tipoInicial = 'adi
 }
 
 async function salvarAjusteManualAdminPonto() {
-  if (!usuarioEhAdministrador()) {
-    setMsg('msgAjusteManualAdminPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+  if (!usuarioPodeAcessar('ponto_ajustes')) {
+    setMsg('msgAjusteManualAdminPonto', 'Seu perfil não possui permissão para ajustar o ponto.', 'err');
     return;
   }
 
@@ -1761,7 +1761,7 @@ async function salvarAjusteManualAdminPonto() {
     return;
   }
   if (!senhaOk) {
-    setMsg('msgAjusteManualAdminPonto', 'Senha/PIN do administrador inválido.', 'err');
+    setMsg('msgAjusteManualAdminPonto', 'PIN operacional inválido ou sem permissão para ajustar o ponto.', 'err');
     return;
   }
 
