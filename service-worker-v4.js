@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v77-idempotent-time-adjustment';
+const CACHE_NAME = 'check-diario-pwa-v78-report-filter-labels';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

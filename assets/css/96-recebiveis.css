@@ -16,6 +16,7 @@ input[type="date"][id^="filtro"],
 .date-filter-standard input,
 .date-filter-standard select { box-sizing:border-box !important; border-radius:10px !important; }
 .date-filter-standard { display:grid; grid-template-columns:repeat(2,minmax(130px,160px)) minmax(150px,210px); gap:8px; align-items:end; }
+.relatorio-financeiro-filtros > .date-filter-standard { grid-column:span 3; width:100%; min-width:0; }
 .date-filter-standard label { display:grid; gap:4px; min-width:0; margin:0; color:var(--text-muted); font-size:11px; font-weight:700; }
 .date-filter-standard input,
 .date-filter-standard select { width:100% !important; min-width:0 !important; height:38px !important; min-height:38px !important; margin:0 !important; padding:7px 9px !important; font-size:12px !important; border-radius:10px !important; }
@@ -43,6 +44,7 @@ input[type="date"][id^="filtro"],
   .date-filter-standard label,
   .contas-pagar-data { width:100% !important; min-width:0 !important; max-width:100% !important; overflow:hidden !important; }
   .date-filter-standard { grid-template-columns:minmax(0,1fr) minmax(0,1fr); width:100%; }
+  .relatorio-financeiro-filtros > .date-filter-standard { grid-column:1/-1; }
   .date-filter-standard .date-filter-criterion-field { grid-column:1 / -1; }
   .date-filter-standard input,
   .date-filter-standard select { height:36px !important; min-height:36px !important; }
