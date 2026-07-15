@@ -1560,10 +1560,10 @@ async function validarSenhaAdministradorParaAjustePonto(senhaInformada) {
   if (!senha) return false;
 
   if (usuarioSistemaLogado?.tipo === 'admin_loja' && usuarioSistemaLogado?.id) {
-    const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
+    const { data, error } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
       p_usuario_id: usuarioSistemaLogado.id,
       p_pin: senha,
-    }));
+    }, data => data === true);
     if (error) throw error;
     return data === true;
   }

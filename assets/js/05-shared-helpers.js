@@ -2056,12 +2056,25 @@ function fecharModalContaFinanceiraBaixa(resultado = null) {
   if (resolver) resolver(resultado);
 }
 
+async function executarValidacaoCredencialComRetry(nomeRpc, parametros, respostaValida) {
+  const executar = () => executarSemFiltrosTenantTemporario(() => sb.rpc(nomeRpc, parametros));
+  let resposta = await executar();
+  if (!resposta?.error && respostaValida(resposta?.data)) return resposta;
+
+  // A primeira chamada de credencial pode voltar vazia durante a retomada da
+  // sessao/conexao. Faz uma unica nova leitura dentro da mesma confirmacao para
+  // que o usuario nao precise informar exatamente o mesmo PIN duas vezes.
+  await new Promise(resolve => window.setTimeout(resolve, 180));
+  resposta = await executar();
+  return resposta;
+}
+
 async function validarPinFuncionario(funcionarioId, pin) {
   if (!funcionarioId || !pin) return false;
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_credencial_funcionario', {
+  const { data, error } = await executarValidacaoCredencialComRetry('verificar_credencial_funcionario', {
     p_funcionario_id: funcionarioId,
     p_senha: String(pin),
-  }));
+  }, data => data === true);
   return !error && data === true;
 }
 
@@ -2097,9 +2110,9 @@ async function obterFuncionarioAtivoPorPin(pin) {
 
   const pinNormalizado = String(pin).trim();
 
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+  const { data, error } = await executarValidacaoCredencialComRetry('buscar_funcionarios_por_credencial', {
     p_senha: pinNormalizado,
-  }));
+  }, data => Array.isArray(data) && data.length > 0);
   if (error) return null;
   const funcionario = (Array.isArray(data) ? data : [])
     .filter(funcionarioPertenceLojaAtualPonto)[0] || null;
@@ -2120,9 +2133,9 @@ async function validarPinExclusaoAgenda(pin, lojaId) {
   const loja = String(lojaId || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
   if (!pinNormalizado || !loja) return { funcionario: null, motivo: 'pin_invalido' };
 
-  const candidatosRes = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+  const candidatosRes = await executarValidacaoCredencialComRetry('buscar_funcionarios_por_credencial', {
     p_senha: pinNormalizado,
-  }));
+  }, data => Array.isArray(data) && data.length > 0);
   if (candidatosRes.error || !(candidatosRes.data || []).length) {
     return { funcionario: null, motivo: 'pin_invalido' };
   }
@@ -2183,10 +2196,10 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
       }
     }
     if (usuarioSistemaLogado?.tipo === 'admin_loja' && idLogado) {
-      const { data: adminValido } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
+      const { data: adminValido } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
         p_usuario_id: idLogado,
         p_pin: pinNormalizado,
-      }));
+      }, data => data === true);
       if (adminValido === true) {
       return {
         id: idLogado || usuarioSistemaLogado?.id || 'admin',
@@ -2204,9 +2217,9 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
     ? obterLojasPermitidasSessao()
     : []).map(l => String(l?.id || l?.loja_id || '').trim()).filter(Boolean);
 
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+  const { data, error } = await executarValidacaoCredencialComRetry('buscar_funcionarios_por_credencial', {
     p_senha: pinNormalizado,
-  }));
+  }, data => Array.isArray(data) && data.length > 0);
 
   if (error) { console.warn('Falha ao buscar funcionário por PIN:', error); return null; }
   return (Array.isArray(data) ? data : []).find(f => f.ativo !== false && (!lojasVinculadas.length || lojasVinculadas.includes(String(f.loja_id || '')))) || null;

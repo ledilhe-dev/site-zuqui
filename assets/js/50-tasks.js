@@ -1301,10 +1301,10 @@ async function validarSenhaMasterParaExclusao(senha = '') {
     const ehAdminSessao = usuarioSistemaLogado?.tipo === 'admin_loja' || usuarioSistemaLogado?.tipo === 'admin' || usuarioEhAdministrador?.();
     if (ehAdminSessao && idUsuario) {
       if (usuarioSistemaLogado?.tipo === 'admin_loja') {
-        const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
+        const { data, error } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
           p_usuario_id: idUsuario,
           p_pin: valor,
-        }));
+        }, data => data === true);
         if (!error && data === true) return true;
       }
       if (perfilPermiteExcluirTarefasCadastro(perfilAtual) && await validarPinFuncionario(idUsuario, valor)) return true;
@@ -1312,9 +1312,9 @@ async function validarSenhaMasterParaExclusao(senha = '') {
 
     // PIN operacional: procura o funcionário pela credencial e confere se pertence à loja
     // e se o perfil dele herda a permissão de excluir tarefas.
-    const candidatosRes = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+    const candidatosRes = await executarValidacaoCredencialComRetry('buscar_funcionarios_por_credencial', {
       p_senha: valor,
-    }));
+    }, data => Array.isArray(data) && data.length > 0);
     if (candidatosRes.error || !(candidatosRes.data || []).length) return false;
 
     for (const funcionario of candidatosRes.data || []) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v73-timeclock-duplicate-recovery';
+const CACHE_NAME = 'check-diario-pwa-v74-operation-pin-retry';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
