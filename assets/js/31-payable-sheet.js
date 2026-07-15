@@ -605,7 +605,7 @@ if (typeof _ncOrigEditar === 'function') {
       ncSyncParceladoUI();
 
       // Modo parcela na edição
-      document.getElementById('ncModoParc')?.classList.toggle('nc-pill-sel', NC.modo === 'parcela');
+      document.getElementById('ncModoTotal')?.classList.remove('nc-pill-sel');
       document.getElementById('ncModoTotal')?.classList.toggle('nc-pill-sel', NC.modo === 'total');
       ncAtuParcelasInfo();
 

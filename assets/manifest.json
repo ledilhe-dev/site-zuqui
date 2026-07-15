@@ -5,6 +5,7 @@
   "./assets/css/12-design-system.css",
   "./assets/css/20-schedule.css",
   "./assets/css/95-patch-5.css",
+  "./assets/css/96-recebiveis.css",
   "./assets/js/00-cep-mask.js",
   "./assets/js/01-core-supabase.js",
   "./assets/js/02-core-version.js",

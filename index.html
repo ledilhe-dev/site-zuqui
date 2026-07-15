@@ -2044,9 +2044,9 @@
         <div class="page-title">Recebíveis</div>
 
         <!-- Barra superior com botão de ação -->
-        <div class="recebiveis-page-actions" style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-          <button class="btn btn-green recebiveis-novo-btn" type="button" onclick="nrAbrir()"
-            style="display:flex;align-items:center;gap:8px;font-size:15px;padding:10px 20px;font-weight:700;">
+        <div class="recebiveis-page-actions">
+          <button class="btn btn-ghost recebiveis-baixar-btn" type="button" onclick="abrirPagina('financeiro_baixar_contas')">Baixar contas</button>
+          <button class="btn btn-green recebiveis-novo-btn" type="button" onclick="nrAbrir()">
             + Cadastrar recebível
           </button>
         </div>
@@ -2056,9 +2056,9 @@
             <div class="card-title">Recebíveis cadastrados</div>
             <button class="btn btn-ghost btn-sm" id="btnToggleRecebiveisLista" type="button" onclick="toggleListaRecebiveisFinanceiro()" aria-expanded="false">Mostrar recebíveis</button>
           </div>
-          <div class="form-row financeiro-filtros-row financeiro-filtros-flex" style="gap:6px;align-items:center;">
+          <div class="form-row financeiro-filtros-row financeiro-filtros-flex">
             <input id="filtroRecebivelBusca" type="text" placeholder="Buscar por pagador, forma, conta ou valor" style="flex:1;min-width:200px;" oninput="debounceConsumo('filtro_recebiveis', () => carregarRecebiveisFinanceiro(), 700)">
-            <div class="recebiveis-date-filters" style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            <div class="recebiveis-date-filters">
               <label class="recebiveis-data-field">
                 <span>Cadastro inicial</span>
                 <input id="filtroRecebivelCadastroInicio" class="campo-curto" type="date" style="width:130px;" title="Cadastro início" onchange="carregarRecebiveisFinanceiro()">
@@ -2086,14 +2086,14 @@
         <div class="card recebiveis-provisionados-card">
           <div class="financeiro-card-title-row recebiveis-provisionados-title-row">
             <div class="card-title">Recebimentos provisionados</div>
-            <div class="recebiveis-provisionados-actions" style="display:flex;gap:8px;align-items:center;">
-              <label class="recebiveis-pendentes-label" style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
+            <div class="recebiveis-provisionados-actions">
+              <label class="recebiveis-pendentes-label">
                 <input type="checkbox" id="filtroRecFuturoSoAbertos" checked onchange="carregarRecFuturos()"> Apenas pendentes
               </label>
               <button class="btn btn-ghost btn-sm" onclick="carregarRecFuturos()">Atualizar</button>
             </div>
           </div>
-          <div class="form-row recebiveis-provisionados-filtros" style="margin-bottom:8px;gap:8px;">
+          <div class="form-row recebiveis-provisionados-filtros">
             <input id="filtroRecFuturoBusca" type="text" placeholder="Buscar pagador..." style="flex:1;font-size:12px;" oninput="carregarRecFuturos()">
             <label class="recebiveis-data-field">
               <span>Data inicial</span>
@@ -2729,6 +2729,7 @@
 </div>
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
+<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260715-refactor-responsivo">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
