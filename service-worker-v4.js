@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v63-filtro-data-unico-fix';
+const CACHE_NAME = 'check-diario-pwa-v64-filtros-intervalo-criterio';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

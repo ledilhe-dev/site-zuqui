@@ -9,6 +9,13 @@
     data: 'Data'
   };
 
+  const OPCOES_ESPECIAIS = {
+    financeiro_baixar_contas: [
+      ['vencimento', 'Data de vencimento'], ['cadastro', 'Data de cadastro'],
+      ['atualizacao', 'Data de atualização'], ['pagamento', 'Data de pagamento']
+    ]
+  };
+
   function normalizar(texto) {
     return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
@@ -35,16 +42,20 @@
   function aplicar(wrapper) {
     const pares = JSON.parse(wrapper.dataset.pares || '[]');
     const criterio = wrapper.querySelector('.date-filter-criterion')?.value || '';
-    const data = wrapper.querySelector('.date-filter-single')?.value || '';
+    const dataInicio = wrapper.querySelector('.date-filter-start')?.value || '';
+    const dataFim = wrapper.querySelector('.date-filter-end')?.value || '';
+    const especial = criterio.startsWith('especial:');
     pares.forEach(par => {
       const inicio = document.getElementById(par.inicio);
       const fim = document.getElementById(par.fim);
       if (!inicio || !fim) return;
-      const valor = par.base === criterio ? data : '';
-      const mudouInicio = inicio.value !== valor;
-      const mudouFim = fim.value !== valor;
-      inicio.value = valor;
-      fim.value = valor;
+      const ativo = par.base === criterio || (especial && par === pares[0]);
+      const novoInicio = ativo ? dataInicio : '';
+      const novoFim = ativo ? dataFim : '';
+      const mudouInicio = inicio.value !== novoInicio;
+      const mudouFim = fim.value !== novoFim;
+      inicio.value = novoInicio;
+      fim.value = novoFim;
       if (mudouInicio || mudouFim) inicio.dispatchEvent(new Event('change', { bubbles:true }));
     });
   }
@@ -60,11 +71,19 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'date-filter-standard';
     wrapper.dataset.pares = JSON.stringify(pares);
+    const paginaId = bloco.closest('.pagina')?.id || '';
+    const especiais = OPCOES_ESPECIAIS[paginaId] || [];
+    const opcoes = especiais.length
+      ? especiais.map(([valor, label]) => ({ valor:`especial:${valor}`, label }))
+      : pares.map(par => ({ valor:par.base, label:par.label }));
     wrapper.innerHTML = `
-      <label class="date-filter-single-field"><span>Data</span><input class="date-filter-single" type="date" aria-label="Data da consulta"></label>
-      <label class="date-filter-criterion-field"><span>Consultar por</span><select class="date-filter-criterion" aria-label="Consultar por">${pares.map(par => `<option value="${par.base}">${par.label}</option>`).join('')}</select></label>`;
+      <label class="date-filter-start-field"><span>Data inicial</span><input class="date-filter-start" type="date" aria-label="Data inicial"></label>
+      <label class="date-filter-end-field"><span>Data final</span><input class="date-filter-end" type="date" aria-label="Data final"></label>
+      <label class="date-filter-criterion-field"><span>Consultar por</span><select class="date-filter-criterion" aria-label="Consultar por">${opcoes.map(opcao => `<option value="${opcao.valor}">${opcao.label}</option>`).join('')}</select></label>`;
     const ancora = primeiro.closest('label') || primeiro;
     ancora.parentElement.insertBefore(wrapper, ancora);
+    wrapper.querySelector('.date-filter-start').value = primeiro.value || '';
+    wrapper.querySelector('.date-filter-end').value = document.getElementById(pares[0].fim)?.value || '';
     wrapper.querySelectorAll('input,select').forEach(campo => campo.addEventListener('change', () => aplicar(wrapper)));
   }
 

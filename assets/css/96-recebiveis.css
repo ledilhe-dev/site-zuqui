@@ -1,13 +1,24 @@
 /* Recebíveis: componente isolado, responsivo e sem afetar outras telas. */
 .date-filter-original-hidden { display:none !important; }
-.date-filter-standard { display:grid; grid-template-columns:minmax(130px,160px) minmax(150px,210px); gap:8px; align-items:end; }
+.date-filter-standard { display:grid; grid-template-columns:repeat(2,minmax(130px,160px)) minmax(150px,210px); gap:8px; align-items:end; }
 .date-filter-standard label { display:grid; gap:4px; min-width:0; margin:0; color:var(--text-muted); font-size:11px; font-weight:700; }
 .date-filter-standard input,
 .date-filter-standard select { width:100% !important; min-width:0 !important; height:38px !important; min-height:38px !important; margin:0 !important; padding:7px 9px !important; font-size:12px !important; }
 @media (max-width:700px) {
   .date-filter-standard { grid-template-columns:minmax(0,1fr) minmax(0,1fr); width:100%; }
+  .date-filter-standard .date-filter-criterion-field { grid-column:1 / -1; }
   .date-filter-standard input,
   .date-filter-standard select { height:36px !important; min-height:36px !important; }
+}
+#financeiro_baixar_contas .financeiro-filtros-baixar { display:grid !important; grid-template-columns:minmax(220px,1fr) auto auto auto !important; gap:8px !important; align-items:end !important; }
+#financeiro_baixar_contas #filtroBaixarContaBusca { min-width:0 !important; }
+@media (max-width:700px) {
+  #financeiro_baixar_contas .financeiro-filtros-baixar { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+  #financeiro_baixar_contas #filtroBaixarContaBusca { grid-column:1/-1 !important; }
+  #financeiro_baixar_contas .date-filter-standard { display:contents; }
+  #financeiro_baixar_contas .date-filter-standard .date-filter-criterion-field { grid-column:auto; }
+  #financeiro_baixar_contas .financeiro-filtros-baixar > select,
+  #financeiro_baixar_contas .financeiro-filtros-baixar > button { width:100% !important; min-width:0 !important; height:36px !important; min-height:36px !important; padding:6px 8px !important; font-size:11px !important; }
 }
 #financeiro_recebiveis { container-type:inline-size; }
 #financeiro_recebiveis * { box-sizing:border-box; }

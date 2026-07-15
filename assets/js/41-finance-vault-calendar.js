@@ -1837,7 +1837,9 @@ function obterTituloFiltroBaixarContas() {
   if (baixarContasFiltroRapidoAtivo === 'amanha') return 'Total vence amanhã';
   const inicio = String(document.getElementById('filtroBaixarContaVencimentoInicio')?.value || '').trim();
   const fim = String(document.getElementById('filtroBaixarContaVencimentoFim')?.value || '').trim();
-  if (inicio || fim) return 'Total por vencimento';
+  const criterio = String(document.querySelector('#financeiro_baixar_contas .date-filter-criterion')?.value || 'especial:vencimento').replace('especial:', '');
+  const titulos = { vencimento:'vencimento', cadastro:'cadastro', atualizacao:'atualização', pagamento:'pagamento' };
+  if (inicio || fim) return `Total por ${titulos[criterio] || 'data'}`;
   return 'Total do filtro';
 }
 
@@ -1853,9 +1855,15 @@ function aplicarAtalhoBaixarContasFinanceiro(tipo = '') {
   const campoInicio = document.getElementById('filtroBaixarContaVencimentoInicio');
   const campoFim = document.getElementById('filtroBaixarContaVencimentoFim');
   const campoStatus = document.getElementById('filtroBaixarContaStatus');
+  const campoCriterio = document.querySelector('#financeiro_baixar_contas .date-filter-criterion');
+  const campoDataInicio = document.querySelector('#financeiro_baixar_contas .date-filter-start');
+  const campoDataFim = document.querySelector('#financeiro_baixar_contas .date-filter-end');
   if (campoInicio) campoInicio.value = '';
   if (campoFim) campoFim.value = '';
   if (campoStatus) campoStatus.value = 'pendente';
+  if (campoCriterio) campoCriterio.value = 'especial:vencimento';
+  if (campoDataInicio) campoDataInicio.value = '';
+  if (campoDataFim) campoDataFim.value = '';
   atualizarAtalhosBaixarContasFinanceiro();
   carregarBaixarContasFinanceiro();
 }
@@ -1865,10 +1873,16 @@ function limparFiltrosBaixarContasFinanceiro() {
   const campoInicio = document.getElementById('filtroBaixarContaVencimentoInicio');
   const campoFim = document.getElementById('filtroBaixarContaVencimentoFim');
   const campoStatus = document.getElementById('filtroBaixarContaStatus');
+  const campoCriterio = document.querySelector('#financeiro_baixar_contas .date-filter-criterion');
+  const campoDataInicio = document.querySelector('#financeiro_baixar_contas .date-filter-start');
+  const campoDataFim = document.querySelector('#financeiro_baixar_contas .date-filter-end');
   if (campoBusca) campoBusca.value = '';
   if (campoInicio) campoInicio.value = '';
   if (campoFim) campoFim.value = '';
   if (campoStatus) campoStatus.value = 'pendente';
+  if (campoCriterio) campoCriterio.value = 'especial:vencimento';
+  if (campoDataInicio) campoDataInicio.value = '';
+  if (campoDataFim) campoDataFim.value = '';
   baixarContasFiltroRapidoAtivo = '';
   atualizarAtalhosBaixarContasFinanceiro();
   carregarBaixarContasFinanceiro();
@@ -1887,11 +1901,12 @@ async function carregarBaixarContasFinanceiro() {
   const filtroStatus = String(document.getElementById('filtroBaixarContaStatus')?.value || '').trim();
   const filtroVencimentoInicio = String(document.getElementById('filtroBaixarContaVencimentoInicio')?.value || '').trim();
   const filtroVencimentoFim = String(document.getElementById('filtroBaixarContaVencimentoFim')?.value || '').trim();
+  const filtroDataTipo = String(document.querySelector('#financeiro_baixar_contas .date-filter-criterion')?.value || 'especial:vencimento').replace('especial:', '');
   atualizarAtalhosBaixarContasFinanceiro();
 
   const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
     .from('contasapagar')
-    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
+    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
     .is('excluido_em', null)
     .order('data_vencimento', { ascending: true }));
 
@@ -1944,7 +1959,13 @@ async function carregarBaixarContasFinanceiro() {
     const observacaoConta = String(item.observacao || '').trim();
     const formaConta = String(item.formas_pagamento?.nome || item.forma_pagamento || '').trim();
     const status = obterStatusContaBaixaFinanceiro(item);
-    const vencimento = String(item.data_vencimento || '').slice(0, 10);
+    const datasFiltro = {
+      vencimento: item.data_vencimento,
+      cadastro: item.created_at || item.data_compra,
+      atualizacao: item.updated_at,
+      pagamento: item.data_pagamento || item.pago_confirmado_em
+    };
+    const dataReferencia = String(datasFiltro[filtroDataTipo] || '').slice(0, 10);
     const bateBusca = !filtroBusca || textoFinanceiroNormalizado(`${nomeFornecedor} ${observacaoConta} ${formaConta}`).includes(filtroBusca);
     const bateStatus = !filtroStatus || filtroStatus === status;
 
@@ -1962,8 +1983,8 @@ async function carregarBaixarContasFinanceiro() {
     }
 
     // Sem atalho: filtro normal por intervalo de datas.
-    const bateInicio = !filtroVencimentoInicio || (vencimento && vencimento >= filtroVencimentoInicio);
-    const bateFim = !filtroVencimentoFim || (vencimento && vencimento <= filtroVencimentoFim);
+    const bateInicio = !filtroVencimentoInicio || (dataReferencia && dataReferencia >= filtroVencimentoInicio);
+    const bateFim = !filtroVencimentoFim || (dataReferencia && dataReferencia <= filtroVencimentoFim);
     return bateBusca && bateStatus && bateInicio && bateFim;
   });
 
