@@ -1,5 +1,17 @@
 /* Recebíveis: componente isolado, responsivo e sem afetar outras telas. */
 .date-filter-original-hidden { display:none !important; }
+:root { --filter-height:36px; --filter-radius:10px; --filter-font-size:11px; }
+.filter-field-standard { display:grid; gap:4px; flex:0 0 auto; min-width:0; margin:0; color:var(--text-muted); font-size:9px; font-weight:700; line-height:1; text-transform:uppercase; letter-spacing:.04em; }
+.filter-field-standard > span,
+.date-filter-standard label > span { min-height:10px; color:var(--text-muted); font-size:9px; font-weight:700; line-height:1; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+.filter-field-standard input,
+.filter-field-standard select { width:100% !important; height:var(--filter-height) !important; min-height:var(--filter-height) !important; padding:6px 9px !important; border-radius:var(--filter-radius) !important; font-size:var(--filter-font-size) !important; }
+.filter-field-search { width:280px; }
+.filter-field-select { width:150px; }
+.financeiro-filtros-row,
+.financeiro-filtros-flex,
+.recebiveis-provisionados-filtros,
+.relatorio-financeiro-filtros { justify-content:flex-start !important; align-items:end !important; align-content:start !important; }
 input[type="date"][id^="filtro"],
 .date-filter-standard input,
 .date-filter-standard select { border-radius:10px !important; }
@@ -18,15 +30,27 @@ input[type="date"][id^="filtro"],
   #financeiro_contasapagar .date-filter-standard { grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
   #financeiro_contasapagar .date-filter-standard .date-filter-criterion-field { grid-column:1/-1; }
 }
-#financeiro_baixar_contas .financeiro-filtros-baixar { display:grid !important; grid-template-columns:minmax(220px,1fr) auto auto auto !important; gap:8px !important; align-items:end !important; }
+#financeiro_baixar_contas .financeiro-filtros-baixar { display:flex !important; flex-wrap:wrap !important; justify-content:flex-start !important; gap:8px !important; align-items:end !important; }
 #financeiro_baixar_contas #filtroBaixarContaBusca { min-width:0 !important; }
+#financeiro_baixar_contas .date-filter-standard { flex:0 0 auto; }
+#financeiro_baixar_contas .financeiro-filtros-baixar > button { flex:0 0 auto !important; width:auto !important; height:var(--filter-height) !important; min-height:var(--filter-height) !important; padding:6px 10px !important; font-size:10px !important; }
 @media (max-width:700px) {
-  #financeiro_baixar_contas .financeiro-filtros-baixar { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
+  #financeiro_baixar_contas .financeiro-filtros-baixar { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
   #financeiro_baixar_contas #filtroBaixarContaBusca { grid-column:1/-1 !important; }
   #financeiro_baixar_contas .date-filter-standard { display:contents; }
   #financeiro_baixar_contas .date-filter-standard .date-filter-criterion-field { grid-column:auto; }
   #financeiro_baixar_contas .financeiro-filtros-baixar > select,
   #financeiro_baixar_contas .financeiro-filtros-baixar > button { width:100% !important; min-width:0 !important; height:36px !important; min-height:36px !important; padding:6px 8px !important; font-size:11px !important; }
+}
+@media (max-width:700px) {
+  .filter-field-search,
+  .filter-field-select { width:100%; }
+  .filter-field-search { grid-column:1 / -1; }
+  #financeiro_recebiveis .filter-field-standard:has(#filtroRecFuturoUsuario) { grid-column:1 / -1; }
+  .financeiro-filtros-row,
+  .financeiro-filtros-flex,
+  .recebiveis-provisionados-filtros,
+  .relatorio-financeiro-filtros { gap:7px !important; }
 }
 #financeiro_recebiveis { container-type:inline-size; }
 #financeiro_recebiveis * { box-sizing:border-box; }

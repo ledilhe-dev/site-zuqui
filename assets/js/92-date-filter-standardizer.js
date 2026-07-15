@@ -59,6 +59,36 @@
     return input.closest('.card, .filters, .toolbar, form, .pagina') || input.parentElement;
   }
 
+  function rotuloControle(campo) {
+    const fonte = normalizar(`${campo.id || ''} ${campo.name || ''} ${campo.placeholder || ''} ${campo.title || ''}`);
+    const regras = [
+      ['status', 'Status'], ['busca', 'Buscar'], ['buscar', 'Buscar'], ['pagador', 'Pagador'],
+      ['fornecedor', 'Fornecedor'], ['categoria', 'Categoria'], ['forma', 'Forma de pagamento'],
+      ['conta', 'Conta'], ['usuario', 'Quem lançou'], ['funcionario', 'Funcionário'],
+      ['responsavel', 'Responsável'], ['loja', 'Loja'], ['tipo', 'Tipo']
+    ];
+    return regras.find(([termo]) => fonte.includes(termo))?.[1] || (campo.tagName === 'SELECT' ? 'Opção' : 'Buscar');
+  }
+
+  function rotularFiltros() {
+    const blocos = ['.financeiro-filtros-row', '.financeiro-filtros-flex', '.financeiro-filtros-baixar', '.recebiveis-provisionados-filtros', '.relatorio-financeiro-filtros', '.filters', '.toolbar'];
+    const seletor = blocos.flatMap(bloco => [`${bloco} input[id^="filtro"]`, `${bloco} select[id^="filtro"]`]).join(', ');
+    document.querySelectorAll(seletor).forEach(campo => {
+      if (campo.type === 'date' || campo.type === 'checkbox' || campo.type === 'hidden' || campo.dataset.filterLabeled === 'true') return;
+      if (campo.closest('label, .campo-com-label, .financeiro-filtro-compacto, .filter-field-standard')) {
+        campo.dataset.filterLabeled = 'true';
+        return;
+      }
+      const wrapper = document.createElement('label');
+      wrapper.className = `filter-field-standard ${campo.tagName === 'SELECT' ? 'filter-field-select' : 'filter-field-search'}`;
+      const texto = document.createElement('span');
+      texto.textContent = rotuloControle(campo);
+      campo.parentElement.insertBefore(wrapper, campo);
+      wrapper.append(texto, campo);
+      campo.dataset.filterLabeled = 'true';
+    });
+  }
+
   function esconderCampo(input) {
     if (!input) return;
     input.dataset.dateFilterEnhanced = 'true';
@@ -117,6 +147,7 @@
   }
 
   function executar() {
+    rotularFiltros();
     document.querySelectorAll('.date-filter-standard').forEach((wrapper, indice, todos) => {
       const bloco = blocoDo(wrapper);
       const primeiro = todos.find(item => item !== wrapper && blocoDo(item) === bloco);

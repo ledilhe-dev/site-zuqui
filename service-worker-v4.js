@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v68-cofre-todas-datas';
+const CACHE_NAME = 'check-diario-pwa-v69-padrao-filtros-global';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
