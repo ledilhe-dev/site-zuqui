@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v78-report-filter-labels';
+const CACHE_NAME = 'check-diario-pwa-v79-report-shortcuts-sync';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -2823,8 +2823,9 @@ function resetFiltroRelatorioFinanceiro() {
   const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
   const campoForma = document.getElementById('filtroRelFinanceiroForma');
 
-  if (campoDataInicio) campoDataInicio.value = hojeLocal;
-  if (campoDataFim) campoDataFim.value = hojeLocal;
+  const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_financeiro', hojeLocal, hojeLocal, 'vencimento') === true;
+  if (!sincronizouData && campoDataInicio) campoDataInicio.value = hojeLocal;
+  if (!sincronizouData && campoDataFim) campoDataFim.value = hojeLocal;
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
@@ -2861,8 +2862,10 @@ function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
   const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
   const campoForma = document.getElementById('filtroRelFinanceiroForma');
 
-  if (campoDataInicio) campoDataInicio.value = hojeLocal;
-  if (campoDataFim) campoDataFim.value = somarDiasDataLocal(hojeLocal, intervalo);
+  const dataFimAtalho = somarDiasDataLocal(hojeLocal, intervalo);
+  const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_financeiro', hojeLocal, dataFimAtalho, 'vencimento') === true;
+  if (!sincronizouData && campoDataInicio) campoDataInicio.value = hojeLocal;
+  if (!sincronizouData && campoDataFim) campoDataFim.value = dataFimAtalho;
   if (campoStatus) {
     renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), ['pendente']);
   }
@@ -3165,8 +3168,9 @@ function resetFiltroRelatorioRecebimentos() {
   const forma = document.getElementById('filtroRelRecebForma');
   const usuario = document.getElementById('filtroRelRecebUsuario');
 
-  if (dataInicio) dataInicio.value = hojeLocal;
-  if (dataFim) dataFim.value = hojeLocal;
+  const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_recebimentos', hojeLocal, hojeLocal, 'recebimento') === true;
+  if (!sincronizouData && dataInicio) dataInicio.value = hojeLocal;
+  if (!sincronizouData && dataFim) dataFim.value = hojeLocal;
   if (pagador) pagador.value = '';
   if (forma) forma.value = '';
   if (usuario) usuario.value = '';
@@ -3178,8 +3182,10 @@ function aplicarAtalhoPeriodoRelatorioRecebimentos(dias = 7) {
   const hojeLocal = hoje();
   const dataInicio = document.getElementById('filtroRelRecebDataInicio');
   const dataFim = document.getElementById('filtroRelRecebDataFim');
-  if (dataInicio) dataInicio.value = subtrairDiasDataLocal(hojeLocal, intervalo - 1);
-  if (dataFim) dataFim.value = hojeLocal;
+  const dataInicioAtalho = subtrairDiasDataLocal(hojeLocal, intervalo - 1);
+  const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_recebimentos', dataInicioAtalho, hojeLocal, 'recebimento') === true;
+  if (!sincronizouData && dataInicio) dataInicio.value = dataInicioAtalho;
+  if (!sincronizouData && dataFim) dataFim.value = hojeLocal;
   carregarRelatorioRecebimentos();
 }
 

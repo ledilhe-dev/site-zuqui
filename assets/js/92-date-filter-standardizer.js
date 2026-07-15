@@ -114,6 +114,23 @@
     });
   }
 
+  window.sincronizarFiltroDataPadronizado = function(paginaId, dataInicio, dataFim, criterio = '') {
+    const pagina = document.getElementById(String(paginaId || ''));
+    const wrapper = pagina?.querySelector('.date-filter-standard');
+    if (!wrapper) return false;
+    const inicio = wrapper.querySelector('.date-filter-start');
+    const fim = wrapper.querySelector('.date-filter-end');
+    const seletor = wrapper.querySelector('.date-filter-criterion');
+    if (inicio) inicio.value = dataInicio || '';
+    if (fim) fim.value = dataFim || '';
+    if (seletor && criterio) {
+      const valor = criterio.startsWith('especial:') ? criterio : `especial:${criterio}`;
+      if ([...seletor.options].some(opcao => opcao.value === valor)) seletor.value = valor;
+    }
+    aplicar(wrapper);
+    return true;
+  };
+
   function aprimorarBloco(bloco, pares) {
     if (!bloco || bloco.querySelector('.date-filter-standard')) return;
     const primeiro = document.getElementById(pares[0].inicio);
