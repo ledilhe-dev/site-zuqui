@@ -2119,7 +2119,11 @@ async function registrarPontoFuncionario() {
     // e criar uma nova entrada indevida no mesmo dia.
     const selecionarCampos = 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id';
 
-    let resp = await executarSemFiltroLojaTemporario(() => sb
+    // Suspende tambem o filtro automatico de empresa. O indice unico legado e
+    // global por funcionario/data; alguns registros antigos da ZUQUI ficaram
+    // com empresa_id/loja_id divergentes e, quando ocultos pelo filtro do
+    // frontend, provocavam uma nova tentativa de INSERT e o erro 23505.
+    let resp = await executarSemFiltrosTenantTemporario(() => sb
       .from('ponto_registros')
       .select(selecionarCampos)
       .eq('funcionario_id', funcionarioId)
@@ -2168,11 +2172,11 @@ async function registrarPontoFuncionario() {
       updated_at: agora,
       ...montarCamposAuditoriaPonto(auditoriaPonto, tipoAuditoria),
     };
-    return executarComFallbackColunasPonto(
+    return executarSemFiltrosTenantTemporario(() => executarComFallbackColunasPonto(
       (payload) => sb.from('ponto_registros').update(payload).eq('id', registroId).select('id').maybeSingle(),
       campos,
       { ...camposBasicos, updated_at: agora },
-    );
+    ));
   }
 
   async function registrarAuditoriaSegura(pontoRegistroId, tipoBatida) {
@@ -2216,12 +2220,23 @@ async function registrarPontoFuncionario() {
         camposEntrada,
         camposEntradaBasicos,
       );
-      if (respostaEntrada.error) throw respostaEntrada.error;
-      pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
-      tipoBatidaRegistrada = 'entrada';
-      tipoAvisoPonto = 'iniciado';
-      descricaoBatida = 'PONTO REGISTRADO';
-    } else {
+      if (respostaEntrada.error) {
+        if (String(respostaEntrada.error.code || '') !== '23505') throw respostaEntrada.error;
+
+        // Recuperacao obrigatoria de concorrencia/dado legado: se a linha foi
+        // criada por outra aba/dispositivo, ou estava escondida por tenant
+        // inconsistente, reutiliza a linha unica do dia e continua a sequencia.
+        registro = await buscarRegistroPontoAbertoOuDoDia();
+        if (!registro?.id) throw respostaEntrada.error;
+      } else {
+        pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
+        tipoBatidaRegistrada = 'entrada';
+        tipoAvisoPonto = 'iniciado';
+        descricaoBatida = 'PONTO REGISTRADO';
+      }
+    }
+
+    if (registro) {
       pontoRegistroAuditoriaId = registro.id;
       const intervalosExtras = await carregarIntervalosDoRegistro(registro.id);
       const ultimoExtra = intervalosExtras[intervalosExtras.length - 1] || null;
