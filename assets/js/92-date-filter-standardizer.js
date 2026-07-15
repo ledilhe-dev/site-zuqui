@@ -13,6 +13,10 @@
     financeiro_baixar_contas: [
       ['vencimento', 'Data de vencimento'], ['cadastro', 'Data de cadastro'],
       ['atualizacao', 'Data de atualização'], ['pagamento', 'Data de pagamento']
+    ],
+    financeiro_recebiveis: [
+      ['prevista', 'Data prevista'], ['cadastro', 'Data de cadastro'],
+      ['recebimento', 'Data de recebimento']
     ]
   };
 

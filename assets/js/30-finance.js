@@ -1773,6 +1773,8 @@ async function carregarRecFuturos() {
   const busca = textoFinanceiroNormalizado(document.getElementById('filtroRecFuturoBusca')?.value || '');
   const inicio = String(document.getElementById('filtroRecFuturoInicio')?.value || '').trim();
   const fim = String(document.getElementById('filtroRecFuturoFim')?.value || '').trim();
+  const usuarioFiltro = String(document.getElementById('filtroRecFuturoUsuario')?.value || '').trim();
+  const dataTipo = String(document.querySelector('#financeiro_recebiveis .recebiveis-provisionados-card .date-filter-criterion')?.value || 'especial:prevista').replace('especial:', '');
 
   try {
     const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
@@ -1786,14 +1788,24 @@ async function carregarRecFuturos() {
     const { data, error } = await query;
     if (error) throw error;
 
+    const filtroUsuario = document.getElementById('filtroRecFuturoUsuario');
+    if (filtroUsuario) {
+      const atual = filtroUsuario.value;
+      const nomes = [...new Set((data || []).map(item => String(item.criado_por_nome || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      filtroUsuario.innerHTML = '<option value="">- Quem lançou -</option>' + nomes.map(nome => `<option value="${escaparHtmlBasico(nome)}">${escaparHtmlBasico(nome)}</option>`).join('');
+      filtroUsuario.value = nomes.includes(atual) ? atual : '';
+    }
+
     recFuturosCache = (data || []).filter(item => {
       // Isolamento por loja em mem?ria (refor?o): nunca mostra recebimento de outra loja.
       if (lojaSessao && String(item.loja_id || '').trim() !== lojaSessao) return false;
       const pagador = textoFinanceiroNormalizado(item.fornecedores?.nome || '');
       if (busca && !pagador.includes(busca)) return false;
-      const dp = String(item.data_prevista || '').slice(0, 10);
-      if (inicio && dp < inicio) return false;
-      if (fim && dp > fim) return false;
+      if (usuarioFiltro && String(item.criado_por_nome || '').trim() !== usuarioFiltro) return false;
+      const datas = { prevista:item.data_prevista, cadastro:item.created_at, recebimento:item.confirmado_em };
+      const dataReferencia = String(datas[dataTipo] || '').slice(0, 10);
+      if (inicio && (!dataReferencia || dataReferencia < inicio)) return false;
+      if (fim && (!dataReferencia || dataReferencia > fim)) return false;
       return true;
     });
 
@@ -1835,7 +1847,6 @@ async function carregarRecFuturos() {
             </label>
             <div class="item-detalhe">
               Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || '-')} ·
-              Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || '-')} ?
               Conta: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')}
             </div>
             <div class="item-detalhe">

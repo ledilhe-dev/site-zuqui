@@ -2051,41 +2051,9 @@
           </button>
         </div>
 
-        <div class="card">
-          <div class="financeiro-card-title-row recebiveis-card-title-row">
-            <div class="card-title">Recebíveis cadastrados</div>
-            <button class="btn btn-ghost btn-sm" id="btnToggleRecebiveisLista" type="button" onclick="toggleListaRecebiveisFinanceiro()" aria-expanded="false">Mostrar recebíveis</button>
-          </div>
-          <div class="form-row financeiro-filtros-row financeiro-filtros-flex">
-            <input id="filtroRecebivelBusca" type="text" placeholder="Buscar por pagador, forma, conta ou valor" style="flex:1;min-width:200px;" oninput="debounceConsumo('filtro_recebiveis', () => carregarRecebiveisFinanceiro(), 700)">
-            <div class="recebiveis-date-filters">
-              <label class="recebiveis-data-field">
-                <span>Cadastro inicial</span>
-                <input id="filtroRecebivelCadastroInicio" class="campo-curto" type="date" style="width:130px;" title="Cadastro início" onchange="carregarRecebiveisFinanceiro()">
-              </label>
-              <label class="recebiveis-data-field">
-                <span>Cadastro final</span>
-                <input id="filtroRecebivelCadastroFim" class="campo-curto" type="date" style="width:130px;" title="Cadastro fim" onchange="carregarRecebiveisFinanceiro()">
-              </label>
-            </div>
-            <select id="filtroRecebivelUsuario" class="campo-curto" style="width:140px;" title="Funcionário que lançou" onchange="carregarRecebiveisFinanceiro()">
-              <option value="">- Quem lançou -</option>
-            </select>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="mostrarTodosRecebiveisFinanceiro()">Todos</button>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltroRecebiveisFinanceiro()">Limpar</button>
-          </div>
-          <div class="form-row financeiro-filtros-row financeiro-selecao-recebiveis-row" id="acoesSelecaoRecebiveisFinanceiro" style="margin-top:8px;gap:8px;align-items:center;display:none;">
-            <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecebiveisFinanceiro" type="button" onclick="toggleSelecionarTodosRecebiveisFinanceiro()">Marcar todos</button>
-            <button class="btn btn-red btn-sm" id="btnExcluirRecebiveisSelecionadosFinanceiro" type="button" onclick="excluirRecebiveisSelecionadosFinanceiro()" disabled>Excluir selecionados</button>
-            <div class="item-detalhe" id="resumoSelecaoRecebiveisFinanceiro" style="align-self:center">Nenhum recebível selecionado.</div>
-          </div>
-          <div id="listaRecebiveisFinanceiro"><div class="empty">Carregando...</div></div>
-        </div>
-
-
         <div class="card recebiveis-provisionados-card">
           <div class="financeiro-card-title-row recebiveis-provisionados-title-row">
-            <div class="card-title">Recebimentos provisionados</div>
+            <div class="card-title">Recebíveis cadastrados</div>
             <div class="recebiveis-provisionados-actions">
               <label class="recebiveis-pendentes-label">
                 <input type="checkbox" id="filtroRecFuturoSoAbertos" checked onchange="carregarRecFuturos()"> Apenas pendentes
@@ -2095,6 +2063,9 @@
           </div>
           <div class="form-row recebiveis-provisionados-filtros">
             <input id="filtroRecFuturoBusca" type="text" placeholder="Buscar pagador..." style="flex:1;font-size:12px;" oninput="carregarRecFuturos()">
+            <select id="filtroRecFuturoUsuario" title="Quem lançou" onchange="carregarRecFuturos()">
+              <option value="">- Quem lançou -</option>
+            </select>
             <label class="recebiveis-data-field">
               <span>Data inicial</span>
               <input id="filtroRecFuturoInicio" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
@@ -2729,7 +2700,7 @@
 </div>
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
-<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260715-intervalo-criterio">
+<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260715-recebiveis-unificados">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3133,7 +3104,7 @@
 
 
 <script id="patch-agenda-por-loja-sem-funcionario-obrigatorio" src="./assets/js/90-schedule-store-agenda-patch.js?v=agenda-cadastro-em-branco-20260709"></script>
-<script id="padrao-filtro-data-unico" src="./assets/js/92-date-filter-standardizer.js?v=20260715-intervalo-criterio"></script>
+<script id="padrao-filtro-data-unico" src="./assets/js/92-date-filter-standardizer.js?v=20260715-recebiveis-unificados"></script>
 
 
 <script id="patch-feriados-loja-auto-zuqui" src="./assets/js/85-holidays-auto-patch.js"></script>

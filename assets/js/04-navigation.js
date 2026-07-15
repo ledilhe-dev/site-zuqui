@@ -645,7 +645,6 @@ function abrirPagina(id, botao) {
     carregarFornecedoresFinanceiro();
     carregarFormasPagamentoFinanceiro({ render: false, silencioso: true }).then(() => preencherSelectRecebivelFormasPagamentoFinanceiro());
     carregarContasFinanceiras({ render: false, silencioso: true }).then(() => preencherSelectRecebivelContasFinanceiras());
-    carregarRecebiveisFinanceiro();
     iniciarTelaRecFuturos();
   }
   if (id === 'financeiro_grupo_fornecedor') {
