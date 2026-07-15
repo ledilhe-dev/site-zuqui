@@ -18,11 +18,6 @@
       ['prevista', 'Data prevista'], ['cadastro', 'Data de cadastro'],
       ['recebimento', 'Data de recebimento']
     ],
-    financeiro_contasapagar: [
-      ['compra', 'Data da compra'], ['vencimento', 'Data de vencimento'],
-      ['pagamento', 'Data de pagamento'], ['cadastro', 'Data de cadastro'],
-      ['atualizacao', 'Data de atualização']
-    ],
     financeiro_cofre: [
       ['movimento', 'Data do movimento'], ['compra', 'Data da compra'],
       ['vencimento', 'Data de vencimento'], ['pagamento', 'Data de pagamento'],
@@ -154,7 +149,7 @@
       if (primeiro) wrapper.remove();
     });
     const inicios = [...document.querySelectorAll('input[type="date"][id^="filtro"][id$="Inicio"]')]
-      .filter(input => input.dataset.dateFilterEnhanced !== 'true');
+      .filter(input => input.dataset.dateFilterEnhanced !== 'true' && input.dataset.dateFilterNative !== 'true');
     const porBloco = new Map();
     inicios.forEach(inicio => {
       const base = inicio.id.slice(0, -6);

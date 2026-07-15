@@ -1825,39 +1825,26 @@
           <div class="financeiro-card-title-row">
             <div class="card-title">Contas cadastradas</div>
             <button class="btn btn-ghost btn-sm" id="btnToggleContasAPagarLista" type="button" onclick="toggleListaContasAPagarFinanceiro()">Mostrar contas</button>
-            <div class="contas-pagar-date-filters">
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarCadastroInicio">Cad. inicial</label>
-              <input id="filtroContaAPagarCadastroInicio" class="campo-curto" type="date" title="Cadastro início" aria-label="Cadastro início" onchange="carregarContasAPagarFinanceiro()">
-            </div>
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarCadastroFim">Cad. final</label>
-              <input id="filtroContaAPagarCadastroFim" class="campo-curto" type="date" title="Cadastro fim" aria-label="Cadastro fim" onchange="carregarContasAPagarFinanceiro()">
-            </div>
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarVencimentoInicio">Venc. inicial</label>
-              <input id="filtroContaAPagarVencimentoInicio" class="campo-curto" type="date" title="Vencimento início" aria-label="Vencimento início" onchange="carregarContasAPagarFinanceiro()">
-            </div>
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarVencimentoFim">Venc. final</label>
-              <input id="filtroContaAPagarVencimentoFim" class="campo-curto" type="date" title="Vencimento fim" aria-label="Vencimento fim" onchange="carregarContasAPagarFinanceiro()">
-            </div>
-            </div>
           </div>
-          <div class="form-row financeiro-filtros-row">
-            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, categoria, forma, conta, valor, data, observação ou parcela" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)">
-            <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
+          <div class="form-row financeiro-filtros-row contas-pagar-filtros-unificados">
+            <label class="filter-field-standard contas-pagar-busca"><span>Buscar</span><input id="filtroContaAPagarBusca" data-filter-labeled="true" type="text" placeholder="Fornecedor, categoria, forma, conta, valor ou observação" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)"></label>
+            <label class="filter-field-standard contas-pagar-data"><span>Data inicial</span><input id="filtroContaAPagarCadastroInicio" data-date-filter-native="true" type="date" onchange="carregarContasAPagarFinanceiro()"></label>
+            <label class="filter-field-standard contas-pagar-data"><span>Data final</span><input id="filtroContaAPagarCadastroFim" data-date-filter-native="true" type="date" onchange="carregarContasAPagarFinanceiro()"></label>
+            <label class="filter-field-standard contas-pagar-criterio"><span>Consultar por</span><select id="filtroContaAPagarDataTipo" data-filter-labeled="true" onchange="carregarContasAPagarFinanceiro()">
+              <option value="compra">Data da compra</option><option value="vencimento">Data de vencimento</option><option value="pagamento">Data de pagamento</option><option value="cadastro" selected>Data de cadastro</option><option value="atualizacao">Data de atualização</option>
+            </select></label>
+            <label class="filter-field-standard contas-pagar-status"><span>Status</span><select id="filtroContaAPagarStatus" data-filter-labeled="true" onchange="carregarContasAPagarFinanceiro()">
               <option value="">- Todos os status -</option>
               <option value="pendente">Pendente</option>
               <option value="pago">Pago</option>
-            </select>
-            <span id="filtroContaAPagarCategoriasWrap" style="position:relative;display:inline-block;">
+            </select></label>
+            <label class="filter-field-standard contas-pagar-categorias"><span>Categoria</span><span id="filtroContaAPagarCategoriasWrap" style="position:relative;display:inline-block;">
               <button class="btn btn-ghost" type="button" id="btnFiltroContaAPagarCategorias" onclick="toggleDropdownCategoriasContaAPagar()" title="Filtrar por uma ou mais categorias">Categorias ▾</button>
               <div id="dropdownCategoriasContaAPagar" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:60;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card,#0f1a2b);border:1px solid var(--border,#2a3a52);border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);"></div>
-            </span>
+            </span></label>
             <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
             <button class="btn btn-ghost btn-sm" type="button" id="btnAgruparParcelas" onclick="toggleAgruparParcelasContaAPagar()" title="Agrupar parcelas do mesmo lançamento em um único card" style="display:flex;align-items:center;justify-content:center;gap:4px;">📦 Agrupar</button>
-            <input id="filtroContaAPagarFornecedor" type="text" placeholder="Fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)">
+            <label class="filter-field-standard contas-pagar-fornecedor"><span>Fornecedor</span><input id="filtroContaAPagarFornecedor" data-filter-labeled="true" type="text" placeholder="Nome do fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)"></label>
           </div>
           <div id="filtroLojasContasAPagarFinanceiro" class="multi-loja-filter" style="margin-top:8px"></div>
           <div class="form-row financeiro-filtros-row financeiro-selecao-contas-row" id="acoesSelecaoContasAPagarFinanceiro" style="margin-top:8px">
@@ -2700,7 +2687,7 @@
 </div>
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
-<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260715-padrao-filtros-global">
+<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260715-contas-pagar-rebuild">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3104,7 +3091,7 @@
 
 
 <script id="patch-agenda-por-loja-sem-funcionario-obrigatorio" src="./assets/js/90-schedule-store-agenda-patch.js?v=agenda-cadastro-em-branco-20260709"></script>
-<script id="padrao-filtro-data-unico" src="./assets/js/92-date-filter-standardizer.js?v=20260715-padrao-filtros-global"></script>
+<script id="padrao-filtro-data-unico" src="./assets/js/92-date-filter-standardizer.js?v=20260715-contas-pagar-rebuild"></script>
 
 
 <script id="patch-feriados-loja-auto-zuqui" src="./assets/js/85-holidays-auto-patch.js"></script>

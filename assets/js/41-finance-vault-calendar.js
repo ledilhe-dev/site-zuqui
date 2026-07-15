@@ -1197,6 +1197,7 @@ function resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel = false } = {
   const vencimentoFim = document.getElementById('filtroContaAPagarVencimentoFim');
   const fornecedor = document.getElementById('filtroContaAPagarFornecedor');
   const status = document.getElementById('filtroContaAPagarStatus');
+  const dataTipo = document.getElementById('filtroContaAPagarDataTipo');
   if (busca) busca.value = '';
   if (cadastroInicio) cadastroInicio.value = '';
   if (cadastroFim) cadastroFim.value = '';
@@ -1207,6 +1208,7 @@ function resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel = false } = {
     status.value = '';
     status.selectedIndex = 0;
   }
+  if (dataTipo) dataTipo.value = 'cadastro';
   contasAPagarListaVisivel = !!manterListaVisivel;
   contasAPagarFinanceiroSelecionadasIds.clear();
   contasAPagarFinanceiroVisiveisIds = [];
@@ -1331,7 +1333,7 @@ async function carregarContasAPagarFinanceiro() {
   const filtroCadastroFim = obterDataISOFiltroContaAPagar('filtroContaAPagarCadastroFim');
   const filtroVencimentoInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoInicio');
   const filtroVencimentoFim = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoFim');
-  const filtroDataTipo = String(document.querySelector('#financeiro_contasapagar .date-filter-criterion')?.value || 'especial:cadastro').replace('especial:', '');
+  const filtroDataTipo = String(document.getElementById('filtroContaAPagarDataTipo')?.value || 'cadastro').replace('especial:', '');
   const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasContasAPagarFinanceiro');
   if (filtroBuscaBruto || filtroFornecedorBruto || filtroCadastroInicio || filtroCadastroFim || filtroVencimentoInicio || filtroVencimentoFim || filtroContaAPagarCategoriasSelecionadas.size) contasAPagarListaVisivel = true;
   atualizarEstadoListaContasAPagarFinanceiro();

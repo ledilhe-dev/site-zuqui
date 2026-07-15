@@ -20,15 +20,26 @@ input[type="date"][id^="filtro"],
 .date-filter-standard input,
 .date-filter-standard select { width:100% !important; min-width:0 !important; height:38px !important; min-height:38px !important; margin:0 !important; padding:7px 9px !important; font-size:12px !important; border-radius:10px !important; }
 .date-filter-standard input[type="date"] { border-radius:10px !important; overflow:hidden !important; }
-#financeiro_contasapagar .date-filter-standard { grid-template-columns:repeat(2,minmax(130px,160px)) minmax(180px,220px); flex:1 1 auto; }
-#financeiro_contasapagar .contas-pagar-date-filters:empty { display:none !important; }
+#financeiro_contasapagar .financeiro-card-title-row { display:flex !important; justify-content:flex-start !important; align-items:center !important; gap:10px !important; }
+#financeiro_contasapagar .financeiro-card-title-row #btnToggleContasAPagarLista { margin:0 !important; }
+#financeiro_contasapagar .contas-pagar-filtros-unificados { display:grid !important; grid-template-columns:minmax(240px,1.5fr) 140px 140px 190px 145px 120px auto auto minmax(150px,1fr) !important; gap:8px !important; align-items:end !important; justify-content:start !important; }
+#financeiro_contasapagar .contas-pagar-filtros-unificados > * { width:100% !important; min-width:0 !important; margin:0 !important; }
+#financeiro_contasapagar .contas-pagar-filtros-unificados input,
+#financeiro_contasapagar .contas-pagar-filtros-unificados select,
+#financeiro_contasapagar .contas-pagar-filtros-unificados button { width:100% !important; height:36px !important; min-height:36px !important; border-radius:10px !important; padding:6px 9px !important; font-size:10px !important; }
+#financeiro_contasapagar .contas-pagar-filtros-unificados > .btn { align-self:end !important; }
+@media (min-width:701px) and (max-width:1450px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados { grid-template-columns:minmax(240px,1fr) 135px 135px 185px 140px !important; }
+}
 @media (max-width:700px) {
   .date-filter-standard { grid-template-columns:minmax(0,1fr) minmax(0,1fr); width:100%; }
   .date-filter-standard .date-filter-criterion-field { grid-column:1 / -1; }
   .date-filter-standard input,
   .date-filter-standard select { height:36px !important; min-height:36px !important; }
-  #financeiro_contasapagar .date-filter-standard { grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
-  #financeiro_contasapagar .date-filter-standard .date-filter-criterion-field { grid-column:1/-1; }
+  #financeiro_contasapagar .contas-pagar-filtros-unificados { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; width:100% !important; }
+  #financeiro_contasapagar .contas-pagar-filtros-unificados .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados .contas-pagar-fornecedor { grid-column:1/-1 !important; }
 }
 #financeiro_baixar_contas .financeiro-filtros-baixar { display:flex !important; flex-wrap:wrap !important; justify-content:flex-start !important; gap:8px !important; align-items:end !important; }
 #financeiro_baixar_contas #filtroBaixarContaBusca { min-width:0 !important; }

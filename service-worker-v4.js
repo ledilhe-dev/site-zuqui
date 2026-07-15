@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v69-padrao-filtros-global';
+const CACHE_NAME = 'check-diario-pwa-v71-contas-pagar-rebuild';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
