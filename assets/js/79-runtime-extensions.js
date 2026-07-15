@@ -2204,30 +2204,21 @@ async function registrarPontoFuncionario() {
     registro = await buscarRegistroPontoAbertoOuDoDia();
 
     if (!registro) {
-      const camposEntradaBasicos = {
-        funcionario_id: funcionarioId,
-        data_ponto: dataHoje,
-        entrada_em: agora,
-        inicio_intervalo_em: null,
-        retorno_intervalo_em: null,
-        saida_em: null,
-        loja_id: lojaId,
-        empresa_id: empresaId,
-      };
-      const camposEntrada = { ...camposEntradaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'entrada') };
-      const respostaEntrada = await executarComFallbackColunasPonto(
-        (payload) => sb.from('ponto_registros').insert([payload]).select('id').maybeSingle(),
-        camposEntrada,
-        camposEntradaBasicos,
-      );
+      // A abertura passa por RPC SECURITY DEFINER: o banco valida novamente o
+      // PIN e usa loja/empresa do cadastro ativo do funcionario. Assim a RLS
+      // continua protegendo a tabela sem bloquear terminais com claim antigo.
+      const respostaEntrada = await executarSemFiltrosTenantTemporario(() => sb.rpc('abrir_ponto_funcionario_seguro', {
+        p_funcionario_id: funcionarioId,
+        p_pin: pin,
+        p_data: dataHoje,
+        p_entrada_em: agora,
+      }));
       if (respostaEntrada.error) {
-        if (String(respostaEntrada.error.code || '') !== '23505') throw respostaEntrada.error;
-
-        // Recuperacao obrigatoria de concorrencia/dado legado: se a linha foi
-        // criada por outra aba/dispositivo, ou estava escondida por tenant
-        // inconsistente, reutiliza a linha unica do dia e continua a sequencia.
+        throw respostaEntrada.error;
+      }
+      if (respostaEntrada.data?.criado === false) {
         registro = await buscarRegistroPontoAbertoOuDoDia();
-        if (!registro?.id) throw respostaEntrada.error;
+        if (!registro?.id) throw new Error('O ponto do dia existe, mas nao pode ser carregado pelo terminal.');
       } else {
         pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
         tipoBatidaRegistrada = 'entrada';
