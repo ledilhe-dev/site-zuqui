@@ -2853,7 +2853,7 @@ function somarDiasDataLocal(dataIso = hoje(), dias = 0) {
   return dataLocalISO(data);
 }
 
-function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
+async function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
   const intervalo = Math.max(1, Number(dias || 7));
   const hojeLocal = hoje();
   const campoDataInicio = document.getElementById('filtroRelFinanceiroDataInicio');
@@ -2873,7 +2873,8 @@ function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
 
-  carregarRelatorioFinanceiro();
+  const itens = await carregarRelatorioFinanceiro();
+  renderizarDetalhesRelatorioFinanceiro(Array.isArray(itens) ? itens : (relatorioFinanceiroCache || []));
 }
 
 async function carregarRelatorioFinanceiro() {
@@ -3082,6 +3083,7 @@ async function carregarRelatorioFinanceiro() {
     renderizarDashboardFormasRelatorioFinanceiro(itensFiltrados);
 
     setMsg('msgRelatorioFinanceiro', '', '');
+    return itensFiltrados;
   } catch (error) {
     console.error('Erro ao carregar relatorio financeiro:', error);
     renderizarPizzaRelatorioFinanceiro('graficoRelatorioFinanceiroFornecedores', []);
@@ -3177,7 +3179,7 @@ function resetFiltroRelatorioRecebimentos() {
   carregarRelatorioRecebimentos();
 }
 
-function aplicarAtalhoPeriodoRelatorioRecebimentos(dias = 7) {
+async function aplicarAtalhoPeriodoRelatorioRecebimentos(dias = 7) {
   const intervalo = Math.max(1, Number(dias || 7));
   const hojeLocal = hoje();
   const dataInicio = document.getElementById('filtroRelRecebDataInicio');
@@ -3186,7 +3188,7 @@ function aplicarAtalhoPeriodoRelatorioRecebimentos(dias = 7) {
   const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_recebimentos', dataInicioAtalho, hojeLocal, 'recebimento') === true;
   if (!sincronizouData && dataInicio) dataInicio.value = dataInicioAtalho;
   if (!sincronizouData && dataFim) dataFim.value = hojeLocal;
-  carregarRelatorioRecebimentos();
+  await carregarRelatorioRecebimentos();
 }
 
 function renderizarRelatorioRecebimentos(itens = []) {
