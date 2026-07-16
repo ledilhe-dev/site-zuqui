@@ -2288,7 +2288,7 @@ async function recalcularFaltaQuitar() {
     // Mesmo recorte de datas do relat?rio: futuros previstos dentro do período filtrado.
     const futInicio = String(document.getElementById('filtroRelFinanceiroDataInicio')?.value || '').trim();
     const futFim = String(document.getElementById('filtroRelFinanceiroDataFim')?.value || '').trim();
-    const { data: futuros, error: erroFuturos } = await executarSemFiltroLojaTemporario(() => {
+    const { data: futuros, error: erroFuturos } = await executarSemFiltrosTenantTemporario(() => {
       let queryFuturos = sb.from('recebiveis_futuros')
         .select('valor, loja_id, data_prevista')
         .eq('ativo', true)

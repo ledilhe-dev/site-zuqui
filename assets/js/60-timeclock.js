@@ -2921,12 +2921,20 @@ async function carregarRelatorioFinanceiro() {
     const filtroDataInicioConsulta = String(campoDataInicio?.value || '').trim();
     const filtroDataFimConsulta = String(campoDataFim?.value || '').trim();
     const filtroDataTipo = String(document.querySelector('#relatorio_financeiro .date-filter-criterion')?.value || 'especial:vencimento').replace('especial:', '');
-    const { data, error } = await executarSemFiltroLojaTemporario(() => {
+    const colunasDataConsulta = {
+      compra: 'data_compra', vencimento: 'data_vencimento', pagamento: 'data_pagamento',
+      cadastro: 'created_at', atualizacao: 'updated_at'
+    };
+    const colunaDataConsulta = colunasDataConsulta[filtroDataTipo] || 'data_vencimento';
+    const { data, error } = await executarSemFiltrosTenantTemporario(() => {
       let query = sb
         .from('contasapagar')
         .select('id, fornecedor_id, categoria_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, updated_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome, grupo_id), formas_pagamento(id, nome)')
         .order('data_vencimento', { ascending: false });
       if (lojasSelecionadas.length) query = query.in('loja_id', lojasSelecionadas);
+      if (filtroDataInicioConsulta) query = query.gte(colunaDataConsulta, filtroDataInicioConsulta);
+      if (filtroDataFimConsulta) query = query.lte(colunaDataConsulta,
+        ['created_at', 'updated_at'].includes(colunaDataConsulta) ? `${filtroDataFimConsulta}T23:59:59.999` : filtroDataFimConsulta);
       return query;
     });
 
@@ -2999,6 +3007,7 @@ async function carregarRelatorioFinanceiro() {
     const filtrosFornecedor = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
     const filtrosForma = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
     const filtrosCategoria = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
+    const filtroGrupo = String(document.getElementById('filtroRelFinanceiroGrupo')?.value || '').trim();
     const elTotalGeral = document.getElementById('rfTotalGeral');
     const elTotalPago = document.getElementById('rfTotalPago');
     const elTotalPendente = document.getElementById('rfTotalPendente');
@@ -3030,6 +3039,7 @@ async function carregarRelatorioFinanceiro() {
       const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
       const formaNome = obterNomeFormaRelatorioFinanceiro(item);
       const categoriaId = String(item.categoria_id || '').trim() || '__sem__';
+      const grupoId = String(item.fornecedores?.grupo_id || '').trim();
       const datasFiltro = {
         compra:item.data_compra, vencimento:item.data_vencimento, pagamento:item.data_pagamento || item.pago_confirmado_em,
         cadastro:item.created_at, atualizacao:item.updated_at
@@ -3042,6 +3052,7 @@ async function carregarRelatorioFinanceiro() {
       if (filtrosFornecedor.length && !filtrosFornecedor.includes(fornecedorId)) return false;
       if (filtrosForma.length && !filtrosForma.includes(formaId || formaNome)) return false;
       if (filtrosCategoria.length && !filtrosCategoria.includes(categoriaId)) return false;
+      if (filtroGrupo && grupoId !== filtroGrupo) return false;
       return true;
     });
 
@@ -3081,6 +3092,7 @@ async function carregarRelatorioFinanceiro() {
 
     renderizarDashboardFornecedoresRelatorioFinanceiro(itensFiltrados);
     renderizarDashboardFormasRelatorioFinanceiro(itensFiltrados);
+    renderizarDetalhesRelatorioFinanceiro(itensFiltrados);
 
     setMsg('msgRelatorioFinanceiro', '', '');
     return itensFiltrados;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v80-report-shortcuts-autofill';
+const CACHE_NAME = 'check-diario-pwa-v81-financial-report-full-flow';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
