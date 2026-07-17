@@ -3448,10 +3448,11 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     const fornecedor = faturaObterFornecedorItem(item);
     const categoria = faturaObterCategoriaItem(item);
     const vencimento = formatarDataBRFinanceiro(String(item.vencimento_fatura || item.data || '').slice(0, 10));
+    const observacao = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
     return `
       <div class="nc-confirm-line fatura-confirm-line">
         <span>${escaparHtmlBasico(item.descricao || 'Compra')}</span>
-        <strong>${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small><em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')} - ${escaparHtmlBasico(categoria?.nome || 'Sem categoria')}</em></strong>
+        <strong>${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small><em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')} - ${escaparHtmlBasico(categoria?.nome || 'Sem categoria')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
       </div>
     `;
   }).join('');
