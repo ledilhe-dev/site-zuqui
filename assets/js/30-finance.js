@@ -3680,8 +3680,8 @@ async function faturaLancarSelecionados() {
           valor_compra: Number(Number(item.valor || 0).toFixed(2)),
           observacao: (() => {
             const obsItem = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
+            const base = obsItem ? `${obsItem} · Importado do arquivo bancário` : 'Importado do arquivo bancário';
             return (qtdParcelas > 1 || ehParceladoOFX) ? `${base} · ${numeroParcela}/${totalRotulo}` : base;
-            return (qtdParcelas > 1 || ehParceladoOFX) ? `${base} ? ${numeroParcela}/${totalRotulo}` : base;
           })(),
           qtd_parcelas: ehParceladoOFX ? item.total_parcelas : qtdParcelas,
           intervalo_parcelas_dias: qtdParcelas > 1 ? intervaloDias : null,
