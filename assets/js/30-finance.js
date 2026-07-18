@@ -2914,7 +2914,10 @@ async function faturaExibirRevisao(resultado) {
     try { await carregarCategoriasCompra(); } catch(e) { /* segue */ }
   }
   // 1) Fornecedor: casa o banco do OFX (Nubank/Inter/Bradesco...) com um fornecedor cadastrado.
-  const fornAuto = faturaEncontrarFornecedorPorBanco(resultado.banco);
+  const fornAutoCartao = resultado.referenciaCartao
+    ? faturaEncontrarFornecedorCartaoNaReferencia(resultado.referenciaCartao)
+    : null;
+  const fornAuto = fornAutoCartao || faturaEncontrarFornecedorPorBanco(resultado.banco);
   // 2) Categoria: monta a mem?ria (hist?rico + tabela de aprendizado).
   await faturaConstruirMemoriaCategorias();
 
@@ -2924,7 +2927,9 @@ async function faturaExibirRevisao(resultado) {
   const fornAutoObj = fornAuto ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornAuto)) : null;
   _faturaItensExtraidos.forEach(item => {
     let fornDoItem = item.fornecedor_id;
-    const fornSugerido = faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`) || fornAuto;
+    const fornSugerido = fornAutoCartao
+      || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
+      || fornAuto;
     if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
     if (!item.categoria_id) {
       const chave = faturaChaveEstabelecimento(item.descricao);
@@ -3194,6 +3199,37 @@ function faturaEncontrarFornecedorPorBanco(banco) {
   // 2) match por apelidos/tolerante
   achado = lista.find(f => casa(f.nome));
   return achado ? achado.id : null;
+}
+
+// No OCR, o emissor do cartao costuma aparecer no cabecalho da notificacao e
+// nao na descricao individual de cada compra. Compara essa referencia somente
+// com fornecedores marcados como cartao, evitando sugerir um fornecedor comum
+// de mesmo nome. "Bradesco Cartoes" casa com "Bradesco Cartao", assim como
+// Nubank, Inter, Ponto Frio e outros nomes cadastrados pelo usuario.
+function faturaEncontrarFornecedorCartaoNaReferencia(referencia) {
+  const normalizar = (s) => String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const compacto = (s) => normalizar(s).replace(/\s+/g, '');
+  const texto = compacto(referencia);
+  if (!texto) return null;
+
+  const candidatos = (fornecedoresFinanceiroCache || [])
+    .filter(f => !!f.is_cartao)
+    .map(f => {
+      const nomeBase = normalizar(f.nome)
+        .replace(/\b(cartao|cartoes|credito|creditos)\b/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+      return { fornecedor: f, chave: compacto(nomeBase || f.nome) };
+    })
+    .filter(c => c.chave.length >= 3 && texto.includes(c.chave))
+    .sort((a, b) => b.chave.length - a.chave.length);
+
+  if (candidatos[0]) return candidatos[0].fornecedor.id;
+  const porBanco = faturaEncontrarFornecedorPorBanco(referencia);
+  const fornecedorBanco = (fornecedoresFinanceiroCache || [])
+    .find(f => String(f.id) === String(porBanco || '') && !!f.is_cartao);
+  return fornecedorBanco?.id || null;
 }
 
 function faturaAtualizarFooter() {

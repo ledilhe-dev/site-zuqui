@@ -325,6 +325,9 @@
       setTimeout(() => {
         faturaExibirRevisao({
           banco: 'Imagem/OCR',
+          // Preserva o texto completo porque o emissor (ex.: BRADESCO CARTOES)
+          // geralmente esta no cabecalho, fora da descricao de cada compra.
+          referenciaCartao: texto,
           vencimento: itens[0]?.vencimento_fatura || itens[0]?.data || imagemCompraHojeISO(),
           total_fatura: itens.reduce((s, item) => s + Number(item.valor || 0), 0),
         });

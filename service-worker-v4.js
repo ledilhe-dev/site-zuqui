@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v84-parcelas-inteligentes';
+const CACHE_NAME = 'check-diario-pwa-v85-fornecedor-cartao-ocr';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
