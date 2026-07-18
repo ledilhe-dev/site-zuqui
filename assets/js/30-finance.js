@@ -2924,7 +2924,8 @@ async function faturaExibirRevisao(resultado) {
   const fornAutoObj = fornAuto ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornAuto)) : null;
   _faturaItensExtraidos.forEach(item => {
     let fornDoItem = item.fornecedor_id;
-    if (fornAuto && !item.fornecedor_id) { item.fornecedor_id = fornAuto; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornAuto; }
+    const fornSugerido = faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`) || fornAuto;
+    if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
     if (!item.categoria_id) {
       const chave = faturaChaveEstabelecimento(item.descricao);
       const catMem = _faturaMemoriaCategorias[chave];
@@ -2939,7 +2940,14 @@ async function faturaExibirRevisao(resultado) {
     }
     // Inicializa parcelas manuais (provisionamento): 1 por padr?o; itens parcelados do OFX
     // j? trazem o total detectado e n?o usam o campo manual.
-    if (item._parcelasManuais == null) item._parcelasManuais = 1;
+    if (item._parcelasManuais == null) {
+      const texto = String(item.descricao || '');
+      const mQtd = texto.match(/(?:parcelad[oa]\s*(?:em)?\s*|\bem\s+)?(\d{1,3})\s*x\b/i);
+      const qtdSugerida = mQtd ? Number.parseInt(mQtd[1], 10) : 1;
+      item._parcelasManuais = qtdSugerida >= 2 && qtdSugerida <= 360 ? qtdSugerida : 1;
+      item._parcelasAuto = item._parcelasManuais > 1;
+    }
+    if (!item._modoValorParcelas) item._modoValorParcelas = 'total';
     // Obs edit?vel: pr?-preenchida com o nome da compra (memo limpo do OFX).
     if (item._obsManual == null) item._obsManual = String(item.descricao || '').trim();
   });
@@ -2971,7 +2979,7 @@ async function faturaExibirRevisao(resultado) {
     // Badge de quantas parcelas serão lançadas para este item.
     const qtdLancar = ehParceladoOFX ? (item.total_parcelas - item.parcela_atual + 1) : Math.max(1, Number(item._parcelasManuais || 1));
     const badgeParcelas = qtdLancar > 1
-      ? `<span style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">${qtdLancar} parcelas</span>`
+      ? `<span data-badge-parcelas style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">${qtdLancar} parcelas</span>`
       : '';
     const jaLancado = !!item._jaLancado;
     const rotuloConcil = item._motivoConciliacao === 'fitid' ? 'OFX'
@@ -2994,6 +3002,12 @@ async function faturaExibirRevisao(resultado) {
              style="width:54px;font-size:11px;height:24px;padding:0 4px;text-align:center;"
              onchange="faturaAoAlterarParcelasManuais('${item.id}', this.value)"
              title="Quantidade de parcelas a provisionar (vencimento mensal a partir do vencimento definido)">
+         </label>
+         <label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Valor:
+           <select style="font-size:11px;height:24px;padding:0 4px;" onchange="faturaAoAlterarModoValor('${item.id}', this.value)">
+             <option value="total" ${item._modoValorParcelas === 'total' ? 'selected' : ''}>Total (dividir)</option>
+             <option value="parcela" ${item._modoValorParcelas === 'parcela' ? 'selected' : ''}>Por parcela</option>
+           </select>
          </label>`
       : '';
     void campoObs; // usado no template abaixo
@@ -3128,6 +3142,11 @@ function faturaAoAlterarParcelasManuais(itemId, valor) {
   }
 }
 
+function faturaAoAlterarModoValor(itemId, modo) {
+  const item = _faturaItensExtraidos.find(i => i.id === itemId);
+  if (item) item._modoValorParcelas = modo === 'parcela' ? 'parcela' : 'total';
+}
+
 function faturaAoSelecionarCategoria(itemId, categoriaId) {
   const item = _faturaItensExtraidos.find(i => i.id === itemId);
   if (item) { item.categoria_id = categoriaId; item._catAuto = false; }
@@ -3164,8 +3183,13 @@ function faturaEncontrarFornecedorPorBanco(banco) {
     return false;
   };
 
+  const candidatos = lista.filter(f => casa(f.nome));
+  // Havendo nomes semelhantes, fornecedor marcado como cartao e a opcao mais
+  // segura para uma importacao de fatura. A escolha continua editavel na revisao.
+  let achado = candidatos.find(f => !!f.is_cartao);
+  if (achado) return achado.id;
   // 1) match exato pelo nome do banco
-  let achado = lista.find(f => norm(f.nome) === alvo);
+  achado = lista.find(f => norm(f.nome) === alvo);
   if (achado) return achado.id;
   // 2) match por apelidos/tolerante
   achado = lista.find(f => casa(f.nome));
@@ -3642,6 +3666,10 @@ async function faturaLancarSelecionados() {
       // Dia de vencimento do fornecedor, para provisionamento mensal "calend?rio".
       const fornObjLanc = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
       const diaVencForn = fornObjLanc?.dia_vencimento;
+      const dividirValorTotal = !ehParceladoOFX && item._modoValorParcelas !== 'parcela' && qtdParcelas > 1;
+      const valorTotalCentavos = Math.round(Number(item.valor || 0) * 100);
+      const valorBaseCentavos = dividirValorTotal ? Math.floor(valorTotalCentavos / qtdParcelas) : valorTotalCentavos;
+      const centavosRestantes = dividirValorTotal ? valorTotalCentavos % qtdParcelas : 0;
 
       // Gerar linhas das parcelas (campos id?nticos ao cadastro manual que funciona)
       const linhas = Array.from({ length: qtdParcelas }, (_, i) => {
@@ -3678,7 +3706,11 @@ async function faturaLancarSelecionados() {
           data_compra: dataCompra,
           data_pagamento: null,
           data_vencimento: venc,
-          valor_compra: Number(Number(item.valor || 0).toFixed(2)),
+          // Distribui eventual diferenca de centavos nas primeiras parcelas,
+          // garantindo que a soma final seja exatamente o valor informado.
+          valor_compra: dividirValorTotal
+            ? (valorBaseCentavos + (i < centavosRestantes ? 1 : 0)) / 100
+            : Number(Number(item.valor || 0).toFixed(2)),
           observacao: (() => {
             const obsItem = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
             const base = obsItem ? `${obsItem} · Importado do arquivo bancário` : 'Importado do arquivo bancário';

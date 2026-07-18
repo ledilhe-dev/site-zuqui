@@ -2533,7 +2533,7 @@
         <input type="number" id="ncParcCustom" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
           placeholder="1" min="1" max="360"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3); ncParcCust()">
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3); ncParcCust()" onblur="ncParcBlur()">
         <div id="ncParcErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
       </div>
     </div>
@@ -2925,7 +2925,7 @@
 <script src="./assets/js/21-employees.js"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260717-observacao-conferencia"></script>
+<script src="./assets/js/30-finance.js?v=20260718-parcelas-inteligentes"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260708-ocr-list-compact"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260708-duplicidade-botoes"></script>
@@ -3126,6 +3126,6 @@
 </html>
 
 
-<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260708-duplicidade-botoes"></script>
+<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260718-edicao-parcelas"></script>
 
 <script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js"></script>

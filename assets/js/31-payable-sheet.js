@@ -57,7 +57,11 @@ function ncSyncParceladoUI() {
   const ativo = !!NC.parcelado;
   if (pc) {
     pc.disabled = !ativo;
-    pc.value = ativo ? String(Math.max(2, NC.parcelas || 2)) : '1';
+    // Nao reescreve o campo enquanto o usuario esta digitando. Isso permite
+    // apagar o valor atual e informar outro numero normalmente.
+    if (document.activeElement !== pc) {
+      pc.value = ativo ? String(Math.max(2, NC.parcelas || 2)) : '1';
+    }
     pc.style.opacity = ativo ? '1' : '0.65';
   }
   if (btn) {
@@ -91,6 +95,19 @@ function ncParcCust() {
   if (v >= 1) NC.parcelas = v;
   const e = document.getElementById('ncParcErr');
   if (e) e.style.display = (v < 1) ? '' : 'none';
+  // Atualiza somente os elementos dependentes; ncSyncParceladoUI alteraria o
+  // proprio input no meio da edicao.
+  const mw = document.getElementById('ncModoParcelasWrap');
+  if (mw) mw.style.opacity = NC.parcelado ? '1' : '0.55';
+  ncAtuParcelasInfo();
+}
+
+function ncParcBlur() {
+  const pc = document.getElementById('ncParcCustom');
+  const v = parseInt(pc?.value || '0', 10);
+  if (!Number.isFinite(v) || v < 1) {
+    NC.parcelas = NC.parcelado ? 2 : 1;
+  }
   ncSyncParceladoUI();
 }
 
