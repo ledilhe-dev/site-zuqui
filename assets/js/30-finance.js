@@ -2940,7 +2940,13 @@ async function faturaExibirRevisao(resultado) {
     const sugestaoHistorico = faturaSugerirPorHistorico(item.descricao);
     item._sugestaoConfianca = sugestaoHistorico?.confianca || 0;
     let fornDoItem = item.fornecedor_id;
-    const fornSugerido = fornAutoCartao
+    // O banco reconhecido no bloco individual vence qualquer leitura do texto
+    // completo. Assim uma alucinacao do OCR fora da compra nao troca Nubank por outro cartao.
+    const fornCartaoDoItem = item._bancoImagem
+      ? faturaEncontrarFornecedorPorBanco(item._bancoImagem)
+      : null;
+    const fornSugerido = fornCartaoDoItem
+      || fornAutoCartao
       || (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
       || faturaEncontrarFornecedorInteligente(item.descricao)
       || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)

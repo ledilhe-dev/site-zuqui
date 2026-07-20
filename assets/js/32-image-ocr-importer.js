@@ -127,6 +127,7 @@
         selecionado: true,
         _obsManual: descricao,
         _origemImagem: true,
+        _bancoImagem: 'Nubank',
       });
     }
     return itens;
@@ -168,6 +169,7 @@
         _obsManual: imagemCompraLimparDescricao(descricao),
         _origemImagem: true,
         _origemCarteira: true,
+        _bancoImagem: 'Nubank',
       });
     });
     return itens;

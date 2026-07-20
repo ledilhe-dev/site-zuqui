@@ -319,18 +319,7 @@ function obterPaginaAtivaSalva() {
 
 function restaurarPaginaAtivaSalvaOuPadrao() {
   fecharMenusLaterais();
-  // Tela inicial = primeiro nav-btn visível na ordem personalizada do usuário
-  // (a ordem foi aplicada por carregarOrdemNavMenu antes desta chamada)
-  const telaPreferida = typeof obterTelaPreferidaAoLogin === 'function' ? obterTelaPreferidaAoLogin() : null;
-  const primeiroBtnVisivel = Array.from(document.querySelectorAll('#navContainer .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)'))
-    .find(btn => btn.style.display !== 'none' && (!usuarioSistemaLogado || usuarioPodeAcessar(btn.dataset.page)));
-  const paginaPrimeira = telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists';
-  if (document.getElementById(paginaPrimeira) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaPrimeira))) {
-    const botaoPrincipal = document.querySelector(`.nav-btn[data-page="${paginaPrimeira}"]`);
-    abrirPagina(paginaPrimeira, botaoPrincipal);
-    return true;
-  }
-
+  // No F5, restaura primeiro a pagina realmente aberta pelo usuario.
   let paginaSalva = obterPaginaAtivaSalva();
   if (paginaSalva === 'itens') {
     paginaSalva = 'tarefas';
@@ -339,6 +328,17 @@ function restaurarPaginaAtivaSalvaOuPadrao() {
   if (paginaSalva && document.getElementById(paginaSalva) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaSalva))) {
     const botaoSalvo = document.querySelector(`.nav-btn[data-page="${paginaSalva}"]`);
     abrirPagina(paginaSalva, botaoSalvo);
+    return true;
+  }
+
+  // Sem pagina salva valida, usa a tela preferida ou a primeira disponivel.
+  const telaPreferida = typeof obterTelaPreferidaAoLogin === 'function' ? obterTelaPreferidaAoLogin() : null;
+  const primeiroBtnVisivel = Array.from(document.querySelectorAll('#navContainer .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)'))
+    .find(btn => btn.style.display !== 'none' && (!usuarioSistemaLogado || usuarioPodeAcessar(btn.dataset.page)));
+  const paginaPrimeira = telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists';
+  if (document.getElementById(paginaPrimeira) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaPrimeira))) {
+    const botaoPrincipal = document.querySelector(`.nav-btn[data-page="${paginaPrimeira}"]`);
+    abrirPagina(paginaPrimeira, botaoPrincipal);
     return true;
   }
 
