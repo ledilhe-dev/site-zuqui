@@ -966,10 +966,10 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     if (pin || senhaAcesso) {
       const confirmacao = await abrirModalPin({
         titulo: 'Confirmar troca de senha',
-        subtitulo: 'Digite a sua própria senha para autorizar a senha deste funcionário.',
+        subtitulo: 'Digite seu PIN operacional ou sua senha gerencial para autorizar esta alteração.',
         textoAcao: 'Autorizar alteração',
         exibirUsuario: false,
-        placeholderInput: 'Sua senha atual',
+        placeholderInput: 'Seu PIN ou senha gerencial',
       });
       if (!confirmacao?.pin) {
         setMsg('msgFuncionarios', 'Alteração de senha cancelada.', 'err');
