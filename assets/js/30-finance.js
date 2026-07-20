@@ -2433,6 +2433,7 @@ async function faturaConstruirMemoriaCategorias() {
     const { data } = await query;
     const contagem = {}; // chave -> { categoria_id: qtd }
     (data || []).forEach(row => {
+      if (/Importado do arquivo banc[aá]rio/i.test(String(row?.observacao || ''))) return;
       // A categoria pertence ao estabelecimento descrito na compra. Usar o
       // fornecedor/cartao primeiro (ex.: Nubank) mistura categorias de todas
       // as compras feitas no mesmo cartao.
@@ -2456,7 +2457,8 @@ async function faturaConstruirMemoriaCategorias() {
   // (2) Tabela dedicada de mem?ria (prioridade sobre o hist?rico).
   try {
     const { data } = await sb.from('fatura_categoria_memoria')
-      .select('chave_estabelecimento, categoria_id');
+      .select('chave_estabelecimento, categoria_id')
+      .gte('atualizado_em', '2026-07-20T21:20:00.000Z');
     (data || []).forEach(row => {
       if (row.chave_estabelecimento && row.categoria_id) {
         mapa[row.chave_estabelecimento] = row.categoria_id;
@@ -2482,7 +2484,7 @@ async function faturaSalvarMemoriaCategorias(itens) {
     const ator = (typeof obterAtorAuditoriaAtual === 'function') ? obterAtorAuditoriaAtual() : {};
     const vistos = new Map(); // chave -> linha (deduplica dentro do mesmo lote)
     (itens || []).forEach(item => {
-      if (!item.categoria_id) return;
+      if (!item.categoria_id || !item._catEditadaManual) return;
       const chave = faturaChaveEstabelecimento(item.descricao);
       if (!chave) return;
       vistos.set(chave, {
@@ -2938,9 +2940,9 @@ async function faturaExibirRevisao(resultado) {
     const sugestaoHistorico = faturaSugerirPorHistorico(item.descricao);
     item._sugestaoConfianca = sugestaoHistorico?.confianca || 0;
     let fornDoItem = item.fornecedor_id;
-    const fornSugerido = (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
+    const fornSugerido = fornAutoCartao
+      || (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
       || faturaEncontrarFornecedorInteligente(item.descricao)
-      || fornAutoCartao
       || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
       || fornAuto;
     if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
@@ -3115,6 +3117,7 @@ async function faturaAoSelecionarFornecedor(itemId, fornecedorId) {
   if (!item) return;
   item.fornecedor_id = fornecedorId;
   item._fornAuto = false;
+  item._fornEditadoManual = true;
   // Recalcula o vencimento com base no dia configurado no novo fornecedor,
   // mas s? se o usu?rio ainda n?o tiver editado o vencimento manualmente.
   if (!item._vencEditadoManual) {
@@ -3148,6 +3151,7 @@ function faturaAoAlterarObs(itemId, valor) {
   if (!item) return;
   item._obsManual = String(valor || '').trim().slice(0, 200);
   item._obsAuto = false;
+  item._obsEditadaManual = true;
 }
 
 function faturaAoAlterarParcelasManuais(itemId, valor) {
@@ -3213,12 +3217,16 @@ function faturaSimilaridadeDescricao(a, b) {
 }
 
 let _faturaMemoriaInteligente = [];
+// Sugestoes antigas eram gravadas sem confirmacao e podem estar contaminadas.
+const FATURA_MEMORIA_CONFIRMADA_DESDE = '2026-07-20T21:20:00.000Z';
 
 async function faturaConstruirMemoriaInteligente() {
   const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
   const perfis = [];
   try {
-    let query = sb.from('fatura_importacao_memoria').select('*').order('ultima_utilizacao_em', { ascending: false }).limit(1500);
+    let query = sb.from('fatura_importacao_memoria').select('*')
+      .gte('atualizado_em', FATURA_MEMORIA_CONFIRMADA_DESDE)
+      .order('ultima_utilizacao_em', { ascending: false }).limit(1500);
     if (lojaId) query = query.eq('loja_id', lojaId);
     const { data, error } = await query;
     if (error) throw error;
@@ -3241,6 +3249,7 @@ async function faturaConstruirMemoriaInteligente() {
     if (lojaId) query = query.eq('loja_id', lojaId);
     const { data } = await query;
     (data || []).forEach(row => {
+      if (/Importado do arquivo banc[aá]rio/i.test(String(row.observacao || ''))) return;
       const observacao = String(row.observacao || '').replace(/\s*[·-]\s*Importado do arquivo banc[aá]rio.*$/i, '').replace(/\s*[·-]\s*\d+\/\d+\s*$/i, '').trim();
       const origens = [observacao, row?.fornecedores?.nome].filter(Boolean);
       origens.forEach(origem => perfis.push({
@@ -3284,12 +3293,13 @@ async function faturaSalvarMemoriaInteligente(itens) {
   const porChave = new Map();
   (itens || []).forEach(item => {
     const chave = faturaNormalizarDescricaoInteligente(item.descricao);
-    if (!chave) return;
+    if (!chave || (!item._obsEditadaManual && !item._fornEditadoManual && !item._catEditadaManual)) return;
     porChave.set(chave, {
       empresa_id: empresaId, loja_id: lojaId, chave_origem: chave,
       descricao_origem_exemplo: String(item.descricao || '').slice(0, 200),
-      observacao_padrao: String(item._obsManual || item.descricao || '').trim().slice(0, 200) || null,
-      fornecedor_id: item.fornecedor_id || null, categoria_id: item.categoria_id || null,
+      observacao_padrao: item._obsEditadaManual ? (String(item._obsManual || '').trim().slice(0, 200) || null) : null,
+      fornecedor_id: item._fornEditadoManual ? (item.fornecedor_id || null) : null,
+      categoria_id: item._catEditadaManual ? (item.categoria_id || null) : null,
       ultima_utilizacao_em: new Date().toISOString(), atualizado_em: new Date().toISOString(),
     });
   });
@@ -3313,7 +3323,7 @@ function faturaAoAlterarModoValor(itemId, modo) {
 
 function faturaAoSelecionarCategoria(itemId, categoriaId) {
   const item = _faturaItensExtraidos.find(i => i.id === itemId);
-  if (item) { item.categoria_id = categoriaId; item._catAuto = false; }
+  if (item) { item.categoria_id = categoriaId; item._catAuto = false; item._catEditadaManual = true; }
 }
 
 // Tenta casar o banco detectado no OFX (ex.: "Nubank", "Inter", "Bradesco")
