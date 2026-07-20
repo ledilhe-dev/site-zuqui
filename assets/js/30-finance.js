@@ -1764,6 +1764,42 @@ function cancelarEdicaoRecFuturo() {
   fecharModalConfirmarRecFuturo();
 }
 
+function aplicarAtalhoPeriodoRecFuturo(tipo) {
+  const inicioEl = document.getElementById('filtroRecFuturoInicio');
+  const fimEl = document.getElementById('filtroRecFuturoFim');
+  if (!inicioEl || !fimEl) return;
+
+  const formatarDataLocal = data => {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  };
+  const hoje = new Date();
+  const adicionarDias = quantidade => {
+    const data = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    data.setDate(data.getDate() + quantidade);
+    return formatarDataLocal(data);
+  };
+
+  inicioEl.value = tipo === 'atrasados' ? '' : formatarDataLocal(hoje);
+  fimEl.value = tipo === 'atrasados' ? adicionarDias(-1)
+    : tipo === 'hoje' ? formatarDataLocal(hoje)
+      : adicionarDias(tipo === '7d' ? 6 : tipo === '15d' ? 14 : 29);
+
+  const apenasPendentes = document.getElementById('filtroRecFuturoSoAbertos');
+  if (apenasPendentes) apenasPendentes.checked = true;
+  const criterio = document.querySelector('#financeiro_recebiveis .recebiveis-provisionados-card .date-filter-criterion');
+  if (criterio) {
+    const opcaoPrevista = Array.from(criterio.options || []).find(opcao => String(opcao.value).replace('especial:', '') === 'prevista');
+    if (opcaoPrevista) criterio.value = opcaoPrevista.value;
+  }
+  document.querySelectorAll('[data-rec-atalho]').forEach(botao => {
+    botao.classList.toggle('is-active', botao.dataset.recAtalho === tipo);
+  });
+  carregarRecFuturos();
+}
+
 async function carregarRecFuturos() {
   const lista = document.getElementById('listaRecFuturos');
   if (!lista) return;
@@ -1823,9 +1859,9 @@ async function carregarRecFuturos() {
     const totalPendentesFut = itensPendentesFut.reduce((s, i) => s + Number(i.valor || 0), 0);
     const totalConfirmadosFut = itensConfirmadosFut.reduce((s, i) => s + Number(i.valor_confirmado ?? i.valor ?? 0), 0);
     const resumoFuturosHtml = `
-      <div class="rec-summary">
+      <div class="rec-summary rec-summary-compacto">
         <div class="item-info">
-          <div class="item-nome">Total previsto pendente: ${formatarMoedaBRFinanceiro(totalPendentesFut)} <span style="font-weight:400;color:var(--text-muted);">(${itensPendentesFut.length} lançamento${itensPendentesFut.length === 1 ? '' : 's'})</span></div>
+          <div class="item-nome"><span class="rec-summary-label">Total previsto pendente:</span> <strong class="rec-summary-valor">${formatarMoedaBRFinanceiro(totalPendentesFut)}</strong> <span>(${itensPendentesFut.length} lançamento${itensPendentesFut.length === 1 ? '' : 's'})</span></div>
           ${itensConfirmadosFut.length ? `<div class="item-detalhe">Confirmados no filtro: ${formatarMoedaBRFinanceiro(totalConfirmadosFut)} (${itensConfirmadosFut.length})</div>` : ''}
         </div>
       </div>`;
@@ -1841,10 +1877,13 @@ async function carregarRecFuturos() {
       return `
         <article class="rec-card rec-card-future">
           <div class="rec-card-main">
-            <label class="rec-card-title rec-check">
-              <input class="checkbox-rec-futuro-financeiro" data-rec-futuro-id="${item.id}" type="checkbox" ${recFuturosSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecFuturo('${item.id}', this.checked)">
-              <span>${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador não encontrado')}</span>
-            </label>
+            <div class="rec-card-title-line">
+              <label class="rec-card-title rec-check">
+                <input class="checkbox-rec-futuro-financeiro" data-rec-futuro-id="${item.id}" type="checkbox" ${recFuturosSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecFuturo('${item.id}', this.checked)">
+                <span>${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador não encontrado')}</span>
+              </label>
+              <strong class="rec-futuro-valor-inline">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
+            </div>
             <div class="item-detalhe">
               Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || '-')} ·
               Conta: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')}
@@ -1872,7 +1911,7 @@ async function carregarRecFuturos() {
           </div>
           <div class="rec-card-actions">
             ${tagStatus}
-            ${!confirmado ? `<button class="btn btn-green btn-sm" onclick="abrirModalConfirmarRecFuturo('${item.id}')">Confirmar recebimento</button>` : ''}
+            ${!confirmado ? `<button class="btn btn-green btn-sm rec-confirmar-btn" onclick="abrirModalConfirmarRecFuturo('${item.id}')">Confirmar recebimento</button>` : ''}
             <button class="btn btn-ghost btn-sm" onclick="editarRecFuturo('${item.id}')">Editar</button>
             <button class="btn btn-red btn-sm" onclick="excluirRecFuturo('${item.id}')">Excluir</button>
           </div>
