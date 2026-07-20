@@ -435,12 +435,24 @@ async function validarDuplicidadeCadastro({
   }
 
   if (nomeNormalizado) {
-    const { data: funcionariosMesmoNome } = await sb
+    let consultaFuncionariosMesmoNome = sb
       .from('funcionarios')
       .select('id, nome')
       .ilike('nome', escaparValorLike(nome));
 
-    if ((funcionariosMesmoNome || []).some(item => item.id !== funcionarioIdIgnorar && normalizarTextoComparacao(item.nome) === nomeNormalizado)) {
+    // Na edicao, o proprio funcionario pode ser retornado pela busca do nome.
+    // Exclui-lo tambem no banco evita falso positivo quando o ID do formulario
+    // (string) e o ID devolvido pelo cliente estiverem representados de formas diferentes.
+    if (funcionarioIdIgnorar !== null && funcionarioIdIgnorar !== undefined && String(funcionarioIdIgnorar).trim()) {
+      consultaFuncionariosMesmoNome = consultaFuncionariosMesmoNome.neq('id', funcionarioIdIgnorar);
+    }
+
+    const { data: funcionariosMesmoNome } = await consultaFuncionariosMesmoNome;
+
+    if ((funcionariosMesmoNome || []).some(item =>
+      String(item.id) !== String(funcionarioIdIgnorar ?? '')
+      && normalizarTextoComparacao(item.nome) === nomeNormalizado
+    )) {
       return 'Já existe um usuário com este nome.';
     }
   }
