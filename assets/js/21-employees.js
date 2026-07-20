@@ -13,6 +13,9 @@ async function carregarFuncionarios() {
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
   renderizarFiltroLojasCheckbox('filtroLojasFuncionarios', 'carregarFuncionarios()');
   const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasFuncionarios');
+  const todasLojasSelecionadas = document.querySelector('#filtroLojasFuncionarios [data-multi-loja-todas]')?.checked === true;
+  const termoBusca = String(document.getElementById('buscaFuncionarios')?.value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
   try {
     const executarConsultaFuncionarios = usuarioSistemaLogado?.tipo === 'admin'
@@ -50,9 +53,9 @@ async function carregarFuncionarios() {
         );
       }
     }
+    const idsVinculadosFiltro = new Set();
     if (lojasSelecionadas.length) {
       const idsLojasFiltro = lojasSelecionadas.map(String);
-      const idsVinculados = new Set();
       try {
         const { data: vinculosFiltro, error: erroVinculosFiltro } = await executarSemFiltroLojaTemporario(() =>
           sb.from('funcionario_lojas')
@@ -60,15 +63,30 @@ async function carregarFuncionarios() {
             .in('loja_id', idsLojasFiltro)
             .eq('ativo', true)
         );
-        if (!erroVinculosFiltro) (vinculosFiltro || []).forEach(v => idsVinculados.add(String(v.funcionario_id || '')));
+        if (!erroVinculosFiltro) (vinculosFiltro || []).forEach(v => idsVinculadosFiltro.add(String(v.funcionario_id || '')));
       } catch (erroVinculosFiltro) {
         console.warn('Não foi possível considerar vínculos multi-loja na lista de funcionários:', erroVinculosFiltro);
       }
       funcionariosVisiveis = funcionariosVisiveis.filter(f =>
         f?.é_administrador === true
         || idsLojasFiltro.includes(String(f?.loja_id || ''))
-        || idsVinculados.has(String(f?.id || ''))
+        || idsVinculadosFiltro.has(String(f?.id || ''))
+        // O administrador global precisa enxergar cadastros orfaos para poder
+        // corrigi-los e vincula-los a uma loja.
+        || (ehAdminSistema && todasLojasSelecionadas && !f?.loja_id)
       );
+    }
+
+    if (termoBusca) {
+      funcionariosVisiveis = funcionariosVisiveis.filter(f => {
+        const tipoAcesso = f?.é_administrador === true
+          ? 'administrador global'
+          : (f?.email ? 'gerencial email senha' : 'operacional pin');
+        const texto = [f?.nome, f?.email, f?.perfis?.nome, f?.perfis?.codigo, tipoAcesso]
+          .filter(Boolean).join(' ')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        return texto.includes(termoBusca);
+      });
     }
 
     if (!funcionariosVisiveis.length) {
@@ -81,7 +99,11 @@ async function carregarFuncionarios() {
     lista.innerHTML = '<div class="lista">' + funcionariosVisiveis.map(f => {
       const nomeLoja = f?.é_administrador === true
         ? 'Todas as lojas (Administrador do Sistema)'
-        : (obterNomeLojaFiltroMultiLoja(f.loja_id) || (!f.loja_id ? 'Acesso por vínculos' : '-'));
+        : (obterNomeLojaFiltroMultiLoja(f.loja_id)
+          || (idsVinculadosFiltro.has(String(f?.id || '')) ? 'Acesso por vínculos' : 'Sem loja vinculada'));
+      const tipoAcesso = f?.é_administrador === true
+        ? 'Administrador global'
+        : (f?.email ? 'Gerencial (e-mail e senha)' : 'Operacional (PIN)');
       // Admin global pode editar qualquer funcionário (não tem loja_id vinculada).
       const dentroDoEscopoDaLoja = ehAdminGlobal || (
         f?.é_administrador !== true
@@ -94,11 +116,12 @@ async function carregarFuncionarios() {
       <div class="item tarefa-cadastrada-item">
         <div class="item-info">
           <div class="item-nome">${f.nome}</div>
-          <div class="item-detalhe">Loja: ${nomeLoja || '-'} · E-mail: ${f.email || '-'} · Senha protegida${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
+          <div class="item-detalhe">Loja: ${nomeLoja || '-'} · Acesso: ${tipoAcesso} · E-mail: ${f.email || '-'} · Senha protegida${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
           <div class="item-detalhe">Turno: ${f.horario_trabalho_inicio || '--:--'} às ${f.horario_trabalho_fim || '--:--'} · Intervalos: ${resumirIntervalosSemanaFuncionario(f.intervalos_semana, f.tempo_intervalo_minutos)}</div>
         </div>
         <div class="item-actions">
           ${f.ativo ? '' : '<span class="tag tag-gray">Inativo</span>'}
+          ${f?.é_administrador !== true && !f?.loja_id && !idsVinculadosFiltro.has(String(f?.id || '')) ? '<span class="tag tag-amber">Sem loja vinculada</span>' : ''}
           ${!f.email ? '<span class="tag tag-gray">Sem e-mail</span>' : f.email_verificado === true ? '<span class="tag tag-green">E-mail ok</span>' : '<span class="tag tag-amber">E-mail pendente</span>'}
           ${podeEditarNestaLoja && f.email && f.email_verificado !== true ? `<button class="btn btn-ghost btn-sm" onclick="reenviarVerificacaoFuncionarioLista('${f.id}', '${String(f.email || '').replace(/'/g, "\\'")}', '${String(f.nome || '').replace(/'/g, "\\'")}')">Reenviar e-mail</button>` : ''}
           ${podeEditarNestaLoja ? `
@@ -986,7 +1009,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       ? {
           nome,
           email: emailInformado ? email : null,
-          loja_id: lojaId,
           é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
