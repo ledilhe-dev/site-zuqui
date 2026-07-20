@@ -34,6 +34,35 @@ async function carregarFuncionarios() {
 
     let funcionariosVisiveis = data || [];
     const ehAdminSistema = usuarioEhAdministrador();
+    const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    const exibindoPainelAdminGlobal = ehAdminSistema && !lojaSessaoId;
+    const idsFuncionariosCarregados = funcionariosVisiveis.map(f => String(f?.id || '')).filter(Boolean);
+    const vinculosPorFuncionario = new Map();
+    const funcionariosComHistoricoVinculos = new Set();
+    const nomesLojasVinculos = new Map();
+    if (idsFuncionariosCarregados.length) {
+      const { data: vinculosTodos, error: erroVinculosTodos } = await executarSemFiltrosTenantTemporario(() => sb
+        .from('funcionario_lojas')
+        .select('funcionario_id, loja_id, ativo')
+        .in('funcionario_id', idsFuncionariosCarregados));
+      if (erroVinculosTodos) throw erroVinculosTodos;
+      const idsLojasDosVinculos = new Set();
+      (vinculosTodos || []).forEach(vinculo => {
+        const funcionarioId = String(vinculo?.funcionario_id || '');
+        const lojaId = String(vinculo?.loja_id || '');
+        if (!funcionarioId) return;
+        funcionariosComHistoricoVinculos.add(funcionarioId);
+        if (vinculo?.ativo !== true || !lojaId) return;
+        if (!vinculosPorFuncionario.has(funcionarioId)) vinculosPorFuncionario.set(funcionarioId, new Set());
+        vinculosPorFuncionario.get(funcionarioId).add(lojaId);
+        idsLojasDosVinculos.add(lojaId);
+      });
+      if (idsLojasDosVinculos.size) {
+        const { data: lojasVinculos, error: erroLojasVinculos } = await executarSemFiltrosTenantTemporario(() => sb
+          .from('lojas').select('id, nome').in('id', [...idsLojasDosVinculos]));
+        if (!erroLojasVinculos) (lojasVinculos || []).forEach(loja => nomesLojasVinculos.set(String(loja.id), loja.nome || 'Loja'));
+      }
+    }
     const lojasPermitidasGestao = obterIdsLojasPermitidasGestaoFuncionarios();
     const funcionariosVinculadosPermitidos = new Set();
     if (!ehAdminSistema) {
@@ -56,25 +85,23 @@ async function carregarFuncionarios() {
     const idsVinculadosFiltro = new Set();
     if (lojasSelecionadas.length) {
       const idsLojasFiltro = lojasSelecionadas.map(String);
-      try {
-        const { data: vinculosFiltro, error: erroVinculosFiltro } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('funcionario_lojas')
-            .select('funcionario_id, loja_id, ativo')
-            .in('loja_id', idsLojasFiltro)
-            .eq('ativo', true)
-        );
-        if (!erroVinculosFiltro) (vinculosFiltro || []).forEach(v => idsVinculadosFiltro.add(String(v.funcionario_id || '')));
-      } catch (erroVinculosFiltro) {
-        console.warn('Não foi possível considerar vínculos multi-loja na lista de funcionários:', erroVinculosFiltro);
-      }
-      funcionariosVisiveis = funcionariosVisiveis.filter(f =>
-        f?.é_administrador === true
-        || idsLojasFiltro.includes(String(f?.loja_id || ''))
-        || idsVinculadosFiltro.has(String(f?.id || ''))
-        // O administrador global precisa enxergar cadastros orfaos para poder
-        // corrigi-los e vincula-los a uma loja.
-        || (ehAdminSistema && todasLojasSelecionadas && !f?.loja_id)
-      );
+      vinculosPorFuncionario.forEach((lojas, funcionarioId) => {
+        if ([...lojas].some(lojaId => idsLojasFiltro.includes(lojaId))) idsVinculadosFiltro.add(funcionarioId);
+      });
+      funcionariosVisiveis = funcionariosVisiveis.filter(f => {
+        if (f?.é_administrador === true) return true;
+        const funcionarioId = String(f?.id || '');
+        const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
+        const possuiVinculoAtivo = (vinculosPorFuncionario.get(funcionarioId)?.size || 0) > 0;
+        const pertenceFiltroPorVinculo = idsVinculadosFiltro.has(funcionarioId);
+        // loja_id e apenas compatibilidade para cadastros que nunca passaram
+        // pela tabela funcionario_lojas. Vinculo desativado nunca e herdado.
+        const pertenceFiltroLegado = !teveVinculos && idsLojasFiltro.includes(String(f?.loja_id || ''));
+        const semAcessoAtivo = !possuiVinculoAtivo && (teveVinculos || !f?.loja_id);
+        return pertenceFiltroPorVinculo
+          || pertenceFiltroLegado
+          || (exibindoPainelAdminGlobal && todasLojasSelecionadas && semAcessoAtivo);
+      });
     }
 
     if (termoBusca) {
@@ -97,10 +124,16 @@ async function carregarFuncionarios() {
     const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     const ehAdminGlobal = usuarioEhAdministrador();
     lista.innerHTML = '<div class="lista">' + funcionariosVisiveis.map(f => {
+      const funcionarioId = String(f?.id || '');
+      const lojasAtivas = [...(vinculosPorFuncionario.get(funcionarioId) || [])];
+      const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
+      const nomesLojasAtivas = lojasAtivas.map(id => nomesLojasVinculos.get(id) || 'Loja').filter(Boolean);
+      const semAcessoAtivo = f?.é_administrador !== true && !lojasAtivas.length && (teveVinculos || !f?.loja_id);
       const nomeLoja = f?.é_administrador === true
         ? 'Todas as lojas (Administrador do Sistema)'
-        : (obterNomeLojaFiltroMultiLoja(f.loja_id)
-          || (idsVinculadosFiltro.has(String(f?.id || '')) ? 'Acesso por vínculos' : 'Sem loja vinculada'));
+        : (nomesLojasAtivas.join(', ')
+          || (!teveVinculos && obterNomeLojaFiltroMultiLoja(f.loja_id))
+          || 'Sem loja vinculada');
       const tipoAcesso = f?.é_administrador === true
         ? 'Administrador global'
         : (f?.email ? 'Gerencial (e-mail e senha)' : 'Operacional (PIN)');
@@ -121,7 +154,7 @@ async function carregarFuncionarios() {
         </div>
         <div class="item-actions">
           ${f.ativo ? '' : '<span class="tag tag-gray">Inativo</span>'}
-          ${f?.é_administrador !== true && !f?.loja_id && !idsVinculadosFiltro.has(String(f?.id || '')) ? '<span class="tag tag-amber">Sem loja vinculada</span>' : ''}
+          ${semAcessoAtivo ? '<span class="tag tag-amber">Sem loja vinculada</span>' : ''}
           ${!f.email ? '<span class="tag tag-gray">Sem e-mail</span>' : f.email_verificado === true ? '<span class="tag tag-green">E-mail ok</span>' : '<span class="tag tag-amber">E-mail pendente</span>'}
           ${podeEditarNestaLoja && f.email && f.email_verificado !== true ? `<button class="btn btn-ghost btn-sm" onclick="reenviarVerificacaoFuncionarioLista('${f.id}', '${String(f.email || '').replace(/'/g, "\\'")}', '${String(f.nome || '').replace(/'/g, "\\'")}')">Reenviar e-mail</button>` : ''}
           ${podeEditarNestaLoja ? `
@@ -715,9 +748,9 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       const idsLojas = [...new Set(vinculosBase.map(v => String(v.loja_id || '')).filter(Boolean))];
       let lojasPorId = new Map();
       if (idsLojas.length) {
-        let resLojas = await executarSemFiltroLojaTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo, cidade').in('id', idsLojas));
+        let resLojas = await executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo, cidade').in('id', idsLojas));
         if (resLojas.error && isMissingColumnError(resLojas.error)) {
-          resLojas = await executarSemFiltroLojaTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo').in('id', idsLojas));
+          resLojas = await executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo').in('id', idsLojas));
         }
         if (resLojas.error) throw resLojas.error;
         lojasPorId = new Map((resLojas.data || []).map(loja => [String(loja.id), loja]));
@@ -725,7 +758,7 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       const idsPerfis = [...new Set(vinculosBase.map(v => String(v.perfil_id || '')).filter(Boolean))];
       let perfisPorId = new Map();
       if (idsPerfis.length) {
-        const resPerfis = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome').in('id', idsPerfis));
+        const resPerfis = await executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome').in('id', idsPerfis));
         if (!resPerfis.error) perfisPorId = new Map((resPerfis.data || []).map(perfil => [String(perfil.id), perfil]));
       }
       const vinculos = vinculosBase.map(v => ({ ...v, lojas: lojasPorId.get(String(v.loja_id || '')) || null, perfis: perfisPorId.get(String(v.perfil_id || '')) || null }));
