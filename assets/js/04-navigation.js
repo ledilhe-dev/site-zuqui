@@ -23,6 +23,15 @@ const topTitles = {
   financeiro_categorias_compra: ['Categorias de Compra', 'Classifique os lançamentos por categoria'],
   tela_preferida_login: ['Tela de Login Preferida', 'Configure a tela inicial por loja ou usuário'],
   financeiro_cofre: ['Cofre', 'Recebimentos lançados em recebíveis'],
+  integracoes_financeiras_dashboard: ['Dashboard Financeiro', 'Visão estrutural das integrações financeiras'],
+  integracoes_financeiras_contas: ['Contas Bancárias', 'Contas conectadas ou cadastradas'],
+  integracoes_financeiras_cartoes: ['Cartões', 'Cartões e faturas integradas'],
+  integracoes_financeiras_movimentacoes: ['Movimentações', 'Extrato financeiro normalizado'],
+  integracoes_financeiras_categorias: ['Categorias', 'Classificação financeira'],
+  integracoes_financeiras_fornecedores: ['Fornecedores', 'Contrapartes das movimentações'],
+  integracoes_financeiras_conciliacao: ['Conciliação', 'Correspondência com registros internos'],
+  integracoes_financeiras_regras: ['Regras Automáticas', 'Classificação automática futura'],
+  integracoes_financeiras_configuracoes: ['Configurações', 'Provedores e sincronizações'],
   itens: ['Itens do Checklist', 'Itens por modelo'],
   funcionarios: ['Funcionarios', 'Gestao de equipe'],
   solicitacoes: ['Solicitacoes de acesso', 'Aprove ou rejeite pedidos de entrada'],
@@ -46,6 +55,10 @@ function paginaPertenceMenuRelatorios(pageId = '') {
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
   return ['financeiro_fornecedores', 'financeiro_formas_pagamento', 'financeiro_contasapagar', 'financeiro_baixar_contas', 'financeiro_conta_financeira', 'financeiro_recebiveis', 'financeiro_grupo_fornecedor', 'financeiro_categorias_compra', 'financeiro_cofre'].includes(String(pageId || ''));
+}
+
+function paginaPertenceMenuIntegracoesFinanceiras(pageId = '') {
+  return String(pageId || '').startsWith('integracoes_financeiras_');
 }
 
 function paginaPertenceMenuFuncionarios(pageId = '') {
@@ -74,6 +87,12 @@ function atualizarEstadoMenuRelatorios(expandido = false) {
 
 function atualizarEstadoMenuFinanceiro(expandido = false) {
   const grupo = document.getElementById('menuFinanceiroGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function atualizarEstadoMenuIntegracoesFinanceiras(expandido = false) {
+  const grupo = document.getElementById('menuIntegracoesFinanceirasGroup');
   if (!grupo) return;
   grupo.classList.toggle('open', !!expandido);
 }
@@ -112,6 +131,11 @@ function toggleMenuFinanceiroSubmenu() {
   const grupo = document.getElementById('menuFinanceiroGroup');
   if (!grupo) return;
   grupo.classList.toggle('open');
+}
+
+function toggleMenuIntegracoesFinanceirasSubmenu() {
+  const grupo = document.getElementById('menuIntegracoesFinanceirasGroup');
+  atualizarEstadoMenuIntegracoesFinanceiras(!grupo?.classList.contains('open'));
 }
 
 function toggleMenuFuncionariosSubmenu() {
@@ -597,6 +621,8 @@ function abrirPagina(id, botao) {
   document.getElementById('topbar-title').textContent = tituloPagina;
   document.getElementById('topbar-sub').textContent = '';
   salvarPaginaAtiva(id);
+  atualizarEstadoMenuIntegracoesFinanceiras(paginaPertenceMenuIntegracoesFinanceiras(id));
+  if (paginaPertenceMenuIntegracoesFinanceiras(id) && typeof carregarPaginaIntegracoesFinanceiras === 'function') carregarPaginaIntegracoesFinanceiras(id);
   if (id === 'meu_painel') carregarMeuPainel();
   if (id === 'dashboard') carregarDashboard();
   if (id === 'checklists') { carregarChecklists(); }

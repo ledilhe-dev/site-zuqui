@@ -26,6 +26,8 @@ HTML monolítico, para preservar funções globais usadas nos atributos `onclick
 - `js/78-init.js`: inicialização do núcleo original.
 - `js/79-*` a `js/92-*`: extensões e correções compatíveis com o legado.
 
+O módulo Integrações Financeiras usa `css/97-financial-integrations.css` e `js/33-financial-integrations.js`, isolando telas, provedores futuros e a fachada inativa do Finance AI do financeiro legado.
+
 ## Verificação
 
 Execute na raiz do projeto:

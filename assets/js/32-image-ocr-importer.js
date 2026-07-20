@@ -83,18 +83,19 @@
   function imagemCompraExtrairNubank(texto, dataPadrao) {
     const itens = [];
     const compacto = imagemCompraNormalizarTexto(texto).replace(/\n+/g, ' ');
-    const regex = /(?:((?:ontem|hoje)[^A-Za-z0-9]{0,4}\d{0,2}:?\d{0,2})\s+)?Compra\s+de\s+R\$\s*([\d.]+,\d{2})\s+APROVAD[AO]\s+em\s+(.+?)(?=\s+para\s+o\s+cart[aã]o|\s+Compra\s+no\s+cr[eé]dito|\s+Compra\s+de\s+R\$|$)/gi;
+    const regex = /Compra\s+de\s+R\$?\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+R\$?|hoje\b|ontem\b)|$)/gi;
     let m;
     while ((m = regex.exec(compacto)) !== null) {
-      const valor = imagemCompraParseValor(m[2]);
-      const descricao = imagemCompraLimparDescricao(m[3]);
+      const valor = imagemCompraParseValor(m[1]);
+      const descricao = imagemCompraLimparDescricao(m[2]);
       if (!valor || !descricao) continue;
+      const contextoData = compacto.slice(Math.max(0, m.index - 60), m.index);
       itens.push({
-        data: imagemCompraParseData(m[1] || '', dataPadrao),
+        data: imagemCompraParseData(contextoData, dataPadrao),
         descricao,
         valor,
         fitid: null,
-        vencimento_fatura: imagemCompraParseData(m[1] || '', dataPadrao),
+        vencimento_fatura: imagemCompraParseData(contextoData, dataPadrao),
         selecionado: true,
         _obsManual: descricao,
         _origemImagem: true,
@@ -204,8 +205,11 @@
   function imagemCompraExtrairItens(texto) {
     const dataPadrao = imagemCompraHojeISO();
     const nubank = imagemCompraExtrairNubank(texto, dataPadrao);
-    if (nubank.length) return imagemCompraDeduplicar(nubank);
-    return imagemCompraDeduplicar(imagemCompraExtrairGenerico(texto, dataPadrao));
+    const genericos = imagemCompraExtrairGenerico(texto, dataPadrao).filter(itemGenerico => !nubank.some(itemNubank =>
+      itemNubank.data === itemGenerico.data
+      && Math.round(Number(itemNubank.valor || 0) * 100) === Math.round(Number(itemGenerico.valor || 0) * 100)
+    ));
+    return imagemCompraDeduplicar([...nubank, ...genericos]);
   }
 
   async function imagemCompraCarregarTesseract() {
@@ -331,7 +335,7 @@
           vencimento: itens[0]?.vencimento_fatura || itens[0]?.data || imagemCompraHojeISO(),
           total_fatura: itens.reduce((s, item) => s + Number(item.valor || 0), 0),
         });
-        setMsg('msgImportarFatura', 'Revise data, fornecedor e categoria antes de lancar. A leitura por imagem pode errar quando a foto esta torta, escura ou cortada.', 'ok');
+        setMsg('msgImportarFatura', `${itens.length} conta(s) identificada(s). Revise as sugestoes editaveis de observacao, fornecedor, categoria e vencimento antes de lancar.`, 'ok');
       }, 250);
     } catch (e) {
       console.error('Erro ao importar imagem por OCR:', e);
@@ -341,4 +345,6 @@
       setMsg('msgImportarFatura', e?.message || 'Nao foi possivel ler a imagem.', 'err');
     }
   };
+
+  window.imagemCompraExtrairItens = imagemCompraExtrairItens;
 })();

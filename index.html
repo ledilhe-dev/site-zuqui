@@ -43,6 +43,7 @@
 
 <link id="obsidian-precision-design-system-v3" rel="stylesheet" href="./assets/css/12-design-system.css">
 <link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css">
+<link id="integracoes-financeiras-style" rel="stylesheet" href="./assets/css/97-financial-integrations.css">
 
 
 
@@ -252,6 +253,26 @@
               <span class="nav-title">Cofre</span>
             </span>
           </button>
+        </div>
+      </div>
+    </div>
+    <div id="navgrp_integracoes_financeiras" class="nav-group">
+      <div class="nav-label">Integrações</div>
+      <div class="nav-group-financeiro" id="menuIntegracoesFinanceirasGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuIntegracoesFinanceiras" type="button" onclick="toggleMenuIntegracoesFinanceirasSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="icon">IF</span><span class="nav-copy"><span class="nav-title">Integrações Financeiras</span><span class="nav-hint">Bancos, cartões e conciliação</span></span></span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_dashboard" onclick="abrirPagina('integracoes_financeiras_dashboard', this)"><span class="nav-copy"><span class="nav-title">Dashboard Financeiro</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_contas" onclick="abrirPagina('integracoes_financeiras_contas', this)"><span class="nav-copy"><span class="nav-title">Contas Bancárias</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_cartoes" onclick="abrirPagina('integracoes_financeiras_cartoes', this)"><span class="nav-copy"><span class="nav-title">Cartões</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_movimentacoes" onclick="abrirPagina('integracoes_financeiras_movimentacoes', this)"><span class="nav-copy"><span class="nav-title">Movimentações</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_categorias" onclick="abrirPagina('integracoes_financeiras_categorias', this)"><span class="nav-copy"><span class="nav-title">Categorias</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_fornecedores" onclick="abrirPagina('integracoes_financeiras_fornecedores', this)"><span class="nav-copy"><span class="nav-title">Fornecedores</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_conciliacao" onclick="abrirPagina('integracoes_financeiras_conciliacao', this)"><span class="nav-copy"><span class="nav-title">Conciliação</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_regras" onclick="abrirPagina('integracoes_financeiras_regras', this)"><span class="nav-copy"><span class="nav-title">Regras Automáticas</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_configuracoes" onclick="abrirPagina('integracoes_financeiras_configuracoes', this)"><span class="nav-copy"><span class="nav-title">Configurações</span></span></button>
         </div>
       </div>
     </div>
@@ -2291,6 +2312,17 @@
         </div>
       </section>
 
+      <!-- Paginas declarativas do modulo. O conteudo e montado por 33-financial-integrations.js para evitar duplicacao. -->
+      <section id="integracoes_financeiras_dashboard" class="pagina"><div class="page-title">Dashboard Financeiro</div><div class="page-sub">Estrutura para indicadores e movimentações consolidadas.</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_contas" class="pagina"><div class="page-title">Contas Bancárias</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_cartoes" class="pagina"><div class="page-title">Cartões</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_movimentacoes" class="pagina"><div class="page-title">Movimentações</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_categorias" class="pagina"><div class="page-title">Categorias</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_fornecedores" class="pagina"><div class="page-title">Fornecedores</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_conciliacao" class="pagina"><div class="page-title">Conciliação</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_regras" class="pagina"><div class="page-title">Regras Automáticas</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_configuracoes" class="pagina"><div class="page-title">Configurações</div><div class="if-page-content"></div></section>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /shell -->
@@ -2925,8 +2957,9 @@
 <script src="./assets/js/21-employees.js"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260718-fornecedor-cartao-ocr"></script>
-<script src="./assets/js/32-image-ocr-importer.js?v=20260718-fornecedor-cartao-ocr"></script>
+<script src="./assets/js/30-finance.js?v=20260719-ocr-inteligente"></script>
+<script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=20260719-ocr-inteligente"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260708-duplicidade-botoes"></script>
 <script src="./assets/js/42-store-settings.js"></script>

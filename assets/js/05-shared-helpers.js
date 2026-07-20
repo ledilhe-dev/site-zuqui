@@ -862,6 +862,7 @@ function usuarioPodeAcessar(pageId) {
   }
   if (usuarioEhAdministrador()) return true;
   const permissoes = obterPermissoesUsuario();
+  if (String(pageId || '').startsWith('integracoes_financeiras_')) return permissoes.integracoes_financeiras === true;
   if (pageId === 'tarefas_rapidas') {
     return usuarioPodeAcessarAlertasRapidos();
   }
@@ -1327,6 +1328,13 @@ function aplicarPermissoesSistema() {
   const algumFinanceiroVisivel = itensFinanceiro.some(btn => btn.style.display !== 'none');
   if (grupoFinanceiro) {
     grupoFinanceiro.style.display = algumFinanceiroVisivel ? '' : 'none';
+  }
+
+  const itensIntegracoesFinanceiras = Array.from(document.querySelectorAll('#menuIntegracoesFinanceirasGroup .nav-btn[data-page]'));
+  const grupoIntegracoesFinanceiras = document.getElementById('menuIntegracoesFinanceirasGroup');
+  const algumaIntegracaoFinanceiraVisivel = itensIntegracoesFinanceiras.some(btn => btn.style.display !== 'none');
+  if (grupoIntegracoesFinanceiras) {
+    grupoIntegracoesFinanceiras.style.display = algumaIntegracaoFinanceiraVisivel ? '' : 'none';
   }
 
   const itensFuncionarios = Array.from(document.querySelectorAll('#menuFuncionariosGroup .nav-btn[data-page]'));

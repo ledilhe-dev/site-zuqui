@@ -2920,20 +2920,26 @@ async function faturaExibirRevisao(resultado) {
   const fornAuto = fornAutoCartao || faturaEncontrarFornecedorPorBanco(resultado.banco);
   // 2) Categoria: monta a mem?ria (hist?rico + tabela de aprendizado).
   await faturaConstruirMemoriaCategorias();
+  await faturaConstruirMemoriaInteligente();
 
   let qtdFornAuto = 0;
   let qtdCatAuto = 0;
   let qtdVencAuto = 0;
+  let qtdObsAuto = 0;
   const fornAutoObj = fornAuto ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornAuto)) : null;
   _faturaItensExtraidos.forEach(item => {
+    const sugestaoHistorico = faturaSugerirPorHistorico(item.descricao);
+    item._sugestaoConfianca = sugestaoHistorico?.confianca || 0;
     let fornDoItem = item.fornecedor_id;
-    const fornSugerido = fornAutoCartao
+    const fornSugerido = (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
+      || fornAutoCartao
       || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
       || fornAuto;
     if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
     if (!item.categoria_id) {
       const chave = faturaChaveEstabelecimento(item.descricao);
-      const catMem = _faturaMemoriaCategorias[chave];
+      const catMem = (sugestaoHistorico?.confianca >= .62 ? sugestaoHistorico.categoria_id : null)
+        || _faturaMemoriaCategorias[chave];
       if (catMem) { item.categoria_id = catMem; item._catAuto = true; qtdCatAuto++; }
     }
     // Vencimento pelo dia configurado no fornecedor (se houver), com base na data da compra.
@@ -2955,6 +2961,14 @@ async function faturaExibirRevisao(resultado) {
     if (!item._modoValorParcelas) item._modoValorParcelas = 'total';
     // Obs edit?vel: pr?-preenchida com o nome da compra (memo limpo do OFX).
     if (item._obsManual == null) item._obsManual = String(item.descricao || '').trim();
+    if (sugestaoHistorico?.observacao && sugestaoHistorico.confianca >= .68) {
+      const observacaoSugerida = String(sugestaoHistorico.observacao).trim().slice(0, 200);
+      if (observacaoSugerida && observacaoSugerida !== item._obsManual) {
+        item._obsManual = observacaoSugerida;
+        item._obsAuto = true;
+        qtdObsAuto++;
+      }
+    }
   });
 
   // Concilia·o refor?ada: marca o que já existe no banco (FITID ou valor+data+fornecedor).
@@ -2994,9 +3008,10 @@ async function faturaExibirRevisao(resultado) {
       ? `<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">já lançado · ${rotuloConcil}</span>`
       : '';
     // Campo de observa·o edit?vel (pr?-preenchido com o nome da compra).
-    const campoObs = `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;flex:1;min-width:180px;">Obs.:
+    const confiancaPct = Math.round(Number(item._sugestaoConfianca || 0) * 100);
+    const campoObs = `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;flex:1;min-width:180px;">Obs.${item._obsAuto ? ` sugerida ${confiancaPct}%` : ''}:
          <input type="text" maxlength="200" value="${escaparHtmlBasico(item._obsManual || '')}"
-           style="flex:1;min-width:140px;font-size:11px;height:24px;padding:0 6px;"
+           style="flex:1;min-width:140px;font-size:11px;height:24px;padding:0 6px;${item._obsAuto ? corAuto : ''}"
            onchange="faturaAoAlterarObs('${item.id}', this.value)"
            title="Observa·o que ser? gravada no contas a pagar (mant?m a marca·o 'Importado do arquivo banc?rio')">
        </label>`;
@@ -3057,6 +3072,7 @@ async function faturaExibirRevisao(resultado) {
   if (qtdFornAuto) partes.push(`fornecedor em ${qtdFornAuto}`);
   if (qtdCatAuto) partes.push(`categoria em ${qtdCatAuto}`);
   if (qtdVencAuto) partes.push(`vencimento em ${qtdVencAuto}`);
+  if (qtdObsAuto) partes.push(`observação padronizada em ${qtdObsAuto}`);
   const msgsConcil = [];
   if (concil && concil.conciliados) {
     const detalhe = [];
@@ -3115,6 +3131,7 @@ function faturaAoAlterarObs(itemId, valor) {
   const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
   if (!item) return;
   item._obsManual = String(valor || '').trim().slice(0, 200);
+  item._obsAuto = false;
 }
 
 function faturaAoAlterarParcelasManuais(itemId, valor) {
@@ -3144,6 +3161,122 @@ function faturaAoAlterarParcelasManuais(itemId, valor) {
         existente.remove();
       }
     }
+  }
+}
+
+function faturaNormalizarDescricaoInteligente(descricao) {
+  let texto = String(descricao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const aliases = [
+    [/\b(?:chat\s*gpt|openai)(?:\s+br(?:asil)?)?\b/g, 'chatgpt'],
+    [/\bspal(?:\s+ind(?:ustria)?(?:\s+brasileira)?\s+de)?\s+bebidas?\b/g, 'coca cola'],
+    [/\bgoogle\s*\*?ads\b/g, 'google ads'],
+    [/\bmeta\s*\*?(?:pay|ads)?\b/g, 'meta'],
+  ];
+  aliases.forEach(([padrao, destino]) => { texto = texto.replace(padrao, destino); });
+  return texto
+    .replace(/\b(?:pagamentos?|servicos?|comercio|industria|brasil|br|ltda|eireli|sa|s a|me|mei)\b/g, ' ')
+    .replace(/\b\d{2,}\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function faturaSimilaridadeDescricao(a, b) {
+  const na = faturaNormalizarDescricaoInteligente(a);
+  const nb = faturaNormalizarDescricaoInteligente(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  const ca = na.replace(/\s/g, ''), cb = nb.replace(/\s/g, '');
+  if ((ca.includes(cb) || cb.includes(ca)) && Math.min(ca.length, cb.length) >= 5) return .92;
+  const ta = new Set(na.split(' ').filter(t => t.length > 1));
+  const tb = new Set(nb.split(' ').filter(t => t.length > 1));
+  const comuns = [...ta].filter(t => tb.has(t)).length;
+  const dice = (2 * comuns) / Math.max(1, ta.size + tb.size);
+  const prefixo = ca.slice(0, 5) === cb.slice(0, 5) ? .12 : 0;
+  return Math.min(1, dice + prefixo);
+}
+
+let _faturaMemoriaInteligente = [];
+
+async function faturaConstruirMemoriaInteligente() {
+  const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+  const perfis = [];
+  try {
+    let query = sb.from('fatura_importacao_memoria').select('*').order('ultima_utilizacao_em', { ascending: false }).limit(1500);
+    if (lojaId) query = query.eq('loja_id', lojaId);
+    const { data, error } = await query;
+    if (error) throw error;
+    (data || []).forEach(row => perfis.push({
+      chave: row.chave_origem,
+      origem: row.descricao_origem_exemplo,
+      observacao: row.observacao_padrao,
+      fornecedor_id: row.fornecedor_id,
+      categoria_id: row.categoria_id,
+      ocorrencias: Number(row.ocorrencias || 1),
+      explicita: true,
+    }));
+  } catch (e) {
+    console.warn('Memoria inteligente de importacao indisponivel:', e?.message || e);
+  }
+  try {
+    let query = sb.from('contasapagar')
+      .select('observacao,categoria_id,fornecedor_id,fornecedores(nome),created_at')
+      .is('excluido_em', null).order('created_at', { ascending: false }).limit(1500);
+    if (lojaId) query = query.eq('loja_id', lojaId);
+    const { data } = await query;
+    (data || []).forEach(row => {
+      const observacao = String(row.observacao || '').replace(/\s*[·-]\s*Importado do arquivo banc[aá]rio.*$/i, '').replace(/\s*[·-]\s*\d+\/\d+\s*$/i, '').trim();
+      const origens = [observacao, row?.fornecedores?.nome].filter(Boolean);
+      origens.forEach(origem => perfis.push({
+        chave: faturaNormalizarDescricaoInteligente(origem), origem, observacao,
+        fornecedor_id: row.fornecedor_id, categoria_id: row.categoria_id,
+        ocorrencias: 1, explicita: false,
+      }));
+    });
+  } catch (e) {
+    console.warn('Historico inteligente de contas indisponivel:', e?.message || e);
+  }
+  _faturaMemoriaInteligente = perfis;
+  return perfis;
+}
+
+function faturaSugerirPorHistorico(descricao) {
+  const chave = faturaNormalizarDescricaoInteligente(descricao);
+  if (!chave) return null;
+  const candidatos = (_faturaMemoriaInteligente || []).map(perfil => {
+    const similaridade = faturaSimilaridadeDescricao(chave, perfil.chave || perfil.origem || perfil.observacao);
+    const bonus = perfil.explicita ? .08 : Math.min(.06, Math.log10(Number(perfil.ocorrencias || 1) + 1) * .03);
+    return { ...perfil, confianca: Math.min(1, similaridade + bonus) };
+  }).filter(item => item.confianca >= .58).sort((a, b) => b.confianca - a.confianca || b.ocorrencias - a.ocorrencias);
+  return candidatos[0] || null;
+}
+
+async function faturaSalvarMemoriaInteligente(itens) {
+  const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+  const empresaId = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
+  if (!lojaId || !empresaId) return;
+  const porChave = new Map();
+  (itens || []).forEach(item => {
+    const chave = faturaNormalizarDescricaoInteligente(item.descricao);
+    if (!chave) return;
+    porChave.set(chave, {
+      empresa_id: empresaId, loja_id: lojaId, chave_origem: chave,
+      descricao_origem_exemplo: String(item.descricao || '').slice(0, 200),
+      observacao_padrao: String(item._obsManual || item.descricao || '').trim().slice(0, 200) || null,
+      fornecedor_id: item.fornecedor_id || null, categoria_id: item.categoria_id || null,
+      ultima_utilizacao_em: new Date().toISOString(), atualizado_em: new Date().toISOString(),
+    });
+  });
+  const linhas = [...porChave.values()];
+  if (!linhas.length) return;
+  try {
+    const { data: existentes } = await sb.from('fatura_importacao_memoria').select('chave_origem,ocorrencias').eq('loja_id', lojaId).in('chave_origem', linhas.map(l => l.chave_origem));
+    const contagens = new Map((existentes || []).map(row => [row.chave_origem, Number(row.ocorrencias || 0)]));
+    linhas.forEach(linha => { linha.ocorrencias = (contagens.get(linha.chave_origem) || 0) + 1; });
+    const { error } = await sb.from('fatura_importacao_memoria').upsert(linhas, { onConflict: 'empresa_id,loja_id,chave_origem' });
+    if (error) throw error;
+  } catch (e) {
+    console.warn('Nao foi possivel salvar a memoria inteligente:', e?.message || e);
   }
 }
 
@@ -3824,6 +3957,7 @@ async function faturaLancarSelecionados() {
 
   // Aprendizado: salvar as categorias escolhidas nesta importa·o (mem?ria).
   await faturaSalvarMemoriaCategorias(selecionados);
+  await faturaSalvarMemoriaInteligente(selecionados);
 
   // Auditoria: registrar esta importa·o (quem/quando/quantos).
   try {
@@ -4321,4 +4455,3 @@ async function excluirCategoriaCompra(id) {
 }
 
 // ·································
-
