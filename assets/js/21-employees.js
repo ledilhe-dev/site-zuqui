@@ -128,7 +128,7 @@ async function carregarFuncionarios() {
             <button class="btn btn-ghost btn-sm" onclick="editarFuncionario('${f.id}')">Editar</button>
             <button class="btn btn-amber btn-sm" onclick="toggleFuncionario('${f.id}', ${f.ativo})">${f.ativo ? 'Desativar' : 'Ativar'}</button>
           ` : ''}
-          ${podeExcluirNestaLoja ? `<button class="btn btn-red" onclick="excluirFuncionario('${f.id}')">Excluir</button>` : ''}
+          ${podeExcluirNestaLoja ? `<button type="button" class="btn btn-red" onclick="excluirFuncionario('${f.id}')">Excluir</button>` : ''}
           ${!dentroDoEscopoDaLoja && (usuarioPodeAcaoFuncionarios('editar') || usuarioPodeAcaoFuncionarios('excluir')) ? '<span class="tag tag-gray">Troque a loja para gerenciar</span>' : ''}
         </div>
       </div>`;
@@ -1293,9 +1293,20 @@ async function excluirFuncionario(id) {
     setMsg('msgFuncionarios', 'Seu perfil não permite excluir funcionários.', 'err');
     return;
   }
-  const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true, acao: 'excluir' });
-  if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
-  if (!confirm('Excluir este funcionário?')) return;
+  const confirmacao = await abrirConfirmacaoSistema({
+    title: 'Excluir funcionário',
+    subtitle: 'Esta ação remove o acesso do usuário.',
+    body: 'Confirma a exclusão deste funcionário? Os registros históricos serão preservados sempre que houver vínculos obrigatórios.',
+    confirmText: 'Excluir funcionário',
+    confirmClass: 'btn-red',
+    cancelText: 'Cancelar',
+  });
+  if (!confirmacao?.confirmado) return;
+
+  try {
+    setMsg('msgFuncionarios', 'Validando e preparando a exclusão...', 'ok');
+    const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true, acao: 'excluir' });
+    if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   // Busca SEM filtro de loja: funcionários órfãos (sem loja) ou de outra loja
   // não seriam encontrados pelo filtro padrão, impedindo a exclusão.
   const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() =>
@@ -1344,6 +1355,10 @@ async function excluirFuncionario(id) {
   setMsg('msgFuncionarios', 'Funcionário excluído com sucesso.', 'ok');
   carregarFuncionarios();
   carregarSolicitacoesAcesso();
+  } catch (erroExclusao) {
+    console.error('Erro inesperado ao excluir funcionário:', erroExclusao);
+    setMsg('msgFuncionarios', `Não foi possível excluir o funcionário: ${mensagemErroSupabase(erroExclusao, 'erro inesperado')}`, 'err');
+  }
 }
 
 async function toggleFuncionario(id, ativo) {
