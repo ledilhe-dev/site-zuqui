@@ -77,17 +77,35 @@
   }
 
   function imagemCompraDeduplicar(itens) {
-    const vistos = new Set();
-    return (itens || []).filter(item => {
-      const chave = [
-        item.data,
-        Math.round(Number(item.valor || 0) * 100),
-        imagemCompraRemoverAcentos(item.descricao || '').toLowerCase().replace(/[^a-z0-9]/g, ''),
-      ].join('|');
-      if (vistos.has(chave)) return false;
-      vistos.add(chave);
-      return true;
+    const normalizarEstabelecimento = descricao => imagemCompraRemoverAcentos(descricao || '')
+      .toLowerCase()
+      .replace(/\b(?:compra|aprovada?|credito|debito|nubank|carteira)\b/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(' ')
+      .filter(token => token.length >= 3)
+      .join(' ')
+      .trim();
+    const similares = (a, b) => {
+      if (!a || !b) return false;
+      if (a === b || a.includes(b) || b.includes(a)) return true;
+      const ta = new Set(a.split(' '));
+      const tb = new Set(b.split(' '));
+      const comuns = [...ta].filter(token => tb.has(token)).length;
+      return comuns >= 2 && comuns / Math.min(ta.size, tb.size) >= 0.75;
+    };
+    const unicos = [];
+    (itens || []).forEach(item => {
+      const data = String(item.data || '').slice(0, 10);
+      const centavos = Math.round(Number(item.valor || 0) * 100);
+      const estabelecimento = normalizarEstabelecimento(item.descricao);
+      const repetido = unicos.some(existente =>
+        String(existente.data || '').slice(0, 10) === data
+        && Math.round(Number(existente.valor || 0) * 100) === centavos
+        && similares(normalizarEstabelecimento(existente.descricao), estabelecimento)
+      );
+      if (!repetido) unicos.push(item);
     });
+    return unicos;
   }
 
   function imagemCompraExtrairNubank(texto, dataPadrao) {

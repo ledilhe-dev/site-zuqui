@@ -2401,10 +2401,11 @@ async function faturaHandleFile(file, tipo = 'ofx') {
 // Normaliza a descri·o do lançamento em uma "chave" est?vel de estabelecimento.
 // Ex.: "DL*Google Google" -> "google"; "Mc Donald's Itapema" -> "mcdonalds itapema"
 function faturaChaveEstabelecimento(descricao) {
-  let s = String(descricao || '').toLowerCase();
+  let s = String(descricao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   s = s.replace(/[*]/g, ' ');                    // remove asteriscos de adquirente
   s = s.replace(/\s+\d{1,2}\/\d{1,2}\s*$/, '');  // remove sufixo de parcela "02/06"
-  s = s.replace(/[^a-z0-9\s]/g, ' ');            // s? letras/n?meros
+  s = s.replace(/\b(?:compra|aprovada?|credito|debito|pagamento|comercio|ltda|mei)\b/g, ' ');
+  s = s.replace(/[^a-z0-9\s]/g, ' ');            // so letras/numeros
   s = s.replace(/\s+/g, ' ').trim();
   // pega as primeiras palavras significativas (at? 3) para casar varia·es
   const palavras = s.split(' ').filter(p => p.length >= 3).slice(0, 3);
@@ -2432,7 +2433,13 @@ async function faturaConstruirMemoriaCategorias() {
     const { data } = await query;
     const contagem = {}; // chave -> { categoria_id: qtd }
     (data || []).forEach(row => {
-      const baseNome = row?.fornecedores?.nome || row?.observacao || '';
+      // A categoria pertence ao estabelecimento descrito na compra. Usar o
+      // fornecedor/cartao primeiro (ex.: Nubank) mistura categorias de todas
+      // as compras feitas no mesmo cartao.
+      const baseNome = String(row?.observacao || '')
+        .replace(/\s*[Â·-]\s*Importado do arquivo banc[aÃ¡]rio.*$/i, '')
+        .replace(/\s*[Â·-]\s*\d+\/\d+\s*$/i, '')
+        .trim() || row?.fornecedores?.nome || '';
       const chave = faturaChaveEstabelecimento(baseNome);
       if (!chave || !row.categoria_id) return;
       contagem[chave] = contagem[chave] || {};
@@ -2939,8 +2946,16 @@ async function faturaExibirRevisao(resultado) {
     if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
     if (!item.categoria_id) {
       const chave = faturaChaveEstabelecimento(item.descricao);
+      const categoriaSimilar = Object.entries(_faturaMemoriaCategorias || {})
+        .map(([chaveMemoria, categoriaId]) => ({
+          categoriaId,
+          confianca: faturaSimilaridadeDescricao(chave, chaveMemoria),
+        }))
+        .filter(candidato => candidato.confianca >= .72)
+        .sort((a, b) => b.confianca - a.confianca)[0]?.categoriaId;
       const catMem = (sugestaoHistorico?.confianca >= .62 ? sugestaoHistorico.categoria_id : null)
-        || _faturaMemoriaCategorias[chave];
+        || _faturaMemoriaCategorias[chave]
+        || categoriaSimilar;
       if (catMem) { item.categoria_id = catMem; item._catAuto = true; qtdCatAuto++; }
     }
     // Vencimento pelo dia configurado no fornecedor (se houver), com base na data da compra.
