@@ -2932,6 +2932,7 @@ async function faturaExibirRevisao(resultado) {
     item._sugestaoConfianca = sugestaoHistorico?.confianca || 0;
     let fornDoItem = item.fornecedor_id;
     const fornSugerido = (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
+      || faturaEncontrarFornecedorInteligente(item.descricao)
       || fornAutoCartao
       || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
       || fornAuto;
@@ -3249,6 +3250,16 @@ function faturaSugerirPorHistorico(descricao) {
     return { ...perfil, confianca: Math.min(1, similaridade + bonus) };
   }).filter(item => item.confianca >= .58).sort((a, b) => b.confianca - a.confianca || b.ocorrencias - a.ocorrencias);
   return candidatos[0] || null;
+}
+
+function faturaEncontrarFornecedorInteligente(descricao) {
+  const candidatos = (fornecedoresFinanceiroCache || []).map(fornecedor => ({
+    id: fornecedor.id,
+    confianca: faturaSimilaridadeDescricao(descricao, fornecedor.nome),
+    tamanho: faturaNormalizarDescricaoInteligente(fornecedor.nome).length,
+  })).filter(item => item.confianca >= .68)
+    .sort((a, b) => b.confianca - a.confianca || b.tamanho - a.tamanho);
+  return candidatos[0]?.id || null;
 }
 
 async function faturaSalvarMemoriaInteligente(itens) {

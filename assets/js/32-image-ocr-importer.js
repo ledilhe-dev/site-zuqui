@@ -40,6 +40,16 @@
     const raw = String(texto || '');
     const ref = /^\d{4}-\d{2}-\d{2}$/.test(String(referenciaISO || '')) ? referenciaISO : imagemCompraHojeISO();
     if (/\bontem\b/i.test(raw)) return imagemCompraAdicionarDiasISO(ref, -1);
+    if (/\bhoje\b/i.test(raw)) return ref;
+    const semana = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6 };
+    const textoSemana = imagemCompraRemoverAcentos(raw).toLowerCase();
+    const diaSemana = Object.keys(semana).find(chave => new RegExp(`\\b${chave}(?:\\.|,|feira)?\\b`, 'i').test(textoSemana));
+    if (diaSemana) {
+      const base = new Date(`${ref}T12:00:00`);
+      let diferenca = (base.getDay() - semana[diaSemana] + 7) % 7;
+      if (diferenca === 0 && !/\bhoje\b/i.test(raw)) diferenca = 7;
+      return imagemCompraAdicionarDiasISO(ref, -diferenca);
+    }
     const mBR = raw.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
     if (mBR) {
       const dia = Number(mBR[1]);
@@ -101,6 +111,47 @@
         _origemImagem: true,
       });
     }
+    return itens;
+  }
+
+  function imagemCompraExtrairCarteiraNubank(texto, dataPadrao) {
+    const linhas = imagemCompraNormalizarTexto(texto).split('\n').map(linha => linha.trim()).filter(Boolean);
+    const itens = [];
+    const ehNubank = linha => /\b(?:nubank|nu\s*bank)\b/i.test(imagemCompraRemoverAcentos(linha));
+    const ehValor = linha => /(?:R\$|RS|R5|S)\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/i.test(linha);
+    const ehRuido = linha => {
+      const normalizada = imagemCompraRemoverAcentos(linha).toLowerCase();
+      return !normalizada
+        || /^(carteira|mostrar menos|notificacoes?|central de notificacoes)$/i.test(normalizada)
+        || /(instagram|enviou um reel|solicitacao para seguir|pediu para seguir|ifood|entrega rapida|desconto|condicoes|aproveitar no app)/i.test(normalizada)
+        || /^(hoje|ontem|dom|seg|ter|qua|qui|sex|sab)[.,\s]/i.test(normalizada)
+        || /^\d{1,2}:\d{2}$/.test(normalizada);
+    };
+
+    linhas.forEach((linha, indice) => {
+      if (!ehNubank(linha)) return;
+      const janela = linhas.slice(indice + 1, Math.min(linhas.length, indice + 6));
+      const indiceValor = janela.findIndex(ehValor);
+      if (indiceValor < 0) return;
+      const antesValor = janela.slice(0, indiceValor);
+      const descricao = antesValor.find(candidata => !ehRuido(candidata) && !ehNubank(candidata) && /[A-Za-zÀ-ÿ]{3,}/.test(candidata));
+      const valorTexto = janela[indiceValor].match(/(?:R\$|RS|R5|S)\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/i)?.[0] || '';
+      const valor = imagemCompraParseValor(valorTexto);
+      if (!descricao || !valor) return;
+      const contextoData = [linha, ...antesValor].join(' ');
+      const data = imagemCompraParseData(contextoData, dataPadrao);
+      itens.push({
+        data,
+        descricao: imagemCompraLimparDescricao(descricao),
+        valor,
+        fitid: null,
+        vencimento_fatura: data,
+        selecionado: true,
+        _obsManual: imagemCompraLimparDescricao(descricao),
+        _origemImagem: true,
+        _origemCarteira: true,
+      });
+    });
     return itens;
   }
 
@@ -205,11 +256,10 @@
   function imagemCompraExtrairItens(texto) {
     const dataPadrao = imagemCompraHojeISO();
     const nubank = imagemCompraExtrairNubank(texto, dataPadrao);
-    const genericos = imagemCompraExtrairGenerico(texto, dataPadrao).filter(itemGenerico => !nubank.some(itemNubank =>
-      itemNubank.data === itemGenerico.data
-      && Math.round(Number(itemNubank.valor || 0) * 100) === Math.round(Number(itemGenerico.valor || 0) * 100)
-    ));
-    return imagemCompraDeduplicar([...nubank, ...genericos]);
+    const carteira = imagemCompraExtrairCarteiraNubank(texto, dataPadrao);
+    const ancorados = imagemCompraDeduplicar([...nubank, ...carteira]);
+    if (ancorados.length) return ancorados;
+    return imagemCompraDeduplicar(imagemCompraExtrairGenerico(texto, dataPadrao));
   }
 
   async function imagemCompraCarregarTesseract() {
@@ -311,6 +361,8 @@
             faturaSetProgress(30 + Math.round((info.progress || 0) * 55), 'Lendo texto da imagem...');
           }
         },
+        tessedit_pageseg_mode: '11',
+        preserve_interword_spaces: '1',
       });
       const texto = resultado?.data?.text || '';
       faturaSetProgress(88, 'Interpretando compras...');
