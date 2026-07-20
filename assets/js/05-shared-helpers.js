@@ -434,18 +434,14 @@ async function validarDuplicidadeCadastro({
     if (pinEmUso === true) return 'Já existe um usuário com este PIN.';
   }
 
-  if (nomeNormalizado) {
+  // Em edicoes, o UPDATE e o indice unico do banco sao a fonte de verdade.
+  // A pre-consulta pode enxergar registros fora da lista/escopo atual e gerar
+  // falso positivo; o banco ainda bloqueia uma duplicidade real ao salvar.
+  if (nomeNormalizado && !funcionarioIdIgnorar) {
     let consultaFuncionariosMesmoNome = sb
       .from('funcionarios')
       .select('id, nome')
       .ilike('nome', escaparValorLike(nome));
-
-    // Na edicao, o proprio funcionario pode ser retornado pela busca do nome.
-    // Exclui-lo tambem no banco evita falso positivo quando o ID do formulario
-    // (string) e o ID devolvido pelo cliente estiverem representados de formas diferentes.
-    if (funcionarioIdIgnorar !== null && funcionarioIdIgnorar !== undefined && String(funcionarioIdIgnorar).trim()) {
-      consultaFuncionariosMesmoNome = consultaFuncionariosMesmoNome.neq('id', funcionarioIdIgnorar);
-    }
 
     const { data: funcionariosMesmoNome } = await consultaFuncionariosMesmoNome;
 
