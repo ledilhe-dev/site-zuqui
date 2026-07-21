@@ -265,7 +265,8 @@ let confirmacaoSistemaOpcaoAtual = null;
 function abrirConfirmacaoSistema(opcoes = {}) {
   const overlay = document.getElementById('confirmacaoSistemaOverlay');
   if (!overlay) {
-    return Promise.resolve({ confirmado: window.confirm(opcoes.body || opcoes.title || 'Confirmar ação?'), valor: '' });
+    console.error('Modal visual de confirmação não encontrado; ação cancelada para impedir diálogo nativo do navegador.');
+    return Promise.resolve({ confirmado: false, acao: 'cancelar', valor: '' });
   }
 
   const title = document.getElementById('confirmacaoSistemaTitle');

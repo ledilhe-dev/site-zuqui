@@ -207,7 +207,7 @@ function ncAtualizarBotaoVencFornecedor() {
   btn.textContent = podeUsar ? `${NC.modoEdicao && NC.parcelado ? 'Todos ' : 'Vence '}dia ${dia}` : 'Usar venc. fornecedor';
 }
 
-function ncUsarVencimentoFornecedor() {
+async function ncUsarVencimentoFornecedor() {
   const msg = document.getElementById('ncMsg');
   const fornecedor = ncFornecedorSelecionado();
   const dia = parseInt(fornecedor?.dia_vencimento, 10);
@@ -224,7 +224,16 @@ function ncUsarVencimentoFornecedor() {
   if (vc) vc.value = vencimento;
   ncVencCust();
   if (NC.modoEdicao && NC.parcelado) {
-    NC.aplicarVencimentoGrupo = confirm(`Aplicar o vencimento no dia ${dia} a todas as parcelas vinculadas ao salvar?`);
+    const decisao = typeof abrirConfirmacaoSistema === 'function' ? await abrirConfirmacaoSistema({
+      title: `Aplicar dia ${dia} em todas as parcelas?`,
+      subtitle: 'O vencimento será recalculado para todo o parcelamento.',
+      body: `<div class="confirmacao-destaque-box"><strong>Vencimento mensal: dia ${dia}</strong><span>Finais de semana e feriados avançam para o próximo dia útil.</span></div>`,
+      cancelText: 'Somente esta parcela',
+      cancelClass: 'btn-ghost',
+      confirmText: 'Aplicar em todas',
+      confirmClass: 'btn-green',
+    }) : { confirmado: false };
+    NC.aplicarVencimentoGrupo = decisao?.confirmado === true;
   }
   if (msg) {
     msg.textContent = NC.aplicarVencimentoGrupo
@@ -390,6 +399,7 @@ async function ncConferirContaSalva(resumo = {}, resultado = {}) {
     ['FORNECEDOR', resumo.fornNome || '-'],
     ['VALOR', ncFmtBR(resumo.valorParcela || resumo.valor || 0)],
     ['VENCIMENTO', resumo.dataVencBR || '-'],
+    ...(resumo.vencimentosParcelas?.length > 1 ? [['VENCIMENTOS DAS PARCELAS', resumo.vencimentosParcelas.join(' · ')]] : []),
     ['CATEGORIA', resumo.catNome || '-'],
     ['PARCELAS', `${resumo.parcelas || 1}x`],
     ['OBSERVACAO', resumo.obs || '-'],
@@ -413,8 +423,7 @@ async function ncConferirContaSalva(resumo = {}, resultado = {}) {
     confirmText: 'OK',
     confirmClass: 'btn-green',
   });
-  if (decisao?.confirmado === false && resultado?.ids?.[0]) return { acao: 'corrigir', id: resultado.ids[0] };
-  return { acao: 'ok' };
+  return decisao?.confirmado === true ? { acao: 'ok' } : { acao: 'corrigir' };
 }
 
 async function ncSalvar(salvarENovo = false) {
@@ -499,7 +508,21 @@ async function ncSalvar(salvarENovo = false) {
     catNome: categoriaSelecionada?.nome || '',
     parcelas: NC.parcelas,
     obs: NC.obs,
+    vencimentosParcelas: Array.from({ length: NC.parcelas }, (_, indice) => {
+      const data = typeof calcularVencimentoParcelaFinanceiro === 'function'
+        ? calcularVencimentoParcelaFinanceiro(NC.dataVenc, indice, NC.intervalo || 30)
+        : NC.dataVenc;
+      return `${indice + 1}: ${toddmmaaaa(data)}`;
+    }),
   };
+
+  // A confirmação precisa acontecer ANTES de sincronizar e gravar no banco.
+  // Fechar, cancelar ou escolher CORRIGIR mantém o formulário aberto e não lança nada.
+  const conferenciaPrevia = await ncConferirContaSalva(resumoConferencia);
+  if (conferenciaPrevia.acao !== 'ok') {
+    if (msg) { msg.textContent = 'Lançamento não gravado. Corrija os dados e confirme novamente.'; msg.className = 'msg err'; }
+    return;
+  }
 
   // 7. Sincroniza campos hidden
   function toddmmaaaa(iso) { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '/' + m + '/' + y; }
@@ -560,11 +583,6 @@ async function ncSalvar(salvarENovo = false) {
       NC.salvando = false;
       if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
       if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
-      const conferencia = await ncConferirContaSalva(resumoConferencia, resultadoSalvar || {});
-      if (conferencia.acao === 'corrigir' && typeof editarContaAPagarFinanceiro === 'function') {
-        editarContaAPagarFinanceiro(conferencia.id);
-        return;
-      }
       ncAbrir();
       const msgNovo = document.getElementById('ncMsg');
       if (msgNovo) { msgNovo.textContent = 'Conta salva. Preencha os dados da próxima conta.'; msgNovo.className = 'msg ok'; }
@@ -573,11 +591,6 @@ async function ncSalvar(salvarENovo = false) {
       NC.salvando = false;
       if (btn) { btn.disabled = false; btn.textContent = NC.modoEdicao ? 'Salvar alterações' : 'Salvar'; }
       if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
-      const conferencia = await ncConferirContaSalva(resumoConferencia, resultadoSalvar || {});
-      if (conferencia.acao === 'corrigir' && typeof editarContaAPagarFinanceiro === 'function') {
-        editarContaAPagarFinanceiro(conferencia.id);
-        return;
-      }
       ncFechar();
       if (typeof abrirPagina === 'function') {
         abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));

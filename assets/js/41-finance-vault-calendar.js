@@ -972,14 +972,9 @@ async function salvarContaAPagarFinanceiro() {
   }
   let intervaloParcelasDiasFinal = null;
   if (qtdParcelasValidada > 1) {
-    if (intervaloInformado) {
-      intervaloParcelasDiasFinal = intervaloParcelasDias;
-    } else {
-      const dtCompra = new Date(`${dataCompra}T00:00:00`);
-      const dtVenc = new Date(`${dataVencimento}T00:00:00`);
-      const diffDias = Math.round((dtVenc.getTime() - dtCompra.getTime()) / (24 * 60 * 60 * 1000));
-      intervaloParcelasDiasFinal = diffDias > 0 ? diffDias : 30;
-    }
+    // A compra nunca define a recorrência. A primeira data de vencimento é a
+    // âncora e 30 significa mensal, preservando o mesmo dia nos meses seguintes.
+    intervaloParcelasDiasFinal = intervaloInformado ? intervaloParcelasDias : 30;
   }
 
   if (contaAPagarFinanceiroEmEdicaoId) {
@@ -2899,7 +2894,16 @@ async function desconfirmarPagamentoContaFinanceiro(id) {
     modo: 'estorno',
   });
   if (!destino) return;
-  if (!confirm(`Estornar o pagamento de ${formatarMoedaBRFinanceiro(valorEstorno)} e reabrir esta conta como pendente?${destino.movimentarSaldo ? `\n\nO valor será devolvido para: ${destino.nome || '-'}.` : '\n\nO saldo do cofre não será movimentado.'}`)) return;
+  const decisaoEstorno = typeof abrirConfirmacaoSistema === 'function' ? await abrirConfirmacaoSistema({
+    title: 'Confirmar estorno de pagamento',
+    subtitle: 'Confira a devolução antes de reabrir o título.',
+    body: `<div class="confirmacao-destaque-box"><strong>${escaparHtmlBasico(formatarMoedaBRFinanceiro(valorEstorno))}</strong><span>${destino.movimentarSaldo ? `Devolver para: ${escaparHtmlBasico(destino.nome || '-')}` : 'Reabrir sem movimentar o saldo do cofre'}</span></div>`,
+    cancelText: 'Cancelar',
+    cancelClass: 'btn-ghost',
+    confirmText: 'Confirmar estorno',
+    confirmClass: 'btn-red',
+  }) : { confirmado: false };
+  if (decisaoEstorno?.confirmado !== true) return;
 
   const operador = obterFuncionarioOperadorAtual();
   const confirmacaoPin = await confirmarAcaoComPin({
