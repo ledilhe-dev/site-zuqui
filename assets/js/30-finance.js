@@ -1182,7 +1182,7 @@ async function salvarRecebivelFinanceiro() {
     const qtdParcelas = parseInt(document.getElementById('recebivelQtdParcelas')?.value || '1', 10) || 1;
     const diasIntervalo = parseInt(document.getElementById('recebivelDiasIntervalo')?.value || '30', 10) || 30;
     const dataPrevista = String(document.getElementById('recebivelDataPrevista')?.value || '').trim();
-    const observacao = String(document.getElementById('recebivelObservacao')?.value || '').trim();
+    const observacao = String(document.getElementById('recebivelObservacao')?.value || '').trim().slice(0, 80);
 
     if (!pagadorId) {
       setMsg('msgRecebivelFinanceiro', 'Selecione um pagador v?lido na busca de fornecedores.', 'err');
@@ -1884,13 +1884,13 @@ async function carregarRecFuturos() {
               </label>
               <strong class="rec-futuro-valor-inline">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
             </div>
+            ${item.observacao ? `<div class="rec-card-observacao" title="${escaparHtmlBasico(item.observacao)}">Obs.: ${escaparHtmlBasico(item.observacao)}</div>` : ''}
             <div class="item-detalhe">
               Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || '-')} ·
               Conta: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')}
             </div>
             <div class="item-detalhe">
               Data prevista: <strong>${formatarDataBRFinanceiro(dp)}</strong>
-              ${item.observacao ? ` ? ${escaparHtmlBasico(item.observacao)}` : ''}
               ? Provisionado por: ${escaparHtmlBasico(item.criado_por_nome || '-')}
             </div>
             ${confirmado ? `<div class="item-detalhe" style="color:var(--green);">

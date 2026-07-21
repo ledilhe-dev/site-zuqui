@@ -113,6 +113,7 @@ input[type="date"][id^="filtro"],
 #financeiro_recebiveis .rec-card { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:14px; padding:14px; border:1px solid var(--border); border-radius:12px; background:var(--surface2); }
 #financeiro_recebiveis .rec-card-main { min-width:0; }
 #financeiro_recebiveis .rec-card-title-line { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px; min-width:0; }
+#financeiro_recebiveis .rec-card-observacao { width:100%; min-width:0; margin:0 0 4px; overflow:hidden; color:var(--text-muted); font-size:9px; line-height:1.15; text-overflow:ellipsis; white-space:nowrap; }
 #financeiro_recebiveis .rec-futuro-valor-inline,
 #financeiro_recebiveis .rec-summary-valor { flex:none; color:var(--orange,#f59e0b) !important; font-size:12px !important; font-weight:800; white-space:nowrap; }
 #financeiro_recebiveis .rec-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:7px; }
@@ -157,6 +158,7 @@ input[type="date"][id^="filtro"],
   #financeiro_recebiveis .rec-card-head { gap:8px; }
   #financeiro_recebiveis .rec-card-title { font-size:11px; line-height:1.2; }
   #financeiro_recebiveis .rec-card-title-line { align-items:flex-start; gap:5px; }
+  #financeiro_recebiveis .rec-card-observacao { margin-bottom:3px; font-size:8px; }
   #financeiro_recebiveis .rec-futuro-valor-inline,
   #financeiro_recebiveis .rec-summary-valor { font-size:11px !important; }
   #financeiro_recebiveis .rec-card-value { font-size:12px; }
