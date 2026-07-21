@@ -4203,6 +4203,17 @@ let categoriaEmEdicaoId = null;
 let categoriasCompraCache = [];
 let categoriaInlineEmEdicaoId = null;
 
+function chaveCategoriaCompraEquivalente(nome = '') {
+  const normalizado = String(nome || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  if (!normalizado) return '';
+  const partes = normalizado.split(/\s+/);
+  const ultima = partes.length - 1;
+  if (partes[ultima].length > 3 && partes[ultima].endsWith('S')) partes[ultima] = partes[ultima].slice(0, -1);
+  return partes.join(' ');
+}
+
 function ehImagemCategoriaCompra(valor = '') {
   const fonte = String(valor || '').trim();
   return /^https?:\/\//i.test(fonte)
@@ -4352,7 +4363,10 @@ async function carregarCategoriasCompra() {
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando...</div>';
   try {
-    const { data, error } = await sb.from('categorias_compra').select('*').eq('ativo', true).order('nome');
+    const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    let query = sb.from('categorias_compra').select('*').eq('ativo', true).order('nome');
+    if (lojaSessao) query = query.eq('loja_id', lojaSessao);
+    const { data, error } = await query;
     if (error) throw error;
     categoriasCompraCache = data || [];
     preencherSelectCategoriasCompra();
@@ -4389,6 +4403,14 @@ async function salvarCategoriaCompra() {
   const cor = String(document.getElementById('categoriaCor')?.value || '#3b82f6').trim();
   const desc = String(document.getElementById('categoriaDesc')?.value || '').trim();
   if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
+  const categoriaEquivalente = (categoriasCompraCache || []).find(categoria =>
+    String(categoria.id) !== String(categoriaEmEdicaoId || '')
+      && chaveCategoriaCompraEquivalente(categoria.nome) === chaveCategoriaCompraEquivalente(nome)
+  );
+  if (categoriaEquivalente) {
+    setMsg('msgCategoriaCompra', `Já existe a categoria "${categoriaEquivalente.nome}". Edite a categoria existente para evitar duplicidade.`, 'err');
+    return;
+  }
   if (/^data:image\//i.test(icone) && !ehImagemCategoriaCompra(icone)) {
     setMsg('msgCategoriaCompra', 'Formato de imagem inv?lido. Use PNG, JPG ou WEBP.', 'err');
     return;
@@ -4481,6 +4503,14 @@ async function salvarCategoriaCompraInline(id) {
   const cor = String(document.getElementById(`categoriaInlineCor_${id}`)?.value || '#3b82f6').trim();
   const desc = String(document.getElementById(`categoriaInlineDesc_${id}`)?.value || '').trim();
   if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
+  const categoriaEquivalente = (categoriasCompraCache || []).find(categoria =>
+    String(categoria.id) !== String(id)
+      && chaveCategoriaCompraEquivalente(categoria.nome) === chaveCategoriaCompraEquivalente(nome)
+  );
+  if (categoriaEquivalente) {
+    setMsg('msgCategoriaCompra', `Já existe a categoria "${categoriaEquivalente.nome}". Use a categoria existente.`, 'err');
+    return;
+  }
   if (/^data:image\//i.test(icone) && !ehImagemCategoriaCompra(icone)) {
     setMsg('msgCategoriaCompra', 'Formato de imagem invalido. Use PNG, JPG ou WEBP.', 'err');
     return;

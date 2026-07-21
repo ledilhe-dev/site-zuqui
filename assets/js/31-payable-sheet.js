@@ -134,10 +134,20 @@ function ncVencCust() {
   const vc = document.getElementById('ncVencCustom');
   if (vc && vc.value) {
     NC.dataVenc = vc.value;
-    // Recalcular "dias para vencimento" para manter os dois sincronizados
-    const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+    // Na edição parcelada, a data escolhida é a nova âncora mensal e o
+    // intervalo original deve permanecer 30; não pode virar a diferença
+    // entre hoje e o vencimento selecionado.
+    if (NC.modoEdicao && NC.parcelado) {
+      const vdEl = document.getElementById('ncVencDia');
+      if (vdEl) vdEl.value = String(NC.intervalo || 30);
+      const e = document.getElementById('ncVencDiaErr');
+      if (e) e.style.display = 'none';
+      return;
+    }
+    // Em cadastro simples, calcula em relação à data da compra.
+    const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
     const venc = new Date(vc.value + 'T00:00:00');
-    const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
+    const diff = Math.round((venc - base) / (1000 * 60 * 60 * 24));
     const vdEl = document.getElementById('ncVencDia');
     if (vdEl) vdEl.value = diff >= 0 ? diff : '';
     const e = document.getElementById('ncVencDiaErr');
@@ -249,7 +259,19 @@ function ncObsInput(inp) {
 // ── Categorias ──────────────────────────────────────────────────
 function ncMontarCategorias() {
   const grid = document.getElementById('ncCatGrid'); if (!grid) return;
-  const cats = categoriasCompraCache || [];
+  const porChave = new Map();
+  (categoriasCompraCache || []).forEach(categoria => {
+    const chave = typeof chaveCategoriaCompraEquivalente === 'function'
+      ? chaveCategoriaCompraEquivalente(categoria.nome)
+      : String(categoria.nome || '').trim().toUpperCase();
+    const atual = porChave.get(chave);
+    const ehSelecionada = String(categoria.id) === String(NC.catId || '');
+    const atualSelecionada = String(atual?.id || '') === String(NC.catId || '');
+    const pontuacao = (categoria.icone ? 2 : 0) + (categoria.descricao ? 1 : 0);
+    const pontuacaoAtual = atual ? ((atual.icone ? 2 : 0) + (atual.descricao ? 1 : 0)) : -1;
+    if (!atual || ehSelecionada || (!atualSelecionada && pontuacao > pontuacaoAtual)) porChave.set(chave, categoria);
+  });
+  const cats = Array.from(porChave.values());
   grid.innerHTML = cats.map(c => {
     const sel = NC.catId && String(c.id) === String(NC.catId);
     return `<div class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${c.id}" onclick="ncSelCat(this)" style="padding:10px;font-size:13px;">${htmlIconeCategoriaCompra(c.icone, 28)}<span>${escaparHtmlBasico(c.nome || '')}</span></div>`;
@@ -611,10 +633,13 @@ if (typeof _ncOrigEditar === 'function') {
       // Preencher data de vencimento e dias
       if (NC.dataVenc) {
         const vc = document.getElementById('ncVencCustom'); if (vc) vc.value = NC.dataVenc;
-        const hoje = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
-        const venc = new Date(NC.dataVenc + 'T00:00:00');
-        const diff = Math.round((venc - hoje) / (1000 * 60 * 60 * 24));
-        const vdEl = document.getElementById('ncVencDia'); if (vdEl) vdEl.value = diff >= 0 ? diff : '';
+        const vdEl = document.getElementById('ncVencDia');
+        if (vdEl) vdEl.value = NC.parcelado ? String(NC.intervalo || 30) : (() => {
+          const base = new Date((NC.dataCompra || new Date().toISOString().split('T')[0]) + 'T00:00:00');
+          const venc = new Date(NC.dataVenc + 'T00:00:00');
+          const diff = Math.round((venc - base) / (1000 * 60 * 60 * 24));
+          return diff >= 0 ? String(diff) : '';
+        })();
       }
 
       // Preencher parcelas

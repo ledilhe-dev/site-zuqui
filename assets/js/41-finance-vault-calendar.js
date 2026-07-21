@@ -785,7 +785,10 @@ async function salvarContaAPagarFinanceiro() {
   const dataCompraTexto = String(document.getElementById('contaDataCompra')?.value || '').trim();
   const dataVencimentoTexto = String(document.getElementById('contaDataVencimento')?.value || '').trim();
   const dataCompra = converterDataBRParaISOFinanceiro(dataCompraTexto);
-  const dataVencimento = converterDataBRParaISOFinanceiro(dataVencimentoTexto);
+  const dataVencimentoInformada = converterDataBRParaISOFinanceiro(dataVencimentoTexto);
+  const dataVencimento = dataVencimentoInformada
+    ? ajustarVencimentoParaDiaUtilFinanceiro(dataVencimentoInformada)
+    : '';
   const valorTexto = String(document.getElementById('contaValorCompra')?.value || '').trim();
   const observacao = String(document.getElementById('contaObservacao')?.value || '').trim();
   const qtdParcelasTexto = String(document.getElementById('contaQtdParcelas')?.value || '').trim();
