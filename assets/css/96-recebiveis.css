@@ -29,17 +29,21 @@ input[type="date"][id^="filtro"],
 #financeiro_contasapagar .contas-pagar-filtros-unificados select,
 #financeiro_contasapagar .contas-pagar-filtros-unificados button { width:100% !important; height:36px !important; min-height:36px !important; border-radius:10px !important; padding:6px 9px !important; font-size:10px !important; }
 #financeiro_contasapagar .contas-pagar-filtros-unificados > .btn { align-self:end !important; }
-#financeiro_contasapagar .conta-pagar-card { display:grid !important; grid-template-columns:minmax(0,1fr) 280px 300px; align-items:center; column-gap:16px; }
+#financeiro_contasapagar .conta-pagar-card { display:grid !important; grid-template-columns:minmax(0,1fr) 260px 360px; align-items:center; column-gap:8px; }
 #financeiro_contasapagar .conta-pagar-card > .item-info { min-width:0; }
-#financeiro_contasapagar .conta-pagar-card > .item-destaque { width:280px !important; min-width:0 !important; max-width:280px !important; flex:none !important; justify-self:center; }
-#financeiro_contasapagar .conta-pagar-card > .item-actions { width:300px; min-width:0; justify-self:end; justify-content:flex-end; }
+#financeiro_contasapagar .conta-pagar-card > .item-destaque { width:260px !important; min-width:0 !important; max-width:260px !important; flex:none !important; justify-self:center; }
+#financeiro_contasapagar .conta-pagar-card > .item-actions { display:flex !important; flex-direction:row !important; flex-wrap:nowrap !important; align-items:center; width:360px; min-width:0; justify-self:start; justify-content:flex-start !important; gap:6px; }
+#financeiro_contasapagar .conta-pagar-card > .item-actions .btn,
+#financeiro_contasapagar .conta-pagar-card > .item-actions .tag { flex:0 0 auto; margin:0 !important; white-space:nowrap; }
+#financeiro_contasapagar .conta-pagar-card > .item-actions .btn { padding:5px 8px !important; font-size:10px !important; }
 #financeiro_contasapagar .conta-pagar-card > .item-destaque span { max-width:100%; white-space:nowrap; }
 #financeiro_contasapagar .conta-pagar-card > .item-destaque span[style*="font-size:30px"] { font-size:27px !important; }
 #financeiro_contasapagar .conta-pagar-card > .item-destaque span[style*="font-size:34px"] { font-size:30px !important; }
 @media (max-width:1250px) and (min-width:701px) {
-  #financeiro_contasapagar .conta-pagar-card { grid-template-columns:minmax(0,1fr) 220px 230px; column-gap:10px; }
-  #financeiro_contasapagar .conta-pagar-card > .item-destaque { width:220px !important; max-width:220px !important; }
-  #financeiro_contasapagar .conta-pagar-card > .item-actions { width:230px; }
+  #financeiro_contasapagar .conta-pagar-card { grid-template-columns:minmax(0,1fr) 190px 285px; column-gap:5px; }
+  #financeiro_contasapagar .conta-pagar-card > .item-destaque { width:190px !important; max-width:190px !important; }
+  #financeiro_contasapagar .conta-pagar-card > .item-actions { width:285px; gap:3px; }
+  #financeiro_contasapagar .conta-pagar-card > .item-actions .btn { padding:4px 5px !important; font-size:8px !important; }
 }
 @media (min-width:701px) and (max-width:1450px) {
   #financeiro_contasapagar .contas-pagar-filtros-unificados { grid-template-columns:minmax(240px,1fr) 135px 135px 185px 140px !important; }
@@ -68,6 +72,7 @@ input[type="date"][id^="filtro"],
   #financeiro_contasapagar .conta-pagar-card { display:flex !important; flex-direction:column; align-items:stretch; gap:7px; }
   #financeiro_contasapagar .conta-pagar-card > .item-destaque,
   #financeiro_contasapagar .conta-pagar-card > .item-actions { width:100% !important; max-width:none !important; }
+  #financeiro_contasapagar .conta-pagar-card > .item-actions { flex-wrap:wrap !important; justify-content:flex-end !important; }
 }
 #financeiro_baixar_contas .financeiro-filtros-baixar { display:flex !important; flex-wrap:wrap !important; justify-content:flex-start !important; gap:8px !important; align-items:end !important; }
 #financeiro_baixar_contas #filtroBaixarContaBusca { min-width:0 !important; }
