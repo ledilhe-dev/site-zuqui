@@ -2756,13 +2756,13 @@
   <div class="modal" style="max-width:720px">
     <div class="modal-header">
       <div>
-        <h3>Selecionar conta financeira</h3>
+        <h3 id="contaFinanceiraBaixaTitle">Selecionar conta financeira</h3>
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="contaFinanceiraBaixaSubtitle">Escolha de onde sairá o dinheiro</div>
       </div>
       <button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalContaFinanceiraBaixa()">X Fechar</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <div class="forma-pagamento-modal-intro">Clique na conta financeira que será usada para pagar este título.</div>
+      <div class="forma-pagamento-modal-intro" id="contaFinanceiraBaixaIntro">Clique na conta financeira que será usada para pagar este título.</div>
       <div class="conta-financeira-movimentacao-toggle" id="contaFinanceiraMovimentacaoToggle">
         <span class="rotulo">Movimentar saldo da conta?</span>
         <button class="btn btn-ghost btn-sm" type="button" id="btnContaFinanceiraMovimentarSim" onclick="definirMovimentacaoSaldoContaFinanceiraBaixa(true)">Sim</button>
@@ -2962,7 +2962,7 @@
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
 <script src="./assets/js/04-navigation.js"></script>
-<script src="./assets/js/05-shared-helpers.js?v=3.2.16"></script>
+<script src="./assets/js/05-shared-helpers.js?v=20260720-estorno-vencimentos"></script>
 <script src="./assets/js/10-dashboard.js?v=20260711-isolamento-loja-dashboard"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260720-pin-ou-senha"></script>
@@ -2972,7 +2972,7 @@
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260720-ocr-banco-por-item"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260720-parcelas-categorias"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260720-estorno-vencimentos"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
@@ -3170,6 +3170,6 @@
 </html>
 
 
-<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260720-parcelas-categorias"></script>
+<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260720-estorno-vencimentos"></script>
 
 <script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js"></script>

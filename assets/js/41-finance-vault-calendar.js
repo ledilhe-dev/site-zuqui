@@ -871,7 +871,8 @@ async function salvarContaAPagarFinanceiro() {
       const nomeFornecedor = contaAnterior?.fornecedores?.nome || String(campoFornecedor?.value || '').trim() || 'Fornecedor';
       const nomeLancamento = observacao || contaAnterior?.observacao || 'Lançamento sem observação';
       const detalhesAlteracoes = descreverAlteracoesContaAPagar(contaAnterior, payloadEdicaoAtual);
-      const decisaoParcelas = await abrirModalConfirmacaoFinanceira({
+      const forcarVencimentoGrupo = window.NC?.aplicarVencimentoGrupo === true;
+      const decisaoParcelas = forcarVencimentoGrupo ? 'sim' : await abrirModalConfirmacaoFinanceira({
         titulo: 'DESEJA ALTERAR EM TODOS LANÇAMENTOS?',
         subtitulo: 'Este título possui parcelas relacionadas',
         fornecedor: nomeFornecedor,
@@ -1525,6 +1526,7 @@ async function carregarContasAPagarFinanceiro() {
           ${statusPago ? '<span class="tag tag-green">Pago</span>' : '<span class="tag tag-amber">Pendente</span>'}
           ${podeEditar ? `
             <button class="btn btn-ghost btn-sm" onclick="editarContaAPagarFinanceiro('${item.id}')">Editar</button>
+            ${statusPago ? `<button class="btn btn-ghost btn-sm" onclick="desconfirmarPagamentoContaFinanceiro('${item.id}')">Estornar pagamento</button>` : ''}
             <button class="btn btn-red" onclick="excluirContaAPagarFinanceiro('${item.id}')">Excluir</button>
           ` : '<span class="tag tag-gray">Troque a loja para editar</span>'}
         </div>
@@ -1557,7 +1559,7 @@ async function carregarContasAPagarFinanceiro() {
         <span style="font-size:12px;font-weight:700;color:${pPago ? '#34d399' : '#ffd400'};">${formatarMoedaBRFinanceiro(p.valor_compra)}</span>
         <span style="font-size:11px;color:var(--text-muted);">venc ${formatarDataBRFinanceiro(p.data_vencimento)}</span>
         <span style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:${pPago ? 'rgba(52,211,153,.15)' : 'rgba(255,165,0,.15)'};color:${pPago ? '#34d399' : '#f0a500'};">${pPago ? 'Pago' : 'Pendente'}</span>
-        ${podeEditar ? `<button style="border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 6px;" onclick="editarContaAPagarFinanceiro('${p.id}')">Editar</button>` : ''}
+        ${podeEditar ? `<button style="border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 6px;" onclick="editarContaAPagarFinanceiro('${p.id}')">Editar</button>${pPago ? `<button style="border:none;background:none;font-size:10px;color:#f59e0b;cursor:pointer;padding:2px 6px;" onclick="desconfirmarPagamentoContaFinanceiro('${p.id}')">Estornar</button>` : ''}` : ''}
       </div>`;
     }).join('');
 
@@ -1776,7 +1778,7 @@ function contaBaixadaSemMovimentacaoSaldo(item = null) {
   return String(item?.observacao || '').includes(OBS_BAIXA_SEM_MOVIMENTACAO_TAG);
 }
 
-async function solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(contaAtualId = '', { valor = 0, titulo = '', movimentarSaldo = true } = {}) {
+async function solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(contaAtualId = '', { valor = 0, titulo = '', movimentarSaldo = true, modo = 'baixa' } = {}) {
   const contas = await carregarContasFinanceiras({ render: false, silencioso: true });
   const ativas = (contas || []).filter(item => item?.ativo !== false);
   if (!ativas.length) {
@@ -1790,6 +1792,7 @@ async function solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(contaAtualId =
     valor,
     titulo,
     movimentarSaldo,
+    modo,
   });
   if (!selecionada) {
     return null;
@@ -2880,35 +2883,83 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
 }
 
 async function desconfirmarPagamentoContaFinanceiro(id) {
-  if (!confirm('Reabrir esta conta como pendente?')) return;
-  const item = contasBaixarFinanceiroCache.find(conta => String(conta.id) === String(id)) || null;
-  const movimentarSaldo = !contaBaixadaSemMovimentacaoSaldo(item);
-  if (movimentarSaldo === true && item?.conta_financeira_id && Number(item.valor_pago || item.valor_compra || 0) > 0) {
+  const item = (contasBaixarFinanceiroCache || []).find(conta => String(conta.id) === String(id))
+    || (contasAPagarFinanceiroCache || []).find(conta => String(conta.id) === String(id))
+    || null;
+  if (!item) {
+    setMsg('msgContaAPagarFinanceiro', 'Conta não encontrada para estorno.', 'err');
+    return;
+  }
+  const valorEstorno = Number(item.valor_pago || item.valor_compra || 0);
+  const movimentavaSaldoOriginal = !contaBaixadaSemMovimentacaoSaldo(item);
+  const destino = await solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(item.conta_financeira_id || '', {
+    valor: valorEstorno,
+    titulo: item.fornecedores?.nome || 'fornecedor',
+    movimentarSaldo: movimentavaSaldoOriginal,
+    modo: 'estorno',
+  });
+  if (!destino) return;
+  if (!confirm(`Estornar o pagamento de ${formatarMoedaBRFinanceiro(valorEstorno)} e reabrir esta conta como pendente?${destino.movimentarSaldo ? `\n\nO valor será devolvido para: ${destino.nome || '-'}.` : '\n\nO saldo do cofre não será movimentado.'}`)) return;
+
+  const operador = obterFuncionarioOperadorAtual();
+  const confirmacaoPin = await confirmarAcaoComPin({
+    funcionario: operador,
+    titulo: 'Confirmar estorno de pagamento',
+    subtitulo: destino.movimentarSaldo
+      ? `Devolver ${formatarMoedaBRFinanceiro(valorEstorno)} para ${destino.nome || 'a conta escolhida'}.`
+      : `Reabrir ${formatarMoedaBRFinanceiro(valorEstorno)} sem devolver saldo ao cofre.`,
+    textoAcao: 'Confirmar estorno',
+    escopo: 'empresa',
+  });
+  if (!confirmacaoPin) return;
+
+  const payloadReabertura = {
+    data_pagamento: null,
+    valor_pago: null,
+    pago_confirmado_em: null,
+    observacao: ajustarObservacaoBaixaSemMovimentacao(item.observacao, false),
+    updated_at: new Date().toISOString(),
+  };
+  let { error } = await sb.from('contasapagar').update(payloadReabertura).eq('id', id).is('excluido_em', null);
+  if (error && isMissingColumnError(error)) {
+    const tentativaCompatibilidade = await sb.from('contasapagar')
+      .update({ data_pagamento: null, valor_pago: null, pago_confirmado_em: null })
+      .eq('id', id).is('excluido_em', null);
+    error = tentativaCompatibilidade.error;
+  }
+  if (error) {
+    setMsg('msgBaixarContasFinanceiro', `Não foi possível reabrir a conta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    setMsg('msgContaAPagarFinanceiro', `Não foi possível estornar o pagamento: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+
+  if (destino.movimentarSaldo === true && destino.id && valorEstorno > 0) {
     const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({
-      contaFinanceiraId: item.conta_financeira_id,
+      contaFinanceiraId: destino.id,
       contaApagarId: id,
       tipo: 'estorno_saida',
-      valor: Number(item.valor_pago || item.valor_compra || 0),
-      descricao: `Reabertura de título de ${item.fornecedores?.nome || 'fornecedor'}`,
+      valor: valorEstorno,
+      descricao: `Estorno de pagamento de ${item.fornecedores?.nome || 'fornecedor'}${String(destino.id) !== String(item.conta_financeira_id || '') ? ' em conta diferente da origem' : ''}`,
     });
     if (erroEstorno) {
-      setMsg('msgBaixarContasFinanceiro', `Não foi possível devolver o saldo para a conta financeira: ${mensagemErroSupabase(erroEstorno, 'erro desconhecido')}`, 'err');
+      const restaurarPagamento = {
+        data_pagamento: item.data_pagamento || hoje(),
+        valor_pago: item.valor_pago ?? item.valor_compra ?? null,
+        pago_confirmado_em: item.pago_confirmado_em || new Date().toISOString(),
+        observacao: item.observacao || null,
+      };
+      await sb.from('contasapagar').update(restaurarPagamento).eq('id', id).is('excluido_em', null);
+      setMsg('msgBaixarContasFinanceiro', `Estorno cancelado: não foi possível devolver o saldo. O pagamento foi mantido. ${mensagemErroSupabase(erroEstorno, '')}`, 'err');
+      setMsg('msgContaAPagarFinanceiro', 'Estorno cancelado porque o saldo não pôde ser devolvido; o pagamento foi mantido.', 'err');
       return;
     }
   }
 
-  const { error } = await sb
-    .from('contasapagar')
-    .update({ pago_confirmado_em: null })
-    .eq('id', id)
-    .is('excluido_em', null);
-
-  if (error) {
-    setMsg('msgBaixarContasFinanceiro', `Não foi possível reabrir a conta: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
-    return;
-  }
-
-  setMsg('msgBaixarContasFinanceiro', 'Conta reaberta como pendente.', 'ok');
+  const mensagemEstorno = destino.movimentarSaldo
+    ? `Pagamento estornado e saldo devolvido para ${destino.nome || 'a conta escolhida'}.`
+    : 'Pagamento estornado sem movimentar o saldo do cofre.';
+  setMsg('msgBaixarContasFinanceiro', mensagemEstorno, 'ok');
+  setMsg('msgContaAPagarFinanceiro', mensagemEstorno, 'ok');
   await carregarContasFinanceiras({ render: false, silencioso: true });
   if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) {
     await carregarCofreFinanceiro();

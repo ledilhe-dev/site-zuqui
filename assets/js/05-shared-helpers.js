@@ -2001,22 +2001,31 @@ function definirMovimentacaoSaldoContaFinanceiraBaixa(movimentar = true) {
   atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
 }
 
-function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = '', valor = 0, titulo = '', movimentarSaldo = true } = {}) {
+function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = '', valor = 0, titulo = '', movimentarSaldo = true, modo = 'baixa' } = {}) {
   const overlay = document.getElementById('contaFinanceiraBaixaOverlay');
   const opcoesEl = document.getElementById('contaFinanceiraBaixaOpcoes');
   const msg = document.getElementById('contaFinanceiraBaixaMsg');
   const subtitle = document.getElementById('contaFinanceiraBaixaSubtitle');
+  const tituloEl = document.getElementById('contaFinanceiraBaixaTitle');
+  const introEl = document.getElementById('contaFinanceiraBaixaIntro');
   if (!overlay || !opcoesEl || !msg) return Promise.resolve(null);
 
   const opcoes = (contas || []).filter(item => item && item.ativo !== false);
+  if (modo === 'estorno' && contaAtualId) {
+    opcoes.sort((a, b) => Number(String(b.id) === String(contaAtualId)) - Number(String(a.id) === String(contaAtualId)));
+  }
   if (!opcoes.length) return Promise.resolve(null);
   contasModalContaFinanceiraBaixa = opcoes;
   modalContaFinanceiraMovimentarSaldo = movimentarSaldo !== false;
   atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
 
   if (subtitle) {
-    subtitle.textContent = `Valor da baixa: ${formatarMoedaBRFinanceiro(valor || 0)}${titulo ? ` · ${titulo}` : ''}`;
+    subtitle.textContent = `${modo === 'estorno' ? 'Valor a devolver' : 'Valor da baixa'}: ${formatarMoedaBRFinanceiro(valor || 0)}${titulo ? ` · ${titulo}` : ''}`;
   }
+  if (tituloEl) tituloEl.textContent = modo === 'estorno' ? 'Devolver saldo ao cofre' : 'Selecionar conta financeira';
+  if (introEl) introEl.textContent = modo === 'estorno'
+    ? 'A conta usada no pagamento está sugerida. Escolha onde o valor será devolvido ou marque “Não” para somente reabrir o título.'
+    : 'Clique na conta financeira que será usada para pagar este título.';
 
   opcoesEl.innerHTML = opcoes.map((item, idx) => {
     const selecionada = String(item.id) === String(contaAtualId || '');
@@ -2024,7 +2033,7 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
       <button class="conta-financeira-opcao conta-financeira-cor-${idx % 6}" type="button" onclick="selecionarContaFinanceiraBaixa('${item.id}')">
         <span class="nome">${escaparHtmlBasico(item.nome || '-')}</span>
         <span class="saldo">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_atual || 0))}</span>
-        <span class="hint">${selecionada ? 'Conta vinculada atualmente' : 'Clique para usar esta conta'}</span>
+        <span class="hint">${selecionada ? (modo === 'estorno' ? 'Conta de onde saiu o pagamento' : 'Conta vinculada atualmente') : (modo === 'estorno' ? 'Devolver nesta conta' : 'Clique para usar esta conta')}</span>
       </button>
     `;
   }).join('');

@@ -13,6 +13,7 @@ const NC = {
   modo: 'total',
   lojaId: null,
   salvando: false,
+  aplicarVencimentoGrupo: false,
 };
 window.NC = NC;
 
@@ -203,7 +204,7 @@ function ncAtualizarBotaoVencFornecedor() {
   const podeUsar = !!fornecedor && Number.isFinite(dia) && dia >= 1 && dia <= 31;
   btn.disabled = !podeUsar;
   btn.style.display = podeUsar ? '' : 'none';
-  btn.textContent = podeUsar ? `Vence dia ${dia}` : 'Usar venc. fornecedor';
+  btn.textContent = podeUsar ? `${NC.modoEdicao && NC.parcelado ? 'Todos ' : 'Vence '}dia ${dia}` : 'Usar venc. fornecedor';
 }
 
 function ncUsarVencimentoFornecedor() {
@@ -222,7 +223,15 @@ function ncUsarVencimentoFornecedor() {
   const vc = document.getElementById('ncVencCustom');
   if (vc) vc.value = vencimento;
   ncVencCust();
-  if (msg) { msg.textContent = `Vencimento do fornecedor aplicado: dia ${dia}.`; msg.className = 'msg ok'; }
+  if (NC.modoEdicao && NC.parcelado) {
+    NC.aplicarVencimentoGrupo = confirm(`Aplicar o vencimento no dia ${dia} a todas as parcelas vinculadas ao salvar?`);
+  }
+  if (msg) {
+    msg.textContent = NC.aplicarVencimentoGrupo
+      ? `Dia ${dia} definido para todas as parcelas. Clique em Salvar alterações.`
+      : `Vencimento aplicado nesta parcela: dia ${dia}.`;
+    msg.className = 'msg ok';
+  }
 }
 
 function ncAtuParcelasInfo() {
@@ -318,7 +327,7 @@ function ncLimparForn() {
 // ── Abrir / Fechar ──────────────────────────────────────────────
 function ncAbrir(editar) {
   if (!editar) {
-    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, parcelado: false, modoEdicao: false, modo: 'total', lojaId: null, salvando: false });
+    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, parcelado: false, modoEdicao: false, modo: 'total', lojaId: null, salvando: false, aplicarVencimentoGrupo: false });
     // Limpa campos visuais
     const fi = document.getElementById('ncFornBusca'); if (fi) { fi.value = ''; fi.style.display = ''; }
     const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
@@ -612,6 +621,7 @@ if (typeof _ncOrigEditar === 'function') {
       NC.intervalo = parseInt(cip ? cip.value : '30', 10) || 30;
       NC.parcelado = NC.parcelas > 1;
       NC.modoEdicao = true;
+      NC.aplicarVencimentoGrupo = false;
       NC.modo = NC.parcelado ? 'parcela' : 'total';
 
       ncAbrir(true);
