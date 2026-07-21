@@ -1495,7 +1495,7 @@ async function carregarContasAPagarFinanceiro() {
     const nomeLoja = obterNomeLojaFiltroMultiLoja(item.loja_id);
     const podeEditar = !item.loja_id || String(item.loja_id) === lojaAtualId;
     return `
-      <div class="item">
+      <div class="item conta-pagar-card">
         <div class="item-info">
           <label class="item-nome" style="display:flex;align-items:center;gap:8px;cursor:pointer">
             ${podeEditar ? `<input class="checkbox-conta-apagar-financeiro" data-conta-id="${item.id}" type="checkbox" ${contasAPagarFinanceiroSelecionadasIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoContaAPagarFinanceiro('${item.id}', this.checked)">` : ''}
