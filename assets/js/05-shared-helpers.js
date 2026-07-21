@@ -2082,15 +2082,17 @@ function fecharModalContaFinanceiraBaixa(resultado = null) {
 }
 
 async function executarValidacaoCredencialComRetry(nomeRpc, parametros, respostaValida) {
-  const executar = () => executarSemFiltrosTenantTemporario(() => sb.rpc(nomeRpc, parametros));
-  let resposta = await executar();
-  if (!resposta?.error && respostaValida(resposta?.data)) return resposta;
-
-  // A primeira chamada de credencial pode voltar vazia durante a retomada da
-  // sessao/conexao. Faz uma unica nova leitura dentro da mesma confirmacao para
-  // que o usuario nao precise informar exatamente o mesmo PIN duas vezes.
-  await new Promise(resolve => window.setTimeout(resolve, 180));
-  resposta = await executar();
+  // RPCs de credencial já resolvem o escopo no banco. Alterar filtros globais
+  // aqui criava uma disputa com carregamentos paralelos, principalmente no
+  // celular, fazendo o mesmo PIN falhar nas primeiras tentativas.
+  const executar = () => sb.rpc(nomeRpc, parametros);
+  const esperas = [0, 220, 550];
+  let resposta = null;
+  for (const espera of esperas) {
+    if (espera) await new Promise(resolve => window.setTimeout(resolve, espera));
+    resposta = await executar();
+    if (!resposta?.error && respostaValida(resposta?.data)) return resposta;
+  }
   return resposta;
 }
 
