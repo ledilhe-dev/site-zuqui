@@ -2380,13 +2380,18 @@ async function confirmarPagamentoContaFinanceiro(id) {
     if (!formaSelecionada) return;
   }
   const valorBase = Number(item.valor_pago ?? item.valor_compra ?? 0);
-  const valorPagoFinal = Number((Number.isFinite(valorBase) ? valorBase : 0).toFixed(2));
+  const valorSugerido = Number((Number.isFinite(valorBase) ? valorBase : 0).toFixed(2));
   const contaSelecionada = await solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(item.conta_financeira_id || '', {
-    valor: valorPagoFinal,
+    valor: valorSugerido,
     titulo: item.fornecedores?.nome || 'fornecedor',
     movimentarSaldo: !contaBaixadaSemMovimentacaoSaldo(item),
   });
   if (!contaSelecionada) return;
+  const valorPagoFinal = Number(contaSelecionada.valorPago);
+  if (!Number.isFinite(valorPagoFinal) || valorPagoFinal <= 0) {
+    setMsg('msgBaixarContasFinanceiro', 'Informe um valor efetivamente pago válido.', 'err');
+    return;
+  }
   const movimentarSaldo = contaSelecionada.movimentarSaldo === true;
 
   const operador = obterFuncionarioOperadorAtual();

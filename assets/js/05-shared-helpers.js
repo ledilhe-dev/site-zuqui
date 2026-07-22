@@ -2008,6 +2008,8 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   const subtitle = document.getElementById('contaFinanceiraBaixaSubtitle');
   const tituloEl = document.getElementById('contaFinanceiraBaixaTitle');
   const introEl = document.getElementById('contaFinanceiraBaixaIntro');
+  const valorWrap = document.getElementById('contaFinanceiraValorPagoWrap');
+  const valorInput = document.getElementById('contaFinanceiraValorPago');
   if (!overlay || !opcoesEl || !msg) return Promise.resolve(null);
 
   const opcoes = (contas || []).filter(item => item && item.ativo !== false);
@@ -2018,6 +2020,11 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   contasModalContaFinanceiraBaixa = opcoes;
   modalContaFinanceiraMovimentarSaldo = movimentarSaldo !== false;
   atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
+  overlay.dataset.modo = modo;
+  if (valorWrap) valorWrap.style.display = modo === 'baixa' ? 'grid' : 'none';
+  if (valorInput) {
+    valorInput.value = Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
   if (subtitle) {
     subtitle.textContent = `${modo === 'estorno' ? 'Valor a devolver' : 'Valor da baixa'}: ${formatarMoedaBRFinanceiro(valor || 0)}${titulo ? ` · ${titulo}` : ''}`;
@@ -2057,9 +2064,23 @@ function selecionarContaFinanceiraBaixa(id) {
     }
     return;
   }
+  const overlay = document.getElementById('contaFinanceiraBaixaOverlay');
+  const modo = String(overlay?.dataset?.modo || 'baixa');
+  const valorInput = document.getElementById('contaFinanceiraValorPago');
+  const valorPago = modo === 'baixa' ? lerValorMonetarioFinanceiro(valorInput?.value || '') : null;
+  if (modo === 'baixa' && (!Number.isFinite(valorPago) || valorPago <= 0)) {
+    const msg = document.getElementById('contaFinanceiraBaixaMsg');
+    if (msg) {
+      msg.textContent = 'Informe um valor efetivamente pago maior que zero.';
+      msg.className = 'msg err';
+    }
+    valorInput?.focus();
+    return;
+  }
   fecharModalContaFinanceiraBaixa({
     ...conta,
     movimentarSaldo: modalContaFinanceiraMovimentarSaldo === true,
+    valorPago: modo === 'baixa' ? Number(valorPago.toFixed(2)) : null,
   });
 }
 

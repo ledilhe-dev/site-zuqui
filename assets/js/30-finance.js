@@ -1800,6 +1800,27 @@ function aplicarAtalhoPeriodoRecFuturo(tipo) {
   carregarRecFuturos();
 }
 
+function limparFiltrosRecFuturos() {
+  const busca = document.getElementById('filtroRecFuturoBusca');
+  const usuario = document.getElementById('filtroRecFuturoUsuario');
+  const inicio = document.getElementById('filtroRecFuturoInicio');
+  const fim = document.getElementById('filtroRecFuturoFim');
+  const apenasPendentes = document.getElementById('filtroRecFuturoSoAbertos');
+  const criterio = document.querySelector('#financeiro_recebiveis .recebiveis-provisionados-card .date-filter-criterion');
+
+  if (busca) busca.value = '';
+  if (usuario) usuario.value = '';
+  if (inicio) inicio.value = '';
+  if (fim) fim.value = '';
+  if (apenasPendentes) apenasPendentes.checked = true;
+  if (criterio) {
+    const opcaoPrevista = Array.from(criterio.options || []).find(opcao => String(opcao.value).replace('especial:', '') === 'prevista');
+    if (opcaoPrevista) criterio.value = opcaoPrevista.value;
+  }
+  document.querySelectorAll('#financeiro_recebiveis [data-rec-atalho]').forEach(botao => botao.classList.remove('is-active'));
+  carregarRecFuturos();
+}
+
 async function carregarRecFuturos() {
   const lista = document.getElementById('listaRecFuturos');
   if (!lista) return;
@@ -1910,6 +1931,7 @@ async function carregarRecFuturos() {
             </div>
           </div>
           <div class="rec-card-actions">
+            <strong class="rec-futuro-valor-acoes">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
             ${tagStatus}
             ${!confirmado ? `<button class="btn btn-green btn-sm rec-confirmar-btn" onclick="abrirModalConfirmarRecFuturo('${item.id}')">Confirmar recebimento</button>` : ''}
             <button class="btn btn-ghost btn-sm" onclick="editarRecFuturo('${item.id}')">Editar</button>

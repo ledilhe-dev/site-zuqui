@@ -146,6 +146,11 @@ input[type="date"][id^="filtro"],
 #financeiro_recebiveis .rec-card-future .item-detalhe { color:var(--text-muted); font-size:12px; line-height:1.45; }
 #financeiro_recebiveis .rec-card-future .item-detalhe strong { color:var(--text); }
 #financeiro_recebiveis .rec-card-actions { display:flex; align-items:center; justify-content:flex-end; gap:7px; flex-wrap:wrap; }
+#financeiro_recebiveis .rec-futuro-valor-acoes { flex:none; margin-right:4px; color:var(--orange,#f59e0b); font-size:12px; font-weight:800; white-space:nowrap; }
+@media (min-width:701px) {
+  #financeiro_recebiveis .rec-card-future .rec-futuro-valor-inline { display:none; }
+  #financeiro_recebiveis .rec-card-future .rec-card-actions { flex-wrap:nowrap; }
+}
 #financeiro_recebiveis .rec-card-actions .btn { min-height:34px; padding:6px 10px; font-size:12px; }
 #financeiro_recebiveis .rec-card-actions .rec-confirmar-btn { min-width:0 !important; padding-inline:6px !important; font-size:clamp(7px,2vw,10px) !important; line-height:1.05 !important; white-space:nowrap !important; }
 #financeiro_recebiveis .rec-summary { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:12px 14px; margin-bottom:10px; border:1px solid var(--border); border-left:3px solid var(--green,#22c55e); border-radius:10px; }
@@ -156,6 +161,7 @@ input[type="date"][id^="filtro"],
 #financeiro_recebiveis .rec-summary-compacto .item-nome,
 #financeiro_recebiveis .rec-summary-compacto .rec-summary-label { font-size:12px; }
 @media (max-width:700px) {
+  #financeiro_recebiveis .rec-futuro-valor-acoes { display:none; }
   #financeiro_recebiveis { padding-inline:8px !important; overflow-x:hidden; }
   #financeiro_recebiveis .page-title { display:block !important; font-size:20px !important; margin-bottom:10px !important; }
   #financeiro_recebiveis .card { padding:10px !important; }

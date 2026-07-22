@@ -35,7 +35,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=20260722-valor-efetivamente-pago">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -2069,6 +2069,7 @@
               <label class="recebiveis-pendentes-label">
                 <input type="checkbox" id="filtroRecFuturoSoAbertos" checked onchange="carregarRecFuturos()"> Apenas pendentes
               </label>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltrosRecFuturos()">Limpar filtros</button>
               <button class="btn btn-ghost btn-sm" onclick="carregarRecFuturos()">Atualizar</button>
             </div>
           </div>
@@ -2730,7 +2731,7 @@
 </div>
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
-<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260720-acoes-uma-linha">
+<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -2763,6 +2764,13 @@
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div class="forma-pagamento-modal-intro" id="contaFinanceiraBaixaIntro">Clique na conta financeira que será usada para pagar este título.</div>
+      <label class="conta-financeira-valor-pago" id="contaFinanceiraValorPagoWrap">
+        <span>Valor efetivamente pago</span>
+        <input id="contaFinanceiraValorPago" type="text" inputmode="decimal" autocomplete="off" placeholder="R$ 0,00"
+          oninput="this.value=formatarDigitacaoMoedaFinanceiro(this.value)"
+          onblur="this.value=prepararValorCampoMoedaParaEdicao(this.value)">
+        <small>Este valor será salvo no pagamento e descontado da conta financeira escolhida.</small>
+      </label>
       <div class="conta-financeira-movimentacao-toggle" id="contaFinanceiraMovimentacaoToggle">
         <span class="rotulo">Movimentar saldo da conta?</span>
         <button class="btn btn-ghost btn-sm" type="button" id="btnContaFinanceiraMovimentarSim" onclick="definirMovimentacaoSaldoContaFinanceiraBaixa(true)">Sim</button>
@@ -2962,17 +2970,17 @@
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
 <script src="./assets/js/04-navigation.js"></script>
-<script src="./assets/js/05-shared-helpers.js?v=20260720-pin-uma-confirmacao"></script>
+<script src="./assets/js/05-shared-helpers.js?v=20260722-valor-efetivamente-pago"></script>
 <script src="./assets/js/10-dashboard.js?v=20260711-isolamento-loja-dashboard"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260720-pin-ou-senha"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260720-parcelas-categorias"></script>
+<script src="./assets/js/30-finance.js?v=20260722-valor-e-limpar-filtros"></script>
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260720-ocr-banco-por-item"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260720-contas-alinhadas"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260722-valor-efetivamente-pago"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
