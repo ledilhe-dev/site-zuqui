@@ -1503,6 +1503,10 @@
               <input type="checkbox" id="relFinanceiroAgrupar" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
               Agrupar por fornecedor
             </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
+              <input type="checkbox" id="relFinanceiroSomenteDivergentes" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
+              Somente valores divergentes
+            </label>
             <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioFinanceiroCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
             <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioFinanceiroPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
           </div>
@@ -1539,6 +1543,11 @@
             <div class="s-label">Total geral (R$)</div>
             <div class="s-value" id="rfTotalSomado" style="color:var(--accent-bright,#ffbe1a);">R$ 0,00</div>
             <div class="s-desc">Pago + pendente no filtro</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Variação realizado x original</div>
+            <div class="s-value" id="rfVariacaoOriginal">R$ 0,00</div>
+            <div class="s-desc">Positivo = custo maior; negativo = economia</div>
           </div>
         </div>
 
@@ -1593,6 +1602,7 @@
             </div>
             <button class="btn btn-green" type="button" onclick="carregarRelatorioRecebimentos()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioRecebimentos()">Hoje</button>
+            <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioRecebimentos()">Limpar filtros</button>
           </div>
           <div class="relatorio-financeiro-acoes">
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(7)">Últimos 7 dias</button>
@@ -1637,6 +1647,16 @@
             <div class="s-label" style="color:var(--amber,#f59e0b);">Recebíveis futuros</div>
             <div class="s-value" id="rrTotalFuturos" style="color:var(--amber,#f59e0b);">R$ 0,00</div>
             <div class="s-desc">Provisionados ainda pendentes.</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Confirmados no filtro</div>
+            <div class="s-value" id="rrQtdConfirmados">0</div>
+            <div class="s-desc">Recebimentos efetivamente confirmados.</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Provisionados no filtro</div>
+            <div class="s-value" id="rrQtdProvisionados">0</div>
+            <div class="s-desc">Lançamentos pendentes incluídos no relatório.</div>
           </div>
         </div>
 
@@ -2807,11 +2827,15 @@
           <input id="editarTituloDataVencimento" type="date">
         </label>
         <label>
-          Valor do título
+          Valor original
+          <input id="editarTituloValorOriginal" type="text" readonly aria-readonly="true" title="Valor preservado do cadastro inicial">
+        </label>
+        <label>
+          Valor previsto/atual
           <input id="editarTituloValorCompra" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00">
         </label>
         <label>
-          Valor pago
+          Valor a pagar/pago
           <input id="editarTituloValorPago" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00">
         </label>
         <label>
@@ -2980,13 +3004,13 @@
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260720-ocr-banco-por-item"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260722-valor-efetivamente-pago"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260722-valores-auditoria"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=3.2.15"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=3.2.21"></script>
+<script src="./assets/js/60-timeclock.js?v=20260722-relatorios-valores"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/78-init.js"></script>

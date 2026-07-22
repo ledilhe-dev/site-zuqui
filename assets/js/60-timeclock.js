@@ -2498,7 +2498,7 @@ function exportarRelatorioFinanceiroCsv() {
   } else {
     cabecalho = [
       'Fornecedor', 'Grupo', 'Categoria', 'Status', 'Forma de pagamento',
-      'Data compra', 'Data vencimento', 'Data pagamento', 'Valor titulo',
+      'Data compra', 'Data vencimento', 'Data pagamento', 'Valor original', 'Valor previsto/atual', 'Valor pago', 'Variacao',
       'PARCELA ATUAL', 'PARCELAS RESTANTES', 'Observacao',
       'Criado por', 'Cadastrado em', 'Excluido por', 'Excluido em',
     ];
@@ -2515,7 +2515,10 @@ function exportarRelatorioFinanceiroCsv() {
         item.data_compra || '',
         item.data_vencimento || '',
         item.data_pagamento || '',
+        Number(item.valor_original ?? item.valor_compra ?? 0).toFixed(2),
         Number(item.valor_compra || 0).toFixed(2),
+        obterValorPagoRelatorioFinanceiro(item).toFixed(2),
+        (obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0)).toFixed(2),
         infoParcelas.parcelaTexto,
         infoParcelas.restantesTexto,
         String(item.observacao || '').trim(),
@@ -2591,7 +2594,7 @@ function imprimirRelatorioFinanceiroPdf() {
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(g.pago + g.pendente))}</td>
         </tr>`).join('');
   } else {
-    cabecalhoCols = ['Fornecedor', 'Categoria', 'Status', 'Forma', 'Vencimento', 'Valor', 'Parcela', 'Rest.', 'Observação', 'Cadastro'];
+    cabecalhoCols = ['Fornecedor', 'Categoria', 'Status', 'Forma', 'Vencimento', 'Original', 'Atual', 'Pago', 'Variação', 'Parcela', 'Rest.', 'Observação', 'Cadastro'];
     linhas = itens.map(item => {
       const statusAtual = obterStatusContaRelatorioFinanceiro(item);
       const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
@@ -2604,7 +2607,10 @@ function imprimirRelatorioFinanceiroPdf() {
           <td>${escaparHtmlBasico(status)}</td>
           <td>${escaparHtmlBasico(obterNomeFormaRelatorioFinanceiro(item))}</td>
           <td>${escaparHtmlBasico(formatarDataBRFinanceiro(item.data_vencimento))}</td>
+          <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_original ?? item.valor_compra ?? 0))}</td>
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_compra || 0))}</td>
+          <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item)))}</td>
+          <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0)))}</td>
           <td>${escaparHtmlBasico(infoParcelas.parcelaTexto)}</td>
           <td>${escaparHtmlBasico(infoParcelas.restantesTexto)}</td>
           <td>${escaparHtmlBasico(String(item.observacao || '').trim() || '-')}</td>
@@ -2626,7 +2632,7 @@ function imprimirRelatorioFinanceiroPdf() {
         <title>Relatório de contas a pagar</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 8px; color: #111; }
-          @page { size: A4 portrait; margin: 8mm; }
+          @page { size: A4 landscape; margin: 8mm; }
           h1 { margin: 0 0 4px; font-size: 13px; }
           .meta { margin-bottom: 6px; font-size: 8px; color: #444; }
           .totais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 8px; }
@@ -2636,13 +2642,16 @@ function imprimirRelatorioFinanceiroPdf() {
           table { width: 100%; border-collapse: collapse; font-size: 7.5px; table-layout: fixed; }
           th, td { border: 1px solid #ddd; padding: 2px 3px; text-align: left; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
           th { background: #f5f5f5; font-size: 7.5px; font-weight: bold; }
-          /* Larguras fixas — 10 colunas sem Grupo, A4 retrato ~175mm útil */
+          /* Larguras fixas para auditoria de valores em A4 paisagem. */
           col.c-forn     { width: 18%; }
           col.c-cat      { width: 13%; }
           col.c-status   { width: 7%;  }
           col.c-forma    { width: 9%;  }
           col.c-venc     { width: 9%;  }
           col.c-valor    { width: 8%;  }
+          col.c-original { width: 8%;  }
+          col.c-pago     { width: 8%;  }
+          col.c-variacao { width: 8%;  }
           col.c-parcela  { width: 7%;  }
           col.c-rest     { width: 4%;  }
           col.c-obs      { width: 16%; }
@@ -2674,7 +2683,7 @@ function imprimirRelatorioFinanceiroPdf() {
         <table>
           <colgroup>
             <col class="c-forn"><col class="c-cat"><col class="c-status">
-            <col class="c-forma"><col class="c-venc"><col class="c-valor">
+            <col class="c-forma"><col class="c-venc"><col class="c-original"><col class="c-valor"><col class="c-pago"><col class="c-variacao">
             <col class="c-parcela"><col class="c-rest"><col class="c-obs"><col class="c-cad">
           </colgroup>
           <thead>
@@ -2761,6 +2770,9 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
   lista.innerHTML = resumoExcluidos + '<div class="lista">' + ordenados.map(item => {
     const status = obterStatusContaRelatorioFinanceiro(item);
     const valorCompra = Number(item.valor_compra || 0);
+    const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
+    const valorRealizado = status === 'pago' ? obterValorPagoRelatorioFinanceiro(item) : valorCompra;
+    const variacao = valorRealizado - valorOriginal;
     const fornecedor = obterNomeFornecedorRelatorioFinanceiro(item);
     const forma = obterNomeFormaRelatorioFinanceiro(item);
     const observacao = String(item.observacao || '').trim() || '-';
@@ -2771,7 +2783,8 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
           <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
-          <div class="item-detalhe">Valor do titulo: ${formatarMoedaBRFinanceiro(valorCompra)}</div>
+          <div class="item-detalhe">Original: ${formatarMoedaBRFinanceiro(valorOriginal)} · Previsto/atual: ${formatarMoedaBRFinanceiro(valorCompra)} · ${status === 'pago' ? `Pago: ${formatarMoedaBRFinanceiro(valorRealizado)}` : `A pagar: ${formatarMoedaBRFinanceiro(valorRealizado)}`}</div>
+          <div class="item-detalhe" style="color:${variacao > 0 ? 'var(--red)' : (variacao < 0 ? 'var(--green)' : 'var(--text-muted)')}">Variação sobre o original: ${variacao > 0 ? '+' : ''}${formatarMoedaBRFinanceiro(variacao)}</div>
           <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · ${escaparHtmlBasico(infoParcelas.resumoTexto)}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
           <div class="item-detalhe">Cadastro: ${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
@@ -2842,6 +2855,8 @@ function limparFiltrosRelatorioFinanceiro() {
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
   const campoGrupo = document.getElementById('filtroRelFinanceiroGrupo');
   if (campoGrupo) campoGrupo.value = '';
+  const somenteDivergentes = document.getElementById('relFinanceiroSomenteDivergentes');
+  if (somenteDivergentes) somenteDivergentes.checked = false;
 
   carregarRelatorioFinanceiro();
 }
@@ -2929,7 +2944,7 @@ async function carregarRelatorioFinanceiro() {
     const { data, error } = await executarSemFiltrosTenantTemporario(() => {
       let query = sb
         .from('contasapagar')
-        .select('id, fornecedor_id, categoria_id, data_compra, data_vencimento, data_pagamento, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, updated_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome, grupo_id), formas_pagamento(id, nome)')
+        .select('id, fornecedor_id, categoria_id, data_compra, data_vencimento, data_pagamento, valor_original, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, updated_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome, grupo_id), formas_pagamento(id, nome)')
         .order('data_vencimento', { ascending: false });
       if (lojasSelecionadas.length) query = query.in('loja_id', lojasSelecionadas);
       if (filtroDataInicioConsulta) query = query.gte(colunaDataConsulta, filtroDataInicioConsulta);
@@ -3008,6 +3023,7 @@ async function carregarRelatorioFinanceiro() {
     const filtrosForma = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
     const filtrosCategoria = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
     const filtroGrupo = String(document.getElementById('filtroRelFinanceiroGrupo')?.value || '').trim();
+    const somenteDivergentes = document.getElementById('relFinanceiroSomenteDivergentes')?.checked === true;
     const elTotalGeral = document.getElementById('rfTotalGeral');
     const elTotalPago = document.getElementById('rfTotalPago');
     const elTotalPendente = document.getElementById('rfTotalPendente');
@@ -3053,6 +3069,11 @@ async function carregarRelatorioFinanceiro() {
       if (filtrosForma.length && !filtrosForma.includes(formaId || formaNome)) return false;
       if (filtrosCategoria.length && !filtrosCategoria.includes(categoriaId)) return false;
       if (filtroGrupo && grupoId !== filtroGrupo) return false;
+      const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
+      const valorComparacao = obterStatusContaRelatorioFinanceiro(item) === 'pago'
+        ? obterValorPagoRelatorioFinanceiro(item)
+        : Number(item.valor_compra || 0);
+      if (somenteDivergentes && Math.abs(valorComparacao - valorOriginal) < 0.005) return false;
       return true;
     });
 
@@ -3077,6 +3098,13 @@ async function carregarRelatorioFinanceiro() {
 
     const qtdTitulos = itensFiltrados.length;
     const totalSomado = totalPago + totalPendente;
+    const variacaoOriginal = itensFiltrados.reduce((acc, item) => {
+      const original = Number(item.valor_original ?? item.valor_compra ?? 0);
+      const realizado = obterStatusContaRelatorioFinanceiro(item) === 'pago'
+        ? obterValorPagoRelatorioFinanceiro(item)
+        : Number(item.valor_compra || 0);
+      return acc + (realizado - original);
+    }, 0);
     if (elTotalGeral) elTotalGeral.textContent = formatarMoedaBRFinanceiro(totalGeral);
     if (elTotalPago) elTotalPago.textContent = formatarMoedaBRFinanceiro(totalPago);
     if (elTotalPendente) elTotalPendente.textContent = formatarMoedaBRFinanceiro(totalPendente);
@@ -3089,6 +3117,11 @@ async function carregarRelatorioFinanceiro() {
     const chkAcoesFuturos = document.getElementById('contasSomarFuturosAcoes');
     if (chkAcoesFuturos?.checked === true) await recalcularFaltaQuitar();
     if (elQtdTitulos) elQtdTitulos.textContent = String(qtdTitulos);
+    const elVariacaoOriginal = document.getElementById('rfVariacaoOriginal');
+    if (elVariacaoOriginal) {
+      elVariacaoOriginal.textContent = `${variacaoOriginal > 0 ? '+' : ''}${formatarMoedaBRFinanceiro(variacaoOriginal)}`;
+      elVariacaoOriginal.style.color = variacaoOriginal > 0 ? 'var(--red)' : (variacaoOriginal < 0 ? 'var(--green)' : 'var(--text)');
+    }
 
     renderizarDashboardFornecedoresRelatorioFinanceiro(itensFiltrados);
     renderizarDashboardFormasRelatorioFinanceiro(itensFiltrados);
@@ -3181,6 +3214,7 @@ function resetFiltroRelatorioRecebimentos() {
   const pagador = document.getElementById('filtroRelRecebPagador');
   const forma = document.getElementById('filtroRelRecebForma');
   const usuario = document.getElementById('filtroRelRecebUsuario');
+  const grupo = document.getElementById('filtroRelRecebGrupo');
 
   const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_recebimentos', hojeLocal, hojeLocal, 'recebimento') === true;
   if (!sincronizouData && dataInicio) dataInicio.value = hojeLocal;
@@ -3188,6 +3222,19 @@ function resetFiltroRelatorioRecebimentos() {
   if (pagador) pagador.value = '';
   if (forma) forma.value = '';
   if (usuario) usuario.value = '';
+  if (grupo) grupo.value = '';
+  carregarRelatorioRecebimentos();
+}
+
+function limparFiltrosRelatorioRecebimentos() {
+  ['filtroRelRecebPagador', 'filtroRelRecebGrupo', 'filtroRelRecebForma', 'filtroRelRecebUsuario'].forEach(id => {
+    const campo = document.getElementById(id);
+    if (campo) campo.value = '';
+  });
+  ['filtroRelRecebIncluirFuturos', 'filtroRelRecebIncluirPendentes'].forEach(id => {
+    const campo = document.getElementById(id);
+    if (campo) campo.checked = false;
+  });
   carregarRelatorioRecebimentos();
 }
 
@@ -3225,8 +3272,8 @@ function renderizarRelatorioRecebimentos(itens = []) {
 }
 
 async function buscarDadosRelatorioRecebimentos() {
-  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, updated_at, criado_por_id, criado_por_nome, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)';
-  const camposSemAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)';
+  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, updated_at, criado_por_id, criado_por_nome, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
+  const camposSemAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
 
   const executar = (campos) => sb
     .from('recebiveis')
@@ -3245,7 +3292,7 @@ async function buscarDadosRelatorioRecebimentos() {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros')
-          .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras(id, nome)')
+          .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)')
           .is('confirmado_em', null)
           .order('data_prevista', { ascending: true })
       );
@@ -3265,7 +3312,7 @@ async function buscarDadosRelatorioRecebimentos() {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros')
-          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, fornecedores(nome), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
+          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
           .not('confirmado_em', 'is', null)
           .order('confirmado_em', { ascending: false })
       );
@@ -3294,6 +3341,7 @@ async function carregarRelatorioRecebimentos() {
   const pagadorEl = document.getElementById('filtroRelRecebPagador');
   const formaEl = document.getElementById('filtroRelRecebForma');
   const usuarioEl = document.getElementById('filtroRelRecebUsuario');
+  const grupoEl = document.getElementById('filtroRelRecebGrupo');
   if (!lista) return;
 
   if (dataInicioEl && !dataInicioEl.value) dataInicioEl.value = hoje();
@@ -3319,6 +3367,7 @@ async function carregarRelatorioRecebimentos() {
     const filtroPagador = String(pagadorEl?.value || '').trim();
     const filtroForma = String(formaEl?.value || '').trim();
     const filtroUsuario = String(usuarioEl?.value || '').trim();
+    const filtroGrupo = String(grupoEl?.value || '').trim();
     const filtroDataTipo = String(document.querySelector('#relatorio_recebimentos .date-filter-criterion')?.value || 'especial:cadastro').replace('especial:', '');
 
     const itens = rows.filter(item => {
@@ -3339,6 +3388,7 @@ async function carregarRelatorioRecebimentos() {
       if (filtroPagador && filtroPagador !== pagadorId) return false;
       if (filtroForma && filtroForma !== (formaId || formaNome)) return false;
       if (filtroUsuario && filtroUsuario !== usuarioChave) return false;
+      if (filtroGrupo && String(item.fornecedores?.grupo_id || '').trim() !== filtroGrupo) return false;
       return true;
     });
 
@@ -3354,10 +3404,14 @@ async function carregarRelatorioRecebimentos() {
     const ticketEl = document.getElementById('rrTicketMedio');
     const ultimoEl = document.getElementById('rrUltimoLancamento');
     const futurosEl = document.getElementById('rrTotalFuturos');
+    const confirmadosEl = document.getElementById('rrQtdConfirmados');
+    const provisionadosEl = document.getElementById('rrQtdProvisionados');
     if (totalEl) totalEl.textContent = formatarMoedaBRFinanceiro(total);
     if (qtdEl) qtdEl.textContent = String(quantidade);
     if (ticketEl) ticketEl.textContent = formatarMoedaBRFinanceiro(ticketMedio);
     if (ultimoEl) ultimoEl.textContent = ultimo;
+    if (confirmadosEl) confirmadosEl.textContent = String(itens.filter(item => !item._provisionadoPendente).length);
+    if (provisionadosEl) provisionadosEl.textContent = String(itens.filter(item => item._provisionadoPendente).length);
     // Card de futuros pendentes (buscar da tabela separada)
     if (futurosEl) {
       futurosEl.textContent = '...';

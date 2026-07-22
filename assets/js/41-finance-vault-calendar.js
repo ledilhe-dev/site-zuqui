@@ -1935,7 +1935,7 @@ async function carregarBaixarContasFinanceiro() {
 
   const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
     .from('contasapagar')
-    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
+    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, valor_original, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
     .is('excluido_em', null)
     .order('data_vencimento', { ascending: true }));
 
@@ -2073,7 +2073,7 @@ async function carregarBaixarContasFinanceiro() {
           <div style="flex:1;min-width:0;">
             <div class="item-nome">${escaparHtmlBasico(nomeFornecedor)}</div>
             <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
-            <div class="item-detalhe">Valor compra: ${formatarMoedaBRFinanceiro(item.valor_compra)} · Valor pago: ${formatarMoedaBRFinanceiro(valorPago)} · Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || item.forma_pagamento || '-')}</div>
+            <div class="item-detalhe">Original: ${formatarMoedaBRFinanceiro(item.valor_original ?? item.valor_compra ?? 0)} · Previsto/atual: ${formatarMoedaBRFinanceiro(item.valor_compra)} · A pagar/pago: ${formatarMoedaBRFinanceiro(valorPago)} · Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || item.forma_pagamento || '-')}</div>
             <div class="item-detalhe">Conta financeira: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')} · Categoria: ${escaparHtmlBasico((categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || 'Sem categoria')}</div>
             <div class="item-detalhe">Parcela: ${item.numero_parcela || 1}/${item.qtd_parcelas || 1}${item.intervalo_parcelas_dias ? ` · intervalo ${item.intervalo_parcelas_dias} dia(s)` : ''}</div>
             <div class="item-detalhe">Obs.: ${escaparHtmlBasico(item.observacao || '-')}</div>
@@ -2187,6 +2187,7 @@ async function editarPagamentoContaFinanceiro(id) {
 
   document.getElementById('editarTituloDataCompra').value = String(item.data_compra || '').slice(0, 10);
   document.getElementById('editarTituloDataVencimento').value = String(item.data_vencimento || '').slice(0, 10);
+  document.getElementById('editarTituloValorOriginal').value = valorMoedaInputFinanceiro(item.valor_original ?? item.valor_compra ?? 0);
   document.getElementById('editarTituloValorCompra').value = valorMoedaInputFinanceiro(item.valor_compra || 0);
   document.getElementById('editarTituloValorPago').value = valorMoedaInputFinanceiro(item.valor_pago ?? item.valor_compra ?? 0);
   prepararCampoMoedaFinanceiro(document.getElementById('editarTituloValorCompra'));
@@ -2312,7 +2313,9 @@ async function salvarModalEditarTituloFinanceiro() {
     const intervalo = Number.parseInt(String(item.intervalo_parcelas_dias || 0), 10) || 0;
     const payloadGrupoBase = {
       data_compra: dataCompra,
+      valor_original: Number(Number(item.valor_original ?? item.valor_compra ?? valorCompra).toFixed(2)),
       valor_compra: Number(valorCompra.toFixed(2)),
+      valor_pago: Number(valorPago.toFixed(2)),
       observacao: observacaoBase,
       updated_at: new Date().toISOString(),
     };
