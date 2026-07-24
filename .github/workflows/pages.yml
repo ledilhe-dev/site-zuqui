@@ -65,6 +65,7 @@ jobs:
           cp icon-512.png _site/
           cp -R assets _site/
           cp -R media _site/
+          cp -R zuqui _site/
 
           touch _site/.nojekyll
 
