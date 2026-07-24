@@ -44,6 +44,7 @@
 <link id="obsidian-precision-design-system-v3" rel="stylesheet" href="./assets/css/12-design-system.css">
 <link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css">
 <link id="integracoes-financeiras-style" rel="stylesheet" href="./assets/css/97-financial-integrations.css">
+<link rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260724">
 
 
 
@@ -139,6 +140,7 @@
           <span class="nav-hint">Resumo rapido da operacao</span>
         </span>
       </button></div>
+      <div data-nav-item-id="estatisticas_atendimento" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="estatisticas_atendimento" onclick="abrirPagina('estatisticas_atendimento', this)"><span class="icon">EA</span><span class="nav-copy"><span class="nav-title">Estatísticas de atendimento</span><span class="nav-hint">Avaliações do Google</span></span></button></div>
     </div>
     <div id="navgrp_relatorios" class="nav-group">
       <div class="nav-label">Relatórios e análise</div>
@@ -2748,6 +2750,15 @@
 
   </div>
 </div>
+      <section id="estatisticas_atendimento" class="pagina atendimento-page">
+        <header class="atendimento-hero"><div><div class="atendimento-eyebrow">Google Business Profile</div><h2>Estatísticas de atendimento</h2><p>Acompanhe a reputação das lojas autorizadas sem sair do CheckDiário.</p></div><div class="atendimento-actions"><span id="atendimentoSyncStatus" class="atendimento-sync">Não conectado</span><button class="btn btn-ghost" onclick="sincronizarGoogleAtendimento()">↻ Sincronizar</button><button class="btn btn-green" onclick="conectarGoogleAtendimento()">Conectar Google</button></div></header>
+        <div id="atendimentoAviso" class="atendimento-alert" hidden></div>
+        <div class="atendimento-filtros"><label><span>Período</span><select id="atendimentoFiltroPeriodo" onchange="carregarEstatisticasAtendimento()"><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Último ano</option><option value="0">Todo o período</option></select></label><label><span>Loja</span><select id="atendimentoFiltroLoja" onchange="carregarEstatisticasAtendimento()"><option value="">Todas as lojas autorizadas</option></select></label><label><span>Nota</span><select id="atendimentoFiltroNota" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="5">5 estrelas</option><option value="4">4 estrelas</option><option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option></select></label><label><span>Situação</span><select id="atendimentoFiltroSituacao" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="pendente">Aguardando resposta</option><option value="respondida">Respondidas</option></select></label></div>
+        <div class="atendimento-kpis"><article class="atendimento-kpi destaque"><span>Nota atual</span><strong id="atendimentoNota">—</strong><small>Média no período</small></article><article class="atendimento-kpi"><span>Total acumulado</span><strong id="atendimentoTotal">0</strong><small>avaliações</small></article><article class="atendimento-kpi"><span>Neste período</span><strong id="atendimentoPeriodo">0</strong><small>novas avaliações</small></article><article class="atendimento-kpi"><span>Taxa de resposta</span><strong id="atendimentoTaxa">0%</strong><small id="atendimentoPendentes">0 aguardando resposta</small></article></div>
+        <div class="atendimento-graficos"><article class="atendimento-card"><h3>Evolução da nota</h3><div id="atendimentoGraficoEvolucao" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article><article class="atendimento-card"><h3>Distribuição por estrelas</h3><div id="atendimentoDistribuicao"></div></article></div>
+        <article class="atendimento-card atendimento-recentes"><h3>Avaliações recentes</h3><p id="atendimentoListaResumo">Nenhuma avaliação encontrada</p><div id="atendimentoAvaliacoesLista" class="atendimento-vazio">Conecte seu Perfil da Empresa no Google.</div></article>
+      </section>
+</div>
 </div>
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
@@ -3013,6 +3024,7 @@
 <script src="./assets/js/60-timeclock.js?v=20260722-relatorios-valores"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
+<script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
 <script src="./assets/js/78-init.js"></script>
 
 <!-- LOGIN INICIAL -->

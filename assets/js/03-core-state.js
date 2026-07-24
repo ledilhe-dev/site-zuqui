@@ -731,6 +731,9 @@ function usuarioEhPerfilGerencialNotificacoes() {
 
 const PERFIL_PERMISSOES = [
   { key: 'dashboard', label: 'Dashboard' },
+  { key: 'estatisticas_atendimento', label: 'Estatísticas de atendimento' },
+  { key: 'estatisticas_atendimento_responder', label: 'Atendimento - responder avaliações' },
+  { key: 'estatisticas_atendimento_conectar', label: 'Atendimento - conectar e sincronizar Google' },
   { key: 'meu_painel', label: 'Meu Painel (personalizado)' },
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
@@ -795,6 +798,7 @@ const PERFIL_ACOES_COLUNAS = [
 const PERFIL_MODULOS_MATRIZ_BASE = [
   { nome: 'Operação diária', recursos: [
     { nome: 'Dashboard', visualizar: 'dashboard' },
+    { nome: 'Estatísticas de atendimento', visualizar: 'estatisticas_atendimento', criar: 'estatisticas_atendimento_conectar', editar: 'estatisticas_atendimento_responder' },
     { nome: 'Meu Painel', visualizar: 'meu_painel', editar: 'meu_painel_editar' },
     { nome: 'Execução de checklist', visualizar: 'checklists', criar: 'nova_execucao_manual', editar: 'checklists_editar', excluir: 'excluir_checklist_lancado' },
     { nome: 'Agenda', visualizar: 'agenda', criar: 'cadastro_plantao', editar: 'agenda_editar', excluir: 'excluir_agenda_cadastrada' },

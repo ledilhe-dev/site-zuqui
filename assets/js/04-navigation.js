@@ -2,6 +2,7 @@
 const topTitles = {
   meu_painel: ['Meu Painel', 'Dashboard personalizado'],
   dashboard: ['Dashboard', 'Visao geral do sistema'],
+  estatisticas_atendimento: ['Estatísticas de atendimento', 'Avaliações das lojas autorizadas'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   escala_plantoes: ['Agenda', 'Calendário de trabalho, folgas, domingos e feriados'],
@@ -625,6 +626,7 @@ function abrirPagina(id, botao) {
   if (paginaPertenceMenuIntegracoesFinanceiras(id) && typeof carregarPaginaIntegracoesFinanceiras === 'function') carregarPaginaIntegracoesFinanceiras(id);
   if (id === 'meu_painel') carregarMeuPainel();
   if (id === 'dashboard') carregarDashboard();
+  if (id === 'estatisticas_atendimento' && typeof carregarEstatisticasAtendimento === 'function') carregarEstatisticasAtendimento();
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
   if (id === 'escala_plantoes') { carregarEscalaPlantoes(); }
