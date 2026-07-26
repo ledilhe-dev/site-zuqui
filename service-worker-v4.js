@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v89-ocr-bradesco-divisao';
+const CACHE_NAME = 'check-diario-pwa-v90-ocr-multifaixas';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

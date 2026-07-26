@@ -346,10 +346,28 @@
             data[i] = data[i + 1] = data[i + 2] = altoContraste;
           }
           ctx.putImageData(imageData, 0, 0);
-          canvas.toBlob(blob => {
+          const criarBlob = (origem, y, h) => new Promise(resolveBlob => {
+            const recorte = document.createElement('canvas');
+            recorte.width = origem.width;
+            recorte.height = Math.max(1, Math.round(h));
+            recorte.getContext('2d').drawImage(
+              origem,
+              0, Math.round(y), origem.width, Math.round(h),
+              0, 0, recorte.width, recorte.height
+            );
+            recorte.toBlob(blob => resolveBlob(blob), 'image/png');
+          });
+          Promise.all([
+            criarBlob(canvas, 0, altura),
+            criarBlob(canvas, 0, altura * 0.62),
+            criarBlob(canvas, altura * 0.38, altura * 0.62),
+          ]).then(([principal, faixaSuperior, faixaInferior]) => {
             URL.revokeObjectURL(url);
-            resolve(blob || file);
-          }, 'image/png');
+            resolve({
+              principal: principal || file,
+              faixas: [faixaSuperior, faixaInferior].filter(Boolean),
+            });
+          }).catch(reject);
         } catch (e) {
           URL.revokeObjectURL(url);
           reject(e);
@@ -388,22 +406,46 @@
     faturaSetProgress(8, 'Preparando imagem...');
 
     try {
-      const imagem = await imagemCompraPrepararArquivo(file);
+      const imagens = await imagemCompraPrepararArquivo(file);
       faturaSetProgress(18, 'Carregando OCR gratuito...');
       const Tesseract = await imagemCompraCarregarTesseract();
       faturaSetProgress(30, 'Lendo texto da imagem...');
-      const resultado = await Tesseract.recognize(imagem, 'por+eng', {
-        logger: info => {
-          if (info?.status === 'recognizing text') {
-            faturaSetProgress(30 + Math.round((info.progress || 0) * 55), 'Lendo texto da imagem...');
-          }
-        },
-        tessedit_pageseg_mode: '11',
-        preserve_interword_spaces: '1',
+      const reconhecer = (imagem, modoPagina, logger) => {
+        const opcoes = {
+          tessedit_pageseg_mode: String(modoPagina),
+          preserve_interword_spaces: '1',
+        };
+        if (typeof logger === 'function') opcoes.logger = logger;
+        return Tesseract.recognize(imagem, 'por+eng', opcoes);
+      };
+      const resultado = await reconhecer(imagens.principal, 11, info => {
+        if (info?.status === 'recognizing text') {
+          faturaSetProgress(30 + Math.round((info.progress || 0) * 45), 'Lendo texto da imagem...');
+        }
       });
-      const texto = resultado?.data?.text || '';
+      let textosReconhecidos = [resultado?.data?.text || ''];
+      let itensReconhecidos = imagemCompraExtrairItens(textosReconhecidos[0]);
+
+      // Em prints com várias notificações, o modo de texto esparso do
+      // Tesseract pode enxergar apenas o primeiro cartão. Se isso ocorrer,
+      // relê duas faixas sobrepostas em modo de bloco e une compras realmente
+      // distintas (mesmo fornecedor/data continuam válidas se o valor mudar).
+      if (itensReconhecidos.length < 2 && imagens.faixas?.length) {
+        faturaSetProgress(76, 'Procurando outros lançamentos na imagem...');
+        const resultadosFaixas = await Promise.all(imagens.faixas.map(faixa =>
+          reconhecer(faixa, 6, null)
+        ));
+        textosReconhecidos = [
+          ...textosReconhecidos,
+          ...resultadosFaixas.map(item => item?.data?.text || ''),
+        ];
+        itensReconhecidos = imagemCompraDeduplicar(
+          textosReconhecidos.flatMap(textoFaixa => imagemCompraExtrairItens(textoFaixa))
+        );
+      }
+      const texto = textosReconhecidos.filter(Boolean).join('\n\n');
       faturaSetProgress(88, 'Interpretando compras...');
-      const itens = imagemCompraExtrairItens(texto).map((item, idx) => ({
+      const itens = itensReconhecidos.map((item, idx) => ({
         id: `img_${Date.now()}_${idx}`,
         ...item,
         fornecedor_id: null,
