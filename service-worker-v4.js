@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v92-ocr-valores-isolados';
+const CACHE_NAME = 'check-diario-pwa-v93-importador-unico-dedup';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

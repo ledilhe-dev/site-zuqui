@@ -1845,8 +1845,7 @@
           <div class="page-title" style="margin:0;">Cadastro de contas a pagar</div>
           <div class="contas-pagar-page-actions">
             <button class="btn btn-green contas-pagar-nova-btn" type="button" onclick="ncAbrir()">+ Nova conta</button>
-            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura(); setTimeout(() => document.getElementById('imagemCompraFileInput')?.click(), 80)" style="display:flex;align-items:center;gap:6px;font-size:12px;">Importar imagem</button>
-            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🗂️ Importar arquivo bancário</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;">📥 Importar</button>
           </div>
         </div>
 
@@ -1912,8 +1911,8 @@
           <!-- Header -->
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
             <div>
-              <div style="font-size:14px;font-weight:700;">🗂️ Importar arquivo bancário</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Arquivo OFX exportado do banco (Nubank, Inter, Bradesco etc.)</div>
+              <div style="font-size:14px;font-weight:700;">📥 Importar contas</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Escolha câmera, galeria ou arquivo bancário</div>
             </div>
             <button class="btn btn-ghost btn-sm" onclick="fecharImportadorFatura()" style="font-size:20px;padding:0 10px;">×</button>
           </div>
@@ -1921,7 +1920,15 @@
           <!-- Step 1: Upload -->
           <div id="faturaStep1" style="padding:20px;flex:1;overflow-y:auto;">
             <!-- Seleção de formato -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;">
+              <!-- Câmera -->
+              <div onclick="document.getElementById('imagemCompraCameraInput').click()"
+                style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:24px 14px;text-align:center;cursor:pointer;">
+                <div style="font-size:32px;margin-bottom:8px;">📷</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Usar câmera</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Fotografar nota, recibo ou tela</div>
+                <input id="imagemCompraCameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
+              </div>
               <!-- OFX -->
               <div id="ofxDropZone" onclick="document.getElementById('ofxFileInput').click()"
                 style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;"
@@ -1940,9 +1947,9 @@
                 ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
                 ondragleave="this.style.borderColor='var(--border-mid)'"
                 ondrop="imagemCompraHandleDrop(event)">
-                <div style="font-size:36px;margin-bottom:8px;">OCR</div>
-                <div style="font-size:13px;font-weight:700;color:var(--text);">Importar print ou recibo</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Foto, print, nota ou comprovante<br>Leitura local e gratuita no navegador</div>
+                <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria ou imagem</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto ou comprovante</div>
                 <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Sem custo de API</div>
                 <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
               </div>
@@ -3034,7 +3041,7 @@
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260722-valor-e-limpar-filtros"></script>
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
-<script src="./assets/js/32-image-ocr-importer.js?v=20260725-ocr-valores-isolados"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260722-valores-auditoria"></script>
 <script src="./assets/js/42-store-settings.js"></script>

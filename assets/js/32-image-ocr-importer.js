@@ -108,17 +108,41 @@
       const comuns = [...ta].filter(token => tb.has(token)).length;
       return comuns >= 2 && comuns / Math.min(ta.size, tb.size) >= 0.75;
     };
+    const descricaoFraca = descricao => {
+      const normalizada = imagemCompraRemoverAcentos(descricao || '').toLowerCase();
+      const tokens = normalizada.replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
+      return tokens.length < 2
+        || /\b(?:bradesco|cartoes?|aprov(?:ada|ado)?|compra de|esco cartoes)\b/.test(normalizada);
+    };
+    const pontuar = item => {
+      const descricao = String(item?.descricao || '');
+      let pontos = descricaoFraca(descricao) ? 0 : 20;
+      pontos += Math.min(12, descricao.length / 5);
+      if (item?._bancoImagem) pontos += 2;
+      return pontos;
+    };
     const unicos = [];
     (itens || []).forEach(item => {
       const data = String(item.data || '').slice(0, 10);
       const centavos = Math.round(Number(item.valor || 0) * 100);
       const estabelecimento = normalizarEstabelecimento(item.descricao);
-      const repetido = unicos.some(existente =>
-        String(existente.data || '').slice(0, 10) === data
-        && Math.round(Number(existente.valor || 0) * 100) === centavos
-        && similares(normalizarEstabelecimento(existente.descricao), estabelecimento)
-      );
-      if (!repetido) unicos.push(item);
+      const indiceRepetido = unicos.findIndex(existente => {
+        if (String(existente.data || '').slice(0, 10) !== data
+          || Math.round(Number(existente.valor || 0) * 100) !== centavos) return false;
+        return similares(normalizarEstabelecimento(existente.descricao), estabelecimento)
+          || descricaoFraca(existente.descricao)
+          || descricaoFraca(item.descricao);
+      });
+      if (indiceRepetido < 0) {
+        unicos.push(item);
+      } else if (pontuar(item) > pontuar(unicos[indiceRepetido])) {
+        const anterior = unicos[indiceRepetido];
+        unicos[indiceRepetido] = {
+          ...anterior,
+          ...item,
+          _bancoImagem: item._bancoImagem || anterior._bancoImagem || null,
+        };
+      }
     });
     return unicos;
   }
@@ -215,6 +239,7 @@
       return !l
         || /^(hoje|ontem|amanha)$/.test(l)
         || /^\d{1,2}:?\d{2}$/.test(l)
+        || /^(?:.*\s)?(?:bradesco|esco)\s+cartoes?\s*$/i.test(l)
         || /(total|selecionad|venc|parcelas|obs|importar|arquivo|bancario|ocr|categoria|fornecedor|cartao|aprovad|final \d+)/i.test(l);
     };
     const limparDescricaoLinha = (linha) => imagemCompraLimparDescricao(
@@ -388,13 +413,15 @@
             // relógio à direita e o ícone à esquerda.
             criarBlob(canvas, altura * 0.08, altura * 0.30, largura * 0.27, largura * 0.55),
             criarBlob(canvas, altura * 0.55, altura * 0.30, largura * 0.27, largura * 0.55),
-          ]).then(([principal, faixaSuperior, faixaInferior, valorSuperior, valorInferior]) => {
+            criarBlob(canvas, altura * 0.25, altura * 0.18, largura * 0.14, largura * 0.76),
+            criarBlob(canvas, altura * 0.72, altura * 0.18, largura * 0.14, largura * 0.76),
+          ]).then(([principal, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior]) => {
             URL.revokeObjectURL(url);
             resolve({
               principal: principal || file,
               faixas: [
-                { cartao: faixaSuperior, valor: valorSuperior },
-                { cartao: faixaInferior, valor: valorInferior },
+                { cartao: faixaSuperior, valor: valorSuperior, descricao: descricaoSuperior },
+                { cartao: faixaInferior, valor: valorInferior, descricao: descricaoInferior },
               ].filter(faixa => faixa.cartao),
             });
           }).catch(reject);
@@ -471,9 +498,13 @@
               tessedit_char_whitelist: 'R$S5012346789,.',
             })
             : null;
+          const resultadoDescricao = faixa.descricao
+            ? await reconhecer(faixa.descricao, 7, null)
+            : null;
           resultadosFaixas.push({
             texto: [
               resultadoCartao?.data?.text || '',
+              resultadoDescricao?.data?.text || '',
               imagemCompraNormalizarValoresSemSeparador(resultadoValor?.data?.text || ''),
             ].filter(Boolean).join('\n'),
           });

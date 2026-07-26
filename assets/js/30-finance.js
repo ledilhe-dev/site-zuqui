@@ -2440,6 +2440,8 @@ function faturaVoltarUpload() {
   document.getElementById('faturaStep1').style.display = '';
   const ofxInput = document.getElementById('ofxFileInput');
   if (ofxInput) ofxInput.value = '';
+  const cameraInput = document.getElementById('imagemCompraCameraInput');
+  if (cameraInput) cameraInput.value = '';
   setMsg('msgImportarFatura', '', '');
   _faturaItensExtraidos = [];
 }
