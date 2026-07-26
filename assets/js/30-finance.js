@@ -3415,9 +3415,6 @@ function faturaRenderizarSeparacao(item) {
   const totalCentavos = faturaDivisaoCentavos(item.valor);
   const usadoCentavos = (item._divisoes || []).reduce((s, parte) => s + faturaDivisaoCentavos(parte.valor), 0);
   const restante = totalCentavos - usadoCentavos;
-  const opcoes = (selecionada) => '<option value="">Selecione a categoria</option>' + (categoriasCompraCache || []).map(c =>
-    `<option value="${c.id}" ${String(c.id) === String(selecionada || '') ? 'selected' : ''}>${escaparHtmlBasico(c.nome)}</option>`
-  ).join('');
   const linhas = (item._divisoes || []).map((parte, indice) => `
     <div class="fatura-divisao-linha">
       <label>Valor
@@ -3426,7 +3423,10 @@ function faturaRenderizarSeparacao(item) {
           onchange="faturaAlterarParte('${item.id}', '${parte.id}', 'valor', this.value)">
       </label>
       <label>Categoria
-        <select onchange="faturaAlterarParte('${item.id}', '${parte.id}', 'categoria_id', this.value)">${opcoes(parte.categoria_id)}</select>
+        <button type="button" class="fatura-divisao-categoria-btn ${parte.categoria_id ? 'selecionado' : ''}"
+          onclick="faturaAbrirCategoriaDivisao('${item.id}', '${parte.id}')">
+          ${faturaHtmlCategoriaDivisao(parte.categoria_id)}
+        </button>
       </label>
       ${indice > 0 ? `<button type="button" class="fatura-divisao-remover" onclick="faturaRemoverParte('${item.id}', '${parte.id}')" title="Remover divisão">×</button>` : ''}
     </div>`).join('');
@@ -3453,6 +3453,39 @@ function faturaRenderizarSeparacao(item) {
       <small class="fatura-separacao-nota">Parcelas e vencimentos permanecem iguais aos da compra original.</small>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+function faturaHtmlCategoriaDivisao(categoriaId) {
+  const categoria = (categoriasCompraCache || []).find(c => String(c.id) === String(categoriaId || ''));
+  if (!categoria) return '<span class="fatura-choice-icon vazio">+</span><span>Selecionar categoria</span>';
+  return `<span class="fatura-choice-icon" style="background:${escaparHtmlBasico(categoria.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(categoria.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(categoria.icone, 26)}</span><span>${escaparHtmlBasico(categoria.nome || 'Categoria')}</span>`;
+}
+
+function faturaAbrirCategoriaDivisao(itemId, parteId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
+  if (!item || !parte) return;
+  const cards = (categoriasCompraCache || []).map(categoria => `
+    <button type="button" class="fatura-cat-card ${String(categoria.id) === String(parte.categoria_id || '') ? 'selecionado' : ''}"
+      onclick="faturaEscolherCategoriaDivisao('${itemId}', '${parteId}', '${categoria.id}')">
+      <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(categoria.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(categoria.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(categoria.icone, 30)}</span>
+      <strong>${escaparHtmlBasico(categoria.nome || 'Categoria')}</strong>
+    </button>
+  `).join('');
+  faturaCriarEscolhaOverlay({
+    titulo: 'Categoria da divisão',
+    subtitulo: `${item.descricao || 'Compra'} · ${parte.valor ? formatarMoedaBRFinanceiro(parte.valor) : 'Informe o valor'}`,
+    body: `<div class="fatura-cat-grid">${cards}</div>`,
+  });
+}
+
+function faturaEscolherCategoriaDivisao(itemId, parteId, categoriaId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
+  if (!item || !parte) return;
+  parte.categoria_id = categoriaId || '';
+  faturaFecharEscolhaOverlay();
+  faturaRenderizarSeparacao(item);
 }
 
 function faturaAlterarParte(itemId, parteId, campo, valor) {
@@ -3513,6 +3546,21 @@ function faturaAtualizarIndicadorSeparacao(itemId) {
   if (!btn || !item) return;
   btn.textContent = item._divisoesAplicadas ? `Separado (${item._divisoes.length})` : 'Separar';
   btn.classList.toggle('ativo', !!item._divisoesAplicadas);
+  const btnCategoria = card.querySelector('[data-fatura-cat-btn]');
+  let resumo = card.querySelector('[data-fatura-divisoes-resumo]');
+  if (item._divisoesAplicadas) {
+    if (btnCategoria) btnCategoria.style.display = 'none';
+    if (!resumo) {
+      resumo = document.createElement('div');
+      resumo.setAttribute('data-fatura-divisoes-resumo', '');
+      resumo.className = 'fatura-divisoes-resumo';
+      btn.insertAdjacentElement('afterend', resumo);
+    }
+    resumo.textContent = `${item._divisoes.length} categorias definidas na separação`;
+  } else {
+    if (btnCategoria) btnCategoria.style.display = '';
+    resumo?.remove();
+  }
 }
 
 // Tenta casar o banco detectado no OFX (ex.: "Nubank", "Inter", "Bradesco")
@@ -3847,7 +3895,12 @@ async function financeiroDecidirDuplicidadeContas(duplicados = [], { titulo = 'C
 async function faturaConfirmarLancamentoSelecionados(selecionados) {
   if (typeof abrirConfirmacaoSistema !== 'function') return true;
   const total = (selecionados || []).reduce((s, i) => s + Number(i.valor || 0), 0);
-  const semCategoria = selecionados.filter(i => !i.categoria_id).length;
+  const totalDestinos = (selecionados || []).reduce((s, item) =>
+    s + (item._divisoesAplicadas ? Math.max(1, item._divisoes?.length || 0) : 1), 0);
+  const itemSemCategoria = item => item._divisoesAplicadas
+    ? !Array.isArray(item._divisoes) || item._divisoes.some(parte => !parte.categoria_id)
+    : !item.categoria_id;
+  const semCategoria = selecionados.filter(itemSemCategoria).length;
   const semFornecedor = selecionados.filter(i => !i.fornecedor_id).length;
   const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
   if (semFornecedorObrigatorio.length) {
@@ -3867,10 +3920,21 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     const categoria = faturaObterCategoriaItem(item);
     const vencimento = formatarDataBRFinanceiro(String(item.vencimento_fatura || item.data || '').slice(0, 10));
     const observacao = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
+    const divisoes = item._divisoesAplicadas ? (item._divisoes || []) : [];
+    const detalheCategorias = divisoes.length
+      ? `<div class="fatura-confirm-divisoes">
+          ${divisoes.map(parte => {
+            const categoriaParte = (categoriasCompraCache || []).find(c => String(c.id) === String(parte.categoria_id));
+            return `<div><span>${escaparHtmlBasico(categoriaParte?.nome || 'Categoria não selecionada')}</span><b>${formatarMoedaBRFinanceiro(parte.valor)}</b></div>`;
+          }).join('')}
+          <div class="fatura-confirm-divisoes-total"><span>Total distribuído</span><b>${formatarMoedaBRFinanceiro(divisoes.reduce((s, parte) => s + Number(parte.valor || 0), 0))}</b></div>
+        </div>`
+      : `<div class="fatura-confirm-categoria-unica">Categoria: <b>${escaparHtmlBasico(categoria?.nome || 'Sem categoria')}</b></div>`;
     return `
       <div class="nc-confirm-line fatura-confirm-line">
         <span>${escaparHtmlBasico(item.descricao || 'Compra')}</span>
-        <strong>${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small><em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')} - ${escaparHtmlBasico(categoria?.nome || 'Sem categoria')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
+        <strong>${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small><em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
+        ${detalheCategorias}
       </div>
     `;
   }).join('');
@@ -3883,7 +3947,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
   ].filter(Boolean).join(' ');
   const body = `
     <div class="nc-confirm-lines">
-      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} item(ns) · ${formatarMoedaBRFinanceiro(total)}</strong></div>
+      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} compra(s) · ${totalDestinos} categoria(s)<small>${formatarMoedaBRFinanceiro(total)}</small></strong></div>
       ${linhas}
       ${extras}
     </div>

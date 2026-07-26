@@ -16,6 +16,22 @@
 .fatura-separacao-cabecalho{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.fatura-separacao-cabecalho strong{display:block;font-size:18px}.fatura-separacao-cabecalho small{display:block;color:var(--text-muted);margin-top:3px}.fatura-separacao-cabecalho button{border:0;background:transparent;color:var(--text);font-size:24px;cursor:pointer}
 .fatura-separacao-total{display:flex;justify-content:space-between;margin:16px 0;padding:12px;border-radius:10px;background:var(--surface2)}
 .fatura-divisao-linha{display:grid;grid-template-columns:minmax(100px,.7fr) minmax(150px,1.3fr) 28px;gap:8px;align-items:end;margin-bottom:10px}.fatura-divisao-linha label{font-size:11px;color:var(--text-muted)}.fatura-divisao-linha input,.fatura-divisao-linha select{display:block;width:100%;height:38px;margin-top:4px}.fatura-divisao-remover{height:38px;border:0;background:transparent;color:var(--red);font-size:22px;cursor:pointer}
+.fatura-divisao-categoria-btn{display:flex;width:100%;min-height:38px;margin-top:4px;padding:5px 8px;align-items:center;gap:7px;border:1px solid var(--border-mid);border-radius:9px;background:var(--bg);color:var(--text);font-size:11px;font-weight:700;text-align:left;cursor:pointer}.fatura-divisao-categoria-btn.selecionado{border-color:rgba(34,197,94,.6);background:rgba(34,197,94,.08)}.fatura-divisao-categoria-btn .fatura-choice-icon{width:26px;height:26px;flex-basis:26px}
 .fatura-separacao-restante{margin:14px 0;padding:10px;border-radius:9px;background:rgba(245,158,11,.12);color:#fbbf24;font-weight:700}.fatura-separacao-restante.completo{background:rgba(34,197,94,.12);color:var(--green)}.fatura-separacao-restante.excedido{background:var(--red-glow);color:var(--red)}
 .fatura-separacao-acoes{display:flex;justify-content:flex-end;gap:8px}.fatura-separacao-nota{display:block;color:var(--text-muted);margin-top:12px;text-align:right}
+.fatura-divisoes-resumo{flex:1 1 180px;min-width:160px;padding:7px 9px;border:1px solid rgba(34,197,94,.4);border-radius:8px;background:rgba(34,197,94,.08);color:var(--green);font-size:10px;font-weight:700}
+.fatura-confirm-divisoes{grid-column:1/-1;margin-top:3px;padding:6px 8px;border-radius:8px;background:rgba(59,130,246,.07)}.fatura-confirm-divisoes>div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:11px}.fatura-confirm-divisoes>div span{font-size:11px;letter-spacing:0;color:var(--text)}.fatura-confirm-divisoes-total{border-top:1px solid var(--border);margin-top:3px;font-weight:800}.fatura-confirm-categoria-unica{grid-column:1/-1;font-size:10px;color:var(--text-muted);text-align:right}
+.fatura-choice-overlay{z-index:10060}
 @media(max-width:560px){.fatura-divisao-linha{grid-template-columns:1fr 28px}.fatura-divisao-linha label:nth-child(2){grid-column:1}.fatura-divisao-linha .fatura-divisao-remover{grid-column:2;grid-row:1/3}.fatura-separacao-acoes{flex-direction:column-reverse}.fatura-separacao-acoes .btn{width:100%}}
+@media(max-width:720px){
+  #faturaStep3{font-size:11px}
+  #faturaListaItens{padding:7px 9px!important;gap:5px!important}
+  .fatura-review-card-enhanced{padding:7px 8px!important}
+  .fatura-review-card-enhanced .fatura-choice-btn{min-height:34px!important;font-size:10.5px!important;padding:4px 7px!important}
+  .fatura-review-card-enhanced .fatura-choice-icon{width:23px!important;height:23px!important;flex-basis:23px!important}
+  #faturaListaItens .fatura-review-card-enhanced input[type="date"],#faturaListaItens .fatura-review-card-enhanced input[type="number"],#faturaListaItens .fatura-review-card-enhanced input[type="text"]{min-height:28px!important;height:28px!important;font-size:10.5px!important}
+  .fatura-btn-separar{font-size:9.5px;padding:3px 6px}
+  #confirmacaoSistemaOverlay .modal-header h2,#confirmacaoSistemaOverlay .modal-header .modal-title{font-size:16px!important}
+  .fatura-confirm-line>strong{font-size:11px!important}
+  .fatura-confirm-divisoes>div,.fatura-confirm-divisoes>div span{font-size:10px!important}
+}
