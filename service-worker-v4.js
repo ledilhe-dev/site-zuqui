@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v95-categoria-divisao-inline';
+const CACHE_NAME = 'check-diario-pwa-v96-resumo-titulos-divisoes';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

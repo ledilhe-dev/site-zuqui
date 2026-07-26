@@ -617,7 +617,7 @@ async function excluirFormaPagamentoFinanceiro(id) {
 async function solicitarFormaPagamentoObrigatoriaFinanceiro(formaAtual = '') {
   const listaCompleta = await carregarFormasPagamentoFinanceiro({ render: false, silencioso: true });
   if (!listaCompleta.length) {
-    setMsg('msgBaixarContasFinanceiro', 'Cadastre formas de pagamento na aba Financeiro antes de baixar t?tulos.', 'err');
+    setMsg('msgBaixarContasFinanceiro', 'Cadastre formas de pagamento na aba Financeiro antes de baixar títulos.', 'err');
     return null;
   }
 
@@ -4022,6 +4022,8 @@ async function faturaLancarSelecionados() {
   let lancados = 0;
   let titulosLancados = 0;
   let titulosComParcelas = 0;
+  let titulosDivididos = 0;
+  let totalCategoriasDivididas = 0;
   let primeiroErro = '';
   const itensComErro = [];
 
@@ -4254,7 +4256,12 @@ async function faturaLancarSelecionados() {
       }
       lancados += linhas.length;
       titulosLancados += 1;
-      if (linhas.length > 1) titulosComParcelas += 1;
+      if (partesCompra.length > 1) {
+        titulosDivididos += 1;
+        totalCategoriasDivididas += partesCompra.length;
+      }
+      // Divisões por categoria geram várias linhas, mas não são parcelas.
+      if (qtdParcelas > 1) titulosComParcelas += 1;
     } catch(e) {
       console.error('Erro ao lançar item:', item.descricao, e);
       const motivo = traduzirErroImportacao(e);
@@ -4310,9 +4317,12 @@ async function faturaLancarSelecionados() {
 
   if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
 
-  const resumoParcelas = titulosComParcelas
-    ? ` (${titulosLancados} t?tulo(s), incluindo ${titulosComParcelas} parcelado(s) ✅ ${lancados} parcelas no total)`
-    : ` (${titulosLancados} t?tulo(s))`;
+  const detalhesResumo = [
+    `${titulosLancados} título(s)`,
+    titulosDivididos ? `${titulosDivididos} dividido(s) em ${totalCategoriasDivididas} categorias` : '',
+    titulosComParcelas ? `${titulosComParcelas} parcelado(s)` : '',
+  ].filter(Boolean);
+  const resumoParcelas = ` (${detalhesResumo.join(' · ')})`;
 
   let msg;
   if (erros === 0) {
