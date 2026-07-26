@@ -3465,6 +3465,7 @@ function faturaAbrirCategoriaDivisao(itemId, parteId) {
   const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
   const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
   if (!item || !parte) return;
+  document.querySelector('.fatura-divisao-categorias-layer')?.remove();
   const cards = (categoriasCompraCache || []).map(categoria => `
     <button type="button" class="fatura-cat-card ${String(categoria.id) === String(parte.categoria_id || '') ? 'selecionado' : ''}"
       onclick="faturaEscolherCategoriaDivisao('${itemId}', '${parteId}', '${categoria.id}')">
@@ -3472,11 +3473,23 @@ function faturaAbrirCategoriaDivisao(itemId, parteId) {
       <strong>${escaparHtmlBasico(categoria.nome || 'Categoria')}</strong>
     </button>
   `).join('');
-  faturaCriarEscolhaOverlay({
-    titulo: 'Categoria da divisão',
-    subtitulo: `${item.descricao || 'Compra'} · ${parte.valor ? formatarMoedaBRFinanceiro(parte.valor) : 'Informe o valor'}`,
-    body: `<div class="fatura-cat-grid">${cards}</div>`,
-  });
+  const modal = document.querySelector('#faturaSeparacaoOverlay .fatura-separacao-modal');
+  if (!modal) return;
+  const layer = document.createElement('div');
+  layer.className = 'fatura-divisao-categorias-layer';
+  layer.innerHTML = `
+    <div class="fatura-divisao-categorias-head">
+      <div><strong>Categoria da divisão</strong><small>${escaparHtmlBasico(item.descricao || 'Compra')} · ${parte.valor ? formatarMoedaBRFinanceiro(parte.valor) : 'Informe o valor'}</small></div>
+      <button type="button" onclick="faturaFecharCategoriaDivisao()" aria-label="Voltar">×</button>
+    </div>
+    <div class="fatura-cat-grid">${cards}</div>
+  `;
+  modal.appendChild(layer);
+  layer.scrollTop = 0;
+}
+
+function faturaFecharCategoriaDivisao() {
+  document.querySelector('.fatura-divisao-categorias-layer')?.remove();
 }
 
 function faturaEscolherCategoriaDivisao(itemId, parteId, categoriaId) {
@@ -3484,7 +3497,7 @@ function faturaEscolherCategoriaDivisao(itemId, parteId, categoriaId) {
   const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
   if (!item || !parte) return;
   parte.categoria_id = categoriaId || '';
-  faturaFecharEscolhaOverlay();
+  faturaFecharCategoriaDivisao();
   faturaRenderizarSeparacao(item);
 }
 
