@@ -3138,6 +3138,8 @@ async function faturaExibirRevisao(resultado) {
             ${campoParcelasManuais}
             ${campoObs}
             <span style="font-size:13px;font-weight:700;color:var(--text);">${formatarMoedaBRFinanceiro(item.valor)}</span>
+            <button type="button" data-btn-separar class="fatura-btn-separar ${item._divisoesAplicadas ? 'ativo' : ''}"
+              onclick="faturaAbrirSeparacao('${item.id}')">${item._divisoesAplicadas ? `Separado (${item._divisoes.length})` : 'Separar'}</button>
             <select class="fatura-select-categoria" style="font-size:11px;height:24px;padding:0 4px;flex:1;min-width:120px;${item._catAuto ? corAuto : ''}"
               onchange="faturaAoSelecionarCategoria('${item.id}', this.value); this.style.boxShadow='';">
               ${optsCategoria(item.categoria_id, item._catAuto)}
@@ -3391,6 +3393,124 @@ function faturaAoAlterarModoValor(itemId, modo) {
 function faturaAoSelecionarCategoria(itemId, categoriaId) {
   const item = _faturaItensExtraidos.find(i => i.id === itemId);
   if (item) { item.categoria_id = categoriaId; item._catAuto = false; item._catEditadaManual = true; }
+}
+
+function faturaDivisaoCentavos(valor) {
+  return Math.round((Number(valor) || 0) * 100);
+}
+
+function faturaAbrirSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  if (!Array.isArray(item._divisoes) || !item._divisoes.length) {
+    item._divisoes = [{ id: `${item.id}_div_1`, valor: '', categoria_id: item.categoria_id || '' }];
+  }
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaRenderizarSeparacao(item) {
+  document.getElementById('faturaSeparacaoOverlay')?.remove();
+  const totalCentavos = faturaDivisaoCentavos(item.valor);
+  const usadoCentavos = (item._divisoes || []).reduce((s, parte) => s + faturaDivisaoCentavos(parte.valor), 0);
+  const restante = totalCentavos - usadoCentavos;
+  const opcoes = (selecionada) => '<option value="">Selecione a categoria</option>' + (categoriasCompraCache || []).map(c =>
+    `<option value="${c.id}" ${String(c.id) === String(selecionada || '') ? 'selected' : ''}>${escaparHtmlBasico(c.nome)}</option>`
+  ).join('');
+  const linhas = (item._divisoes || []).map((parte, indice) => `
+    <div class="fatura-divisao-linha">
+      <label>Valor
+        <input type="text" inputmode="decimal" placeholder="R$ 0,00"
+          value="${parte.valor === '' ? '' : Number(parte.valor || 0).toFixed(2).replace('.', ',')}"
+          onchange="faturaAlterarParte('${item.id}', '${parte.id}', 'valor', this.value)">
+      </label>
+      <label>Categoria
+        <select onchange="faturaAlterarParte('${item.id}', '${parte.id}', 'categoria_id', this.value)">${opcoes(parte.categoria_id)}</select>
+      </label>
+      ${indice > 0 ? `<button type="button" class="fatura-divisao-remover" onclick="faturaRemoverParte('${item.id}', '${parte.id}')" title="Remover divisão">×</button>` : ''}
+    </div>`).join('');
+  const formatarRestante = centavos => formatarMoedaBRFinanceiro(Math.abs(centavos) / 100);
+  const overlay = document.createElement('div');
+  overlay.id = 'faturaSeparacaoOverlay';
+  overlay.className = 'fatura-separacao-overlay';
+  overlay.innerHTML = `
+    <div class="fatura-separacao-modal" role="dialog" aria-modal="true" aria-label="Separar compra">
+      <div class="fatura-separacao-cabecalho">
+        <div><strong>Separar compra</strong><small>${escaparHtmlBasico(item.descricao)}</small></div>
+        <button type="button" onclick="faturaFecharSeparacao()" aria-label="Fechar">×</button>
+      </div>
+      <div class="fatura-separacao-total">Valor total <strong>${formatarMoedaBRFinanceiro(item.valor)}</strong></div>
+      <div>${linhas}</div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="faturaAdicionarParte('${item.id}')">＋ Adicionar categoria</button>
+      <div class="fatura-separacao-restante ${restante < 0 ? 'excedido' : restante === 0 ? 'completo' : ''}">
+        ${restante < 0 ? `Valor excedido em ${formatarRestante(restante)}` : restante === 0 ? '✓ Valor total distribuído' : `Restam ${formatarRestante(restante)}`}
+      </div>
+      <div class="fatura-separacao-acoes">
+        <button type="button" class="btn btn-ghost" onclick="faturaCancelarSeparacao('${item.id}')">Cancelar divisão</button>
+        <button type="button" class="btn btn-green" ${restante !== 0 ? 'disabled' : ''} onclick="faturaConfirmarSeparacao('${item.id}')">Aplicar separação</button>
+      </div>
+      <small class="fatura-separacao-nota">Parcelas e vencimentos permanecem iguais aos da compra original.</small>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function faturaAlterarParte(itemId, parteId, campo, valor) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
+  if (!parte) return;
+  if (campo === 'valor') {
+    const texto = String(valor || '').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    parte.valor = texto === '' ? '' : Math.max(0, Number(texto) || 0);
+  } else parte.categoria_id = valor || '';
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaAdicionarParte(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  item._divisoes.push({ id: `${item.id}_div_${Date.now()}`, valor: '', categoria_id: '' });
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaRemoverParte(itemId, parteId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  item._divisoes = item._divisoes.filter(p => String(p.id) !== String(parteId));
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaFecharSeparacao() {
+  document.getElementById('faturaSeparacaoOverlay')?.remove();
+}
+
+function faturaCancelarSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (item) { item._divisoes = null; item._divisoesAplicadas = false; }
+  faturaFecharSeparacao();
+  faturaAtualizarIndicadorSeparacao(itemId);
+}
+
+function faturaConfirmarSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const partes = item._divisoes || [];
+  if (partes.reduce((s, p) => s + faturaDivisaoCentavos(p.valor), 0) !== faturaDivisaoCentavos(item.valor)) {
+    alert('Distribua exatamente o valor total da compra.'); return;
+  }
+  if (partes.length < 2 || partes.some(p => faturaDivisaoCentavos(p.valor) <= 0 || !p.categoria_id)) {
+    alert('Informe pelo menos duas divisões, cada uma com valor e categoria.'); return;
+  }
+  item._divisoesAplicadas = true;
+  faturaFecharSeparacao();
+  faturaAtualizarIndicadorSeparacao(itemId);
+}
+
+function faturaAtualizarIndicadorSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const card = document.getElementById('faturaItem_' + itemId);
+  const btn = card?.querySelector('[data-btn-separar]');
+  if (!btn || !item) return;
+  btn.textContent = item._divisoesAplicadas ? `Separado (${item._divisoes.length})` : 'Separar';
+  btn.classList.toggle('ativo', !!item._divisoesAplicadas);
 }
 
 // Tenta casar o banco detectado no OFX (ex.: "Nubank", "Inter", "Bradesco")
@@ -3787,6 +3907,15 @@ async function faturaLancarSelecionados() {
     alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.`);
     return;
   }
+  const divisoesInvalidas = selecionados.filter(item => item._divisoesAplicadas && (
+    !Array.isArray(item._divisoes) || item._divisoes.length < 2
+    || item._divisoes.some(parte => faturaDivisaoCentavos(parte.valor) <= 0 || !parte.categoria_id)
+    || item._divisoes.reduce((s, parte) => s + faturaDivisaoCentavos(parte.valor), 0) !== faturaDivisaoCentavos(item.valor)
+  ));
+  if (divisoesInvalidas.length) {
+    alert('Revise a separação: todos os valores e categorias são obrigatórios e a soma deve fechar o total.');
+    return;
+  }
 
   const confirmou = await faturaConfirmarLancamentoSelecionados(selecionados);
   if (!confirmou) return;
@@ -3934,17 +4063,22 @@ async function faturaLancarSelecionados() {
         ? item.total_parcelas - item.parcela_atual + 1  // parcelas restantes incluindo atual
         : Math.max(1, parseInt(item._parcelasManuais, 10) || 1); // provisionamento manual
       const intervaloDias = 30;
-      const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
       // Dia de vencimento do fornecedor, para provisionamento mensal "calend?rio".
       const fornObjLanc = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
       const diaVencForn = fornObjLanc?.dia_vencimento;
       const dividirValorTotal = !ehParceladoOFX && item._modoValorParcelas !== 'parcela' && qtdParcelas > 1;
-      const valorTotalCentavos = Math.round(Number(item.valor || 0) * 100);
-      const valorBaseCentavos = dividirValorTotal ? Math.floor(valorTotalCentavos / qtdParcelas) : valorTotalCentavos;
-      const centavosRestantes = dividirValorTotal ? valorTotalCentavos % qtdParcelas : 0;
+      const partesCompra = item._divisoesAplicadas
+        ? item._divisoes.map(parte => ({ valor: Number(parte.valor), categoria_id: parte.categoria_id }))
+        : [{ valor: Number(item.valor || 0), categoria_id: item.categoria_id || null }];
 
-      // Gerar linhas das parcelas (campos id?nticos ao cadastro manual que funciona)
-      const linhas = Array.from({ length: qtdParcelas }, (_, i) => {
+      // Cada categoria vira uma série própria, mantendo quantidade, números de
+      // parcela e calendário da compra original.
+      const linhas = partesCompra.flatMap((parte, indiceParte) => {
+        const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
+        const valorTotalCentavos = Math.round(Number(parte.valor || 0) * 100);
+        const valorBaseCentavos = dividirValorTotal ? Math.floor(valorTotalCentavos / qtdParcelas) : valorTotalCentavos;
+        const centavosRestantes = dividirValorTotal ? valorTotalCentavos % qtdParcelas : 0;
+        return Array.from({ length: qtdParcelas }, (_, i) => {
         // Vencimentos:
         //  - Parcela ATUAL do OFX (i=0): respeita o vencimento definido na revis?o.
         //  - Parcelas seguintes (OFX) e provisionamento manual: se o fornecedor tem
@@ -3972,7 +4106,7 @@ async function faturaLancarSelecionados() {
         const totalRotulo = ehParceladoOFX ? item.total_parcelas : qtdParcelas;
         return {
           fornecedor_id: fornecedorId,
-          categoria_id: item.categoria_id || null,
+          categoria_id: parte.categoria_id || null,
           loja_id: lojaId,
           empresa_id: empresaId,
           data_compra: dataCompra,
@@ -3982,7 +4116,7 @@ async function faturaLancarSelecionados() {
           // garantindo que a soma final seja exatamente o valor informado.
           valor_compra: dividirValorTotal
             ? (valorBaseCentavos + (i < centavosRestantes ? 1 : 0)) / 100
-            : Number(Number(item.valor || 0).toFixed(2)),
+            : Number(Number(parte.valor || 0).toFixed(2)),
           observacao: (() => {
             const obsItem = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
             const base = obsItem ? `${obsItem} · Importado do arquivo bancário` : 'Importado do arquivo bancário';
@@ -3992,10 +4126,13 @@ async function faturaLancarSelecionados() {
           intervalo_parcelas_dias: qtdParcelas > 1 ? intervaloDias : null,
           numero_parcela: numeroParcela,
           grupo_parcelas_id: grupoId,
-          ofx_fitid: i === 0 ? (item.fitid || null) : null,
+          // FITID é único: a primeira linha protege a compra inteira, sem
+          // bloquear as demais divisões por categoria.
+          ofx_fitid: indiceParte === 0 && i === 0 ? (item.fitid || null) : null,
           criado_por_id: criadoPorId,
           criado_por_nome: criadoPorNome,
         };
+        });
       });
 
       const duplicadosConta = await financeiroBuscarDuplicidadesContas(linhas, { lojaId });

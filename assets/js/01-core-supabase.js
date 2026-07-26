@@ -71,11 +71,11 @@ const TABELAS_COM_EMPRESA_ID = new Set([
   'contas_financeiras_ajustes_saldo',
   'recebiveis','recebiveis_futuros','agenda','escala_plantoes',
   'fatura_categoria_memoria','fatura_importacoes_log',
-  'categorias_compra','grupos_fornecedor','perfis'
+  'categorias_compra','grupos_fornecedor','perfis','google_business_conexoes','google_business_locais','google_avaliacoes','google_avaliacoes_metricas_diarias','google_sincronizacoes_logs'
 ]);
 
 const TABELAS_COM_LOJA_ID = new Set([
-  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','agenda','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','categorias_compra','grupos_fornecedor','perfis'
+  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','agenda','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','categorias_compra','grupos_fornecedor','perfis','google_business_conexoes','google_business_locais','google_avaliacoes','google_avaliacoes_metricas_diarias','google_sincronizacoes_logs'
 ]);
 
 let filtroLojaSuspensoTemporariamente = false;

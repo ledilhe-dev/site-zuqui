@@ -2,7 +2,7 @@
 const topTitles = {
   meu_painel: ['Meu Painel', 'Dashboard personalizado'],
   dashboard: ['Dashboard', 'Visao geral do sistema'],
-  estatisticas_atendimento: ['Estatísticas de atendimento', 'Avaliações das lojas autorizadas'],
+  estatisticas_atendimento: ['Estatísticas de atendimento', 'Avaliações e reputação no Google'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   escala_plantoes: ['Agenda', 'Calendário de trabalho, folgas, domingos e feriados'],

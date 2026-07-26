@@ -68,10 +68,11 @@
   function imagemCompraLimparDescricao(desc) {
     return String(desc || '')
       .replace(/\s+para\s+o\s+cart[aã]o.*$/i, '')
+      .replace(/\s*,?\s+no\s+cart[aã]o.*$/i, '')
       .replace(/\s+final\s+\d+.*$/i, '')
       .replace(/\s+aprovad[ao].*$/i, '')
       .replace(/\s{2,}/g, ' ')
-      .replace(/^[\s:.-]+|[\s:.-]+$/g, '')
+      .replace(/^[\s:,.-]+|[\s:,.-]+$/g, '')
       .trim()
       .slice(0, 120);
   }
@@ -108,7 +109,22 @@
     return unicos;
   }
 
-  function imagemCompraExtrairNubank(texto, dataPadrao) {
+  function imagemCompraDetectarBanco(contexto) {
+    const normalizado = imagemCompraRemoverAcentos(contexto).toLowerCase();
+    const bancos = [
+      ['Bradesco', /\bbradesco(?:\s+cartoes?)?\b/],
+      ['Nubank', /\b(?:nubank|nu\s*bank)\b/],
+      ['Inter', /\b(?:banco\s+)?inter\b/],
+      ['Itau', /\b(?:itau|itaucard)\b/],
+      ['Santander', /\bsantander\b/],
+      ['Caixa', /\bcaixa(?:\s+economica)?\b/],
+      ['Banco do Brasil', /\b(?:banco\s+do\s+brasil|bb\s+cartoes?)\b/],
+      ['C6 Bank', /\bc6(?:\s+bank)?\b/],
+    ];
+    return bancos.find(([, regex]) => regex.test(normalizado))?.[0] || null;
+  }
+
+  function imagemCompraExtrairNotificacoesCartao(texto, dataPadrao) {
     const itens = [];
     const compacto = imagemCompraNormalizarTexto(texto).replace(/\n+/g, ' ');
     const regex = /Compra\s+de\s+R\$?\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+R\$?|hoje\b|ontem\b)|$)/gi;
@@ -117,7 +133,8 @@
       const valor = imagemCompraParseValor(m[1]);
       const descricao = imagemCompraLimparDescricao(m[2]);
       if (!valor || !descricao) continue;
-      const contextoData = compacto.slice(Math.max(0, m.index - 60), m.index);
+      const contextoData = compacto.slice(Math.max(0, m.index - 220), m.index);
+      const banco = imagemCompraDetectarBanco(contextoData);
       itens.push({
         data: imagemCompraParseData(contextoData, dataPadrao),
         descricao,
@@ -127,7 +144,7 @@
         selecionado: true,
         _obsManual: descricao,
         _origemImagem: true,
-        _bancoImagem: 'Nubank',
+        _bancoImagem: banco,
       });
     }
     return itens;
@@ -275,9 +292,9 @@
 
   function imagemCompraExtrairItens(texto) {
     const dataPadrao = imagemCompraHojeISO();
-    const nubank = imagemCompraExtrairNubank(texto, dataPadrao);
+    const notificacoes = imagemCompraExtrairNotificacoesCartao(texto, dataPadrao);
     const carteira = imagemCompraExtrairCarteiraNubank(texto, dataPadrao);
-    const ancorados = imagemCompraDeduplicar([...nubank, ...carteira]);
+    const ancorados = imagemCompraDeduplicar([...notificacoes, ...carteira]);
     if (ancorados.length) return ancorados;
     return imagemCompraDeduplicar(imagemCompraExtrairGenerico(texto, dataPadrao));
   }

@@ -14,10 +14,115 @@
   <meta property="og:url" content="https://checkdiario.com.br/zuqui/">
   <link rel="canonical" href="https://checkdiario.com.br/zuqui/">
   <style>
-    :root{color-scheme:light;--green:#244a36;--green-dark:#173326;--cream:#f7f1e5;--paper:#fffdf8;--ink:#243029;--muted:#647068;--shadow:0 22px 60px rgba(35,55,43,.13)}
-    *{box-sizing:border-box}body{margin:0;color:var(--ink);background:radial-gradient(circle at 8% 5%,rgba(210,175,112,.2),transparent 30rem),linear-gradient(150deg,var(--cream),#eef2e9 70%,#e4eee5);font:400 16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}.page{min-height:100svh;display:grid;grid-template-rows:1fr auto}main{width:min(1120px,calc(100% - 32px));margin:auto;padding:48px 0 38px}.hero{overflow:hidden;display:grid;grid-template-columns:1.15fr .85fr;min-height:610px;background:rgba(255,253,248,.92);border:1px solid rgba(255,255,255,.76);border-radius:30px;box-shadow:var(--shadow)}.intro{padding:clamp(36px,7vw,82px);display:flex;flex-direction:column;justify-content:center}.brand{display:inline-flex;align-items:center;width:fit-content;margin-bottom:32px;color:var(--green);font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}.brand:before{content:"";width:34px;height:2px;margin-right:12px;background:#c49a55}h1{max-width:650px;margin:0;color:var(--green-dark);font-family:Georgia,"Times New Roman",serif;font-size:clamp(42px,7vw,76px);line-height:.98;letter-spacing:-.045em}.lead{max-width:650px;margin:26px 0 0;color:var(--muted);font-size:clamp(17px,2vw,20px)}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}.button{min-height:50px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 20px;border:1px solid var(--green);border-radius:999px;color:var(--green);font-weight:750;text-decoration:none;transition:.18s}.button:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(36,74,54,.15)}.button.primary{color:#fff;background:var(--green)}.details{padding:clamp(28px,5vw,52px);color:#fff;background:linear-gradient(160deg,var(--green),var(--green-dark));display:flex;flex-direction:column;justify-content:center}.details h2{margin:0 0 24px;font-family:Georgia,"Times New Roman",serif;font-size:30px}.detail{padding:19px 0;border-top:1px solid rgba(255,255,255,.15)}.detail:first-of-type{border-top:0;padding-top:0}.detail strong{display:block;margin-bottom:4px;color:#dfc38d;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.detail p,.detail address{margin:0;color:rgba(255,255,255,.91);font-style:normal}.features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 16px;margin:9px 0 0;padding:0;list-style:none}.features li{position:relative;padding-left:18px;color:rgba(255,255,255,.9);font-size:14px}.features li:before{content:"•";position:absolute;left:0;color:#dfc38d}footer{padding:20px 16px 30px;color:#6c756f;text-align:center;font-size:12px}footer a{text-underline-offset:3px}@media(max-width:800px){main{padding-top:20px}.hero{grid-template-columns:1fr;min-height:0;border-radius:22px}.intro{padding:44px 28px}.details{padding:36px 28px}.brand{margin-bottom:24px}}@media(max-width:430px){main{width:min(100% - 20px,1120px)}.actions,.button{width:100%}.features{grid-template-columns:1fr}}
+    :root {
+      color-scheme: light;
+      --green: #244a36;
+      --green-dark: #173326;
+      --cream: #f7f1e5;
+      --paper: #fffdf8;
+      --coffee: #6c4932;
+      --ink: #243029;
+      --muted: #647068;
+      --line: rgba(36, 74, 54, .14);
+      --shadow: 0 22px 60px rgba(35, 55, 43, .13);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 5%, rgba(210, 175, 112, .20), transparent 30rem),
+        linear-gradient(150deg, var(--cream), #eef2e9 70%, #e4eee5);
+      font: 400 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: inherit; }
+    .page { min-height: 100svh; display: grid; grid-template-rows: 1fr auto; }
+    main { width: min(1120px, calc(100% - 32px)); margin: auto; padding: 48px 0 38px; }
+    .hero {
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      min-height: 610px;
+      background: rgba(255, 253, 248, .92);
+      border: 1px solid rgba(255,255,255,.76);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+    }
+    .intro { padding: clamp(36px, 7vw, 82px); display: flex; flex-direction: column; justify-content: center; }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-bottom: 32px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .brand::before { content: ""; width: 34px; height: 2px; margin-right: 12px; background: #c49a55; }
+    h1 { max-width: 650px; margin: 0; color: var(--green-dark); font-family: Georgia, "Times New Roman", serif; font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.045em; }
+    .lead { max-width: 650px; margin: 26px 0 0; color: var(--muted); font-size: clamp(17px, 2vw, 20px); }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+    .button {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 12px 20px;
+      border: 1px solid var(--green);
+      border-radius: 999px;
+      color: var(--green);
+      font-weight: 750;
+      text-decoration: none;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .button:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(36,74,54,.15); }
+    .button.primary { color: #fff; background: var(--green); }
+    .details { padding: clamp(28px, 5vw, 52px); color: #fff; background: linear-gradient(160deg, var(--green), var(--green-dark)); display: flex; flex-direction: column; justify-content: center; }
+    .details h2 { margin: 0 0 24px; font-family: Georgia, "Times New Roman", serif; font-size: 30px; }
+    .detail { padding: 19px 0; border-top: 1px solid rgba(255,255,255,.15); }
+    .detail:first-of-type { border-top: 0; padding-top: 0; }
+    .detail strong { display: block; margin-bottom: 4px; color: #dfc38d; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    .detail p, .detail address { margin: 0; color: rgba(255,255,255,.91); font-style: normal; }
+    .features { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px 16px; margin: 9px 0 0; padding: 0; list-style: none; }
+    .features li { position: relative; padding-left: 18px; color: rgba(255,255,255,.9); font-size: 14px; }
+    .features li::before { content: "•"; position: absolute; left: 0; color: #dfc38d; }
+    footer { padding: 20px 16px 30px; color: #6c756f; text-align: center; font-size: 12px; }
+    footer a { text-underline-offset: 3px; }
+    @media (max-width: 800px) {
+      main { padding-top: 20px; }
+      .hero { grid-template-columns: 1fr; min-height: 0; border-radius: 22px; }
+      .intro { padding: 44px 28px; }
+      .details { padding: 36px 28px; }
+      .brand { margin-bottom: 24px; }
+    }
+    @media (max-width: 430px) {
+      main { width: min(100% - 20px, 1120px); }
+      .actions, .button { width: 100%; }
+      .features { grid-template-columns: 1fr; }
+    }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":["Bakery","CafeOrCoffeeShop"],"name":"Zuqui Garden Coffee","description":"Padaria, cafeteria e mercado no Canto da Praia, em Itapema.","url":"https://checkdiario.com.br/zuqui/","telephone":"+55 47 98899-4152","address":{"@type":"PostalAddress","streetAddress":"Rua 109, nº 183 – Rua do Mirante – Canto da Praia","addressLocality":"Itapema","addressRegion":"SC","addressCountry":"BR"},"openingHours":"Mo-Su 06:00-20:00"}</script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": ["Bakery", "CafeOrCoffeeShop"],
+    "name": "Zuqui Garden Coffee",
+    "description": "Padaria, cafeteria e mercado no Canto da Praia, em Itapema.",
+    "url": "https://checkdiario.com.br/zuqui/",
+    "telephone": "+55 47 98899-4152",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Rua 109, nº 183 – Rua do Mirante – Canto da Praia",
+      "addressLocality": "Itapema",
+      "addressRegion": "SC",
+      "addressCountry": "BR"
+    },
+    "openingHours": "Mo-Su 06:00-20:00"
+  }
+  </script>
 </head>
 <body>
   <div class="page">
@@ -35,11 +140,23 @@
         </section>
         <aside class="details" aria-label="Informações do Zuqui Garden Coffee">
           <h2>Venha nos visitar</h2>
-          <div class="detail"><strong>Endereço</strong><address>Rua 109, nº 183<br>Canto da Praia – Itapema/SC<br>Rua do Mirante</address></div>
-          <div class="detail"><strong>Horário</strong><p>Todos os dias, das 06h às 20h.<br>Sem fechar ao meio-dia.</p></div>
+          <div class="detail">
+            <strong>Endereço</strong>
+            <address>Rua 109, nº 183<br>Canto da Praia – Itapema/SC<br>Rua do Mirante</address>
+          </div>
+          <div class="detail">
+            <strong>Horário</strong>
+            <p>Todos os dias, das 06h às 20h.<br>Sem fechar ao meio-dia.</p>
+          </div>
           <div class="detail">
             <strong>Por aqui você encontra</strong>
-            <ul class="features"><li>Estacionamento próprio gratuito</li><li>Espaço kids</li><li>Ambiente familiar</li><li>Bolos, doces e salgados</li><li>Pedidos pelo iFood e WhatsApp</li></ul>
+            <ul class="features">
+              <li>Estacionamento próprio gratuito</li>
+              <li>Espaço kids</li>
+              <li>Ambiente familiar</li>
+              <li>Bolos, doces e salgados</li>
+              <li>Pedidos pelo iFood e WhatsApp</li>
+            </ul>
           </div>
         </aside>
       </article>
