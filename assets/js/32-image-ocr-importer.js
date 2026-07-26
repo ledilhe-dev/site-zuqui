@@ -27,7 +27,8 @@
   }
 
   function imagemCompraParseValor(valorTexto) {
-    const limpo = String(valorTexto || '').replace(/[^\d.,]/g, '');
+    const semMoeda = String(valorTexto || '').replace(/^\s*(?:R\s*\$|R[S5]|S)\s*/i, '');
+    const limpo = semMoeda.replace(/[^\d.,]/g, '');
     if (!limpo) return null;
     const normalizado = limpo.includes(',')
       ? limpo.replace(/\./g, '').replace(',', '.')
@@ -127,7 +128,7 @@
   function imagemCompraExtrairNotificacoesCartao(texto, dataPadrao) {
     const itens = [];
     const compacto = imagemCompraNormalizarTexto(texto).replace(/\n+/g, ' ');
-    const regex = /Compra\s+de\s+R\$?\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+R\$?|hoje\b|ontem\b)|$)/gi;
+    const regex = /Compra\s+de\s+(?:R\s*\$|R[S5]|S)?\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+(?:R\s*\$|R[S5]|S)?|hoje\b|ontem\b)|$)/gi;
     let m;
     while ((m = regex.exec(compacto)) !== null) {
       const valor = imagemCompraParseValor(m[1]);
@@ -205,7 +206,7 @@
     };
     const limparDescricaoLinha = (linha) => imagemCompraLimparDescricao(
       String(linha || '')
-        .replace(/(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}/g, ' ')
+        .replace(/(?:(?:R\s*\$|R[S5]|S)\s*)?\d{1,3}(?:\.\d{3})*[,.]\d{2}/gi, ' ')
         .replace(/\b\d{1,2}:?\d{2}\b/g, ' ')
         .replace(/\b(h[aá]\s*)?\d+\s*h\b/gi, ' ')
         .replace(/\s{2,}/g, ' ')
@@ -232,7 +233,7 @@
     const compras = [];
     linhas.forEach((linha, idx) => {
       const ehTotal = /total|subtotal|selecionad|saldo|limite/i.test(linha);
-      const matches = linha.match(/(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
+      const matches = linha.match(/(?:(?:R\s*\$|R[S5]|S)\s*)?\d{1,3}(?:\.\d{3})*[,.]\d{2}/gi) || [];
       matches.forEach(v => {
         const valor = imagemCompraParseValor(v);
         if (!valor || ehTotal) return;
@@ -253,14 +254,14 @@
       });
     });
     if (compras.length > 1) return compras;
-    if (compras.length === 1 && linhas.filter(l => /(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}/.test(l)).length === 1) {
+    if (compras.length === 1 && linhas.filter(l => /(?:(?:R\s*\$|R[S5]|S)\s*)?\d{1,3}(?:\.\d{3})*[,.]\d{2}/i.test(l)).length === 1) {
       return compras;
     }
 
     const candidatosValor = [];
     linhas.forEach((linha, idx) => {
       const temTotal = /total|valor|debito|credito|cart[aã]o|pago|pagamento/i.test(linha);
-      const matches = linha.match(/(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
+      const matches = linha.match(/(?:(?:R\s*\$|R[S5]|S)\s*)?\d{1,3}(?:\.\d{3})*[,.]\d{2}/gi) || [];
       matches.forEach(v => {
         const valor = imagemCompraParseValor(v);
         if (valor) candidatosValor.push({ valor, idx, peso: temTotal ? 2 : 1 });
@@ -294,9 +295,18 @@
     const dataPadrao = imagemCompraHojeISO();
     const notificacoes = imagemCompraExtrairNotificacoesCartao(texto, dataPadrao);
     const carteira = imagemCompraExtrairCarteiraNubank(texto, dataPadrao);
-    const ancorados = imagemCompraDeduplicar([...notificacoes, ...carteira]);
-    if (ancorados.length) return ancorados;
-    return imagemCompraDeduplicar(imagemCompraExtrairGenerico(texto, dataPadrao));
+    const genericos = imagemCompraExtrairGenerico(texto, dataPadrao);
+    const valoresAncorados = new Set(
+      [...notificacoes, ...carteira].map(item => Math.round(Number(item.valor || 0) * 100))
+    );
+    const genericosNovos = genericos.filter(item =>
+      !valoresAncorados.has(Math.round(Number(item.valor || 0) * 100))
+    );
+    // Um bloco pode ser lido perfeitamente e outro perder palavras como
+    // "Compra de". Antes, a existência do primeiro bloco específico fazia o
+    // parser descartar todos os achados genéricos — exatamente o caso de dois
+    // avisos no mesmo print. Agora as fontes são sempre combinadas.
+    return imagemCompraDeduplicar([...notificacoes, ...carteira, ...genericosNovos]);
   }
 
   async function imagemCompraCarregarTesseract() {
@@ -359,8 +369,8 @@
           });
           Promise.all([
             criarBlob(canvas, 0, altura),
-            criarBlob(canvas, 0, altura * 0.62),
-            criarBlob(canvas, altura * 0.38, altura * 0.62),
+            criarBlob(canvas, 0, altura * 0.55),
+            criarBlob(canvas, altura * 0.45, altura * 0.55),
           ]).then(([principal, faixaSuperior, faixaInferior]) => {
             URL.revokeObjectURL(url);
             resolve({
@@ -433,7 +443,7 @@
       if (itensReconhecidos.length < 2 && imagens.faixas?.length) {
         faturaSetProgress(76, 'Procurando outros lançamentos na imagem...');
         const resultadosFaixas = await Promise.all(imagens.faixas.map(faixa =>
-          reconhecer(faixa, 6, null)
+          reconhecer(faixa, 11, null)
         ));
         textosReconhecidos = [
           ...textosReconhecidos,
