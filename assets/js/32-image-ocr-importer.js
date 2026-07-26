@@ -37,6 +37,19 @@
     return Number.isFinite(valor) && valor > 0 ? Number(valor.toFixed(2)) : null;
   }
 
+  function imagemCompraNormalizarValoresSemSeparador(texto) {
+    return String(texto || '').split('\n').map(linha => {
+      if (/[,.]\d{2}\b/.test(linha)) return linha;
+      const digitos = linha.replace(/\D/g, '');
+      // O recorte dedicado contém o preço em destaque. Quando a vírgula
+      // desaparece no OCR, 30484 deve voltar a ser 304,84.
+      if (digitos.length >= 5 && digitos.length <= 8) {
+        return `${digitos.slice(0, -2)},${digitos.slice(-2)}`;
+      }
+      return linha;
+    }).join('\n');
+  }
+
   function imagemCompraParseData(texto, referenciaISO) {
     const raw = String(texto || '');
     const ref = /^\d{4}-\d{2}-\d{2}$/.test(String(referenciaISO || '')) ? referenciaISO : imagemCompraHojeISO();
@@ -356,13 +369,13 @@
             data[i] = data[i + 1] = data[i + 2] = altoContraste;
           }
           ctx.putImageData(imageData, 0, 0);
-          const criarBlob = (origem, y, h) => new Promise(resolveBlob => {
+          const criarBlob = (origem, y, h, x = 0, w = origem.width) => new Promise(resolveBlob => {
             const recorte = document.createElement('canvas');
-            recorte.width = origem.width;
+            recorte.width = Math.max(1, Math.round(w));
             recorte.height = Math.max(1, Math.round(h));
             recorte.getContext('2d').drawImage(
               origem,
-              0, Math.round(y), origem.width, Math.round(h),
+              Math.round(x), Math.round(y), Math.round(w), Math.round(h),
               0, 0, recorte.width, recorte.height
             );
             recorte.toBlob(blob => resolveBlob(blob), 'image/png');
@@ -371,11 +384,18 @@
             criarBlob(canvas, 0, altura),
             criarBlob(canvas, 0, altura * 0.55),
             criarBlob(canvas, altura * 0.45, altura * 0.55),
-          ]).then(([principal, faixaSuperior, faixaInferior]) => {
+            // Faixas centrais dos cartões: isolam os valores e excluem o
+            // relógio à direita e o ícone à esquerda.
+            criarBlob(canvas, altura * 0.08, altura * 0.30, largura * 0.27, largura * 0.55),
+            criarBlob(canvas, altura * 0.55, altura * 0.30, largura * 0.27, largura * 0.55),
+          ]).then(([principal, faixaSuperior, faixaInferior, valorSuperior, valorInferior]) => {
             URL.revokeObjectURL(url);
             resolve({
               principal: principal || file,
-              faixas: [faixaSuperior, faixaInferior].filter(Boolean),
+              faixas: [
+                { cartao: faixaSuperior, valor: valorSuperior },
+                { cartao: faixaInferior, valor: valorInferior },
+              ].filter(faixa => faixa.cartao),
             });
           }).catch(reject);
         } catch (e) {
@@ -420,10 +440,11 @@
       faturaSetProgress(18, 'Carregando OCR gratuito...');
       const Tesseract = await imagemCompraCarregarTesseract();
       faturaSetProgress(30, 'Lendo texto da imagem...');
-      const reconhecer = (imagem, modoPagina, logger) => {
+      const reconhecer = (imagem, modoPagina, logger, parametros = {}) => {
         const opcoes = {
           tessedit_pageseg_mode: String(modoPagina),
           preserve_interword_spaces: '1',
+          ...parametros,
         };
         if (typeof logger === 'function') opcoes.logger = logger;
         return Tesseract.recognize(imagem, 'por+eng', opcoes);
@@ -442,12 +463,24 @@
       // distintas (mesmo fornecedor/data continuam válidas se o valor mudar).
       if (itensReconhecidos.length < 2 && imagens.faixas?.length) {
         faturaSetProgress(76, 'Procurando outros lançamentos na imagem...');
-        const resultadosFaixas = await Promise.all(imagens.faixas.map(faixa =>
-          reconhecer(faixa, 11, null)
-        ));
+        const resultadosFaixas = [];
+        for (const faixa of imagens.faixas) {
+          const resultadoCartao = await reconhecer(faixa.cartao, 11, null);
+          const resultadoValor = faixa.valor
+            ? await reconhecer(faixa.valor, 6, null, {
+              tessedit_char_whitelist: 'R$S5012346789,.',
+            })
+            : null;
+          resultadosFaixas.push({
+            texto: [
+              resultadoCartao?.data?.text || '',
+              imagemCompraNormalizarValoresSemSeparador(resultadoValor?.data?.text || ''),
+            ].filter(Boolean).join('\n'),
+          });
+        }
         textosReconhecidos = [
           ...textosReconhecidos,
-          ...resultadosFaixas.map(item => item?.data?.text || ''),
+          ...resultadosFaixas.map(item => item.texto || ''),
         ];
         itensReconhecidos = imagemCompraDeduplicar(
           textosReconhecidos.flatMap(textoFaixa => imagemCompraExtrairItens(textoFaixa))
@@ -488,4 +521,5 @@
   };
 
   window.imagemCompraExtrairItens = imagemCompraExtrairItens;
+  window.imagemCompraNormalizarValoresSemSeparador = imagemCompraNormalizarValoresSemSeparador;
 })();

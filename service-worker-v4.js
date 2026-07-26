@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v91-ocr-combinado-v2';
+const CACHE_NAME = 'check-diario-pwa-v92-ocr-valores-isolados';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
