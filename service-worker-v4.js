@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v97-responsive-system';
+const CACHE_NAME = 'check-diario-pwa-v98-relatorio-pagamentos';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

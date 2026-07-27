@@ -2011,7 +2011,7 @@ function obterValorPagoRelatorioFinanceiro(item) {
 }
 
 function obterValorAbertoRelatorioFinanceiro(item) {
-  if (obterStatusContaRelatorioFinanceiro(item) !== 'pendente') return 0;
+  if (!['a_vencer', 'vencida'].includes(obterStatusContaRelatorioFinanceiro(item))) return 0;
   const valorCompra = Number(item?.valor_compra || 0);
   return Number.isFinite(valorCompra) ? valorCompra : 0;
 }
@@ -2027,7 +2027,8 @@ function preencherSelectRelatorioFinanceiro(selectEl, placeholder, opcoes = [], 
 
 const STATUS_OPCOES_RELATORIO_FINANCEIRO = [
   { valor: '', rotulo: 'Todos' },
-  { valor: 'pendente', rotulo: 'Pendente' },
+  { valor: 'a_vencer', rotulo: 'A vencer' },
+  { valor: 'vencida', rotulo: 'Vencida' },
   { valor: 'pago', rotulo: 'Pago' },
   { valor: 'excluido', rotulo: 'Excluído' },
 ];
@@ -2484,7 +2485,7 @@ function exportarRelatorioFinanceiroCsv() {
       grupos[nome].qtd += 1;
       if (pago) grupos[nome].pago += valor; else grupos[nome].pendente += valor;
     });
-    cabecalho = ['Fornecedor', 'Grupo', 'Qtd titulos', 'Total pago', 'Total pendente', 'Total geral'];
+    cabecalho = ['Fornecedor', 'Grupo', 'Qtd titulos', 'Total pago', 'Total em aberto', 'Total geral'];
     linhas = Object.values(grupos)
       .sort((a, b) => (b.pago + b.pendente) - (a.pago + a.pendente))
       .map(g => [
@@ -2504,7 +2505,7 @@ function exportarRelatorioFinanceiroCsv() {
     ];
     linhas = itens.map(item => {
       const statusAtual = obterStatusContaRelatorioFinanceiro(item);
-      const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
+      const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : (statusAtual === 'vencida' ? 'Vencida' : 'A vencer'));
       const infoParcelas = obterInfoParcelasRelatorioFinanceiro(item);
       return [
         obterNomeFornecedorRelatorioFinanceiro(item),
@@ -2518,7 +2519,7 @@ function exportarRelatorioFinanceiroCsv() {
         Number(item.valor_original ?? item.valor_compra ?? 0).toFixed(2),
         Number(item.valor_compra || 0).toFixed(2),
         obterValorPagoRelatorioFinanceiro(item).toFixed(2),
-        (obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0)).toFixed(2),
+        (statusAtual === 'pago' ? obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0) : 0).toFixed(2),
         infoParcelas.parcelaTexto,
         infoParcelas.restantesTexto,
         String(item.observacao || '').trim(),
@@ -2581,7 +2582,7 @@ function imprimirRelatorioFinanceiroPdf() {
       grupos[nome].qtd += 1;
       if (pago) grupos[nome].pago += valor; else grupos[nome].pendente += valor;
     });
-    cabecalhoCols = ['Fornecedor', 'Grupo', 'Qtd. títulos', 'Pago', 'Pendente', 'Total'];
+    cabecalhoCols = ['Fornecedor', 'Grupo', 'Qtd. títulos', 'Pago', 'Em aberto', 'Total'];
     linhas = Object.values(grupos)
       .sort((a, b) => (b.pago + b.pendente) - (a.pago + a.pendente))
       .map(g => `
@@ -2597,7 +2598,7 @@ function imprimirRelatorioFinanceiroPdf() {
     cabecalhoCols = ['Fornecedor', 'Categoria', 'Status', 'Forma', 'Vencimento', 'Original', 'Atual', 'Pago', 'Variação', 'Parcela', 'Rest.', 'Observação', 'Cadastro'];
     linhas = itens.map(item => {
       const statusAtual = obterStatusContaRelatorioFinanceiro(item);
-      const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : 'Pendente');
+      const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : (statusAtual === 'vencida' ? 'Vencida' : 'A vencer'));
       const infoParcelas = obterInfoParcelasRelatorioFinanceiro(item);
       const classeLinha = statusAtual === 'excluido' ? 'linha-excluida' : (ehContaEditadaRelatorioFinanceiro(item) ? 'linha-editada' : '');
       return `
@@ -2610,7 +2611,7 @@ function imprimirRelatorioFinanceiroPdf() {
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_original ?? item.valor_compra ?? 0))}</td>
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_compra || 0))}</td>
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item)))}</td>
-          <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0)))}</td>
+          <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(statusAtual === 'pago' ? obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0) : 0))}</td>
           <td>${escaparHtmlBasico(infoParcelas.parcelaTexto)}</td>
           <td>${escaparHtmlBasico(infoParcelas.restantesTexto)}</td>
           <td>${escaparHtmlBasico(String(item.observacao || '').trim() || '-')}</td>
@@ -2673,7 +2674,7 @@ function imprimirRelatorioFinanceiroPdf() {
         <div class="totais">
           <div class="box"><div class="label">Total pendente</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalGeral))}</div></div>
           <div class="box"><div class="label">Total pago</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalPago))}</div></div>
-          <div class="box"><div class="label">Total pendente</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalPendente))}</div></div>
+          <div class="box"><div class="label">Total em aberto</div><div class="valor">${escaparHtmlBasico(formatarMoedaBRFinanceiro(totalPendente))}</div></div>
           <div class="box"><div class="label">Qtd. títulos</div><div class="valor">${escaparHtmlBasico(String(itens.length))}</div></div>
         </div>
         <div class="legenda">
@@ -2756,7 +2757,7 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
       <div class="item">
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(g.nome)}</div>
-          <div class="item-detalhe">${g.qtd} título(s) · Pago: ${formatarMoedaBRFinanceiro(g.pago)} · Pendente: ${formatarMoedaBRFinanceiro(g.pendente)}</div>
+          <div class="item-detalhe">${g.qtd} título(s) · Pago: ${formatarMoedaBRFinanceiro(g.pago)} · Em aberto: ${formatarMoedaBRFinanceiro(g.pendente)}</div>
           <div class="item-detalhe">Total: <strong>${formatarMoedaBRFinanceiro(g.pago + g.pendente)}</strong></div>
         </div>
         <div class="item-actions">
@@ -2772,7 +2773,7 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     const valorCompra = Number(item.valor_compra || 0);
     const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
     const valorRealizado = status === 'pago' ? obterValorPagoRelatorioFinanceiro(item) : valorCompra;
-    const variacao = valorRealizado - valorOriginal;
+    const variacao = status === 'pago' ? valorRealizado - valorOriginal : 0;
     const fornecedor = obterNomeFornecedorRelatorioFinanceiro(item);
     const forma = obterNomeFormaRelatorioFinanceiro(item);
     const observacao = String(item.observacao || '').trim() || '-';
@@ -2784,7 +2785,7 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
           <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
           <div class="item-detalhe">Original: ${formatarMoedaBRFinanceiro(valorOriginal)} · Previsto/atual: ${formatarMoedaBRFinanceiro(valorCompra)} · ${status === 'pago' ? `Pago: ${formatarMoedaBRFinanceiro(valorRealizado)}` : `A pagar: ${formatarMoedaBRFinanceiro(valorRealizado)}`}</div>
-          <div class="item-detalhe" style="color:${variacao > 0 ? 'var(--red)' : (variacao < 0 ? 'var(--green)' : 'var(--text-muted)')}">Variação sobre o original: ${variacao > 0 ? '+' : ''}${formatarMoedaBRFinanceiro(variacao)}</div>
+          <div class="item-detalhe" style="color:${variacao > 0 ? 'var(--red)' : (variacao < 0 ? 'var(--green)' : 'var(--text-muted)')}">${status === 'pago' ? `Variação sobre o original: ${variacao > 0 ? '+' : ''}${formatarMoedaBRFinanceiro(variacao)}` : 'Variação sobre o original: aguardando pagamento'}</div>
           <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · ${escaparHtmlBasico(infoParcelas.resumoTexto)}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
           <div class="item-detalhe">Cadastro: ${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
@@ -2882,7 +2883,7 @@ async function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
   if (!sincronizouData && campoDataInicio) campoDataInicio.value = hojeLocal;
   if (!sincronizouData && campoDataFim) campoDataFim.value = dataFimAtalho;
   if (campoStatus) {
-    renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), ['pendente']);
+    renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), ['a_vencer', 'vencida']);
   }
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
@@ -3069,11 +3070,11 @@ async function carregarRelatorioFinanceiro() {
       if (filtrosForma.length && !filtrosForma.includes(formaId || formaNome)) return false;
       if (filtrosCategoria.length && !filtrosCategoria.includes(categoriaId)) return false;
       if (filtroGrupo && grupoId !== filtroGrupo) return false;
-      const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
-      const valorComparacao = obterStatusContaRelatorioFinanceiro(item) === 'pago'
-        ? obterValorPagoRelatorioFinanceiro(item)
-        : Number(item.valor_compra || 0);
-      if (somenteDivergentes && Math.abs(valorComparacao - valorOriginal) < 0.005) return false;
+      if (somenteDivergentes) {
+        if (status !== 'pago') return false;
+        const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
+        if (Math.abs(obterValorPagoRelatorioFinanceiro(item) - valorOriginal) < 0.005) return false;
+      }
       return true;
     });
 
@@ -3102,7 +3103,7 @@ async function carregarRelatorioFinanceiro() {
       const original = Number(item.valor_original ?? item.valor_compra ?? 0);
       const realizado = obterStatusContaRelatorioFinanceiro(item) === 'pago'
         ? obterValorPagoRelatorioFinanceiro(item)
-        : Number(item.valor_compra || 0);
+        : original;
       return acc + (realizado - original);
     }, 0);
     if (elTotalGeral) elTotalGeral.textContent = formatarMoedaBRFinanceiro(totalGeral);

@@ -1508,9 +1508,9 @@
               <input type="checkbox" id="relFinanceiroAgrupar" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
               Agrupar por fornecedor
             </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
+            <label title="Exibe somente contas pagas cujo valor final difere do valor originalmente cadastrado" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
               <input type="checkbox" id="relFinanceiroSomenteDivergentes" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
-              Somente valores divergentes
+              Somente pagamentos divergentes
             </label>
             <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioFinanceiroCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
             <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioFinanceiroPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
@@ -1520,7 +1520,7 @@
 
         <div class="stats-grid" id="cardsRelatorioFinanceiro">
           <div class="stat-card rf-total-geral-card">
-            <div class="s-label">Total pendente (R$)</div>
+            <div class="s-label">Total em aberto (R$)</div>
             <div class="s-value" id="rfTotalGeral">R$ 0,00</div>
             <div class="s-desc">Soma em aberto dos títulos ativos no filtro</div>
           </div>
@@ -1537,7 +1537,7 @@
           <div class="stat-card rf-falta-quitar-btn" style="cursor:default;">
             <div class="s-label" id="rfFaltaQuitarLabel">Falta para quitar (R$)</div>
             <div class="s-value" id="rfFaltaQuitar">R$ 0,00</div>
-            <div class="s-desc" id="rfFaltaQuitarDesc">Total pendente menos saldo disponível</div>
+            <div class="s-desc" id="rfFaltaQuitarDesc">Total em aberto menos saldo disponível</div>
           </div>
           <button class="stat-card rf-titulos-toggle" id="btnToggleTitulosRelatorioFinanceiro" type="button" onclick="toggleDetalhesRelatorioFinanceiro()" aria-expanded="false" aria-controls="cardDetalhamentoRelatorioFinanceiro">
             <div class="s-label">Qtd. de títulos</div>
@@ -1547,12 +1547,12 @@
           <div class="stat-card">
             <div class="s-label">Total geral (R$)</div>
             <div class="s-value" id="rfTotalSomado" style="color:var(--accent-bright,#ffbe1a);">R$ 0,00</div>
-            <div class="s-desc">Pago + pendente no filtro</div>
+            <div class="s-desc">Pago + em aberto no filtro</div>
           </div>
           <div class="stat-card">
-            <div class="s-label">Variação realizado x original</div>
+            <div class="s-label">Variação paga x original</div>
             <div class="s-value" id="rfVariacaoOriginal">R$ 0,00</div>
-            <div class="s-desc">Positivo = custo maior; negativo = economia</div>
+            <div class="s-desc">Somente pagamentos; positivo = custo maior</div>
           </div>
         </div>
 
@@ -3033,7 +3033,7 @@
 <script src="./assets/js/01-core-supabase.js?v=20260720-modais-do-sistema"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
-<script src="./assets/js/04-navigation.js"></script>
+<script src="./assets/js/04-navigation.js?v=20260727-relatorio-pagamentos-divergentes"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260722-valor-efetivamente-pago"></script>
 <script src="./assets/js/10-dashboard.js?v=20260711-isolamento-loja-dashboard"></script>
 <script src="./assets/js/20-checklists.js"></script>
@@ -3044,13 +3044,13 @@
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260722-valores-auditoria"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260727-status-vencimento"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=3.2.15"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260722-relatorios-valores"></script>
+<script src="./assets/js/60-timeclock.js?v=20260727-pagamentos-divergentes"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>

@@ -1741,7 +1741,9 @@ function obterStatusContaBaixaFinanceiro(item) {
 
 function obterStatusContaRelatorioFinanceiro(item) {
   if (item?.excluido_em) return 'excluido';
-  return obterStatusContaBaixaFinanceiro(item);
+  if (obterStatusContaBaixaFinanceiro(item) === 'pago') return 'pago';
+  const vencimento = String(item?.data_vencimento || '').trim().slice(0, 10);
+  return vencimento && vencimento < hoje() ? 'vencida' : 'a_vencer';
 }
 
 function obterDataReferenciaContaRelatorioFinanceiro(item) {
@@ -1752,7 +1754,8 @@ function obterDataReferenciaContaRelatorioFinanceiro(item) {
 function tagStatusContaRelatorioFinanceiro(status = '') {
   if (status === 'pago') return '<span class="tag tag-green">Pago</span>';
   if (status === 'excluido') return '<span class="tag tag-red">Excluído</span>';
-  return '<span class="tag tag-amber">Pendente</span>';
+  if (status === 'vencida') return '<span class="tag tag-red">Vencida</span>';
+  return '<span class="tag tag-amber">A vencer</span>';
 }
 
 async function obterSaldoTotalContasFinanceiras() {
