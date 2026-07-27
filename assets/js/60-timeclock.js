@@ -2912,8 +2912,30 @@ async function carregarRelatorioFinanceiro() {
   const statusSelecionadosAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), statusSelecionadosAtuais);
 
-  if (campoDataInicio && !campoDataInicio.value) campoDataInicio.value = hoje();
-  if (campoDataFim && !campoDataFim.value) campoDataFim.value = hoje();
+  const filtroDataPadronizado = document.querySelector('#relatorio_financeiro .date-filter-standard');
+  const campoDataInicioVisivel = filtroDataPadronizado?.querySelector('.date-filter-start') || campoDataInicio;
+  const campoDataFimVisivel = filtroDataPadronizado?.querySelector('.date-filter-end') || campoDataFim;
+  const periodoInicioInformado = String(campoDataInicioVisivel?.value || '').trim();
+  const periodoFimInformado = String(campoDataFimVisivel?.value || '').trim();
+
+  // Sem um período completo o relatório deve permanecer vazio. Isso evita que
+  // a ausência de datas seja interpretada como "consultar todo o histórico".
+  if (!periodoInicioInformado || !periodoFimInformado) {
+    relatorioFinanceiroCache = [];
+    ['rfTotalGeral', 'rfTotalPago', 'rfTotalPendente', 'rfFaltaQuitar', 'rfTotalSomado', 'rfVariacaoOriginal']
+      .forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) elemento.textContent = formatarMoedaBRFinanceiro(0);
+      });
+    const quantidade = document.getElementById('rfQuantidadeTitulos');
+    if (quantidade) quantidade.textContent = '0';
+    listaDetalhes.innerHTML = '<div class="empty">Informe a data inicial e a data final para consultar os títulos.</div>';
+    listaFornecedores.innerHTML = '';
+    listaFormas.innerHTML = '';
+    ocultarDetalhesRelatorioFinanceiro();
+    setMsg('msgRelatorioFinanceiro', 'Informe um período completo para carregar o relatório.', '');
+    return [];
+  }
 
   listaDetalhes.innerHTML = '<div class="empty">Carregando...</div>';
   listaFornecedores.innerHTML = '<div class="empty">Carregando...</div>';
@@ -2934,8 +2956,8 @@ async function carregarRelatorioFinanceiro() {
   if (seqRelFin !== window.__relFinSeq) return;
 
   try {
-    const filtroDataInicioConsulta = String(campoDataInicio?.value || '').trim();
-    const filtroDataFimConsulta = String(campoDataFim?.value || '').trim();
+    const filtroDataInicioConsulta = periodoInicioInformado;
+    const filtroDataFimConsulta = periodoFimInformado;
     const filtroDataTipo = String(document.querySelector('#relatorio_financeiro .date-filter-criterion')?.value || 'especial:vencimento').replace('especial:', '');
     const colunasDataConsulta = {
       compra: 'data_compra', vencimento: 'data_vencimento', pagamento: 'data_pagamento',
@@ -3017,8 +3039,8 @@ async function carregarRelatorioFinanceiro() {
     ]
       .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
     renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria', categoriasOpcoes, categoriasSelecionadasAtuais);
-    const filtroDataInicio = String(campoDataInicio?.value || '').trim();
-    const filtroDataFim = String(campoDataFim?.value || '').trim();
+    const filtroDataInicio = periodoInicioInformado;
+    const filtroDataFim = periodoFimInformado;
     const filtrosStatus = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
     const filtrosFornecedor = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
     const filtrosForma = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');

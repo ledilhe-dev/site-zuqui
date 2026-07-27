@@ -26,7 +26,7 @@
       ['ajuste', 'Data do ajuste']
     ],
     relatorio_financeiro: [
-      ['compra', 'Data da compra'], ['vencimento', 'Data de vencimento'],
+      ['vencimento', 'Data de vencimento'], ['compra', 'Data da compra'],
       ['pagamento', 'Data de pagamento'], ['cadastro', 'Data de cadastro'],
       ['atualizacao', 'Data de atualização']
     ],
