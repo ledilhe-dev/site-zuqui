@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v118-nova-conta-campos';
+const CACHE_NAME = 'check-diario-pwa-v119-device-layout';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

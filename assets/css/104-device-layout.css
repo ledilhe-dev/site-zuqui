@@ -1,0 +1,274 @@
+/*
+ * Camada final de enquadramento por dispositivo.
+ * Faixas:
+ * - desktop: acima de 1024px
+ * - tablet: 701px a 1024px
+ * - celular: até 700px
+ */
+html,
+body,
+.shell,
+.main,
+.content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+body,
+.main,
+.content {
+  overflow-x: hidden;
+}
+
+.pagina.ativa,
+.pagina.ativa > *,
+.pagina.ativa .card,
+.pagina.ativa .form-row,
+.pagina.ativa [class*="-grid"],
+.pagina.ativa [class*="-row"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pagina.ativa input:not([type="checkbox"]):not([type="radio"]),
+.pagina.ativa select,
+.pagina.ativa textarea,
+.pagina.ativa button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pagina.ativa input[type="date"] {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.pagina.ativa input[type="date"]::-webkit-date-and-time-value,
+.pagina.ativa input[type="date"]::-webkit-datetime-edit {
+  min-width: 0;
+}
+
+/* Desktop e notebooks: aproveita a largura sem deixar o conteúdo escapar. */
+@media (min-width: 1025px) {
+  .pagina.ativa {
+    width: 100%;
+    max-width: 1920px;
+    margin-inline: auto;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    grid-template-columns:
+      minmax(220px, 1.6fr)
+      minmax(125px, .8fr)
+      minmax(125px, .8fr)
+      minmax(170px, 1fr)
+      minmax(130px, .8fr)
+      minmax(120px, .7fr)
+      minmax(90px, .55fr)
+      minmax(100px, .6fr)
+      minmax(160px, 1fr) !important;
+  }
+}
+
+/* Tablet/iPad: nenhuma tela recebe a grade de desktop. */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .content {
+    width: 100% !important;
+    padding: 12px !important;
+    overflow-x: hidden !important;
+  }
+
+  .pagina.ativa {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .pagina.ativa .card {
+    width: 100% !important;
+    padding: 12px !important;
+    overflow: visible;
+  }
+
+  .pagina.ativa .form-row,
+  .pagina.ativa .filters,
+  .pagina.ativa .toolbar,
+  .pagina.ativa .financeiro-filtros-row,
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .pagina.ativa .financeiro-filtros-row:not(.financeiro-selecao-contas-row),
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    align-items: end !important;
+  }
+
+  .pagina.ativa .filter-field-standard,
+  .pagina.ativa .date-filter-standard,
+  .pagina.ativa .date-filter-standard label {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .pagina.ativa .date-filter-standard {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+
+  .pagina.ativa .date-filter-standard .date-filter-criterion-field {
+    grid-column: 1 / -1;
+  }
+
+  /* Cadastro de contas a pagar: ordem visual previsível em duas colunas. */
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    width: 100% !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    grid-column: auto !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: 1 / -1 !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados input,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados select,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados button {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 6px 9px !important;
+    font-size: 11px !important;
+  }
+
+  #financeiro_contasapagar #filtroContaAPagarCategoriasWrap,
+  #financeiro_contasapagar #btnFiltroContaAPagarCategorias {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 9px !important;
+    width: 100% !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro #resumoSelecaoContasAPagarFinanceiro {
+    grid-column: 1 / -1;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  }
+
+  .table-wrap,
+  [class*="table-wrap"],
+  [class*="-tabela-wrap"] {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Celular: controles compactos, duas colunas somente quando há espaço real. */
+@media (max-width: 700px) {
+  .content {
+    width: 100% !important;
+    padding: 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  .pagina.ativa,
+  .pagina.ativa > *,
+  .pagina.ativa .card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    grid-column: auto !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: 1 / -1 !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados input,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados select,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados button,
+  #financeiro_contasapagar #filtroContaAPagarCategoriasWrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro #resumoSelecaoContasAPagarFinanceiro {
+    grid-column: 1 / -1;
+  }
+
+  .pagina.ativa .financeiro-filtros-row:not(.contas-pagar-filtros-unificados):not(.financeiro-selecao-contas-row),
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados,
+  .pagina.ativa .financeiro-filtros-row:not(.financeiro-selecao-contas-row),
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    grid-template-columns: 1fr !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro {
+    grid-template-columns: 1fr !important;
+  }
+}
+
