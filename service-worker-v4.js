@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v114-sem-filtro-lojas';
+const CACHE_NAME = 'check-diario-pwa-v115-enquadramento-global';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

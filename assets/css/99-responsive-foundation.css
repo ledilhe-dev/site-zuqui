@@ -116,6 +116,39 @@ input, select, textarea, button { max-width:100%; }
 
 /* Celular e tablet estreito. Mantém duas colunas onde ajuda e uma onde precisa. */
 @media (max-width:900px) {
+  .pagina.ativa,
+  .pagina.ativa > *,
+  .pagina.ativa .card,
+  .pagina.ativa .form-row,
+  .pagina.ativa [class*="-grid"],
+  .pagina.ativa [class*="-row"] {
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  .pagina.ativa input:not([type="checkbox"]):not([type="radio"]),
+  .pagina.ativa select,
+  .pagina.ativa textarea {
+    width:100%;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  .pagina.ativa button,
+  .pagina.ativa .btn {
+    min-width:0;
+    max-width:100%;
+  }
+  .overlay .modal,
+  .overlay [class*="-modal-card"],
+  .overlay [class*="-sheet"] {
+    width:min(100%,calc(100vw - 16px));
+    min-width:0!important;
+    max-width:calc(100vw - 16px)!important;
+  }
+  .overlay .modal-body,
+  .overlay [class*="-sheet-body"] {
+    min-width:0!important;
+    max-width:100%!important;
+  }
   .shell, .main, .topbar, .content, .pagina.ativa { width:100%!important; max-width:100%!important; min-width:0!important; }
   .content { overflow-x:hidden!important; }
   .topbar {
