@@ -157,13 +157,68 @@ input, select, textarea, button { max-width:100%; }
   .relatorio-financeiro-filtros > *, .tarefas-filtro-grid > *, .ponto-ajustes-filtros > * { min-width:0!important; width:100%!important; }
   table { max-width:100%; }
   .table-wrap, [class*="table-wrap"], [class*="-tabela-wrap"] { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+  /* Densidade móvel global: mantém ações e indicadores visíveis sem cartões gigantes. */
+  .content { padding:8px 8px 18px!important; }
+  .card, .stat-card { padding:9px!important; margin-bottom:8px!important; border-radius:9px!important; }
+  .card-title { margin-bottom:7px!important; font-size:11px!important; }
+  .btn, .btn-sm {
+    min-height:32px!important; height:auto!important; padding:5px 8px!important;
+    border-radius:7px!important; font-size:10.5px!important; line-height:1.15!important;
+  }
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    min-height:34px!important; height:auto; padding:6px 8px!important; font-size:12px!important;
+  }
+  .stats-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important; margin-bottom:9px!important;
+  }
+  .stat-card { min-height:84px!important; }
+  .stat-card .s-label { margin-bottom:4px!important; font-size:7.5px!important; letter-spacing:.55px!important; }
+  .stat-card .s-value { font-size:clamp(18px,5.4vw,23px)!important; line-height:1.08!important; white-space:nowrap; }
+  .stat-card .s-desc { margin-top:4px!important; font-size:8.5px!important; line-height:1.2!important; }
+
+  #relatorio_financeiro > .card { padding:9px!important; }
+  #relatorio_financeiro .multi-loja-filter { margin-bottom:6px!important; }
+  #relatorio_financeiro .relatorio-financeiro-filtros {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:6px!important;
+  }
+  #relatorio_financeiro .relatorio-financeiro-filtros > .date-filter-standard { grid-column:1/-1!important; }
+  #relatorio_financeiro .relatorio-financeiro-filtros .campo-com-label { padding-top:13px!important; }
+  #relatorio_financeiro .relatorio-financeiro-filtros .campo-label { font-size:8.5px!important; }
+  #relatorio_financeiro .relatorio-check-filter-head,
+  #relatorio_financeiro .relatorio-financeiro-filtros input,
+  #relatorio_financeiro .relatorio-financeiro-filtros select,
+  #relatorio_financeiro .relatorio-financeiro-filtros .btn {
+    height:34px!important; min-height:34px!important; max-height:34px!important;
+    padding:5px 7px!important; font-size:10px!important;
+  }
+  #relatorio_financeiro .relatorio-check-filter-query { font-size:10px!important; }
+  #relatorio_financeiro .relatorio-financeiro-acoes {
+    display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important; margin-top:7px!important; align-items:center!important;
+  }
+  #relatorio_financeiro .relatorio-financeiro-acoes > * {
+    min-width:0!important; width:100%!important; margin:0!important;
+  }
+  #relatorio_financeiro .relatorio-financeiro-acoes label {
+    min-height:30px; gap:4px!important; padding:3px 2px;
+    font-size:8.5px!important; line-height:1.15!important;
+  }
+  #relatorio_financeiro .relatorio-financeiro-acoes input[type="checkbox"] {
+    width:13px!important; height:13px!important; min-width:13px!important;
+  }
+  #relatorio_financeiro .btn-export-icon { width:14px; height:14px; margin-right:4px; font-size:8px; }
+  #relatorio_financeiro .msg { margin-top:5px!important; font-size:9px!important; }
 }
 
 @media (max-width:560px) {
   .contas-pagar-page-actions, .recebiveis-page-actions, [class*="-page-actions"],
-  .relatorio-financeiro-filtros, .tarefas-filtro-grid, .ponto-ajustes-filtros,
+  .tarefas-filtro-grid, .ponto-ajustes-filtros,
   .atendimento-filtros { grid-template-columns:1fr!important; }
-  .stats-grid { grid-template-columns:1fr!important; }
+  .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+  #relatorio_financeiro .relatorio-financeiro-filtros { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+  #relatorio_financeiro .relatorio-financeiro-acoes { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
   .modal, [class*="-modal-card"], [class*="-sheet"] { max-width:calc(100vw - 16px)!important; }
 }
 

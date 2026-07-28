@@ -2922,11 +2922,22 @@ async function carregarRelatorioFinanceiro() {
   // a ausência de datas seja interpretada como "consultar todo o histórico".
   if (!periodoInicioInformado || !periodoFimInformado) {
     relatorioFinanceiroCache = [];
-    ['rfTotalGeral', 'rfTotalPago', 'rfTotalPendente', 'rfFaltaQuitar', 'rfTotalSomado', 'rfVariacaoOriginal']
+    ['rfTotalGeral', 'rfTotalPago', 'rfTotalPendente', 'rfTotalSomado', 'rfVariacaoOriginal']
       .forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento) elemento.textContent = formatarMoedaBRFinanceiro(0);
       });
+    let saldoTotalContas = 0;
+    try {
+      saldoTotalContas = await obterSaldoTotalContasFinanceiras();
+    } catch (erroSaldo) {
+      console.warn('Erro ao carregar saldo do cofre sem período no relatório:', erroSaldo);
+    }
+    if (seqRelFin !== window.__relFinSeq) return [];
+    const saldoContas = document.getElementById('rfSaldoContas');
+    if (saldoContas) saldoContas.textContent = formatarMoedaBRFinanceiro(saldoTotalContas);
+    window._contasFaltaCache = { totalPendente: 0, saldoTotalContas };
+    exibirResultadoQuitacao(0, saldoTotalContas, 'Saldo atual do cofre; informe um período para calcular a dívida');
     const quantidade = document.getElementById('rfQuantidadeTitulos');
     if (quantidade) quantidade.textContent = '0';
     listaDetalhes.innerHTML = '<div class="empty">Informe a data inicial e a data final para consultar os títulos.</div>';
