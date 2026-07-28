@@ -82,13 +82,11 @@ function renderizarCalendarioCofre() {
   const mesHoje = new Date().getMonth();
   const anoHoje = new Date().getFullYear();
 
-  let html = diasSemana.map(d => 
-    `<div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);padding:4px 0;">${d}</div>`
-  ).join('');
+  let html = diasSemana.map(d => `<div class="cofre-cal-weekday">${d}</div>`).join('');
 
   // Células vazias antes do dia 1
   for (let i = 0; i < primeiroDia; i++) {
-    html += `<div></div>`;
+    html += '<div class="cofre-cal-empty"></div>';
   }
 
   for (let dia = 1; dia <= totalDias; dia++) {
@@ -99,20 +97,16 @@ function renderizarCalendarioCofre() {
     const temPagar = ev?.pagar > 0;
 
     let dotHtml = '';
-    if (temRecebido || temFuturo) dotHtml += `<div style="width:5px;height:5px;border-radius:50%;background:var(--green,#22c55e);margin:0 1px;"></div>`;
-    if (temPagar) dotHtml += `<div style="width:5px;height:5px;border-radius:50%;background:var(--red,#ef4444);margin:0 1px;"></div>`;
-    if (temFuturo && !temRecebido) dotHtml = `<div style="width:5px;height:5px;border-radius:50%;background:var(--amber,#f59e0b);margin:0 1px;"></div>` + (temPagar ? dotHtml.replace('<div style="width:5px','<div style="width:5px') : '');
+    if (temRecebido) dotHtml += '<span class="cofre-cal-dot entrada"></span>';
+    if (temFuturo) dotHtml += '<span class="cofre-cal-dot futuro"></span>';
+    if (temPagar) dotHtml += '<span class="cofre-cal-dot saida"></span>';
 
-    const border = ehHoje ? '2px solid var(--accent)' : '1px solid var(--border)';
-    const bg = ehHoje ? 'var(--surface2)' : 'transparent';
-
-    html += `<div onclick="abrirDetalheDiaCofre(${dia})" style="cursor:pointer;border:${border};border-radius:6px;padding:4px 3px;background:${bg};min-height:44px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:background .15s;" 
-      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='${bg}'">
-      <div style="font-size:11px;font-weight:${ehHoje ? '700' : '400'};color:${ehHoje ? 'var(--accent)' : 'var(--text)'};">${dia}</div>
-      ${ev ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;">${dotHtml}</div>
-      ${temRecebido ? `<div style="font-size:9px;color:var(--green,#22c55e);white-space:nowrap;">${formatarMoedaBRFinanceiro(ev.recebido).replace('R$','')}</div>` : ''}
-      ${temFuturo ? `<div style="font-size:9px;color:var(--amber,#f59e0b);white-space:nowrap;">+${formatarMoedaBRFinanceiro(ev.futuro).replace('R$','')}</div>` : ''}
-      ${temPagar ? `<div style="font-size:9px;color:var(--red,#ef4444);white-space:nowrap;">-${formatarMoedaBRFinanceiro(ev.pagar).replace('R$','')}</div>` : ''}` : ''}
+    html += `<div class="cofre-cal-day${ehHoje ? ' hoje' : ''}" onclick="abrirDetalheDiaCofre(${dia})">
+      <div class="cofre-cal-number">${dia}</div>
+      ${ev ? `<div class="cofre-cal-dots">${dotHtml}</div>
+      ${temRecebido ? `<div class="cofre-cal-value entrada">${formatarMoedaBRFinanceiro(ev.recebido).replace('R$','')}</div>` : ''}
+      ${temFuturo ? `<div class="cofre-cal-value futuro">+${formatarMoedaBRFinanceiro(ev.futuro).replace('R$','')}</div>` : ''}
+      ${temPagar ? `<div class="cofre-cal-value saida">-${formatarMoedaBRFinanceiro(ev.pagar).replace('R$','')}</div>` : ''}` : ''}
     </div>`;
   }
 

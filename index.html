@@ -2318,15 +2318,15 @@
 
         <!-- Calendário financeiro do cofre -->
         <div class="card" id="cardCalendarioCofre">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="cofre-calendar-head">
             <div class="card-title" style="margin:0;">Calendário financeiro</div>
-            <div style="display:flex;gap:6px;align-items:center;">
+            <div class="cofre-calendar-nav">
               <button class="btn btn-ghost btn-sm" onclick="navegarCalendarioCofre(-1)">‹</button>
               <span id="labelMesCalendarioCofre" style="font-size:13px;font-weight:600;min-width:120px;text-align:center;"></span>
               <button class="btn btn-ghost btn-sm" onclick="navegarCalendarioCofre(1)">›</button>
             </div>
           </div>
-          <div id="calendarioCofre" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+          <div id="calendarioCofre"></div>
           <!-- Detalhe do dia selecionado -->
           <div id="detalheDiaCofre" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
             <div id="tituloDiaCofre" style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;"></div>
@@ -2782,6 +2782,7 @@
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-relatorio-adaptativo-v2">
 <link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-financeiro-responsivo-v1">
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260727-nova-conta-v1">
+<link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-cofre-v2">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3034,7 +3035,7 @@
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260727-status-vencimento"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260727-cofre-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>

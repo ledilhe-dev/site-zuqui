@@ -1,0 +1,92 @@
+/* Cofre reconstruído: desktop, notebook/tablet e celular. */
+#financeiro_cofre.pagina.ativa{width:100%!important;max-width:none!important;margin:0!important}
+#financeiro_cofre{--cv-gap:clamp(10px,.85vw,17px);--cv-radius:clamp(10px,.7vw,14px);--cv-control:clamp(40px,2.45vw,48px);--cv-text:clamp(13px,.8vw,17px);--cv-small:clamp(10px,.62vw,13px)}
+#financeiro_cofre>.page-title{font-size:clamp(20px,1.35vw,28px);margin-bottom:var(--cv-gap)}
+#financeiro_cofre>.card{width:100%;padding:clamp(14px,1.05vw,22px)!important;border-radius:var(--cv-radius)!important}
+#financeiro_cofre .cofre-overview{display:grid!important;grid-template-columns:minmax(420px,.85fr) minmax(520px,1.15fr)!important;gap:var(--cv-gap)!important;margin-bottom:var(--cv-gap)!important}
+#financeiro_cofre .cofre-saldo-principal,#financeiro_cofre .cofre-pizza-card{min-height:clamp(190px,13vw,260px)!important;border-radius:var(--cv-radius)!important}
+#financeiro_cofre .cofre-saldo-principal{padding:clamp(22px,1.7vw,34px)!important}
+#financeiro_cofre .cofre-saldo-principal .stat-label{font-size:clamp(15px,.95vw,20px)!important}
+#financeiro_cofre .cofre-saldo-principal .stat-value{font-size:clamp(48px,4vw,80px)!important}
+#financeiro_cofre .cofre-pizza-card{grid-template-columns:clamp(150px,10vw,195px) minmax(0,1fr)!important;padding:clamp(18px,1.4vw,28px)!important}
+#financeiro_cofre .cofre-pizza{width:clamp(145px,9.5vw,188px)!important}
+#financeiro_cofre .cofre-pizza-legenda-item,#financeiro_cofre .cofre-pizza-valor{font-size:var(--cv-text)!important}
+#financeiro_cofre #cardsCofreContas{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(245px,1fr))!important;gap:var(--cv-gap)!important;margin-bottom:var(--cv-gap)!important}
+#financeiro_cofre #cardsCofreContas .stat-card{min-height:clamp(115px,7.5vw,150px)!important;padding:clamp(14px,1vw,20px)!important;border-radius:var(--cv-radius)!important}
+#financeiro_cofre #cardsCofreContas .stat-label{font-size:var(--cv-small)!important}
+#financeiro_cofre #cardsCofreContas .stat-value{font-size:clamp(25px,1.75vw,36px)!important}
+
+#financeiro_cofre .cofre-toolbar{padding:clamp(13px,1vw,20px)!important}
+#financeiro_cofre .cofre-toolbar-row{display:grid!important;grid-template-columns:repeat(16,minmax(0,1fr))!important;gap:clamp(7px,.65vw,13px)!important;align-items:end!important}
+#financeiro_cofre .cofre-toolbar-title{grid-column:span 1;align-self:center;font-size:var(--cv-text)!important}
+#financeiro_cofre .cofre-toolbar-row>.date-filter-standard{grid-column:span 5;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important}
+#financeiro_cofre .date-filter-standard label{min-width:0!important}
+#financeiro_cofre .date-filter-standard label>span{display:block;margin-bottom:5px;font-size:var(--cv-small)!important;white-space:nowrap}
+#financeiro_cofre .date-filter-standard input,#financeiro_cofre .date-filter-standard select{width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important;border-radius:10px!important}
+#financeiro_cofre .cofre-toolbar-row>.date-filter-original-hidden{display:none!important}
+#financeiro_cofre .cofre-toolbar-row>.btn{grid-column:span 1;width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important;border-radius:10px!important}
+#financeiro_cofre .cofre-futuros{grid-column:span 1;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important}
+#financeiro_cofre .cofre-lojas{grid-column:span 2;width:100%!important;min-width:0!important}
+#financeiro_cofre .cofre-toolbar-actions{grid-column:span 4;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+#financeiro_cofre .cofre-toolbar-actions .btn{width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important;border-radius:10px!important}
+#financeiro_cofre #msgCofreFinanceiro{margin-top:8px;font-size:var(--cv-small)!important}
+
+#financeiro_cofre #cardCalendarioCofre{padding:clamp(14px,1.05vw,22px)!important}
+#financeiro_cofre .cofre-calendar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+#financeiro_cofre .cofre-calendar-head .card-title{margin:0;font-size:clamp(13px,.85vw,18px)!important}
+#financeiro_cofre .cofre-calendar-nav{display:grid;grid-template-columns:42px minmax(130px,180px) 42px;gap:7px;align-items:center}
+#financeiro_cofre .cofre-calendar-nav .btn{min-height:38px!important;font-size:16px!important}
+#financeiro_cofre #labelMesCalendarioCofre{font-size:var(--cv-text)!important;font-weight:700;text-align:center}
+#financeiro_cofre #calendarioCofre{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:clamp(4px,.4vw,8px)!important}
+#financeiro_cofre .cofre-cal-weekday{text-align:center;padding:6px 0;color:var(--text-muted);font-size:var(--cv-small);font-weight:700}
+#financeiro_cofre .cofre-cal-empty{min-height:1px}
+#financeiro_cofre .cofre-cal-day{min-height:clamp(68px,5vw,100px);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:clamp(5px,.45vw,9px);cursor:pointer;border:1px solid var(--border);border-radius:9px;background:transparent;transition:border-color .15s,background .15s,transform .15s}
+#financeiro_cofre .cofre-cal-day:hover{background:var(--surface2);border-color:var(--border-bright);transform:translateY(-1px)}
+#financeiro_cofre .cofre-cal-day.hoje{border:2px solid var(--accent);background:var(--surface2)}
+#financeiro_cofre .cofre-cal-number{font-size:clamp(11px,.72vw,15px);color:var(--text)}
+#financeiro_cofre .cofre-cal-day.hoje .cofre-cal-number{color:var(--accent);font-weight:800}
+#financeiro_cofre .cofre-cal-dots{display:flex;justify-content:center;flex-wrap:wrap}
+#financeiro_cofre .cofre-cal-dot{width:6px;height:6px;margin:0 1px;border-radius:50%}
+#financeiro_cofre .cofre-cal-dot.entrada{background:var(--green,#22c55e)}
+#financeiro_cofre .cofre-cal-dot.futuro{background:var(--amber,#f59e0b)}
+#financeiro_cofre .cofre-cal-dot.saida{background:var(--red,#ef4444)}
+#financeiro_cofre .cofre-cal-value{font-size:clamp(9px,.58vw,12px);white-space:nowrap}
+#financeiro_cofre .cofre-cal-value.entrada{color:var(--green,#22c55e)}
+#financeiro_cofre .cofre-cal-value.futuro{color:var(--amber,#f59e0b)}
+#financeiro_cofre .cofre-cal-value.saida{color:var(--red,#ef4444)}
+
+@media(max-width:1500px){
+ #financeiro_cofre .cofre-toolbar-row{grid-template-columns:repeat(12,minmax(0,1fr))!important}
+ #financeiro_cofre .cofre-toolbar-title{grid-column:span 1}
+ #financeiro_cofre .cofre-toolbar-row>.date-filter-standard{grid-column:span 5}
+ #financeiro_cofre .cofre-lojas{grid-column:span 2}
+ #financeiro_cofre .cofre-toolbar-actions{grid-column:span 12}
+}
+@media(max-width:1000px){
+ #financeiro_cofre{--cv-control:38px;--cv-text:12px;--cv-small:9px}
+ #financeiro_cofre .cofre-overview{grid-template-columns:1fr 1fr!important}
+ #financeiro_cofre .cofre-toolbar-row{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+ #financeiro_cofre .cofre-toolbar-title{grid-column:span 6}
+ #financeiro_cofre .cofre-toolbar-row>.date-filter-standard{grid-column:span 6}
+ #financeiro_cofre .cofre-toolbar-row>.btn{grid-column:span 2}
+ #financeiro_cofre .cofre-futuros,#financeiro_cofre .cofre-lojas{grid-column:span 3}
+ #financeiro_cofre .cofre-toolbar-actions{grid-column:span 6}
+}
+@media(max-width:700px){
+ #financeiro_cofre{--cv-gap:7px;--cv-radius:9px;--cv-control:34px;--cv-text:10px;--cv-small:8px}
+ #financeiro_cofre>.card{padding:9px!important}
+ #financeiro_cofre .cofre-overview{grid-template-columns:1fr!important}
+ #financeiro_cofre .cofre-saldo-principal{min-height:125px!important}
+ #financeiro_cofre .cofre-saldo-principal .stat-value{font-size:clamp(34px,10vw,46px)!important}
+ #financeiro_cofre .cofre-pizza-card{min-height:145px!important;grid-template-columns:105px minmax(0,1fr)!important;padding:11px!important}
+ #financeiro_cofre .cofre-pizza{width:100px!important}
+ #financeiro_cofre #cardsCofreContas{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #financeiro_cofre #cardsCofreContas .stat-card{min-height:88px!important;padding:9px!important}
+ #financeiro_cofre .cofre-toolbar-row>.date-filter-standard{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #financeiro_cofre .date-filter-criterion-field{grid-column:1/-1}
+ #financeiro_cofre .cofre-calendar-head{align-items:stretch;flex-direction:column}
+ #financeiro_cofre .cofre-calendar-nav{grid-template-columns:36px minmax(0,1fr) 36px}
+ #financeiro_cofre #calendarioCofre{gap:3px!important;overflow-x:auto}
+ #financeiro_cofre .cofre-cal-day{min-height:58px;padding:4px 2px;border-radius:6px}
+ #financeiro_cofre .cofre-cal-value{font-size:7px}
+}

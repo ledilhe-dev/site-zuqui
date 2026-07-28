@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v110-nova-conta-responsiva';
+const CACHE_NAME = 'check-diario-pwa-v111-cofre-responsivo';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
