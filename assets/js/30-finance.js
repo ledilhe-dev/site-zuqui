@@ -2341,7 +2341,8 @@ async function recalcularFaltaQuitar() {
   // Buscar recebimentos futuros pendentes ? restritos ?s lojas marcadas no
   // filtro do pr?prio relat?rio (mesmo mecanismo do Cofre).
   try {
-    const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasRelatorioFinanceiro');
+    const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || obterLojaAtualParaIsolamento?.() || '').trim();
+    const lojasPermitidasIds = lojaAtualId ? [lojaAtualId] : [];
     if (!Array.isArray(lojasPermitidasIds) || !lojasPermitidasIds.length) {
       exibirResultadoQuitacao(totalPendente, saldoTotalContas, 'N?o foi poss?vel identificar a loja para somar os futuros');
       return;

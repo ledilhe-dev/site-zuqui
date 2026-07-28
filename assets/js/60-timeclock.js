@@ -2415,17 +2415,15 @@ function obterFiltrosRodapeRelatorioFinanceiro() {
   const fornecedor = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor', 'Todos os fornecedores');
   const categoria = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria', 'Todas as categorias');
   const forma = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma', 'Todas as formas');
-  const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasRelatorioFinanceiro');
-  const lojas = lojasSelecionadas.length
-    ? lojasSelecionadas.map(id => obterNomeLojaFiltroMultiLoja(id)).filter(Boolean).join(', ')
-    : 'Todas';
+  const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || obterLojaAtualParaIsolamento?.() || '').trim();
+  const lojas = obterNomeLojaFiltroMultiLoja(lojaAtualId) || 'Loja atual';
   return [
     `Vencimento: ${inicio ? formatarDataBRFinanceiro(inicio) : '-'} até ${fim ? formatarDataBRFinanceiro(fim) : '-'}`,
     `Status: ${status}`,
     `Fornecedor: ${fornecedor}`,
     `Categoria: ${categoria}`,
     `Forma: ${forma}`,
-    `Lojas: ${lojas}`,
+    `Loja: ${lojas}`,
   ].join(' | ');
 }
 
@@ -2907,8 +2905,8 @@ async function carregarRelatorioFinanceiro() {
   // Evita renders concorrentes (causa do "piscar"): só a chamada mais recente
   // conclui a renderização; chamadas antigas são abandonadas após cada await.
   const seqRelFin = (window.__relFinSeq = (window.__relFinSeq || 0) + 1);
-  renderizarFiltroLojasCheckbox('filtroLojasRelatorioFinanceiro', 'carregarRelatorioFinanceiro()');
-  const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasRelatorioFinanceiro');
+  const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || obterLojaAtualParaIsolamento?.() || '').trim();
+  const lojasSelecionadas = lojaAtualId ? [lojaAtualId] : [];
   const statusSelecionadosAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), statusSelecionadosAtuais);
 
@@ -2980,7 +2978,9 @@ async function carregarRelatorioFinanceiro() {
         .from('contasapagar')
         .select('id, fornecedor_id, categoria_id, data_compra, data_vencimento, data_pagamento, valor_original, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, numero_parcela, created_at, updated_at, criado_por_nome, excluido_em, excluido_por_nome, loja_id, fornecedores(nome, grupo_id), formas_pagamento(id, nome)')
         .order('data_vencimento', { ascending: false });
-      if (lojasSelecionadas.length) query = query.in('loja_id', lojasSelecionadas);
+      query = lojasSelecionadas.length
+        ? query.in('loja_id', lojasSelecionadas)
+        : query.eq('loja_id', '__sem_loja__');
       if (filtroDataInicioConsulta) query = query.gte(colunaDataConsulta, filtroDataInicioConsulta);
       if (filtroDataFimConsulta) query = query.lte(colunaDataConsulta,
         ['created_at', 'updated_at'].includes(colunaDataConsulta) ? `${filtroDataFimConsulta}T23:59:59.999` : filtroDataFimConsulta);

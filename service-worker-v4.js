@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v100-mobile-financeiro';
+const CACHE_NAME = 'check-diario-pwa-v101-relatorio-mobile-grid';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

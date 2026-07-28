@@ -638,7 +638,6 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_financeiro') {
     const somentePagamentosDivergentes = document.getElementById('relFinanceiroSomenteDivergentes');
     if (somentePagamentosDivergentes) somentePagamentosDivergentes.checked = false;
-    renderizarFiltroLojasCheckbox('filtroLojasRelatorioFinanceiro', 'carregarRelatorioFinanceiro()');
     carregarRelatorioFinanceiro();
     Promise.all([carregarGruposFornecedor(), carregarCategoriasCompra()]);
   }

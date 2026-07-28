@@ -1460,7 +1460,6 @@
         <div class="page-title">Relatório de contas a pagar</div>
 
         <div class="card">
-          <div id="filtroLojasRelatorioFinanceiro" class="multi-loja-filter" style="margin-bottom:10px"></div>
           <div class="relatorio-financeiro-filtros">
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroDataInicio">Vencimento inicial</label>
@@ -1492,7 +1491,6 @@
               <label class="campo-label" for="filtroRelFinanceiroForma">Forma de pagamento</label>
               <div id="filtroRelFinanceiroForma" class="relatorio-check-filter"></div>
             </div>
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioFinanceiro()">Hoje</button>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioFinanceiro()" title="Mantém o período e limpa status, fornecedor, grupo, categoria e forma de pagamento">✕ Limpar filtros</button>
           </div>
@@ -1500,6 +1498,7 @@
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(7)">Próx. 7d</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(15)">Próx. 15d</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(30)">Próx. 30d</button>
+            <button class="btn btn-green relatorio-financeiro-filtrar" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:8px;">
               <input type="checkbox" id="contasSomarFuturosAcoes" style="margin:0;" onchange="recalcularFaltaQuitar()">
               Somar receb. futuros
@@ -2791,7 +2790,7 @@
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
-<link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-mobile-compacto-financeiro">
+<link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-relatorio-mobile-grid">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3033,14 +3032,14 @@
 <script src="./assets/js/01-core-supabase.js?v=20260720-modais-do-sistema"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
-<script src="./assets/js/04-navigation.js?v=20260727-relatorio-pagamentos-divergentes"></script>
+<script src="./assets/js/04-navigation.js?v=20260727-relatorio-loja-atual"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260722-valor-efetivamente-pago"></script>
 <script src="./assets/js/10-dashboard.js?v=20260711-isolamento-loja-dashboard"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260720-pin-ou-senha"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260725-resumo-titulos-divisoes"></script>
+<script src="./assets/js/30-finance.js?v=20260727-futuros-loja-atual"></script>
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js"></script>
@@ -3050,7 +3049,7 @@
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=3.2.15"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260727-saldo-cofre-periodo"></script>
+<script src="./assets/js/60-timeclock.js?v=20260727-relatorio-mobile-loja"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
