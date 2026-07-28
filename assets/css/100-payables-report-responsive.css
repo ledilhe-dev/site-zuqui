@@ -104,9 +104,21 @@
   border-radius: var(--rf-radius) !important;
 }
 
+#relatorio_financeiro .fornecedor-multi-search {
+  display: block !important;
+  width: 100% !important;
+  overflow: hidden;
+}
+
 #relatorio_financeiro .fornecedor-multi-search-input,
 #relatorio_financeiro .relatorio-financeiro-filtrar {
   font-size: var(--rf-text) !important;
+}
+
+#relatorio_financeiro .fornecedor-multi-search-input {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
 }
 
 #relatorio_financeiro .relatorio-financeiro-exportacoes {

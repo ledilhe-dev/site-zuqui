@@ -2236,7 +2236,6 @@ function renderizarCheckboxFiltroRelatorioFinanceiro(containerId, opcoes = [], v
   const cabecalho = pesquisaFornecedor
     ? `<div class="fornecedor-multi-search">
         <input class="relatorio-check-filter-query fornecedor-multi-search-input" type="search" autocomplete="off" placeholder="Digite o fornecedor" aria-label="Pesquisar fornecedor" onfocus="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')" oninput="filtrarOpcoesCheckboxRelatorioFinanceiro(this, '${containerId}')" onkeydown="if(event.key==='Escape'){this.closest('.relatorio-check-filter')?.classList.remove('is-open'); this.blur(); atualizarResumoCheckboxFiltroRelatorioFinanceiro('${containerId}');}">
-        <button class="fornecedor-multi-search-toggle" type="button" aria-label="Abrir fornecedores" onclick="event.stopPropagation(); alternarDropdownCheckboxFiltroRelatorioFinanceiro('${containerId}')">▾</button>
       </div>`
     : somenteExibicao
       ? `<button class="relatorio-check-filter-head relatorio-check-filter-button" type="button" onclick="alternarDropdownCheckboxFiltroRelatorioFinanceiro('${containerId}')">
