@@ -2766,17 +2766,21 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     });
     const linhas = Object.values(grupos)
       .sort((a, b) => (b.pago + b.pendente) - (a.pago + a.pendente));
-    lista.innerHTML = resumoExcluidos + '<div class="lista">' + linhas.map(g => `
+    lista.innerHTML = resumoExcluidos + `
+      <div class="rf-grupo-cabecalho" aria-hidden="true">
+        <span>Fornecedor</span>
+        <span>Pago</span>
+        <span>Em aberto</span>
+        <span>Total</span>
+        <span>Títulos</span>
+      </div>
+      <div class="lista rf-grupo-lista">` + linhas.map(g => `
       <div class="item rf-grupo-item">
-        <div class="item-info">
-          <div class="item-nome">${escaparHtmlBasico(g.nome)}</div>
-          <div class="item-detalhe">Pago: ${formatarMoedaBRFinanceiro(g.pago)}</div>
-        </div>
-        <div class="rf-grupo-resumo-lateral">
-          <span class="rf-grupo-valor rf-grupo-aberto"><small>Em aberto</small><strong>${formatarMoedaBRFinanceiro(g.pendente)}</strong></span>
-          <span class="rf-grupo-valor rf-grupo-total"><small>Total</small><strong>${formatarMoedaBRFinanceiro(g.pago + g.pendente)}</strong></span>
-          <span class="tag rf-grupo-qtd">${g.qtd} título(s)</span>
-        </div>
+        <strong class="rf-grupo-fornecedor">${escaparHtmlBasico(g.nome)}</strong>
+        <span class="rf-grupo-pago">${formatarMoedaBRFinanceiro(g.pago)}</span>
+        <span class="rf-grupo-aberto">${formatarMoedaBRFinanceiro(g.pendente)}</span>
+        <span class="rf-grupo-total">${formatarMoedaBRFinanceiro(g.pago + g.pendente)}</span>
+        <strong class="rf-grupo-qtd">${g.qtd}</strong>
       </div>
     `).join('') + '</div>';
     return;
