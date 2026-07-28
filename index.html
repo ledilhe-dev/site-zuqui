@@ -2307,9 +2307,9 @@
             </label>
             <div id="filtroLojasCofreFinanceiro" class="multi-loja-filter cofre-lojas"></div>
             <div class="cofre-toolbar-actions">
-              <button class="btn btn-green btn-sm" id="btnToggleExtratoCofre" onclick="toggleExtratoCofre()">Extrato</button>
-              <button class="btn btn-ghost btn-sm" onclick="exportarExtratoCofreCsv()">CSV</button>
-              <button class="btn btn-ghost btn-sm" onclick="exportarExtratoCofrePdf()">PDF</button>
+              <button class="btn btn-green btn-sm cofre-toggle-extrato" id="btnToggleExtratoCofre" onclick="toggleExtratoCofre()"><span class="cofre-action-icon">▤</span><span>Exibir extrato</span></button>
+              <button class="btn btn-ghost btn-sm cofre-export-excel" onclick="exportarExtratoCofreCsv()"><span class="btn-export-icon excel">X</span><span>Excel</span></button>
+              <button class="btn btn-ghost btn-sm cofre-export-pdf" onclick="exportarExtratoCofrePdf()"><span class="btn-export-icon pdf">PDF</span><span>PDF</span></button>
               <button class="btn btn-amber btn-sm" id="btnAbrirAjusteSaldoCofre" onclick="abrirModalAjusteSaldoCofre()">Ajustar</button>
             </div>
           </div>
@@ -2782,7 +2782,7 @@
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
 <link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-financeiro-responsivo-v1">
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260727-nova-conta-v2">
-<link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-cofre-v2">
+<link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-cofre-acoes-v3">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3034,7 +3034,7 @@
 <script src="./assets/js/30-finance.js?v=20260727-futuros-loja-atual"></script>
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
-<script src="./assets/js/40-login-preferences.js"></script>
+<script src="./assets/js/40-login-preferences.js?v=20260727-cofre-acoes-v3"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260727-cofre-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>

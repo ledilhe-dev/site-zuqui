@@ -399,7 +399,10 @@ function atualizarEstadoExtratoCofre() {
   const card = document.getElementById('cardExtratoCofre');
   const btn = document.getElementById('btnToggleExtratoCofre');
   if (card) card.hidden = !cofreExtratoVisivel;
-  if (btn) btn.textContent = cofreExtratoVisivel ? 'Ocultar extrato' : 'Exibir extrato';
+  if (btn) {
+    btn.innerHTML = `<span class="cofre-action-icon">▤</span><span>${cofreExtratoVisivel ? 'Ocultar extrato' : 'Exibir extrato'}</span>`;
+    btn.setAttribute('aria-expanded', String(cofreExtratoVisivel));
+  }
 }
 
 function toggleExtratoCofre() {

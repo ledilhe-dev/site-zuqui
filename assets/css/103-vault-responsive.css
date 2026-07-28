@@ -24,11 +24,14 @@
 #financeiro_cofre .date-filter-standard label>span{display:block;margin-bottom:5px;font-size:var(--cv-small)!important;white-space:nowrap}
 #financeiro_cofre .date-filter-standard input,#financeiro_cofre .date-filter-standard select{width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important;border-radius:10px!important}
 #financeiro_cofre .cofre-toolbar-row>.date-filter-original-hidden{display:none!important}
+#financeiro_cofre .cofre-period-separator{display:none!important}
 #financeiro_cofre .cofre-toolbar-row>.btn{grid-column:span 1;width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important;border-radius:10px!important}
 #financeiro_cofre .cofre-futuros{grid-column:span 1;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important}
 #financeiro_cofre .cofre-lojas{grid-column:span 2;width:100%!important;min-width:0!important}
-#financeiro_cofre .cofre-toolbar-actions{grid-column:span 4;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
-#financeiro_cofre .cofre-toolbar-actions .btn{width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important;border-radius:10px!important}
+#financeiro_cofre .cofre-toolbar-actions{grid-column:span 4;display:grid!important;grid-template-columns:minmax(135px,1.45fr) repeat(2,minmax(78px,.8fr)) minmax(88px,1fr)!important;gap:7px!important}
+#financeiro_cofre .cofre-toolbar-actions .btn{display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;padding-inline:8px!important;font-size:var(--cv-text)!important;border-radius:10px!important;white-space:nowrap!important}
+#financeiro_cofre .cofre-action-icon{font-size:16px;line-height:1;color:currentColor}
+#financeiro_cofre .cofre-toolbar-actions .btn-export-icon{flex:0 0 auto;margin:0!important}
 #financeiro_cofre #msgCofreFinanceiro{margin-top:8px;font-size:var(--cv-small)!important}
 
 #financeiro_cofre #cardCalendarioCofre{padding:clamp(14px,1.05vw,22px)!important}
@@ -89,4 +92,6 @@
  #financeiro_cofre #calendarioCofre{gap:3px!important;overflow-x:auto}
  #financeiro_cofre .cofre-cal-day{min-height:58px;padding:4px 2px;border-radius:6px}
  #financeiro_cofre .cofre-cal-value{font-size:7px}
+ #financeiro_cofre .cofre-toolbar-actions{grid-template-columns:minmax(112px,1.45fr) repeat(2,minmax(58px,.75fr)) minmax(70px,1fr)!important}
+ #financeiro_cofre .cofre-toolbar-actions .btn{gap:4px!important;padding-inline:5px!important}
 }
