@@ -32,6 +32,31 @@ input, select, textarea, button { max-width:100%; }
   width:34px; height:36px; padding:0; border:0; border-left:1px solid var(--border);
   background:transparent; color:var(--text-muted); cursor:pointer;
 }
+#relatorio_financeiro .rf-grupo-item {
+  display:grid; grid-template-columns:minmax(150px,1fr) auto; align-items:center;
+  gap:10px; min-height:48px; padding-block:7px;
+}
+#relatorio_financeiro .rf-grupo-item .item-info { min-width:0; }
+#relatorio_financeiro .rf-grupo-item .item-nome { margin-bottom:2px; }
+#relatorio_financeiro .rf-grupo-resumo-lateral {
+  display:flex; align-items:center; justify-content:flex-end; gap:6px; min-width:0;
+}
+#relatorio_financeiro .rf-grupo-valor {
+  display:grid; grid-template-columns:auto auto; align-items:center; gap:4px;
+  min-height:25px; padding:3px 7px; border:1px solid; border-radius:7px;
+  white-space:nowrap; font-size:9px; line-height:1;
+}
+#relatorio_financeiro .rf-grupo-valor small {
+  font-size:7px; font-weight:700; text-transform:uppercase; letter-spacing:.35px;
+}
+#relatorio_financeiro .rf-grupo-valor strong { font-size:9px; }
+#relatorio_financeiro .rf-grupo-aberto {
+  color:#fb923c; border-color:rgba(249,115,22,.5); background:rgba(124,45,18,.18);
+}
+#relatorio_financeiro .rf-grupo-total {
+  color:#60a5fa; border-color:rgba(59,130,246,.5); background:rgba(30,64,175,.16);
+}
+#relatorio_financeiro .rf-grupo-qtd { margin-left:2px; white-space:nowrap; }
 
 /* Telas muito grandes: conteúdo legível sem caixas infinitamente esticadas. */
 @media (min-width:1921px) {

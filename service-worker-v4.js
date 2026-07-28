@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v104-controles-centralizados';
+const CACHE_NAME = 'check-diario-pwa-v105-resumo-lateral';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
