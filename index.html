@@ -2578,7 +2578,7 @@
     <div class="nc-grid-2 nc-venc-parcelas-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
 
       <!-- Dias para vencimento -->
-      <div>
+      <div class="nc-due-days-field">
         <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Dias p/ vencimento <span style="color:var(--red)">*</span></div>
         <input type="number" id="ncVencDia" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
@@ -2588,7 +2588,7 @@
       </div>
 
       <!-- Qtda Parcelas -->
-      <div>
+      <div class="nc-installments-field">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
           <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Qtda parcelas <span style="color:var(--red)">*</span></div>
           <button type="button" id="ncToggleParcelado" class="btn btn-ghost btn-sm" style="min-height:28px;padding:4px 8px;font-size:10px;border-radius:8px;" onclick="ncSetParcelado(!NC.parcelado)">Parcelar</button>
@@ -2779,9 +2779,9 @@
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-grade-agrupada-fornecedores">
-<link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-relatorio-adaptativo-v2">
+<link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
 <link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-financeiro-responsivo-v1">
-<link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260727-nova-conta-v1">
+<link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260727-nova-conta-v2">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-cofre-v2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3041,7 +3041,7 @@
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=3.2.15"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260727-relatorio-adaptativo-v2"></script>
+<script src="./assets/js/60-timeclock.js?v=20260727-fornecedor-v3"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
@@ -3234,6 +3234,6 @@
 </html>
 
 
-<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260727-nova-conta-v1"></script>
+<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260727-nova-conta-v2"></script>
 
 <script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js"></script>

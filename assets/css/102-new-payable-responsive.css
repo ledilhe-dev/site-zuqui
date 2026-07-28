@@ -9,8 +9,14 @@
 #ncSheet .nc-sheet-close:hover{border-color:var(--border-bright)!important;color:var(--text)!important}
 #ncSheet .nc-sheet-body{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;align-content:start;gap:clamp(10px,.9vw,16px)!important;width:100%;padding:clamp(14px,1.25vw,24px)!important;overflow-y:auto!important}
 #ncSheet .nc-sheet-body>div{grid-column:span 12;min-width:0}
-#ncSheet .nc-valor-compra-row,#ncSheet .nc-venc-parcelas-row{grid-column:span 6!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:clamp(10px,.8vw,15px)!important}
-#ncSheet .nc-vencimento-wrap,#ncModoParcelasWrap{grid-column:span 6!important}
+#ncSheet .nc-valor-compra-row{grid-column:span 6!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:clamp(10px,.8vw,15px)!important}
+#ncSheet .nc-venc-parcelas-row{display:contents!important}
+#ncSheet .nc-venc-parcelas-row>div,#ncSheet .nc-vencimento-wrap{grid-column:span 4!important;min-width:0}
+#ncSheet #ncModoParcelasWrap{grid-column:span 6!important}
+#ncSheet .nc-due-days-field,#ncSheet .nc-installments-field,#ncSheet .nc-vencimento-wrap{display:flex;flex-direction:column}
+#ncSheet .nc-due-days-field>div:first-child,#ncSheet .nc-installments-field>div:first-child,#ncSheet .nc-vencimento-wrap .nc-label-action-row{min-height:34px!important;display:flex!important;align-items:center!important;margin-bottom:6px!important}
+#ncSheet .nc-installments-field>div:first-child,#ncSheet .nc-vencimento-wrap .nc-label-action-row{justify-content:space-between!important}
+#ncSheet .nc-due-days-field>input,#ncSheet .nc-installments-field>input,#ncSheet .nc-vencimento-wrap>input{margin-top:auto!important}
 #ncSheet .nc-sheet-body [style*="text-transform:uppercase"]{font-size:clamp(10px,.65vw,13px)!important;letter-spacing:.45px!important}
 #ncSheet .nc-sheet-body input{min-height:clamp(42px,2.8vw,52px)!important;font-size:clamp(13px,.85vw,17px)!important;border-radius:11px!important}
 #ncSheet #ncFornSel{min-height:clamp(58px,4vw,72px);border-radius:12px!important}
@@ -32,7 +38,9 @@
  #ncOverlay.nc-overlay{padding:0;align-items:stretch}
  #ncSheet.nc-sheet{width:100%!important;max-width:none!important;height:100%!important;border:0!important;border-radius:0!important}
  #ncSheet .nc-sheet-body{display:flex!important;flex-direction:column!important;padding:14px 16px!important;gap:10px!important}
- #ncSheet .nc-valor-compra-row,#ncSheet .nc-venc-parcelas-row{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #ncSheet .nc-valor-compra-row{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #ncSheet .nc-venc-parcelas-row{display:grid!important;width:100%;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #ncSheet .nc-venc-parcelas-row>div,#ncSheet .nc-vencimento-wrap{width:100%;grid-column:auto!important}
  #ncSheet #ncCatGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;max-height:none}
 }
 @media(max-width:520px){

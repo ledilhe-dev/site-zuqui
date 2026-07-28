@@ -316,6 +316,9 @@ function ncSelCat(el) {
   document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o => o.classList.remove('nc-sel'));
   el.classList.add('nc-sel'); NC.catId = el.dataset.id || null;
   const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
+  const busca = document.getElementById('ncCatBusca');
+  if (busca) busca.value = '';
+  ncFiltrarCategorias('');
 }
 
 // ── Fornecedor ──────────────────────────────────────────────────
