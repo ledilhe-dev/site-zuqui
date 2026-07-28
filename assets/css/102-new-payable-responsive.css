@@ -330,9 +330,54 @@
   #ncSheet .nc-valor-compra-row,
   #ncSheet .nc-venc-parcelas-row {
     display: grid !important;
-    grid-template-columns: 1fr !important;
     width: 100% !important;
     gap: 11px !important;
+  }
+
+  #ncSheet .nc-valor-compra-row {
+    grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr) !important;
+    gap: 8px !important;
+  }
+
+  #ncSheet .nc-valor-compra-row > div {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  #ncSheet .nc-venc-parcelas-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  #ncSheet #ncValor,
+  #ncSheet #ncDataCompra {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 7px 8px !important;
+  }
+
+  #ncSheet #ncValor {
+    font-size: 13px !important;
+  }
+
+  #ncSheet #ncDataCompra {
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: clamp(10px, 3.05vw, 13px) !important;
+    line-height: 1 !important;
+    text-align: center !important;
+  }
+
+  #ncSheet #ncDataCompra::-webkit-date-and-time-value,
+  #ncSheet #ncDataCompra::-webkit-datetime-edit {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
   }
 
   #ncSheet .nc-category-section {
@@ -392,6 +437,16 @@
 
   #ncSheet #ncCatGrid {
     grid-template-columns: 1fr !important;
+  }
+
+  #ncSheet .nc-valor-compra-row {
+    grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr) !important;
+    gap: 6px !important;
+  }
+
+  #ncSheet #ncValor,
+  #ncSheet #ncDataCompra {
+    padding-inline: 6px !important;
   }
 
   #ncSheet .nc-sheet-actions {
