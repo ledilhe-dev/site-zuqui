@@ -1153,8 +1153,8 @@
               <option value="50">50 por página</option>
               <option value="100">100 por página</option>
             </select>
-            <button class="btn btn-green" onclick="aplicarFunilExecucoesComReset()">Filtrar</button>
             <button class="btn btn-ghost" onclick="resetFiltroData()">Hoje</button>
+            <button class="btn btn-green" onclick="aplicarFunilExecucoesComReset()">Filtrar</button>
           </div>
           <div class="msg" id="msgExecucoes"></div>
         </div>
@@ -1331,8 +1331,8 @@
             <input id="filtroPontoDataFim" type="date">
             <input id="filtroPontoHoraInicio" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora inicial">
             <input id="filtroPontoHoraFim" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora final">
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioPonto()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioPonto()">Hoje</button>
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioPonto()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioPonto"></div>
         </div>
@@ -1367,8 +1367,8 @@
             </select>
             <input id="filtroPontoAjusteDataInicio" type="date" title="Data inicial">
             <input id="filtroPontoAjusteDataFim" type="date" title="Data final">
-            <button class="btn btn-green" type="button" onclick="carregarAjustesPonto()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroAjustesPonto()">Pendentes</button>
+            <button class="btn btn-green" type="button" onclick="carregarAjustesPonto()">Filtrar</button>
           </div>
           <div class="msg" id="msgPontoAjustes"></div>
         </div>
@@ -1399,8 +1399,8 @@
               <option value="">- Todos os responsáveis -</option>
             </select>
             <input id="filtroLancamentoBusca" type="text" placeholder="Buscar por tarefa, checklist, observação ou ator">
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioLancamentos()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioLancamentos()">Hoje</button>
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioLancamentos()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioLancamentos"></div>
         </div>
@@ -1437,8 +1437,8 @@
             <select id="filtroTarefasCadResponsavel">
               <option value="">- Responsável (todos) -</option>
             </select>
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioTarefasCadastradas()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioTarefasCadastradas()">Limpar</button>
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioTarefasCadastradas()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioTarefasCad"></div>
         </div>
@@ -1588,7 +1588,6 @@
                 <option value="">- Todos os usuários -</option>
               </select>
             </div>
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioRecebimentos()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioRecebimentos()">Hoje</button>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioRecebimentos()">Limpar filtros</button>
           </div>
@@ -1606,6 +1605,7 @@
             </label>
             <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioRecebimentosCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
             <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioRecebimentosPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
+            <button class="btn btn-green relatorio-recebimentos-filtrar" type="button" onclick="carregarRelatorioRecebimentos()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioRecebimentos"></div>
         </div>
@@ -1709,8 +1709,8 @@
               <label class="campo-label" for="filtroRelAjusteSaldoBuscaMotivo">Buscar motivo</label>
               <input id="filtroRelAjusteSaldoBuscaMotivo" type="text" placeholder="Digite parte do motivo do ajuste">
             </div>
-            <button class="btn btn-green" id="btnFiltrarRelAjusteSaldo" type="button" onclick="carregarRelatorioAjusteSaldo()">Filtrar</button>
             <button class="btn btn-ghost" id="btnHojeRelAjusteSaldo" type="button" onclick="resetFiltroRelatorioAjusteSaldo()">Hoje</button>
+            <button class="btn btn-green" id="btnFiltrarRelAjusteSaldo" type="button" onclick="carregarRelatorioAjusteSaldo()">Filtrar</button>
           </div>
           <div class="relatorio-financeiro-acoes">
             <button class="btn btn-ghost btn-export-excel" id="btnExportarExcelRelAjusteSaldo" type="button" onclick="exportarRelatorioAjusteSaldoCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
@@ -2776,7 +2776,7 @@
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-enquadramento-global">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
-<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-sem-filtro-lojas">
+<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-filtros-ordenados">
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260727-nova-conta-v3">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 
