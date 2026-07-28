@@ -2068,7 +2068,9 @@ function atualizarResumoCheckboxFiltroRelatorioFinanceiro(containerId) {
   const resumo = container?.querySelector('.relatorio-check-filter-summary');
   const consulta = container?.querySelector('.relatorio-check-filter-query');
   const textoResumo = obterResumoCheckboxFiltroRelatorioFinanceiro(containerId);
-  const placeholderConsulta = textoResumo === 'Todos' ? 'Consultar...' : textoResumo;
+  const placeholderConsulta = textoResumo === 'Todos'
+    ? String(container.dataset.placeholder || 'Todos').trim()
+    : textoResumo;
   if (resumo) resumo.textContent = textoResumo;
   if (consulta && !container.classList.contains('is-open')) {
     consulta.value = '';
@@ -2414,7 +2416,6 @@ function obterFiltrosRodapeRelatorioFinanceiro() {
   const status = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', 'Todos os status');
   const fornecedor = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor', 'Todos os fornecedores');
   const categoria = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria', 'Todas as categorias');
-  const forma = obterRotulosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma', 'Todas as formas');
   const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || obterLojaAtualParaIsolamento?.() || '').trim();
   const lojas = obterNomeLojaFiltroMultiLoja(lojaAtualId) || 'Loja atual';
   return [
@@ -2422,7 +2423,6 @@ function obterFiltrosRodapeRelatorioFinanceiro() {
     `Status: ${status}`,
     `Fornecedor: ${fornecedor}`,
     `Categoria: ${categoria}`,
-    `Forma: ${forma}`,
     `Loja: ${lojas}`,
   ].join(' | ');
 }
@@ -2833,14 +2833,12 @@ function resetFiltroRelatorioFinanceiro() {
   const campoDataFim = document.getElementById('filtroRelFinanceiroDataFim');
   const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
   const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
-  const campoForma = document.getElementById('filtroRelFinanceiroForma');
 
   const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_financeiro', hojeLocal, hojeLocal, 'vencimento') === true;
   if (!sincronizouData && campoDataInicio) campoDataInicio.value = hojeLocal;
   if (!sincronizouData && campoDataFim) campoDataFim.value = hojeLocal;
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
-  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
 
   carregarRelatorioFinanceiro();
@@ -2850,10 +2848,7 @@ function limparFiltrosRelatorioFinanceiro() {
   // Mantém o período (vencimento inicial/final) e limpa todos os demais filtros.
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
-  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
-  const campoGrupo = document.getElementById('filtroRelFinanceiroGrupo');
-  if (campoGrupo) campoGrupo.value = '';
   const somenteDivergentes = document.getElementById('relFinanceiroSomenteDivergentes');
   if (somenteDivergentes) somenteDivergentes.checked = false;
 
@@ -2874,7 +2869,6 @@ async function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
   const campoDataFim = document.getElementById('filtroRelFinanceiroDataFim');
   const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
   const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
-  const campoForma = document.getElementById('filtroRelFinanceiroForma');
 
   const dataFimAtalho = somarDiasDataLocal(hojeLocal, intervalo);
   const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_financeiro', hojeLocal, dataFimAtalho, 'vencimento') === true;
@@ -2884,7 +2878,6 @@ async function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
     renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), ['a_vencer', 'vencida']);
   }
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
-  marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
 
   const itens = await carregarRelatorioFinanceiro();
@@ -2899,7 +2892,6 @@ async function carregarRelatorioFinanceiro() {
   const campoDataFim = document.getElementById('filtroRelFinanceiroDataFim');
   const campoStatus = document.getElementById('filtroRelFinanceiroStatus');
   const campoFornecedor = document.getElementById('filtroRelFinanceiroFornecedor');
-  const campoForma = document.getElementById('filtroRelFinanceiroForma');
 
   if (!listaDetalhes || !listaFornecedores || !listaFormas) return;
   // Evita renders concorrentes (causa do "piscar"): só a chamada mais recente
@@ -2909,6 +2901,29 @@ async function carregarRelatorioFinanceiro() {
   const lojasSelecionadas = lojaAtualId ? [lojaAtualId] : [];
   const statusSelecionadosAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus', STATUS_OPCOES_RELATORIO_FINANCEIRO.slice(1), statusSelecionadosAtuais);
+
+  // Os filtros precisam estar disponíveis antes de o usuário informar o
+  // período e clicar em Filtrar.
+  if (!(fornecedoresFinanceiroCache || []).length && typeof carregarFornecedoresFinanceiro === 'function') {
+    try { await carregarFornecedoresFinanceiro(); } catch (_) {}
+  }
+  if (!(categoriasCompraCache || []).length && typeof carregarCategoriasCompra === 'function') {
+    try { await carregarCategoriasCompra(); } catch (_) {}
+  }
+  if (seqRelFin !== window.__relFinSeq) return [];
+  const fornecedoresSelecionadosIniciais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
+  const fornecedoresIniciais = (fornecedoresFinanceiroCache || [])
+    .filter(item => !lojaAtualId || String(item.loja_id || '').trim() === lojaAtualId)
+    .map(item => ({ valor: String(item.id || '').trim(), rotulo: String(item.nome || 'Fornecedor').trim() }))
+    .filter(item => item.valor)
+    .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor', fornecedoresIniciais, fornecedoresSelecionadosIniciais);
+  const categoriasSelecionadasIniciais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
+  const categoriasIniciais = [
+    { valor: '__sem__', rotulo: 'Sem categoria' },
+    ...(categoriasCompraCache || []).map(item => ({ valor: String(item.id), rotulo: String(item.nome || '').trim() })),
+  ].sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
+  renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria', categoriasIniciais, categoriasSelecionadasIniciais);
 
   const filtroDataPadronizado = document.querySelector('#relatorio_financeiro .date-filter-standard');
   const campoDataInicioVisivel = filtroDataPadronizado?.querySelector('.date-filter-start') || campoDataInicio;
@@ -3028,19 +3043,6 @@ async function carregarRelatorioFinanceiro() {
     }
     renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor', fornecedoresOpcoes, fornecedoresSelecionadosAtuais);
 
-    const formasSelecionadasAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
-    const formasOpcoes = [...new Map(rows
-      .map(item => {
-        const nomeForma = obterNomeFormaRelatorioFinanceiro(item);
-        const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
-        const chave = formaId || nomeForma;
-        return { valor: chave, rotulo: nomeForma, idForma: formaId };
-      })
-      .filter(item => item.valor && item.rotulo !== 'Nao informado')
-      .map(item => [item.valor, item])).values()]
-      .sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'pt-BR'));
-    renderizarCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma', formasOpcoes, formasSelecionadasAtuais);
-
     // Categoria (multi-seleção): "Sem categoria" é uma opção fixa, pois representa
     // lançamentos sem categoria_id e não um cadastro da tabela de categorias.
     const categoriasSelecionadasAtuais = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
@@ -3054,9 +3056,7 @@ async function carregarRelatorioFinanceiro() {
     const filtroDataFim = periodoFimInformado;
     const filtrosStatus = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
     const filtrosFornecedor = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
-    const filtrosForma = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroForma');
     const filtrosCategoria = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
-    const filtroGrupo = String(document.getElementById('filtroRelFinanceiroGrupo')?.value || '').trim();
     const somenteDivergentes = document.getElementById('relFinanceiroSomenteDivergentes')?.checked === true;
     const elTotalGeral = document.getElementById('rfTotalGeral');
     const elTotalPago = document.getElementById('rfTotalPago');
@@ -3086,10 +3086,7 @@ async function carregarRelatorioFinanceiro() {
     const itensFiltrados = rows.filter(item => {
       const status = obterStatusContaRelatorioFinanceiro(item);
       const fornecedorId = String(item.fornecedor_id || '').trim();
-      const formaId = String(item.forma_pagamento_id || item.formas_pagamento?.id || '').trim();
-      const formaNome = obterNomeFormaRelatorioFinanceiro(item);
       const categoriaId = String(item.categoria_id || '').trim() || '__sem__';
-      const grupoId = String(item.fornecedores?.grupo_id || '').trim();
       const datasFiltro = {
         compra:item.data_compra, vencimento:item.data_vencimento, pagamento:item.data_pagamento || item.pago_confirmado_em,
         cadastro:item.created_at, atualizacao:item.updated_at
@@ -3100,9 +3097,7 @@ async function carregarRelatorioFinanceiro() {
       if (filtroDataFim && (!dataReferencia || dataReferencia > filtroDataFim)) return false;
       if (filtrosStatus.length && !filtrosStatus.includes(status)) return false;
       if (filtrosFornecedor.length && !filtrosFornecedor.includes(fornecedorId)) return false;
-      if (filtrosForma.length && !filtrosForma.includes(formaId || formaNome)) return false;
       if (filtrosCategoria.length && !filtrosCategoria.includes(categoriaId)) return false;
-      if (filtroGrupo && grupoId !== filtroGrupo) return false;
       if (somenteDivergentes) {
         if (status !== 'pago') return false;
         const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
