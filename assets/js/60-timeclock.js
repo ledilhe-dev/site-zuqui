@@ -2067,11 +2067,13 @@ function atualizarResumoCheckboxFiltroRelatorioFinanceiro(containerId) {
   const container = document.getElementById(containerId);
   const resumo = container?.querySelector('.relatorio-check-filter-summary');
   const consulta = container?.querySelector('.relatorio-check-filter-query');
+  const exibicao = container?.querySelector('.relatorio-check-filter-display');
   const textoResumo = obterResumoCheckboxFiltroRelatorioFinanceiro(containerId);
   const placeholderConsulta = textoResumo === 'Todos'
     ? String(container.dataset.placeholder || 'Todos').trim()
     : textoResumo;
   if (resumo) resumo.textContent = textoResumo;
+  if (exibicao) exibicao.textContent = placeholderConsulta;
   if (consulta && !container.classList.contains('is-open')) {
     consulta.value = '';
     consulta.placeholder = placeholderConsulta;
@@ -2175,7 +2177,7 @@ function abrirDropdownCheckboxRelatorioFinanceiro(containerId) {
 
 function posicionarDropdownCheckboxRelatorioFinanceiro(containerId) {
   const container = document.getElementById(containerId);
-  const head = container?.querySelector('.relatorio-check-filter-head');
+  const head = container?.querySelector('.relatorio-check-filter-head, .fornecedor-multi-search');
   const panel = container?.querySelector('.relatorio-check-filter-panel');
   if (!container || !head || !panel) return;
   const rect = head.getBoundingClientRect();
@@ -2216,6 +2218,8 @@ function renderizarCheckboxFiltroRelatorioFinanceiro(containerId, opcoes = [], v
   if (!container) return;
   prepararEventosCheckboxRelatorioFinanceiro();
   const valores = new Set((Array.isArray(valoresAtuais) ? valoresAtuais : [valoresAtuais]).map(valor => String(valor || '').trim()).filter(Boolean));
+  const somenteExibicao = container.dataset.displayOnly === 'true';
+  const pesquisaFornecedor = containerId === 'filtroRelFinanceiroFornecedor';
   const opcoesComTodos = opcoes.filter(item => String(item.valor || '').trim());
   const temValorValido = opcoesComTodos.some(item => valores.has(String(item.valor || '').trim()));
   const htmlOpcoes = opcoesComTodos.map((item, idx) => {
@@ -2229,12 +2233,23 @@ function renderizarCheckboxFiltroRelatorioFinanceiro(containerId, opcoes = [], v
       </label>
     `;
   }).join('');
+  const cabecalho = pesquisaFornecedor
+    ? `<div class="fornecedor-multi-search">
+        <input class="relatorio-check-filter-query fornecedor-multi-search-input" type="search" autocomplete="off" placeholder="Digite o fornecedor" aria-label="Pesquisar fornecedor" onfocus="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')" oninput="filtrarOpcoesCheckboxRelatorioFinanceiro(this, '${containerId}')" onkeydown="if(event.key==='Escape'){this.closest('.relatorio-check-filter')?.classList.remove('is-open'); this.blur(); atualizarResumoCheckboxFiltroRelatorioFinanceiro('${containerId}');}">
+        <button class="fornecedor-multi-search-toggle" type="button" aria-label="Abrir fornecedores" onclick="event.stopPropagation(); alternarDropdownCheckboxFiltroRelatorioFinanceiro('${containerId}')">▾</button>
+      </div>`
+    : somenteExibicao
+      ? `<button class="relatorio-check-filter-head relatorio-check-filter-button" type="button" onclick="alternarDropdownCheckboxFiltroRelatorioFinanceiro('${containerId}')">
+        <span class="relatorio-check-filter-display"></span>
+        <span class="relatorio-check-filter-arrow">▾</span>
+      </button>`
+      : `<div class="relatorio-check-filter-head" onclick="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')">
+        <input class="relatorio-check-filter-query" type="search" autocomplete="off" onfocus="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')" oninput="filtrarOpcoesCheckboxRelatorioFinanceiro(this, '${containerId}')" onkeydown="if(event.key==='Escape'){this.closest('.relatorio-check-filter')?.classList.remove('is-open'); this.blur(); atualizarResumoCheckboxFiltroRelatorioFinanceiro('${containerId}');}">
+        <span class="relatorio-check-filter-summary"></span>
+        <span class="relatorio-check-filter-arrow">▾</span>
+      </div>`;
   container.innerHTML = `
-    <div class="relatorio-check-filter-head" onclick="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')">
-      <input class="relatorio-check-filter-query" type="search" autocomplete="off" onfocus="abrirDropdownCheckboxRelatorioFinanceiro('${containerId}')" oninput="filtrarOpcoesCheckboxRelatorioFinanceiro(this, '${containerId}')" onkeydown="if(event.key==='Escape'){this.closest('.relatorio-check-filter')?.classList.remove('is-open'); this.blur(); atualizarResumoCheckboxFiltroRelatorioFinanceiro('${containerId}');}">
-      <span class="relatorio-check-filter-summary"></span>
-      <span class="relatorio-check-filter-arrow">▾</span>
-    </div>
+    ${cabecalho}
     <div class="relatorio-check-filter-panel" onclick="event.stopPropagation()">
       <label class="relatorio-check-filter-todos" style="border-bottom:1px solid var(--border);font-weight:600;">
         <input type="checkbox" onchange="alternarTodosCheckboxRelatorioFinanceiro('${containerId}', this.checked); ${acaoChange}">

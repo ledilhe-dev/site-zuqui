@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v102-filtros-financeiros';
+const CACHE_NAME = 'check-diario-pwa-v103-controles-financeiros';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

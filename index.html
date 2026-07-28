@@ -1471,20 +1471,15 @@
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroStatus">Status</label>
-              <div id="filtroRelFinanceiroStatus" class="relatorio-check-filter" data-placeholder="Todos"></div>
+              <div id="filtroRelFinanceiroStatus" class="relatorio-check-filter relatorio-multi-moderno" data-placeholder="Todos" data-display-only="true"></div>
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroCategoria">Categoria</label>
-              <div id="filtroRelFinanceiroCategoria" class="relatorio-check-filter" data-placeholder="Todas"></div>
-            </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="filtroRelFinanceiroFornecedor">Pesquisar fornecedor</label>
-              <div id="filtroRelFinanceiroFornecedor" class="relatorio-check-filter relatorio-fornecedor-pesquisa" data-placeholder="Digite o fornecedor"></div>
+              <div id="filtroRelFinanceiroCategoria" class="relatorio-check-filter relatorio-multi-moderno" data-placeholder="Todas" data-display-only="true"></div>
             </div>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioFinanceiro()">Hoje</button>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioFinanceiro()" title="Mantém o período e limpa status, fornecedor e categoria">✕ Limpar filtros</button>
           </div>
-          <button class="btn btn-green relatorio-financeiro-filtrar" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
           <div class="relatorio-financeiro-acoes">
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(7)">Próx. 7d</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(15)">Próx. 15d</button>
@@ -1501,6 +1496,15 @@
               <input type="checkbox" id="relFinanceiroSomenteDivergentes" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
               Pagamentos divergentes
             </label>
+          </div>
+          <div class="relatorio-financeiro-aplicar">
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelFinanceiroFornecedor">Pesquisar fornecedor</label>
+              <div id="filtroRelFinanceiroFornecedor" class="relatorio-check-filter relatorio-fornecedor-pesquisa" data-placeholder="Digite o fornecedor"></div>
+            </div>
+            <button class="btn btn-green relatorio-financeiro-filtrar" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
+          </div>
+          <div class="relatorio-financeiro-exportacoes">
             <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioFinanceiroCsv()"><span class="btn-export-icon">X</span>Excel</button>
             <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioFinanceiroPdf()"><span class="btn-export-icon">PDF</span>PDF</button>
           </div>
@@ -2780,7 +2784,7 @@
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
-<link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-filtros-financeiros-ordenados">
+<link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-controles-financeiros-refeitos">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3039,7 +3043,7 @@
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=3.2.15"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260727-multifiltros-fornecedor"></script>
+<script src="./assets/js/60-timeclock.js?v=20260727-fornecedor-multibusca"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
