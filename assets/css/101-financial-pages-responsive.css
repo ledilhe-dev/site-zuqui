@@ -39,7 +39,6 @@
 #financeiro_cofre .cofre-period-separator{color:var(--text-muted);text-align:center}
 #financeiro_cofre .cofre-toolbar input[type=date],#financeiro_cofre .cofre-toolbar .btn{width:100%!important;height:var(--fc)!important;min-height:var(--fc)!important;padding:6px 9px!important;font-size:var(--ft)!important;border-radius:var(--fr)!important}
 #financeiro_cofre .cofre-futuros{display:flex;align-items:center;justify-content:center;gap:6px;min-height:var(--fc);font-size:var(--ft);white-space:nowrap}
-#financeiro_cofre .cofre-lojas{min-width:0}
 #financeiro_cofre .cofre-toolbar-actions{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:6px}
 #financeiro_cofre #cardCalendarioCofre,#financeiro_cofre #cardExtratoCofre{font-size:var(--ft)}
 
@@ -48,7 +47,6 @@
  #relatorio_recebimentos .relatorio-financeiro-acoes,#relatorio_recebimentos #cardsRelatorioRecebimentos{grid-template-columns:repeat(4,minmax(0,1fr))!important}
  #financeiro_cofre .cofre-toolbar-row{grid-template-columns:repeat(6,minmax(0,1fr))}
  #financeiro_cofre .cofre-toolbar-title{grid-column:span 6}
- #financeiro_cofre .cofre-lojas{grid-column:span 2}
  #financeiro_cofre .cofre-toolbar-actions{grid-column:span 4}
 }
 @media(max-width:700px){
@@ -67,7 +65,7 @@
  #financeiro_cofre #cardsCofreContas{grid-template-columns:repeat(2,minmax(0,1fr))!important}
  #financeiro_cofre .cofre-toolbar-row{grid-template-columns:repeat(6,minmax(0,1fr))}
  #financeiro_cofre .cofre-toolbar-title{grid-column:span 6}
- #financeiro_cofre .cofre-toolbar-row>input[type=date],#financeiro_cofre .cofre-futuros,#financeiro_cofre .cofre-lojas{grid-column:span 3}
+ #financeiro_cofre .cofre-toolbar-row>input[type=date],#financeiro_cofre .cofre-futuros{grid-column:span 3}
  #financeiro_cofre .cofre-period-separator{display:none}
  #financeiro_cofre .cofre-toolbar-row>.btn{grid-column:span 2}
  #financeiro_cofre .cofre-toolbar-actions{grid-column:span 6;grid-template-columns:repeat(4,minmax(0,1fr))}

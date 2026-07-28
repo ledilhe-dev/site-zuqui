@@ -11,9 +11,11 @@ async function carregarFuncionarios() {
   atualizarSelectLojasFuncionario();
   const lista = document.getElementById('listaFuncionarios');
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
-  renderizarFiltroLojasCheckbox('filtroLojasFuncionarios', 'carregarFuncionarios()');
-  const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasFuncionarios');
-  const todasLojasSelecionadas = document.querySelector('#filtroLojasFuncionarios [data-multi-loja-todas]')?.checked === true;
+  const lojaSessaoFiltroId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const lojasSelecionadas = lojaSessaoFiltroId
+    ? [lojaSessaoFiltroId]
+    : obterLojasDisponiveisParaFiltroMultiLoja().map(loja => String(loja.id || '')).filter(Boolean);
+  const todasLojasSelecionadas = !lojaSessaoFiltroId;
   const termoBusca = String(document.getElementById('buscaFuncionarios')?.value || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 

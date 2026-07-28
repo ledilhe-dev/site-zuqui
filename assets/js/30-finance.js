@@ -766,9 +766,9 @@ function aplicarFiltroLojasFinanceirasPermitidas(query, lojasPermitidasIds = nul
   return query;
 }
 
-function obterIdsLojasSelecionadasFiltroFinanceiroPage(containerId = '') {
-  const ids = obterIdsLojasSelecionadasFiltroMultiLoja(containerId || '');
-  return ids.length ? ids : obterIdsLojasFinanceirasPermitidas();
+function obterIdsLojasFinanceiroDaSessao() {
+  const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  return lojaSessaoId ? [lojaSessaoId] : obterIdsLojasFinanceirasPermitidas();
 }
 
 function limparFormularioContaFinanceira() {
@@ -786,7 +786,7 @@ async function carregarContasFinanceiras({ render = true, silencioso = false } =
   const lista = document.getElementById('listaContasFinanceiras');
   if (render && lista) lista.innerHTML = '<div class="empty">Carregando...</div>';
 
-  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasContasFinanceiras');
+  const lojasPermitidasIds = obterIdsLojasFinanceiroDaSessao();
   const { data, error } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('contas_financeiras')
@@ -984,7 +984,7 @@ async function carregarExtratoContaFinanceira() {
   const filtroConta = String(document.getElementById('filtroExtratoContaFinanceira')?.value || '').trim();
   const filtroBusca = textoFinanceiroNormalizado(document.getElementById('filtroExtratoContaBusca')?.value || '');
 
-  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasContasFinanceiras');
+  const lojasPermitidasIds = obterIdsLojasFinanceiroDaSessao();
   let query = sb
     .from('contas_financeiras_movimentacoes')
     .select('id, conta_financeira_id, recebivel_id, tipo, valor, descricao, saldo_apos, created_at, contas_financeiras(nome), recebiveis(id, fornecedores(nome), formas_pagamento(nome))')

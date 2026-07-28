@@ -35,14 +35,14 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=20260722-valor-efetivamente-pago">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=20260727-sem-filtro-lojas">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
 <link id="topbar-admin-panel-indicator" rel="stylesheet" href="./assets/css/11-topbar-admin.css">
 
 <link id="obsidian-precision-design-system-v3" rel="stylesheet" href="./assets/css/12-design-system.css">
-<link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css">
+<link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css?v=20260727-sem-filtro-lojas">
 <link id="integracoes-financeiras-style" rel="stylesheet" href="./assets/css/97-financial-integrations.css?v=20260725-categoria-divisao-inline">
 <link id="atendimento-estatisticas-style" rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260724">
 
@@ -694,7 +694,6 @@
 
         <div class="card">
           <div class="card-title">Funcionários cadastrados</div>
-          <div id="filtroLojasFuncionarios" class="multi-loja-filter" style="margin-bottom:10px"></div>
           <input id="buscaFuncionarios" type="search" placeholder="Buscar por nome, e-mail ou perfil..." autocomplete="off"
             style="width:100%;margin-bottom:10px;"
             oninput="debounceConsumo('busca_funcionarios', () => carregarFuncionarios(), 180)">
@@ -1878,7 +1877,6 @@
             <button class="btn btn-ghost btn-sm" type="button" id="btnAgruparParcelas" onclick="toggleAgruparParcelasContaAPagar()" title="Agrupar parcelas do mesmo lançamento em um único card" style="display:flex;align-items:center;justify-content:center;gap:4px;">📦 Agrupar</button>
             <label class="filter-field-standard contas-pagar-fornecedor"><span>Fornecedor</span><input id="filtroContaAPagarFornecedor" data-filter-labeled="true" type="text" placeholder="Nome do fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)"></label>
           </div>
-          <div id="filtroLojasContasAPagarFinanceiro" class="multi-loja-filter" style="margin-top:8px"></div>
           <div class="form-row financeiro-filtros-row financeiro-selecao-contas-row" id="acoesSelecaoContasAPagarFinanceiro" style="margin-top:8px">
             <button class="btn btn-ghost" id="btnSelecionarTodasContasAPagarFinanceiro" type="button" onclick="toggleSelecionarTodasContasAPagarFinanceiro()">Marcar todos</button>
             <button class="btn btn-red" id="btnExcluirContasAPagarSelecionadasFinanceiro" type="button" onclick="excluirContasAPagarSelecionadasFinanceiro()" disabled>Excluir selecionadas</button>
@@ -2050,7 +2048,6 @@
 
         <div class="card">
           <div class="card-title">Contas cadastradas</div>
-          <div id="filtroLojasContasFinanceiras" class="multi-loja-filter" style="margin-top:8px"></div>
           <div id="listaContasFinanceiras"><div class="empty">Carregando...</div></div>
         </div>
 
@@ -2305,7 +2302,6 @@
               <input type="checkbox" id="cofreSomarFuturos" onchange="carregarCofreFinanceiro()">
               + Futuros
             </label>
-            <div id="filtroLojasCofreFinanceiro" class="multi-loja-filter cofre-lojas"></div>
             <div class="cofre-toolbar-actions">
               <button class="btn btn-green btn-sm cofre-toggle-extrato" id="btnToggleExtratoCofre" onclick="toggleExtratoCofre()"><span class="cofre-action-icon">▤</span><span>Exibir extrato</span></button>
               <button class="btn btn-ghost btn-sm cofre-export-excel" onclick="exportarExtratoCofreCsv()"><span class="btn-export-icon excel">X</span><span>Excel</span></button>
@@ -2780,9 +2776,9 @@
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-grade-agrupada-fornecedores">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
-<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-financeiro-responsivo-v1">
+<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-sem-filtro-lojas">
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260727-nova-conta-v2">
-<link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-cofre-acoes-v3">
+<link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3024,18 +3020,18 @@
 <script src="./assets/js/01-core-supabase.js?v=20260720-modais-do-sistema"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
-<script src="./assets/js/04-navigation.js?v=20260727-relatorio-loja-atual"></script>
-<script src="./assets/js/05-shared-helpers.js?v=20260722-valor-efetivamente-pago"></script>
+<script src="./assets/js/04-navigation.js?v=20260727-sem-filtro-lojas"></script>
+<script src="./assets/js/05-shared-helpers.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/10-dashboard.js?v=20260711-isolamento-loja-dashboard"></script>
 <script src="./assets/js/20-checklists.js"></script>
-<script src="./assets/js/21-employees.js?v=20260720-pin-ou-senha"></script>
+<script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260727-futuros-loja-atual"></script>
+<script src="./assets/js/30-finance.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/33-financial-integrations.js?v=20260719-fase-1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260727-cofre-acoes-v3"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260727-cofre-v2"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>

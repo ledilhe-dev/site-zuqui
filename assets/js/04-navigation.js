@@ -653,7 +653,6 @@ function abrirPagina(id, botao) {
   if (id === 'financeiro_contasapagar') {
     limparFormularioContaAPagarFinanceiro();
     resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel: false });
-    renderizarFiltroLojasCheckbox('filtroLojasContasAPagarFinanceiro', 'carregarContasAPagarFinanceiro()');
     carregarFornecedoresFinanceiro();
     carregarContasAPagarFinanceiro();
     Promise.all([carregarGruposFornecedor(), carregarCategoriasCompra()]);
@@ -664,7 +663,6 @@ function abrirPagina(id, botao) {
   }
   if (id === 'financeiro_conta_financeira') {
     limparFormularioContaFinanceira();
-    renderizarFiltroLojasCheckbox('filtroLojasContasFinanceiras', 'carregarContasFinanceiras(); carregarExtratoContaFinanceira()');
     carregarContasFinanceiras();
     carregarExtratoContaFinanceira();
   }
@@ -684,12 +682,10 @@ function abrirPagina(id, botao) {
     iniciarTelaPreferidaLogin();
   }
   if (id === 'financeiro_cofre') {
-    renderizarFiltroLojasCheckbox('filtroLojasCofreFinanceiro', 'carregarCofreFinanceiro()');
     carregarCofreFinanceiro();
   }
   if (id === 'funcionarios') {
     limparFormularioFuncionario();
-    renderizarFiltroLojasCheckbox('filtroLojasFuncionarios', 'carregarFuncionarios()');
     carregarFuncionarios();
     carregarSelectPerfisFuncionario();
   }

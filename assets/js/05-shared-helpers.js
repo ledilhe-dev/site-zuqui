@@ -1203,65 +1203,6 @@ function obterLojasDisponiveisParaFiltroMultiLoja() {
   return Array.from(mapa.values()).sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
 }
 
-function renderizarFiltroLojasCheckbox(containerId = '', onChange = '') {
-  const container = document.getElementById(containerId);
-  if (!container) return [];
-  const lojas = obterLojasDisponiveisParaFiltroMultiLoja();
-  const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  const lojaSessaoAnterior = String(container.dataset.lojaSessaoId || '').trim();
-  const houveTrocaLojaSessao = !!lojaSessaoId && lojaSessaoAnterior && lojaSessaoAnterior !== lojaSessaoId;
-  const selecionadasAntes = houveTrocaLojaSessao
-    ? new Set()
-    : new Set(Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(input => String(input.value || '')));
-  const selecionadas = selecionadasAntes.size ? selecionadasAntes : new Set(lojaSessaoId ? [lojaSessaoId] : lojas.map(loja => loja.id));
-  const handler = String(onChange || '').trim() || 'void 0';
-
-  if (!lojas.length) {
-    container.innerHTML = '<span class="multi-loja-filter-title">Lojas</span><span class="item-detalhe">Nenhuma loja disponível.</span>';
-    return [];
-  }
-
-  const todasMarcadas = lojas.every(loja => selecionadas.has(String(loja.id)));
-  container.innerHTML = [
-    '<span class="multi-loja-filter-title">Lojas</span>',
-    `<label><input type="checkbox" data-multi-loja-todas="1" ${todasMarcadas ? 'checked' : ''} onchange="toggleTodasLojasFiltroMultiLoja('${escaparHtmlBasico(containerId)}', this.checked); ${handler}">Todas</label>`,
-    ...lojas.map(loja => `
-      <label title="${escaparHtmlBasico(loja.nome)}">
-        <input type="checkbox" value="${escaparHtmlBasico(loja.id)}" ${selecionadas.has(String(loja.id)) ? 'checked' : ''} onchange="sincronizarTodasLojasFiltroMultiLoja('${escaparHtmlBasico(containerId)}'); ${handler}">
-        ${escaparHtmlBasico(loja.nome)}
-      </label>
-    `),
-  ].join('');
-  container.dataset.lojaSessaoId = lojaSessaoId;
-  return lojas;
-}
-
-function sincronizarTodasLojasFiltroMultiLoja(containerId = '') {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const lojas = Array.from(container.querySelectorAll('input[type="checkbox"][value]'));
-  const todas = container.querySelector('[data-multi-loja-todas]');
-  if (todas) todas.checked = !!lojas.length && lojas.every(input => input.checked);
-}
-
-function toggleTodasLojasFiltroMultiLoja(containerId = '', marcado = false) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.querySelectorAll('input[type="checkbox"][value]').forEach(input => {
-    input.checked = !!marcado;
-  });
-}
-
-function obterIdsLojasSelecionadasFiltroMultiLoja(containerId = '') {
-  const container = document.getElementById(containerId);
-  const ids = container
-    ? Array.from(container.querySelectorAll('input[type="checkbox"][value]:checked')).map(input => String(input.value || '').trim()).filter(Boolean)
-    : [];
-  if (ids.length) return [...new Set(ids)];
-  const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  return lojaSessaoId ? [lojaSessaoId] : [];
-}
-
 function obterNomeLojaFiltroMultiLoja(lojaId = '') {
   const id = String(lojaId || '').trim();
   if (!id) return '';

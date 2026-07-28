@@ -27,8 +27,7 @@
 #financeiro_cofre .cofre-period-separator{display:none!important}
 #financeiro_cofre .cofre-toolbar-row>.btn{grid-column:span 1;width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important;border-radius:10px!important}
 #financeiro_cofre .cofre-futuros{grid-column:span 1;min-height:var(--cv-control)!important;font-size:var(--cv-text)!important}
-#financeiro_cofre .cofre-lojas{grid-column:span 2;width:100%!important;min-width:0!important}
-#financeiro_cofre .cofre-toolbar-actions{grid-column:span 4;display:grid!important;grid-template-columns:minmax(135px,1.45fr) repeat(2,minmax(78px,.8fr)) minmax(88px,1fr)!important;gap:7px!important}
+#financeiro_cofre .cofre-toolbar-actions{grid-column:span 6;display:grid!important;grid-template-columns:minmax(135px,1.45fr) repeat(2,minmax(78px,.8fr)) minmax(88px,1fr)!important;gap:7px!important}
 #financeiro_cofre .cofre-toolbar-actions .btn{display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;width:100%!important;height:var(--cv-control)!important;min-height:var(--cv-control)!important;padding-inline:8px!important;font-size:var(--cv-text)!important;border-radius:10px!important;white-space:nowrap!important}
 #financeiro_cofre .cofre-action-icon{font-size:16px;line-height:1;color:currentColor}
 #financeiro_cofre .cofre-toolbar-actions .btn-export-icon{flex:0 0 auto;margin:0!important}
@@ -62,7 +61,6 @@
  #financeiro_cofre .cofre-toolbar-row{grid-template-columns:repeat(12,minmax(0,1fr))!important}
  #financeiro_cofre .cofre-toolbar-title{grid-column:span 1}
  #financeiro_cofre .cofre-toolbar-row>.date-filter-standard{grid-column:span 5}
- #financeiro_cofre .cofre-lojas{grid-column:span 2}
  #financeiro_cofre .cofre-toolbar-actions{grid-column:span 12}
 }
 @media(max-width:1000px){
@@ -72,7 +70,7 @@
  #financeiro_cofre .cofre-toolbar-title{grid-column:span 6}
  #financeiro_cofre .cofre-toolbar-row>.date-filter-standard{grid-column:span 6}
  #financeiro_cofre .cofre-toolbar-row>.btn{grid-column:span 2}
- #financeiro_cofre .cofre-futuros,#financeiro_cofre .cofre-lojas{grid-column:span 3}
+ #financeiro_cofre .cofre-futuros{grid-column:span 3}
  #financeiro_cofre .cofre-toolbar-actions{grid-column:span 6}
 }
 @media(max-width:700px){

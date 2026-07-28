@@ -843,11 +843,6 @@
   border-radius: 8px !important;
   font-size: 12px !important;
   }
-  #financeiro_contasapagar #filtroLojasContasAPagarFinanceiro {
-  margin-top: 6px !important;
-  padding: 8px 10px !important;
-  min-height: 0 !important;
-  }
   #financeiro_contasapagar .financeiro-selecao-contas-row {
   grid-template-columns: 166px 186px minmax(0, 1fr) !important;
   margin-top: 6px !important;

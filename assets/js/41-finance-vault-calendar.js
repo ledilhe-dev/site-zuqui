@@ -11,7 +11,6 @@ function navegarCalendarioCofre(delta) {
 }
 
 async function carregarDadosCalendarioCofre() {
-  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasCofreFinanceiro');
   try {
     // Buscar recebíveis confirmados (movimentações de entrada)
     // Sem suspender filtros: cada tabela já filtra por loja/empresa da sessão,
@@ -170,7 +169,7 @@ async function carregarCofreFinanceiro() {
   }
   window.__cofrePeriodoInicializado = true;
 
-  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasCofreFinanceiro');
+  const lojasPermitidasIds = obterIdsLojasFinanceiroDaSessao();
   const filtroInicio = String(document.getElementById('filtroCofreDataInicio')?.value || '').trim();
   const filtroFim = String(document.getElementById('filtroCofreDataFim')?.value || '').trim();
   const filtroDataTipoCofre = String(document.querySelector('#financeiro_cofre .date-filter-criterion')?.value || 'especial:movimento').replace('especial:', '');
@@ -1319,7 +1318,6 @@ function toggleAgruparParcelasContaAPagar() {
 async function carregarContasAPagarFinanceiro() {
   const lista = document.getElementById('listaContasAPagarFinanceiro');
   if (!lista) return;
-  renderizarFiltroLojasCheckbox('filtroLojasContasAPagarFinanceiro', 'carregarContasAPagarFinanceiro()');
   const filtroBuscaBruto = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
   const filtroFornecedorBruto = String(document.getElementById('filtroContaAPagarFornecedor')?.value || '').trim();
   const filtroCadastroInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarCadastroInicio');
@@ -1327,7 +1325,7 @@ async function carregarContasAPagarFinanceiro() {
   const filtroVencimentoInicio = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoInicio');
   const filtroVencimentoFim = obterDataISOFiltroContaAPagar('filtroContaAPagarVencimentoFim');
   const filtroDataTipo = String(document.getElementById('filtroContaAPagarDataTipo')?.value || 'cadastro').replace('especial:', '');
-  const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasContasAPagarFinanceiro');
+  const lojasSelecionadas = obterIdsLojasFinanceiroDaSessao();
   if (filtroBuscaBruto || filtroFornecedorBruto || filtroCadastroInicio || filtroCadastroFim || filtroVencimentoInicio || filtroVencimentoFim || filtroContaAPagarCategoriasSelecionadas.size) contasAPagarListaVisivel = true;
   atualizarEstadoListaContasAPagarFinanceiro();
   lista.innerHTML = '<div class="empty">Carregando...</div>';
