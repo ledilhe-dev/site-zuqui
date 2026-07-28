@@ -1,0 +1,47 @@
+/* Nova conta: layout responsivo isolado. */
+#ncOverlay.nc-overlay{display:none;position:fixed;inset:0;z-index:9700;background:rgba(2,10,20,.88);backdrop-filter:blur(8px);padding:clamp(0px,2vw,28px);align-items:center;justify-content:center}
+#ncSheet.nc-sheet{display:flex!important;flex-direction:column!important;width:min(1180px,100%)!important;max-width:1180px!important;height:min(940px,100%)!important;margin:auto!important;overflow:hidden!important;border:1px solid var(--border)!important;border-radius:clamp(0px,1vw,18px)!important;background:var(--bg)!important;box-shadow:0 24px 80px rgba(0,0,0,.45)}
+#ncSheet>.nc-sheet-head{flex:0 0 auto;padding:clamp(13px,1vw,20px) clamp(16px,1.4vw,26px)!important;background:var(--surface);border-bottom:1px solid var(--border)}
+#ncSheet .nc-sheet-handle{width:42px;height:4px;border-radius:4px;background:var(--border-bright);margin:0 auto clamp(10px,.8vw,15px)}
+#ncSheet .nc-sheet-title-row{display:flex;align-items:center;justify-content:space-between}
+#ncTitulo{font-size:clamp(17px,1.1vw,22px)!important}
+#ncSheet .nc-sheet-close{width:clamp(34px,2.4vw,42px)!important;height:clamp(34px,2.4vw,42px)!important;border:1px solid transparent!important;border-radius:10px!important;background:var(--surface3)!important;color:var(--text-muted)!important;cursor:pointer}
+#ncSheet .nc-sheet-close:hover{border-color:var(--border-bright)!important;color:var(--text)!important}
+#ncSheet .nc-sheet-body{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;align-content:start;gap:clamp(10px,.9vw,16px)!important;width:100%;padding:clamp(14px,1.25vw,24px)!important;overflow-y:auto!important}
+#ncSheet .nc-sheet-body>div{grid-column:span 12;min-width:0}
+#ncSheet .nc-valor-compra-row,#ncSheet .nc-venc-parcelas-row{grid-column:span 6!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:clamp(10px,.8vw,15px)!important}
+#ncSheet .nc-vencimento-wrap,#ncModoParcelasWrap{grid-column:span 6!important}
+#ncSheet .nc-sheet-body [style*="text-transform:uppercase"]{font-size:clamp(10px,.65vw,13px)!important;letter-spacing:.45px!important}
+#ncSheet .nc-sheet-body input{min-height:clamp(42px,2.8vw,52px)!important;font-size:clamp(13px,.85vw,17px)!important;border-radius:11px!important}
+#ncSheet #ncFornSel{min-height:clamp(58px,4vw,72px);border-radius:12px!important}
+#ncSheet #ncFornSelNome{font-size:clamp(15px,1vw,19px)!important}
+#ncSheet .nc-category-section{padding:clamp(12px,1vw,18px);border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.012)}
+#ncSheet .nc-category-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:10px}
+#ncSheet .nc-category-title{margin-bottom:0!important}
+#ncSheet #ncCatBusca{width:min(280px,48%)!important;min-height:36px!important;height:36px!important;padding:6px 11px!important;font-size:12px!important;border-radius:10px!important}
+#ncSheet #ncCatGrid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(155px,1fr))!important;gap:8px!important;max-height:clamp(250px,32vh,390px);overflow-y:auto;padding-right:3px}
+#ncSheet #ncCatGrid .nc-cat-card{min-width:0;min-height:58px;padding:9px 11px!important;border-radius:11px!important;font-size:clamp(11px,.72vw,14px)!important;line-height:1.2}
+#ncSheet #ncCatGrid .nc-cat-card[hidden]{display:none!important}
+#ncSheet #ncCatGrid .nc-cat-card span{min-width:0;overflow-wrap:anywhere}
+#ncSheet .nc-cat-empty{grid-column:1/-1;padding:20px;text-align:center;color:var(--text-muted);font-size:12px}
+#ncSheet #ncModoParcelasWrap{padding:clamp(11px,.8vw,15px)!important;border-radius:12px!important}
+#ncSheet .nc-sheet-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+#ncSheet .nc-sheet-actions .btn{min-height:46px!important;font-size:clamp(12px,.78vw,15px)!important;border-radius:11px!important}
+
+@media(max-width:900px){
+ #ncOverlay.nc-overlay{padding:0;align-items:stretch}
+ #ncSheet.nc-sheet{width:100%!important;max-width:none!important;height:100%!important;border:0!important;border-radius:0!important}
+ #ncSheet .nc-sheet-body{display:flex!important;flex-direction:column!important;padding:14px 16px!important;gap:10px!important}
+ #ncSheet .nc-valor-compra-row,#ncSheet .nc-venc-parcelas-row{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #ncSheet #ncCatGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;max-height:none}
+}
+@media(max-width:520px){
+ #ncSheet>.nc-sheet-head{padding:11px 13px!important}
+ #ncSheet .nc-sheet-body{padding:11px 12px!important}
+ #ncSheet .nc-category-head{align-items:stretch;flex-direction:column;gap:7px}
+ #ncSheet #ncCatBusca{width:100%!important}
+ #ncSheet #ncCatGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+ #ncSheet #ncCatGrid .nc-cat-card{min-height:54px;padding:7px 8px!important;font-size:10px!important}
+ #ncSheet #ncCatGrid .nc-cat-card img,#ncSheet #ncCatGrid .nc-cat-card svg{width:25px!important;height:25px!important}
+ #ncSheet .nc-vencimento-wrap,#ncModoParcelasWrap{width:100%}
+}

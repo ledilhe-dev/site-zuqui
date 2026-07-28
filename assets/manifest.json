@@ -11,6 +11,7 @@
   "./assets/css/99-responsive-foundation.css",
   "./assets/css/100-payables-report-responsive.css",
   "./assets/css/101-financial-pages-responsive.css",
+  "./assets/css/102-new-payable-responsive.css",
   "./assets/js/00-cep-mask.js",
   "./assets/js/01-core-supabase.js",
   "./assets/js/02-core-version.js",

@@ -292,8 +292,24 @@ function ncMontarCategorias() {
   const cats = Array.from(porChave.values());
   grid.innerHTML = cats.map(c => {
     const sel = NC.catId && String(c.id) === String(NC.catId);
-    return `<div class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${c.id}" onclick="ncSelCat(this)" style="padding:10px;font-size:13px;">${htmlIconeCategoriaCompra(c.icone, 28)}<span>${escaparHtmlBasico(c.nome || '')}</span></div>`;
+    return `<div class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${c.id}" data-nome="${escaparHtmlBasico(c.nome || '')}" onclick="ncSelCat(this)" style="padding:10px;font-size:13px;">${htmlIconeCategoriaCompra(c.icone, 28)}<span>${escaparHtmlBasico(c.nome || '')}</span></div>`;
   }).join('');
+  ncFiltrarCategorias(document.getElementById('ncCatBusca')?.value || '');
+}
+
+function ncFiltrarCategorias(termo = '') {
+  const grid = document.getElementById('ncCatGrid');
+  if (!grid) return;
+  const busca = String(termo || '').trim().toLocaleUpperCase('pt-BR');
+  let visiveis = 0;
+  grid.querySelectorAll('.nc-cat-card').forEach(card => {
+    const nome = String(card.dataset.nome || card.textContent || '').toLocaleUpperCase('pt-BR');
+    const exibir = !busca || nome.includes(busca);
+    card.hidden = !exibir;
+    if (exibir) visiveis += 1;
+  });
+  grid.querySelector('.nc-cat-empty')?.remove();
+  if (!visiveis) grid.insertAdjacentHTML('beforeend', '<div class="nc-cat-empty">Nenhuma categoria encontrada.</div>');
 }
 
 function ncSelCat(el) {
