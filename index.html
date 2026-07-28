@@ -2292,28 +2292,28 @@
 
         <div id="cardsCofreContas" class="stats-grid"></div>
 
-        <div class="card" style="padding:10px 14px;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px;">
-            <span style="font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">EXTRATO</span>
-            <input id="filtroCofreDataInicio" type="date" style="width:126px;flex-shrink:0;font-size:11px;height:28px;padding:0 6px;" onchange="carregarCofreFinanceiro()">
-            <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;">→</span>
-            <input id="filtroCofreDataFim" type="date" style="width:126px;flex-shrink:0;font-size:11px;height:28px;padding:0 6px;" onchange="carregarCofreFinanceiro()">
-            <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0;" onclick="aplicarAtalhoPeriodoCofreFinanceiro(7)">7d</button>
-            <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0;" onclick="aplicarAtalhoPeriodoCofreFinanceiro(15)">15d</button>
-            <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0;" onclick="aplicarAtalhoPeriodoCofreFinanceiro(30)">30d</button>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0;">
-              <input type="checkbox" id="cofreSomarFuturos" onchange="carregarCofreFinanceiro()" style="margin:0;width:12px;height:12px;">
+        <div class="card cofre-toolbar">
+          <div class="cofre-toolbar-row">
+            <span class="cofre-toolbar-title">EXTRATO</span>
+            <input id="filtroCofreDataInicio" type="date" onchange="carregarCofreFinanceiro()">
+            <span class="cofre-period-separator">→</span>
+            <input id="filtroCofreDataFim" type="date" onchange="carregarCofreFinanceiro()">
+            <button class="btn btn-ghost btn-sm" onclick="aplicarAtalhoPeriodoCofreFinanceiro(7)">7d</button>
+            <button class="btn btn-ghost btn-sm" onclick="aplicarAtalhoPeriodoCofreFinanceiro(15)">15d</button>
+            <button class="btn btn-ghost btn-sm" onclick="aplicarAtalhoPeriodoCofreFinanceiro(30)">30d</button>
+            <label class="cofre-futuros">
+              <input type="checkbox" id="cofreSomarFuturos" onchange="carregarCofreFinanceiro()">
               + Futuros
             </label>
-            <div id="filtroLojasCofreFinanceiro" class="multi-loja-filter" style="margin:0;flex-shrink:0;"></div>
-            <div style="margin-left:auto;display:flex;gap:5px;flex-shrink:0;">
-              <button class="btn btn-green btn-sm" id="btnToggleExtratoCofre" style="height:28px;padding:0 10px;font-size:11px;" onclick="toggleExtratoCofre()">Extrato</button>
-              <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;" onclick="exportarExtratoCofreCsv()">CSV</button>
-              <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;" onclick="exportarExtratoCofrePdf()">PDF</button>
-              <button class="btn btn-amber btn-sm" id="btnAbrirAjusteSaldoCofre" style="height:28px;padding:0 10px;font-size:11px;" onclick="abrirModalAjusteSaldoCofre()">Ajustar</button>
+            <div id="filtroLojasCofreFinanceiro" class="multi-loja-filter cofre-lojas"></div>
+            <div class="cofre-toolbar-actions">
+              <button class="btn btn-green btn-sm" id="btnToggleExtratoCofre" onclick="toggleExtratoCofre()">Extrato</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportarExtratoCofreCsv()">CSV</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportarExtratoCofrePdf()">PDF</button>
+              <button class="btn btn-amber btn-sm" id="btnAbrirAjusteSaldoCofre" onclick="abrirModalAjusteSaldoCofre()">Ajustar</button>
             </div>
           </div>
-          <div class="msg" id="msgCofreFinanceiro" style="margin-top:6px;"></div>
+          <div class="msg" id="msgCofreFinanceiro"></div>
         </div>
 
         <!-- Calendário financeiro do cofre -->
@@ -2777,6 +2777,7 @@
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-grade-agrupada-fornecedores">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-relatorio-adaptativo-v2">
+<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-financeiro-responsivo-v1">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">

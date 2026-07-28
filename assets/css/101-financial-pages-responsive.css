@@ -1,0 +1,79 @@
+/* Recebimentos e cofre: responsividade isolada, sem alterar regras financeiras. */
+#relatorio_recebimentos.pagina.ativa,#financeiro_cofre.pagina.ativa{width:100%!important;max-width:none!important;margin:0!important}
+#relatorio_recebimentos,#financeiro_cofre{--fg:clamp(9px,.8vw,16px);--fr:clamp(9px,.65vw,13px);--fc:clamp(40px,2.5vw,48px);--ft:clamp(12px,.76vw,16px);--fs:clamp(9px,.58vw,12px)}
+#relatorio_recebimentos>.page-title,#financeiro_cofre>.page-title{font-size:clamp(19px,1.3vw,27px);margin-bottom:var(--fg)}
+#relatorio_recebimentos>.card,#financeiro_cofre>.card{width:100%;padding:clamp(14px,1vw,20px)!important;border-radius:var(--fr)!important}
+#relatorio_recebimentos .relatorio-financeiro-filtros{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:var(--fg)!important;align-items:end}
+#relatorio_recebimentos .relatorio-financeiro-filtros>*{width:100%!important;min-width:0!important;max-width:none!important}
+#relatorio_recebimentos .campo-label{font-size:var(--fs)!important}
+#relatorio_recebimentos .relatorio-financeiro-filtros input,#relatorio_recebimentos .relatorio-financeiro-filtros select,#relatorio_recebimentos .relatorio-financeiro-filtros .btn{width:100%!important;height:var(--fc)!important;min-height:var(--fc)!important;padding:7px 11px!important;border-radius:var(--fr)!important;font-size:var(--ft)!important}
+#relatorio_recebimentos .relatorio-financeiro-acoes{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:var(--fg)!important;align-items:center;margin-top:var(--fg)!important}
+#relatorio_recebimentos .relatorio-financeiro-acoes>*{display:flex!important;width:100%!important;min-width:0!important;min-height:var(--fc);margin:0!important;align-items:center;justify-content:center;gap:6px!important;padding:6px 8px!important;border-radius:var(--fr)!important;font-size:var(--ft)!important;text-align:center}
+#relatorio_recebimentos #cardsRelatorioRecebimentos{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:var(--fg)!important}
+#relatorio_recebimentos #cardsRelatorioRecebimentos .stat-card{min-width:0;min-height:clamp(112px,7.5vw,148px);padding:clamp(12px,.9vw,18px)!important;border-radius:var(--fr)!important}
+#relatorio_recebimentos .stat-card .s-label{font-size:var(--fs)!important}
+#relatorio_recebimentos .stat-card .s-value{font-size:clamp(21px,1.55vw,32px)!important;line-height:1.12!important}
+#relatorio_recebimentos .stat-card .s-desc{font-size:var(--fs)!important;line-height:1.25}
+#relatorio_recebimentos #cardRelatorioRecebimentosDetalhes .card-title{font-size:clamp(12px,.78vw,16px)!important}
+#relatorio_recebimentos #tabelaRelatorioRecebimentos{min-width:860px!important;font-size:var(--ft)}
+#relatorio_recebimentos #tabelaRelatorioRecebimentos th,#relatorio_recebimentos #tabelaRelatorioRecebimentos td{height:clamp(42px,2.8vw,54px);padding:clamp(8px,.65vw,13px)!important}
+
+#financeiro_cofre .cofre-overview{display:grid;grid-template-columns:minmax(340px,.9fr) minmax(440px,1.1fr);gap:var(--fg);margin-bottom:var(--fg);align-items:stretch}
+#financeiro_cofre .cofre-overview .stats-grid{grid-template-columns:1fr!important;margin:0!important}
+#financeiro_cofre .cofre-saldo-principal{min-height:clamp(180px,12vw,240px);display:flex;flex-direction:column;justify-content:center;padding:clamp(18px,1.5vw,30px)!important;border-radius:var(--fr)!important}
+#financeiro_cofre .cofre-saldo-principal .stat-label{font-size:clamp(14px,.9vw,18px);margin-bottom:12px}
+#financeiro_cofre .cofre-saldo-principal .stat-value{font-size:clamp(44px,3.7vw,74px);line-height:1;white-space:nowrap}
+#financeiro_cofre .cofre-pizza-card{min-height:clamp(180px,12vw,240px);display:grid;grid-template-columns:clamp(130px,9vw,180px) minmax(0,1fr);gap:clamp(16px,1.5vw,30px);align-items:center;padding:clamp(16px,1.2vw,24px);background:var(--surface);border:1px solid var(--border);border-radius:var(--fr)}
+#financeiro_cofre .cofre-pizza{width:clamp(126px,8.5vw,170px);height:auto;aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:var(--surface2);position:relative}
+#financeiro_cofre .cofre-pizza::after{content:"";position:absolute;inset:29%;border-radius:50%;background:var(--surface);border:1px solid rgba(255,255,255,.1)}
+#financeiro_cofre .cofre-pizza-legenda{display:grid;gap:9px;min-width:0}
+#financeiro_cofre .cofre-pizza-legenda-item{display:grid;grid-template-columns:11px minmax(0,1fr) auto;align-items:center;gap:9px;font-size:var(--ft)}
+#financeiro_cofre .cofre-pizza-swatch{width:11px;height:11px;border-radius:50%}
+#financeiro_cofre .cofre-pizza-nome{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#financeiro_cofre .cofre-pizza-valor{font-size:var(--ft)}
+#financeiro_cofre #cardsCofreContas{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))!important;gap:var(--fg)!important}
+#financeiro_cofre #cardsCofreContas .stat-card{min-height:clamp(105px,7vw,140px);padding:clamp(12px,.9vw,18px)!important}
+#financeiro_cofre .cofre-toolbar{padding:clamp(12px,.9vw,18px)!important}
+#financeiro_cofre .cofre-toolbar-row{display:grid;grid-template-columns:auto minmax(140px,.8fr) auto minmax(140px,.8fr) repeat(3,minmax(64px,.35fr)) minmax(105px,.65fr) minmax(150px,1fr) auto;align-items:center;gap:var(--fg)}
+#financeiro_cofre .cofre-toolbar-title{font-size:var(--ft);font-weight:700;color:var(--text-muted)}
+#financeiro_cofre .cofre-period-separator{color:var(--text-muted);text-align:center}
+#financeiro_cofre .cofre-toolbar input[type=date],#financeiro_cofre .cofre-toolbar .btn{width:100%!important;height:var(--fc)!important;min-height:var(--fc)!important;padding:6px 9px!important;font-size:var(--ft)!important;border-radius:var(--fr)!important}
+#financeiro_cofre .cofre-futuros{display:flex;align-items:center;justify-content:center;gap:6px;min-height:var(--fc);font-size:var(--ft);white-space:nowrap}
+#financeiro_cofre .cofre-lojas{min-width:0}
+#financeiro_cofre .cofre-toolbar-actions{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:6px}
+#financeiro_cofre #cardCalendarioCofre,#financeiro_cofre #cardExtratoCofre{font-size:var(--ft)}
+
+@media(min-width:701px) and (max-width:1180px){
+ #relatorio_recebimentos .relatorio-financeiro-filtros{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #relatorio_recebimentos .relatorio-financeiro-acoes,#relatorio_recebimentos #cardsRelatorioRecebimentos{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ #financeiro_cofre .cofre-toolbar-row{grid-template-columns:repeat(6,minmax(0,1fr))}
+ #financeiro_cofre .cofre-toolbar-title{grid-column:span 6}
+ #financeiro_cofre .cofre-lojas{grid-column:span 2}
+ #financeiro_cofre .cofre-toolbar-actions{grid-column:span 4}
+}
+@media(max-width:700px){
+ #relatorio_recebimentos,#financeiro_cofre{--fg:7px;--fr:9px;--fc:34px;--ft:10px;--fs:8px}
+ #relatorio_recebimentos>.card,#financeiro_cofre>.card{padding:9px!important}
+ #relatorio_recebimentos .relatorio-financeiro-filtros,#relatorio_recebimentos .relatorio-financeiro-acoes,#relatorio_recebimentos #cardsRelatorioRecebimentos{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #relatorio_recebimentos .relatorio-financeiro-acoes label{font-size:8px!important}
+ #relatorio_recebimentos #cardsRelatorioRecebimentos .stat-card{min-height:88px;padding:9px!important}
+ #relatorio_recebimentos .stat-card .s-value{font-size:clamp(18px,5.2vw,23px)!important}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos{font-size:9px;min-width:720px!important}
+ #financeiro_cofre .cofre-overview{grid-template-columns:1fr}
+ #financeiro_cofre .cofre-saldo-principal{min-height:130px}
+ #financeiro_cofre .cofre-saldo-principal .stat-value{font-size:clamp(34px,10vw,46px)}
+ #financeiro_cofre .cofre-pizza-card{min-height:150px;grid-template-columns:105px minmax(0,1fr);gap:10px;padding:11px}
+ #financeiro_cofre .cofre-pizza{width:100px}
+ #financeiro_cofre #cardsCofreContas{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #financeiro_cofre .cofre-toolbar-row{grid-template-columns:repeat(6,minmax(0,1fr))}
+ #financeiro_cofre .cofre-toolbar-title{grid-column:span 6}
+ #financeiro_cofre .cofre-toolbar-row>input[type=date],#financeiro_cofre .cofre-futuros,#financeiro_cofre .cofre-lojas{grid-column:span 3}
+ #financeiro_cofre .cofre-period-separator{display:none}
+ #financeiro_cofre .cofre-toolbar-row>.btn{grid-column:span 2}
+ #financeiro_cofre .cofre-toolbar-actions{grid-column:span 6;grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+@media(min-width:1181px){
+ #relatorio_financeiro{--rf-text:clamp(14px,.82vw,17px);--rf-small:clamp(10px,.62vw,13px)}
+ #relatorio_financeiro .stat-card .s-value{font-size:clamp(25px,1.8vw,37px)!important}
+}

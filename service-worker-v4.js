@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v108-fornecedor-sem-seta';
+const CACHE_NAME = 'check-diario-pwa-v109-financeiro-responsivo';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
