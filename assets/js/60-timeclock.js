@@ -2512,7 +2512,7 @@ function exportarRelatorioFinanceiroCsv() {
   } else {
     cabecalho = [
       'Fornecedor', 'Grupo', 'Categoria', 'Status', 'Forma de pagamento',
-      'Data compra', 'Data vencimento', 'Data pagamento', 'Valor original', 'Valor previsto/atual', 'Valor pago', 'Variacao',
+      'Data compra', 'Data vencimento', 'Data pagamento', 'Valor original', 'Valor previsto/atual', 'Valor pago',
       'PARCELA ATUAL', 'PARCELAS RESTANTES', 'Observacao',
       'Criado por', 'Cadastrado em', 'Excluido por', 'Excluido em',
     ];
@@ -2532,7 +2532,6 @@ function exportarRelatorioFinanceiroCsv() {
         Number(item.valor_original ?? item.valor_compra ?? 0).toFixed(2),
         Number(item.valor_compra || 0).toFixed(2),
         obterValorPagoRelatorioFinanceiro(item).toFixed(2),
-        (statusAtual === 'pago' ? obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0) : 0).toFixed(2),
         infoParcelas.parcelaTexto,
         infoParcelas.restantesTexto,
         String(item.observacao || '').trim(),
@@ -2608,7 +2607,7 @@ function imprimirRelatorioFinanceiroPdf() {
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(g.pago + g.pendente))}</td>
         </tr>`).join('');
   } else {
-    cabecalhoCols = ['Fornecedor', 'Categoria', 'Status', 'Forma', 'Vencimento', 'Original', 'Atual', 'Pago', 'Variação', 'Parcela', 'Rest.', 'Observação', 'Cadastro'];
+    cabecalhoCols = ['Fornecedor', 'Categoria', 'Status', 'Forma', 'Vencimento', 'Original', 'Atual', 'Pago', 'Parcela', 'Rest.', 'Observação', 'Cadastro'];
     linhas = itens.map(item => {
       const statusAtual = obterStatusContaRelatorioFinanceiro(item);
       const status = statusAtual === 'pago' ? 'Pago' : (statusAtual === 'excluido' ? 'Excluído' : (statusAtual === 'vencida' ? 'Vencida' : 'A vencer'));
@@ -2624,7 +2623,6 @@ function imprimirRelatorioFinanceiroPdf() {
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_original ?? item.valor_compra ?? 0))}</td>
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor_compra || 0))}</td>
           <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorPagoRelatorioFinanceiro(item)))}</td>
-          <td>${escaparHtmlBasico(formatarMoedaBRFinanceiro(statusAtual === 'pago' ? obterValorPagoRelatorioFinanceiro(item) - Number(item.valor_original ?? item.valor_compra ?? 0) : 0))}</td>
           <td>${escaparHtmlBasico(infoParcelas.parcelaTexto)}</td>
           <td>${escaparHtmlBasico(infoParcelas.restantesTexto)}</td>
           <td>${escaparHtmlBasico(String(item.observacao || '').trim() || '-')}</td>
@@ -2791,7 +2789,6 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     const valorCompra = Number(item.valor_compra || 0);
     const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
     const valorRealizado = status === 'pago' ? obterValorPagoRelatorioFinanceiro(item) : valorCompra;
-    const variacao = status === 'pago' ? valorRealizado - valorOriginal : 0;
     const fornecedor = obterNomeFornecedorRelatorioFinanceiro(item);
     const forma = obterNomeFormaRelatorioFinanceiro(item);
     const observacao = String(item.observacao || '').trim() || '-';
@@ -2803,7 +2800,6 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
           <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
           <div class="item-detalhe">Original: ${formatarMoedaBRFinanceiro(valorOriginal)} · Previsto/atual: ${formatarMoedaBRFinanceiro(valorCompra)} · ${status === 'pago' ? `Pago: ${formatarMoedaBRFinanceiro(valorRealizado)}` : `A pagar: ${formatarMoedaBRFinanceiro(valorRealizado)}`}</div>
-          <div class="item-detalhe" style="color:${variacao > 0 ? 'var(--red)' : (variacao < 0 ? 'var(--green)' : 'var(--text-muted)')}">${status === 'pago' ? `Variação sobre o original: ${variacao > 0 ? '+' : ''}${formatarMoedaBRFinanceiro(variacao)}` : 'Variação sobre o original: aguardando pagamento'}</div>
           <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · ${escaparHtmlBasico(infoParcelas.resumoTexto)}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
           <div class="item-detalhe">Cadastro: ${escaparHtmlBasico(String(item.criado_por_nome || 'Cadastro anterior').trim() || 'Cadastro anterior')} · ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</div>
@@ -2869,8 +2865,6 @@ function limparFiltrosRelatorioFinanceiro() {
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
   marcarTodosCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
-  const somenteDivergentes = document.getElementById('relFinanceiroSomenteDivergentes');
-  if (somenteDivergentes) somenteDivergentes.checked = false;
 
   carregarRelatorioFinanceiro();
 }
@@ -2955,7 +2949,7 @@ async function carregarRelatorioFinanceiro() {
   // a ausência de datas seja interpretada como "consultar todo o histórico".
   if (!periodoInicioInformado || !periodoFimInformado) {
     relatorioFinanceiroCache = [];
-    ['rfTotalGeral', 'rfTotalPago', 'rfTotalPendente', 'rfTotalSomado', 'rfVariacaoOriginal']
+    ['rfTotalGeral', 'rfTotalPago', 'rfTotalPendente', 'rfTotalSomado']
       .forEach(id => {
         const elemento = document.getElementById(id);
         if (elemento) elemento.textContent = formatarMoedaBRFinanceiro(0);
@@ -3077,7 +3071,6 @@ async function carregarRelatorioFinanceiro() {
     const filtrosStatus = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroStatus');
     const filtrosFornecedor = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroFornecedor');
     const filtrosCategoria = obterValoresCheckboxFiltroRelatorioFinanceiro('filtroRelFinanceiroCategoria');
-    const somenteDivergentes = document.getElementById('relFinanceiroSomenteDivergentes')?.checked === true;
     const elTotalGeral = document.getElementById('rfTotalGeral');
     const elTotalPago = document.getElementById('rfTotalPago');
     const elTotalPendente = document.getElementById('rfTotalPendente');
@@ -3118,11 +3111,6 @@ async function carregarRelatorioFinanceiro() {
       if (filtrosStatus.length && !filtrosStatus.includes(status)) return false;
       if (filtrosFornecedor.length && !filtrosFornecedor.includes(fornecedorId)) return false;
       if (filtrosCategoria.length && !filtrosCategoria.includes(categoriaId)) return false;
-      if (somenteDivergentes) {
-        if (status !== 'pago') return false;
-        const valorOriginal = Number(item.valor_original ?? item.valor_compra ?? 0);
-        if (Math.abs(obterValorPagoRelatorioFinanceiro(item) - valorOriginal) < 0.005) return false;
-      }
       return true;
     });
 
@@ -3147,13 +3135,6 @@ async function carregarRelatorioFinanceiro() {
 
     const qtdTitulos = itensFiltrados.length;
     const totalSomado = totalPago + totalPendente;
-    const variacaoOriginal = itensFiltrados.reduce((acc, item) => {
-      const original = Number(item.valor_original ?? item.valor_compra ?? 0);
-      const realizado = obterStatusContaRelatorioFinanceiro(item) === 'pago'
-        ? obterValorPagoRelatorioFinanceiro(item)
-        : original;
-      return acc + (realizado - original);
-    }, 0);
     if (elTotalGeral) elTotalGeral.textContent = formatarMoedaBRFinanceiro(totalGeral);
     if (elTotalPago) elTotalPago.textContent = formatarMoedaBRFinanceiro(totalPago);
     if (elTotalPendente) elTotalPendente.textContent = formatarMoedaBRFinanceiro(totalPendente);
@@ -3166,11 +3147,6 @@ async function carregarRelatorioFinanceiro() {
     const chkAcoesFuturos = document.getElementById('contasSomarFuturosAcoes');
     if (chkAcoesFuturos?.checked === true) await recalcularFaltaQuitar();
     if (elQtdTitulos) elQtdTitulos.textContent = String(qtdTitulos);
-    const elVariacaoOriginal = document.getElementById('rfVariacaoOriginal');
-    if (elVariacaoOriginal) {
-      elVariacaoOriginal.textContent = `${variacaoOriginal > 0 ? '+' : ''}${formatarMoedaBRFinanceiro(variacaoOriginal)}`;
-      elVariacaoOriginal.style.color = variacaoOriginal > 0 ? 'var(--red)' : (variacaoOriginal < 0 ? 'var(--green)' : 'var(--text)');
-    }
 
     renderizarDashboardFornecedoresRelatorioFinanceiro(itensFiltrados);
     renderizarDashboardFormasRelatorioFinanceiro(itensFiltrados);

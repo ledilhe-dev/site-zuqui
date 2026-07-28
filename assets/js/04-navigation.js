@@ -636,8 +636,6 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
   if (id === 'relatorio_tarefas_cadastradas') { carregarRelatorioTarefasCadastradas(); }
   if (id === 'relatorio_financeiro') {
-    const somentePagamentosDivergentes = document.getElementById('relFinanceiroSomenteDivergentes');
-    if (somentePagamentosDivergentes) somentePagamentosDivergentes.checked = false;
     carregarRelatorioFinanceiro();
     Promise.all([carregarGruposFornecedor(), carregarCategoriasCompra()]);
   }

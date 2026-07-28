@@ -1492,10 +1492,6 @@
               <input type="checkbox" id="relFinanceiroAgrupar" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
               Agrupar fornecedor
             </label>
-            <label title="Exibe somente contas pagas cujo valor final difere do valor originalmente cadastrado" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
-              <input type="checkbox" id="relFinanceiroSomenteDivergentes" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
-              Pagamentos divergentes
-            </label>
           </div>
           <div class="relatorio-financeiro-aplicar">
             <div class="campo-com-label">
@@ -1541,11 +1537,6 @@
             <div class="s-label">Total geral (R$)</div>
             <div class="s-value" id="rfTotalSomado" style="color:var(--accent-bright,#ffbe1a);">R$ 0,00</div>
             <div class="s-desc">Pago + em aberto no filtro</div>
-          </div>
-          <div class="stat-card">
-            <div class="s-label">Variação paga x original</div>
-            <div class="s-value" id="rfVariacaoOriginal">R$ 0,00</div>
-            <div class="s-desc">Somente pagamentos; positivo = custo maior</div>
           </div>
         </div>
 
@@ -2785,6 +2776,7 @@
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260709-confirmacao-agenda-frente">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-grade-agrupada-fornecedores">
+<link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-relatorio-adaptativo-v1">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3043,7 +3035,7 @@
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=3.2.15"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260727-colunas-agrupadas-fornecedores"></script>
+<script src="./assets/js/60-timeclock.js?v=20260727-relatorio-adaptativo-v1"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
