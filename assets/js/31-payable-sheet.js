@@ -322,16 +322,27 @@ function ncSelCat(el) {
 }
 
 // ── Fornecedor ──────────────────────────────────────────────────
-function ncBuscarForn(t) {
+let ncCarregandoFornecedores = null;
+
+async function ncBuscarForn(t) {
   const res = document.getElementById('ncFornRes'); if (!res) return;
   if (!t || t.trim().length < 1) { res.innerHTML = ''; return; }
+  if (!(fornecedoresFinanceiroCache || []).length && typeof carregarFornecedoresFinanceiro === 'function') {
+    res.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:6px 0;">Carregando fornecedores...</div>';
+    ncCarregandoFornecedores ||= Promise.resolve(carregarFornecedoresFinanceiro())
+      .finally(() => { ncCarregandoFornecedores = null; });
+    try { await ncCarregandoFornecedores; } catch (_) {}
+    const buscaAtual = document.getElementById('ncFornBusca')?.value || '';
+    if (buscaAtual !== t) return;
+  }
   const tU = t.trim().toUpperCase();
   const m = (fornecedoresFinanceiroCache || []).filter(f => (f.nome || '').toUpperCase().includes(tU) || (f.cnpj || '').includes(tU)).slice(0, 6);
   if (!m.length) { res.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:6px 0;">Nenhum encontrado.</div>'; return; }
-  res.innerHTML = m.map(f => `<div class="nc-forn-card" onclick="ncSelForn('${f.id}','${escaparHtmlBasico(f.nome || '')}')"><div style="font-size:15px;font-weight:700;color:var(--text);">${escaparHtmlBasico(f.nome || '')}</div><span style="color:var(--text-muted);font-size:22px;">›</span></div>`).join('');
+  res.innerHTML = m.map(f => `<div class="nc-forn-card" onclick="ncSelForn('${f.id}')"><div style="font-size:15px;font-weight:700;color:var(--text);">${escaparHtmlBasico(f.nome || '')}</div><span style="color:var(--text-muted);font-size:22px;">›</span></div>`).join('');
 }
 
 function ncSelForn(id, nome) {
+  if (!nome) nome = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(id))?.nome || '';
   NC.fornId = String(id); NC.fornNome = nome || '';
   const fb = document.getElementById('contaFornecedorBusca'); if (fb) fb.value = nome;
   const fi = document.getElementById('contaFornecedorId'); if (fi) fi.value = id;
@@ -360,6 +371,10 @@ function ncAbrir(editar) {
     const fi = document.getElementById('ncFornBusca'); if (fi) { fi.value = ''; fi.style.display = ''; }
     const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
     const fsel = document.getElementById('ncFornSel'); if (fsel) fsel.style.display = 'none';
+    const fornecedorBuscaLegado = document.getElementById('contaFornecedorBusca');
+    if (fornecedorBuscaLegado) fornecedorBuscaLegado.value = '';
+    const fornecedorIdLegado = document.getElementById('contaFornecedorId');
+    if (fornecedorIdLegado) fornecedorIdLegado.value = '';
     const vi = document.getElementById('ncValor'); if (vi) vi.value = '';
     const oi = document.getElementById('ncObs'); if (oi) { oi.value = ''; oi.style.borderColor = ''; }
     // Modo padrão = total
@@ -399,6 +414,8 @@ function ncAbrir(editar) {
   ncAtualizarBotaoVencFornecedor();
   const ov = document.getElementById('ncOverlay'); if (!ov) return;
   ov.style.display = 'flex';
+  const body = document.querySelector('#ncSheet .nc-sheet-body');
+  if (body) body.scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const sh = document.getElementById('ncSheet'); if (sh) sh.style.transform = 'translateY(0)';
   }));

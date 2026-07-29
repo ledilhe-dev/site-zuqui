@@ -97,6 +97,7 @@
 
 #ncSheet .nc-valor-compra-row {
   grid-column: span 6 !important;
+  grid-row: 2;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
   gap: 14px !important;
@@ -109,6 +110,7 @@
 
 #ncSheet .nc-category-section {
   grid-column: span 6 !important;
+  grid-row: 2 / span 3;
   padding: 14px !important;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -175,18 +177,21 @@
 
 #ncSheet .nc-venc-parcelas-row {
   grid-column: span 6 !important;
+  grid-row: 3;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 14px !important;
 }
 
 #ncSheet .nc-vencimento-wrap {
-  grid-column: span 6 !important;
+  grid-column: 1 / 4 !important;
+  grid-row: 4;
   min-width: 0 !important;
 }
 
 #ncSheet #ncModoParcelasWrap {
-  grid-column: span 6 !important;
+  grid-column: 4 / 7 !important;
+  grid-row: 4;
   min-width: 0 !important;
   padding: 13px !important;
   border-radius: 12px !important;
@@ -270,6 +275,22 @@
   font-size: clamp(13px, .82vw, 15px) !important;
 }
 
+#ncSheet .nc-sheet-footer {
+  flex: 0 0 auto;
+  padding: 12px clamp(16px, 2vw, 26px) calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 -10px 24px rgba(0, 0, 0, .18);
+}
+
+#ncSheet .nc-sheet-footer #ncMsg:empty {
+  display: none;
+}
+
+#ncSheet .nc-sheet-footer #ncMsg:not(:empty) {
+  margin: 0 0 8px;
+}
+
 @media (max-width: 900px) {
   #ncOverlay.nc-overlay {
     padding: 0;
@@ -294,6 +315,7 @@
   #ncSheet .nc-sheet-body > div,
   #ncSheet .nc-category-section {
     grid-column: 1 / -1 !important;
+    grid-row: auto !important;
   }
 
   #ncSheet .nc-valor-compra-row,
@@ -304,6 +326,7 @@
   #ncSheet .nc-vencimento-wrap,
   #ncSheet #ncModoParcelasWrap {
     grid-column: span 1 !important;
+    grid-row: auto !important;
   }
 
   #ncSheet #ncCatGrid {
@@ -325,6 +348,10 @@
     flex-direction: column !important;
     gap: 11px !important;
     padding: 13px 14px calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #ncSheet .nc-sheet-footer {
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
   }
 
   #ncSheet .nc-valor-compra-row,
