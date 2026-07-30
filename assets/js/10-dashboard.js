@@ -561,6 +561,7 @@ let _dashGfOpcoesFornecedores = []; // [[id, nome], ...] do ano carregado
 let _dashGfOpcoesCategorias = [];
 let _dashGfConsultaDropdown = { forn: '', cat: '' };
 let _dashGfOrdenacaoDetalhe = 'valor';
+let _dashGfDirecaoDetalhe = 'desc';
 // Modo de data dos gráficos: 'vencimento' (padrão — espelha a fatura) ou 'compra'.
 let _dashGfModoData = (() => {
   try { return localStorage.getItem('dashGfModoData') === 'compra' ? 'compra' : 'vencimento'; }
@@ -714,6 +715,18 @@ function dashGfLimparFiltros() {
 
 function dashGfAlterarOrdenacao(valor = 'valor') {
   _dashGfOrdenacaoDetalhe = ['categoria', 'fornecedor', 'data'].includes(valor) ? valor : 'valor';
+  _dashGfDirecaoDetalhe = _dashGfOrdenacaoDetalhe === 'valor' ? 'desc' : 'asc';
+  renderizarGraficosFinanceirosDashboard();
+}
+
+function dashGfOrdenarColuna(chave) {
+  const permitidas = ['vencimento','valor','lancamento','fornecedor','categoria','compra','observacao','status'];
+  if (!permitidas.includes(chave)) return;
+  if (_dashGfOrdenacaoDetalhe === chave) _dashGfDirecaoDetalhe = _dashGfDirecaoDetalhe === 'asc' ? 'desc' : 'asc';
+  else {
+    _dashGfOrdenacaoDetalhe = chave;
+    _dashGfDirecaoDetalhe = ['valor','vencimento','lancamento','compra'].includes(chave) ? 'desc' : 'asc';
+  }
   renderizarGraficosFinanceirosDashboard();
 }
 
@@ -1171,22 +1184,33 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
         : '';
     } else {
       const LIMITE = 60;
-      const campoDataDet = _dashGfCampoData();
-      const rotuloDataDet = _dashGfModoData === 'compra' ? 'Compra' : 'Vencimento';
+      const textoOrdenacao = (c, chave) => {
+        if (chave === 'fornecedor') return c.fornecedores?.nome || '';
+        if (chave === 'categoria') return c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)]?.nome || '' : 'Sem categoria';
+        if (chave === 'observacao') return c.observacao || '';
+        if (chave === 'status') return _dashGfEhPago(c) ? 'Pago' : 'Pendente';
+        return '';
+      };
       const ordenadas = [...contasResumo].sort((a, b) => {
-        if (_dashGfOrdenacaoDetalhe === 'categoria') {
-          const catA = a.categoria_id ? _dashGfCategoriasMapa[String(a.categoria_id)]?.nome : 'Sem categoria';
-          const catB = b.categoria_id ? _dashGfCategoriasMapa[String(b.categoria_id)]?.nome : 'Sem categoria';
-          return String(catA || '').localeCompare(String(catB || ''), 'pt-BR');
-        }
-        if (_dashGfOrdenacaoDetalhe === 'fornecedor') return String(a.fornecedores?.nome || '').localeCompare(String(b.fornecedores?.nome || ''), 'pt-BR');
-        if (_dashGfOrdenacaoDetalhe === 'valor') return _dashGfValorDe(b) - _dashGfValorDe(a);
-        return String(a[campoDataDet] || '').localeCompare(String(b[campoDataDet] || ''));
+        const chave = _dashGfOrdenacaoDetalhe === 'data' ? (_dashGfModoData === 'compra' ? 'compra' : 'vencimento') : _dashGfOrdenacaoDetalhe;
+        let cmp = 0;
+        if (chave === 'valor') cmp = _dashGfValorDe(a) - _dashGfValorDe(b);
+        else if (chave === 'vencimento') cmp = String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || ''));
+        else if (chave === 'compra') cmp = String(a.data_compra || '').localeCompare(String(b.data_compra || ''));
+        else if (chave === 'lancamento') cmp = String(a.created_at || '').localeCompare(String(b.created_at || ''));
+        else cmp = textoOrdenacao(a, chave).localeCompare(textoOrdenacao(b, chave), 'pt-BR', { sensitivity:'base', numeric:true });
+        if (cmp === 0) cmp = String(a.id || '').localeCompare(String(b.id || ''));
+        return _dashGfDirecaoDetalhe === 'asc' ? cmp : -cmp;
       });
+      const cabecalhoOrdenavel = (chave, rotulo, classe) => {
+        const ativa = (_dashGfOrdenacaoDetalhe === 'data' ? (_dashGfModoData === 'compra' ? 'compra' : 'vencimento') : _dashGfOrdenacaoDetalhe) === chave;
+        const seta = ativa ? (_dashGfDirecaoDetalhe === 'asc' ? '▲' : '▼') : '↕';
+        return `<th class="${classe} ${ativa ? 'ordenacao-ativa' : ''}" aria-sort="${ativa ? (_dashGfDirecaoDetalhe === 'asc' ? 'ascending' : 'descending') : 'none'}"><button type="button" onclick="dashGfOrdenarColuna('${chave}')">${escaparHtmlBasico(rotulo)} <span>${seta}</span></button></th>`;
+      };
       const linhas = ordenadas.slice(0, LIMITE).map(c => {
         const pago = _dashGfEhPago(c);
         const cat = c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)] : null;
-        const dv = String(c[campoDataDet] || '').slice(0, 10).split('-').reverse().join('/');
+        const dv = String(c.data_vencimento || '').slice(0, 10).split('-').reverse().join('/');
         const dc = String(c.data_compra || '').slice(0, 10).split('-').reverse().join('/');
         let dlanca = '—';
         const dataLancamento = c.created_at || c.data_compra || '';
@@ -1200,7 +1224,7 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
         const categoriaDetalhe = escaparHtmlBasico(cat?.nome || 'Sem categoria');
         const observacaoDetalhe = escaparHtmlBasico(String(c.observacao || '—').slice(0, 80));
         return `<tr class="dash-gf-detail-row">
-          <td class="dash-gf-col-data" data-label="${escaparHtmlBasico(rotuloDataDet)}">${escaparHtmlBasico(dv)}</td>
+          <td class="dash-gf-col-data" data-label="Vencimento">${escaparHtmlBasico(dv)}</td>
           <td class="dash-gf-col-valor" data-label="Valor"><strong>${fmt(_dashGfValorDe(c))}</strong></td>
           <td class="dash-gf-col-lancado" data-label="Lançado em">${escaparHtmlBasico(dlanca)}</td>
           <td class="dash-gf-col-fornecedor" data-label="Fornecedor" title="${fornecedorDetalhe}">${fornecedorDetalhe}</td>
@@ -1217,14 +1241,14 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
           <table class="dash-gf-detail-table">
             <thead>
               <tr>
-                <th class="dash-gf-col-data">${rotuloDataDet}</th>
-                <th class="dash-gf-col-valor">Valor</th>
-                <th class="dash-gf-col-lancado">Lançado em</th>
-                <th class="dash-gf-col-fornecedor">Fornecedor</th>
-                <th class="dash-gf-col-categoria">Categoria</th>
-                <th class="dash-gf-col-compra">Compra</th>
-                <th class="dash-gf-col-observacao">Observação</th>
-                <th class="dash-gf-col-status">Status</th>
+                ${cabecalhoOrdenavel('vencimento','Vencimento','dash-gf-col-data')}
+                ${cabecalhoOrdenavel('valor','Valor','dash-gf-col-valor')}
+                ${cabecalhoOrdenavel('lancamento','Lançado em','dash-gf-col-lancado')}
+                ${cabecalhoOrdenavel('fornecedor','Fornecedor','dash-gf-col-fornecedor')}
+                ${cabecalhoOrdenavel('categoria','Categoria','dash-gf-col-categoria')}
+                ${cabecalhoOrdenavel('compra','Compra','dash-gf-col-compra')}
+                ${cabecalhoOrdenavel('observacao','Observação','dash-gf-col-observacao')}
+                ${cabecalhoOrdenavel('status','Status','dash-gf-col-status')}
               </tr>
             </thead>
             <tbody>${linhas}</tbody>
