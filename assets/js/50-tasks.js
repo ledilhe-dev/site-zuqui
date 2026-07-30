@@ -1300,7 +1300,7 @@ async function validarSenhaMasterParaExclusao(senha = '') {
     const perfilAtual = usuarioSistemaLogado?.perfil || {};
     const ehAdminSessao = usuarioSistemaLogado?.tipo === 'admin_loja' || usuarioSistemaLogado?.tipo === 'admin' || usuarioEhAdministrador?.();
     if (ehAdminSessao && idUsuario) {
-      if (usuarioSistemaLogado?.tipo === 'admin_loja') {
+      if (['admin', 'admin_loja'].includes(String(usuarioSistemaLogado?.tipo || ''))) {
         const { data, error } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
           p_usuario_id: idUsuario,
           p_pin: valor,

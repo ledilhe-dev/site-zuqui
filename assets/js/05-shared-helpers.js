@@ -2174,6 +2174,26 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
     || (typeof usuarioEhAdminDeLoja === 'function' && usuarioEhAdminDeLoja());
   if (ehAdmin) {
     const idLogado = String(usuarioSistemaLogado?.id || '').trim();
+    // Contas administrativas (globais ou de loja) possuem credencial própria
+    // em usuarios_admin. Validar essa origem primeiro evita que o mesmo PIN
+    // passe por buscas de funcionários/lojas e falhe de forma intermitente.
+    if (idLogado && ['admin', 'admin_loja'].includes(String(usuarioSistemaLogado?.tipo || ''))) {
+      const { data: adminValido, error: erroAdmin } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
+        p_usuario_id: idLogado,
+        p_pin: pinNormalizado,
+      }, data => data === true);
+      if (!erroAdmin && adminValido === true) {
+        return {
+          id: idLogado,
+          nome: usuarioSistemaLogado?.nome || 'Administrador',
+          ativo: true,
+          origem_credencial: 'usuario_admin',
+        };
+      }
+    }
+
+    // Compatibilidade: alguns administradores de loja também possuem cadastro
+    // operacional em funcionarios. Mantém esse caminho como fallback.
     if (idLogado) {
       const { data: euAdmin } = await executarSemFiltrosTenantTemporario(() => sb
         .from('funcionarios')
@@ -2182,19 +2202,6 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
         .maybeSingle());
       if (euAdmin && euAdmin.ativo !== false && await validarPinFuncionario(euAdmin.id, pinNormalizado)) {
         return euAdmin;
-      }
-    }
-    if (usuarioSistemaLogado?.tipo === 'admin_loja' && idLogado) {
-      const { data: adminValido } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
-        p_usuario_id: idLogado,
-        p_pin: pinNormalizado,
-      }, data => data === true);
-      if (adminValido === true) {
-      return {
-        id: idLogado || usuarioSistemaLogado?.id || 'admin',
-        nome: usuarioSistemaLogado?.nome || 'Administrador',
-        ativo: true,
-      };
       }
     }
   }
