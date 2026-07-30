@@ -1748,6 +1748,8 @@ async function salvarAjusteManualAdminPonto() {
   const senha = String(document.getElementById('adminAjustePontoSenha')?.value || '').trim();
   const motivo = String(document.getElementById('adminAjustePontoMotivo')?.value || '').trim();
   const tipo = adminAjusteManualPontoTipoAtual === 'anular' ? 'anular' : 'adicionar';
+  const opcaoFuncionario = document.getElementById('adminAjustePontoFuncionario')?.selectedOptions?.[0] || null;
+  const lojaFuncionarioSelecionado = String(opcaoFuncionario?.dataset?.lojaId || '').trim();
 
   const horarioObrigatorio = tipo === 'adicionar' && !horarioAjuste;
   if (!funcionarioId || !dataAjuste || horarioObrigatorio || !senha || !motivo || (tipo === 'anular' && !batidaAnular)) {
@@ -1758,16 +1760,29 @@ async function salvarAjusteManualAdminPonto() {
   }
 
   try {
-    let qFuncionarioLoja = sb
+    // A opção foi carregada pela lista já isolada por loja. Usar esse contexto
+    // estável evita combinar o filtro automático do Supabase com uma segunda
+    // leitura de sessão/topbar que pode estar sendo atualizada em paralelo.
+    const criarConsultaFuncionario = () => sb
       .from('funcionarios')
-      .select('id, nome, loja_id, ativo')
+      .select('id, nome, loja_id, ativo');
+    let qFuncionarioLoja = typeof criarConsultaPontoComLojaExplicita === 'function'
+      ? criarConsultaPontoComLojaExplicita(criarConsultaFuncionario)
+      : criarConsultaFuncionario();
+    qFuncionarioLoja = qFuncionarioLoja
       .eq('id', funcionarioId)
       .eq('ativo', true);
-    qFuncionarioLoja = aplicarFiltroLojaAtualPontoQuery(qFuncionarioLoja);
+    if (lojaFuncionarioSelecionado) {
+      qFuncionarioLoja = qFuncionarioLoja.eq('loja_id', lojaFuncionarioSelecionado);
+    }
     const { data: funcionarioLoja, error: erroFuncionarioLoja } = await qFuncionarioLoja.maybeSingle();
     if (erroFuncionarioLoja) throw erroFuncionarioLoja;
-    if (!funcionarioLoja || !funcionarioPertenceLojaAtualPonto(funcionarioLoja)) {
-      setMsg('msgAjusteManualAdminPonto', 'Funcionário não pertence à loja logada. Ajuste bloqueado para proteger o multi-loja.', 'err');
+    if (!funcionarioLoja) {
+      setMsg('msgAjusteManualAdminPonto', 'Não foi possível confirmar o funcionário nesta loja. Atualize a tela e tente novamente.', 'err');
+      return;
+    }
+    if (lojaFuncionarioSelecionado && String(funcionarioLoja.loja_id || '').trim() !== lojaFuncionarioSelecionado) {
+      setMsg('msgAjusteManualAdminPonto', 'O vínculo de loja do funcionário mudou. Atualize a tela antes de ajustar o ponto.', 'err');
       return;
     }
   } catch (error) {

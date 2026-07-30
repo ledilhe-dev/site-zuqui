@@ -34,6 +34,21 @@ function aplicarFiltroLojaAtualPontoQuery(query) {
   return query;
 }
 
+function criarConsultaPontoComLojaExplicita(criadorConsulta) {
+  if (typeof criadorConsulta !== 'function') return null;
+  if (typeof filtroLojaSuspensoTemporariamente === 'undefined') return criadorConsulta();
+  const estadoAnterior = filtroLojaSuspensoTemporariamente;
+  filtroLojaSuspensoTemporariamente = true;
+  try {
+    // Apenas a criação do builder ocorre sem o filtro automático. O estado é
+    // restaurado antes de qualquer requisição assíncrona e a loja será aplicada
+    // uma única vez, explicitamente, pelo chamador.
+    return criadorConsulta();
+  } finally {
+    filtroLojaSuspensoTemporariamente = estadoAnterior;
+  }
+}
+
 function funcionarioPertenceLojaAtualPonto(funcionario) {
   const lojaId = obterLojaIdAtualParaPontoSeguro();
   if (!lojaId) return true;
@@ -184,6 +199,8 @@ function preencherSelectFuncionariosPonto(selectEl, funcionarios = [], {
     const opt = document.createElement('option');
     opt.value = item.id;
     opt.textContent = item.nome;
+    opt.dataset.lojaId = String(item.loja_id || '').trim();
+    opt.dataset.empresaId = String(item.empresa_id || '').trim();
     selectEl.appendChild(opt);
   });
 
