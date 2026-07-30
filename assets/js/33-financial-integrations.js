@@ -164,11 +164,14 @@ async function ifConcRegistrarImportacao(file) {
     const payload = {
       empresa_id:empresaId, loja_id:lojaId, fornecedor_id:IFConciliacao.fornecedorId,
       arquivo_nome:file.name, arquivo_tipo:tipo, arquivo_hash:await ifConcHashArquivo(file),
+      arquivo_mime:file.type || null, arquivo_tamanho:file.size,
       leitor:String(leitura.leitor || '').startsWith('IA') ? 'openai' : tipo === 'ofx' || tipo === 'qfx' ? 'ofx' : tipo === 'pdf' ? 'pdf_texto' : 'ocr_local',
       status:'revisao', total_documento:leitura.total_documento ?? null,
       total_lancamentos:IFConciliacao.itensArquivo.reduce((s,i) => s + Number(i.valor || 0), 0),
       confianca:leitura.confianca_documento || null, alertas:leitura.alertas || [],
-      metadados:{ response_id:leitura.response_id || null }, criado_por_id:ator?.funcionarioId || null,
+      metadados:{ response_id:leitura.response_id || null },
+      conteudo_extraido:{ leitor:leitura.leitor || null, total_documento:leitura.total_documento ?? null, quantidade:IFConciliacao.itensArquivo.length },
+      criado_por_id:ator?.funcionarioId || null,
       criado_por_nome:ator?.nome || usuarioSistemaLogado?.nome || 'Sistema',
     };
     const { data:importacao, error } = await sb.from('conciliacao_importacoes')
@@ -311,7 +314,7 @@ async function ifConcComparar() {
   if (!IFConciliacao.fornecedorId || !IFConciliacao.itensArquivo.length) return;
   ifConcMsg('Buscando lançamentos do Check Diário...', '');
   let query = sb.from('contasapagar')
-    .select('id,ofx_fitid,valor_compra,data_compra,data_vencimento,observacao,fornecedor_id,categoria_id,numero_parcela,qtd_parcelas,status,loja_id,fornecedores(nome)')
+    .select('id,ofx_fitid,valor_original,valor_compra,valor_pago,data_compra,data_vencimento,data_pagamento,observacao,fornecedor_id,categoria_id,numero_parcela,qtd_parcelas,loja_id,fornecedores(nome)')
     .eq('fornecedor_id', IFConciliacao.fornecedorId).is('excluido_em', null).order('data_compra', { ascending: true });
   const datasValidas = IFConciliacao.itensArquivo.map(i => String(i.data || '').slice(0,10)).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
   if (datasValidas.length) {
@@ -421,24 +424,21 @@ async function ifConcConciliar(extId) {
     ? await abrirConfirmacaoSistema({ title:'Conciliar valores', subtitle:'O valor será atualizado; observação, categoria e demais dados serão mantidos.', body:`${ifEsc(conta.observacao || 'Conta')}<br><strong>${ifMoeda(conta.valor_compra)} → ${ifMoeda(ext.valor)}</strong>`, confirmText:'Conciliar' })
     : { confirmado: window.confirm(`Atualizar o valor de ${ifMoeda(conta.valor_compra)} para ${ifMoeda(ext.valor)}?`) };
   if (!resposta?.confirmado) return;
-  const { error } = await sb.from('contasapagar').update({ valor_compra: Number(ext.valor) }).eq('id', conta.id).is('excluido_em', null);
+  const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+  const ator = typeof obterAtorAuditoriaAtual === 'function' ? obterAtorAuditoriaAtual() : {};
+  const ordem = IFConciliacao.itensArquivo.indexOf(ext);
+  const { data:itemDb } = IFConciliacao.importacaoId
+    ? await sb.from('conciliacao_importacao_itens').select('id').eq('importacao_id',IFConciliacao.importacaoId).eq('ordem',ordem).maybeSingle()
+    : { data:null };
+  const { error } = await sb.rpc('conciliar_conta_pagar_com_arquivo', {
+    p_loja_id:lojaId, p_conta_pagar_id:conta.id, p_importacao_id:IFConciliacao.importacaoId || null,
+    p_item_id:itemDb?.id || null, p_valor_arquivo:Number(ext.valor),
+    p_ator_id:ator?.funcionarioId || null, p_ator_nome:ator?.nome || usuarioSistemaLogado?.nome || 'Sistema',
+  });
   if (error) { ifConcMsg(`Não foi possível conciliar: ${error.message}`, 'err'); return; }
-  conta.valor_compra = Number(ext.valor); ext.status = 'localizado';
-  if (IFConciliacao.importacaoId) {
-    const empresaId = usuarioSistemaLogado?.empresa_id || null;
-    const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
-    const ator = typeof obterAtorAuditoriaAtual === 'function' ? obterAtorAuditoriaAtual() : {};
-    const ordem = IFConciliacao.itensArquivo.indexOf(ext);
-    const { data:itemDb } = await sb.from('conciliacao_importacao_itens').select('id').eq('importacao_id',IFConciliacao.importacaoId).eq('ordem',ordem).maybeSingle();
-    if (itemDb?.id) {
-      await sb.from('conciliacao_importacao_itens').update({ status:'conciliado', conta_pagar_id:conta.id }).eq('id',itemDb.id);
-      await sb.from('conciliacao_auditoria').insert({
-        importacao_id:IFConciliacao.importacaoId,item_id:itemDb.id,empresa_id:empresaId,loja_id:lojaId,
-        acao:'valor_conciliado',conta_pagar_id:conta.id,antes:{valor_compra:valorAnterior},
-        depois:{valor_compra:Number(ext.valor)},ator_id:ator?.funcionarioId || null,ator_nome:ator?.nome || usuarioSistemaLogado?.nome || 'Sistema',
-      });
-    }
-  }
+  conta.valor_compra = Number(ext.valor);
+  if (conta.data_pagamento) conta.valor_pago = Number(ext.valor);
+  ext.status = 'localizado';
   ifConcRenderResultado(); ifConcMsg('Conta conciliada. Somente o valor foi atualizado; os demais dados foram preservados.', 'ok');
 }
 function ifConcCadastrar(extId) {
