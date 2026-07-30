@@ -26,7 +26,7 @@ const FinanceAI = Object.freeze({
 
 const IFConciliacao = {
   arquivo: null, fornecedorId: '', fornecedorNome: '', itensArquivo: [], contas: [],
-  pares: new Map(), processando: false, filtro: 'todos',
+  pares: new Map(), processando: false, filtro: 'todos', leitura: null, importacaoId: null,
 };
 
 function ifEsc(texto) {
@@ -118,12 +118,23 @@ async function ifConcReceberArquivo(file) {
   try {
     const nome = file.name.toLowerCase();
     let itens;
-    if (nome.endsWith('.ofx') || nome.endsWith('.qfx')) itens = await ifConcLerOFX(file);
-    else if (nome.endsWith('.pdf') || file.type === 'application/pdf') itens = await ifConcLerPDF(file);
-    else if (/^image\//i.test(file.type)) itens = await ifConcLerImagem(file);
+    IFConciliacao.leitura = null;
+    if (nome.endsWith('.ofx') || nome.endsWith('.qfx')) {
+      itens = await ifConcLerOFX(file);
+      IFConciliacao.leitura = { leitor:'OFX estruturado', confianca_documento:1, alertas:[] };
+    } else if (nome.endsWith('.pdf') || file.type === 'application/pdf') {
+      const ia = await ifConcLerComIA(file);
+      if (ia?.itens?.length) { itens = ia.itens; IFConciliacao.leitura = ia.meta; }
+      else { itens = await ifConcLerPDF(file); IFConciliacao.leitura = { leitor:'Texto do PDF', confianca_documento:.72, alertas:['IA indisponível: confirme os lançamentos antes de concluir.'] }; }
+    } else if (/^image\//i.test(file.type)) {
+      const ia = await ifConcLerComIA(file);
+      if (ia?.itens?.length) { itens = ia.itens; IFConciliacao.leitura = ia.meta; }
+      else { itens = await ifConcLerImagem(file); IFConciliacao.leitura = { leitor:'OCR local', confianca_documento:.62, alertas:['Leitura por OCR local: confira datas e valores.'] }; }
+    }
     else throw new Error('Formato não aceito. Use PDF, imagem, OFX ou QFX.');
     IFConciliacao.itensArquivo = ifConcDeduplicar(itens).map((item, indice) => ({ ...item, id: `ext_${indice}`, status: 'pendente' }));
     if (!IFConciliacao.itensArquivo.length) throw new Error('Não encontrei lançamentos no arquivo. Confira a qualidade ou o formato da fatura.');
+    await ifConcRegistrarImportacao(file);
     await ifConcComparar();
     ifConcMsg(`${IFConciliacao.itensArquivo.length} lançamento(s) lido(s) de ${file.name}.`, 'ok');
   } catch (e) {
@@ -133,6 +144,90 @@ async function ifConcReceberArquivo(file) {
     IFConciliacao.processando = false;
     const input = document.getElementById('ifConcArquivo');
     if (input) input.value = '';
+  }
+}
+
+async function ifConcHashArquivo(file) {
+  if (!crypto?.subtle) return `${file.name}:${file.size}:${file.lastModified}`;
+  const hash = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function ifConcRegistrarImportacao(file) {
+  try {
+    const empresaId = usuarioSistemaLogado?.empresa_id || null;
+    const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+    if (!empresaId || !lojaId) throw new Error('Loja não identificada.');
+    const nome = file.name.toLowerCase();
+    const tipo = nome.endsWith('.pdf') ? 'pdf' : nome.endsWith('.ofx') ? 'ofx' : nome.endsWith('.qfx') ? 'qfx' : 'imagem';
+    const leitura = IFConciliacao.leitura || {};
+    const ator = typeof obterAtorAuditoriaAtual === 'function' ? obterAtorAuditoriaAtual() : {};
+    const payload = {
+      empresa_id:empresaId, loja_id:lojaId, fornecedor_id:IFConciliacao.fornecedorId,
+      arquivo_nome:file.name, arquivo_tipo:tipo, arquivo_hash:await ifConcHashArquivo(file),
+      leitor:String(leitura.leitor || '').startsWith('IA') ? 'openai' : tipo === 'ofx' || tipo === 'qfx' ? 'ofx' : tipo === 'pdf' ? 'pdf_texto' : 'ocr_local',
+      status:'revisao', total_documento:leitura.total_documento ?? null,
+      total_lancamentos:IFConciliacao.itensArquivo.reduce((s,i) => s + Number(i.valor || 0), 0),
+      confianca:leitura.confianca_documento || null, alertas:leitura.alertas || [],
+      metadados:{ response_id:leitura.response_id || null }, criado_por_id:ator?.funcionarioId || null,
+      criado_por_nome:ator?.nome || usuarioSistemaLogado?.nome || 'Sistema',
+    };
+    const { data:importacao, error } = await sb.from('conciliacao_importacoes')
+      .upsert(payload, { onConflict:'loja_id,arquivo_hash' }).select('id').single();
+    if (error) throw error;
+    IFConciliacao.importacaoId = importacao.id;
+    const linhas = IFConciliacao.itensArquivo.map((i,ordem) => ({
+      importacao_id:importacao.id, empresa_id:empresaId, loja_id:lojaId, ordem,
+      data_movimento:i.data || null, descricao:i.descricao, valor:Number(i.valor), tipo:'debito',
+      identificador_bancario:i.fitid || null, texto_evidencia:i.evidencia || null,
+      pagina:i.pagina || null, confianca:i.confianca ?? null, status:'pendente',
+    }));
+    const { error:erroItens } = await sb.from('conciliacao_importacao_itens').upsert(linhas, { onConflict:'importacao_id,ordem' });
+    if (erroItens) throw erroItens;
+  } catch (e) {
+    console.warn('Não foi possível registrar a sessão de conciliação:', e?.message || e);
+    IFConciliacao.importacaoId = null;
+  }
+}
+
+async function ifConcArquivoBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binario = '';
+  const bloco = 0x8000;
+  for (let i = 0; i < bytes.length; i += bloco) binario += String.fromCharCode(...bytes.subarray(i, i + bloco));
+  return btoa(binario);
+}
+async function ifConcLerComIA(file) {
+  if (file.size > 20 * 1024 * 1024 || !sb?.functions?.invoke) return null;
+  try {
+    ifConcMsg('Leitura inteligente em alta fidelidade...', '');
+    const empresaId = usuarioSistemaLogado?.empresa_id || null;
+    const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+    if (!empresaId || !lojaId) throw new Error('Loja da sessão não identificada.');
+    const { data, error } = await sb.functions.invoke('conciliacao-leitor-ia', { body: {
+      arquivo_base64: await ifConcArquivoBase64(file),
+      mime_type: file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+      arquivo_nome: file.name, empresa_id: empresaId, loja_id: lojaId, fornecedor_id: IFConciliacao.fornecedorId,
+    }});
+    if (error || !data?.lancamentos) throw error || new Error(data?.error || 'Resposta inválida da IA.');
+    const itens = data.lancamentos
+      .filter(i => ['debito','tarifa','juros','outro'].includes(i.tipo) && Number(i.valor) > 0)
+      .map(i => ({
+        data:i.data || '', descricao:i.descricao, valor:Number(i.valor), fitid:i.identificador || null,
+        confianca:Number(i.confianca || 0), evidencia:i.texto_evidencia || '', pagina:i.pagina || null,
+        parcela_atual:i.parcela_atual || null, total_parcelas:i.parcelas_total || null,
+      }));
+    const soma = itens.reduce((s,i) => s + Number(i.valor || 0), 0);
+    const alertas = [...(data.alertas || [])];
+    if (data.total_documento != null && Math.abs(soma - Number(data.total_documento)) > .01) {
+      alertas.push(`A soma dos lançamentos (${ifMoeda(soma)}) difere do total identificado (${ifMoeda(data.total_documento)}).`);
+    }
+    return { itens, meta:{
+      leitor:`IA · ${data.modelo || 'OpenAI'}`, confianca_documento:Number(data.confianca_documento || 0),
+      total_documento:data.total_documento, alertas, response_id:data.response_id || null,
+    }};
+  } catch (e) {
+    console.warn('Leitor de IA indisponível; usando fallback local:', e?.message || e);
+    return null;
   }
 }
 
@@ -216,7 +311,7 @@ async function ifConcComparar() {
   if (!IFConciliacao.fornecedorId || !IFConciliacao.itensArquivo.length) return;
   ifConcMsg('Buscando lançamentos do Check Diário...', '');
   let query = sb.from('contasapagar')
-    .select('id,valor_compra,data_compra,data_vencimento,observacao,fornecedor_id,categoria_id,numero_parcela,qtd_parcelas,status,loja_id,fornecedores(nome)')
+    .select('id,ofx_fitid,valor_compra,data_compra,data_vencimento,observacao,fornecedor_id,categoria_id,numero_parcela,qtd_parcelas,status,loja_id,fornecedores(nome)')
     .eq('fornecedor_id', IFConciliacao.fornecedorId).is('excluido_em', null).order('data_compra', { ascending: true });
   const datasValidas = IFConciliacao.itensArquivo.map(i => String(i.data || '').slice(0,10)).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
   if (datasValidas.length) {
@@ -232,18 +327,21 @@ async function ifConcComparar() {
   const usados = new Set();
   IFConciliacao.itensArquivo.forEach(ext => {
     const candidatos = IFConciliacao.contas.filter(c => !usados.has(String(c.id))).map(c => {
+      const fitidIgual = !!ext.fitid && String(c.ofx_fitid || '') === String(ext.fitid);
       const valorIgual = ifCentavos(c.valor_compra) === ifCentavos(ext.valor);
       const dias = Math.min(ifDiffDias(c.data_compra, ext.data), ifDiffDias(c.data_vencimento, ext.data));
       const nome = ifNorm(`${c.observacao || ''} ${c.fornecedores?.nome || ''}`);
       const termos = ifNorm(ext.descricao).split(' ').filter(t => t.length > 2);
       const textoScore = termos.length ? termos.filter(t => nome.includes(t)).length / termos.length : 0;
-      return { conta:c, valorIgual, dias, score:(valorIgual ? 100 : 0) + (dias <= 5 ? 25 - dias : 0) + textoScore * 20 };
+      return { conta:c, fitidIgual, valorIgual, dias, textoScore, score:(fitidIgual ? 1000 : 0) + (valorIgual ? 100 : 0) + (dias <= 5 ? 25 - dias : 0) + textoScore * 20 };
     }).sort((a,b) => b.score - a.score);
     const melhor = candidatos[0];
-    if (melhor && (melhor.valorIgual || melhor.score >= 25)) {
+    if (melhor && (melhor.fitidIgual || melhor.valorIgual || melhor.score >= 25)) {
       IFConciliacao.pares.set(ext.id, String(melhor.conta.id));
       usados.add(String(melhor.conta.id));
-      ext.status = melhor.valorIgual ? 'localizado' : 'divergente';
+      ext.status = melhor.fitidIgual || melhor.valorIgual ? 'localizado' : 'divergente';
+      ext.scoreCorrespondencia = melhor.fitidIgual ? 1 : Math.min(.99, melhor.score / 145);
+      ext.criteriosCorrespondencia = { fitid:melhor.fitidIgual, valor:melhor.valorIgual, dias:melhor.dias, descricao:Number(melhor.textoScore.toFixed(3)) };
     } else ext.status = 'nao_localizado';
   });
   ifConcRenderResultado();
@@ -265,7 +363,13 @@ function ifConcRenderResultado() {
   if (!root) return;
   const resumo = ifConcResumo();
   const usados = new Set(IFConciliacao.pares.values());
+  const leitura = IFConciliacao.leitura || {};
+  const confiancaPct = Math.round(Number(leitura.confianca_documento || 0) * 100);
   root.innerHTML = `
+    <div class="if-conc-quality ${confiancaPct >= 90 && !(leitura.alertas || []).length ? 'ok' : 'alerta'}">
+      <div><strong>${ifEsc(leitura.leitor || 'Leitor do arquivo')}</strong><span>Confiança do documento: ${confiancaPct || '—'}%</span></div>
+      ${(leitura.alertas || []).length ? `<ul>${leitura.alertas.map(a => `<li>${ifEsc(a)}</li>`).join('')}</ul>` : '<span>Leitura validada sem alertas estruturais.</span>'}
+    </div>
     <div class="if-conc-summary">
       <div class="stat-card"><div class="stat-label">Total da fatura</div><div class="stat-value">${ifMoeda(resumo.totalArquivo)}</div></div>
       <div class="stat-card ok"><div class="stat-label">Localizado</div><div class="stat-value">${ifMoeda(resumo.totalLocalizado)}</div><small>${resumo.localizados} item(ns)</small></div>
@@ -285,12 +389,14 @@ function ifConcLinha(ext) {
   const opts = ['<option value="">Não encontrado no sistema</option>', ...IFConciliacao.contas.map(c =>
     `<option value="${ifEsc(c.id)}" ${String(c.id) === contaId ? 'selected' : ''}>${ifData(c.data_compra)} · ${ifEsc(c.observacao || c.fornecedores?.nome || 'Conta')} · ${ifMoeda(c.valor_compra)}</option>`
   )].join('');
+  const conf = ext.confianca == null ? null : Math.round(Number(ext.confianca) * 100);
   return `<div class="if-conc-row ${localizado ? 'localizado' : 'divergente'}">
     <div class="if-conc-item"><span class="if-conc-status">${localizado ? '✓' : '!'}</span><div><strong>${ifEsc(ext.descricao)}</strong><span>${ifData(ext.data)} · ${ifMoeda(ext.valor)}</span></div></div>
     <div class="if-conc-link">${conta ? (localizado ? '＝' : '≠') : '→'}</div>
     <div class="if-conc-system">
       <select onchange="ifConcTrocarPar('${ifEsc(ext.id)}',this.value)">${opts}</select>
       ${conta ? `<div class="if-conc-system-info"><span>${ifEsc(conta.observacao || conta.fornecedores?.nome || 'Conta')}</span><strong>${ifMoeda(conta.valor_compra)}</strong></div>` : '<span class="if-conc-nao-achou">Nenhuma conta correspondente</span>'}
+      ${conf != null ? `<div class="if-conc-evidence"><span class="${conf >= 90 ? 'alta' : conf >= 70 ? 'media' : 'baixa'}">${conf}% confiança</span>${ext.pagina ? `<small>Página ${ext.pagina}</small>` : ''}${ext.evidencia ? `<small title="${ifEsc(ext.evidencia)}">Ver evidência</small>` : ''}</div>` : ''}
       <div class="if-conc-actions">
         ${conta && !localizado ? `<button class="btn btn-green btn-sm" onclick="ifConcConciliar('${ifEsc(ext.id)}')">Conciliar pelo valor da fatura</button>` : ''}
         ${!conta ? `<button class="btn btn-ghost btn-sm" onclick="ifConcCadastrar('${ifEsc(ext.id)}')">+ Cadastrar conta</button>` : ''}
@@ -310,6 +416,7 @@ async function ifConcConciliar(extId) {
   const contaId = IFConciliacao.pares.get(extId);
   const conta = IFConciliacao.contas.find(c => String(c.id) === String(contaId));
   if (!ext || !conta) return;
+  const valorAnterior = Number(conta.valor_compra);
   const resposta = typeof abrirConfirmacaoSistema === 'function'
     ? await abrirConfirmacaoSistema({ title:'Conciliar valores', subtitle:'O valor será atualizado; observação, categoria e demais dados serão mantidos.', body:`${ifEsc(conta.observacao || 'Conta')}<br><strong>${ifMoeda(conta.valor_compra)} → ${ifMoeda(ext.valor)}</strong>`, confirmText:'Conciliar' })
     : { confirmado: window.confirm(`Atualizar o valor de ${ifMoeda(conta.valor_compra)} para ${ifMoeda(ext.valor)}?`) };
@@ -317,6 +424,21 @@ async function ifConcConciliar(extId) {
   const { error } = await sb.from('contasapagar').update({ valor_compra: Number(ext.valor) }).eq('id', conta.id).is('excluido_em', null);
   if (error) { ifConcMsg(`Não foi possível conciliar: ${error.message}`, 'err'); return; }
   conta.valor_compra = Number(ext.valor); ext.status = 'localizado';
+  if (IFConciliacao.importacaoId) {
+    const empresaId = usuarioSistemaLogado?.empresa_id || null;
+    const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+    const ator = typeof obterAtorAuditoriaAtual === 'function' ? obterAtorAuditoriaAtual() : {};
+    const ordem = IFConciliacao.itensArquivo.indexOf(ext);
+    const { data:itemDb } = await sb.from('conciliacao_importacao_itens').select('id').eq('importacao_id',IFConciliacao.importacaoId).eq('ordem',ordem).maybeSingle();
+    if (itemDb?.id) {
+      await sb.from('conciliacao_importacao_itens').update({ status:'conciliado', conta_pagar_id:conta.id }).eq('id',itemDb.id);
+      await sb.from('conciliacao_auditoria').insert({
+        importacao_id:IFConciliacao.importacaoId,item_id:itemDb.id,empresa_id:empresaId,loja_id:lojaId,
+        acao:'valor_conciliado',conta_pagar_id:conta.id,antes:{valor_compra:valorAnterior},
+        depois:{valor_compra:Number(ext.valor)},ator_id:ator?.funcionarioId || null,ator_nome:ator?.nome || usuarioSistemaLogado?.nome || 'Sistema',
+      });
+    }
+  }
   ifConcRenderResultado(); ifConcMsg('Conta conciliada. Somente o valor foi atualizado; os demais dados foram preservados.', 'ok');
 }
 function ifConcCadastrar(extId) {
