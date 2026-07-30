@@ -1484,13 +1484,13 @@ function selecionarTipoAjusteManualAdminPonto(tipo = 'adicionar') {
   document.getElementById('adminAjusteTipoAdicionar')?.classList.toggle('ativo', adminAjusteManualPontoTipoAtual === 'adicionar');
   document.getElementById('adminAjusteTipoAnular')?.classList.toggle('ativo', adminAjusteManualPontoTipoAtual === 'anular');
   const horarioLabel = document.getElementById('adminAjustePontoHorarioLabel');
+  const horarioInput = document.getElementById('adminAjustePontoHorario');
   const batidaLabel = document.getElementById('adminAjustePontoBatidaLabel');
   if (horarioLabel) {
-    horarioLabel.hidden = false;
-    horarioLabel.childNodes[0].textContent = adminAjusteManualPontoTipoAtual === 'anular'
-      ? 'Horário correto (substitui a batida) '
-      : 'Horário correto ';
+    horarioLabel.hidden = adminAjusteManualPontoTipoAtual === 'anular';
+    horarioLabel.childNodes[0].textContent = 'Horário correto ';
   }
+  if (horarioInput && adminAjusteManualPontoTipoAtual === 'anular') horarioInput.value = '';
   if (batidaLabel) batidaLabel.hidden = adminAjusteManualPontoTipoAtual !== 'anular';
   const motivo = document.getElementById('adminAjustePontoMotivo');
   if (motivo) {
@@ -1566,21 +1566,14 @@ async function atualizarBatidasDisponiveisAnulacaoPonto() {
   }
 }
 
-async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso, horarioCorreto }) {
+async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso }) {
   const { registro, intervalos } = await obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataAjuste);
   if (!registro?.id) return { ok: false, mensagem: 'Nenhum registro de ponto encontrado para essa data.' };
   const batidasAtuais = montarListaBatidasPonto(registro, intervalos).map(item => item.iso);
   const alvo = new Date(batidaIso).getTime();
   const indiceAlvo = batidasAtuais.findIndex(iso => new Date(iso).getTime() === alvo);
   if (indiceAlvo < 0) return { ok: false, mensagem: 'Batida selecionada não foi encontrada.' };
-  const horarioCorrigidoIso = typeof montarIsoAjustePonto === 'function'
-    ? montarIsoAjustePonto(dataAjuste, horarioCorreto)
-    : new Date(`${dataAjuste}T${horarioCorreto}:00`).toISOString();
-  if (!horarioCorrigidoIso || Number.isNaN(new Date(horarioCorrigidoIso).getTime())) {
-    return { ok: false, mensagem: 'Horário correto inválido.' };
-  }
-  const batidas = [...batidasAtuais];
-  batidas[indiceAlvo] = horarioCorrigidoIso;
+  const batidas = batidasAtuais.filter((_, indice) => indice !== indiceAlvo);
   batidas.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
   const jornadaFechada = batidas.length % 2 === 0;
@@ -1601,16 +1594,46 @@ async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso, ho
     retorno_em: item.retorno_em,
   }));
 
-  const { error: erroAtualiza } = await sb.from('ponto_registros').update({ entrada_em: entradaEm, inicio_intervalo_em: inicioIntervaloEm, retorno_intervalo_em: retornoIntervaloEm, saida_em: saidaEm }).eq('id', registro.id);
+  const estadoOriginalRegistro = {
+    entrada_em: registro.entrada_em || null,
+    inicio_intervalo_em: registro.inicio_intervalo_em || null,
+    retorno_intervalo_em: registro.retorno_intervalo_em || null,
+    saida_em: registro.saida_em || null,
+  };
+  const restaurarJornadaOriginal = async () => {
+    await sb.from('ponto_registros').update(estadoOriginalRegistro)
+      .eq('id', registro.id)
+      .eq('funcionario_id', funcionarioId)
+      .eq('data_ponto', dataAjuste);
+    await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
+    if (intervalos.length) {
+      await sb.from('ponto_intervalos').insert(intervalos.map((item, idx) => ({
+        ponto_registro_id: registro.id,
+        ordem: Number(item.ordem || 0) || idx + 2,
+        inicio_em: item.inicio_em || null,
+        retorno_em: item.retorno_em || null,
+      })));
+    }
+  };
+
+  const { error: erroAtualiza } = await sb.from('ponto_registros')
+    .update({ entrada_em: entradaEm, inicio_intervalo_em: inicioIntervaloEm, retorno_intervalo_em: retornoIntervaloEm, saida_em: saidaEm })
+    .eq('id', registro.id)
+    .eq('funcionario_id', funcionarioId)
+    .eq('data_ponto', dataAjuste);
   if (erroAtualiza) return { ok: false, mensagem: mensagemErroSupabase(erroAtualiza, 'erro desconhecido') };
 
   const { error: erroDelete } = await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
   if (erroDelete && !isMissingTimeClockIntervalsTableError(erroDelete)) {
-    return { ok: false, mensagem: `Batida anulada no registro principal, mas houve erro ao limpar intervalos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
+    await restaurarJornadaOriginal();
+    return { ok: false, mensagem: `Não foi possível reorganizar os intervalos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
   }
   if (novosIntervalos.length) {
     const { error: erroInsert } = await sb.from('ponto_intervalos').insert(novosIntervalos);
-    if (erroInsert) return { ok: false, mensagem: `Batida anulada, mas houve erro ao recriar intervalos: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}` };
+    if (erroInsert) {
+      await restaurarJornadaOriginal();
+      return { ok: false, mensagem: `Não foi possível recriar os intervalos: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}` };
+    }
   }
 
   try {
@@ -1622,18 +1645,16 @@ async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso, ho
     const auditoriaId = auditorias?.[0]?.id;
     if (auditoriaId) {
       await sb.from('ponto_batidas_auditoria').update({
-        registrado_em: horarioCorrigidoIso,
-        origem_registro: 'ajuste_manual_admin',
+        origem_registro: 'anulado_ajuste_manual_admin',
       }).eq('id', auditoriaId);
     }
   } catch (erroAuditoria) {
-    console.warn('Não foi possível atualizar a auditoria da batida corrigida:', erroAuditoria);
+    console.warn('Não foi possível identificar a batida anulada na auditoria:', erroAuditoria);
   }
 
   return {
     ok: true,
-    mensagem: `Batida das ${formatarHoraPonto(batidaIso)} substituída por ${formatarHoraPonto(horarioCorrigidoIso)}. Jornada recalculada.`,
-    horarioCorrigidoIso,
+    mensagem: `Batida das ${formatarHoraPonto(batidaIso)} removida da jornada e preservada no histórico. Jornada recalculada.`,
   };
 }
 
@@ -1728,9 +1749,10 @@ async function salvarAjusteManualAdminPonto() {
   const motivo = String(document.getElementById('adminAjustePontoMotivo')?.value || '').trim();
   const tipo = adminAjusteManualPontoTipoAtual === 'anular' ? 'anular' : 'adicionar';
 
-  if (!funcionarioId || !dataAjuste || !horarioAjuste || !senha || !motivo || (tipo === 'anular' && !batidaAnular)) {
+  const horarioObrigatorio = tipo === 'adicionar' && !horarioAjuste;
+  if (!funcionarioId || !dataAjuste || horarioObrigatorio || !senha || !motivo || (tipo === 'anular' && !batidaAnular)) {
     setMsg('msgAjusteManualAdminPonto', tipo === 'anular'
-      ? 'Preencha funcionário, data, batida errada, horário correto, senha do administrador e motivo.'
+      ? 'Preencha funcionário, data, batida errada, senha do administrador e motivo.'
       : 'Preencha funcionário, data, horário, senha do administrador e motivo.', 'err');
     return;
   }
@@ -1773,10 +1795,11 @@ async function salvarAjusteManualAdminPonto() {
   let resultado;
   let solicitacaoManual;
   if (tipo === 'anular') {
-    resultado = await anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso: batidaAnular, horarioCorreto: horarioAjuste });
+    resultado = await anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso: batidaAnular });
+    const horarioBatidaAnulada = formatarHoraPonto(batidaAnular);
     solicitacaoManual = {
       funcionario_id: funcionarioId, funcionario_nome: funcionarioNome, data_ajuste: dataAjuste,
-      horario_ajuste: horarioAjuste, motivo: `[ANULACAO MANUAL ADMIN] Original ${formatarHoraPonto(batidaAnular)} substituída por ${horarioAjuste}. ${motivo}`,
+      horario_ajuste: horarioBatidaAnulada, motivo: `[ANULACAO MANUAL ADMIN] Batida original ${horarioBatidaAnulada} removida da jornada. ${motivo}`,
       status: 'aprovado', aprovado_em: new Date().toISOString(), aprovado_por_id: obterIdAdminAtual(), aprovado_por_nome: obterNomeAdminAtual(),
     };
   } else {

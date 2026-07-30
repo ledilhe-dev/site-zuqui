@@ -1889,6 +1889,19 @@ async function carregarRecFuturos() {
     lista.innerHTML = '<div class="rec-grid">' + resumoFuturosHtml + recFuturosCache.map(item => {
       const confirmado = !!item.confirmado_em;
       const dp = String(item.data_prevista || '').slice(0, 10);
+      const datasPorCriterio = {
+        prevista: item.data_prevista,
+        cadastro: item.created_at,
+        recebimento: item.confirmado_em,
+      };
+      const dataDoFiltro = String(datasPorCriterio[dataTipo] || '').slice(0, 10);
+      const dataDoFiltroFormatada = dataDoFiltro ? formatarDataBRFinanceiro(dataDoFiltro) : '-';
+      const rotulosDataFiltro = {
+        prevista: 'Data prevista',
+        cadastro: 'Data de cadastro',
+        recebimento: 'Data de recebimento',
+      };
+      const rotuloDataFiltro = rotulosDataFiltro[dataTipo] || 'Data';
       const atrasado = !confirmado && dp && dp < hoje;
       const tagStatus = confirmado
         ? `<span class="tag tag-green">✓ Confirmado</span>`
@@ -1903,7 +1916,10 @@ async function carregarRecFuturos() {
                 <input class="checkbox-rec-futuro-financeiro" data-rec-futuro-id="${item.id}" type="checkbox" ${recFuturosSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecFuturo('${item.id}', this.checked)">
                 <span>${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador não encontrado')}</span>
               </label>
-              <strong class="rec-futuro-valor-inline">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
+              <span class="rec-futuro-valor-data rec-futuro-valor-data-inline">
+                <strong class="rec-futuro-valor-inline">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
+                <span class="rec-futuro-data-filtrada" title="${rotuloDataFiltro}">${dataDoFiltroFormatada}</span>
+              </span>
             </div>
             ${item.observacao ? `<div class="rec-card-observacao" title="${escaparHtmlBasico(item.observacao)}">Obs.: ${escaparHtmlBasico(item.observacao)}</div>` : ''}
             <div class="item-detalhe">
@@ -1931,7 +1947,10 @@ async function carregarRecFuturos() {
             </div>
           </div>
           <div class="rec-card-actions">
-            <strong class="rec-futuro-valor-acoes">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
+            <span class="rec-futuro-valor-data rec-futuro-valor-data-acoes">
+              <strong class="rec-futuro-valor-acoes">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
+              <span class="rec-futuro-data-filtrada" title="${rotuloDataFiltro}">${dataDoFiltroFormatada}</span>
+            </span>
             ${tagStatus}
             ${!confirmado ? `<button class="btn btn-green btn-sm rec-confirmar-btn" onclick="abrirModalConfirmarRecFuturo('${item.id}')">Confirmar recebimento</button>` : ''}
             <button class="btn btn-ghost btn-sm" onclick="editarRecFuturo('${item.id}')">Editar</button>

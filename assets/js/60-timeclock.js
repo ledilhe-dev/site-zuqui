@@ -1047,7 +1047,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
     try {
       const { data: dataAuditoria, error: errAuditoria } = await sb
         .from('ponto_batidas_auditoria')
-        .select('ponto_registro_id, registrado_em, tipo_batida')
+        .select('ponto_registro_id, registrado_em, tipo_batida, origem_registro')
         .in('ponto_registro_id', ids)
         .order('registrado_em', { ascending: true });
 
@@ -1055,6 +1055,7 @@ async function carregarResumoPontoHoje(funcionarioId = '') {
         (dataAuditoria || []).forEach(item => {
           const chave = String(item.ponto_registro_id || '');
           if (!chave || !item.registrado_em) return;
+          if (String(item.origem_registro || '').toLowerCase().includes('anulado')) return;
           if (!batidasAuditoriaPorRegistro[chave]) batidasAuditoriaPorRegistro[chave] = [];
           batidasAuditoriaPorRegistro[chave].push(item.registrado_em);
         });

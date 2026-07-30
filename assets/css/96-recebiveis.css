@@ -136,6 +136,8 @@ input[type="date"][id^="filtro"],
 #financeiro_recebiveis .rec-card-observacao { width:100%; min-width:0; margin:0 0 4px; overflow:hidden; color:var(--text-muted); font-size:9px; line-height:1.15; text-overflow:ellipsis; white-space:nowrap; }
 #financeiro_recebiveis .rec-futuro-valor-inline,
 #financeiro_recebiveis .rec-summary-valor { flex:none; color:var(--orange,#f59e0b) !important; font-size:12px !important; font-weight:800; white-space:nowrap; }
+#financeiro_recebiveis .rec-futuro-valor-data { display:flex; flex:none; flex-direction:column; align-items:flex-end; justify-content:center; line-height:1.15; white-space:nowrap; }
+#financeiro_recebiveis .rec-futuro-data-filtrada { margin-top:3px; color:#60a5fa; font-size:10px; font-weight:700; white-space:nowrap; }
 #financeiro_recebiveis .rec-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:7px; }
 #financeiro_recebiveis .rec-card-title { min-width:0; font-size:15px; font-weight:800; overflow-wrap:anywhere; }
 #financeiro_recebiveis .rec-card-value { flex:none; font-size:18px; font-weight:800; color:var(--yellow,#eab308); white-space:nowrap; }
@@ -148,7 +150,7 @@ input[type="date"][id^="filtro"],
 #financeiro_recebiveis .rec-card-actions { display:flex; align-items:center; justify-content:flex-end; gap:7px; flex-wrap:wrap; }
 #financeiro_recebiveis .rec-futuro-valor-acoes { flex:none; margin-right:4px; color:var(--orange,#f59e0b); font-size:12px; font-weight:800; white-space:nowrap; }
 @media (min-width:701px) {
-  #financeiro_recebiveis .rec-card-future .rec-futuro-valor-inline { display:none; }
+  #financeiro_recebiveis .rec-card-future .rec-futuro-valor-data-inline { display:none; }
   #financeiro_recebiveis .rec-card-future .rec-card-actions { flex-wrap:nowrap; }
 }
 #financeiro_recebiveis .rec-card-actions .btn { min-height:34px; padding:6px 10px; font-size:12px; }
@@ -161,7 +163,7 @@ input[type="date"][id^="filtro"],
 #financeiro_recebiveis .rec-summary-compacto .item-nome,
 #financeiro_recebiveis .rec-summary-compacto .rec-summary-label { font-size:12px; }
 @media (max-width:700px) {
-  #financeiro_recebiveis .rec-futuro-valor-acoes { display:none; }
+  #financeiro_recebiveis .rec-futuro-valor-data-acoes { display:none; }
   #financeiro_recebiveis { padding-inline:8px !important; overflow-x:hidden; }
   #financeiro_recebiveis .page-title { display:block !important; font-size:20px !important; margin-bottom:10px !important; }
   #financeiro_recebiveis .card { padding:10px !important; }
@@ -187,6 +189,7 @@ input[type="date"][id^="filtro"],
   #financeiro_recebiveis .rec-card-observacao { margin-bottom:3px; font-size:8px; }
   #financeiro_recebiveis .rec-futuro-valor-inline,
   #financeiro_recebiveis .rec-summary-valor { font-size:11px !important; }
+  #financeiro_recebiveis .rec-futuro-data-filtrada { margin-top:2px; font-size:9px; }
   #financeiro_recebiveis .rec-card-value { font-size:12px; }
   #financeiro_recebiveis .rec-card-meta,
   #financeiro_recebiveis .rec-card-future .item-detalhe { font-size:9.5px; line-height:1.3; }

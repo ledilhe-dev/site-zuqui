@@ -3542,6 +3542,9 @@
       letter-spacing: 0.5px;
       color: var(--text-muted);
     }
+    .ponto-ajuste-form label[hidden] {
+      display: none !important;
+    }
     .ponto-ajuste-form input,
     .ponto-ajuste-form textarea,
     .ponto-ajuste-form select {
