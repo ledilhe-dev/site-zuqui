@@ -258,10 +258,15 @@
               <span class="nav-title">Cofre</span>
             </span>
           </button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_conciliacao" onclick="abrirPagina('integracoes_financeiras_conciliacao', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Conciliação bancária</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
-    <div id="navgrp_integracoes_financeiras" class="nav-group">
+    <div id="navgrp_integracoes_financeiras" class="nav-group" hidden aria-hidden="true">
       <div class="nav-label">Integrações</div>
       <div class="nav-group-financeiro" id="menuIntegracoesFinanceirasGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuIntegracoesFinanceiras" type="button" onclick="toggleMenuIntegracoesFinanceirasSubmenu()">
@@ -3024,7 +3029,7 @@
 <script src="./assets/js/01-core-supabase.js?v=20260720-modais-do-sistema"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
-<script src="./assets/js/04-navigation.js?v=20260727-sem-filtro-lojas"></script>
+<script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/10-dashboard.js?v=20260711-isolamento-loja-dashboard"></script>
 <script src="./assets/js/20-checklists.js"></script>

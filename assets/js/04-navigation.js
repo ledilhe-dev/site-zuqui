@@ -55,7 +55,7 @@ function paginaPertenceMenuRelatorios(pageId = '') {
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
-  return ['financeiro_fornecedores', 'financeiro_formas_pagamento', 'financeiro_contasapagar', 'financeiro_baixar_contas', 'financeiro_conta_financeira', 'financeiro_recebiveis', 'financeiro_grupo_fornecedor', 'financeiro_categorias_compra', 'financeiro_cofre'].includes(String(pageId || ''));
+  return ['financeiro_fornecedores', 'financeiro_formas_pagamento', 'financeiro_contasapagar', 'financeiro_baixar_contas', 'financeiro_conta_financeira', 'financeiro_recebiveis', 'financeiro_grupo_fornecedor', 'financeiro_categorias_compra', 'financeiro_cofre', 'integracoes_financeiras_conciliacao'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuIntegracoesFinanceiras(pageId = '') {
