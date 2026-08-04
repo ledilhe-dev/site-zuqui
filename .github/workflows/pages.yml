@@ -1,6 +1,10 @@
 name: Publicar no GitHub Pages
 
 on:
+  push:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 permissions:
@@ -9,8 +13,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -25,28 +29,7 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Validar projeto modular
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --check service-worker-v4.js
-          find assets/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
-          python - <<'PY'
-          from pathlib import Path
-          import json, re
-
-          root = Path('.')
-          html = (root / 'index.html').read_text(encoding='utf-8')
-          refs = re.findall(r'(?:src|href)="(\./assets/[^"]+)"', html)
-          refs_files = [ref.split('?', 1)[0].split('#', 1)[0] for ref in refs]
-          missing = [ref for ref in refs_files if not (root / ref.removeprefix('./')).is_file()]
-          if missing:
-              raise SystemExit(f'Referências ausentes: {missing}')
-
-          manifest = json.loads((root / 'assets/manifest.json').read_text(encoding='utf-8'))
-          if sorted(manifest) != sorted(refs_files):
-              raise SystemExit('assets/manifest.json não corresponde ao index.html')
-          print(f'Projeto modular válido: {len(refs)} recursos.')
-          PY
+        run: python tools/verify_modularization.py
 
       - name: Montar artefato público
         shell: bash
