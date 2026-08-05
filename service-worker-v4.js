@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v125-ipad-filtro-futuros';
+const CACHE_NAME = 'check-diario-pwa-v126-ipad-calendarios-globais';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

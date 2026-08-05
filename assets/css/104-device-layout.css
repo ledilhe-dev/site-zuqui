@@ -300,3 +300,52 @@ body,
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Interface dedicada a tablets/iPad (Chrome e Safari usam o mesmo motor WebKit).
+   Esta regra fica por último para vencer os layouts específicos de cada relatório. */
+@media (min-width: 701px) and (max-width: 1100px) {
+  .pagina.ativa .date-filter-standard {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    column-gap: 22px !important;
+    row-gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 8px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .pagina.ativa .date-filter-standard .date-filter-start-field,
+  .pagina.ativa .date-filter-standard .date-filter-end-field {
+    display: grid !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .pagina.ativa .date-filter-standard input[type="date"] {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 4px 8px !important;
+    border-radius: 9px !important;
+    box-sizing: border-box !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    -webkit-appearance: auto !important;
+    appearance: auto !important;
+    overflow: hidden !important;
+  }
+
+  .pagina.ativa .date-filter-standard .date-filter-criterion-field {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
