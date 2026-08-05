@@ -3274,10 +3274,17 @@ function limparFiltrosRelatorioRecebimentos() {
     const campo = document.getElementById(id);
     if (campo) campo.value = '';
   });
-  ['filtroRelRecebIncluirFuturos', 'filtroRelRecebIncluirPendentes'].forEach(id => {
-    const campo = document.getElementById(id);
-    if (campo) campo.checked = false;
-  });
+  const tipo = document.getElementById('filtroRelRecebTipo');
+  if (tipo) tipo.value = 'recebidos';
+  carregarRelatorioRecebimentos();
+}
+
+function alterarTipoRelatorioRecebimentos() {
+  const somenteFuturos = document.getElementById('filtroRelRecebTipo')?.value === 'provisionados';
+  const hojeLocal = hoje();
+  const inicio = document.getElementById('filtroRelRecebDataInicio')?.value || hojeLocal;
+  const fim = document.getElementById('filtroRelRecebDataFim')?.value || hojeLocal;
+  window.sincronizarFiltroDataPadronizado?.('relatorio_recebimentos', inicio, fim, somenteFuturos ? 'prevista' : 'recebimento');
   carregarRelatorioRecebimentos();
 }
 
@@ -3304,11 +3311,11 @@ function renderizarRelatorioRecebimentos(itens = []) {
 
   lista.innerHTML = itens.map(item => `
     <tr>
-      <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</td>
+      <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.created_at ? (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : fmtDate(item.created_at)) : '-')}</td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">
         ${escaparHtmlBasico(obterNomePagadorRelatorioRecebimentos(item))}
         ${item.observacao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${escaparHtmlBasico(item.observacao)}</div>` : ''}
-        ${item.intervalo_dias ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">Recorrência ${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1} · a cada ${item.intervalo_dias} dia(s) · ${item.sequencial_dias_corridos ? 'dias corridos' : 'próximo dia útil'}</div>` : ''}
+        ${item.intervalo_dias && (item._provisionadoPendente || Number(item.qtd_parcelas || 1) > 1) ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">Recorrência ${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1} · a cada ${item.intervalo_dias} dia(s) · ${item.sequencial_dias_corridos ? 'dias corridos' : 'próximo dia útil'}</div>` : ''}
       </td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeFormaRelatorioRecebimentos(item))}</td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeContaRelatorioRecebimentos(item))}</td>
@@ -3334,7 +3341,8 @@ async function buscarDadosRelatorioRecebimentos() {
   }
 
   // Se checkbox "incluir provisionados pendentes" marcado, buscar também de recebiveis_futuros não confirmados
-  const incluirPendentes = document.getElementById('filtroRelRecebIncluirPendentes')?.checked === true;
+  const tipoRelatorio = String(document.getElementById('filtroRelRecebTipo')?.value || 'recebidos');
+  const incluirPendentes = tipoRelatorio === 'provisionados' || tipoRelatorio === 'todos';
   if (incluirPendentes && !res.error) {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
@@ -3354,7 +3362,7 @@ async function buscarDadosRelatorioRecebimentos() {
       }
     } catch(e) { /* tabela pode não existir ainda */ }
   }
-  const incluirFuturos = document.getElementById('filtroRelRecebIncluirFuturos')?.checked === true;
+  const incluirFuturos = false; // Confirmados já existem em recebiveis; repetir aqui duplicava resultados.
   if (incluirFuturos && !res.error) {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
@@ -3415,14 +3423,17 @@ async function carregarRelatorioRecebimentos() {
     const filtroForma = String(formaEl?.value || '').trim();
     const filtroUsuario = String(usuarioEl?.value || '').trim();
     const filtroGrupo = String(grupoEl?.value || '').trim();
+    const filtroTipo = String(document.getElementById('filtroRelRecebTipo')?.value || 'recebidos');
     const filtroDataTipo = String(document.querySelector('#relatorio_recebimentos .date-filter-criterion')?.value || 'especial:cadastro').replace('especial:', '');
 
     const itens = rows.filter(item => {
+      if (filtroTipo === 'recebidos' && item._provisionadoPendente) return false;
+      if (filtroTipo === 'provisionados' && !item._provisionadoPendente) return false;
       const datasFiltro = {
         cadastro:item.created_at,
         atualizacao:item.updated_at,
         prevista:item._provisionadoPendente ? item.created_at : null,
-        recebimento:item._futuro ? item.created_at : (!item._provisionadoPendente ? item.created_at : null)
+        recebimento:item.created_at
       };
       const dataRef = String(datasFiltro[filtroDataTipo] || '').slice(0, 10);
       const pagadorId = String(item.pagador_id || '').trim();
@@ -3453,6 +3464,8 @@ async function carregarRelatorioRecebimentos() {
     const futurosEl = document.getElementById('rrTotalFuturos');
     const confirmadosEl = document.getElementById('rrQtdConfirmados');
     const provisionadosEl = document.getElementById('rrQtdProvisionados');
+    const totalLabelEl = document.getElementById('rrTotalRecebidoLabel');
+    if (totalLabelEl) totalLabelEl.textContent = filtroTipo === 'provisionados' ? 'Total previsto' : 'Total recebido';
     if (totalEl) totalEl.textContent = formatarMoedaBRFinanceiro(total);
     if (qtdEl) qtdEl.textContent = String(quantidade);
     if (ticketEl) ticketEl.textContent = formatarMoedaBRFinanceiro(ticketMedio);

@@ -1593,6 +1593,14 @@
                 <option value="">- Todos os usuários -</option>
               </select>
             </div>
+            <div class="campo-com-label relatorio-recebimentos-tipo">
+              <label class="campo-label" for="filtroRelRecebTipo">Tipo de recebimento</label>
+              <select id="filtroRelRecebTipo" onchange="alterarTipoRelatorioRecebimentos()">
+                <option value="recebidos">Recebidos confirmados</option>
+                <option value="provisionados">Somente provisionados futuros</option>
+                <option value="todos">Recebidos e provisionados futuros</option>
+              </select>
+            </div>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioRecebimentos()">Hoje</button>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioRecebimentos()">Limpar filtros</button>
           </div>
@@ -1600,14 +1608,6 @@
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(7)">Próximos 7 dias</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(15)">Próximos 15 dias</button>
             <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(30)">Próximos 30 dias</button>
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:4px;">
-              <input type="checkbox" id="filtroRelRecebIncluirFuturos" onchange="carregarRelatorioRecebimentos()" style="margin:0;">
-              Incluir futuros confirmados
-            </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:4px;">
-              <input type="checkbox" id="filtroRelRecebIncluirPendentes" onchange="carregarRelatorioRecebimentos()" style="margin:0;">
-              Incluir provisionados pendentes
-            </label>
             <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioRecebimentosCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
             <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioRecebimentosPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
             <button class="btn btn-green relatorio-recebimentos-filtrar" type="button" onclick="carregarRelatorioRecebimentos()">Filtrar</button>
@@ -1617,7 +1617,7 @@
 
         <div class="stats-grid" id="cardsRelatorioRecebimentos">
           <div class="stat-card">
-            <div class="s-label">Total recebido</div>
+            <div class="s-label" id="rrTotalRecebidoLabel">Total recebido</div>
             <div class="s-value" id="rrTotalRecebido">R$ 0,00</div>
             <div class="s-desc">Somatório dos recebimentos no filtro.</div>
           </div>
@@ -2799,7 +2799,7 @@
 <link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-filtros-ordenados">
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260728-nova-conta-v6">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
-<link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260728-ipad-layout-v1">
+<link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260804-ipad-calendarios-v2">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3058,7 +3058,7 @@
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260804-filtro-periodo-futuro"></script>
+<script src="./assets/js/60-timeclock.js?v=20260804-filtro-tipo-recebimento"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
