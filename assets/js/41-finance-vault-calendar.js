@@ -1259,9 +1259,6 @@ async function excluirContasAPagarSelecionadasFinanceiro() {
     return;
   }
 
-  const confirmacaoTela = confirm(`Excluir ${idsSelecionados.length} conta(s) selecionada(s)? Esta ação ficará registrada no relatório.`);
-  if (!confirmacaoTela) return;
-
   const operador = obterFuncionarioOperadorAtual();
   const confirmacao = await confirmarAcaoComPin({
     funcionario: operador,
@@ -2844,7 +2841,7 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
 
     overlay.querySelector('#bcmCancelar').onclick = () => fechar(null);
     overlay.onclick = (e) => { if (e.target === overlay) fechar(null); };
-    overlay.querySelector('#bcmConfirmar').onclick = () => {
+    overlay.querySelector('#bcmConfirmar').onclick = async () => {
       const { sel, alocado, diferenca } = atualizarResumo();
       if (!sel.length) {
         setMsgModal('Marque ao menos uma conta financeira.', 'err');
@@ -2869,7 +2866,12 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
           const lista = negativas
             .map(c => `• ${c.nome}: saldo ${formatarMoedaBRFinanceiro(c.saldo_atual)} → ficará em ${formatarMoedaBRFinanceiro(Number((c.saldo_atual - c.valor).toFixed(2)))}`)
             .join('\n');
-          if (!confirm(`Atenção: a(s) conta(s) abaixo ficará(ão) NEGATIVA(S) após esta baixa:\n\n${lista}\n\nConfirmar mesmo assim?`)) return;
+          const decisao = await abrirConfirmacaoSistema({
+            title: 'Saldo negativo após a baixa', subtitle: 'Confira as contas antes de continuar.',
+            body: `<div class="confirmacao-destaque-box"><span style="white-space:pre-line">${escaparHtmlBasico(lista)}</span></div>`,
+            cancelText: 'Voltar e ajustar', confirmText: 'Continuar com a baixa', confirmClass: 'btn-red',
+          });
+          if (decisao?.confirmado !== true) return;
         }
       }
       fechar({
@@ -2985,7 +2987,13 @@ async function reabrirTodasContasFinanceiro() {
     setMsg('msgBaixarContasFinanceiro', 'Não há contas pagas neste filtro para reabrir.', 'err');
     return;
   }
-  if (!confirm(`Reabrir ${pagas.length} conta(s) paga(s) como pendente(s)?\n\nO saldo movimentado será estornado das contas financeiras.`)) return;
+  const confirmacaoPin = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(),
+    titulo: 'Estornar pagamentos em lote',
+    subtitulo: `Confirme sua senha para reabrir ${pagas.length} conta(s) e estornar os saldos movimentados.`,
+    textoAcao: 'Confirmar estornos', escopo: 'empresa',
+  });
+  if (!confirmacaoPin) return;
 
   let ok = 0, falhas = 0;
   for (const item of pagas) {

@@ -1218,6 +1218,13 @@ async function salvarRecebivelFinanceiro() {
       setMsg('msgRecebivelFinanceiro', 'Preencha a observa·o.', 'err');
       return;
     }
+    if (!Number.isInteger(diasIntervalo) || diasIntervalo < 1 || diasIntervalo > 365) {
+      const diasErr = document.getElementById('nrDiasErr');
+      if (diasErr) { diasErr.textContent = 'Informe de 1 a 365 dias'; diasErr.style.display = ''; }
+      document.getElementById('recebivelDiasIntervalo')?.focus();
+      setMsg('msgRecebivelFinanceiro', 'Informe um intervalo válido entre 1 e 365 dias.', 'err');
+      return;
+    }
 
     const contaSelecionada = (contasFinanceirasCache || []).find(item => String(item.id) === String(contaFinanceiraId)) || null;
     let empresaIdSessao = contaSelecionada?.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
@@ -1305,8 +1312,8 @@ async function salvarRecebivelFinanceiro() {
         forma_pagamento_id: formaPagamentoId,
         conta_financeira_id: contaFinanceiraId,
         valor: Number(valorRecebivel.toFixed(2)),
-        data_prevista: calcularVencimentoParcelaFinanceiro(dataPrevista, indice, 30),
-        intervalo_dias: 30,
+        data_prevista: calcularVencimentoParcelaFinanceiro(dataPrevista, indice, diasIntervalo),
+        intervalo_dias: diasIntervalo,
         qtd_recorrencias: quantidade,
         numero_recorrencia: indice + 1,
         observacao: observacao || null,
@@ -1326,7 +1333,7 @@ async function salvarRecebivelFinanceiro() {
       nrFechar();
       limparFormularioRecebivelFinanceiro();
       await carregarRecFuturos();
-      setMsg('msgRecFuturosLista', `${quantidade} recebimento(s) provisionado(s), mantendo o dia combinado de cada m?s.`, 'ok');
+      setMsg('msgRecFuturosLista', `${quantidade} recebimento(s) provisionado(s) a cada ${diasIntervalo} dia(s).`, 'ok');
       return;
     }
     const payload = editando
@@ -2056,7 +2063,15 @@ function configurarCampoValorRecFuturo(valor = 0) {
 }
 
 async function excluirRecFuturo(id) {
-  if (!confirm('Excluir este provisionamento?')) return;
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(),
+    titulo: 'Excluir provisionamento',
+    subtitulo: `Confirme sua senha para excluir ${formatarMoedaBRFinanceiro(item?.valor || 0)}.`,
+    textoAcao: 'Excluir',
+    escopo: 'empresa',
+  });
+  if (!confirmacao) return;
   try {
     const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').delete().eq('id', id));
     if (error) throw error;
@@ -2110,6 +2125,14 @@ async function confirmarRecebimentoFuturo() {
 
   const confirmadoPorNome = usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Usuário';
   const valorConfirmado = Number(valor.toFixed(2));
+  const confirmacaoPin = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(),
+    titulo: item.confirmado_em ? 'Confirmar alteração do recebimento' : 'Confirmar baixa do recebimento',
+    subtitulo: `Confirme sua senha para lançar ${formatarMoedaBRFinanceiro(valorConfirmado)} na conta selecionada.`,
+    textoAcao: item.confirmado_em ? 'Salvar alteração' : 'Confirmar recebimento',
+    escopo: 'empresa',
+  });
+  if (!confirmacaoPin) return;
   // Usa a data informada no modal (meio-dia para evitar problemas de fuso hor?rio)
   const confirmadoEmISO = new Date(`${dataConfirmacao}T12:00:00`).toISOString();
 
@@ -2300,8 +2323,12 @@ async function excluirRecebiveisSelecionadosFinanceiro() {
     return;
   }
 
-  const msg = `Deseja excluir ${idsSelecionados.length} recebível(is)? Esta ação não pode ser desfeita.`;
-  if (!confirm(msg)) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Excluir recebíveis selecionados',
+    subtitulo: `Confirme sua senha para excluir ${idsSelecionados.length} recebível(is).`,
+    textoAcao: 'Excluir selecionados', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
 
   const btnExcluir = document.getElementById('btnExcluirRecebiveisSelecionadosFinanceiro');
   const btnSelecionar = document.getElementById('btnSelecionarTodosRecebiveisFinanceiro');
@@ -2395,8 +2422,12 @@ async function excluirRecFuturosSelecionados() {
   const valorSelecionado = (recFuturosCache || [])
     .filter(item => idsSelecionados.includes(String(item.id)))
     .reduce((soma, item) => soma + Number(item.valor || 0), 0);
-  const msg = `Deseja excluir ${idsSelecionados.length} recebimento(s), no total de ${formatarMoedaBRFinanceiro(valorSelecionado)}? Esta ação não pode ser desfeita.`;
-  if (!confirm(msg)) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Excluir provisões selecionadas',
+    subtitulo: `Confirme sua senha para excluir ${idsSelecionados.length} recebimento(s), no total de ${formatarMoedaBRFinanceiro(valorSelecionado)}.`,
+    textoAcao: 'Excluir selecionadas', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
 
   const btnExcluir = document.getElementById('btnExcluirRecFuturosSelecionados');
   const btnSelecionar = document.getElementById('btnSelecionarTodosRecFuturos');
@@ -3414,7 +3445,12 @@ async function localizarRecebivelGeradoPorProvisionamento(item) {
 async function estornarRecebimentoFuturo(id) {
   const item = recFuturosCache.find(i => String(i.id) === String(id));
   if (!item?.confirmado_em) return;
-  if (!confirm(`Estornar o recebimento de ${formatarMoedaBRFinanceiro(item.valor_confirmado ?? item.valor ?? 0)}?\n\nO valor será descontado da conta e o lançamento voltará para pendente.`)) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Estornar recebimento',
+    subtitulo: `Confirme sua senha para estornar ${formatarMoedaBRFinanceiro(item.valor_confirmado ?? item.valor ?? 0)} e devolver o lançamento para pendente.`,
+    textoAcao: 'Confirmar estorno', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
   try {
     const recebivel = await localizarRecebivelGeradoPorProvisionamento(item);
     if (!recebivel) throw new Error('Não foi possível localizar o recebível gerado por esta confirmação.');

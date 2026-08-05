@@ -3305,7 +3305,11 @@ function renderizarRelatorioRecebimentos(itens = []) {
   lista.innerHTML = itens.map(item => `
     <tr>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')}</td>
-      <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomePagadorRelatorioRecebimentos(item))}</td>
+      <td style="padding:10px;border-bottom:1px solid var(--border)">
+        ${escaparHtmlBasico(obterNomePagadorRelatorioRecebimentos(item))}
+        ${item.observacao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${escaparHtmlBasico(item.observacao)}</div>` : ''}
+        ${item.intervalo_dias ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">Recorrência ${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1} · a cada ${item.intervalo_dias} dia(s)</div>` : ''}
+      </td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeFormaRelatorioRecebimentos(item))}</td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeContaRelatorioRecebimentos(item))}</td>
       <td style="padding:10px;border-bottom:1px solid var(--border);text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor || 0))}</td>
@@ -3315,8 +3319,8 @@ function renderizarRelatorioRecebimentos(itens = []) {
 }
 
 async function buscarDadosRelatorioRecebimentos() {
-  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, updated_at, criado_por_id, criado_por_nome, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
-  const camposSemAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
+  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, updated_at, criado_por_id, criado_por_nome, qtd_parcelas, intervalo_dias, observacao, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
+  const camposSemAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, qtd_parcelas, intervalo_dias, observacao, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
 
   const executar = (campos) => sb
     .from('recebiveis')
@@ -3335,7 +3339,7 @@ async function buscarDadosRelatorioRecebimentos() {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros')
-          .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)')
+          .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, observacao, intervalo_dias, qtd_recorrencias, numero_recorrencia, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)')
           .is('confirmado_em', null)
           .order('data_prevista', { ascending: true })
       );
@@ -3355,7 +3359,7 @@ async function buscarDadosRelatorioRecebimentos() {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros')
-          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
+          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, observacao, intervalo_dias, qtd_recorrencias, numero_recorrencia, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
           .not('confirmado_em', 'is', null)
           .order('confirmado_em', { ascending: false })
       );
@@ -3488,6 +3492,9 @@ function montarLinhasExportacaoRelatorioRecebimentos() {
     forma: obterNomeFormaRelatorioRecebimentos(item),
     conta: obterNomeContaRelatorioRecebimentos(item),
     valor: Number(item.valor || 0) || 0,
+    observacao: item.observacao || '',
+    recorrencia: item.intervalo_dias ? `${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1}` : '',
+    intervaloDias: item.intervalo_dias || '',
     lancadoPor: obterNomeUsuarioRelatorioRecebimentos(item),
   }));
 }
@@ -3499,7 +3506,7 @@ function exportarRelatorioRecebimentosCsv() {
     return;
   }
 
-  const cabecalho = ['Data/hora', 'Pagador', 'Forma de pagamento', 'Conta financeira', 'Valor', 'Lancado por'];
+  const cabecalho = ['Data/hora', 'Pagador', 'Forma de pagamento', 'Conta financeira', 'Valor', 'Observacao', 'Recorrencia', 'Intervalo em dias', 'Lancado por'];
   const conteudo = [
     cabecalho.map(escaparCsvRelatorioFinanceiro).join(';'),
     ...linhas.map(item => [
@@ -3508,6 +3515,9 @@ function exportarRelatorioRecebimentosCsv() {
       item.forma,
       item.conta,
       item.valor.toFixed(2),
+      item.observacao,
+      item.recorrencia,
+      item.intervaloDias,
       item.lancadoPor,
     ].map(escaparCsvRelatorioFinanceiro).join(';')),
   ].join('\n');

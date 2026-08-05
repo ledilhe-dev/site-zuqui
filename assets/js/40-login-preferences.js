@@ -92,7 +92,12 @@ function obterTelaPreferidaAoLogin() {
 }
 // ══════════════════════════════════════════════════════════════════
 async function excluirRecebivelFinanceiro(id) {
-  if (!confirm('Excluir este recebível?')) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Excluir recebível',
+    subtitulo: 'Confirme sua senha para excluir este recebível e estornar o saldo correspondente.',
+    textoAcao: 'Excluir recebível', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
 
   let item = recebiveisFinanceiroCache.find(recebivel => String(recebivel.id) === String(id)) || null;
   if (!item) {

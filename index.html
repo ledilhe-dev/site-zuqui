@@ -2737,7 +2737,7 @@
     <div>
       <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Data prevista de pagamento <span style="color:var(--red)">*</span></div>
       <input id="recebivelDataPrevista" type="date" style="width:100%;border-radius:10px;font-size:16px;font-weight:700;padding:11px 14px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);">
-      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">As próximas parcelas mantêm este dia do mês. Finais de semana e feriados avançam para o próximo dia útil.</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">As próximas provisões respeitam o intervalo em dias. Finais de semana e feriados avançam para o próximo dia útil.</div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -2750,11 +2750,12 @@
         <div id="nrQtdErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
       </div>
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Periodicidade mensal</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Intervalo em dias <span style="color:var(--red)">*</span></div>
         <input id="recebivelDiasIntervalo" type="number" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
-          value="30" readonly aria-label="Periodicidade mensal, mantendo o mesmo dia do mês">
-        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;text-align:center;">Mesmo dia a cada mês</div>
+          value="30" min="1" max="365" aria-label="Intervalo entre recebimentos em dias"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3);">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;text-align:center;">Ex.: 1 para diário, 7 para semanal</div>
         <div id="nrDiasErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
       </div>
     </div>
@@ -3036,17 +3037,17 @@
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260804-estorno-recebimentos"></script>
+<script src="./assets/js/30-finance.js?v=20260804-periodicidade-diaria-senha"></script>
 <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
-<script src="./assets/js/40-login-preferences.js?v=20260727-cofre-acoes-v3"></script>
+<script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260727-fornecedor-v3"></script>
+<script src="./assets/js/60-timeclock.js?v=20260804-relatorio-recorrencia"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
