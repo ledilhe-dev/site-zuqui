@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v120-pin-sem-falso-negativo';
+const CACHE_NAME = 'check-diario-pwa-v121-estorno-recebimentos';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

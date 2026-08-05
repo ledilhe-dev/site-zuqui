@@ -1126,6 +1126,7 @@ async function recebiveisSaldoGerenciadoNoBanco() {
 
 function limparFormularioRecebivelFinanceiro() {
   recebivelFinanceiroEmEdicaoId = null;
+  recFuturoEmEdicaoId = null;
   const campoPagador = document.getElementById('recebivelPagadorBusca');
   const campoPagadorId = document.getElementById('recebivelPagadorId');
   const campoForma = document.getElementById('recebivelFormaPagamentoId');
@@ -1243,6 +1244,58 @@ async function salvarRecebivelFinanceiro() {
       intervalo_dias: diasIntervalo > 0 ? diasIntervalo : 30,
       observacao: observacao || null,
     };
+    // O mesmo formulário edita provisionamentos, que ainda não movimentam saldo.
+    if (recFuturoEmEdicaoId) {
+      const anterior = recFuturosCache.find(item => String(item.id) === String(recFuturoEmEdicaoId));
+      if (!anterior) {
+        setMsg('msgRecebivelFinanceiro', 'Recebimento provisionado não encontrado. Atualize a lista.', 'err');
+        return;
+      }
+      const relacionados = recFuturosCache
+        .filter(item => !item.confirmado_em
+          && String(item.pagador_id) === String(anterior.pagador_id)
+          && String(item.created_at || '') === String(anterior.created_at || '')
+          && Number(item.qtd_recorrencias || 1) === Number(anterior.qtd_recorrencias || 1))
+        .sort((a, b) => Number(a.numero_recorrencia || 1) - Number(b.numero_recorrencia || 1));
+      let alterarTodos = false;
+      if (relacionados.length > 1) {
+        const decisao = await abrirModalConfirmacaoFinanceira({
+          titulo: 'DESEJA ALTERAR EM TODOS LANÇAMENTOS?',
+          subtitulo: 'Este recebimento possui lançamentos relacionados',
+          fornecedor: anterior.fornecedores?.nome || 'Pagador',
+          lancamento: observacao || anterior.observacao || 'Recebimento provisionado',
+          detalhes: [`Lançamentos pendentes relacionados: ${relacionados.length}`],
+          textoSim: 'Sim, alterar todos',
+          textoNao: 'Não, alterar só este',
+        });
+        if (decisao === 'cancelar') return;
+        alterarTodos = decisao === 'sim';
+      }
+      const alvos = alterarTodos ? relacionados : [anterior];
+      const numeroAtual = Number(anterior.numero_recorrencia || 1);
+      for (const alvo of alvos) {
+        const deslocamento = Number(alvo.numero_recorrencia || 1) - numeroAtual;
+        const dados = {
+          pagador_id: pagadorId,
+          forma_pagamento_id: formaPagamentoId,
+          conta_financeira_id: contaFinanceiraId,
+          valor: Number(valorRecebivel.toFixed(2)),
+          data_prevista: alterarTodos ? calcularVencimentoParcelaFinanceiro(dataPrevista, deslocamento, diasIntervalo) : dataPrevista,
+          intervalo_dias: diasIntervalo,
+          observacao: observacao || null,
+        };
+        const { error: erroEdicao } = await executarSemFiltroLojaTemporario(() =>
+          sb.from('recebiveis_futuros').update(dados).eq('id', alvo.id).is('confirmado_em', null)
+        );
+        if (erroEdicao) throw erroEdicao;
+      }
+      recFuturoEmEdicaoId = null;
+      nrFechar();
+      limparFormularioRecebivelFinanceiro();
+      await carregarRecFuturos();
+      setMsg('msgRecFuturosLista', alterarTodos ? 'Todos os recebimentos relacionados foram atualizados.' : 'Recebimento provisionado atualizado.', 'ok');
+      return;
+    }
     const editando = !!recebivelFinanceiroEmEdicaoId;
     if (!editando) {
       const quantidade = Math.max(1, qtdParcelas);
@@ -1953,6 +2006,7 @@ async function carregarRecFuturos() {
             </span>
             ${tagStatus}
             ${!confirmado ? `<button class="btn btn-green btn-sm rec-confirmar-btn" onclick="abrirModalConfirmarRecFuturo('${item.id}')">Confirmar recebimento</button>` : ''}
+            ${confirmado ? `<button class="btn btn-red btn-sm" onclick="estornarRecebimentoFuturo('${item.id}')">Estornar</button>` : ''}
             <button class="btn btn-ghost btn-sm" onclick="editarRecFuturo('${item.id}')">Editar</button>
             <button class="btn btn-red btn-sm" onclick="excluirRecFuturo('${item.id}')">Excluir</button>
           </div>
@@ -1971,6 +2025,28 @@ async function carregarRecFuturos() {
 }
 
 function editarRecFuturo(id) {
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  if (!item) return;
+  if (!item.confirmado_em) {
+    recFuturoEmEdicaoId = String(id);
+    recebivelFinanceiroEmEdicaoId = null;
+    NR.pagadorId = item.pagador_id || null;
+    NR.pagadorNome = item.fornecedores?.nome || '';
+    NR.valor = Number(item.valor || 0);
+    NR.modoEdicao = true;
+    nrAbrir(true);
+    if (NR.pagadorNome) nrSelPagador(NR.pagadorId, NR.pagadorNome);
+    preencherSelectRecebivelFormasPagamentoFinanceiro(item.forma_pagamento_id || '');
+    preencherSelectRecebivelContasFinanceiras(item.conta_financeira_id || '');
+    const valor = document.getElementById('recebivelValor'); if (valor) valor.value = nrFmtBR(item.valor || 0);
+    const data = document.getElementById('recebivelDataPrevista'); if (data) data.value = String(item.data_prevista || '').slice(0, 10);
+    const qtd = document.getElementById('recebivelQtdParcelas'); if (qtd) qtd.value = item.qtd_recorrencias || 1;
+    const dias = document.getElementById('recebivelDiasIntervalo'); if (dias) dias.value = item.intervalo_dias || 30;
+    const obs = document.getElementById('recebivelObservacao'); if (obs) obs.value = item.observacao || '';
+    const titulo = document.getElementById('nrTitulo'); if (titulo) titulo.textContent = 'Editar recebimento provisionado';
+    const salvar = document.getElementById('btnSalvarRecebivelFinanceiro'); if (salvar) salvar.textContent = '✓ Salvar alterações';
+    return;
+  }
   // Form de lançamento removido ? editar redireciona para confirma·o de recebimento
   abrirModalConfirmarRecFuturo(id);
 }
@@ -1996,14 +2072,15 @@ function abrirModalConfirmarRecFuturo(id) {
   document.getElementById('modalConfirmarRecFuturoId').value = id;
   // Pr?-preencher com valores previstos
   const hoje = new Date().toISOString().slice(0, 10);
-  document.getElementById('modalConfirmarData').value = hoje;
-  document.getElementById('modalConfirmarValor').value = item.valor > 0 ? formatarMoedaBRFinanceiro(item.valor) : '';
+  document.getElementById('modalConfirmarData').value = item.confirmado_em ? String(item.confirmado_em).slice(0, 10) : hoje;
+  const valorAtual = item.confirmado_em ? Number(item.valor_confirmado ?? item.valor ?? 0) : Number(item.valor || 0);
+  document.getElementById('modalConfirmarValor').value = valorAtual > 0 ? formatarMoedaBRFinanceiro(valorAtual) : '';
   // Preencher select de contas
   const selConta = document.getElementById('modalConfirmarConta');
   if (selConta) {
     selConta.innerHTML = '<option value="">Selecione a conta</option>' +
       (contasFinanceirasCache || []).map(c =>
-        `<option value="${c.id}" ${String(c.id) === String(item.conta_financeira_id) ? 'selected' : ''}>${escaparHtmlBasico(c.nome)}</option>`
+        `<option value="${c.id}" ${String(c.id) === String(item.conta_financeira_confirmada_id || item.conta_financeira_id) ? 'selected' : ''}>${escaparHtmlBasico(c.nome)}</option>`
       ).join('');
   }
   document.getElementById('modalConfirmarObs').value = '';
@@ -2042,6 +2119,40 @@ async function confirmarRecebimentoFuturo() {
   const lojaId = contaSelecionada?.loja_id || item.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
 
   try {
+    // Se já estava confirmado, editar o recebível real em vez de criar outro.
+    // O trigger do banco ajusta apenas a diferença/transferência; em bancos
+    // antigos fazemos o estorno e a nova entrada explicitamente.
+    if (item.confirmado_em) {
+      const recebivelAnterior = await localizarRecebivelGeradoPorProvisionamento(item);
+      if (!recebivelAnterior) throw new Error('Não foi possível localizar o recebível vinculado para edição.');
+      const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+      const { error: erroEditar } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').update({
+        conta_financeira_id: contaId,
+        valor: valorConfirmado,
+      }).eq('id', recebivelAnterior.id));
+      if (erroEditar) throw erroEditar;
+      if (!saldoGerenciadoNoBanco) {
+        const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: recebivelAnterior.conta_financeira_id, recebivelId: recebivelAnterior.id, tipo: 'estorno', valor: recebivelAnterior.valor, descricao: 'Estorno por edição de recebimento' });
+        if (erroEstorno) throw erroEstorno;
+        const { error: erroEntrada } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: contaId, recebivelId: recebivelAnterior.id, tipo: 'entrada', valor: valorConfirmado, descricao: 'Entrada atualizada de recebimento' });
+        if (erroEntrada) throw erroEntrada;
+      }
+      const { error: erroFuturo } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({
+        confirmado_em: item.confirmado_em,
+        confirmado_por_nome: confirmadoPorNome,
+        valor_confirmado: valorConfirmado,
+        conta_financeira_confirmada_id: contaId,
+      }).eq('id', id));
+      if (erroFuturo) throw erroFuturo;
+      fecharModalConfirmarRecFuturo();
+      await carregarContasFinanceiras({ render: false, silencioso: true });
+      await carregarRecFuturos();
+      recebiveisFinanceiroListaVisivel = true;
+      await carregarRecebiveisFinanceiro();
+      if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+      setMsg('msgRecFuturosLista', 'Recebimento atualizado e saldo recalculado.', 'ok');
+      return;
+    }
     // 1. Marcar o recebimento futuro como confirmado (tabela recebiveis_futuros)
     const payloadConfirmacao = {
       confirmado_em: confirmadoEmISO,
@@ -3243,6 +3354,99 @@ function faturaAoAlterarObs(itemId, valor) {
   item._obsManual = String(valor || '').trim().slice(0, 200);
   item._obsAuto = false;
   item._obsEditadaManual = true;
+}
+
+// Variante sem confirmação individual usada pela exclusão em lote.
+async function excluirRecebivelFinanceiroInterno(id, { atualizarTela = false } = {}) {
+  const item = recebiveisFinanceiroCache.find(recebivel => String(recebivel.id) === String(id));
+  if (!item) return false;
+  const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+  if (!saldoGerenciadoNoBanco && item.conta_financeira_id && Number(item.valor || 0) > 0) {
+    const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: item.conta_financeira_id, recebivelId: id, tipo: 'estorno', valor: item.valor, descricao: 'Estorno por exclusão de recebível' });
+    if (erroEstorno) return false;
+  }
+  const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').delete().eq('id', id));
+  if (error) {
+    if (!saldoGerenciadoNoBanco && item.conta_financeira_id && Number(item.valor || 0) > 0) {
+      await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: item.conta_financeira_id, recebivelId: id, tipo: 'entrada', valor: item.valor, descricao: 'Desfaz estorno de exclusão não concluída' });
+    }
+    return false;
+  }
+  recebiveisFinanceiroSelecionadosIds.delete(String(id));
+  if (atualizarTela) await carregarRecebiveisFinanceiro();
+  return true;
+}
+
+async function localizarRecebivelGeradoPorProvisionamento(item) {
+  if (!item?.confirmado_em) return null;
+  const centro = new Date(item.confirmado_em).getTime();
+  const inicio = new Date(centro - 10 * 60 * 1000).toISOString();
+  const fim = new Date(centro + 10 * 60 * 1000).toISOString();
+  let query = sb.from('recebiveis')
+    .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, loja_id, empresa_id')
+    .eq('pagador_id', item.pagador_id)
+    .eq('forma_pagamento_id', item.forma_pagamento_id)
+    .eq('conta_financeira_id', item.conta_financeira_confirmada_id || item.conta_financeira_id)
+    .eq('valor', Number(item.valor_confirmado ?? item.valor ?? 0))
+    .gte('created_at', inicio).lte('created_at', fim);
+  if (item.loja_id) query = query.eq('loja_id', item.loja_id);
+  let { data, error } = await executarSemFiltroLojaTemporario(() => query);
+  if (error) throw error;
+  // A data efetiva pode ter sido informada retroativamente. Nesse caso o
+  // created_at do recebível não fica perto de confirmado_em.
+  if (!data?.length) {
+    let fallback = sb.from('recebiveis')
+      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, loja_id, empresa_id')
+      .eq('pagador_id', item.pagador_id)
+      .eq('forma_pagamento_id', item.forma_pagamento_id)
+      .eq('conta_financeira_id', item.conta_financeira_confirmada_id || item.conta_financeira_id)
+      .eq('valor', Number(item.valor_confirmado ?? item.valor ?? 0))
+      .order('created_at', { ascending: false }).limit(1);
+    if (item.loja_id) fallback = fallback.eq('loja_id', item.loja_id);
+    const resultado = await executarSemFiltroLojaTemporario(() => fallback);
+    data = resultado.data;
+    error = resultado.error;
+    if (error) throw error;
+  }
+  return (data || []).sort((a, b) => Math.abs(new Date(a.created_at).getTime() - centro) - Math.abs(new Date(b.created_at).getTime() - centro))[0] || null;
+}
+
+async function estornarRecebimentoFuturo(id) {
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  if (!item?.confirmado_em) return;
+  if (!confirm(`Estornar o recebimento de ${formatarMoedaBRFinanceiro(item.valor_confirmado ?? item.valor ?? 0)}?\n\nO valor será descontado da conta e o lançamento voltará para pendente.`)) return;
+  try {
+    const recebivel = await localizarRecebivelGeradoPorProvisionamento(item);
+    if (!recebivel) throw new Error('Não foi possível localizar o recebível gerado por esta confirmação.');
+    const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+    if (!saldoGerenciadoNoBanco) {
+      const { error: erroSaldo } = await registrarMovimentacaoContaFinanceira({
+        contaFinanceiraId: recebivel.conta_financeira_id,
+        recebivelId: recebivel.id,
+        tipo: 'estorno',
+        valor: recebivel.valor,
+        descricao: 'Estorno de recebimento provisionado',
+      });
+      if (erroSaldo) throw erroSaldo;
+    }
+    const { error: erroExcluir } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').delete().eq('id', recebivel.id));
+    if (erroExcluir) {
+      if (!saldoGerenciadoNoBanco) await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: recebivel.conta_financeira_id, recebivelId: recebivel.id, tipo: 'entrada', valor: recebivel.valor, descricao: 'Desfaz estorno não concluído' });
+      throw erroExcluir;
+    }
+    const { error: erroReabrir } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({
+      confirmado_em: null, confirmado_por_nome: null, valor_confirmado: null, conta_financeira_confirmada_id: null,
+    }).eq('id', id));
+    if (erroReabrir) throw erroReabrir;
+    await carregarContasFinanceiras({ render: false, silencioso: true });
+    await carregarRecFuturos();
+    recebiveisFinanceiroListaVisivel = true;
+    await carregarRecebiveisFinanceiro();
+    if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+    setMsg('msgRecFuturosLista', 'Recebimento estornado e devolvido para pendente.', 'ok');
+  } catch (e) {
+    setMsg('msgRecFuturosLista', `Não foi possível estornar: ${mensagemErroSupabase(e, e?.message || 'erro desconhecido')}`, 'err');
+  }
 }
 
 function faturaAoAlterarParcelasManuais(itemId, valor) {
