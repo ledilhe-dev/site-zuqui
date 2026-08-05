@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v122-periodicidade-diaria-senha';
+const CACHE_NAME = 'check-diario-pwa-v123-sequencial-dias-corridos';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

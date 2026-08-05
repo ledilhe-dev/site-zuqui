@@ -1143,11 +1143,13 @@ function limparFormularioRecebivelFinanceiro() {
   nrLimparPagador();
   const campoQtd = document.getElementById('recebivelQtdParcelas');
   const campoDias = document.getElementById('recebivelDiasIntervalo');
+  const campoSequencial = document.getElementById('recebivelSequencialDiasCorridos');
   const campoDataPrevista = document.getElementById('recebivelDataPrevista');
   const campoObs = document.getElementById('recebivelObservacao');
   const campoVal = document.getElementById('recebivelValor');
   if (campoQtd) campoQtd.value = '1';
   if (campoDias) campoDias.value = '30';
+  if (campoSequencial) campoSequencial.checked = false;
   if (campoDataPrevista) campoDataPrevista.value = '';
   if (campoObs) { campoObs.value = ''; campoObs.style.borderColor = ''; }
   if (campoVal) campoVal.value = '';
@@ -1182,6 +1184,7 @@ async function salvarRecebivelFinanceiro() {
     const valorRecebivel = lerValorMonetarioFinanceiro(valorTexto);
     const qtdParcelas = parseInt(document.getElementById('recebivelQtdParcelas')?.value || '1', 10) || 1;
     const diasIntervalo = parseInt(document.getElementById('recebivelDiasIntervalo')?.value || '30', 10) || 30;
+    const sequencialDiasCorridos = document.getElementById('recebivelSequencialDiasCorridos')?.checked === true;
     const dataPrevista = String(document.getElementById('recebivelDataPrevista')?.value || '').trim();
     const observacao = String(document.getElementById('recebivelObservacao')?.value || '').trim().slice(0, 80);
 
@@ -1287,8 +1290,9 @@ async function salvarRecebivelFinanceiro() {
           forma_pagamento_id: formaPagamentoId,
           conta_financeira_id: contaFinanceiraId,
           valor: Number(valorRecebivel.toFixed(2)),
-          data_prevista: alterarTodos ? calcularVencimentoParcelaFinanceiro(dataPrevista, deslocamento, diasIntervalo) : dataPrevista,
+          data_prevista: alterarTodos ? calcularVencimentoParcelaFinanceiro(dataPrevista, deslocamento, diasIntervalo, sequencialDiasCorridos) : dataPrevista,
           intervalo_dias: diasIntervalo,
+          sequencial_dias_corridos: sequencialDiasCorridos,
           observacao: observacao || null,
         };
         const { error: erroEdicao } = await executarSemFiltroLojaTemporario(() =>
@@ -1312,8 +1316,9 @@ async function salvarRecebivelFinanceiro() {
         forma_pagamento_id: formaPagamentoId,
         conta_financeira_id: contaFinanceiraId,
         valor: Number(valorRecebivel.toFixed(2)),
-        data_prevista: calcularVencimentoParcelaFinanceiro(dataPrevista, indice, diasIntervalo),
+        data_prevista: calcularVencimentoParcelaFinanceiro(dataPrevista, indice, diasIntervalo, sequencialDiasCorridos),
         intervalo_dias: diasIntervalo,
+        sequencial_dias_corridos: sequencialDiasCorridos,
         qtd_recorrencias: quantidade,
         numero_recorrencia: indice + 1,
         observacao: observacao || null,
@@ -1333,7 +1338,7 @@ async function salvarRecebivelFinanceiro() {
       nrFechar();
       limparFormularioRecebivelFinanceiro();
       await carregarRecFuturos();
-      setMsg('msgRecFuturosLista', `${quantidade} recebimento(s) provisionado(s) a cada ${diasIntervalo} dia(s).`, 'ok');
+      setMsg('msgRecFuturosLista', `${quantidade} recebimento(s) provisionado(s) a cada ${diasIntervalo} dia(s)${sequencialDiasCorridos ? ', em dias corridos' : ', com ajuste para dia útil'}.`, 'ok');
       return;
     }
     const payload = editando
@@ -1896,7 +1901,7 @@ async function carregarRecFuturos() {
   try {
     const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     let query = sb.from('recebiveis_futuros')
-      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, confirmado_em, confirmado_por_nome, valor_confirmado, conta_financeira_confirmada_id, observacao, criado_por_nome, created_at, intervalo_dias, qtd_recorrencias, numero_recorrencia, loja_id, empresa_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
+      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, confirmado_em, confirmado_por_nome, valor_confirmado, conta_financeira_confirmada_id, observacao, criado_por_nome, created_at, intervalo_dias, sequencial_dias_corridos, qtd_recorrencias, numero_recorrencia, loja_id, empresa_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
       .eq('ativo', true)
       .order('data_prevista', { ascending: true });
     if (soAbertos) query = query.is('confirmado_em', null);
@@ -2049,6 +2054,7 @@ function editarRecFuturo(id) {
     const data = document.getElementById('recebivelDataPrevista'); if (data) data.value = String(item.data_prevista || '').slice(0, 10);
     const qtd = document.getElementById('recebivelQtdParcelas'); if (qtd) qtd.value = item.qtd_recorrencias || 1;
     const dias = document.getElementById('recebivelDiasIntervalo'); if (dias) dias.value = item.intervalo_dias || 30;
+    const sequencial = document.getElementById('recebivelSequencialDiasCorridos'); if (sequencial) sequencial.checked = item.sequencial_dias_corridos === true;
     const obs = document.getElementById('recebivelObservacao'); if (obs) obs.value = item.observacao || '';
     const titulo = document.getElementById('nrTitulo'); if (titulo) titulo.textContent = 'Editar recebimento provisionado';
     const salvar = document.getElementById('btnSalvarRecebivelFinanceiro'); if (salvar) salvar.textContent = '✓ Salvar alterações';

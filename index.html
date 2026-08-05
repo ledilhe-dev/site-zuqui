@@ -2760,6 +2760,17 @@
       </div>
     </div>
 
+    <div class="recebivel-sequencial-box">
+      <label class="recebivel-sequencial-label" for="recebivelSequencialDiasCorridos">
+        <input id="recebivelSequencialDiasCorridos" type="checkbox" onchange="nrAtualizarAjudaSequencial()">
+        <span>Sequencial (dias corridos)</span>
+      </label>
+      <button class="recebivel-info-amarelo" type="button" aria-label="Explicar regra sequencial" aria-controls="recebivelSequencialAjuda" aria-expanded="false" onclick="nrAlternarAjudaSequencial(this)">i</button>
+      <div id="recebivelSequencialAjuda" class="recebivel-sequencial-ajuda" hidden>
+        Marcado: repete em dias corridos, incluindo sábados, domingos e feriados. Desmarcado: datas que caírem em fim de semana ou feriado passam para o próximo dia útil.
+      </div>
+    </div>
+
     <!-- Observação -->
     <div>
       <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Observação <span style="color:var(--red)">*</span></div>
@@ -2782,7 +2793,7 @@
 </div>
 
 <link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260730-dashboard-ordenacao-colunas">
-<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260722-valor-e-limpar-filtros">
+<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260804-sequencial-dias-corridos">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-enquadramento-global">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
 <link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-filtros-ordenados">
@@ -3037,17 +3048,17 @@
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260804-periodicidade-diaria-senha"></script>
+<script src="./assets/js/30-finance.js?v=20260804-sequencial-dias-corridos"></script>
 <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260727-sem-filtro-lojas"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260804-calculo-dias-corridos"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260804-relatorio-recorrencia"></script>
+<script src="./assets/js/60-timeclock.js?v=20260804-relatorio-regra-dias"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
@@ -3242,4 +3253,4 @@
 
 <script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260728-nova-conta-v3"></script>
 
-<script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js"></script>
+<script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js?v=20260804-ajuda-sequencial"></script>

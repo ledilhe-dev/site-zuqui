@@ -3308,7 +3308,7 @@ function renderizarRelatorioRecebimentos(itens = []) {
       <td style="padding:10px;border-bottom:1px solid var(--border)">
         ${escaparHtmlBasico(obterNomePagadorRelatorioRecebimentos(item))}
         ${item.observacao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${escaparHtmlBasico(item.observacao)}</div>` : ''}
-        ${item.intervalo_dias ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">Recorrência ${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1} · a cada ${item.intervalo_dias} dia(s)</div>` : ''}
+        ${item.intervalo_dias ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">Recorrência ${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1} · a cada ${item.intervalo_dias} dia(s) · ${item.sequencial_dias_corridos ? 'dias corridos' : 'próximo dia útil'}</div>` : ''}
       </td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeFormaRelatorioRecebimentos(item))}</td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeContaRelatorioRecebimentos(item))}</td>
@@ -3339,7 +3339,7 @@ async function buscarDadosRelatorioRecebimentos() {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros')
-          .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, observacao, intervalo_dias, qtd_recorrencias, numero_recorrencia, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)')
+          .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, observacao, intervalo_dias, sequencial_dias_corridos, qtd_recorrencias, numero_recorrencia, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)')
           .is('confirmado_em', null)
           .order('data_prevista', { ascending: true })
       );
@@ -3359,7 +3359,7 @@ async function buscarDadosRelatorioRecebimentos() {
     try {
       const { data: futuros } = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros')
-          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, observacao, intervalo_dias, qtd_recorrencias, numero_recorrencia, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
+          .select('id, pagador_id, forma_pagamento_id, conta_financeira_confirmada_id, valor_confirmado, confirmado_em, confirmado_por_nome, observacao, intervalo_dias, sequencial_dias_corridos, qtd_recorrencias, numero_recorrencia, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras!conta_financeira_confirmada_id(id, nome)')
           .not('confirmado_em', 'is', null)
           .order('confirmado_em', { ascending: false })
       );
@@ -3495,6 +3495,7 @@ function montarLinhasExportacaoRelatorioRecebimentos() {
     observacao: item.observacao || '',
     recorrencia: item.intervalo_dias ? `${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1}` : '',
     intervaloDias: item.intervalo_dias || '',
+    regraDias: item.intervalo_dias ? (item.sequencial_dias_corridos ? 'Dias corridos' : 'Próximo dia útil') : '',
     lancadoPor: obterNomeUsuarioRelatorioRecebimentos(item),
   }));
 }
@@ -3506,7 +3507,7 @@ function exportarRelatorioRecebimentosCsv() {
     return;
   }
 
-  const cabecalho = ['Data/hora', 'Pagador', 'Forma de pagamento', 'Conta financeira', 'Valor', 'Observacao', 'Recorrencia', 'Intervalo em dias', 'Lancado por'];
+  const cabecalho = ['Data/hora', 'Pagador', 'Forma de pagamento', 'Conta financeira', 'Valor', 'Observacao', 'Recorrencia', 'Intervalo em dias', 'Regra dos dias', 'Lancado por'];
   const conteudo = [
     cabecalho.map(escaparCsvRelatorioFinanceiro).join(';'),
     ...linhas.map(item => [
@@ -3518,6 +3519,7 @@ function exportarRelatorioRecebimentosCsv() {
       item.observacao,
       item.recorrencia,
       item.intervaloDias,
+      item.regraDias,
       item.lancadoPor,
     ].map(escaparCsvRelatorioFinanceiro).join(';')),
   ].join('\n');

@@ -752,9 +752,12 @@ function ajustarVencimentoParaDiaUtilFinanceiro(dataISO) {
 // (ex.: base 08/07 → 08/08, 08/09... ajustando meses curtos como fevereiro).
 // Qualquer outro intervalo (15, 45...) continua somando dias exatos.
 // idx pode ser negativo (recálculo de parcelas anteriores na edição).
-function calcularVencimentoParcelaFinanceiro(baseISO, idx, intervaloDias) {
+function calcularVencimentoParcelaFinanceiro(baseISO, idx, intervaloDias, sequencialDiasCorridos = false) {
   const n = Number.parseInt(String(intervaloDias ?? ''), 10);
   const ehMensal = !Number.isFinite(n) || n <= 0 || n === 30;
+  if (sequencialDiasCorridos === true && Number.isFinite(n) && n > 0) {
+    return adicionarDiasDataISOFinanceiro(baseISO, idx * n) || baseISO;
+  }
   if (!ehMensal) {
     return ajustarVencimentoParaDiaUtilFinanceiro(adicionarDiasDataISOFinanceiro(baseISO, idx * n) || baseISO);
   }
