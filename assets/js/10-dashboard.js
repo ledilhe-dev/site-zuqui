@@ -996,7 +996,7 @@ function renderizarGraficosFinanceirosDashboard() {
   });
   const maxValor = Math.max(1, ...meses.map(m => Math.max(m.pago, m.pendente)));
   const elBarras = document.getElementById('dashGfBarras');
-  const modoMesesCompacto = window.matchMedia('(max-width: 700px)').matches;
+  const modoMesesCompacto = window.matchMedia('(max-width: 1100px)').matches;
   let barrasSvg = '';
 
   if (modoMesesCompacto) {
@@ -1145,7 +1145,7 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
         const mes = _dashGfMesDe(c);
         if (mes >= 0 && mes < 12) valoresMes[mes] += _dashGfValorDe(c);
       });
-      const curvaMobile = window.matchMedia('(max-width: 700px)').matches;
+      const curvaMobile = window.matchMedia('(max-width: 1100px)').matches;
       const largura = curvaMobile ? 300 : 620;
       const altura = curvaMobile ? 132 : 190;
       const margemX = curvaMobile ? 14 : 28;
@@ -1236,7 +1236,7 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
       }).join('');
       elDetalhe.innerHTML = `
         <div class="dash-gf-detail-title">Detalhamento dos lançamentos filtrados (${contasResumo.length}${contasResumo.length > LIMITE ? `, exibindo ${LIMITE}` : ''})</div>
-        <div class="dash-gf-detail-hint">No celular, arraste a tabela para o lado para ver categoria, compra, observação e status.</div>
+        <div class="dash-gf-detail-hint">No celular ou tablet, arraste a tabela para os lados para ver todas as colunas.</div>
         <div class="dash-gf-detail-wrap">
           <table class="dash-gf-detail-table">
             <thead>

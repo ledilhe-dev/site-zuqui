@@ -15,6 +15,32 @@ body,
   min-width: 0;
 }
 
+@media (min-width: 701px) and (max-width: 1100px) {
+  #cardDashboardGraficosFinanceiros { width:100%!important; max-width:100%!important; padding:12px!important; overflow:hidden!important; font-size:11px!important; }
+  #cardDashboardGraficosFinanceiros .dash-gf-header,
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar { width:100%!important; max-width:100%!important; gap:6px!important; }
+  #cardDashboardGraficosFinanceiros .btn,
+  #cardDashboardGraficosFinanceiros select { min-height:32px!important; padding:5px 7px!important; font-size:10px!important; }
+  #dashGfResumo { display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:7px 10px!important; font-size:10px!important; }
+  #dashGfBarras,#dashGfCurvaCategoria,#dashGfRosca,#dashGfRoscaCategoria,#dashGfTopCategorias,#dashGfDetalhe { width:100%!important; max-width:100%!important; min-width:0!important; box-sizing:border-box!important; }
+  .dash-gf-meses-mobile { display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:6px!important; width:100%!important; }
+  .dash-gf-mes-card,.dash-gf-mes-card.selecionado { width:100%!important; min-width:0!important; min-height:64px!important; padding:6px!important; font-size:9px!important; transform:none!important; }
+  .dash-gf-mes-card strong,.dash-gf-mes-card span,.dash-gf-mes-valor,.dash-gf-mes-valor b { font-size:9px!important; line-height:1.1!important; }
+  #dashGfCurvaCategoria { overflow:hidden!important; }
+  #dashGfCurvaCategoria svg { display:block!important; width:100%!important; max-width:100%!important; height:auto!important; }
+  #dashGfTopCategorias button { grid-template-columns:24px minmax(0,1fr) auto!important; gap:6px!important; padding:6px!important; font-size:10px!important; }
+  #dashGfTopCategorias button > span:nth-child(3) { display:none!important; }
+  #dashGfRosca,#dashGfRoscaCategoria { display:grid!important; grid-template-columns:130px minmax(0,1fr)!important; align-items:start!important; gap:10px!important; overflow:hidden!important; }
+  #dashGfRosca svg,#dashGfRoscaCategoria svg { width:125px!important; height:125px!important; }
+  #dashGfRosca > div,#dashGfRoscaCategoria > div { min-width:0!important; font-size:10px!important; }
+  #dashGfRosca > div > div,#dashGfRoscaCategoria > div > div { padding:2px!important; gap:4px!important; font-size:10px!important; }
+  #dashGfDetalhe { overflow:visible!important; }
+  #dashGfDetalhe .dash-gf-detail-wrap { display:block!important; width:100%!important; max-width:100%!important; overflow-x:scroll!important; overflow-y:hidden!important; -webkit-overflow-scrolling:touch!important; touch-action:pan-x!important; overscroll-behavior-x:contain!important; }
+  #dashGfDetalhe .dash-gf-detail-table { width:1120px!important; min-width:1120px!important; max-width:none!important; table-layout:fixed!important; font-size:10px!important; }
+  #dashGfDetalhe .dash-gf-detail-table th,#dashGfDetalhe .dash-gf-detail-table td { padding:7px 8px!important; font-size:10px!important; }
+  #dashGfDetalhe .dash-gf-detail-hint { display:block!important; margin:4px 0 7px!important; color:var(--text-muted)!important; font-size:10px!important; }
+}
+
 body,
 .main,
 .content {
