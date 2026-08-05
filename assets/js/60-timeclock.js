@@ -3305,13 +3305,14 @@ function renderizarRelatorioRecebimentos(itens = []) {
   if (!lista) return;
 
   if (!itens.length) {
-    lista.innerHTML = '<tr><td colspan="6" style="padding:16px;color:var(--text-muted)">Nenhum recebimento encontrado para os filtros informados.</td></tr>';
+    lista.innerHTML = '<tr><td colspan="7" style="padding:16px;color:var(--text-muted)">Nenhum recebimento encontrado para os filtros informados.</td></tr>';
     return;
   }
 
   lista.innerHTML = itens.map(item => `
     <tr>
       <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.created_at ? (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : fmtDate(item.created_at)) : '-')}</td>
+      <td style="padding:10px;border-bottom:1px solid var(--border);white-space:nowrap">${escaparHtmlBasico(item.data_prevista ? formatarDataBRFinanceiro(String(item.data_prevista).slice(0, 10)) : (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : '—'))}</td>
       <td style="padding:10px;border-bottom:1px solid var(--border)">
         ${escaparHtmlBasico(obterNomePagadorRelatorioRecebimentos(item))}
         ${item.observacao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${escaparHtmlBasico(item.observacao)}</div>` : ''}
@@ -3500,7 +3501,8 @@ async function carregarRelatorioRecebimentos() {
 
 function montarLinhasExportacaoRelatorioRecebimentos() {
   return (Array.isArray(relatorioRecebimentosCache) ? relatorioRecebimentosCache : []).map(item => ({
-    dataHora: item.created_at ? fmtDate(item.created_at) : '-',
+    dataHora: item.created_at ? (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : fmtDate(item.created_at)) : '-',
+    dataPrevista: item.data_prevista ? formatarDataBRFinanceiro(String(item.data_prevista).slice(0, 10)) : (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : '—'),
     pagador: obterNomePagadorRelatorioRecebimentos(item),
     forma: obterNomeFormaRelatorioRecebimentos(item),
     conta: obterNomeContaRelatorioRecebimentos(item),
@@ -3520,11 +3522,12 @@ function exportarRelatorioRecebimentosCsv() {
     return;
   }
 
-  const cabecalho = ['Data/hora', 'Pagador', 'Forma de pagamento', 'Conta financeira', 'Valor', 'Observacao', 'Recorrencia', 'Intervalo em dias', 'Regra dos dias', 'Lancado por'];
+  const cabecalho = ['Data/hora', 'Data prevista', 'Pagador', 'Forma de pagamento', 'Conta financeira', 'Valor', 'Observacao', 'Recorrencia', 'Intervalo em dias', 'Regra dos dias', 'Lancado por'];
   const conteudo = [
     cabecalho.map(escaparCsvRelatorioFinanceiro).join(';'),
     ...linhas.map(item => [
       item.dataHora,
+      item.dataPrevista,
       item.pagador,
       item.forma,
       item.conta,
@@ -3563,6 +3566,7 @@ function imprimirRelatorioRecebimentosPdf() {
   const htmlLinhas = linhas.map(item => `
     <tr>
       <td>${escaparHtmlBasico(item.dataHora)}</td>
+      <td>${escaparHtmlBasico(item.dataPrevista)}</td>
       <td>${escaparHtmlBasico(item.pagador)}</td>
       <td>${escaparHtmlBasico(item.forma)}</td>
       <td>${escaparHtmlBasico(item.conta)}</td>
@@ -3589,8 +3593,9 @@ function imprimirRelatorioRecebimentosPdf() {
           .box { border: 1px solid #d0d0d0; border-radius: 8px; padding: 10px; }
           .box .label { font-size: 11px; color: #666; text-transform: uppercase; }
           .box .valor { font-size: 18px; font-weight: bold; margin-top: 4px; }
-          table { width: 100%; border-collapse: collapse; font-size: 12px; }
-          th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
+          @page { size: landscape; margin: 10mm; }
+          table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
+          th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
           th { background: #f5f5f5; }
           ${cssRodapeRelatorioImpressao()}
         </style>
@@ -3608,6 +3613,7 @@ function imprimirRelatorioRecebimentosPdf() {
           <thead>
             <tr>
               <th>Data/hora</th>
+              <th>Data prevista</th>
               <th>Pagador</th>
               <th>Forma</th>
               <th>Conta financeira</th>

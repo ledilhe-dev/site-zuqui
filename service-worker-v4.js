@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v127-ipad-dashboard-completo';
+const CACHE_NAME = 'check-diario-pwa-v128-data-prevista-relatorio';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
