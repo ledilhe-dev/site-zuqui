@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v123-sequencial-dias-corridos';
+const CACHE_NAME = 'check-diario-pwa-v124-filtro-periodo-atual';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

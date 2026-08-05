@@ -3286,10 +3286,10 @@ async function aplicarAtalhoPeriodoRelatorioRecebimentos(dias = 7) {
   const hojeLocal = hoje();
   const dataInicio = document.getElementById('filtroRelRecebDataInicio');
   const dataFim = document.getElementById('filtroRelRecebDataFim');
-  const dataInicioAtalho = subtrairDiasDataLocal(hojeLocal, intervalo - 1);
-  const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_recebimentos', dataInicioAtalho, hojeLocal, 'recebimento') === true;
-  if (!sincronizouData && dataInicio) dataInicio.value = dataInicioAtalho;
-  if (!sincronizouData && dataFim) dataFim.value = hojeLocal;
+  const dataFimAtalho = adicionarDiasDataISO(hojeLocal, intervalo - 1);
+  const sincronizouData = window.sincronizarFiltroDataPadronizado?.('relatorio_recebimentos', hojeLocal, dataFimAtalho, 'recebimento') === true;
+  if (!sincronizouData && dataInicio) dataInicio.value = hojeLocal;
+  if (!sincronizouData && dataFim) dataFim.value = dataFimAtalho;
   await carregarRelatorioRecebimentos();
 }
 
