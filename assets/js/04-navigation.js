@@ -24,6 +24,7 @@ const topTitles = {
   financeiro_categorias_compra: ['Categorias de Compra', 'Classifique os lançamentos por categoria'],
   tela_preferida_login: ['Tela de Login Preferida', 'Configure a tela inicial por loja ou usuário'],
   financeiro_cofre: ['Cofre', 'Recebimentos lançados em recebíveis'],
+  financeiro_sangrias_raffinato: ['Integração Raffinato', 'Conexão SQL e sangrias por loja'],
   integracoes_financeiras_dashboard: ['Dashboard Financeiro', 'Visão estrutural das integrações financeiras'],
   integracoes_financeiras_contas: ['Contas Bancárias', 'Contas conectadas ou cadastradas'],
   integracoes_financeiras_cartoes: ['Cartões', 'Cartões e faturas integradas'],
@@ -683,6 +684,9 @@ function abrirPagina(id, botao) {
   }
   if (id === 'financeiro_cofre') {
     carregarCofreFinanceiro();
+  }
+  if (id === 'financeiro_sangrias_raffinato' && typeof iniciarTelaSangriasRaffinato === 'function') {
+    iniciarTelaSangriasRaffinato();
   }
   if (id === 'funcionarios') {
     limparFormularioFuncionario();

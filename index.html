@@ -203,6 +203,13 @@
         </div>
       </div>
     </div>
+    <div id="navgrp_integracoes" class="nav-group">
+      <div class="nav-label">Integrações</div>
+      <button class="nav-btn" data-page="financeiro_sangrias_raffinato" onclick="abrirPagina('financeiro_sangrias_raffinato', this)">
+        <span class="icon">RF</span>
+        <span class="nav-copy"><span class="nav-title">Raffinato</span><span class="nav-hint">Conexão SQL e sangrias</span></span>
+      </button>
+    </div>
     <div id="navgrp_financeiro" class="nav-group">
       <div class="nav-label">Financeiro</div>
       <div class="nav-group-financeiro" id="menuFinanceiroGroup">
@@ -2342,6 +2349,85 @@
         </div>
       </section>
 
+      <section id="financeiro_sangrias_raffinato" class="pagina raffinato-page">
+        <div class="page-title">Integração Raffinato</div>
+
+        <div class="card raffinato-hero">
+          <div class="raffinato-hero-copy">
+            <div class="raffinato-hero-icon">SR</div>
+            <div>
+              <h2>Movimentações de sangria</h2>
+              <p>Consulta segura e somente leitura do Raffinato pela rede Radmin VPN.</p>
+            </div>
+          </div>
+          <div class="raffinato-connection" id="raffinatoConnectionStatus">
+            <span class="raffinato-connection-dot"></span>
+            <span id="raffinatoConnectionLabel">Verificando conector...</span>
+          </div>
+        </div>
+
+        <div class="card raffinato-integration-card">
+          <div class="raffinato-integration-head">
+            <div><div class="card-title">Conexão desta loja</div><div class="page-sub" id="raffinatoLojaContexto">Carregando loja...</div></div>
+            <button class="btn btn-red btn-sm" id="raffinatoDeleteIntegrationBtn" type="button" onclick="excluirIntegracaoRaffinato()" hidden>Excluir integração</button>
+          </div>
+          <div class="raffinato-config-grid">
+            <div class="raffinato-field"><label for="raffinatoSqlServer">Instância SQL</label><input id="raffinatoSqlServer" type="text" placeholder="26.x.x.x\\sql2019" autocomplete="off"></div>
+            <div class="raffinato-field"><label for="raffinatoDatabase">Banco de dados</label><input id="raffinatoDatabase" type="text" placeholder="Nome do banco" autocomplete="off"></div>
+            <div class="raffinato-field"><label for="raffinatoDbUser">Usuário do banco</label><input id="raffinatoDbUser" type="text" placeholder="Usuário SQL" autocomplete="off"></div>
+            <div class="raffinato-field"><label for="raffinatoDbPassword">Senha do banco</label><input id="raffinatoDbPassword" type="password" placeholder="Informe para testar ou alterar" autocomplete="new-password"></div>
+          </div>
+          <div class="raffinato-config-actions">
+            <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
+            <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
+            <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
+          </div>
+          <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
+          <div class="msg" id="msgRaffinatoIntegracao"></div>
+        </div>
+
+        <div class="card raffinato-filter-card" id="raffinatoSangriasPanel" hidden>
+          <div class="raffinato-filter-grid">
+            <div class="raffinato-field"><label for="raffinatoDataInicio">Data inicial</label><input id="raffinatoDataInicio" type="date"></div>
+            <div class="raffinato-field"><label for="raffinatoHoraInicio">Hora inicial</label><input id="raffinatoHoraInicio" type="time" value="00:00"></div>
+            <div class="raffinato-field"><label for="raffinatoDataFim">Data final</label><input id="raffinatoDataFim" type="date"></div>
+            <div class="raffinato-field"><label for="raffinatoHoraFim">Hora final</label><input id="raffinatoHoraFim" type="time" value="23:59"></div>
+            <div class="raffinato-actions">
+              <button class="btn raffinato-btn-query" id="raffinatoQueryBtn" type="button" onclick="consultarSangriasRaffinato()">Executar consulta</button>
+              <button class="btn btn-red" id="raffinatoCancelBtn" type="button" onclick="cancelarConsultaSangriasRaffinato()" hidden>Cancelar</button>
+            </div>
+          </div>
+          <div class="raffinato-shortcuts">
+            <span class="raffinato-shortcuts-label">Período rápido</span>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(1)">Hoje</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(7)">7 dias</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(15)">15 dias</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(30)">30 dias</button>
+          </div>
+          <div class="msg" id="msgRaffinatoSangrias"></div>
+        </div>
+
+        <div class="raffinato-summary" id="raffinatoSummary" hidden>
+          <div class="stat-card"><div class="stat-label">Total das sangrias</div><div class="stat-value" id="raffinatoTotal">R$ 0,00</div></div>
+          <div class="stat-card"><div class="stat-label">Quantidade</div><div class="stat-value" id="raffinatoQuantidade">0</div></div>
+          <div class="stat-card"><div class="stat-label">Valor médio</div><div class="stat-value" id="raffinatoTicketMedio">R$ 0,00</div></div>
+        </div>
+
+        <div class="card raffinato-table-card" id="raffinatoTableCard" hidden>
+          <div class="raffinato-table-head">
+            <div class="card-title" style="margin:0">Detalhamento</div>
+            <button class="btn btn-green btn-sm" id="raffinatoExportBtn" type="button" onclick="exportarSangriasRaffinatoExcel()" disabled>Exportar para Excel</button>
+          </div>
+          <div class="raffinato-table-wrap">
+            <table class="raffinato-table" id="raffinatoTable" hidden>
+              <thead><tr><th>Data</th><th>Hora</th><th>Motivo</th><th style="text-align:right">Valor</th></tr></thead>
+              <tbody id="raffinatoTableBody"></tbody>
+            </table>
+            <div class="raffinato-empty" id="raffinatoEmpty"><div><strong>Pronto para consultar</strong>Escolha o período e clique em Executar consulta.</div></div>
+          </div>
+        </div>
+      </section>
+
       <!-- Paginas declarativas do modulo. O conteudo e montado por 33-financial-integrations.js para evitar duplicacao. -->
       <section id="integracoes_financeiras_dashboard" class="pagina"><div class="page-title">Dashboard Financeiro</div><div class="page-sub">Estrutura para indicadores e movimentações consolidadas.</div><div class="if-page-content"></div></section>
       <section id="integracoes_financeiras_contas" class="pagina"><div class="page-title">Contas Bancárias</div><div class="if-page-content"></div></section>
@@ -2801,6 +2887,7 @@
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260728-nova-conta-v6">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 <link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
+<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260806-integracao-v1">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3050,7 +3137,8 @@
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260804-sequencial-dias-corridos"></script>
-<script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
+      <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260806-local-network-v2"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260804-calculo-dias-corridos"></script>

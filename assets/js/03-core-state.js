@@ -757,6 +757,7 @@ const PERFIL_PERMISSOES = [
   { key: 'financeiro_conta_financeira', label: 'Financeiro - Conta financeira' },
   { key: 'financeiro_recebiveis', label: 'Financeiro - Recebíveis' },
   { key: 'financeiro_cofre', label: 'Financeiro - Cofre' },
+  { key: 'financeiro_sangrias_raffinato', label: 'Integrações - Raffinato' },
   { key: 'financeiro_grupo_fornecedor', label: 'Financeiro - Grupos de Fornecedor' },
   { key: 'financeiro_categorias_compra', label: 'Financeiro - Categorias de Compra' },
   { key: 'integracoes_financeiras', label: 'Integrações Financeiras' },
@@ -823,6 +824,9 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
     { nome: 'Grupos de fornecedor', visualizar: 'financeiro_grupo_fornecedor', criar: 'grupos_fornecedor_criar', editar: 'grupos_fornecedor_editar', excluir: 'grupos_fornecedor_excluir' },
     { nome: 'Cofre', visualizar: 'financeiro_cofre', editar: 'financeiro_cofre_editar' },
     { nome: 'Integrações financeiras', visualizar: 'integracoes_financeiras' },
+  ]},
+  { nome: 'Integrações', recursos: [
+    { nome: 'Raffinato', visualizar: 'financeiro_sangrias_raffinato' },
   ]},
   { nome: 'Relatórios', recursos: [
     { nome: 'Relatório de escala/plantões', visualizar: 'relatorio_plantao' },
