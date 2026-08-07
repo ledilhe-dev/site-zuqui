@@ -2012,6 +2012,7 @@ async function carregarBaixarContasFinanceiro() {
     return bateBusca && bateStatus && bateInicio && bateFim;
   });
 
+  baixarContasItensFiltradosAtuais = itens;
   atualizarResumoBaixarContasFinanceiro(itens, { titulo: obterTituloFiltroBaixarContas() });
 
   if (!itens.length) {
@@ -2052,6 +2053,12 @@ async function carregarBaixarContasFinanceiro() {
         ${pagasIds.length ? `<button class="btn btn-ghost btn-sm" onclick="reabrirTodasContasFinanceiro()" style="margin-left:auto;">Reabrir todas (${pagasIds.length} pagas)</button>` : ''}
       </div>`
     : '';
+
+  if (baixarContasAgruparFornecedor) {
+    lista.innerHTML = renderizarGruposFornecedorBaixa(itens, barraSelecao);
+    faturaAtualizarBarraSelecaoBaixa();
+    return;
+  }
 
   lista.innerHTML = barraSelecao + '<div class="lista">' + itens.map(item => {
     const nomeFornecedor = item.fornecedores?.nome || 'Fornecedor não encontrado';
@@ -2360,6 +2367,61 @@ function chaveAutorizacaoBaixaFinanceira() {
   return [usuarioSistemaLogado?.id || '', obterEmpresaIdSessao?.() || '', obterLojaIdSessao?.() || ''].join(':');
 }
 
+let baixarContasAgruparFornecedor = false;
+let baixarContasItensFiltradosAtuais = [];
+let baixarContasGruposVisiveis = new Map();
+
+function alternarAgrupamentoFornecedorBaixa() {
+  baixarContasAgruparFornecedor = !baixarContasAgruparFornecedor;
+  const btn = document.getElementById('btnAgruparFornecedorBaixa');
+  if (btn) {
+    btn.classList.toggle('btn-green', baixarContasAgruparFornecedor);
+    btn.classList.toggle('btn-ghost', !baixarContasAgruparFornecedor);
+    btn.textContent = baixarContasAgruparFornecedor ? 'Exibir contas individuais' : 'Agrupar por fornecedor';
+  }
+  carregarBaixarContasFinanceiro();
+}
+
+function faturaToggleGrupoFornecedorBaixa(chave, marcado) {
+  const ids = baixarContasGruposVisiveis.get(String(chave)) || [];
+  if (marcado) ids.forEach(id => { if (!_baixaSelecionadasIds.includes(id)) _baixaSelecionadasIds.push(id); });
+  else {
+    const remover = new Set(ids.map(String));
+    _baixaSelecionadasIds = _baixaSelecionadasIds.filter(id => !remover.has(String(id)));
+  }
+  faturaAtualizarBarraSelecaoBaixa();
+}
+
+function renderizarGruposFornecedorBaixa(itens = [], barraSelecao = '') {
+  const grupos = new Map();
+  itens.forEach(item => {
+    const nome = String(item.fornecedores?.nome || 'Fornecedor não identificado').trim();
+    const chaveBase = String(item.fornecedor_id || textoFinanceiroNormalizado(nome) || 'sem-fornecedor');
+    if (!grupos.has(chaveBase)) grupos.set(chaveBase, { nome, itens:[], total:0 });
+    const grupo = grupos.get(chaveBase);
+    grupo.itens.push(item);
+    grupo.total += obterValorTotalizadorBaixarConta(item);
+  });
+  baixarContasGruposVisiveis = new Map();
+  const ordenados = [...grupos.values()].sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome));
+  const cards = ordenados.map((grupo, indice) => {
+    const chave = `fornecedor-${indice}`;
+    const ids = grupo.itens.filter(item => obterStatusContaBaixaFinanceiro(item) !== 'pago').map(item => item.id);
+    baixarContasGruposVisiveis.set(chave, ids);
+    const selecionados = ids.filter(id => _baixaSelecionadasIds.includes(id)).length;
+    const marcado = ids.length > 0 && selecionados === ids.length;
+    const vencimentos = grupo.itens.map(item => String(item.data_vencimento || '')).filter(Boolean).sort();
+    const detalhe = grupo.itens.slice(0, 8).map(item => `<li><span>${escaparHtmlBasico(formatarDataBRFinanceiro(item.data_vencimento))}</span><span>${escaparHtmlBasico(item.observacao || 'Sem observação')}</span><strong>${escaparHtmlBasico(formatarMoedaBRFinanceiro(obterValorTotalizadorBaixarConta(item)))}</strong></li>`).join('');
+    return `<article class="baixa-fornecedor-grupo"><div class="baixa-fornecedor-cabecalho">
+      ${ids.length ? `<input type="checkbox" class="baixa-grupo-check" ${marcado ? 'checked' : ''} onchange="faturaToggleGrupoFornecedorBaixa('${chave}', this.checked)">` : ''}
+      <div class="baixa-fornecedor-identidade"><strong>${escaparHtmlBasico(grupo.nome)}</strong><span>${grupo.itens.length} título(s)${selecionados ? ` · ${selecionados} selecionado(s)` : ''}</span></div>
+      <div class="baixa-fornecedor-vencimento"><span>Vencimento</span><strong>${vencimentos.length && vencimentos[0] === vencimentos[vencimentos.length - 1] ? escaparHtmlBasico(formatarDataBRFinanceiro(vencimentos[0])) : `${escaparHtmlBasico(formatarDataBRFinanceiro(vencimentos[0]))} a ${escaparHtmlBasico(formatarDataBRFinanceiro(vencimentos[vencimentos.length - 1]))}`}</strong></div>
+      <div class="baixa-fornecedor-total"><span>Total</span><strong>${escaparHtmlBasico(formatarMoedaBRFinanceiro(grupo.total))}</strong></div>
+      </div><details class="baixa-fornecedor-detalhes"><summary>Conferir títulos</summary><ul>${detalhe}${grupo.itens.length > 8 ? `<li class="mais">+ ${grupo.itens.length - 8} título(s) no grupo</li>` : ''}</ul></details></article>`;
+  }).join('');
+  return barraSelecao + `<div class="baixa-fornecedor-resumo"><strong>${ordenados.length} fornecedor(es)</strong><span>${itens.length} títulos agrupados</span></div><div class="baixa-fornecedor-lista">${cards}</div>`;
+}
+
 async function confirmarBaixaFinanceiraUmaVez(opcoes) {
   const chave = chaveAutorizacaoBaixaFinanceira();
   if (autorizacaoBaixaFinanceiraTemporaria
@@ -2498,6 +2560,19 @@ function faturaToggleSelecaoBaixa(id, marcado) {
 }
 
 function faturaToggleSelecionarTodosBaixa(marcado) {
+  if (baixarContasAgruparFornecedor) {
+    const idsVisiveis = baixarContasItensFiltradosAtuais
+      .filter(item => obterStatusContaBaixaFinanceiro(item) !== 'pago')
+      .map(item => item.id);
+    if (marcado) idsVisiveis.forEach(id => { if (!_baixaSelecionadasIds.includes(id)) _baixaSelecionadasIds.push(id); });
+    else {
+      const remover = new Set(idsVisiveis.map(String));
+      _baixaSelecionadasIds = _baixaSelecionadasIds.filter(id => !remover.has(String(id)));
+    }
+    document.querySelectorAll('.baixa-grupo-check').forEach(chk => { chk.checked = marcado; });
+    faturaAtualizarBarraSelecaoBaixa();
+    return;
+  }
   const checks = document.querySelectorAll('.baixa-check');
   checks.forEach(chk => { chk.checked = marcado; });
   _baixaSelecionadasIds = marcado
@@ -2535,7 +2610,9 @@ async function abrirBaixaMultiplaFinanceiro() {
   if (!formaSelecionada) return;
 
   // Modal com valores editáveis por item (preenchidos com o valor da compra)
-  const valores = await abrirModalValoresBaixaMultipla(itens);
+  const valores = baixarContasAgruparFornecedor
+    ? Object.fromEntries(itens.map(item => [item.id, Number(item.valor_pago ?? item.valor_compra ?? 0)]))
+    : await abrirModalValoresBaixaMultipla(itens);
   if (!valores) return;
   const totalFinal = Number(Object.values(valores).reduce((s, v) => s + Number(v || 0), 0).toFixed(2));
   if (!(totalFinal > 0)) {
@@ -2545,7 +2622,8 @@ async function abrirBaixaMultiplaFinanceiro() {
 
   // Contas financeiras (uma ou mais) para compor o pagamento agrupado
   await carregarContasFinanceiras({ render: false, silencioso: true });
-  const selecaoContas = await abrirModalContasBaixaMultipla(totalFinal, `${itens.length} título(s)`);
+  const fornecedoresNoLote = new Set(itens.map(item => String(item.fornecedor_id || item.fornecedores?.nome || 'sem-fornecedor'))).size;
+  const selecaoContas = await abrirModalContasBaixaMultipla(totalFinal, `${itens.length} título(s) · ${fornecedoresNoLote} fornecedor(es)`);
   if (!selecaoContas || !Array.isArray(selecaoContas.contas) || !selecaoContas.contas.length) return;
   const movimentarSaldo = selecaoContas.movimentarSaldo === true;
   const contasEscolhidas = selecaoContas.contas;
