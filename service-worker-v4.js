@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v140-baixa-agrupada';
+const CACHE_NAME = 'check-diario-pwa-v141-credencial-vinculo';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

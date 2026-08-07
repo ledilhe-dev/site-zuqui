@@ -2224,7 +2224,35 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
   }, data => Array.isArray(data) && data.length > 0);
 
   if (error) { console.warn('Falha ao buscar funcionário por PIN:', error); return null; }
-  return (Array.isArray(data) ? data : []).find(f => f.ativo !== false && (!lojasVinculadas.length || lojasVinculadas.includes(String(f.loja_id || '')))) || null;
+  const candidatos = (Array.isArray(data) ? data : []).filter(f => f.ativo !== false);
+  if (!candidatos.length) return null;
+
+  // Cadastros operacionais podem pertencer às lojas somente pela tabela de
+  // vínculos, sem loja_id direto. Aceita a própria credencial do usuário
+  // logado; para outra pessoa, valida o vínculo com a loja atual.
+  const idLogadoAtual = String(usuarioSistemaLogado?.id || '').trim();
+  const proprioUsuario = candidatos.find(f => String(f.id || '') === idLogadoAtual);
+  if (proprioUsuario) return proprioUsuario;
+
+  const lojaAtual = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || lojasVinculadas[0] || '').trim();
+  if (!lojaAtual) return candidatos[0];
+  const direto = candidatos.find(f => String(f.loja_id || '') === lojaAtual);
+  if (direto) return direto;
+
+  const idsCandidatos = candidatos.map(f => f.id).filter(Boolean);
+  if (!idsCandidatos.length) return null;
+  const { data: vinculos, error: erroVinculos } = await sb
+    .from('funcionario_lojas')
+    .select('funcionario_id, loja_id, ativo')
+    .in('funcionario_id', idsCandidatos)
+    .eq('loja_id', lojaAtual)
+    .eq('ativo', true);
+  if (erroVinculos) {
+    console.warn('Falha ao validar vínculo do autorizador financeiro:', erroVinculos);
+    return null;
+  }
+  const idsVinculados = new Set((vinculos || []).map(v => String(v.funcionario_id || '')));
+  return candidatos.find(f => idsVinculados.has(String(f.id || ''))) || null;
 }
 
 function resumoNomesPendencias(pendencias = [], limite = 3) {
