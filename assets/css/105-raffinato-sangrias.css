@@ -85,6 +85,7 @@
 .raffinato-sort span { color:#fb923c; }
 .raffinato-cell-filter { border:0; background:transparent; color:inherit; font:inherit; padding:0; cursor:pointer; text-decoration:underline dotted rgba(249,115,22,.5); text-underline-offset:3px; }
 .raffinato-empty { min-height:270px; display:grid; place-items:center; text-align:center; padding:32px; color:var(--text-muted); }
+.raffinato-empty[hidden] { display:none !important; }
 .raffinato-empty strong { display:block; color:var(--text); margin-bottom:5px; }
 .raffinato-spinner { width:24px; height:24px; margin:0 auto 12px; border:3px solid rgba(249,115,22,.2); border-top-color:var(--raffinato-accent); border-radius:50%; animation:raffinato-spin .75s linear infinite; }
 @keyframes raffinato-spin { to { transform:rotate(360deg); } }
