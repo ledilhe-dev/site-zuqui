@@ -47,7 +47,7 @@ function iniciarTelaRelatorioSangriasRaffinato() {
 
 async function raffinatoBridgePost(path, body) {
   const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), targetAddressSpace:'loopback',
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body),
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || 'Falha no conector Raffinato.');
@@ -185,7 +185,7 @@ async function verificarConectorRaffinato() {
   const timeout = setTimeout(() => controller.abort(), 2500);
   try {
     const response = await fetch(`${RAFFINATO_BRIDGE_URL}/health`, {
-      cache:'no-store', signal:controller.signal, targetAddressSpace:'loopback',
+      cache:'no-store', signal:controller.signal,
     });
     if (!response.ok) throw new Error('Conector indisponível');
     atualizarStatusConectorRaffinato('online', 'Conector local ativo');
@@ -308,7 +308,6 @@ async function consultarSangriasRaffinato() {
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ inicio: periodo.inicio, fim: periodo.fim, loja_id:contextoRaffinato().lojaId }),
       signal: raffinatoConsultaController.signal,
-      targetAddressSpace: 'loopback',
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || 'Falha ao consultar o Raffinato.');
