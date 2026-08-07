@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v138-raffinato-external';
+const CACHE_NAME = 'check-diario-pwa-v139-baixa-uma-senha';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -2178,11 +2178,17 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
     // em usuarios_admin. Validar essa origem primeiro evita que o mesmo PIN
     // passe por buscas de funcionários/lojas e falhe de forma intermitente.
     if (idLogado && ['admin', 'admin_loja'].includes(String(usuarioSistemaLogado?.tipo || ''))) {
-      const { data: adminValido, error: erroAdmin } = await executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
-        p_usuario_id: idLogado,
-        p_pin: pinNormalizado,
-      }, data => data === true);
-      if (!erroAdmin && adminValido === true) {
+      const [pinRes, senhaRes] = await Promise.all([
+        executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
+          p_usuario_id: idLogado,
+          p_pin: pinNormalizado,
+        }, data => data === true),
+        executarValidacaoCredencialComRetry('verificar_credencial_usuario_admin', {
+          p_usuario_id: idLogado,
+          p_senha: pinNormalizado,
+        }, data => data === true),
+      ]);
+      if ((!pinRes?.error && pinRes?.data === true) || (!senhaRes?.error && senhaRes?.data === true)) {
         return {
           id: idLogado,
           nome: usuarioSistemaLogado?.nome || 'Administrador',
@@ -2344,7 +2350,7 @@ function mensagemErroSupabase(error, fallback = 'Erro inesperado.') {
   return [error.message, error.details, error.hint, error.code].filter(Boolean).join(' - ') || fallback;
 }
 
-async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false, escopo = 'ponto', validarFuncionarioConfirmado = null }) {
+async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false, escopo = 'ponto', validarFuncionarioConfirmado = null, placeholderInput = 'Digite sua senha ou PIN' }) {
   let mensagemErro = '';
   let tipoMensagem = 'err';
   while (true) {
@@ -2355,6 +2361,7 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, 
       textoAcao,
       mensagem: mensagemErro,
       tipoMensagem,
+      placeholderInput,
     });
 
     if (!resposta) return null;
@@ -2399,7 +2406,7 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, 
 
     mensagemErro = exigirFuncionarioInformado
       ? `Senha inválida para ${funcionario?.nome || 'o funcionário responsável'}.`
-      : 'PIN inválido. Tente novamente.';
+      : (escopo === 'empresa' ? 'Senha ou PIN inválido. Tente novamente.' : 'PIN inválido. Tente novamente.');
     tipoMensagem = 'err';
   }
 }

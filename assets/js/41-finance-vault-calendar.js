@@ -2353,6 +2353,35 @@ async function salvarModalEditarTituloFinanceiro() {
   carregarContasAPagarFinanceiro();
 }
 
+let autorizacaoBaixaFinanceiraTemporaria = null;
+const DURACAO_AUTORIZACAO_BAIXA_MS = 2 * 60 * 1000;
+
+function chaveAutorizacaoBaixaFinanceira() {
+  return [usuarioSistemaLogado?.id || '', obterEmpresaIdSessao?.() || '', obterLojaIdSessao?.() || ''].join(':');
+}
+
+async function confirmarBaixaFinanceiraUmaVez(opcoes) {
+  const chave = chaveAutorizacaoBaixaFinanceira();
+  if (autorizacaoBaixaFinanceiraTemporaria
+      && autorizacaoBaixaFinanceiraTemporaria.chave === chave
+      && Date.now() < autorizacaoBaixaFinanceiraTemporaria.expiraEm) {
+    return autorizacaoBaixaFinanceiraTemporaria.confirmacao;
+  }
+  const confirmacao = await confirmarAcaoComPin({
+    ...opcoes,
+    escopo:'empresa',
+    placeholderInput:'Digite sua senha de acesso ou PIN',
+  });
+  if (confirmacao) {
+    autorizacaoBaixaFinanceiraTemporaria = {
+      chave,
+      confirmacao,
+      expiraEm:Date.now() + DURACAO_AUTORIZACAO_BAIXA_MS,
+    };
+  }
+  return confirmacao;
+}
+
 async function confirmarPagamentoContaFinanceiro(id) {
   const item = contasBaixarFinanceiroCache.find(conta => String(conta.id) === String(id));
   if (!item) {
@@ -2393,7 +2422,7 @@ async function confirmarPagamentoContaFinanceiro(id) {
   const movimentarSaldo = contaSelecionada.movimentarSaldo === true;
 
   const operador = obterFuncionarioOperadorAtual();
-  const confirmacaoPin = await confirmarAcaoComPin({
+  const confirmacaoPin = await confirmarBaixaFinanceiraUmaVez({
     funcionario: operador,
     titulo: 'Confirmar baixa financeira',
     subtitulo: movimentarSaldo
@@ -2524,7 +2553,7 @@ async function abrirBaixaMultiplaFinanceiro() {
   // PIN uma vez para o lote
   const operador = obterFuncionarioOperadorAtual();
   const resumoContas = contasEscolhidas.map(c => `${c.nome || '-'} (${formatarMoedaBRFinanceiro(c.valor || 0)})`).join(' + ');
-  const confirmacaoPin = await confirmarAcaoComPin({
+  const confirmacaoPin = await confirmarBaixaFinanceiraUmaVez({
     funcionario: operador,
     titulo: 'Confirmar baixa em lote',
     subtitulo: `Confirme o PIN para baixar ${itens.length} título(s) · ${formatarMoedaBRFinanceiro(totalFinal)} · ${resumoContas}.`,
