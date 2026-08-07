@@ -117,6 +117,7 @@ function navItemDrop(e) {
   } else {
     pai.insertBefore(_navItemDragSrc, wrapper.nextSibling);
   }
+  atualizarGruposVaziosNav();
   salvarOrdemNavItens();
 }
 
@@ -154,6 +155,14 @@ async function carregarOrdemNavMenu() {
     }
   } catch(e) { console.warn('Erro ao carregar ordem nav:', e); }
   inicializarControlesOrdemNav();
+  atualizarGruposVaziosNav();
+}
+
+function atualizarGruposVaziosNav() {
+  document.querySelectorAll('#navContainer .nav-group').forEach(grupo => {
+    const temItem = !!grupo.querySelector(':scope > [data-nav-item-id]');
+    grupo.style.display = temItem ? '' : 'none';
+  });
 }
 
 function inicializarControlesOrdemNav() {
@@ -176,6 +185,7 @@ function inicializarControlesOrdemNav() {
       if (_navItemDragSrc && alvo && alvo !== _navItemDragSrc) {
         const rect = alvo.getBoundingClientRect();
         alvo.parentNode.insertBefore(_navItemDragSrc, toque.clientY < rect.top + rect.height / 2 ? alvo : alvo.nextSibling);
+        atualizarGruposVaziosNav();
         salvarOrdemNavItens();
       }
       item.classList.remove('nav-touch-moving');

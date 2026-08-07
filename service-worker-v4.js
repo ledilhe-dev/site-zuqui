@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v143-raffinato-loading';
+const CACHE_NAME = 'check-diario-pwa-v144-menu-limpo';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
