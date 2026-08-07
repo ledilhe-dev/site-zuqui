@@ -496,7 +496,7 @@ async function consultarSangriasRaffinato() {
 
     const contexto = contextoRaffinato();
     const payload = await raffinatoRelay({
-      action:'dashboard', inicio:periodo.inicio.slice(0, 10), fim:periodo.fim.slice(0, 10),
+      action:'dashboard', inicio:periodo.inicio, fim:periodo.fim,
       empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
       usuario_id:String(usuarioSistemaLogado?.id || ''),
     });
