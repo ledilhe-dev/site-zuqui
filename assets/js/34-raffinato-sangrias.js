@@ -1,5 +1,5 @@
 // Integração com o conector local do Raffinato (Radmin VPN).
-const RAFFINATO_BRIDGE_URL = 'http://127.0.0.1:8765';
+const RAFFINATO_BRIDGE_URL = 'http://127.0.0.1:8766';
 let raffinatoSangrias = [];
 let raffinatoConsultaController = null;
 let raffinatoTelaInicializada = false;
