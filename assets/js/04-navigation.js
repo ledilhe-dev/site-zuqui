@@ -14,6 +14,7 @@ const topTitles = {
   relatorio_financeiro: ['Relatório de contas a pagar', 'Análise detalhada de títulos e pagamentos'],
   relatorio_recebimentos: ['Relatório de recebimentos', 'Entradas com usuário e horário de lançamento'],
   relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
+  relatorio_sangrias_raffinato: ['Relatório de Sangrias', 'Análise de sangrias do Raffinato por loja'],
   financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
   financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
   financeiro_contasapagar: ['Cadastro de contas a pagar', 'Lançamentos financeiros por fornecedor'],
@@ -52,7 +53,7 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
@@ -642,6 +643,7 @@ function abrirPagina(id, botao) {
   }
   if (id === 'relatorio_recebimentos') { carregarRelatorioRecebimentos(); }
   if (id === 'relatorio_ajuste_saldo') { carregarRelatorioAjusteSaldo(); }
+  if (id === 'relatorio_sangrias_raffinato' && typeof iniciarTelaRelatorioSangriasRaffinato === 'function') { iniciarTelaRelatorioSangriasRaffinato(); }
   if (id === 'financeiro_fornecedores') {
     limparFormularioFornecedorFinanceiro();
     carregarFornecedoresFinanceiro();

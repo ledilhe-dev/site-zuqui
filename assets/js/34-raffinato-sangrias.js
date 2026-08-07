@@ -32,6 +32,19 @@ function iniciarTelaSangriasRaffinato() {
   carregarIntegracaoRaffinato();
 }
 
+function iniciarTelaRelatorioSangriasRaffinato() {
+  if (!raffinatoTelaInicializada) {
+    const hoje = dataLocalIso();
+    const inicio = document.getElementById('raffinatoDataInicio');
+    const fim = document.getElementById('raffinatoDataFim');
+    if (inicio) inicio.value = hoje;
+    if (fim) fim.value = hoje;
+    raffinatoTelaInicializada = true;
+  }
+  verificarConectorRaffinato();
+  carregarIntegracaoRaffinato();
+}
+
 async function raffinatoBridgePost(path, body) {
   const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), targetAddressSpace:'loopback',
@@ -63,6 +76,7 @@ function preencherFormularioIntegracaoRaffinato(item) {
   document.getElementById('raffinatoSangriasPanel').hidden = ocultarConsulta;
   document.getElementById('raffinatoSummary').hidden = ocultarConsulta;
   document.getElementById('raffinatoTableCard').hidden = ocultarConsulta;
+  document.getElementById('raffinatoCharts').hidden = ocultarConsulta || !raffinatoSangrias.length;
   raffinatoTesteValido = false;
   document.getElementById('raffinatoSaveBtn').disabled = true;
 }
@@ -153,12 +167,17 @@ async function excluirIntegracaoRaffinato() {
 }
 
 function atualizarStatusConectorRaffinato(estado, texto) {
-  const status = document.getElementById('raffinatoConnectionStatus');
-  const label = document.getElementById('raffinatoConnectionLabel');
-  if (!status || !label) return;
-  status.classList.remove('is-online', 'is-offline');
-  if (estado) status.classList.add(`is-${estado}`);
-  label.textContent = texto;
+  [
+    ['raffinatoConnectionStatus', 'raffinatoConnectionLabel'],
+    ['raffinatoReportConnectionStatus', 'raffinatoReportConnectionLabel'],
+  ].forEach(([statusId, labelId]) => {
+    const status = document.getElementById(statusId);
+    const label = document.getElementById(labelId);
+    if (!status || !label) return;
+    status.classList.remove('is-online', 'is-offline');
+    if (estado) status.classList.add(`is-${estado}`);
+    label.textContent = texto;
+  });
 }
 
 async function verificarConectorRaffinato() {
@@ -227,6 +246,41 @@ function renderizarSangriasRaffinato(items, total) {
   document.getElementById('raffinatoQuantidade').textContent = String(items.length);
   document.getElementById('raffinatoTicketMedio').textContent = formatarMoedaRaffinato(items.length ? total / items.length : 0);
   document.getElementById('raffinatoExportBtn').disabled = !items.length;
+  renderizarGraficosSangriasRaffinato(items);
+}
+
+function agruparSangriasRaffinato(items, keyFn, valueFn = item => Number(item.valor || 0)) {
+  const map = new Map();
+  items.forEach(item => {
+    const key = keyFn(item);
+    map.set(key, (map.get(key) || 0) + valueFn(item));
+  });
+  return [...map.entries()];
+}
+
+function barrasSangriasRaffinato(entries, formatValue = formatarMoedaRaffinato) {
+  const max = Math.max(1, ...entries.map(([, value]) => Number(value || 0)));
+  return entries.map(([label, value]) => `<div class="raffinato-chart-row"><div class="raffinato-chart-label" title="${escapeRaffinatoHtml(label)}">${escapeRaffinatoHtml(label)}</div><div class="raffinato-chart-track"><div class="raffinato-chart-bar" style="width:${Math.max(2, Number(value || 0) / max * 100)}%"></div></div><div class="raffinato-chart-value">${escapeRaffinatoHtml(formatValue(value))}</div></div>`).join('');
+}
+
+function renderizarGraficosSangriasRaffinato(items) {
+  const charts = document.getElementById('raffinatoCharts');
+  if (!charts) return;
+  charts.hidden = !items.length;
+  if (!items.length) return;
+  const porDia = agruparSangriasRaffinato(items, item => item.data).sort((a, b) => {
+    const br = value => String(value).split('/').reverse().join('-');
+    return br(a[0]).localeCompare(br(b[0]));
+  });
+  const porMotivo = agruparSangriasRaffinato(items, item => item.motivo || 'Sem motivo').sort((a,b) => b[1] - a[1]).slice(0, 8);
+  const faixas = [
+    ['00–06h', 0, 6], ['06–09h', 6, 9], ['09–12h', 9, 12], ['12–15h', 12, 15],
+    ['15–18h', 15, 18], ['18–21h', 18, 21], ['21–24h', 21, 24],
+  ].map(([label, min, max]) => [label, items.filter(item => { const h = Number(String(item.hora || '0').slice(0,2)); return h >= min && h < max; }).length]);
+  document.getElementById('raffinatoChartDias').innerHTML = barrasSangriasRaffinato(porDia);
+  document.getElementById('raffinatoChartMotivos').innerHTML = barrasSangriasRaffinato(porMotivo);
+  const maxHora = Math.max(1, ...faixas.map(([, value]) => value));
+  document.getElementById('raffinatoChartHoras').innerHTML = faixas.map(([label, value]) => `<div class="raffinato-hour-column"><span class="raffinato-hour-value">${value}</span><div class="raffinato-hour-bar" style="height:${Math.max(2, value / maxHora * 115)}px"></div><span class="raffinato-hour-label">${label}</span></div>`).join('');
 }
 
 function setConsultaRaffinatoCarregando(carregando) {

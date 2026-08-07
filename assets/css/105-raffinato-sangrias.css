@@ -12,6 +12,7 @@
 .raffinato-connection.is-offline { color:#b45309; border-color:rgba(245,158,11,.3); background:rgba(245,158,11,.07); }
 .raffinato-connection.is-offline .raffinato-connection-dot { background:#f59e0b; }
 .raffinato-filter-card { padding:18px; margin-bottom:16px; }
+.raffinato-report-intro { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 20px; margin-bottom:16px; }
 .raffinato-integration-card { padding:20px; margin-bottom:16px; }
 .raffinato-integration-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
 .raffinato-config-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
@@ -32,6 +33,20 @@
 .raffinato-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
 .raffinato-summary .stat-card { min-height:96px; position:relative; overflow:hidden; }
 .raffinato-summary .stat-card:first-child { border-left:3px solid var(--raffinato-accent); }
+.raffinato-charts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:16px; }
+.raffinato-chart-card { padding:18px; min-height:310px; }
+.raffinato-chart-wide { grid-column:1/-1; min-height:250px; }
+.raffinato-chart { display:flex; flex-direction:column; gap:11px; margin-top:18px; }
+.raffinato-chart-row { display:grid; grid-template-columns:minmax(86px,130px) minmax(80px,1fr) 94px; gap:10px; align-items:center; }
+.raffinato-chart-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); font-size:11px; font-weight:650; }
+.raffinato-chart-track { height:12px; border-radius:999px; overflow:hidden; background:rgba(148,163,184,.14); }
+.raffinato-chart-bar { height:100%; min-width:3px; border-radius:inherit; background:linear-gradient(90deg,#fb923c,#ea580c); box-shadow:0 0 12px rgba(249,115,22,.2); }
+.raffinato-chart-value { text-align:right; color:var(--text-muted); font-size:10px; font-variant-numeric:tabular-nums; }
+.raffinato-hour-chart { height:160px; display:flex; align-items:flex-end; gap:8px; margin-top:26px; padding-top:10px; border-bottom:1px solid var(--border); }
+.raffinato-hour-column { flex:1; min-width:0; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:5px; }
+.raffinato-hour-value { color:var(--text-muted); font-size:9px; }
+.raffinato-hour-bar { width:min(34px,75%); min-height:2px; border-radius:7px 7px 0 0; background:linear-gradient(180deg,#fb923c,#c2410c); }
+.raffinato-hour-label { color:var(--text-muted); font-size:9px; white-space:nowrap; }
 .raffinato-table-card { padding:0; overflow:hidden; }
 .raffinato-table-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid var(--border); }
 .raffinato-table-wrap { overflow:auto; min-height:270px; max-height:560px; }
@@ -46,4 +61,4 @@
 .raffinato-spinner { width:24px; height:24px; margin:0 auto 12px; border:3px solid rgba(249,115,22,.2); border-top-color:var(--raffinato-accent); border-radius:50%; animation:raffinato-spin .75s linear infinite; }
 @keyframes raffinato-spin { to { transform:rotate(360deg); } }
 @media (max-width:980px) { .raffinato-filter-grid { grid-template-columns:1fr 120px 1fr 120px; } .raffinato-actions { grid-column:1/-1; } }
-@media (max-width:640px) { .raffinato-hero { align-items:flex-start; flex-direction:column; padding:17px; } .raffinato-config-grid { grid-template-columns:1fr; } .raffinato-config-actions { flex-wrap:wrap; } .raffinato-config-actions .btn { flex:1 1 auto; } .raffinato-test-steps { grid-template-columns:1fr; } .raffinato-integration-head { flex-direction:column; } .raffinato-filter-grid { grid-template-columns:1fr 1fr; } .raffinato-field:nth-child(1),.raffinato-field:nth-child(3) { grid-column:1/-1; } .raffinato-actions { flex-wrap:wrap; } .raffinato-actions .btn { flex:1 1 auto; } .raffinato-summary { grid-template-columns:1fr; } .raffinato-shortcuts { overflow:auto; } }
+@media (max-width:640px) { .raffinato-hero,.raffinato-report-intro { align-items:flex-start; flex-direction:column; padding:17px; } .raffinato-config-grid,.raffinato-charts { grid-template-columns:1fr; } .raffinato-chart-wide { grid-column:auto; } .raffinato-config-actions { flex-wrap:wrap; } .raffinato-config-actions .btn { flex:1 1 auto; } .raffinato-test-steps { grid-template-columns:1fr; } .raffinato-integration-head { flex-direction:column; } .raffinato-filter-grid { grid-template-columns:1fr 1fr; } .raffinato-field:nth-child(1),.raffinato-field:nth-child(3) { grid-column:1/-1; } .raffinato-actions { flex-wrap:wrap; } .raffinato-actions .btn { flex:1 1 auto; } .raffinato-summary { grid-template-columns:1fr; } .raffinato-shortcuts { overflow:auto; } .raffinato-chart-row { grid-template-columns:80px 1fr 78px; } }

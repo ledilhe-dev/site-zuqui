@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v131-raffinato-loopback';
+const CACHE_NAME = 'check-diario-pwa-v132-relatorio-sangrias';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

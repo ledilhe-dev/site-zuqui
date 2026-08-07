@@ -199,6 +199,11 @@
                 <span class="nav-title">Ajuste de saldo</span>
               </span>
             </button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_sangrias_raffinato" onclick="abrirPagina('relatorio_sangrias_raffinato', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Sangrias Raffinato</span>
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -2356,8 +2361,8 @@
           <div class="raffinato-hero-copy">
             <div class="raffinato-hero-icon">SR</div>
             <div>
-              <h2>Movimentações de sangria</h2>
-              <p>Consulta segura e somente leitura do Raffinato pela rede Radmin VPN.</p>
+              <h2>Conexão com o Raffinato</h2>
+              <p>Configure o acesso SQL desta loja e valide a comunicação com o servidor.</p>
             </div>
           </div>
           <div class="raffinato-connection" id="raffinatoConnectionStatus">
@@ -2386,6 +2391,15 @@
           <div class="msg" id="msgRaffinatoIntegracao"></div>
         </div>
 
+      </section>
+
+      <section id="relatorio_sangrias_raffinato" class="pagina raffinato-page raffinato-report-page">
+        <div class="page-title">Relatório de Sangrias</div>
+        <div class="card raffinato-report-intro">
+          <div><div class="card-title">Análise de sangrias do Raffinato</div><div class="page-sub">Acompanhe valores, frequência, motivos e horários da loja selecionada.</div></div>
+          <div class="raffinato-connection" id="raffinatoReportConnectionStatus"><span class="raffinato-connection-dot"></span><span id="raffinatoReportConnectionLabel">Verificando integração...</span></div>
+        </div>
+
         <div class="card raffinato-filter-card" id="raffinatoSangriasPanel" hidden>
           <div class="raffinato-filter-grid">
             <div class="raffinato-field"><label for="raffinatoDataInicio">Data inicial</label><input id="raffinatoDataInicio" type="date"></div>
@@ -2411,6 +2425,12 @@
           <div class="stat-card"><div class="stat-label">Total das sangrias</div><div class="stat-value" id="raffinatoTotal">R$ 0,00</div></div>
           <div class="stat-card"><div class="stat-label">Quantidade</div><div class="stat-value" id="raffinatoQuantidade">0</div></div>
           <div class="stat-card"><div class="stat-label">Valor médio</div><div class="stat-value" id="raffinatoTicketMedio">R$ 0,00</div></div>
+        </div>
+
+        <div class="raffinato-charts" id="raffinatoCharts" hidden>
+          <div class="card raffinato-chart-card"><div class="card-title">Evolução por dia</div><div class="page-sub">Valor total de sangrias no período</div><div id="raffinatoChartDias" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card"><div class="card-title">Principais motivos</div><div class="page-sub">Distribuição do valor por motivo</div><div id="raffinatoChartMotivos" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Sangrias por faixa de horário</div><div class="page-sub">Quantidade de ocorrências ao longo do dia</div><div id="raffinatoChartHoras" class="raffinato-hour-chart"></div></div>
         </div>
 
         <div class="card raffinato-table-card" id="raffinatoTableCard" hidden>
@@ -2887,7 +2907,7 @@
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260728-nova-conta-v6">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 <link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
-<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260806-integracao-v1">
+<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260806-relatorio-v4">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3138,7 +3158,7 @@
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260804-sequencial-dias-corridos"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
-      <script src="./assets/js/34-raffinato-sangrias.js?v=20260806-loopback-v3"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260806-relatorio-v4"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260804-calculo-dias-corridos"></script>
