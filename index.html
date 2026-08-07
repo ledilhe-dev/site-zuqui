@@ -147,7 +147,7 @@
     </div>
     <div id="navgrp_relatorios" class="nav-group">
       <div class="nav-label">Relatórios e análise</div>
-      <div class="nav-group-relatorios" id="menuRelatoriosGroup">
+      <div class="nav-group-relatorios" id="menuRelatoriosGroup" data-nav-item-id="relatorios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuRelatorios" type="button" onclick="toggleMenuRelatoriosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
             <span class="icon">RL</span>
@@ -210,14 +210,14 @@
     </div>
     <div id="navgrp_integracoes" class="nav-group">
       <div class="nav-label">Integrações</div>
-      <button class="nav-btn" data-page="financeiro_sangrias_raffinato" onclick="abrirPagina('financeiro_sangrias_raffinato', this)">
+      <button class="nav-btn" data-nav-item-id="raffinato" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" data-page="financeiro_sangrias_raffinato" onclick="abrirPagina('financeiro_sangrias_raffinato', this)">
         <span class="icon">RF</span>
         <span class="nav-copy"><span class="nav-title">Raffinato</span><span class="nav-hint">Conexão SQL e sangrias</span></span>
       </button>
     </div>
     <div id="navgrp_financeiro" class="nav-group">
       <div class="nav-label">Financeiro</div>
-      <div class="nav-group-financeiro" id="menuFinanceiroGroup">
+      <div class="nav-group-financeiro" id="menuFinanceiroGroup" data-nav-item-id="financeiro" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFinanceiro" type="button" onclick="toggleMenuFinanceiroSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
             <span class="icon">FI</span>
@@ -300,7 +300,7 @@
     </div>
     <div id="navgrp_administracao" class="nav-group">
       <div class="nav-label">Administração</div>
-      <div class="nav-group-funcionarios" id="menuFuncionariosGroup">
+      <div class="nav-group-funcionarios" id="menuFuncionariosGroup" data-nav-item-id="administracao_funcionarios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFuncionarios" type="button" onclick="toggleMenuFuncionariosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
             <span class="icon">CF</span>
@@ -2908,7 +2908,7 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260807-baixa-agrupada-v1">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260807-menu-personalizavel-v2">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260804-sequencial-dias-corridos">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-enquadramento-global">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
@@ -3160,7 +3160,7 @@
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
 <script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
-<script src="./assets/js/10-dashboard.js?v=20260805-ipad-dashboard-compacto"></script>
+<script src="./assets/js/10-dashboard.js?v=20260807-menu-personalizavel-v2"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>

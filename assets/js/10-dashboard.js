@@ -108,8 +108,7 @@ function navItemDrop(e) {
   const wrapper = e.currentTarget.closest('[data-nav-item-id]') || e.currentTarget;
   document.querySelectorAll('[data-nav-item-id]').forEach(el => { el.style.outline = ''; el.style.opacity = ''; });
   if (!_navItemDragSrc || !wrapper || wrapper === _navItemDragSrc) return;
-  const pai = _navItemDragSrc.parentNode;
-  if (pai !== wrapper.parentNode) return; // só no mesmo grupo
+  const pai = wrapper.parentNode;
   // Determinar posição relativa
   const rect = wrapper.getBoundingClientRect();
   const meio = rect.top + rect.height / 2;
@@ -127,30 +126,63 @@ function navItemDragEnd(e) {
 }
 
 async function salvarOrdemNavItens() {
-  const grupo = document.querySelector('#navContainer .nav-group.featured');
-  if (!grupo) return;
-  const wrappers = [...grupo.querySelectorAll(':scope > [data-nav-item-id]')];
-  const ordem = wrappers.map(el => el.dataset.navItemId);
-  await salvarPreferenciaMeuPainel('nav_ordem_itens', ordem);
+  const wrappers = [...document.querySelectorAll('#navContainer .nav-group > [data-nav-item-id]')];
+  const ordem = wrappers.map(el => ({
+    id: el.dataset.navItemId,
+    grupo: el.parentElement?.id || 'navgrp_operacao'
+  }));
+  await salvarPreferenciaMeuPainel('nav_ordem_itens_v2', ordem);
 }
 
 async function carregarOrdemNavMenu() {
   try {
-    const ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens', null);
-    if (!Array.isArray(ordem) || !ordem.length) return;
-    const grupo = document.querySelector('#navContainer .nav-group.featured');
-    if (!grupo) return;
-    // Mapear wrappers por id
+    let ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens_v2', null);
     const mapa = {};
-    grupo.querySelectorAll(':scope > [data-nav-item-id]').forEach(el => {
+    document.querySelectorAll('#navContainer .nav-group > [data-nav-item-id]').forEach(el => {
       mapa[el.dataset.navItemId] = el;
     });
-    // Reaplicar ordem
-    ordem.forEach(id => {
-      const el = mapa[id];
-      if (el) grupo.appendChild(el);
-    });
+    if (Array.isArray(ordem) && ordem.length && typeof ordem[0] === 'object') {
+      ordem.forEach(item => {
+        const el = mapa[item.id];
+        const grupo = document.getElementById(item.grupo);
+        if (el && grupo?.classList.contains('nav-group')) grupo.appendChild(el);
+      });
+    } else {
+      ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens', null);
+      const grupo = document.querySelector('#navContainer .nav-group.featured');
+      if (Array.isArray(ordem) && grupo) ordem.forEach(id => mapa[id] && grupo.appendChild(mapa[id]));
+    }
   } catch(e) { console.warn('Erro ao carregar ordem nav:', e); }
+  inicializarControlesOrdemNav();
+}
+
+function inicializarControlesOrdemNav() {
+  document.querySelectorAll('#navContainer [data-nav-item-id]').forEach(item => {
+    if (item.querySelector(':scope > .nav-order-handle')) return;
+    const handle = document.createElement('span');
+    handle.className = 'nav-order-handle';
+    handle.textContent = '⠿';
+    handle.title = 'Arraste para mover';
+    handle.setAttribute('aria-label', 'Arraste para mover este item');
+    handle.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+    handle.addEventListener('touchstart', e => {
+      _navItemDragSrc = item;
+      item.classList.add('nav-touch-moving');
+      e.stopPropagation();
+    }, { passive: true });
+    handle.addEventListener('touchend', e => {
+      const toque = e.changedTouches[0];
+      const alvo = document.elementFromPoint(toque.clientX, toque.clientY)?.closest('[data-nav-item-id]');
+      if (_navItemDragSrc && alvo && alvo !== _navItemDragSrc) {
+        const rect = alvo.getBoundingClientRect();
+        alvo.parentNode.insertBefore(_navItemDragSrc, toque.clientY < rect.top + rect.height / 2 ? alvo : alvo.nextSibling);
+        salvarOrdemNavItens();
+      }
+      item.classList.remove('nav-touch-moving');
+      _navItemDragSrc = null;
+    });
+    item.appendChild(handle);
+  });
 }
 // ══════════════════════════════════════════════════════════════════
 
