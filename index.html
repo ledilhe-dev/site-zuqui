@@ -2427,20 +2427,28 @@
           <div class="stat-card"><div class="stat-label">Valor médio</div><div class="stat-value" id="raffinatoTicketMedio">R$ 0,00</div></div>
         </div>
 
+        <div class="card raffinato-active-filters" id="raffinatoActiveFilters" hidden>
+          <div><strong>Filtros cruzados</strong><span>Clique nos gráficos, motivos ou datas para combinar análises.</span></div>
+          <div id="raffinatoFilterChips" class="raffinato-filter-chips"></div>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltrosAnaliticosRaffinato()">Limpar filtros</button>
+        </div>
+
         <div class="raffinato-charts" id="raffinatoCharts" hidden>
-          <div class="card raffinato-chart-card"><div class="card-title">Evolução por dia</div><div class="page-sub">Valor total de sangrias no período</div><div id="raffinatoChartDias" class="raffinato-chart"></div></div>
-          <div class="card raffinato-chart-card"><div class="card-title">Principais motivos</div><div class="page-sub">Distribuição do valor por motivo</div><div id="raffinatoChartMotivos" class="raffinato-chart"></div></div>
-          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Sangrias por faixa de horário</div><div class="page-sub">Quantidade de ocorrências ao longo do dia</div><div id="raffinatoChartHoras" class="raffinato-hour-chart"></div></div>
+          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Evolução por dia</div><div class="page-sub">Clique em um dia para cruzar com motivo, dia da semana e horário.</div><div id="raffinatoChartDias" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card raffinato-top-card"><div class="card-title">Top 10 retiradas mais frequentes</div><div class="page-sub">Motivos semelhantes são unificados somente nesta análise.</div><div id="raffinatoChartMotivos" class="raffinato-chart raffinato-top-list"></div></div>
+          <div class="card raffinato-chart-card raffinato-donut-card"><div class="card-title">Participação dos principais motivos</div><div class="page-sub">Valor movimentado por motivo agrupado.</div><div id="raffinatoPizzaMotivos" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Dia da semana com mais gastos</div><div class="page-sub">Todos os dias permanecem visíveis no período.</div><div id="raffinatoPizzaSemana" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Horário com mais sangrias</div><div class="page-sub">Quantidade por faixa horária.</div><div id="raffinatoPizzaHoras" class="raffinato-donut-layout"></div></div>
         </div>
 
         <div class="card raffinato-table-card" id="raffinatoTableCard" hidden>
           <div class="raffinato-table-head">
-            <div class="card-title" style="margin:0">Detalhamento</div>
-            <button class="btn btn-green btn-sm" id="raffinatoExportBtn" type="button" onclick="exportarSangriasRaffinatoExcel()" disabled>Exportar para Excel</button>
+            <div><div class="card-title" style="margin:0">Detalhamento</div><div class="page-sub" id="raffinatoTableSummary">Clique nos cabeçalhos para ordenar como no Excel.</div></div>
+            <div class="raffinato-table-tools"><input id="raffinatoDetailSearch" type="search" placeholder="Filtrar no detalhamento..." oninput="definirBuscaDetalheRaffinato(this.value)"><button class="btn btn-green btn-sm" id="raffinatoExportBtn" type="button" onclick="exportarSangriasRaffinatoExcel()" disabled>Exportar para Excel</button></div>
           </div>
           <div class="raffinato-table-wrap">
             <table class="raffinato-table" id="raffinatoTable" hidden>
-              <thead><tr><th>Data</th><th>Hora</th><th>Motivo</th><th style="text-align:right">Valor</th></tr></thead>
+              <thead><tr><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('data')">Data <span id="raffinatoSortData">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('hora')">Hora <span id="raffinatoSortHora">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('motivo')">Motivo <span id="raffinatoSortMotivo">↕</span></button></th><th><button class="raffinato-sort is-right" type="button" onclick="ordenarDetalhamentoRaffinato('valor')">Valor <span id="raffinatoSortValor">↕</span></button></th></tr></thead>
               <tbody id="raffinatoTableBody"></tbody>
             </table>
             <div class="raffinato-empty" id="raffinatoEmpty"><div><strong>Pronto para consultar</strong>Escolha o período e clique em Executar consulta.</div></div>
@@ -2907,7 +2915,7 @@
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260728-nova-conta-v6">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 <link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
-<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260806-relatorio-v4">
+<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260806-analytics-v7">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3158,7 +3166,7 @@
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260804-sequencial-dias-corridos"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
-      <script src="./assets/js/34-raffinato-sangrias.js?v=20260806-isolamento-loja-v6"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260806-analytics-v7"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260804-calculo-dias-corridos"></script>

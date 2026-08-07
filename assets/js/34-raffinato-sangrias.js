@@ -6,6 +6,10 @@ let raffinatoTelaInicializada = false;
 let raffinatoIntegracaoAtual = null;
 let raffinatoTesteValido = false;
 let raffinatoLoadSequence = 0;
+let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' };
+let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
+let raffinatoBuscaDetalhe = '';
+let raffinatoItensVisiveis = [];
 
 function contextoRaffinato() {
   const lojaId = String((typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || '').trim();
@@ -241,25 +245,136 @@ function formatarMoedaRaffinato(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 }
 
-function renderizarSangriasRaffinato(items, total) {
+function chaveTextoRaffinato(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function distanciaLevenshteinRaffinato(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  const linha = Array.from({ length:b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diagonal = linha[0]; linha[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const anterior = linha[j];
+      linha[j] = Math.min(linha[j] + 1, linha[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diagonal = anterior;
+    }
+  }
+  return linha[b.length];
+}
+
+function motivosSemelhantesRaffinato(a, b) {
+  if (a === b) return true;
+  if (!a || !b || Math.min(a.length, b.length) < 4) return false;
+  const maior = Math.max(a.length, b.length);
+  if (Math.abs(a.length - b.length) <= 2 && 1 - distanciaLevenshteinRaffinato(a, b) / maior >= .86) return true;
+  const ta = new Set(a.split(' ').filter(t => t.length > 1));
+  const tb = new Set(b.split(' ').filter(t => t.length > 1));
+  const intersecao = [...ta].filter(t => tb.has(t)).length;
+  const uniao = new Set([...ta, ...tb]).size;
+  return uniao > 0 && intersecao / uniao >= .8;
+}
+
+function prepararMotivosAgrupadosRaffinato(items) {
+  const frequencias = new Map();
+  items.forEach(item => {
+    const chave = chaveTextoRaffinato(item.motivo) || 'sem motivo';
+    const atual = frequencias.get(chave) || { chave, quantidade:0, valor:0, rotulos:new Map() };
+    atual.quantidade += 1;
+    atual.valor += Number(item.valor || 0);
+    const rotulo = String(item.motivo || 'Sem motivo').trim() || 'Sem motivo';
+    atual.rotulos.set(rotulo, (atual.rotulos.get(rotulo) || 0) + 1);
+    frequencias.set(chave, atual);
+  });
+  const grupos = [];
+  [...frequencias.values()].sort((a,b) => b.quantidade - a.quantidade).forEach(item => {
+    let grupo = grupos.find(candidato => motivosSemelhantesRaffinato(candidato.chave, item.chave));
+    if (!grupo) { grupo = { chave:item.chave, chaves:[], quantidade:0, valor:0, rotulos:new Map() }; grupos.push(grupo); }
+    grupo.chaves.push(item.chave); grupo.quantidade += item.quantidade; grupo.valor += item.valor;
+    item.rotulos.forEach((qtd, rotulo) => grupo.rotulos.set(rotulo, (grupo.rotulos.get(rotulo) || 0) + qtd));
+  });
+  grupos.forEach(grupo => {
+    grupo.rotulo = [...grupo.rotulos.entries()].sort((a,b) => b[1] - a[1] || a[0].length - b[0].length)[0]?.[0] || 'Sem motivo';
+    grupo.rotulo = grupo.rotulo.charAt(0).toUpperCase() + grupo.rotulo.slice(1);
+  });
+  return grupos;
+}
+
+function dataRaffinatoParaDate(item) {
+  const partes = String(item.data || '').split('/').map(Number);
+  if (partes.length === 3) return new Date(partes[2], partes[1] - 1, partes[0]);
+  const data = new Date(item.data);
+  return Number.isNaN(data.getTime()) ? new Date(0) : data;
+}
+
+const RAFFINATO_DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const RAFFINATO_FAIXAS = [['00–06h',0,6],['06–09h',6,9],['09–12h',9,12],['12–15h',12,15],['15–18h',15,18],['18–21h',18,21],['21–24h',21,24]];
+function faixaHoraRaffinato(item) { const h = Number(String(item.hora || '0').slice(0,2)); return RAFFINATO_FAIXAS.find(([,min,max]) => h >= min && h < max)?.[0] || '00–06h'; }
+function diaSemanaRaffinato(item) { return RAFFINATO_DIAS_SEMANA[dataRaffinatoParaDate(item).getDay()]; }
+
+function itensFiltradosRaffinato() {
+  return raffinatoSangrias.filter(item => {
+    const f = raffinatoFiltrosAnaliticos;
+    const motivo = chaveTextoRaffinato(item.motivo) || 'sem motivo';
+    return (!f.data || item.data === f.data) && (!f.motivo || motivosSemelhantesRaffinato(f.motivo, motivo))
+      && (!f.semana || diaSemanaRaffinato(item) === f.semana) && (!f.faixa || faixaHoraRaffinato(item) === f.faixa);
+  });
+}
+
+function alternarFiltroAnaliticoRaffinato(tipo, valor) { raffinatoFiltrosAnaliticos[tipo] = raffinatoFiltrosAnaliticos[tipo] === valor ? '' : valor; atualizarPainelAnaliticoRaffinato(); }
+function removerFiltroAnaliticoRaffinato(tipo) { raffinatoFiltrosAnaliticos[tipo] = ''; atualizarPainelAnaliticoRaffinato(); }
+function limparFiltrosAnaliticosRaffinato() { raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' }; raffinatoBuscaDetalhe = ''; const busca = document.getElementById('raffinatoDetailSearch'); if (busca) busca.value = ''; atualizarPainelAnaliticoRaffinato(); }
+function definirBuscaDetalheRaffinato(valor) { raffinatoBuscaDetalhe = chaveTextoRaffinato(valor); renderizarDetalhamentoRaffinato(itensFiltradosRaffinato()); }
+
+function renderizarFiltrosAtivosRaffinato() {
+  const box = document.getElementById('raffinatoActiveFilters');
+  const chips = document.getElementById('raffinatoFilterChips');
+  if (!box || !chips) return;
+  const nomes = { data:'Data', motivo:'Motivo', semana:'Dia', faixa:'Horário' };
+  const ativos = Object.entries(raffinatoFiltrosAnaliticos).filter(([,valor]) => valor);
+  box.hidden = !ativos.length;
+  chips.innerHTML = ativos.map(([tipo,valor]) => `<button type="button" class="raffinato-filter-chip" onclick="removerFiltroAnaliticoRaffinato('${tipo}')"><span>${nomes[tipo]}:</span> ${escapeRaffinatoHtml(tipo === 'motivo' ? valor.charAt(0).toUpperCase() + valor.slice(1) : valor)} ×</button>`).join('');
+}
+
+function valorOrdenacaoRaffinato(item, coluna) {
+  if (coluna === 'valor') return Number(item.valor || 0);
+  if (coluna === 'data') return dataRaffinatoParaDate(item).getTime();
+  if (coluna === 'hora') return String(item.hora || '');
+  return chaveTextoRaffinato(item.motivo);
+}
+
+function ordenarDetalhamentoRaffinato(coluna) {
+  raffinatoOrdenacao = { coluna, direcao:raffinatoOrdenacao.coluna === coluna && raffinatoOrdenacao.direcao === 'asc' ? 'desc' : 'asc' };
+  renderizarDetalhamentoRaffinato(itensFiltradosRaffinato());
+}
+
+function renderizarDetalhamentoRaffinato(items) {
   const body = document.getElementById('raffinatoTableBody');
   const empty = document.getElementById('raffinatoEmpty');
   const table = document.getElementById('raffinatoTable');
   if (!body || !empty || !table) return;
-  if (!items.length) {
+  const busca = raffinatoBuscaDetalhe;
+  const filtrados = items.filter(item => !busca || chaveTextoRaffinato(`${item.data} ${item.hora} ${item.motivo} ${item.valor}`).includes(busca));
+  const fator = raffinatoOrdenacao.direcao === 'asc' ? 1 : -1;
+  raffinatoItensVisiveis = [...filtrados].sort((a,b) => {
+    const va = valorOrdenacaoRaffinato(a, raffinatoOrdenacao.coluna), vb = valorOrdenacaoRaffinato(b, raffinatoOrdenacao.coluna);
+    return (typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'pt-BR', { numeric:true })) * fator;
+  });
+  if (!raffinatoItensVisiveis.length) {
     table.hidden = true;
     empty.hidden = false;
-    empty.innerHTML = '<div><strong>Nenhuma sangria encontrada</strong>Altere o período e execute uma nova consulta.</div>';
+    empty.innerHTML = '<div><strong>Nenhuma sangria encontrada</strong>Remova algum filtro ou altere o período.</div>';
   } else {
-    body.innerHTML = items.map(item => `<tr><td class="is-time">${escapeRaffinatoHtml(item.data)}</td><td class="is-time">${escapeRaffinatoHtml(item.hora)}</td><td>${escapeRaffinatoHtml(item.motivo)}</td><td class="is-value">${formatarMoedaRaffinato(item.valor)}</td></tr>`).join('');
+    body.innerHTML = raffinatoItensVisiveis.map(item => `<tr><td class="is-time"><button class="raffinato-cell-filter" onclick="alternarFiltroAnaliticoRaffinato('data','${escapeRaffinatoHtml(item.data)}')">${escapeRaffinatoHtml(item.data)}</button></td><td class="is-time">${escapeRaffinatoHtml(item.hora)}</td><td>${escapeRaffinatoHtml(item.motivo)}</td><td class="is-value">${formatarMoedaRaffinato(item.valor)}</td></tr>`).join('');
     table.hidden = false;
     empty.hidden = true;
   }
-  document.getElementById('raffinatoTotal').textContent = formatarMoedaRaffinato(total);
-  document.getElementById('raffinatoQuantidade').textContent = String(items.length);
-  document.getElementById('raffinatoTicketMedio').textContent = formatarMoedaRaffinato(items.length ? total / items.length : 0);
-  document.getElementById('raffinatoExportBtn').disabled = !items.length;
-  renderizarGraficosSangriasRaffinato(items);
+  ['Data','Hora','Motivo','Valor'].forEach(nome => { const el = document.getElementById(`raffinatoSort${nome}`); if (el) el.textContent = raffinatoOrdenacao.coluna === nome.toLowerCase() ? (raffinatoOrdenacao.direcao === 'asc' ? '↑' : '↓') : '↕'; });
+  const resumo = document.getElementById('raffinatoTableSummary');
+  if (resumo) resumo.textContent = `${raffinatoItensVisiveis.length} registro(s) exibido(s) · ordenado por ${raffinatoOrdenacao.coluna}`;
+  document.getElementById('raffinatoExportBtn').disabled = !raffinatoItensVisiveis.length;
 }
 
 function agruparSangriasRaffinato(items, keyFn, valueFn = item => Number(item.valor || 0)) {
@@ -271,9 +386,19 @@ function agruparSangriasRaffinato(items, keyFn, valueFn = item => Number(item.va
   return [...map.entries()];
 }
 
-function barrasSangriasRaffinato(entries, formatValue = formatarMoedaRaffinato) {
+function barrasSangriasRaffinato(entries, formatValue = formatarMoedaRaffinato, tipoFiltro = '') {
   const max = Math.max(1, ...entries.map(([, value]) => Number(value || 0)));
-  return entries.map(([label, value]) => `<div class="raffinato-chart-row"><div class="raffinato-chart-label" title="${escapeRaffinatoHtml(label)}">${escapeRaffinatoHtml(label)}</div><div class="raffinato-chart-track"><div class="raffinato-chart-bar" style="width:${Math.max(2, Number(value || 0) / max * 100)}%"></div></div><div class="raffinato-chart-value">${escapeRaffinatoHtml(formatValue(value))}</div></div>`).join('');
+  return entries.map(([label, value, meta]) => `<button type="button" class="raffinato-chart-row ${tipoFiltro && raffinatoFiltrosAnaliticos[tipoFiltro] === (meta?.filtro || label) ? 'is-selected' : ''}" ${tipoFiltro ? `onclick="alternarFiltroAnaliticoRaffinato('${tipoFiltro}','${escapeRaffinatoHtml(meta?.filtro || label)}')"` : ''}><span class="raffinato-chart-label" title="${escapeRaffinatoHtml(label)}">${escapeRaffinatoHtml(label)}</span><span class="raffinato-chart-track"><span class="raffinato-chart-bar" style="width:${Math.max(2, Number(value || 0) / max * 100)}%"></span></span><span class="raffinato-chart-value">${escapeRaffinatoHtml(formatValue(value, meta))}</span></button>`).join('');
+}
+
+const RAFFINATO_CORES = ['#f97316','#22c55e','#38bdf8','#a78bfa','#facc15','#fb7185','#14b8a6','#60a5fa','#e879f9','#94a3b8'];
+function renderizarPizzaRaffinato(containerId, entries, tipoFiltro) {
+  const el = document.getElementById(containerId); if (!el) return;
+  const total = entries.reduce((s,e) => s + Number(e[1] || 0), 0) || 1;
+  let acumulado = 0;
+  const fatias = entries.map((entry,i) => { const pct = Number(entry[1] || 0) / total * 100; const ini = acumulado; acumulado += pct; return `${RAFFINATO_CORES[i % RAFFINATO_CORES.length]} ${ini}% ${acumulado}%`; });
+  const legenda = entries.map(([label,value,meta],i) => `<button type="button" class="raffinato-donut-item ${raffinatoFiltrosAnaliticos[tipoFiltro] === (meta?.filtro || label) ? 'is-selected' : ''}" onclick="alternarFiltroAnaliticoRaffinato('${tipoFiltro}','${escapeRaffinatoHtml(meta?.filtro || label)}')"><i style="background:${RAFFINATO_CORES[i % RAFFINATO_CORES.length]}"></i><span>${escapeRaffinatoHtml(label)}</span><strong>${escapeRaffinatoHtml(meta?.texto || String(value))}</strong></button>`).join('');
+  el.innerHTML = `<div class="raffinato-donut" style="background:conic-gradient(${fatias.join(',')})"><div><strong>${entries.length}</strong><span>grupos</span></div></div><div class="raffinato-donut-legend">${legenda}</div>`;
 }
 
 function renderizarGraficosSangriasRaffinato(items) {
@@ -285,15 +410,34 @@ function renderizarGraficosSangriasRaffinato(items) {
     const br = value => String(value).split('/').reverse().join('-');
     return br(a[0]).localeCompare(br(b[0]));
   });
-  const porMotivo = agruparSangriasRaffinato(items, item => item.motivo || 'Sem motivo').sort((a,b) => b[1] - a[1]).slice(0, 8);
-  const faixas = [
-    ['00–06h', 0, 6], ['06–09h', 6, 9], ['09–12h', 9, 12], ['12–15h', 12, 15],
-    ['15–18h', 15, 18], ['18–21h', 18, 21], ['21–24h', 21, 24],
-  ].map(([label, min, max]) => [label, items.filter(item => { const h = Number(String(item.hora || '0').slice(0,2)); return h >= min && h < max; }).length]);
-  document.getElementById('raffinatoChartDias').innerHTML = barrasSangriasRaffinato(porDia);
-  document.getElementById('raffinatoChartMotivos').innerHTML = barrasSangriasRaffinato(porMotivo);
-  const maxHora = Math.max(1, ...faixas.map(([, value]) => value));
-  document.getElementById('raffinatoChartHoras').innerHTML = faixas.map(([label, value]) => `<div class="raffinato-hour-column"><span class="raffinato-hour-value">${value}</span><div class="raffinato-hour-bar" style="height:${Math.max(2, value / maxHora * 115)}px"></div><span class="raffinato-hour-label">${label}</span></div>`).join('');
+  const motivos = prepararMotivosAgrupadosRaffinato(items).sort((a,b) => b.quantidade - a.quantidade);
+  const top10 = motivos.slice(0,10).map(g => [g.rotulo, g.quantidade, { filtro:g.chave, texto:`${g.quantidade}× · ${formatarMoedaRaffinato(g.valor)}` }]);
+  const pizzaMotivos = [...motivos].sort((a,b) => b.valor - a.valor).slice(0,9).map(g => [g.rotulo, g.valor, { filtro:g.chave, texto:formatarMoedaRaffinato(g.valor) }]);
+  const semanaMap = new Map(RAFFINATO_DIAS_SEMANA.map(dia => [dia,{ quantidade:0, valor:0 }]));
+  items.forEach(item => { const atual = semanaMap.get(diaSemanaRaffinato(item)); atual.quantidade += 1; atual.valor += Number(item.valor || 0); });
+  const semana = [...semanaMap.entries()].map(([label,v]) => [label,v.valor,{ texto:`${formatarMoedaRaffinato(v.valor)} · ${v.quantidade}×` }]);
+  const faixas = RAFFINATO_FAIXAS.map(([label]) => { const encontrados = items.filter(item => faixaHoraRaffinato(item) === label); return [label,encontrados.length,{ texto:`${encontrados.length}×` }]; });
+  document.getElementById('raffinatoChartDias').innerHTML = barrasSangriasRaffinato(porDia, formatarMoedaRaffinato, 'data');
+  document.getElementById('raffinatoChartMotivos').innerHTML = barrasSangriasRaffinato(top10, (value,meta) => meta.texto, 'motivo');
+  renderizarPizzaRaffinato('raffinatoPizzaMotivos', pizzaMotivos, 'motivo');
+  renderizarPizzaRaffinato('raffinatoPizzaSemana', semana, 'semana');
+  renderizarPizzaRaffinato('raffinatoPizzaHoras', faixas, 'faixa');
+}
+
+function atualizarPainelAnaliticoRaffinato() {
+  const items = itensFiltradosRaffinato();
+  const total = items.reduce((sum,item) => sum + Number(item.valor || 0), 0);
+  document.getElementById('raffinatoTotal').textContent = formatarMoedaRaffinato(total);
+  document.getElementById('raffinatoQuantidade').textContent = String(items.length);
+  document.getElementById('raffinatoTicketMedio').textContent = formatarMoedaRaffinato(items.length ? total / items.length : 0);
+  renderizarFiltrosAtivosRaffinato();
+  renderizarGraficosSangriasRaffinato(items);
+  renderizarDetalhamentoRaffinato(items);
+}
+
+function renderizarSangriasRaffinato(items) {
+  if (!items.length) document.getElementById('raffinatoCharts').hidden = true;
+  atualizarPainelAnaliticoRaffinato();
 }
 
 function setConsultaRaffinatoCarregando(carregando) {
@@ -325,6 +469,10 @@ async function consultarSangriasRaffinato() {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || 'Falha ao consultar o Raffinato.');
     raffinatoSangrias = Array.isArray(payload.items) ? payload.items : [];
+    raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' };
+    raffinatoBuscaDetalhe = '';
+    const buscaDetalhe = document.getElementById('raffinatoDetailSearch');
+    if (buscaDetalhe) buscaDetalhe.value = '';
     renderizarSangriasRaffinato(raffinatoSangrias, Number(payload.total || 0));
     atualizarStatusConectorRaffinato('online', 'Raffinato conectado');
     if (msg) { msg.className = 'msg ok'; msg.textContent = `${raffinatoSangrias.length} sangria(s) encontrada(s).`; }
@@ -349,9 +497,9 @@ function cancelarConsultaSangriasRaffinato() {
 }
 
 function exportarSangriasRaffinatoExcel() {
-  if (!raffinatoSangrias.length) return;
-  const rows = [['Data', 'Hora', 'Motivo', 'Valor'], ...raffinatoSangrias.map(item => [item.data, item.hora, item.motivo, Number(item.valor || 0).toFixed(2).replace('.', ',')])];
-  rows.push(['', '', 'TOTAL', raffinatoSangrias.reduce((sum, item) => sum + Number(item.valor || 0), 0).toFixed(2).replace('.', ',')]);
+  if (!raffinatoItensVisiveis.length) return;
+  const rows = [['Data', 'Hora', 'Motivo', 'Valor'], ...raffinatoItensVisiveis.map(item => [item.data, item.hora, item.motivo, Number(item.valor || 0).toFixed(2).replace('.', ',')])];
+  rows.push(['', '', 'TOTAL', raffinatoItensVisiveis.reduce((sum, item) => sum + Number(item.valor || 0), 0).toFixed(2).replace('.', ',')]);
   const csv = '\ufeff' + rows.map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
