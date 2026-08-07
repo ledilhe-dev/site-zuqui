@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v136-raffinato-analytics';
+const CACHE_NAME = 'check-diario-pwa-v137-raffinato-external';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

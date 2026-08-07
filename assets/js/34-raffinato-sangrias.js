@@ -10,6 +10,31 @@ let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' };
 let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
 let raffinatoBuscaDetalhe = '';
 let raffinatoItensVisiveis = [];
+const RAFFINATO_RELAY_FUNCTION = 'raffinato-relay';
+
+async function raffinatoRelay(body) {
+  const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body });
+  if (error) throw new Error(error.message || 'Falha na comunicacao externa com o Raffinato.');
+  if (data?.error) throw new Error(data.error);
+  return data || {};
+}
+
+function gerarTokenRaffinato() {
+  const bytes = crypto.getRandomValues(new Uint8Array(48));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+async function parearConectorExternoRaffinato() {
+  const contexto = contextoRaffinato();
+  const token = gerarTokenRaffinato();
+  await raffinatoBridgePost('/api/integracoes/raffinato/parear', {
+    loja_id: contexto.lojaId, empresa_id: contexto.empresaId, relay_token: token,
+  });
+  await raffinatoRelay({
+    action:'pair', token, empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
+    usuario_id:String(usuarioSistemaLogado?.id || ''),
+  });
+}
 
 function contextoRaffinato() {
   const lojaId = String((typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || '').trim();
@@ -104,6 +129,14 @@ async function carregarIntegracaoRaffinato() {
     if (sequence !== raffinatoLoadSequence || contextoAtual.lojaId !== contexto.lojaId || contextoAtual.empresaId !== contexto.empresaId) return;
     raffinatoIntegracaoAtual = data || null;
     preencherFormularioIntegracaoRaffinato(raffinatoIntegracaoAtual);
+    if (data && !data.conector_token_hash) {
+      try {
+        await parearConectorExternoRaffinato();
+        raffinatoIntegracaoAtual.conector_token_hash = 'pareado';
+      } catch (pairError) {
+        console.warn('Pareamento externo do Raffinato pendente:', pairError);
+      }
+    }
     if (msg) { msg.className = 'msg'; msg.textContent = data ? 'Integração cadastrada. Teste novamente antes de salvar alterações.' : 'Cadastre a conexão do Raffinato para esta loja.'; }
   } catch (error) {
     if (sequence !== raffinatoLoadSequence) return;
@@ -151,6 +184,7 @@ async function salvarIntegracaoRaffinato() {
     const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId };
     const { error } = await sb.from('raffinato_integracoes').upsert(payload, { onConflict:'loja_id' });
     if (error) throw error;
+    await parearConectorExternoRaffinato();
     if (msg) { msg.className = 'msg ok'; msg.textContent = 'Integração salva para esta loja.'; }
     await carregarIntegracaoRaffinato();
   } catch (error) {
@@ -198,20 +232,21 @@ function atualizarStatusConectorRaffinato(estado, texto) {
 }
 
 async function verificarConectorRaffinato() {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 2500);
   try {
-    const response = await fetch(`${RAFFINATO_BRIDGE_URL}/health`, {
-      cache:'no-store', signal:controller.signal,
+    const contexto = contextoRaffinato();
+    const statusRemoto = await raffinatoRelay({
+      action:'status', empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
+      usuario_id:String(usuarioSistemaLogado?.id || ''),
     });
-    if (!response.ok) throw new Error('Conector indisponível');
-    atualizarStatusConectorRaffinato('online', 'Conector local ativo');
+    if (!statusRemoto.online) {
+      atualizarStatusConectorRaffinato('offline', statusRemoto.pareado ? 'Aguardando sincronizacao' : 'Conector nao pareado');
+      return false;
+    }
+    atualizarStatusConectorRaffinato('online', 'Conector Raffinato ativo');
     return true;
   } catch (_) {
-    atualizarStatusConectorRaffinato('offline', 'Conector local desligado');
+    atualizarStatusConectorRaffinato('offline', 'Conector indisponível');
     return false;
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -452,7 +487,6 @@ async function consultarSangriasRaffinato() {
   try {
     const periodo = obterPeriodoSangriasRaffinato();
     raffinatoConsultaController?.abort();
-    raffinatoConsultaController = new AbortController();
     setConsultaRaffinatoCarregando(true);
     if (msg) { msg.className = 'msg'; msg.textContent = ''; }
     const empty = document.getElementById('raffinatoEmpty');
@@ -460,14 +494,12 @@ async function consultarSangriasRaffinato() {
     if (table) table.hidden = true;
     if (empty) { empty.hidden = false; empty.innerHTML = '<div><div class="raffinato-spinner"></div><strong>Consultando o Raffinato</strong>Aguarde a resposta pela rede Radmin VPN.</div>'; }
 
-    const response = await fetch(`${RAFFINATO_BRIDGE_URL}/api/sangrias`, {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ inicio: periodo.inicio, fim: periodo.fim, loja_id:contextoRaffinato().lojaId }),
-      signal: raffinatoConsultaController.signal,
+    const contexto = contextoRaffinato();
+    const payload = await raffinatoRelay({
+      action:'dashboard', inicio:periodo.inicio.slice(0, 10), fim:periodo.fim.slice(0, 10),
+      empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
+      usuario_id:String(usuarioSistemaLogado?.id || ''),
     });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || 'Falha ao consultar o Raffinato.');
     raffinatoSangrias = Array.isArray(payload.items) ? payload.items : [];
     raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' };
     raffinatoBuscaDetalhe = '';
