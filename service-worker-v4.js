@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v134-raffinato-loopback-compat';
+const CACHE_NAME = 'check-diario-pwa-v135-raffinato-multiloja';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -5,6 +5,7 @@ let raffinatoConsultaController = null;
 let raffinatoTelaInicializada = false;
 let raffinatoIntegracaoAtual = null;
 let raffinatoTesteValido = false;
+let raffinatoLoadSequence = 0;
 
 function contextoRaffinato() {
   const lojaId = String((typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || '').trim();
@@ -83,15 +84,27 @@ function preencherFormularioIntegracaoRaffinato(item) {
 
 async function carregarIntegracaoRaffinato() {
   const msg = document.getElementById('msgRaffinatoIntegracao');
+  const sequence = ++raffinatoLoadSequence;
   try {
     const contexto = contextoRaffinato();
     document.getElementById('raffinatoLojaContexto').textContent = `Configuração exclusiva de ${contexto.lojaNome}`;
-    const { data, error } = await sb.from('raffinato_integracoes').select('*').eq('loja_id', contexto.lojaId).maybeSingle();
+    raffinatoIntegracaoAtual = null;
+    raffinatoSangrias = [];
+    preencherFormularioIntegracaoRaffinato(null);
+    document.getElementById('raffinatoTestResult').hidden = true;
+    if (msg) { msg.className = 'msg'; msg.textContent = `Carregando integração de ${contexto.lojaNome}...`; }
+    const { data, error } = await sb.from('raffinato_integracoes').select('*')
+      .eq('empresa_id', contexto.empresaId).eq('loja_id', contexto.lojaId).maybeSingle();
     if (error) throw error;
+    const contextoAtual = contextoRaffinato();
+    if (sequence !== raffinatoLoadSequence || contextoAtual.lojaId !== contexto.lojaId || contextoAtual.empresaId !== contexto.empresaId) return;
     raffinatoIntegracaoAtual = data || null;
     preencherFormularioIntegracaoRaffinato(raffinatoIntegracaoAtual);
     if (msg) { msg.className = 'msg'; msg.textContent = data ? 'Integração cadastrada. Teste novamente antes de salvar alterações.' : 'Cadastre a conexão do Raffinato para esta loja.'; }
   } catch (error) {
+    if (sequence !== raffinatoLoadSequence) return;
+    raffinatoIntegracaoAtual = null;
+    preencherFormularioIntegracaoRaffinato(null);
     if (msg) { msg.className = 'msg err'; msg.textContent = error?.message || 'Não foi possível carregar a integração.'; }
   }
 }
