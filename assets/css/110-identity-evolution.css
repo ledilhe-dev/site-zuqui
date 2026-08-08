@@ -287,3 +287,33 @@ body.avatar-crop-open{overflow:hidden!important}
   #cardDashboardGraficosFinanceiros .dash-gf-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   #dashGfModoBtns,#dashGfStatusBtns{grid-column:1/-1}
 }
+
+/* Rail desktop recolhido: um atalho legível por função, sem repetir submenus. */
+@media(min-width:901px){
+  body.sidebar-collapsed .sidebar{width:72px!important;min-width:72px!important;flex-basis:72px!important;padding:14px 9px!important}
+  body.sidebar-collapsed .sidebar .logo{min-height:46px!important;height:46px!important;margin:0 0 42px!important}
+  body.sidebar-collapsed .sidebar .logo::before{width:44px!important;height:44px!important;border-radius:13px!important;box-shadow:0 0 0 3px rgba(45,212,191,.12),0 8px 20px rgba(2,8,23,.3)!important}
+  body.sidebar-collapsed .sidebar>.sidebar-collapse-toggle{top:68px!important;right:19px!important;width:34px!important;height:30px!important;min-width:34px!important;min-height:30px!important}
+  body.sidebar-collapsed .sidebar #navContainer{padding:6px 0 18px!important;scrollbar-width:none}
+  body.sidebar-collapsed .sidebar #navContainer::-webkit-scrollbar{display:none}
+  body.sidebar-collapsed .sidebar .nav-group{margin:0 0 8px!important;padding:0 0 8px!important;border-bottom:1px solid rgba(148,163,184,.11)}
+  body.sidebar-collapsed .sidebar .nav-group:last-child{border-bottom:0}
+  body.sidebar-collapsed .sidebar .nav-submenu{display:none!important}
+  body.sidebar-collapsed .sidebar .nav-btn{width:48px!important;min-width:48px!important;height:44px!important;min-height:44px!important;margin:3px auto!important;border:1px solid transparent!important;border-radius:12px!important}
+  body.sidebar-collapsed .sidebar .nav-btn::before{width:24px!important;height:24px!important;color:#94a3b8!important;font-size:17px!important;font-family:Inter,system-ui,sans-serif!important;font-weight:800!important}
+  body.sidebar-collapsed .sidebar .nav-btn:hover{border-color:rgba(45,212,191,.2)!important;background:rgba(45,212,191,.09)!important}
+  body.sidebar-collapsed .sidebar .nav-btn.ativo,body.sidebar-collapsed .sidebar .nav-btn.active,body.sidebar-collapsed .sidebar .nav-btn[aria-current="page"]{border-color:rgba(45,212,191,.34)!important;background:linear-gradient(145deg,rgba(45,212,191,.2),rgba(6,182,212,.1))!important;box-shadow:inset 3px 0 0 #2dd4bf,0 7px 18px rgba(2,8,23,.2)!important}
+  body.sidebar-collapsed .sidebar .nav-btn:hover::before{color:#e2e8f0!important}
+  body.sidebar-collapsed .sidebar .nav-btn.ativo::before,body.sidebar-collapsed .sidebar .nav-btn.active::before,body.sidebar-collapsed .sidebar .nav-btn[aria-current="page"]::before{color:#5eead4!important}
+  body.sidebar-collapsed .sidebar .nav-btn[data-page="bater_ponto"]::before{content:"◷"}
+  body.sidebar-collapsed .sidebar .nav-btn[data-page="escala_plantoes"]::before{content:"▣"}
+  body.sidebar-collapsed .sidebar #btnMenuChecklist::before{content:"✓"}
+  body.sidebar-collapsed .sidebar .nav-btn[data-page="tarefas_rapidas"]::before{content:"!"}
+  body.sidebar-collapsed .sidebar .nav-btn[data-page="dashboard"]::before{content:"▦"}
+  body.sidebar-collapsed .sidebar .nav-btn[data-page="estatisticas_atendimento"]::before{content:"★"}
+  body.sidebar-collapsed .sidebar #btnMenuRelatorios::before{content:"↗"}
+  body.sidebar-collapsed .sidebar .nav-btn[data-page="financeiro_sangrias_raffinato"]::before{content:"R";font-size:14px!important}
+  body.sidebar-collapsed .sidebar #btnMenuFinanceiro::before{content:"$"}
+  body.sidebar-collapsed .sidebar #btnMenuFuncionarios::before{content:"U";font-size:14px!important}
+  body.sidebar-collapsed .sidebar #btnMenuConfiguracoes::before{content:"⚙"}
+}
