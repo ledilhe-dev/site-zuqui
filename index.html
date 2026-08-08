@@ -3127,7 +3127,7 @@
 <div class="avatar-crop-overlay" id="avatarCropOverlay" aria-hidden="true">
   <div class="avatar-crop-modal" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitulo">
     <header class="avatar-crop-header">
-      <div><span class="avatar-crop-kicker">Foto de perfil</span><h3 id="avatarCropTitulo">Ajuste o enquadramento</h3><p>Arraste a foto e use o zoom para destacar seu rosto.</p></div>
+      <div><span class="avatar-crop-kicker">Foto de perfil</span><h3 id="avatarCropTitulo">Ajustar foto</h3><p>Arraste a foto e use o zoom para destacar seu rosto.</p></div>
       <button class="avatar-crop-close" type="button" onclick="cancelarRecorteAvatar()" aria-label="Fechar editor">×</button>
     </header>
     <div class="avatar-crop-body">
@@ -3139,7 +3139,7 @@
         <button class="avatar-crop-icon-btn" type="button" onclick="alterarZoomAvatar(10)" aria-label="Ampliar zoom">+</button>
         <button class="btn btn-ghost btn-sm avatar-crop-center" type="button" onclick="centralizarRecorteAvatar()">Centralizar</button>
       </div>
-      <p class="avatar-crop-help">Dica: use a roda do mouse ou o gesto de pinça para ajustar o zoom.</p>
+      <p class="avatar-crop-help" id="avatarCropStatus" role="status">Carregando imagem...</p>
     </div>
     <footer class="avatar-crop-footer"><button class="btn btn-ghost" type="button" onclick="cancelarRecorteAvatar()">Cancelar</button><button class="btn btn-primary" id="avatarCropAplicar" type="button" onclick="aplicarRecorteAvatar()">Aplicar foto</button></footer>
   </div>
@@ -3151,7 +3151,7 @@
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
 <script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
-<script src="./assets/js/06-theme-interface.js?v=20260807-final-ux-v1"></script>
+<script src="./assets/js/06-theme-interface.js?v=20260807-avatar-crop-v2"></script>
 <script src="./assets/js/10-dashboard.js?v=20260807-menu-limpo-v3"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>

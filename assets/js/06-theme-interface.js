@@ -5,6 +5,7 @@ let minhaContaAvatarUrl = '';
 let avatarCropper = null;
 let avatarCropArquivoUrl = '';
 let avatarCropZoomBase = 1;
+let avatarCropCarregamento = 0;
 
 function temaEfetivoCheckDiario(preferencia) {
   return preferencia === 'system'
@@ -192,6 +193,7 @@ function previsualizarAvatarMinhaConta(input) {
     return;
   }
   destruirEditorRecorteAvatar();
+  const carregamentoAtual = ++avatarCropCarregamento;
   avatarCropArquivoUrl = URL.createObjectURL(arquivo);
   const imagem = document.getElementById('avatarCropImage');
   const overlay = document.getElementById('avatarCropOverlay');
@@ -200,16 +202,18 @@ function previsualizarAvatarMinhaConta(input) {
     input.value = '';
     return;
   }
-  imagem.src = avatarCropArquivoUrl;
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
   document.body.classList.add('avatar-crop-open');
-  requestAnimationFrame(() => {
+  const status = document.getElementById('avatarCropStatus');
+  if (status) status.textContent = 'Carregando imagem...';
+  imagem.onload = () => {
+    if (carregamentoAtual !== avatarCropCarregamento || !overlay.classList.contains('open')) return;
     avatarCropper = new Cropper(imagem, {
       aspectRatio: 1,
       viewMode: 1,
       dragMode: 'move',
-      autoCropArea: 1,
+      autoCropArea: 0.84,
       background: false,
       guides: false,
       center: true,
@@ -219,12 +223,27 @@ function previsualizarAvatarMinhaConta(input) {
       toggleDragModeOnDblclick: false,
       responsive: true,
       restore: false,
+      movable: true,
+      zoomable: true,
+      zoomOnTouch: true,
       zoomOnWheel: true,
       wheelZoomRatio: 0.08,
       ready() {
-        avatarCropZoomBase = avatarCropper.getImageData().ratio || 1;
+        const container = avatarCropper.getContainerData();
+        const lado = Math.floor(Math.min(container.width, container.height) * 0.84);
+        avatarCropper.setCropBoxData({
+          width: lado,
+          height: lado,
+          left: (container.width - lado) / 2,
+          top: (container.height - lado) / 2
+        });
+        const dadosImagem = avatarCropper.getImageData();
+        avatarCropZoomBase = dadosImagem.naturalWidth > 0
+          ? dadosImagem.width / dadosImagem.naturalWidth
+          : 1;
         const zoom = document.getElementById('avatarCropZoom');
         if (zoom) zoom.value = '0';
+        if (status) status.textContent = 'Arraste a imagem para posicionar o rosto dentro do círculo.';
       },
       zoom(event) {
         if (!avatarCropper || !avatarCropZoomBase) return;
@@ -233,14 +252,27 @@ function previsualizarAvatarMinhaConta(input) {
         if (zoom) zoom.value = String(Math.round(valor));
       }
     });
-  });
+  };
+  imagem.onerror = () => {
+    if (carregamentoAtual !== avatarCropCarregamento) return;
+    cancelarRecorteAvatar();
+    if (typeof alert === 'function') alert('Não foi possível abrir esta imagem. Escolha outro arquivo.');
+  };
+  imagem.src = avatarCropArquivoUrl;
 }
 
 function destruirEditorRecorteAvatar() {
+  avatarCropCarregamento += 1;
   avatarCropper?.destroy();
   avatarCropper = null;
   if (avatarCropArquivoUrl) URL.revokeObjectURL(avatarCropArquivoUrl);
   avatarCropArquivoUrl = '';
+  const imagem = document.getElementById('avatarCropImage');
+  if (imagem) {
+    imagem.onload = null;
+    imagem.onerror = null;
+    imagem.removeAttribute('src');
+  }
 }
 
 function fecharEditorRecorteAvatar() {
@@ -260,7 +292,7 @@ function cancelarRecorteAvatar() {
 function definirZoomAvatar(valor) {
   if (!avatarCropper) return;
   const nivel = Math.max(0, Math.min(100, Number(valor) || 0));
-  avatarCropper.zoomTo(avatarCropZoomBase * (1 + nivel / 25));
+    avatarCropper.zoomTo(avatarCropZoomBase * (1 + nivel / 25));
 }
 
 function alterarZoomAvatar(delta) {
@@ -273,7 +305,10 @@ function alterarZoomAvatar(delta) {
 function centralizarRecorteAvatar() {
   if (!avatarCropper) return;
   avatarCropper.reset();
-  avatarCropZoomBase = avatarCropper.getImageData().ratio || 1;
+  const dadosImagem = avatarCropper.getImageData();
+  avatarCropZoomBase = dadosImagem.naturalWidth > 0
+    ? dadosImagem.width / dadosImagem.naturalWidth
+    : 1;
   const zoom = document.getElementById('avatarCropZoom');
   if (zoom) zoom.value = '0';
 }
