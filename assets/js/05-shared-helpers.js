@@ -434,13 +434,21 @@ async function validarDuplicidadeCadastro({
     if (pinEmUso === true) return 'Já existe um usuário com este PIN.';
   }
 
-  if (nomeNormalizado) {
-    const { data: funcionariosMesmoNome } = await sb
+  // Em edicoes, o UPDATE e o indice unico do banco sao a fonte de verdade.
+  // A pre-consulta pode enxergar registros fora da lista/escopo atual e gerar
+  // falso positivo; o banco ainda bloqueia uma duplicidade real ao salvar.
+  if (nomeNormalizado && !funcionarioIdIgnorar) {
+    let consultaFuncionariosMesmoNome = sb
       .from('funcionarios')
       .select('id, nome')
       .ilike('nome', escaparValorLike(nome));
 
-    if ((funcionariosMesmoNome || []).some(item => item.id !== funcionarioIdIgnorar && normalizarTextoComparacao(item.nome) === nomeNormalizado)) {
+    const { data: funcionariosMesmoNome } = await consultaFuncionariosMesmoNome;
+
+    if ((funcionariosMesmoNome || []).some(item =>
+      String(item.id) !== String(funcionarioIdIgnorar ?? '')
+      && normalizarTextoComparacao(item.nome) === nomeNormalizado
+    )) {
       return 'Já existe um usuário com este nome.';
     }
   }
@@ -862,6 +870,7 @@ function usuarioPodeAcessar(pageId) {
   }
   if (usuarioEhAdministrador()) return true;
   const permissoes = obterPermissoesUsuario();
+  if (String(pageId || '').startsWith('integracoes_financeiras_')) return permissoes.integracoes_financeiras === true;
   if (pageId === 'tarefas_rapidas') {
     return usuarioPodeAcessarAlertasRapidos();
   }
@@ -1194,65 +1203,6 @@ function obterLojasDisponiveisParaFiltroMultiLoja() {
   return Array.from(mapa.values()).sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
 }
 
-function renderizarFiltroLojasCheckbox(containerId = '', onChange = '') {
-  const container = document.getElementById(containerId);
-  if (!container) return [];
-  const lojas = obterLojasDisponiveisParaFiltroMultiLoja();
-  const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  const lojaSessaoAnterior = String(container.dataset.lojaSessaoId || '').trim();
-  const houveTrocaLojaSessao = !!lojaSessaoId && lojaSessaoAnterior && lojaSessaoAnterior !== lojaSessaoId;
-  const selecionadasAntes = houveTrocaLojaSessao
-    ? new Set()
-    : new Set(Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(input => String(input.value || '')));
-  const selecionadas = selecionadasAntes.size ? selecionadasAntes : new Set(lojaSessaoId ? [lojaSessaoId] : lojas.map(loja => loja.id));
-  const handler = String(onChange || '').trim() || 'void 0';
-
-  if (!lojas.length) {
-    container.innerHTML = '<span class="multi-loja-filter-title">Lojas</span><span class="item-detalhe">Nenhuma loja disponível.</span>';
-    return [];
-  }
-
-  const todasMarcadas = lojas.every(loja => selecionadas.has(String(loja.id)));
-  container.innerHTML = [
-    '<span class="multi-loja-filter-title">Lojas</span>',
-    `<label><input type="checkbox" data-multi-loja-todas="1" ${todasMarcadas ? 'checked' : ''} onchange="toggleTodasLojasFiltroMultiLoja('${escaparHtmlBasico(containerId)}', this.checked); ${handler}">Todas</label>`,
-    ...lojas.map(loja => `
-      <label title="${escaparHtmlBasico(loja.nome)}">
-        <input type="checkbox" value="${escaparHtmlBasico(loja.id)}" ${selecionadas.has(String(loja.id)) ? 'checked' : ''} onchange="sincronizarTodasLojasFiltroMultiLoja('${escaparHtmlBasico(containerId)}'); ${handler}">
-        ${escaparHtmlBasico(loja.nome)}
-      </label>
-    `),
-  ].join('');
-  container.dataset.lojaSessaoId = lojaSessaoId;
-  return lojas;
-}
-
-function sincronizarTodasLojasFiltroMultiLoja(containerId = '') {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const lojas = Array.from(container.querySelectorAll('input[type="checkbox"][value]'));
-  const todas = container.querySelector('[data-multi-loja-todas]');
-  if (todas) todas.checked = !!lojas.length && lojas.every(input => input.checked);
-}
-
-function toggleTodasLojasFiltroMultiLoja(containerId = '', marcado = false) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.querySelectorAll('input[type="checkbox"][value]').forEach(input => {
-    input.checked = !!marcado;
-  });
-}
-
-function obterIdsLojasSelecionadasFiltroMultiLoja(containerId = '') {
-  const container = document.getElementById(containerId);
-  const ids = container
-    ? Array.from(container.querySelectorAll('input[type="checkbox"][value]:checked')).map(input => String(input.value || '').trim()).filter(Boolean)
-    : [];
-  if (ids.length) return [...new Set(ids)];
-  const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-  return lojaSessaoId ? [lojaSessaoId] : [];
-}
-
 function obterNomeLojaFiltroMultiLoja(lojaId = '') {
   const id = String(lojaId || '').trim();
   if (!id) return '';
@@ -1327,6 +1277,13 @@ function aplicarPermissoesSistema() {
   const algumFinanceiroVisivel = itensFinanceiro.some(btn => btn.style.display !== 'none');
   if (grupoFinanceiro) {
     grupoFinanceiro.style.display = algumFinanceiroVisivel ? '' : 'none';
+  }
+
+  const itensIntegracoesFinanceiras = Array.from(document.querySelectorAll('#menuIntegracoesFinanceirasGroup .nav-btn[data-page]'));
+  const grupoIntegracoesFinanceiras = document.getElementById('menuIntegracoesFinanceirasGroup');
+  const algumaIntegracaoFinanceiraVisivel = itensIntegracoesFinanceiras.some(btn => btn.style.display !== 'none');
+  if (grupoIntegracoesFinanceiras) {
+    grupoIntegracoesFinanceiras.style.display = algumaIntegracaoFinanceiraVisivel ? '' : 'none';
   }
 
   const itensFuncionarios = Array.from(document.querySelectorAll('#menuFuncionariosGroup .nav-btn[data-page]'));
@@ -1985,22 +1942,38 @@ function definirMovimentacaoSaldoContaFinanceiraBaixa(movimentar = true) {
   atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
 }
 
-function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = '', valor = 0, titulo = '', movimentarSaldo = true } = {}) {
+function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = '', valor = 0, titulo = '', movimentarSaldo = true, modo = 'baixa' } = {}) {
   const overlay = document.getElementById('contaFinanceiraBaixaOverlay');
   const opcoesEl = document.getElementById('contaFinanceiraBaixaOpcoes');
   const msg = document.getElementById('contaFinanceiraBaixaMsg');
   const subtitle = document.getElementById('contaFinanceiraBaixaSubtitle');
+  const tituloEl = document.getElementById('contaFinanceiraBaixaTitle');
+  const introEl = document.getElementById('contaFinanceiraBaixaIntro');
+  const valorWrap = document.getElementById('contaFinanceiraValorPagoWrap');
+  const valorInput = document.getElementById('contaFinanceiraValorPago');
   if (!overlay || !opcoesEl || !msg) return Promise.resolve(null);
 
   const opcoes = (contas || []).filter(item => item && item.ativo !== false);
+  if (modo === 'estorno' && contaAtualId) {
+    opcoes.sort((a, b) => Number(String(b.id) === String(contaAtualId)) - Number(String(a.id) === String(contaAtualId)));
+  }
   if (!opcoes.length) return Promise.resolve(null);
   contasModalContaFinanceiraBaixa = opcoes;
   modalContaFinanceiraMovimentarSaldo = movimentarSaldo !== false;
   atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
+  overlay.dataset.modo = modo;
+  if (valorWrap) valorWrap.style.display = modo === 'baixa' ? 'grid' : 'none';
+  if (valorInput) {
+    valorInput.value = Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
   if (subtitle) {
-    subtitle.textContent = `Valor da baixa: ${formatarMoedaBRFinanceiro(valor || 0)}${titulo ? ` · ${titulo}` : ''}`;
+    subtitle.textContent = `${modo === 'estorno' ? 'Valor a devolver' : 'Valor da baixa'}: ${formatarMoedaBRFinanceiro(valor || 0)}${titulo ? ` · ${titulo}` : ''}`;
   }
+  if (tituloEl) tituloEl.textContent = modo === 'estorno' ? 'Devolver saldo ao cofre' : 'Selecionar conta financeira';
+  if (introEl) introEl.textContent = modo === 'estorno'
+    ? 'A conta usada no pagamento está sugerida. Escolha onde o valor será devolvido ou marque “Não” para somente reabrir o título.'
+    : 'Clique na conta financeira que será usada para pagar este título.';
 
   opcoesEl.innerHTML = opcoes.map((item, idx) => {
     const selecionada = String(item.id) === String(contaAtualId || '');
@@ -2008,7 +1981,7 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
       <button class="conta-financeira-opcao conta-financeira-cor-${idx % 6}" type="button" onclick="selecionarContaFinanceiraBaixa('${item.id}')">
         <span class="nome">${escaparHtmlBasico(item.nome || '-')}</span>
         <span class="saldo">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_atual || 0))}</span>
-        <span class="hint">${selecionada ? 'Conta vinculada atualmente' : 'Clique para usar esta conta'}</span>
+        <span class="hint">${selecionada ? (modo === 'estorno' ? 'Conta de onde saiu o pagamento' : 'Conta vinculada atualmente') : (modo === 'estorno' ? 'Devolver nesta conta' : 'Clique para usar esta conta')}</span>
       </button>
     `;
   }).join('');
@@ -2032,9 +2005,23 @@ function selecionarContaFinanceiraBaixa(id) {
     }
     return;
   }
+  const overlay = document.getElementById('contaFinanceiraBaixaOverlay');
+  const modo = String(overlay?.dataset?.modo || 'baixa');
+  const valorInput = document.getElementById('contaFinanceiraValorPago');
+  const valorPago = modo === 'baixa' ? lerValorMonetarioFinanceiro(valorInput?.value || '') : null;
+  if (modo === 'baixa' && (!Number.isFinite(valorPago) || valorPago <= 0)) {
+    const msg = document.getElementById('contaFinanceiraBaixaMsg');
+    if (msg) {
+      msg.textContent = 'Informe um valor efetivamente pago maior que zero.';
+      msg.className = 'msg err';
+    }
+    valorInput?.focus();
+    return;
+  }
   fecharModalContaFinanceiraBaixa({
     ...conta,
     movimentarSaldo: modalContaFinanceiraMovimentarSaldo === true,
+    valorPago: modo === 'baixa' ? Number(valorPago.toFixed(2)) : null,
   });
 }
 
@@ -2056,12 +2043,27 @@ function fecharModalContaFinanceiraBaixa(resultado = null) {
   if (resolver) resolver(resultado);
 }
 
+async function executarValidacaoCredencialComRetry(nomeRpc, parametros, respostaValida) {
+  // RPCs de credencial já resolvem o escopo no banco. Alterar filtros globais
+  // aqui criava uma disputa com carregamentos paralelos, principalmente no
+  // celular, fazendo o mesmo PIN falhar nas primeiras tentativas.
+  const executar = () => sb.rpc(nomeRpc, parametros);
+  const esperas = [0, 220, 550];
+  let resposta = null;
+  for (const espera of esperas) {
+    if (espera) await new Promise(resolve => window.setTimeout(resolve, espera));
+    resposta = await executar();
+    if (!resposta?.error && respostaValida(resposta?.data)) return resposta;
+  }
+  return resposta;
+}
+
 async function validarPinFuncionario(funcionarioId, pin) {
   if (!funcionarioId || !pin) return false;
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_credencial_funcionario', {
+  const { data, error } = await executarValidacaoCredencialComRetry('verificar_credencial_funcionario', {
     p_funcionario_id: funcionarioId,
     p_senha: String(pin),
-  }));
+  }, data => data === true);
   return !error && data === true;
 }
 
@@ -2097,9 +2099,9 @@ async function obterFuncionarioAtivoPorPin(pin) {
 
   const pinNormalizado = String(pin).trim();
 
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+  const { data, error } = await executarValidacaoCredencialComRetry('buscar_funcionarios_por_credencial', {
     p_senha: pinNormalizado,
-  }));
+  }, data => Array.isArray(data) && data.length > 0);
   if (error) return null;
   const funcionario = (Array.isArray(data) ? data : [])
     .filter(funcionarioPertenceLojaAtualPonto)[0] || null;
@@ -2120,9 +2122,9 @@ async function validarPinExclusaoAgenda(pin, lojaId) {
   const loja = String(lojaId || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
   if (!pinNormalizado || !loja) return { funcionario: null, motivo: 'pin_invalido' };
 
-  const candidatosRes = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+  const candidatosRes = await executarValidacaoCredencialComRetry('buscar_funcionarios_por_credencial', {
     p_senha: pinNormalizado,
-  }));
+  }, data => Array.isArray(data) && data.length > 0);
   if (candidatosRes.error || !(candidatosRes.data || []).length) {
     return { funcionario: null, motivo: 'pin_invalido' };
   }
@@ -2172,6 +2174,32 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
     || (typeof usuarioEhAdminDeLoja === 'function' && usuarioEhAdminDeLoja());
   if (ehAdmin) {
     const idLogado = String(usuarioSistemaLogado?.id || '').trim();
+    // Contas administrativas (globais ou de loja) possuem credencial própria
+    // em usuarios_admin. Validar essa origem primeiro evita que o mesmo PIN
+    // passe por buscas de funcionários/lojas e falhe de forma intermitente.
+    if (idLogado && ['admin', 'admin_loja'].includes(String(usuarioSistemaLogado?.tipo || ''))) {
+      const [pinRes, senhaRes] = await Promise.all([
+        executarValidacaoCredencialComRetry('verificar_pin_usuario_admin', {
+          p_usuario_id: idLogado,
+          p_pin: pinNormalizado,
+        }, data => data === true),
+        executarValidacaoCredencialComRetry('verificar_credencial_usuario_admin', {
+          p_usuario_id: idLogado,
+          p_senha: pinNormalizado,
+        }, data => data === true),
+      ]);
+      if ((!pinRes?.error && pinRes?.data === true) || (!senhaRes?.error && senhaRes?.data === true)) {
+        return {
+          id: idLogado,
+          nome: usuarioSistemaLogado?.nome || 'Administrador',
+          ativo: true,
+          origem_credencial: 'usuario_admin',
+        };
+      }
+    }
+
+    // Compatibilidade: alguns administradores de loja também possuem cadastro
+    // operacional em funcionarios. Mantém esse caminho como fallback.
     if (idLogado) {
       const { data: euAdmin } = await executarSemFiltrosTenantTemporario(() => sb
         .from('funcionarios')
@@ -2180,19 +2208,6 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
         .maybeSingle());
       if (euAdmin && euAdmin.ativo !== false && await validarPinFuncionario(euAdmin.id, pinNormalizado)) {
         return euAdmin;
-      }
-    }
-    if (usuarioSistemaLogado?.tipo === 'admin_loja' && idLogado) {
-      const { data: adminValido } = await executarSemFiltrosTenantTemporario(() => sb.rpc('verificar_pin_usuario_admin', {
-        p_usuario_id: idLogado,
-        p_pin: pinNormalizado,
-      }));
-      if (adminValido === true) {
-      return {
-        id: idLogado || usuarioSistemaLogado?.id || 'admin',
-        nome: usuarioSistemaLogado?.nome || 'Administrador',
-        ativo: true,
-      };
       }
     }
   }
@@ -2204,12 +2219,40 @@ async function obterFuncionarioAtivoPorPinEmpresa(pin) {
     ? obterLojasPermitidasSessao()
     : []).map(l => String(l?.id || l?.loja_id || '').trim()).filter(Boolean);
 
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('buscar_funcionarios_por_credencial', {
+  const { data, error } = await executarValidacaoCredencialComRetry('buscar_funcionarios_por_credencial', {
     p_senha: pinNormalizado,
-  }));
+  }, data => Array.isArray(data) && data.length > 0);
 
   if (error) { console.warn('Falha ao buscar funcionário por PIN:', error); return null; }
-  return (Array.isArray(data) ? data : []).find(f => f.ativo !== false && (!lojasVinculadas.length || lojasVinculadas.includes(String(f.loja_id || '')))) || null;
+  const candidatos = (Array.isArray(data) ? data : []).filter(f => f.ativo !== false);
+  if (!candidatos.length) return null;
+
+  // Cadastros operacionais podem pertencer às lojas somente pela tabela de
+  // vínculos, sem loja_id direto. Aceita a própria credencial do usuário
+  // logado; para outra pessoa, valida o vínculo com a loja atual.
+  const idLogadoAtual = String(usuarioSistemaLogado?.id || '').trim();
+  const proprioUsuario = candidatos.find(f => String(f.id || '') === idLogadoAtual);
+  if (proprioUsuario) return proprioUsuario;
+
+  const lojaAtual = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || lojasVinculadas[0] || '').trim();
+  if (!lojaAtual) return candidatos[0];
+  const direto = candidatos.find(f => String(f.loja_id || '') === lojaAtual);
+  if (direto) return direto;
+
+  const idsCandidatos = candidatos.map(f => f.id).filter(Boolean);
+  if (!idsCandidatos.length) return null;
+  const { data: vinculos, error: erroVinculos } = await sb
+    .from('funcionario_lojas')
+    .select('funcionario_id, loja_id, ativo')
+    .in('funcionario_id', idsCandidatos)
+    .eq('loja_id', lojaAtual)
+    .eq('ativo', true);
+  if (erroVinculos) {
+    console.warn('Falha ao validar vínculo do autorizador financeiro:', erroVinculos);
+    return null;
+  }
+  const idsVinculados = new Set((vinculos || []).map(v => String(v.funcionario_id || '')));
+  return candidatos.find(f => idsVinculados.has(String(f.id || ''))) || null;
 }
 
 function resumoNomesPendencias(pendencias = [], limite = 3) {
@@ -2335,7 +2378,7 @@ function mensagemErroSupabase(error, fallback = 'Erro inesperado.') {
   return [error.message, error.details, error.hint, error.code].filter(Boolean).join(' - ') || fallback;
 }
 
-async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false, escopo = 'ponto', validarFuncionarioConfirmado = null }) {
+async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, exigirFuncionarioInformado = false, escopo = 'ponto', validarFuncionarioConfirmado = null, placeholderInput = 'Digite sua senha ou PIN' }) {
   let mensagemErro = '';
   let tipoMensagem = 'err';
   while (true) {
@@ -2346,6 +2389,7 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, 
       textoAcao,
       mensagem: mensagemErro,
       tipoMensagem,
+      placeholderInput,
     });
 
     if (!resposta) return null;
@@ -2390,7 +2434,7 @@ async function confirmarAcaoComPin({ funcionario, titulo, subtitulo, textoAcao, 
 
     mensagemErro = exigirFuncionarioInformado
       ? `Senha inválida para ${funcionario?.nome || 'o funcionário responsável'}.`
-      : 'PIN inválido. Tente novamente.';
+      : (escopo === 'empresa' ? 'Senha ou PIN inválido. Tente novamente.' : 'PIN inválido. Tente novamente.');
     tipoMensagem = 'err';
   }
 }

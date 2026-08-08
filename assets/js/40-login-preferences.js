@@ -92,7 +92,12 @@ function obterTelaPreferidaAoLogin() {
 }
 // ══════════════════════════════════════════════════════════════════
 async function excluirRecebivelFinanceiro(id) {
-  if (!confirm('Excluir este recebível?')) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Excluir recebível',
+    subtitulo: 'Confirme sua senha para excluir este recebível e estornar o saldo correspondente.',
+    textoAcao: 'Excluir recebível', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
 
   let item = recebiveisFinanceiroCache.find(recebivel => String(recebivel.id) === String(id)) || null;
   if (!item) {
@@ -399,7 +404,10 @@ function atualizarEstadoExtratoCofre() {
   const card = document.getElementById('cardExtratoCofre');
   const btn = document.getElementById('btnToggleExtratoCofre');
   if (card) card.hidden = !cofreExtratoVisivel;
-  if (btn) btn.textContent = cofreExtratoVisivel ? 'Ocultar extrato' : 'Exibir extrato';
+  if (btn) {
+    btn.innerHTML = `<span class="cofre-action-icon">▤</span><span>${cofreExtratoVisivel ? 'Ocultar extrato' : 'Exibir extrato'}</span>`;
+    btn.setAttribute('aria-expanded', String(cofreExtratoVisivel));
+  }
 }
 
 function toggleExtratoCofre() {

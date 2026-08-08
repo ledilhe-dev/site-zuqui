@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.7';
-const APP_VERSION_LABEL = '3.1.64-confirmar-rec-futuro-fix';
+const APP_VERSION = '3.2.13';
+const APP_VERSION_LABEL = '3.2.13-restaurar-vencimento-mobile';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -22,7 +22,9 @@ const AUTH_EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).authEmailFunctionName
 const AUTH_REDIRECT_URL = (window.APP_CONFIG || {}).authRedirectUrl || 'https://checkdiario.com.br/';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-window.sb = sb; // compatibilidade para módulos seguros de escala/plantões
+window.sb = sb; // compatibilidade para módulos seguros de agenda
+const AGENDA_TABLE = 'agenda';
+window.AGENDA_TABLE = AGENDA_TABLE;
 
 
 // Controle de consumo: evita uma consulta ao Supabase a cada tecla digitada em filtros.
@@ -67,13 +69,13 @@ const TABELAS_COM_EMPRESA_ID = new Set([
   'contas_financeiras',
   'contas_financeiras_movimentacoes',
   'contas_financeiras_ajustes_saldo',
-  'recebiveis','recebiveis_futuros','escala_plantoes',
-  'fatura_categoria_memoria','fatura_importacoes_log',
-  'categorias_compra','grupos_fornecedor','perfis'
+  'recebiveis','recebiveis_futuros','agenda','escala_plantoes',
+  'fatura_categoria_memoria','fatura_importacoes_log','raffinato_integracoes',
+  'categorias_compra','grupos_fornecedor','perfis','google_business_conexoes','google_business_locais','google_avaliacoes','google_avaliacoes_metricas_diarias','google_sincronizacoes_logs'
 ]);
 
 const TABELAS_COM_LOJA_ID = new Set([
-  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','categorias_compra','grupos_fornecedor','perfis'
+  'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','agenda','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','raffinato_integracoes','categorias_compra','grupos_fornecedor','perfis','google_business_conexoes','google_business_locais','google_avaliacoes','google_avaliacoes_metricas_diarias','google_sincronizacoes_logs'
 ]);
 
 let filtroLojaSuspensoTemporariamente = false;
@@ -110,15 +112,40 @@ function aplicarFiltroLojaFuncionariosQuery(query) {
 // Loja atualmente em uso (logada ou trocada pelo admin no topo).
 function obterLojaAtualParaIsolamento() {
   try {
-    return String(
+    if (filtroLojaSuspensoTemporariamente) return '';
+    const direta = String(
       (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '')
       || usuarioSistemaLogado?.loja_id
       || (typeof window !== 'undefined' ? window.lojaAtualId : '')
       || ''
     ).trim();
+    if (direta) return direta;
+
+    const normalizar = (valor) => String(valor || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+    const nomeTopo = normalizar(document.getElementById('topbar-store-name')?.textContent || '');
+    const lojasPermitidas = Array.isArray(usuarioSistemaLogado?.lojas_permitidas)
+      ? usuarioSistemaLogado.lojas_permitidas
+      : [];
+    if (nomeTopo && nomeTopo !== '-' && nomeTopo !== 'PAINEL ADMINISTRATIVO') {
+      const lojaTopo = lojasPermitidas.find(loja => {
+        const id = String(loja?.id || loja?.loja_id || '').trim();
+        const nome = normalizar(loja?.nome || loja?.loja_nome || loja?.codigo || '');
+        return id && nome && nome === nomeTopo;
+      });
+      if (lojaTopo) return String(lojaTopo.id || lojaTopo.loja_id || '').trim();
+    }
+    if (lojasPermitidas.length === 1) {
+      return String(lojasPermitidas[0]?.id || lojasPermitidas[0]?.loja_id || '').trim();
+    }
   } catch (e) {
     return '';
   }
+  return '';
 }
 
 // Aplica .eq('loja_id', lojaAtual) em qualquer query que tenha coluna loja_id.
@@ -175,7 +202,7 @@ async function aplicarEmpresaRLS() {
   sb.from = function(tabela) {
     const builder = _from(tabela);
     const empresaId = obterEmpresaIdSessao();
-    const lojaId = obterLojaIdSessao();
+    const lojaId = obterLojaIdSessao() || obterLojaAtualParaIsolamento();
 
     const aplicaEmpresa = !!empresaId && TABELAS_COM_EMPRESA_ID.has(tabela);
     const aplicaLoja = !!lojaId && TABELAS_COM_LOJA_ID.has(tabela);
@@ -238,7 +265,8 @@ let confirmacaoSistemaOpcaoAtual = null;
 function abrirConfirmacaoSistema(opcoes = {}) {
   const overlay = document.getElementById('confirmacaoSistemaOverlay');
   if (!overlay) {
-    return Promise.resolve({ confirmado: window.confirm(opcoes.body || opcoes.title || 'Confirmar ação?'), valor: '' });
+    console.error('Modal visual de confirmação não encontrado; ação cancelada para impedir diálogo nativo do navegador.');
+    return Promise.resolve({ confirmado: false, acao: 'cancelar', valor: '' });
   }
 
   const title = document.getElementById('confirmacaoSistemaTitle');
@@ -251,6 +279,14 @@ function abrirConfirmacaoSistema(opcoes = {}) {
   const btnCancelar = document.getElementById('confirmacaoSistemaCancelar');
   const btnNeutro = document.getElementById('confirmacaoSistemaNeutro');
   const btnConfirmar = document.getElementById('confirmacaoSistemaConfirmar');
+  let btnExtra = document.getElementById('confirmacaoSistemaExtra');
+  if (!btnExtra && btnConfirmar?.parentElement) {
+    btnExtra = document.createElement('button');
+    btnExtra.type = 'button';
+    btnExtra.id = 'confirmacaoSistemaExtra';
+    btnExtra.onclick = () => resolverConfirmacaoSistema('extra');
+    btnConfirmar.parentElement.insertBefore(btnExtra, btnConfirmar);
+  }
 
   confirmacaoSistemaOpcaoAtual = {
     exigeTexto: Boolean(opcoes.exigeTexto),
@@ -273,6 +309,11 @@ function abrirConfirmacaoSistema(opcoes = {}) {
     btnConfirmar.textContent = opcoes.confirmText || 'Confirmar';
     btnConfirmar.className = `btn ${opcoes.confirmClass || 'btn-green'}`;
   }
+  if (btnExtra) {
+    btnExtra.textContent = opcoes.extraText || '';
+    btnExtra.className = `btn ${opcoes.extraClass || 'btn-amber'}`;
+    btnExtra.style.display = opcoes.extraText ? '' : 'none';
+  }
   if (inputWrap) inputWrap.style.display = opcoes.input ? 'flex' : 'none';
   if (inputLabel) inputLabel.textContent = opcoes.inputLabel || 'Motivo';
   if (input) {
@@ -282,6 +323,7 @@ function abrirConfirmacaoSistema(opcoes = {}) {
 
   overlay.classList.add('show');
   overlay.style.display = 'flex';
+  overlay.style.zIndex = '100001';
 
   setTimeout(() => {
     if (opcoes.input && input) input.focus();
@@ -313,6 +355,6 @@ function resolverConfirmacaoSistema(confirmado) {
   const resolver = confirmacaoSistemaResolver;
   confirmacaoSistemaResolver = null;
   confirmacaoSistemaOpcaoAtual = null;
-  const acao = confirmado === true ? 'confirmar' : confirmado === 'neutro' ? 'neutro' : 'cancelar';
+  const acao = confirmado === true ? 'confirmar' : confirmado === 'neutro' ? 'neutro' : confirmado === 'extra' ? 'extra' : 'cancelar';
   if (resolver) resolver({ confirmado: confirmado === true, acao, valor });
 }

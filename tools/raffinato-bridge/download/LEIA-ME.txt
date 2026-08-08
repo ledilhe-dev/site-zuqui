@@ -1,0 +1,18 @@
+CONECTOR RAFFINATO - CHECKDIARIO
+
+1. Extraia todo o conteudo do ZIP para uma pasta permanente.
+2. Confirme que o Radmin VPN esta conectado.
+3. Execute Conector-Raffinato-Oculto.exe. Ele ficara ativo sem abrir janela.
+4. Acesse o CheckDiario e abra Integracoes > Raffinato.
+5. Preencha os dados e clique em Testar conexao.
+
+Se precisar diagnosticar algum problema, feche o processo oculto pelo Gerenciador
+de Tarefas e execute Conector-Raffinato.exe para visualizar as mensagens.
+
+Nao execute as duas versoes ao mesmo tempo.
+
+Requisito do computador:
+- Microsoft ODBC Driver 17 ou 18 for SQL Server.
+
+O Python nao precisa ser instalado. As senhas ficam criptografadas pelo Windows
+no arquivo integracoes-raffinato.dat, criado ao lado do executavel.

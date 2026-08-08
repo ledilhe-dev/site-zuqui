@@ -2,6 +2,7 @@
 const topTitles = {
   meu_painel: ['Meu Painel', 'Dashboard personalizado'],
   dashboard: ['Dashboard', 'Visao geral do sistema'],
+  estatisticas_atendimento: ['Estatísticas de atendimento', 'Avaliações e reputação no Google'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   escala_plantoes: ['Agenda', 'Calendário de trabalho, folgas, domingos e feriados'],
@@ -13,6 +14,7 @@ const topTitles = {
   relatorio_financeiro: ['Relatório de contas a pagar', 'Análise detalhada de títulos e pagamentos'],
   relatorio_recebimentos: ['Relatório de recebimentos', 'Entradas com usuário e horário de lançamento'],
   relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
+  relatorio_sangrias_raffinato: ['Relatório de Sangrias', 'Análise de sangrias do Raffinato por loja'],
   financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
   financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
   financeiro_contasapagar: ['Cadastro de contas a pagar', 'Lançamentos financeiros por fornecedor'],
@@ -23,6 +25,16 @@ const topTitles = {
   financeiro_categorias_compra: ['Categorias de Compra', 'Classifique os lançamentos por categoria'],
   tela_preferida_login: ['Tela de Login Preferida', 'Configure a tela inicial por loja ou usuário'],
   financeiro_cofre: ['Cofre', 'Recebimentos lançados em recebíveis'],
+  financeiro_sangrias_raffinato: ['Integração Raffinato', 'Conexão SQL e sangrias por loja'],
+  integracoes_financeiras_dashboard: ['Dashboard Financeiro', 'Visão estrutural das integrações financeiras'],
+  integracoes_financeiras_contas: ['Contas Bancárias', 'Contas conectadas ou cadastradas'],
+  integracoes_financeiras_cartoes: ['Cartões', 'Cartões e faturas integradas'],
+  integracoes_financeiras_movimentacoes: ['Movimentações', 'Extrato financeiro normalizado'],
+  integracoes_financeiras_categorias: ['Categorias', 'Classificação financeira'],
+  integracoes_financeiras_fornecedores: ['Fornecedores', 'Contrapartes das movimentações'],
+  integracoes_financeiras_conciliacao: ['Conciliação', 'Correspondência com registros internos'],
+  integracoes_financeiras_regras: ['Regras Automáticas', 'Classificação automática futura'],
+  integracoes_financeiras_configuracoes: ['Configurações', 'Provedores e sincronizações'],
   itens: ['Itens do Checklist', 'Itens por modelo'],
   funcionarios: ['Funcionarios', 'Gestao de equipe'],
   solicitacoes: ['Solicitacoes de acesso', 'Aprove ou rejeite pedidos de entrada'],
@@ -41,11 +53,15 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
-  return ['financeiro_fornecedores', 'financeiro_formas_pagamento', 'financeiro_contasapagar', 'financeiro_baixar_contas', 'financeiro_conta_financeira', 'financeiro_recebiveis', 'financeiro_grupo_fornecedor', 'financeiro_categorias_compra', 'financeiro_cofre'].includes(String(pageId || ''));
+  return ['financeiro_fornecedores', 'financeiro_formas_pagamento', 'financeiro_contasapagar', 'financeiro_baixar_contas', 'financeiro_conta_financeira', 'financeiro_recebiveis', 'financeiro_grupo_fornecedor', 'financeiro_categorias_compra', 'financeiro_cofre', 'integracoes_financeiras_conciliacao'].includes(String(pageId || ''));
+}
+
+function paginaPertenceMenuIntegracoesFinanceiras(pageId = '') {
+  return String(pageId || '').startsWith('integracoes_financeiras_');
 }
 
 function paginaPertenceMenuFuncionarios(pageId = '') {
@@ -74,6 +90,12 @@ function atualizarEstadoMenuRelatorios(expandido = false) {
 
 function atualizarEstadoMenuFinanceiro(expandido = false) {
   const grupo = document.getElementById('menuFinanceiroGroup');
+  if (!grupo) return;
+  grupo.classList.toggle('open', !!expandido);
+}
+
+function atualizarEstadoMenuIntegracoesFinanceiras(expandido = false) {
+  const grupo = document.getElementById('menuIntegracoesFinanceirasGroup');
   if (!grupo) return;
   grupo.classList.toggle('open', !!expandido);
 }
@@ -112,6 +134,11 @@ function toggleMenuFinanceiroSubmenu() {
   const grupo = document.getElementById('menuFinanceiroGroup');
   if (!grupo) return;
   grupo.classList.toggle('open');
+}
+
+function toggleMenuIntegracoesFinanceirasSubmenu() {
+  const grupo = document.getElementById('menuIntegracoesFinanceirasGroup');
+  atualizarEstadoMenuIntegracoesFinanceiras(!grupo?.classList.contains('open'));
 }
 
 function toggleMenuFuncionariosSubmenu() {
@@ -261,7 +288,8 @@ function obterFeriadosNacionaisEscala(ano){const pascoa=calcularPascoaEscala(ano
 function obterInicioFimMesEscala(){const ref=escalaPlantoesDataReferencia||new Date(),ano=ref.getFullYear(),mes=ref.getMonth();return {inicio:formatarDataIsoLocalEscala(new Date(ano,mes,1)),fim:formatarDataIsoLocalEscala(new Date(ano,mes+1,0))};}
 function normalizarHoraEscala(valor){return String(valor||'').slice(0,5);}
 function formatarDataBRSimplesEscala(dataIso){const [a,m,d]=String(dataIso||'').split('-');return d&&m&&a?`${d}/${m}/${a}`:String(dataIso||'');}
-function isMissingEscalaPlantoesTableError(error){const msg=String(error?.message||error?.details||error?.hint||error?.code||'').toLowerCase(); if(msg.includes('empresa_id') || msg.includes('loja_id') || msg.includes('column')) return false; return msg.includes('could not find the table') || (msg.includes('relation') && msg.includes('escala_plantoes') && msg.includes('does not exist')) || msg.includes('schema cache');}
+function tabelaAgenda(){return window.AGENDA_TABLE || 'agenda';}
+function isMissingEscalaPlantoesTableError(error){const msg=String(error?.message||error?.details||error?.hint||error?.code||'').toLowerCase(); if(msg.includes('empresa_id') || msg.includes('loja_id') || msg.includes('column')) return false; return msg.includes('could not find the table') || (msg.includes('relation') && (msg.includes('agenda') || msg.includes('escala_plantoes')) && msg.includes('does not exist')) || msg.includes('schema cache');}
 
 async function carregarEscalaPlantoes(){
   if(!(escalaPlantoesDataReferencia instanceof Date)||Number.isNaN(escalaPlantoesDataReferencia.getTime()))escalaPlantoesDataReferencia=new Date();
@@ -281,7 +309,7 @@ function irParaHojeEscalaPlantoes(){escalaPlantoesDataReferencia=new Date();carr
 async function carregarPlantoesEscalaMes(){
   const { inicio, fim } = obterInicioFimMesEscala();
   let query = sb
-    .from('escala_plantoes')
+    .from(tabelaAgenda())
     .select('*')
     .gte('data_plantao', inicio)
     .lte('data_plantao', fim)
@@ -294,7 +322,7 @@ async function carregarPlantoesEscalaMes(){
   if (error) {
     escalaPlantoesEventos = [];
     if (isMissingEscalaPlantoesTableError(error)) {
-      setMsg('msgEscalaPlantoes','Rode o SQL da tabela escala_plantoes para salvar e exibir plantões.','err');
+      setMsg('msgEscalaPlantoes','Rode o SQL da tabela agenda para salvar e exibir a agenda.','err');
     } else {
       setMsg('msgEscalaPlantoes',`Erro ao carregar plantões: ${mensagemErroSupabase(error,'erro desconhecido')}`,'err');
     }
@@ -394,7 +422,7 @@ async function abrirModalCadastroPlantaoEscala(dataIso=''){
   ['escalaPlantaoInicio','escalaPlantaoFim','escalaPlantaoTitulo','escalaPlantaoValor','escalaPlantaoObservacao'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';});
   const tipo=document.getElementById('escalaPlantaoTipo'); if(tipo)tipo.value='plantao';
   const btnExcluir=document.getElementById('btnExcluirPlantaoEscala'); if(btnExcluir) btnExcluir.style.display='none';
-  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar escala';
+  const btnSalvar=document.getElementById('btnSalvarPlantaoEscala'); if(btnSalvar) btnSalvar.textContent='Salvar agenda';
   setMsg('msgModalEscalaPlantao','','');
   await carregarFuncionariosSelectEscala();
   renderizarItensDiaModalEscala();
@@ -409,7 +437,8 @@ function fecharModalCadastroPlantaoEscala(){
 
 async function salvarPlantaoEscala(){
   const eventoId=String(document.getElementById('escalaPlantaoEventoId')?.value||'').trim();
-  const funcionarioId=String(document.getElementById('escalaPlantaoFuncionario')?.value||'').trim();
+  const funcionarioAgendaId=String(document.getElementById('escalaPlantaoFuncionario')?.value||'').trim();
+  const funcionarioId=funcionarioAgendaId || 'agenda_loja';
   const inicio=String(document.getElementById('escalaPlantaoInicio')?.value||'').trim();
   const fim=String(document.getElementById('escalaPlantaoFim')?.value||'').trim();
   const tipo=String(document.getElementById('escalaPlantaoTipo')?.value||'plantao').trim();
@@ -427,7 +456,7 @@ async function salvarPlantaoEscala(){
   const payload={
     empresa_id: empresaId,
     loja_id: lojaId,
-    funcionario_id: funcionarioId,
+    funcionario_id: funcionarioAgendaId || null,
     data_plantao: escalaPlantoesDataSelecionada,
     inicio_hora: inicio,
     fim_hora: fim,
@@ -438,14 +467,14 @@ async function salvarPlantaoEscala(){
   };
   let resposta;
   if(eventoId){
-    let q=sb.from('escala_plantoes').update(payload).eq('id', eventoId);
+    let q=sb.from(tabelaAgenda()).update(payload).eq('id', eventoId);
     if(lojaId) q=q.eq('loja_id', lojaId);
     resposta=await q;
   } else {
-    resposta=await sb.from('escala_plantoes').insert([payload]);
+    resposta=await sb.from(tabelaAgenda()).insert([payload]);
   }
   if(resposta.error){
-    if(isMissingEscalaPlantoesTableError(resposta.error)) setMsg('msgModalEscalaPlantao','Rode o SQL da tabela escala_plantoes antes de salvar.','err');
+    if(isMissingEscalaPlantoesTableError(resposta.error)) setMsg('msgModalEscalaPlantao','Rode o SQL da tabela agenda antes de salvar.','err');
     else setMsg('msgModalEscalaPlantao',`Não foi possível salvar: ${mensagemErroSupabase(resposta.error,'erro desconhecido')}`,'err');
     return;
   }
@@ -506,7 +535,7 @@ async function excluirPlantaoEscala(){
       : 'PIN inválido ou usuário sem vínculo ativo com esta loja.';
     setMsg('msgModalEscalaPlantao', texto + ' A escala não foi excluída.','err');return;
   }
-  let q=sb.from('escala_plantoes').update({
+  let q=sb.from(tabelaAgenda()).update({
     deleted_at: new Date().toISOString(),
     deleted_by_funcionario_id: usuarioExclusao.id,
     deleted_by_nome: usuarioExclusao.nome || 'Funcionário',
@@ -595,8 +624,11 @@ function abrirPagina(id, botao) {
   document.getElementById('topbar-title').textContent = tituloPagina;
   document.getElementById('topbar-sub').textContent = '';
   salvarPaginaAtiva(id);
+  atualizarEstadoMenuIntegracoesFinanceiras(paginaPertenceMenuIntegracoesFinanceiras(id));
+  if (paginaPertenceMenuIntegracoesFinanceiras(id) && typeof carregarPaginaIntegracoesFinanceiras === 'function') carregarPaginaIntegracoesFinanceiras(id);
   if (id === 'meu_painel') carregarMeuPainel();
   if (id === 'dashboard') carregarDashboard();
+  if (id === 'estatisticas_atendimento' && typeof carregarEstatisticasAtendimento === 'function') carregarEstatisticasAtendimento();
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
   if (id === 'escala_plantoes') { carregarEscalaPlantoes(); }
@@ -606,12 +638,12 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_lancamentos') { carregarRelatorioLancamentos(); }
   if (id === 'relatorio_tarefas_cadastradas') { carregarRelatorioTarefasCadastradas(); }
   if (id === 'relatorio_financeiro') {
-    renderizarFiltroLojasCheckbox('filtroLojasRelatorioFinanceiro', 'carregarRelatorioFinanceiro()');
     carregarRelatorioFinanceiro();
     Promise.all([carregarGruposFornecedor(), carregarCategoriasCompra()]);
   }
   if (id === 'relatorio_recebimentos') { carregarRelatorioRecebimentos(); }
   if (id === 'relatorio_ajuste_saldo') { carregarRelatorioAjusteSaldo(); }
+  if (id === 'relatorio_sangrias_raffinato' && typeof iniciarTelaRelatorioSangriasRaffinato === 'function') { iniciarTelaRelatorioSangriasRaffinato(); }
   if (id === 'financeiro_fornecedores') {
     limparFormularioFornecedorFinanceiro();
     carregarFornecedoresFinanceiro();
@@ -624,7 +656,6 @@ function abrirPagina(id, botao) {
   if (id === 'financeiro_contasapagar') {
     limparFormularioContaAPagarFinanceiro();
     resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel: false });
-    renderizarFiltroLojasCheckbox('filtroLojasContasAPagarFinanceiro', 'carregarContasAPagarFinanceiro()');
     carregarFornecedoresFinanceiro();
     carregarContasAPagarFinanceiro();
     Promise.all([carregarGruposFornecedor(), carregarCategoriasCompra()]);
@@ -635,7 +666,6 @@ function abrirPagina(id, botao) {
   }
   if (id === 'financeiro_conta_financeira') {
     limparFormularioContaFinanceira();
-    renderizarFiltroLojasCheckbox('filtroLojasContasFinanceiras', 'carregarContasFinanceiras(); carregarExtratoContaFinanceira()');
     carregarContasFinanceiras();
     carregarExtratoContaFinanceira();
   }
@@ -643,7 +673,6 @@ function abrirPagina(id, botao) {
     carregarFornecedoresFinanceiro();
     carregarFormasPagamentoFinanceiro({ render: false, silencioso: true }).then(() => preencherSelectRecebivelFormasPagamentoFinanceiro());
     carregarContasFinanceiras({ render: false, silencioso: true }).then(() => preencherSelectRecebivelContasFinanceiras());
-    carregarRecebiveisFinanceiro();
     iniciarTelaRecFuturos();
   }
   if (id === 'financeiro_grupo_fornecedor') {
@@ -656,12 +685,13 @@ function abrirPagina(id, botao) {
     iniciarTelaPreferidaLogin();
   }
   if (id === 'financeiro_cofre') {
-    renderizarFiltroLojasCheckbox('filtroLojasCofreFinanceiro', 'carregarCofreFinanceiro()');
     carregarCofreFinanceiro();
+  }
+  if (id === 'financeiro_sangrias_raffinato' && typeof iniciarTelaSangriasRaffinato === 'function') {
+    iniciarTelaSangriasRaffinato();
   }
   if (id === 'funcionarios') {
     limparFormularioFuncionario();
-    renderizarFiltroLojasCheckbox('filtroLojasFuncionarios', 'carregarFuncionarios()');
     carregarFuncionarios();
     carregarSelectPerfisFuncionario();
   }

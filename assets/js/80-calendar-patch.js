@@ -74,7 +74,7 @@
       const inicio=iso(new Date(ref.getFullYear(),ref.getMonth(),1));
       const fim=iso(new Date(ref.getFullYear(),ref.getMonth()+1,0));
       if(typeof sb !== 'undefined' && sb?.from){
-        let q=sb.from('escala_plantoes').select('id, empresa_id, loja_id, funcionario_id, data_plantao, inicio_hora, fim_hora, tipo, titulo, observacao').gte('data_plantao',inicio).lte('data_plantao',fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
+        let q=sb.from(window.AGENDA_TABLE || 'agenda').select('id, empresa_id, loja_id, funcionario_id, data_plantao, inicio_hora, fim_hora, tipo, titulo, observacao').gte('data_plantao',inicio).lte('data_plantao',fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true});
         const lojaId=String((typeof obterLojaIdSessao==='function' ? obterLojaIdSessao() : '') || usuarioSistemaLogado?.loja_id || lojaAtualId || '').trim();
         if(lojaId) q=q.eq('loja_id',lojaId);
         const r=await q;
@@ -97,17 +97,17 @@
           const msg = (r.error && (r.error.message || r.error.details || r.error.hint || r.error.code)) || 'erro desconhecido';
           const textoErro = String(msg).toLowerCase();
           if (textoErro.includes('empresa_id')) {
-            setMsg('msgEscalaPlantoes', 'Tabela escala_plantoes existe, mas falta a coluna empresa_id. Rode o SQL de correção multi-filial e recarregue a página.', 'err');
+            setMsg('msgEscalaPlantoes', 'Tabela agenda existe, mas falta a coluna empresa_id. Rode o SQL de correção multi-filial e recarregue a página.', 'err');
           } else if (textoErro.includes('loja_id')) {
-            setMsg('msgEscalaPlantoes', 'Tabela escala_plantoes existe, mas falta a coluna loja_id. Rode o SQL de correção multi-filial e recarregue a página.', 'err');
+            setMsg('msgEscalaPlantoes', 'Tabela agenda existe, mas falta a coluna loja_id. Rode o SQL de correção multi-filial e recarregue a página.', 'err');
           } else if (String(r.error?.code || '').includes('42P01') || textoErro.includes('could not find the table') || textoErro.includes('schema cache') || (textoErro.includes('relation') && textoErro.includes('does not exist'))) {
-            setMsg('msgEscalaPlantoes', "Tabela escala_plantoes existe no banco, mas o Supabase REST ainda não atualizou o schema cache. Rode o SQL de recarregar schema e atualize a página.", 'err');
+            setMsg('msgEscalaPlantoes', "Tabela agenda existe no banco, mas o Supabase REST ainda não atualizou o schema cache. Rode o SQL de recarregar schema e atualize a página.", 'err');
           } else {
-            setMsg('msgEscalaPlantoes', `Erro ao carregar escala_plantoes: ${msg}`, 'err');
+            setMsg('msgEscalaPlantoes', `Erro ao carregar agenda: ${msg}`, 'err');
           }
         }
       }
-    }catch(e){ console.warn('Falha ao buscar escala_plantoes:', e); }
+    }catch(e){ console.warn('Falha ao buscar agenda:', e); }
     window.renderizarEscalaPlantoes();
   };
   window.mudarMesEscalaPlantoes=function(delta){ const r=window.escalaPlantoesDataReferencia || new Date(); window.escalaPlantoesDataReferencia=new Date(r.getFullYear(),r.getMonth()+Number(delta||0),1); window.carregarEscalaPlantoes(); };

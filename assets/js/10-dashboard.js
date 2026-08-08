@@ -108,8 +108,7 @@ function navItemDrop(e) {
   const wrapper = e.currentTarget.closest('[data-nav-item-id]') || e.currentTarget;
   document.querySelectorAll('[data-nav-item-id]').forEach(el => { el.style.outline = ''; el.style.opacity = ''; });
   if (!_navItemDragSrc || !wrapper || wrapper === _navItemDragSrc) return;
-  const pai = _navItemDragSrc.parentNode;
-  if (pai !== wrapper.parentNode) return; // só no mesmo grupo
+  const pai = wrapper.parentNode;
   // Determinar posição relativa
   const rect = wrapper.getBoundingClientRect();
   const meio = rect.top + rect.height / 2;
@@ -118,6 +117,7 @@ function navItemDrop(e) {
   } else {
     pai.insertBefore(_navItemDragSrc, wrapper.nextSibling);
   }
+  atualizarGruposVaziosNav();
   salvarOrdemNavItens();
 }
 
@@ -127,30 +127,72 @@ function navItemDragEnd(e) {
 }
 
 async function salvarOrdemNavItens() {
-  const grupo = document.querySelector('#navContainer .nav-group.featured');
-  if (!grupo) return;
-  const wrappers = [...grupo.querySelectorAll(':scope > [data-nav-item-id]')];
-  const ordem = wrappers.map(el => el.dataset.navItemId);
-  await salvarPreferenciaMeuPainel('nav_ordem_itens', ordem);
+  const wrappers = [...document.querySelectorAll('#navContainer .nav-group > [data-nav-item-id]')];
+  const ordem = wrappers.map(el => ({
+    id: el.dataset.navItemId,
+    grupo: el.parentElement?.id || 'navgrp_operacao'
+  }));
+  await salvarPreferenciaMeuPainel('nav_ordem_itens_v2', ordem);
 }
 
 async function carregarOrdemNavMenu() {
   try {
-    const ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens', null);
-    if (!Array.isArray(ordem) || !ordem.length) return;
-    const grupo = document.querySelector('#navContainer .nav-group.featured');
-    if (!grupo) return;
-    // Mapear wrappers por id
+    let ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens_v2', null);
     const mapa = {};
-    grupo.querySelectorAll(':scope > [data-nav-item-id]').forEach(el => {
+    document.querySelectorAll('#navContainer .nav-group > [data-nav-item-id]').forEach(el => {
       mapa[el.dataset.navItemId] = el;
     });
-    // Reaplicar ordem
-    ordem.forEach(id => {
-      const el = mapa[id];
-      if (el) grupo.appendChild(el);
-    });
+    if (Array.isArray(ordem) && ordem.length && typeof ordem[0] === 'object') {
+      ordem.forEach(item => {
+        const el = mapa[item.id];
+        const grupo = document.getElementById(item.grupo);
+        if (el && grupo?.classList.contains('nav-group')) grupo.appendChild(el);
+      });
+    } else {
+      ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens', null);
+      const grupo = document.querySelector('#navContainer .nav-group.featured');
+      if (Array.isArray(ordem) && grupo) ordem.forEach(id => mapa[id] && grupo.appendChild(mapa[id]));
+    }
   } catch(e) { console.warn('Erro ao carregar ordem nav:', e); }
+  inicializarControlesOrdemNav();
+  atualizarGruposVaziosNav();
+}
+
+function atualizarGruposVaziosNav() {
+  document.querySelectorAll('#navContainer .nav-group').forEach(grupo => {
+    const temItem = !!grupo.querySelector(':scope > [data-nav-item-id]');
+    grupo.style.display = temItem ? '' : 'none';
+  });
+}
+
+function inicializarControlesOrdemNav() {
+  document.querySelectorAll('#navContainer [data-nav-item-id]').forEach(item => {
+    if (item.querySelector(':scope > .nav-order-handle')) return;
+    const handle = document.createElement('span');
+    handle.className = 'nav-order-handle';
+    handle.textContent = '⠿';
+    handle.title = 'Arraste para mover';
+    handle.setAttribute('aria-label', 'Arraste para mover este item');
+    handle.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+    handle.addEventListener('touchstart', e => {
+      _navItemDragSrc = item;
+      item.classList.add('nav-touch-moving');
+      e.stopPropagation();
+    }, { passive: true });
+    handle.addEventListener('touchend', e => {
+      const toque = e.changedTouches[0];
+      const alvo = document.elementFromPoint(toque.clientX, toque.clientY)?.closest('[data-nav-item-id]');
+      if (_navItemDragSrc && alvo && alvo !== _navItemDragSrc) {
+        const rect = alvo.getBoundingClientRect();
+        alvo.parentNode.insertBefore(_navItemDragSrc, toque.clientY < rect.top + rect.height / 2 ? alvo : alvo.nextSibling);
+        atualizarGruposVaziosNav();
+        salvarOrdemNavItens();
+      }
+      item.classList.remove('nav-touch-moving');
+      _navItemDragSrc = null;
+    });
+    item.appendChild(handle);
+  });
 }
 // ══════════════════════════════════════════════════════════════════
 
@@ -377,6 +419,11 @@ function abrirPaginaAtalhoMeuPainel(pagina) {
   abrirPagina(pagina, botaoNav || null);
 }
 
+function aplicarLojaAtualDashboardQuery(query) {
+  const lojaId = (typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || '';
+  return lojaId && query && typeof query.eq === 'function' ? query.eq('loja_id', lojaId) : query;
+}
+
 async function carregarDadosWidgetMeuPainel(wid) {
   const elVal = document.getElementById('wval_' + wid);
   const elDesc = document.getElementById('wdesc_' + wid);
@@ -385,9 +432,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
   try {
     switch(wid) {
       case 'saldo_cofre': {
-        const { data: contas } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true)
-        );
+        const { data: contas } = await aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true));
         const total = (contas || []).reduce((s, c) => s + Number(c.saldo_atual || 0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = total >= 0 ? 'var(--green,#22c55e)' : 'var(--red,#ef4444)';
@@ -397,8 +442,8 @@ async function carregarDadosWidgetMeuPainel(wid) {
       case 'falta_quitar': {
         const hoje = new Date().toISOString().slice(0,10);
         const [{ data: contas }, { data: capagar }] = await Promise.all([
-          executarSemFiltroLojaTemporario(() => sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true)),
-          executarSemFiltroLojaTemporario(() => sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).lte('data_vencimento', hoje)),
+          aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true)),
+          aplicarLojaAtualDashboardQuery(sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).lte('data_vencimento', hoje)),
         ]);
         const saldo = (contas||[]).reduce((s,c) => s + Number(c.saldo_atual||0), 0);
         const devendo = (capagar||[]).reduce((s,c) => s + Number(c.valor_compra||0), 0);
@@ -409,7 +454,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
         break;
       }
       case 'recebiveis_futuros': {
-        const { data } = await sb.from('recebiveis_futuros').select('valor').eq('ativo', true).is('confirmado_em', null);
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('recebiveis_futuros').select('valor').eq('ativo', true).is('confirmado_em', null));
         const total = (data||[]).reduce((s,f) => s + Number(f.valor||0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = 'var(--amber,#f59e0b)';
@@ -421,9 +466,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
         const dias = wid === 'contas_vencer_7' ? 7 : 30;
         const hoje = new Date().toISOString().slice(0,10);
         const ate = new Date(Date.now() + dias * 86400000).toISOString().slice(0,10);
-        const { data } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).gte('data_vencimento', hoje).lte('data_vencimento', ate)
-        );
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).gte('data_vencimento', hoje).lte('data_vencimento', ate));
         const total = (data||[]).reduce((s,c) => s + Number(c.valor_compra||0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = dias === 7 ? 'var(--red,#ef4444)' : 'var(--amber,#f59e0b)';
@@ -434,9 +477,7 @@ async function carregarDadosWidgetMeuPainel(wid) {
         const ini = new Date(); ini.setDate(1);
         const inicio = ini.toISOString().slice(0,10);
         const fim = new Date().toISOString().slice(0,10);
-        const { data } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('contas_financeiras_movimentacoes').select('valor').eq('tipo','entrada').gte('created_at', inicio).lte('created_at', fim + 'T23:59:59Z')
-        );
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras_movimentacoes').select('valor').eq('tipo','entrada').gte('created_at', inicio).lte('created_at', fim + 'T23:59:59Z'));
         const total = (data||[]).reduce((s,m) => s + Number(m.valor||0), 0);
         elVal.textContent = formatarMoedaBRFinanceiro(total);
         elVal.style.color = 'var(--green,#22c55e)';
@@ -562,6 +603,7 @@ let _dashGfOpcoesFornecedores = []; // [[id, nome], ...] do ano carregado
 let _dashGfOpcoesCategorias = [];
 let _dashGfConsultaDropdown = { forn: '', cat: '' };
 let _dashGfOrdenacaoDetalhe = 'valor';
+let _dashGfDirecaoDetalhe = 'desc';
 // Modo de data dos gráficos: 'vencimento' (padrão — espelha a fatura) ou 'compra'.
 let _dashGfModoData = (() => {
   try { return localStorage.getItem('dashGfModoData') === 'compra' ? 'compra' : 'vencimento'; }
@@ -600,11 +642,16 @@ async function carregarGraficosFinanceirosDashboard() {
     // Carrega todas as contas do ano (pela data escolhida: vencimento ou compra)
     // + categorias de compra em paralelo.
     const campoData = _dashGfCampoData();
-    const consultarContasDash = async (incluirCor) => sb.from('contasapagar')
-      .select(`id, fornecedor_id, categoria_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, fornecedores(nome${incluirCor ? ', cor' : ''})`)
-      .is('excluido_em', null)
-      .gte(campoData, inicio)
-      .lte(campoData, fim);
+    const lojaAtualDash = (typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || '';
+    const consultarContasDash = async (incluirCor) => {
+      let query = sb.from('contasapagar')
+        .select(`id, fornecedor_id, categoria_id, loja_id, empresa_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, created_at, fornecedores(nome${incluirCor ? ', cor' : ''})`)
+        .is('excluido_em', null)
+        .gte(campoData, inicio)
+        .lte(campoData, fim);
+      if (lojaAtualDash) query = query.eq('loja_id', lojaAtualDash);
+      return query;
+    };
     const resContasTentativa = await consultarContasDash(true);
     // Fallback: banco ainda sem a coluna fornecedores.cor (ALTER não rodado).
     let resContas = resContasTentativa;
@@ -710,6 +757,18 @@ function dashGfLimparFiltros() {
 
 function dashGfAlterarOrdenacao(valor = 'valor') {
   _dashGfOrdenacaoDetalhe = ['categoria', 'fornecedor', 'data'].includes(valor) ? valor : 'valor';
+  _dashGfDirecaoDetalhe = _dashGfOrdenacaoDetalhe === 'valor' ? 'desc' : 'asc';
+  renderizarGraficosFinanceirosDashboard();
+}
+
+function dashGfOrdenarColuna(chave) {
+  const permitidas = ['vencimento','valor','lancamento','fornecedor','categoria','compra','observacao','status'];
+  if (!permitidas.includes(chave)) return;
+  if (_dashGfOrdenacaoDetalhe === chave) _dashGfDirecaoDetalhe = _dashGfDirecaoDetalhe === 'asc' ? 'desc' : 'asc';
+  else {
+    _dashGfOrdenacaoDetalhe = chave;
+    _dashGfDirecaoDetalhe = ['valor','vencimento','lancamento','compra'].includes(chave) ? 'desc' : 'asc';
+  }
   renderizarGraficosFinanceirosDashboard();
 }
 
@@ -854,6 +913,21 @@ function _dashGfMesDe(c) { return parseInt(String(c[_dashGfCampoData()] || '').s
 function _dashGfEhPago(c) { return !!c.pago_confirmado_em || !!c.data_pagamento; }
 function _dashGfValorDe(c) { return Number(c.valor_pago ?? c.valor_compra ?? 0) || Number(c.valor_compra || 0); }
 
+function _dashGfValorCompacto(valor = 0) {
+  const numero = Number(valor || 0);
+  if (!numero) return 'R$ 0';
+  try {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(numero).replace(/\s+/g, ' ');
+  } catch (_) {
+    return formatarMoedaBRFinanceiro(numero);
+  }
+}
+
 // Desenha uma rosca SVG clicável. itens: [{chave, nome, valor, cor, selecionado}]
 function _dashGfDesenharRosca(itens, total, fnToggleNome, temSelecao) {
   const fmt = (n) => formatarMoedaBRFinanceiro(n);
@@ -963,37 +1037,55 @@ function renderizarGraficosFinanceirosDashboard() {
     if (_dashGfEhPago(c)) meses[m].pago += v; else meses[m].pendente += v;
   });
   const maxValor = Math.max(1, ...meses.map(m => Math.max(m.pago, m.pendente)));
-  const larguraMes = window.matchMedia('(max-width: 900px)').matches ? 68 : 80;
-  const alturaGraf = 180, baseY = alturaGraf + 18, larguraTotal = larguraMes * 12;
-  const escala = alturaGraf / maxValor;
-  let barrasSvg = `<svg viewBox="0 0 ${larguraTotal} ${baseY + 22}" width="${larguraTotal}" height="${baseY + 22}" style="min-width:${larguraTotal}px;font-family:inherit;">`;
-  meses.forEach((m, i) => {
-    const x = i * larguraMes;
-    const hPago = Math.round(m.pago * escala);
-    const hPend = Math.round(m.pendente * escala);
-    const larBarra = 28;
-    const gap = 4;
+  const elBarras = document.getElementById('dashGfBarras');
+  const modoMesesCompacto = window.matchMedia('(max-width: 1100px)').matches;
+  let barrasSvg = '';
+
+  if (modoMesesCompacto) {
+    barrasSvg = `<div class="dash-gf-meses-mobile">${meses.map((m, i) => {
+      const selecionado = F.mes === i;
+      const dim = F.mes !== null && !selecionado;
+      const pagoPct = Math.max(m.pago > 0 ? 4 : 0, (m.pago / maxValor) * 100);
+      const pendPct = Math.max(m.pendente > 0 ? 4 : 0, (m.pendente / maxValor) * 100);
+      return `<button type="button" class="dash-gf-mes-card${selecionado ? ' selecionado' : ''}" style="opacity:${dim ? '.42' : '1'}" onclick="dashGfToggleMes(${i})">
+        <strong>${_dashGfNomesMes[i]}</strong>
+        <span class="dash-gf-mini-barras" aria-hidden="true"><i style="width:${pagoPct.toFixed(1)}%;background:#22c55e"></i><i style="width:${pendPct.toFixed(1)}%;background:#f59e0b"></i></span>
+        <span class="dash-gf-mes-valor pago"><b>Pago</b>${fmt(m.pago)}</span>
+        <span class="dash-gf-mes-valor pendente"><b>Pendente</b>${fmt(m.pendente)}</span>
+      </button>`;
+    }).join('')}</div>`;
+  } else {
+    const larguraDisponivel = Math.max(600, Math.floor(elBarras?.clientWidth || 960));
+    const larguraMes = larguraDisponivel / 12;
+    const alturaGraf = 190, baseY = alturaGraf + 28, larguraTotal = larguraDisponivel;
+    const escala = alturaGraf / maxValor;
+    const larBarra = Math.max(12, Math.min(25, (larguraMes - 12) / 2));
+    const gap = Math.max(3, Math.min(6, larguraMes * .06));
     const totalLar = larBarra * 2 + gap;
-    const offsetX = Math.round((larguraMes - totalLar) / 2);
-    const selecionado = F.mes === i;
-    const dim = F.mes !== null && !selecionado;
-    const op = dim ? 0.3 : 1;
-    const totalMes = m.pago + m.pendente;
-    // área clicável do mês inteiro
-    barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" fill="transparent" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Total: ${fmt(totalMes)} (clique para filtrar)</title></rect>`;
-    if (selecionado) barrasSvg += `<rect x="${x + 2}" y="0" width="${larguraMes - 4}" height="${baseY + 20}" rx="6" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.5)" pointer-events="none"/>`;
-    // Barra PAGO (verde) - esquerda
-    if (hPago > 0) barrasSvg += `<rect x="${x + offsetX}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
-    // Barra PENDENTE (laranja) - direita
-    if (hPend > 0) barrasSvg += `<rect x="${x + offsetX + larBarra + gap}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
-    barrasSvg += `<text x="${x + larguraMes / 2}" y="${baseY + 14}" text-anchor="middle" font-size="11" font-weight="${selecionado ? 'bold' : 'normal'}" fill="${selecionado ? 'var(--text,#fff)' : 'var(--text-muted,#888)'}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})">${_dashGfNomesMes[i]}</text>`;
-  });
-  barrasSvg += '</svg>';
-  barrasSvg += `<div style="display:flex;gap:16px;font-size:11px;margin-top:6px;">
+    barrasSvg = `<svg viewBox="0 0 ${larguraTotal} ${baseY + 24}" width="100%" height="${baseY + 24}" preserveAspectRatio="xMidYMid meet" style="display:block;max-width:100%;font-family:inherit;">`;
+    meses.forEach((m, i) => {
+      const x = i * larguraMes;
+      const hPago = Math.round(m.pago * escala);
+      const hPend = Math.round(m.pendente * escala);
+      const offsetX = (larguraMes - totalLar) / 2;
+      const selecionado = F.mes === i;
+      const dim = F.mes !== null && !selecionado;
+      const op = dim ? 0.3 : 1;
+      const totalMes = m.pago + m.pendente;
+      const topoMaiorBarra = baseY - Math.max(hPago, hPend);
+      barrasSvg += `<rect x="${x + 2}" y="0" width="${Math.max(1, larguraMes - 4)}" height="${baseY + 20}" fill="transparent" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)} · Pendente: ${fmt(m.pendente)} · Total: ${fmt(totalMes)}</title></rect>`;
+      if (selecionado) barrasSvg += `<rect x="${x + 2}" y="0" width="${Math.max(1, larguraMes - 4)}" height="${baseY + 20}" rx="6" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.5)" pointer-events="none"/>`;
+      if (totalMes > 0) barrasSvg += `<text x="${x + larguraMes / 2}" y="${Math.max(10, topoMaiorBarra - 7)}" text-anchor="middle" font-size="8" font-weight="700" fill="var(--text,#fff)" opacity="${op}">${_dashGfValorCompacto(totalMes)}</text>`;
+      if (hPago > 0) barrasSvg += `<rect x="${x + offsetX}" y="${baseY - hPago}" width="${larBarra}" height="${hPago}" rx="3" fill="#22c55e" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pago: ${fmt(m.pago)}</title></rect>`;
+      if (hPend > 0) barrasSvg += `<rect x="${x + offsetX + larBarra + gap}" y="${baseY - hPend}" width="${larBarra}" height="${hPend}" rx="3" fill="#f59e0b" opacity="${op}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})"><title>${_dashGfNomesMes[i]} — Pendente: ${fmt(m.pendente)}</title></rect>`;
+      barrasSvg += `<text x="${x + larguraMes / 2}" y="${baseY + 16}" text-anchor="middle" font-size="10" font-weight="${selecionado ? 'bold' : 'normal'}" fill="${selecionado ? 'var(--text,#fff)' : 'var(--text-muted,#888)'}" style="cursor:pointer;" onclick="dashGfToggleMes(${i})">${_dashGfNomesMes[i]}</text>`;
+    });
+    barrasSvg += '</svg>';
+  }
+  barrasSvg += `<div class="dash-gf-legenda-barras" style="display:flex;gap:16px;font-size:11px;margin-top:6px;">
     <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Pago</span>
     <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;background:#f59e0b;border-radius:2px;display:inline-block;"></span>Pendente</span>
   </div>`;
-  const elBarras = document.getElementById('dashGfBarras');
   if (elBarras) elBarras.innerHTML = barrasSvg;
 
   // ── Rosca por fornecedor (filtrada por mês + categoria; clique filtra fornecedor) ──
@@ -1059,13 +1151,13 @@ function renderizarGraficosFinanceirosDashboard() {
     }
   }
 
-  // Top 10 de categorias e curva mensal da categoria líder.
-  const topCategorias = ordCat.slice(0, 10);
+  // Todas as categorias com valor
+const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
   const elTopCategorias = document.getElementById('dashGfTopCategorias');
   const elTopCategoriasTitulo = document.getElementById('dashGfTopCategoriasTitulo');
   if (elTopCategoriasTitulo) elTopCategoriasTitulo.innerHTML = _dashGfOrdenacaoDetalhe === 'categoria'
     ? 'Categorias em ordem A–Z · <span style="opacity:.8;">clique para filtrar</span>'
-    : 'Top 10 categorias com maior gasto · <span style="opacity:.8;">clique para filtrar</span>';
+    : 'Categorias com gasto · <span style="opacity:.8;">clique para filtrar</span>';
   if (elTopCategorias) {
     if (!topCategorias.length) {
       elTopCategorias.innerHTML = '<div class="empty" style="padding:20px;">Sem categorias no período/filtros.</div>';
@@ -1095,7 +1187,11 @@ function renderizarGraficosFinanceirosDashboard() {
         const mes = _dashGfMesDe(c);
         if (mes >= 0 && mes < 12) valoresMes[mes] += _dashGfValorDe(c);
       });
-      const largura = 620, altura = 190, margemX = 28, margemY = 20;
+      const curvaMobile = window.matchMedia('(max-width: 1100px)').matches;
+      const largura = curvaMobile ? 300 : 620;
+      const altura = curvaMobile ? 132 : 190;
+      const margemX = curvaMobile ? 14 : 28;
+      const margemY = curvaMobile ? 16 : 20;
       const maximo = Math.max(1, ...valoresMes);
       const pontos = valoresMes.map((valor, indice) => ({
         x: margemX + indice * ((largura - margemX * 2) / 11),
@@ -1109,14 +1205,14 @@ function renderizarGraficosFinanceirosDashboard() {
       const area = `${linha} L ${ultimoPonto.x.toFixed(1)} ${altura - margemY} L ${pontosCurva[0].x.toFixed(1)} ${altura - margemY} Z`;
       const cor = categoriaLider.cor || '#3b82f6';
       elCurvaTitulo.textContent = `Curva mensal: ${categoriaLider.nome} · seta indica o mês mais recente`;
-      elCurva.innerHTML = `<svg viewBox="0 0 ${largura} ${altura + 24}" width="100%" style="min-width:520px;font-family:inherit;">
+      elCurva.innerHTML = `<svg viewBox="0 0 ${largura} ${altura + 20}" width="100%" style="font-family:inherit;display:block;">
         <defs>
           <linearGradient id="dashGfCurvaArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cor}" stop-opacity=".38"/><stop offset="1" stop-color="${cor}" stop-opacity=".02"/></linearGradient>
           <marker id="dashGfCurvaSeta" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="${cor}"/></marker>
         </defs>
         <path d="${area}" fill="url(#dashGfCurvaArea)"/>
-        <path d="${linha}" fill="none" stroke="${cor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#dashGfCurvaSeta)"/>
-        ${pontos.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="${p.valor ? 4 : 2}" fill="${p.valor ? cor : 'var(--text-muted)'}"><title>${_dashGfNomesMes[i]}: ${fmt(p.valor)}</title></circle><text x="${p.x}" y="${altura + 10}" text-anchor="middle" font-size="10" fill="var(--text-muted)">${_dashGfNomesMes[i]}</text>`).join('')}
+        <path d="${linha}" fill="none" stroke="${cor}" stroke-width="${curvaMobile ? 2.5 : 3}" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#dashGfCurvaSeta)"/>
+        ${pontos.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="${p.valor ? (curvaMobile ? 3 : 4) : 2}" fill="${p.valor ? cor : 'var(--text-muted)'}"><title>${_dashGfNomesMes[i]}: ${fmt(p.valor)}</title></circle><text x="${p.x}" y="${altura + 10}" text-anchor="middle" font-size="${curvaMobile ? 8 : 10}" fill="var(--text-muted)">${_dashGfNomesMes[i]}</text>`).join('')}
       </svg>`;
     }
   }
@@ -1130,55 +1226,71 @@ function renderizarGraficosFinanceirosDashboard() {
         : '';
     } else {
       const LIMITE = 60;
-      const campoDataDet = _dashGfCampoData();
-      const rotuloDataDet = _dashGfModoData === 'compra' ? 'Compra' : 'Vencimento';
+      const textoOrdenacao = (c, chave) => {
+        if (chave === 'fornecedor') return c.fornecedores?.nome || '';
+        if (chave === 'categoria') return c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)]?.nome || '' : 'Sem categoria';
+        if (chave === 'observacao') return c.observacao || '';
+        if (chave === 'status') return _dashGfEhPago(c) ? 'Pago' : 'Pendente';
+        return '';
+      };
       const ordenadas = [...contasResumo].sort((a, b) => {
-        if (_dashGfOrdenacaoDetalhe === 'categoria') {
-          const catA = a.categoria_id ? _dashGfCategoriasMapa[String(a.categoria_id)]?.nome : 'Sem categoria';
-          const catB = b.categoria_id ? _dashGfCategoriasMapa[String(b.categoria_id)]?.nome : 'Sem categoria';
-          return String(catA || '').localeCompare(String(catB || ''), 'pt-BR');
-        }
-        if (_dashGfOrdenacaoDetalhe === 'fornecedor') return String(a.fornecedores?.nome || '').localeCompare(String(b.fornecedores?.nome || ''), 'pt-BR');
-        if (_dashGfOrdenacaoDetalhe === 'valor') return _dashGfValorDe(b) - _dashGfValorDe(a);
-        return String(a[campoDataDet] || '').localeCompare(String(b[campoDataDet] || ''));
+        const chave = _dashGfOrdenacaoDetalhe === 'data' ? (_dashGfModoData === 'compra' ? 'compra' : 'vencimento') : _dashGfOrdenacaoDetalhe;
+        let cmp = 0;
+        if (chave === 'valor') cmp = _dashGfValorDe(a) - _dashGfValorDe(b);
+        else if (chave === 'vencimento') cmp = String(a.data_vencimento || '').localeCompare(String(b.data_vencimento || ''));
+        else if (chave === 'compra') cmp = String(a.data_compra || '').localeCompare(String(b.data_compra || ''));
+        else if (chave === 'lancamento') cmp = String(a.created_at || '').localeCompare(String(b.created_at || ''));
+        else cmp = textoOrdenacao(a, chave).localeCompare(textoOrdenacao(b, chave), 'pt-BR', { sensitivity:'base', numeric:true });
+        if (cmp === 0) cmp = String(a.id || '').localeCompare(String(b.id || ''));
+        return _dashGfDirecaoDetalhe === 'asc' ? cmp : -cmp;
       });
+      const cabecalhoOrdenavel = (chave, rotulo, classe) => {
+        const ativa = (_dashGfOrdenacaoDetalhe === 'data' ? (_dashGfModoData === 'compra' ? 'compra' : 'vencimento') : _dashGfOrdenacaoDetalhe) === chave;
+        const seta = ativa ? (_dashGfDirecaoDetalhe === 'asc' ? '▲' : '▼') : '↕';
+        return `<th class="${classe} ${ativa ? 'ordenacao-ativa' : ''}" aria-sort="${ativa ? (_dashGfDirecaoDetalhe === 'asc' ? 'ascending' : 'descending') : 'none'}"><button type="button" onclick="dashGfOrdenarColuna('${chave}')">${escaparHtmlBasico(rotulo)} <span>${seta}</span></button></th>`;
+      };
       const linhas = ordenadas.slice(0, LIMITE).map(c => {
         const pago = _dashGfEhPago(c);
         const cat = c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)] : null;
-        const dv = String(c[campoDataDet] || '').slice(0, 10).split('-').reverse().join('/');
+        const dv = String(c.data_vencimento || '').slice(0, 10).split('-').reverse().join('/');
         const dc = String(c.data_compra || '').slice(0, 10).split('-').reverse().join('/');
         let dlanca = '—';
-        if (c.created_at) {
+        const dataLancamento = c.created_at || c.data_compra || '';
+        if (dataLancamento) {
           try {
-            const d = new Date(c.created_at);
-            dlanca = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-          } catch(e) { dlanca = String(c.created_at).slice(0,10); }
+            const d = new Date(String(dataLancamento).includes('T') ? dataLancamento : `${dataLancamento}T12:00:00`);
+            dlanca = d.toLocaleDateString('pt-BR') + (c.created_at ? ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '');
+          } catch(e) { dlanca = String(dataLancamento).slice(0,10).split('-').reverse().join('/'); }
         }
-        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-          <td style="padding:5px 8px;white-space:nowrap;">${escaparHtmlBasico(dv)}</td>
-          <td style="padding:5px 8px;white-space:nowrap;color:var(--text-muted);">${escaparHtmlBasico(dc||'—')}</td>
-          <td style="padding:5px 8px;white-space:nowrap;font-size:11px;color:var(--text-muted);">${escaparHtmlBasico(dlanca)}</td>
-          <td style="padding:5px 8px;">${escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor')}</td>
-          <td style="padding:5px 8px;">${escaparHtmlBasico(cat?.nome || 'Sem categoria')}</td>
-          <td style="padding:5px 8px;">${escaparHtmlBasico(String(c.observacao || '—').slice(0, 60))}</td>
-          <td style="padding:5px 8px;"><span style="font-size:11px;padding:2px 8px;border-radius:99px;${pago ? 'background:rgba(34,197,94,0.15);color:#22c55e;' : 'background:rgba(245,158,11,0.15);color:#f59e0b;'}">${pago ? 'Pago' : 'Pendente'}</span></td>
-          <td style="padding:5px 8px;text-align:right;white-space:nowrap;"><strong>${fmt(_dashGfValorDe(c))}</strong></td>
+        const fornecedorDetalhe = escaparHtmlBasico(c.fornecedores?.nome || 'Sem fornecedor');
+        const categoriaDetalhe = escaparHtmlBasico(cat?.nome || 'Sem categoria');
+        const observacaoDetalhe = escaparHtmlBasico(String(c.observacao || '—').slice(0, 80));
+        return `<tr class="dash-gf-detail-row">
+          <td class="dash-gf-col-data" data-label="Vencimento">${escaparHtmlBasico(dv)}</td>
+          <td class="dash-gf-col-valor" data-label="Valor"><strong>${fmt(_dashGfValorDe(c))}</strong></td>
+          <td class="dash-gf-col-lancado" data-label="Lançado em">${escaparHtmlBasico(dlanca)}</td>
+          <td class="dash-gf-col-fornecedor" data-label="Fornecedor" title="${fornecedorDetalhe}">${fornecedorDetalhe}</td>
+          <td class="dash-gf-col-categoria" data-label="Categoria" title="${categoriaDetalhe}">${categoriaDetalhe}</td>
+          <td class="dash-gf-col-compra" data-label="Compra">${escaparHtmlBasico(dc||'—')}</td>
+          <td class="dash-gf-col-observacao" data-label="Observação" title="${observacaoDetalhe}">${observacaoDetalhe}</td>
+          <td class="dash-gf-col-status" data-label="Status"><span class="dash-gf-status ${pago ? 'pago' : 'pendente'}">${pago ? 'Pago' : 'Pendente'}</span></td>
         </tr>`;
       }).join('');
       elDetalhe.innerHTML = `
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Detalhamento dos lançamentos filtrados (${contasResumo.length}${contasResumo.length > LIMITE ? `, exibindo ${LIMITE}` : ''})</div>
-        <div style="overflow-x:auto;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:760px;">
+        <div class="dash-gf-detail-title">Detalhamento dos lançamentos filtrados (${contasResumo.length}${contasResumo.length > LIMITE ? `, exibindo ${LIMITE}` : ''})</div>
+        <div class="dash-gf-detail-hint">No celular ou tablet, arraste a tabela para os lados para ver todas as colunas.</div>
+        <div class="dash-gf-detail-wrap">
+          <table class="dash-gf-detail-table">
             <thead>
-              <tr style="text-align:left;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.12);">
-                <th style="padding:6px 8px;">${rotuloDataDet}</th>
-                <th style="padding:6px 8px;">Compra</th>
-                <th style="padding:6px 8px;">Lançado em</th>
-                <th style="padding:6px 8px;">Fornecedor</th>
-                <th style="padding:6px 8px;">Categoria</th>
-                <th style="padding:6px 8px;">Observação</th>
-                <th style="padding:6px 8px;">Status</th>
-                <th style="padding:6px 8px;text-align:right;">Valor</th>
+              <tr>
+                ${cabecalhoOrdenavel('vencimento','Vencimento','dash-gf-col-data')}
+                ${cabecalhoOrdenavel('valor','Valor','dash-gf-col-valor')}
+                ${cabecalhoOrdenavel('lancamento','Lançado em','dash-gf-col-lancado')}
+                ${cabecalhoOrdenavel('fornecedor','Fornecedor','dash-gf-col-fornecedor')}
+                ${cabecalhoOrdenavel('categoria','Categoria','dash-gf-col-categoria')}
+                ${cabecalhoOrdenavel('compra','Compra','dash-gf-col-compra')}
+                ${cabecalhoOrdenavel('observacao','Observação','dash-gf-col-observacao')}
+                ${cabecalhoOrdenavel('status','Status','dash-gf-col-status')}
               </tr>
             </thead>
             <tbody>${linhas}</tbody>

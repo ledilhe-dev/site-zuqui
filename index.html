@@ -3,12 +3,12 @@
 <html lang="pt-br" class="admin-fouc-pendente">
 <head>
   <meta charset="UTF-8">
-  <meta name="autocomplete" content="off">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="autocomplete" content="on">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.2.7">
+  <meta name="app-version" content="3.2.13">
   <meta name="theme-color" content="#090b10">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
   <title>CHECK DIARIO</title>
   <!--
-    Versão 3.2.7 - Permissões independentes para relatórios de funcionários
+    Versão 3.2.13 - Restaurar vencimento no mobile
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -35,14 +35,16 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=20260727-sem-filtro-lojas">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
 <link id="topbar-admin-panel-indicator" rel="stylesheet" href="./assets/css/11-topbar-admin.css">
 
 <link id="obsidian-precision-design-system-v3" rel="stylesheet" href="./assets/css/12-design-system.css">
-<link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css">
+<link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css?v=20260727-sem-filtro-lojas">
+<link id="integracoes-financeiras-style" rel="stylesheet" href="./assets/css/97-financial-integrations.css?v=20260730-conciliacao-design-v4">
+<link id="atendimento-estatisticas-style" rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260724">
 
 
 
@@ -138,10 +140,14 @@
           <span class="nav-hint">Resumo rapido da operacao</span>
         </span>
       </button></div>
+      <div data-nav-item-id="estatisticas_atendimento" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="estatisticas_atendimento" onclick="abrirPagina('estatisticas_atendimento', this)">
+        <span class="icon">EA</span>
+        <span class="nav-copy"><span class="nav-title">Estatísticas de atendimento</span><span class="nav-hint">Avaliações do Google</span></span>
+      </button></div>
     </div>
     <div id="navgrp_relatorios" class="nav-group">
       <div class="nav-label">Relatórios e análise</div>
-      <div class="nav-group-relatorios" id="menuRelatoriosGroup">
+      <div class="nav-group-relatorios" id="menuRelatoriosGroup" data-nav-item-id="relatorios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuRelatorios" type="button" onclick="toggleMenuRelatoriosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
             <span class="icon">RL</span>
@@ -193,13 +199,25 @@
                 <span class="nav-title">Ajuste de saldo</span>
               </span>
             </button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_sangrias_raffinato" onclick="abrirPagina('relatorio_sangrias_raffinato', this)">
+              <span class="nav-copy">
+                <span class="nav-title">Sangrias Raffinato</span>
+              </span>
+            </button>
           </div>
         </div>
       </div>
     </div>
+    <div id="navgrp_integracoes" class="nav-group">
+      <div class="nav-label">Integrações</div>
+      <button class="nav-btn" data-nav-item-id="raffinato" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" data-page="financeiro_sangrias_raffinato" onclick="abrirPagina('financeiro_sangrias_raffinato', this)">
+        <span class="icon">RF</span>
+        <span class="nav-copy"><span class="nav-title">Raffinato</span><span class="nav-hint">Conexão SQL e sangrias</span></span>
+      </button>
+    </div>
     <div id="navgrp_financeiro" class="nav-group">
       <div class="nav-label">Financeiro</div>
-      <div class="nav-group-financeiro" id="menuFinanceiroGroup">
+      <div class="nav-group-financeiro" id="menuFinanceiroGroup" data-nav-item-id="financeiro" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFinanceiro" type="button" onclick="toggleMenuFinanceiroSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
             <span class="icon">FI</span>
@@ -252,12 +270,37 @@
               <span class="nav-title">Cofre</span>
             </span>
           </button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_conciliacao" onclick="abrirPagina('integracoes_financeiras_conciliacao', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Conciliação bancária</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="navgrp_integracoes_financeiras" class="nav-group" hidden aria-hidden="true">
+      <div class="nav-label">Integrações</div>
+      <div class="nav-group-financeiro" id="menuIntegracoesFinanceirasGroup">
+        <button class="nav-btn nav-btn-parent" id="btnMenuIntegracoesFinanceiras" type="button" onclick="toggleMenuIntegracoesFinanceirasSubmenu()">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="icon">IF</span><span class="nav-copy"><span class="nav-title">Integrações Financeiras</span><span class="nav-hint">Bancos, cartões e conciliação</span></span></span>
+          <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-submenu">
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_dashboard" onclick="abrirPagina('integracoes_financeiras_dashboard', this)"><span class="nav-copy"><span class="nav-title">Dashboard Financeiro</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_contas" onclick="abrirPagina('integracoes_financeiras_contas', this)"><span class="nav-copy"><span class="nav-title">Contas Bancárias</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_cartoes" onclick="abrirPagina('integracoes_financeiras_cartoes', this)"><span class="nav-copy"><span class="nav-title">Cartões</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_movimentacoes" onclick="abrirPagina('integracoes_financeiras_movimentacoes', this)"><span class="nav-copy"><span class="nav-title">Movimentações</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_categorias" onclick="abrirPagina('integracoes_financeiras_categorias', this)"><span class="nav-copy"><span class="nav-title">Categorias</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_fornecedores" onclick="abrirPagina('integracoes_financeiras_fornecedores', this)"><span class="nav-copy"><span class="nav-title">Fornecedores</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_conciliacao" onclick="abrirPagina('integracoes_financeiras_conciliacao', this)"><span class="nav-copy"><span class="nav-title">Conciliação</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_regras" onclick="abrirPagina('integracoes_financeiras_regras', this)"><span class="nav-copy"><span class="nav-title">Regras Automáticas</span></span></button>
+          <button class="nav-btn nav-sub-btn" data-page="integracoes_financeiras_configuracoes" onclick="abrirPagina('integracoes_financeiras_configuracoes', this)"><span class="nav-copy"><span class="nav-title">Configurações</span></span></button>
         </div>
       </div>
     </div>
     <div id="navgrp_administracao" class="nav-group">
       <div class="nav-label">Administração</div>
-      <div class="nav-group-funcionarios" id="menuFuncionariosGroup">
+      <div class="nav-group-funcionarios" id="menuFuncionariosGroup" data-nav-item-id="administracao_funcionarios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFuncionarios" type="button" onclick="toggleMenuFuncionariosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
             <span class="icon">CF</span>
@@ -668,7 +711,9 @@
 
         <div class="card">
           <div class="card-title">Funcionários cadastrados</div>
-          <div id="filtroLojasFuncionarios" class="multi-loja-filter" style="margin-bottom:10px"></div>
+          <input id="buscaFuncionarios" type="search" placeholder="Buscar por nome, e-mail ou perfil..." autocomplete="off"
+            style="width:100%;margin-bottom:10px;"
+            oninput="debounceConsumo('busca_funcionarios', () => carregarFuncionarios(), 180)">
           <div id="listaFuncionarios"><div class="empty">Carregando⬦</div></div>
         </div>
 
@@ -1125,8 +1170,8 @@
               <option value="50">50 por página</option>
               <option value="100">100 por página</option>
             </select>
-            <button class="btn btn-green" onclick="aplicarFunilExecucoesComReset()">Filtrar</button>
             <button class="btn btn-ghost" onclick="resetFiltroData()">Hoje</button>
+            <button class="btn btn-green" onclick="aplicarFunilExecucoesComReset()">Filtrar</button>
           </div>
           <div class="msg" id="msgExecucoes"></div>
         </div>
@@ -1157,7 +1202,7 @@
             <input id="pontoPinInput" type="text" placeholder="PIN / senha" maxlength="6" inputmode="numeric" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); registrarPontoFuncionario(); }" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
             <button class="btn btn-green" type="button" onclick="registrarPontoFuncionario()">Registrar ponto</button>
             <button class="btn btn-amber" type="button" onclick="abrirModalSolicitarAjustePonto()">Solicitar ajuste</button>
-            <button class="btn btn-ghost" id="btnAjusteManualAdminPonto" type="button" onclick="abrirModalAjusteManualAdminPonto()" hidden>Ajuste manual ADM</button>
+            <button class="btn btn-ghost" id="btnAjusteManualAdminPonto" type="button" onclick="abrirModalAjusteManualAdminPonto()" hidden>Ajuste manual</button>
           </div>
           <div class="msg" id="msgPonto"></div>
         </div>
@@ -1303,8 +1348,8 @@
             <input id="filtroPontoDataFim" type="date">
             <input id="filtroPontoHoraInicio" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora inicial">
             <input id="filtroPontoHoraFim" class="campo-curto" type="time" style="max-width:130px;flex:0 0 130px !important" title="Hora final">
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioPonto()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioPonto()">Hoje</button>
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioPonto()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioPonto"></div>
         </div>
@@ -1339,8 +1384,8 @@
             </select>
             <input id="filtroPontoAjusteDataInicio" type="date" title="Data inicial">
             <input id="filtroPontoAjusteDataFim" type="date" title="Data final">
-            <button class="btn btn-green" type="button" onclick="carregarAjustesPonto()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroAjustesPonto()">Pendentes</button>
+            <button class="btn btn-green" type="button" onclick="carregarAjustesPonto()">Filtrar</button>
           </div>
           <div class="msg" id="msgPontoAjustes"></div>
         </div>
@@ -1371,8 +1416,8 @@
               <option value="">- Todos os responsáveis -</option>
             </select>
             <input id="filtroLancamentoBusca" type="text" placeholder="Buscar por tarefa, checklist, observação ou ator">
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioLancamentos()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioLancamentos()">Hoje</button>
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioLancamentos()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioLancamentos"></div>
         </div>
@@ -1409,8 +1454,8 @@
             <select id="filtroTarefasCadResponsavel">
               <option value="">- Responsável (todos) -</option>
             </select>
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioTarefasCadastradas()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioTarefasCadastradas()">Limpar</button>
+            <button class="btn btn-green" type="button" onclick="carregarRelatorioTarefasCadastradas()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioTarefasCad"></div>
         </div>
@@ -1431,7 +1476,6 @@
         <div class="page-title">Relatório de contas a pagar</div>
 
         <div class="card">
-          <div id="filtroLojasRelatorioFinanceiro" class="multi-loja-filter" style="margin-bottom:10px"></div>
           <div class="relatorio-financeiro-filtros">
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroDataInicio">Vencimento inicial</label>
@@ -1443,51 +1487,45 @@
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroStatus">Status</label>
-              <div id="filtroRelFinanceiroStatus" class="relatorio-check-filter"></div>
-            </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="filtroRelFinanceiroFornecedor">Fornecedor</label>
-              <div id="filtroRelFinanceiroFornecedor" class="relatorio-check-filter"></div>
-            </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="filtroRelFinanceiroGrupo">Grupo de fornecedor</label>
-              <select id="filtroRelFinanceiroGrupo" onchange="carregarRelatorioFinanceiro()">
-                <option value="">Todos os grupos</option>
-              </select>
+              <div id="filtroRelFinanceiroStatus" class="relatorio-check-filter relatorio-multi-moderno" data-placeholder="Todos" data-display-only="true"></div>
             </div>
             <div class="campo-com-label">
               <label class="campo-label" for="filtroRelFinanceiroCategoria">Categoria</label>
-              <div id="filtroRelFinanceiroCategoria" class="relatorio-check-filter"></div>
+              <div id="filtroRelFinanceiroCategoria" class="relatorio-check-filter relatorio-multi-moderno" data-placeholder="Todas" data-display-only="true"></div>
             </div>
-            <div class="campo-com-label">
-              <label class="campo-label" for="filtroRelFinanceiroForma">Forma de pagamento</label>
-              <div id="filtroRelFinanceiroForma" class="relatorio-check-filter"></div>
-            </div>
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioFinanceiro()">Hoje</button>
-            <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioFinanceiro()" title="Mantém o período e limpa status, fornecedor, grupo, categoria e forma de pagamento">✕ Limpar filtros</button>
+            <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioFinanceiro()" title="Mantém o período e limpa status, fornecedor e categoria">✕ Limpar filtros</button>
           </div>
           <div class="relatorio-financeiro-acoes">
-            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(7)">Próx. 7 dias</button>
-            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(15)">Próx. 15 dias</button>
-            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(30)">Próx. 30 dias</button>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(7)">Próx. 7d</button>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(15)">Próx. 15d</button>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioFinanceiro(30)">Próx. 30d</button>
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:8px;">
               <input type="checkbox" id="contasSomarFuturosAcoes" style="margin:0;" onchange="recalcularFaltaQuitar()">
-              Somar recebimentos futuros ao saldo
+              Somar receb. futuros
             </label>
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;">
               <input type="checkbox" id="relFinanceiroAgrupar" style="margin:0;" onchange="carregarRelatorioFinanceiro()">
-              Agrupar por fornecedor
+              Agrupar fornecedor
             </label>
-            <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioFinanceiroCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
-            <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioFinanceiroPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
+          </div>
+          <div class="relatorio-financeiro-aplicar">
+            <div class="campo-com-label">
+              <label class="campo-label" for="filtroRelFinanceiroFornecedor">Pesquisar fornecedor</label>
+              <div id="filtroRelFinanceiroFornecedor" class="relatorio-check-filter relatorio-fornecedor-pesquisa" data-placeholder="Digite o fornecedor"></div>
+            </div>
+            <button class="btn btn-green relatorio-financeiro-filtrar" type="button" onclick="carregarRelatorioFinanceiro()">Filtrar</button>
+          </div>
+          <div class="relatorio-financeiro-exportacoes">
+            <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioFinanceiroCsv()"><span class="btn-export-icon">X</span>Excel</button>
+            <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioFinanceiroPdf()"><span class="btn-export-icon">PDF</span>PDF</button>
           </div>
           <div class="msg" id="msgRelatorioFinanceiro"></div>
         </div>
 
         <div class="stats-grid" id="cardsRelatorioFinanceiro">
           <div class="stat-card rf-total-geral-card">
-            <div class="s-label">Total pendente (R$)</div>
+            <div class="s-label">Total em aberto (R$)</div>
             <div class="s-value" id="rfTotalGeral">R$ 0,00</div>
             <div class="s-desc">Soma em aberto dos títulos ativos no filtro</div>
           </div>
@@ -1504,7 +1542,7 @@
           <div class="stat-card rf-falta-quitar-btn" style="cursor:default;">
             <div class="s-label" id="rfFaltaQuitarLabel">Falta para quitar (R$)</div>
             <div class="s-value" id="rfFaltaQuitar">R$ 0,00</div>
-            <div class="s-desc" id="rfFaltaQuitarDesc">Total pendente menos saldo disponível</div>
+            <div class="s-desc" id="rfFaltaQuitarDesc">Total em aberto menos saldo disponível</div>
           </div>
           <button class="stat-card rf-titulos-toggle" id="btnToggleTitulosRelatorioFinanceiro" type="button" onclick="toggleDetalhesRelatorioFinanceiro()" aria-expanded="false" aria-controls="cardDetalhamentoRelatorioFinanceiro">
             <div class="s-label">Qtd. de títulos</div>
@@ -1514,7 +1552,7 @@
           <div class="stat-card">
             <div class="s-label">Total geral (R$)</div>
             <div class="s-value" id="rfTotalSomado" style="color:var(--accent-bright,#ffbe1a);">R$ 0,00</div>
-            <div class="s-desc">Pago + pendente no filtro</div>
+            <div class="s-desc">Pago + em aberto no filtro</div>
           </div>
         </div>
 
@@ -1567,30 +1605,31 @@
                 <option value="">- Todos os usuários -</option>
               </select>
             </div>
-            <button class="btn btn-green" type="button" onclick="carregarRelatorioRecebimentos()">Filtrar</button>
+            <div class="campo-com-label relatorio-recebimentos-tipo">
+              <label class="campo-label" for="filtroRelRecebTipo">Tipo de recebimento</label>
+              <select id="filtroRelRecebTipo" onchange="alterarTipoRelatorioRecebimentos()">
+                <option value="recebidos">Recebidos confirmados</option>
+                <option value="provisionados">Somente provisionados futuros</option>
+                <option value="todos">Recebidos e provisionados futuros</option>
+              </select>
+            </div>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioRecebimentos()">Hoje</button>
+            <button class="btn btn-ghost" type="button" onclick="limparFiltrosRelatorioRecebimentos()">Limpar filtros</button>
           </div>
           <div class="relatorio-financeiro-acoes">
-            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(7)">Últimos 7 dias</button>
-            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(15)">Últimos 15 dias</button>
-            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(30)">Últimos 30 dias</button>
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:4px;">
-              <input type="checkbox" id="filtroRelRecebIncluirFuturos" onchange="carregarRelatorioRecebimentos()" style="margin:0;">
-              Incluir futuros confirmados
-            </label>
-            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;margin-left:4px;">
-              <input type="checkbox" id="filtroRelRecebIncluirPendentes" onchange="carregarRelatorioRecebimentos()" style="margin:0;">
-              Incluir provisionados pendentes
-            </label>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(7)">Próximos 7 dias</button>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(15)">Próximos 15 dias</button>
+            <button class="btn btn-ghost relatorio-financeiro-atalho" type="button" onclick="aplicarAtalhoPeriodoRelatorioRecebimentos(30)">Próximos 30 dias</button>
             <button class="btn btn-ghost btn-export-excel" type="button" onclick="exportarRelatorioRecebimentosCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
             <button class="btn btn-ghost btn-export-pdf" type="button" onclick="imprimirRelatorioRecebimentosPdf()"><span class="btn-export-icon">PDF</span>Exportar PDF</button>
+            <button class="btn btn-green relatorio-recebimentos-filtrar" type="button" onclick="carregarRelatorioRecebimentos()">Filtrar</button>
           </div>
           <div class="msg" id="msgRelatorioRecebimentos"></div>
         </div>
 
         <div class="stats-grid" id="cardsRelatorioRecebimentos">
           <div class="stat-card">
-            <div class="s-label">Total recebido</div>
+            <div class="s-label" id="rrTotalRecebidoLabel">Total recebido</div>
             <div class="s-value" id="rrTotalRecebido">R$ 0,00</div>
             <div class="s-desc">Somatório dos recebimentos no filtro.</div>
           </div>
@@ -1614,15 +1653,26 @@
             <div class="s-value" id="rrTotalFuturos" style="color:var(--amber,#f59e0b);">R$ 0,00</div>
             <div class="s-desc">Provisionados ainda pendentes.</div>
           </div>
+          <div class="stat-card">
+            <div class="s-label">Confirmados no filtro</div>
+            <div class="s-value" id="rrQtdConfirmados">0</div>
+            <div class="s-desc">Recebimentos efetivamente confirmados.</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-label">Provisionados no filtro</div>
+            <div class="s-value" id="rrQtdProvisionados">0</div>
+            <div class="s-desc">Lançamentos pendentes incluídos no relatório.</div>
+          </div>
         </div>
 
         <div class="card" id="cardRelatorioRecebimentosDetalhes">
           <div class="card-title">Detalhes dos recebimentos</div>
           <div id="tabelaRelatorioRecebimentosWrap" style="overflow-x:auto">
-            <table id="tabelaRelatorioRecebimentos" style="width:100%;border-collapse:collapse;min-width:980px">
+            <table id="tabelaRelatorioRecebimentos" style="width:100%;border-collapse:collapse;min-width:1060px;font-size:11px">
               <thead>
                 <tr>
                   <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Data/hora</th>
+                  <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Data prevista</th>
                   <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Pagador</th>
                   <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Forma</th>
                   <th style="text-align:left;padding:10px;border-bottom:1px solid var(--border)">Conta financeira</th>
@@ -1632,7 +1682,7 @@
               </thead>
               <tbody id="listaRelatorioRecebimentos">
                 <tr>
-                  <td colspan="6" style="padding:16px;color:var(--text-muted)">Use os filtros para carregar os recebimentos.</td>
+                  <td colspan="7" style="padding:16px;color:var(--text-muted)">Use os filtros para carregar os recebimentos.</td>
                 </tr>
               </tbody>
             </table>
@@ -1677,8 +1727,8 @@
               <label class="campo-label" for="filtroRelAjusteSaldoBuscaMotivo">Buscar motivo</label>
               <input id="filtroRelAjusteSaldoBuscaMotivo" type="text" placeholder="Digite parte do motivo do ajuste">
             </div>
-            <button class="btn btn-green" id="btnFiltrarRelAjusteSaldo" type="button" onclick="carregarRelatorioAjusteSaldo()">Filtrar</button>
             <button class="btn btn-ghost" id="btnHojeRelAjusteSaldo" type="button" onclick="resetFiltroRelatorioAjusteSaldo()">Hoje</button>
+            <button class="btn btn-green" id="btnFiltrarRelAjusteSaldo" type="button" onclick="carregarRelatorioAjusteSaldo()">Filtrar</button>
           </div>
           <div class="relatorio-financeiro-acoes">
             <button class="btn btn-ghost btn-export-excel" id="btnExportarExcelRelAjusteSaldo" type="button" onclick="exportarRelatorioAjusteSaldoCsv()"><span class="btn-export-icon">X</span>Exportar Excel</button>
@@ -1791,12 +1841,12 @@
         </div>
       </section>
 
-      <section id="financeiro_contasapagar" class="pagina">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <section id="financeiro_contasapagar" class="pagina financeiro-contas-page">
+        <div class="contas-pagar-page-head">
           <div class="page-title" style="margin:0;">Cadastro de contas a pagar</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-green" type="button" onclick="ncAbrir()" style="display:flex;align-items:center;gap:8px;font-size:15px;padding:10px 20px;font-weight:700;">+ Nova conta</button>
-            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;gap:6px;font-size:12px;">🗂️ Importar arquivo bancário</button>
+          <div class="contas-pagar-page-actions">
+            <button class="btn btn-green contas-pagar-nova-btn" type="button" onclick="ncAbrir()">+ Nova conta</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirImportadorFatura()" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;">📥 Importar</button>
           </div>
         </div>
 
@@ -1824,39 +1874,27 @@
           <div class="financeiro-card-title-row">
             <div class="card-title">Contas cadastradas</div>
             <button class="btn btn-ghost btn-sm" id="btnToggleContasAPagarLista" type="button" onclick="toggleListaContasAPagarFinanceiro()">Mostrar contas</button>
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarCadastroInicio">Cad. inicial</label>
-              <input id="filtroContaAPagarCadastroInicio" class="campo-curto" type="date" title="Cadastro início" aria-label="Cadastro início" onchange="carregarContasAPagarFinanceiro()">
-            </div>
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarCadastroFim">Cad. final</label>
-              <input id="filtroContaAPagarCadastroFim" class="campo-curto" type="date" title="Cadastro fim" aria-label="Cadastro fim" onchange="carregarContasAPagarFinanceiro()">
-            </div>
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarVencimentoInicio">Venc. inicial</label>
-              <input id="filtroContaAPagarVencimentoInicio" class="campo-curto" type="date" title="Vencimento início" aria-label="Vencimento início" onchange="carregarContasAPagarFinanceiro()">
-            </div>
-            <div class="financeiro-filtro-compacto">
-              <label for="filtroContaAPagarVencimentoFim">Venc. final</label>
-              <input id="filtroContaAPagarVencimentoFim" class="campo-curto" type="date" title="Vencimento fim" aria-label="Vencimento fim" onchange="carregarContasAPagarFinanceiro()">
-            </div>
           </div>
-          <div class="form-row financeiro-filtros-row">
-            <input id="filtroContaAPagarBusca" type="text" placeholder="Buscar por fornecedor, categoria, forma, conta, valor, data, observação ou parcela" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)">
-            <select id="filtroContaAPagarStatus" class="campo-curto" onchange="carregarContasAPagarFinanceiro()">
+          <div class="form-row financeiro-filtros-row contas-pagar-filtros-unificados">
+            <label class="filter-field-standard contas-pagar-busca"><span>Buscar</span><input id="filtroContaAPagarBusca" data-filter-labeled="true" type="text" placeholder="Fornecedor, categoria, forma, conta, valor ou observação" oninput="debounceConsumo('filtro_contas_pagar', () => carregarContasAPagarFinanceiro(), 700)"></label>
+            <label class="filter-field-standard contas-pagar-data"><span>Data inicial</span><input id="filtroContaAPagarCadastroInicio" data-date-filter-native="true" type="date" onchange="carregarContasAPagarFinanceiro()"></label>
+            <label class="filter-field-standard contas-pagar-data"><span>Data final</span><input id="filtroContaAPagarCadastroFim" data-date-filter-native="true" type="date" onchange="carregarContasAPagarFinanceiro()"></label>
+            <label class="filter-field-standard contas-pagar-criterio"><span>Consultar por</span><select id="filtroContaAPagarDataTipo" data-filter-labeled="true" onchange="carregarContasAPagarFinanceiro()">
+              <option value="compra">Data da compra</option><option value="vencimento">Data de vencimento</option><option value="pagamento">Data de pagamento</option><option value="cadastro" selected>Data de cadastro</option><option value="atualizacao">Data de atualização</option>
+            </select></label>
+            <label class="filter-field-standard contas-pagar-status"><span>Status</span><select id="filtroContaAPagarStatus" data-filter-labeled="true" onchange="carregarContasAPagarFinanceiro()">
               <option value="">- Todos os status -</option>
               <option value="pendente">Pendente</option>
               <option value="pago">Pago</option>
-            </select>
-            <span id="filtroContaAPagarCategoriasWrap" style="position:relative;display:inline-block;">
+            </select></label>
+            <label class="filter-field-standard contas-pagar-categorias"><span>Categoria</span><span id="filtroContaAPagarCategoriasWrap" style="position:relative;display:inline-block;">
               <button class="btn btn-ghost" type="button" id="btnFiltroContaAPagarCategorias" onclick="toggleDropdownCategoriasContaAPagar()" title="Filtrar por uma ou mais categorias">Categorias ▾</button>
               <div id="dropdownCategoriasContaAPagar" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:60;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card,#0f1a2b);border:1px solid var(--border,#2a3a52);border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);"></div>
-            </span>
+            </span></label>
             <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
             <button class="btn btn-ghost btn-sm" type="button" id="btnAgruparParcelas" onclick="toggleAgruparParcelasContaAPagar()" title="Agrupar parcelas do mesmo lançamento em um único card" style="display:flex;align-items:center;justify-content:center;gap:4px;">📦 Agrupar</button>
-            <input id="filtroContaAPagarFornecedor" type="text" placeholder="Fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)">
+            <label class="filter-field-standard contas-pagar-fornecedor"><span>Fornecedor</span><input id="filtroContaAPagarFornecedor" data-filter-labeled="true" type="text" placeholder="Nome do fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)"></label>
           </div>
-          <div id="filtroLojasContasAPagarFinanceiro" class="multi-loja-filter" style="margin-top:8px"></div>
           <div class="form-row financeiro-filtros-row financeiro-selecao-contas-row" id="acoesSelecaoContasAPagarFinanceiro" style="margin-top:8px">
             <button class="btn btn-ghost" id="btnSelecionarTodasContasAPagarFinanceiro" type="button" onclick="toggleSelecionarTodasContasAPagarFinanceiro()">Marcar todos</button>
             <button class="btn btn-red" id="btnExcluirContasAPagarSelecionadasFinanceiro" type="button" onclick="excluirContasAPagarSelecionadasFinanceiro()" disabled>Excluir selecionadas</button>
@@ -1873,8 +1911,8 @@
           <!-- Header -->
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
             <div>
-              <div style="font-size:14px;font-weight:700;">🗂️ Importar arquivo bancário</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Arquivo OFX exportado do banco (Nubank, Inter, Bradesco etc.)</div>
+              <div style="font-size:14px;font-weight:700;">📥 Importar contas</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Escolha câmera, galeria ou arquivo bancário</div>
             </div>
             <button class="btn btn-ghost btn-sm" onclick="fecharImportadorFatura()" style="font-size:20px;padding:0 10px;">×</button>
           </div>
@@ -1882,7 +1920,15 @@
           <!-- Step 1: Upload -->
           <div id="faturaStep1" style="padding:20px;flex:1;overflow-y:auto;">
             <!-- Seleção de formato -->
-            <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;">
+              <!-- Câmera -->
+              <div onclick="document.getElementById('imagemCompraCameraInput').click()"
+                style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:24px 14px;text-align:center;cursor:pointer;">
+                <div style="font-size:32px;margin-bottom:8px;">📷</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Usar câmera</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Fotografar nota, recibo ou tela</div>
+                <input id="imagemCompraCameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
+              </div>
               <!-- OFX -->
               <div id="ofxDropZone" onclick="document.getElementById('ofxFileInput').click()"
                 style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;"
@@ -1895,11 +1941,26 @@
                 <div style="margin-top:10px;font-size:10px;background:rgba(34,197,94,.1);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--green);">✓ Sem IA — direto do banco</div>
                 <input id="ofxFileInput" type="file" accept=".ofx,.qfx" style="display:none" onchange="faturaHandleFile(this.files[0],'ofx')">
               </div>
+              <!-- Imagem -->
+              <div id="imagemCompraDropZone" onclick="document.getElementById('imagemCompraFileInput').click()"
+                style="border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;"
+                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+                ondragleave="this.style.borderColor='var(--border-mid)'"
+                ondrop="imagemCompraHandleDrop(event)">
+                <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria ou imagem</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto ou comprovante</div>
+                <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Sem custo de API</div>
+                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
+              </div>
             </div>
             <!-- Dica OFX -->
             <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;">
               💡 <strong style="color:var(--text);">Como exportar OFX do Nubank:</strong>
               App Nubank → Cartão de crédito → Fatura → ··· → Exportar fatura → OFX
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px;">
+              <strong style="color:var(--text);">Imagem:</strong> o sistema tenta preencher valor, data e observação, mas confira antes de lançar. Prints nítidos funcionam melhor que fotos escuras ou tremidas.
             </div>
             <div class="msg" id="msgImportarFatura" style="margin-top:10px;"></div>
           </div>
@@ -1958,6 +2019,7 @@
             </select>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosBaixarContasFinanceiro()">Limpar</button>
             <button class="btn btn-ghost" type="button" onclick="carregarBaixarContasFinanceiro()">Atualizar</button>
+            <button class="btn btn-ghost" id="btnAgruparFornecedorBaixa" type="button" onclick="alternarAgrupamentoFornecedorBaixa()">Agrupar por fornecedor</button>
           </div>
           <div class="baixar-contas-atalhos" id="atalhosBaixarContasFinanceiro">
             <button class="baixar-contas-atalho" data-tipo="hoje" type="button" onclick="aplicarAtalhoBaixarContasFinanceiro('hoje')">
@@ -2005,7 +2067,6 @@
 
         <div class="card">
           <div class="card-title">Contas cadastradas</div>
-          <div id="filtroLojasContasFinanceiras" class="multi-loja-filter" style="margin-top:8px"></div>
           <div id="listaContasFinanceiras"><div class="empty">Carregando...</div></div>
         </div>
 
@@ -2022,59 +2083,49 @@
         </div>
       </section>
 
-      <section id="financeiro_recebiveis" class="pagina">
+      <section id="financeiro_recebiveis" class="pagina financeiro-recebiveis-page">
         <div class="page-title">Recebíveis</div>
 
         <!-- Barra superior com botão de ação -->
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-          <button class="btn btn-green" type="button" onclick="nrAbrir()"
-            style="display:flex;align-items:center;gap:8px;font-size:15px;padding:10px 20px;font-weight:700;">
+        <div class="recebiveis-page-actions">
+          <button class="btn btn-ghost recebiveis-baixar-btn" type="button" onclick="abrirPagina('financeiro_baixar_contas')">Baixar contas</button>
+          <button class="btn btn-green recebiveis-novo-btn" type="button" onclick="nrAbrir()">
             + Cadastrar recebível
           </button>
         </div>
 
-        <div class="card">
-          <div class="financeiro-card-title-row">
+        <div class="card recebiveis-provisionados-card">
+          <div class="financeiro-card-title-row recebiveis-provisionados-title-row">
             <div class="card-title">Recebíveis cadastrados</div>
-            <button class="btn btn-ghost btn-sm" id="btnToggleRecebiveisLista" type="button" onclick="toggleListaRecebiveisFinanceiro()" aria-expanded="false">Mostrar recebíveis</button>
-          </div>
-          <div class="form-row financeiro-filtros-row financeiro-filtros-flex" style="gap:6px;align-items:center;">
-            <input id="filtroRecebivelBusca" type="text" placeholder="Buscar por pagador, forma, conta ou valor" style="flex:1;min-width:200px;" oninput="debounceConsumo('filtro_recebiveis', () => carregarRecebiveisFinanceiro(), 700)">
-            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-              <label style="font-size:11px;color:var(--text-muted);white-space:nowrap;">De</label>
-              <input id="filtroRecebivelCadastroInicio" class="campo-curto" type="date" style="width:130px;" title="Cadastro início" onchange="carregarRecebiveisFinanceiro()">
-              <label style="font-size:11px;color:var(--text-muted);">até</label>
-              <input id="filtroRecebivelCadastroFim" class="campo-curto" type="date" style="width:130px;" title="Cadastro fim" onchange="carregarRecebiveisFinanceiro()">
-            </div>
-            <select id="filtroRecebivelUsuario" class="campo-curto" style="width:140px;" title="Funcionário que lançou" onchange="carregarRecebiveisFinanceiro()">
-              <option value="">- Quem lançou -</option>
-            </select>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="mostrarTodosRecebiveisFinanceiro()">Todos</button>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltroRecebiveisFinanceiro()">Limpar</button>
-          </div>
-          <div class="form-row financeiro-filtros-row financeiro-selecao-recebiveis-row" id="acoesSelecaoRecebiveisFinanceiro" style="margin-top:8px;gap:8px;align-items:center;display:none;">
-            <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecebiveisFinanceiro" type="button" onclick="toggleSelecionarTodosRecebiveisFinanceiro()">Marcar todos</button>
-            <button class="btn btn-red btn-sm" id="btnExcluirRecebiveisSelecionadosFinanceiro" type="button" onclick="excluirRecebiveisSelecionadosFinanceiro()" disabled>Excluir selecionados</button>
-            <div class="item-detalhe" id="resumoSelecaoRecebiveisFinanceiro" style="align-self:center">Nenhum recebível selecionado.</div>
-          </div>
-          <div id="listaRecebiveisFinanceiro"><div class="empty">Carregando...</div></div>
-        </div>
-
-
-        <div class="card">
-          <div class="financeiro-card-title-row">
-            <div class="card-title">Recebimentos provisionados</div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
+            <div class="recebiveis-provisionados-actions">
+              <label class="recebiveis-pendentes-label">
                 <input type="checkbox" id="filtroRecFuturoSoAbertos" checked onchange="carregarRecFuturos()"> Apenas pendentes
               </label>
+              <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltrosRecFuturos()">Limpar filtros</button>
               <button class="btn btn-ghost btn-sm" onclick="carregarRecFuturos()">Atualizar</button>
             </div>
           </div>
-          <div class="form-row" style="margin-bottom:8px;gap:8px;">
+          <div class="recebiveis-atalhos-periodo" aria-label="Filtrar recebíveis por período">
+            <span>Período</span>
+            <button class="btn btn-ghost btn-sm" type="button" data-rec-atalho="atrasados" onclick="aplicarAtalhoPeriodoRecFuturo('atrasados')">Atrasados</button>
+            <button class="btn btn-ghost btn-sm" type="button" data-rec-atalho="hoje" onclick="aplicarAtalhoPeriodoRecFuturo('hoje')">Hoje</button>
+            <button class="btn btn-ghost btn-sm" type="button" data-rec-atalho="7d" onclick="aplicarAtalhoPeriodoRecFuturo('7d')">7D</button>
+            <button class="btn btn-ghost btn-sm" type="button" data-rec-atalho="15d" onclick="aplicarAtalhoPeriodoRecFuturo('15d')">15D</button>
+            <button class="btn btn-ghost btn-sm" type="button" data-rec-atalho="30d" onclick="aplicarAtalhoPeriodoRecFuturo('30d')">30D</button>
+          </div>
+          <div class="form-row recebiveis-provisionados-filtros">
             <input id="filtroRecFuturoBusca" type="text" placeholder="Buscar pagador..." style="flex:1;font-size:12px;" oninput="carregarRecFuturos()">
-            <input id="filtroRecFuturoInicio" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
-            <input id="filtroRecFuturoFim" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
+            <select id="filtroRecFuturoUsuario" title="Quem lançou" onchange="carregarRecFuturos()">
+              <option value="">- Quem lançou -</option>
+            </select>
+            <label class="recebiveis-data-field">
+              <span>Data inicial</span>
+              <input id="filtroRecFuturoInicio" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
+            </label>
+            <label class="recebiveis-data-field">
+              <span>Data final</span>
+              <input id="filtroRecFuturoFim" type="date" style="font-size:12px;" onchange="carregarRecFuturos()">
+            </label>
           </div>
           <div class="form-row financeiro-filtros-row financeiro-selecao-rec-futuros-row" id="acoesSelecaoRecFuturos" style="margin-bottom:8px;gap:8px;align-items:center;display:none;">
             <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecFuturos" type="button" onclick="toggleSelecionarTodosRecFuturos()">Selecionar todas</button>
@@ -2257,41 +2308,40 @@
 
         <div id="cardsCofreContas" class="stats-grid"></div>
 
-        <div class="card" style="padding:10px 14px;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px;">
-            <span style="font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">EXTRATO</span>
-            <input id="filtroCofreDataInicio" type="date" style="width:126px;flex-shrink:0;font-size:11px;height:28px;padding:0 6px;" onchange="carregarCofreFinanceiro()">
-            <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;">→</span>
-            <input id="filtroCofreDataFim" type="date" style="width:126px;flex-shrink:0;font-size:11px;height:28px;padding:0 6px;" onchange="carregarCofreFinanceiro()">
-            <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0;" onclick="aplicarAtalhoPeriodoCofreFinanceiro(7)">7d</button>
-            <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0;" onclick="aplicarAtalhoPeriodoCofreFinanceiro(15)">15d</button>
-            <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0;" onclick="aplicarAtalhoPeriodoCofreFinanceiro(30)">30d</button>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0;">
-              <input type="checkbox" id="cofreSomarFuturos" onchange="carregarCofreFinanceiro()" style="margin:0;width:12px;height:12px;">
+        <div class="card cofre-toolbar">
+          <div class="cofre-toolbar-row">
+            <span class="cofre-toolbar-title">EXTRATO</span>
+            <input id="filtroCofreDataInicio" type="date" onchange="carregarCofreFinanceiro()">
+            <span class="cofre-period-separator">→</span>
+            <input id="filtroCofreDataFim" type="date" onchange="carregarCofreFinanceiro()">
+            <button class="btn btn-ghost btn-sm" onclick="aplicarAtalhoPeriodoCofreFinanceiro(7)">7d</button>
+            <button class="btn btn-ghost btn-sm" onclick="aplicarAtalhoPeriodoCofreFinanceiro(15)">15d</button>
+            <button class="btn btn-ghost btn-sm" onclick="aplicarAtalhoPeriodoCofreFinanceiro(30)">30d</button>
+            <label class="cofre-futuros">
+              <input type="checkbox" id="cofreSomarFuturos" onchange="carregarCofreFinanceiro()">
               + Futuros
             </label>
-            <div id="filtroLojasCofreFinanceiro" class="multi-loja-filter" style="margin:0;flex-shrink:0;"></div>
-            <div style="margin-left:auto;display:flex;gap:5px;flex-shrink:0;">
-              <button class="btn btn-green btn-sm" id="btnToggleExtratoCofre" style="height:28px;padding:0 10px;font-size:11px;" onclick="toggleExtratoCofre()">Extrato</button>
-              <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;" onclick="exportarExtratoCofreCsv()">CSV</button>
-              <button class="btn btn-ghost btn-sm" style="height:28px;padding:0 8px;font-size:11px;" onclick="exportarExtratoCofrePdf()">PDF</button>
-              <button class="btn btn-amber btn-sm" id="btnAbrirAjusteSaldoCofre" style="height:28px;padding:0 10px;font-size:11px;" onclick="abrirModalAjusteSaldoCofre()">Ajustar</button>
+            <div class="cofre-toolbar-actions">
+              <button class="btn btn-green btn-sm cofre-toggle-extrato" id="btnToggleExtratoCofre" onclick="toggleExtratoCofre()"><span class="cofre-action-icon">▤</span><span>Exibir extrato</span></button>
+              <button class="btn btn-ghost btn-sm cofre-export-excel" onclick="exportarExtratoCofreCsv()"><span class="btn-export-icon excel">X</span><span>Excel</span></button>
+              <button class="btn btn-ghost btn-sm cofre-export-pdf" onclick="exportarExtratoCofrePdf()"><span class="btn-export-icon pdf">PDF</span><span>PDF</span></button>
+              <button class="btn btn-amber btn-sm" id="btnAbrirAjusteSaldoCofre" onclick="abrirModalAjusteSaldoCofre()">Ajustar</button>
             </div>
           </div>
-          <div class="msg" id="msgCofreFinanceiro" style="margin-top:6px;"></div>
+          <div class="msg" id="msgCofreFinanceiro"></div>
         </div>
 
         <!-- Calendário financeiro do cofre -->
         <div class="card" id="cardCalendarioCofre">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="cofre-calendar-head">
             <div class="card-title" style="margin:0;">Calendário financeiro</div>
-            <div style="display:flex;gap:6px;align-items:center;">
+            <div class="cofre-calendar-nav">
               <button class="btn btn-ghost btn-sm" onclick="navegarCalendarioCofre(-1)">‹</button>
               <span id="labelMesCalendarioCofre" style="font-size:13px;font-weight:600;min-width:120px;text-align:center;"></span>
               <button class="btn btn-ghost btn-sm" onclick="navegarCalendarioCofre(1)">›</button>
             </div>
           </div>
-          <div id="calendarioCofre" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+          <div id="calendarioCofre"></div>
           <!-- Detalhe do dia selecionado -->
           <div id="detalheDiaCofre" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
             <div id="tituloDiaCofre" style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;"></div>
@@ -2304,6 +2354,119 @@
           <div id="listaCofreFinanceiro"></div>
         </div>
       </section>
+
+      <section id="financeiro_sangrias_raffinato" class="pagina raffinato-page">
+        <div class="page-title">Integração Raffinato</div>
+
+        <div class="card raffinato-hero">
+          <div class="raffinato-hero-copy">
+            <div class="raffinato-hero-icon">SR</div>
+            <div>
+              <h2>Conexão com o Raffinato</h2>
+              <p>Configure o acesso SQL desta loja e valide a comunicação com o servidor.</p>
+            </div>
+          </div>
+          <div class="raffinato-connection" id="raffinatoConnectionStatus">
+            <span class="raffinato-connection-dot"></span>
+            <span id="raffinatoConnectionLabel">Verificando conector...</span>
+          </div>
+        </div>
+
+        <div class="card raffinato-integration-card">
+          <div class="raffinato-integration-head">
+            <div><div class="card-title">Conexão desta loja</div><div class="page-sub" id="raffinatoLojaContexto">Carregando loja...</div></div>
+            <button class="btn btn-red btn-sm" id="raffinatoDeleteIntegrationBtn" type="button" onclick="excluirIntegracaoRaffinato()" hidden>Excluir integração</button>
+          </div>
+          <div class="raffinato-config-grid">
+            <div class="raffinato-field"><label for="raffinatoSqlServer">Instância SQL</label><input id="raffinatoSqlServer" type="text" placeholder="26.x.x.x\\sql2019" autocomplete="off"></div>
+            <div class="raffinato-field"><label for="raffinatoDatabase">Banco de dados</label><input id="raffinatoDatabase" type="text" placeholder="Nome do banco" autocomplete="off"></div>
+            <div class="raffinato-field"><label for="raffinatoDbUser">Usuário do banco</label><input id="raffinatoDbUser" type="text" placeholder="Usuário SQL" autocomplete="off"></div>
+            <div class="raffinato-field"><label for="raffinatoDbPassword">Senha do banco</label><input id="raffinatoDbPassword" type="password" placeholder="Informe para testar ou alterar" autocomplete="new-password"></div>
+          </div>
+          <div class="raffinato-config-actions">
+            <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
+            <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
+            <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
+          </div>
+          <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
+          <div class="msg" id="msgRaffinatoIntegracao"></div>
+        </div>
+
+      </section>
+
+      <section id="relatorio_sangrias_raffinato" class="pagina raffinato-page raffinato-report-page">
+        <div class="page-title">Relatório de Sangrias</div>
+        <div class="card raffinato-report-intro">
+          <div><div class="card-title">Análise de sangrias do Raffinato</div><div class="page-sub">Acompanhe valores, frequência, motivos e horários da loja selecionada.</div></div>
+          <div class="raffinato-connection" id="raffinatoReportConnectionStatus"><span class="raffinato-connection-dot"></span><span id="raffinatoReportConnectionLabel">Verificando integração...</span></div>
+        </div>
+
+        <div class="card raffinato-filter-card" id="raffinatoSangriasPanel" hidden>
+          <div class="raffinato-filter-grid">
+            <div class="raffinato-field"><label for="raffinatoDataInicio">Data inicial</label><input id="raffinatoDataInicio" type="date"></div>
+            <div class="raffinato-field"><label for="raffinatoHoraInicio">Hora inicial</label><input id="raffinatoHoraInicio" type="time" value="00:00"></div>
+            <div class="raffinato-field"><label for="raffinatoDataFim">Data final</label><input id="raffinatoDataFim" type="date"></div>
+            <div class="raffinato-field"><label for="raffinatoHoraFim">Hora final</label><input id="raffinatoHoraFim" type="time" value="23:59"></div>
+            <div class="raffinato-actions">
+              <button class="btn raffinato-btn-query" id="raffinatoQueryBtn" type="button" onclick="consultarSangriasRaffinato()">Executar consulta</button>
+              <button class="btn btn-red" id="raffinatoCancelBtn" type="button" onclick="cancelarConsultaSangriasRaffinato()" hidden>Cancelar</button>
+            </div>
+          </div>
+          <div class="raffinato-shortcuts">
+            <span class="raffinato-shortcuts-label">Período rápido</span>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(1)">Hoje</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(7)">7 dias</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(15)">15 dias</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(30)">30 dias</button>
+          </div>
+          <div class="msg" id="msgRaffinatoSangrias"></div>
+        </div>
+
+        <div class="raffinato-summary" id="raffinatoSummary" hidden>
+          <div class="stat-card"><div class="stat-label">Total das sangrias</div><div class="stat-value" id="raffinatoTotal">R$ 0,00</div></div>
+          <div class="stat-card"><div class="stat-label">Quantidade</div><div class="stat-value" id="raffinatoQuantidade">0</div></div>
+          <div class="stat-card"><div class="stat-label">Valor médio</div><div class="stat-value" id="raffinatoTicketMedio">R$ 0,00</div></div>
+        </div>
+
+        <div class="card raffinato-active-filters" id="raffinatoActiveFilters" hidden>
+          <div><strong>Filtros cruzados</strong><span>Clique nos gráficos, motivos ou datas para combinar análises.</span></div>
+          <div id="raffinatoFilterChips" class="raffinato-filter-chips"></div>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltrosAnaliticosRaffinato()">Limpar filtros</button>
+        </div>
+
+        <div class="raffinato-charts" id="raffinatoCharts" hidden>
+          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Evolução por dia</div><div class="page-sub">Clique em um dia para cruzar com motivo, dia da semana e horário.</div><div id="raffinatoChartDias" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card raffinato-top-card"><div class="card-title">Top 10 retiradas mais frequentes</div><div class="page-sub">Motivos semelhantes são unificados somente nesta análise.</div><div id="raffinatoChartMotivos" class="raffinato-chart raffinato-top-list"></div></div>
+          <div class="card raffinato-chart-card raffinato-donut-card"><div class="card-title">Participação dos principais motivos</div><div class="page-sub">Valor movimentado por motivo agrupado.</div><div id="raffinatoPizzaMotivos" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Dia da semana com mais gastos</div><div class="page-sub">Todos os dias permanecem visíveis no período.</div><div id="raffinatoPizzaSemana" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Horário com mais sangrias</div><div class="page-sub">Quantidade por faixa horária.</div><div id="raffinatoPizzaHoras" class="raffinato-donut-layout"></div></div>
+        </div>
+
+        <div class="card raffinato-table-card" id="raffinatoTableCard" hidden>
+          <div class="raffinato-table-head">
+            <div><div class="card-title" style="margin:0">Detalhamento</div><div class="page-sub" id="raffinatoTableSummary">Clique nos cabeçalhos para ordenar como no Excel.</div></div>
+            <div class="raffinato-table-tools"><input id="raffinatoDetailSearch" type="search" placeholder="Filtrar no detalhamento..." oninput="definirBuscaDetalheRaffinato(this.value)"><button class="btn btn-green btn-sm" id="raffinatoExportBtn" type="button" onclick="exportarSangriasRaffinatoExcel()" disabled>Exportar para Excel</button></div>
+          </div>
+          <div class="raffinato-table-wrap">
+            <table class="raffinato-table" id="raffinatoTable" hidden>
+              <thead><tr><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('data')">Data <span id="raffinatoSortData">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('hora')">Hora <span id="raffinatoSortHora">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('motivo')">Motivo <span id="raffinatoSortMotivo">↕</span></button></th><th><button class="raffinato-sort is-right" type="button" onclick="ordenarDetalhamentoRaffinato('valor')">Valor <span id="raffinatoSortValor">↕</span></button></th></tr></thead>
+              <tbody id="raffinatoTableBody"></tbody>
+            </table>
+            <div class="raffinato-empty" id="raffinatoEmpty"><div><strong>Pronto para consultar</strong>Escolha o período e clique em Executar consulta.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Paginas declarativas do modulo. O conteudo e montado por 33-financial-integrations.js para evitar duplicacao. -->
+      <section id="integracoes_financeiras_dashboard" class="pagina"><div class="page-title">Dashboard Financeiro</div><div class="page-sub">Estrutura para indicadores e movimentações consolidadas.</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_contas" class="pagina"><div class="page-title">Contas Bancárias</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_cartoes" class="pagina"><div class="page-title">Cartões</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_movimentacoes" class="pagina"><div class="page-title">Movimentações</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_categorias" class="pagina"><div class="page-title">Categorias</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_fornecedores" class="pagina"><div class="page-title">Fornecedores</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_conciliacao" class="pagina"><div class="page-title">Conciliação</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_regras" class="pagina"><div class="page-title">Regras Automáticas</div><div class="if-page-content"></div></section>
+      <section id="integracoes_financeiras_configuracoes" class="pagina"><div class="page-title">Configurações</div><div class="if-page-content"></div></section>
 
     </div><!-- /content -->
   </div><!-- /main -->
@@ -2351,7 +2514,7 @@
   <div class="ponto-ajuste-modal-overlay" id="modalAjusteManualAdminPonto" hidden>
     <div class="ponto-ajuste-modal-card">
       <div class="ponto-ajuste-modal-title">Ajuste manual de ponto</div>
-      <div class="ponto-ajuste-modal-sub">Disponível apenas para Administrador. Adicione uma batida esquecida ou anule uma batida errada mantendo o histórico do ajuste.</div>
+      <div class="ponto-ajuste-modal-sub">Disponível para perfis com permissão de ajuste de ponto. Adicione uma batida esquecida ou anule uma batida errada mantendo o histórico.</div>
       <div class="ponto-ajuste-form">
         <label>Tipo de ajuste
           <div class="ponto-ajuste-tipo-grid">
@@ -2368,11 +2531,11 @@
         <label id="adminAjustePontoHorarioLabel">Horário correto
           <input id="adminAjustePontoHorario" type="time">
         </label>
-        <label id="adminAjustePontoBatidaLabel" hidden>Batida errada que será substituída
+        <label id="adminAjustePontoBatidaLabel" hidden>Batida errada que será anulada
           <select id="adminAjustePontoBatida"></select>
         </label>
-        <label>Senha/PIN do administrador
-          <input id="adminAjustePontoSenha" type="text" maxlength="20" autocomplete="off" placeholder="Confirme sua senha" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
+        <label>PIN operacional do usuário
+          <input id="adminAjustePontoSenha" type="text" maxlength="20" autocomplete="off" placeholder="Informe seu PIN operacional" class="pin-secure-input" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
         </label>
         <label>Motivo do ajuste
           <textarea id="adminAjustePontoMotivo" maxlength="300" placeholder="Exemplo: funcionária esqueceu de bater; horário conferido pelo administrador"></textarea>
@@ -2475,22 +2638,22 @@
 </div>
 
 <!-- ══ NOVA CONTA A PAGAR SHEET ══ -->
-<div id="ncOverlay" style="display:none;position:fixed;inset:0;z-index:9700;background:var(--bg);flex-direction:column;">
-<div id="ncSheet" style="display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;width:100%;">
+<div id="ncOverlay" class="nc-overlay" style="display:none;position:fixed;inset:0;z-index:9700;background:var(--bg);flex-direction:column;">
+<div id="ncSheet" class="nc-sheet" style="display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;width:100%;">
 
   <!-- Topo -->
-  <div style="flex-shrink:0;padding:12px 18px 0;background:var(--surface);">
-    <div style="width:40px;height:4px;border-radius:2px;background:var(--border-bright);margin:0 auto 14px;"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);">
+  <div class="nc-sheet-head">
+    <div class="nc-sheet-handle"></div>
+    <div class="nc-sheet-title-row">
       <div>
         <div id="ncTitulo" style="font-size:14px;font-weight:700;color:var(--text);">Nova conta</div>
       </div>
-      <button onclick="ncFechar()" style="width:28px;height:28px;border:none;background:var(--surface3);color:var(--text-muted);font-size:13px;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;">✕</button>
+      <button class="nc-sheet-close" onclick="ncFechar()" aria-label="Fechar">✕</button>
     </div>
   </div>
 
   <!-- Corpo -->
-  <div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+  <div class="nc-sheet-body" style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
 
     <!-- Fornecedor -->
     <div>
@@ -2507,7 +2670,7 @@
     </div>
 
     <!-- Valor + Data compra -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="nc-grid-2 nc-valor-compra-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Valor <span style="color:var(--red)">*</span></div>
         <input id="ncValor" type="text" inputmode="decimal" style="width:100%;border-radius:10px;font-size:18px;font-weight:700;padding:10px 12px;" placeholder="0,00" oninput="ncValorInput(this)" onblur="ncValorBlur(this)" onfocus="ncValorFocus(this)">
@@ -2520,16 +2683,19 @@
     </div>
 
     <!-- Categoria -->
-    <div>
-      <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Categoria <span style="color:var(--red)">*</span></div>
+    <div class="nc-category-section">
+      <div class="nc-category-head">
+        <div class="nc-category-title" style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Categoria <span style="color:var(--red)">*</span></div>
+        <input id="ncCatBusca" type="search" autocomplete="off" placeholder="Pesquisar categoria" aria-label="Pesquisar categoria pelo nome" oninput="ncFiltrarCategorias(this.value)">
+      </div>
       <div id="ncCatGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
     </div>
 
     <!-- Vencimento + Parcelas lado a lado -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="nc-grid-2 nc-venc-parcelas-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
 
       <!-- Dias para vencimento -->
-      <div>
+      <div class="nc-due-days-field">
         <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Dias p/ vencimento <span style="color:var(--red)">*</span></div>
         <input type="number" id="ncVencDia" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
@@ -2539,19 +2705,25 @@
       </div>
 
       <!-- Qtda Parcelas -->
-      <div>
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Qtda parcelas <span style="color:var(--red)">*</span></div>
+      <div class="nc-installments-field">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Qtda parcelas <span style="color:var(--red)">*</span></div>
+          <button type="button" id="ncToggleParcelado" class="btn btn-ghost btn-sm" style="min-height:28px;padding:4px 8px;font-size:10px;border-radius:8px;" onclick="ncSetParcelado(!NC.parcelado)">Parcelar</button>
+        </div>
         <input type="number" id="ncParcCustom" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
           placeholder="1" min="1" max="360"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3); ncParcCust()">
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3); ncParcCust()" onblur="ncParcBlur()">
         <div id="ncParcErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
       </div>
     </div>
 
     <!-- Data de vencimento (calendário) -->
-    <div>
-      <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Data de vencimento <span style="color:var(--red)">*</span></div>
+    <div class="nc-vencimento-wrap">
+      <div class="nc-label-action-row">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Data de vencimento <span style="color:var(--red)">*</span></div>
+        <button type="button" id="ncBtnUsarVencFornecedor" class="btn btn-ghost btn-sm nc-use-provider-due" onclick="ncUsarVencimentoFornecedor()" title="Usar o dia de vencimento cadastrado no fornecedor">Usar venc. fornecedor</button>
+      </div>
       <input type="date" id="ncVencCustom"
         style="width:100%;border-radius:10px;font-size:15px;padding:11px 14px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);"
         oninput="ncVencCust()">
@@ -2580,14 +2752,44 @@
       <div id="ncObsErr" style="display:none;color:var(--red);font-size:12px;font-weight:600;margin-top:4px;">Campo obrigatório</div>
     </div>
 
+  </div>
+
+  <div class="nc-sheet-footer">
     <div class="msg" id="ncMsg" style="font-size:14px;"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:env(safe-area-inset-bottom,0px);">
+    <div class="nc-sheet-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:env(safe-area-inset-bottom,0px);">
       <button class="btn btn-ghost" id="ncBtnSalvar" style="padding:14px 10px;font-size:14px;border-radius:14px;width:100%;" onclick="ncSalvar(false)">Salvar</button>
       <button class="btn btn-green" id="ncBtnSalvarNovo" style="padding:14px 10px;font-size:14px;border-radius:14px;width:100%;" onclick="ncSalvar(true)">Salvar e novo</button>
       <button class="btn btn-ghost" id="ncBtnCancelar" style="display:none;grid-column:1/-1;padding:14px;font-size:14px;border-radius:14px;width:100%;" onclick="ncCancelarEdicao()">Cancelar edição</button>
     </div>
-
   </div>
+</div>
+</div>
+
+      <section id="estatisticas_atendimento" class="pagina atendimento-page">
+        <header class="atendimento-hero">
+          <div><div class="atendimento-eyebrow"><span class="google-dot"></span> Google Business Profile</div><h2>Estatísticas de atendimento</h2><p>Acompanhe a reputação das lojas e responda avaliações sem sair do CheckDiário.</p></div>
+          <div class="atendimento-actions"><span id="atendimentoSyncStatus" class="atendimento-sync">Não conectado</span><button class="btn btn-ghost" type="button" onclick="sincronizarGoogleAtendimento()">↻ Sincronizar</button><button id="btnConectarGoogleAtendimento" class="btn btn-green" type="button" onclick="conectarGoogleAtendimento()">Conectar Google</button></div>
+        </header>
+        <div id="atendimentoAviso" class="atendimento-alert" hidden></div>
+        <div class="atendimento-filtros" aria-label="Filtros das avaliações">
+          <label><span>Período</span><select id="atendimentoFiltroPeriodo" onchange="carregarEstatisticasAtendimento()"><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Último ano</option><option value="0">Todo o período</option></select></label>
+          <label><span>Loja</span><select id="atendimentoFiltroLoja" onchange="carregarEstatisticasAtendimento()"><option value="">Todas as lojas</option></select></label>
+          <label><span>Nota</span><select id="atendimentoFiltroNota" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="5">5 estrelas</option><option value="4">4 estrelas</option><option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option></select></label>
+          <label><span>Situação</span><select id="atendimentoFiltroSituacao" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="pendente">Aguardando resposta</option><option value="respondida">Respondidas</option></select></label>
+        </div>
+        <div class="atendimento-kpis">
+          <article class="atendimento-kpi destaque"><span>Nota atual</span><strong id="atendimentoNota">—</strong><small id="atendimentoNotaVariacao">Sem dados do Google</small></article>
+          <article class="atendimento-kpi"><span>Total acumulado</span><strong id="atendimentoTotal">0</strong><small>avaliações</small></article>
+          <article class="atendimento-kpi"><span>Neste período</span><strong id="atendimentoPeriodo">0</strong><small>novas avaliações</small></article>
+          <article class="atendimento-kpi"><span>Taxa de resposta</span><strong id="atendimentoTaxa">0%</strong><small id="atendimentoPendentes">0 aguardando resposta</small></article>
+        </div>
+        <div class="atendimento-graficos">
+          <article class="atendimento-card atendimento-evolucao"><div class="atendimento-card-head"><div><h3>Evolução da nota</h3><p>Média das avaliações por mês</p></div></div><div id="atendimentoGraficoEvolucao" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
+          <article class="atendimento-card"><div class="atendimento-card-head"><div><h3>Distribuição por estrelas</h3><p>Composição das avaliações</p></div></div><div id="atendimentoDistribuicao" class="atendimento-distribuicao"></div></article>
+          <article class="atendimento-card atendimento-volume"><div class="atendimento-card-head"><div><h3>Avaliações recebidas</h3><p>Volume mensal no período</p></div></div><div id="atendimentoGraficoVolume" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
+        </div>
+        <article class="atendimento-card atendimento-recentes"><div class="atendimento-card-head"><div><h3>Avaliações recentes</h3><p id="atendimentoListaResumo">Nenhuma avaliação encontrada</p></div><button class="btn btn-ghost btn-sm" type="button" onclick="carregarEstatisticasAtendimento()">Atualizar lista</button></div><div id="atendimentoAvaliacoesLista" class="atendimento-lista"><div class="atendimento-vazio"><strong>Conecte seu Perfil da Empresa no Google</strong><span>As avaliações das lojas aparecerão aqui.</span></div></div></article>
+      </section>
 </div>
 </div>
 
@@ -2651,7 +2853,7 @@
     <div>
       <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Data prevista de pagamento <span style="color:var(--red)">*</span></div>
       <input id="recebivelDataPrevista" type="date" style="width:100%;border-radius:10px;font-size:16px;font-weight:700;padding:11px 14px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);">
-      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">As próximas parcelas mantêm este dia do mês. Finais de semana e feriados avançam para o próximo dia útil.</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">As próximas provisões respeitam o intervalo em dias. Finais de semana e feriados avançam para o próximo dia útil.</div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -2664,21 +2866,33 @@
         <div id="nrQtdErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
       </div>
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Periodicidade mensal</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Intervalo em dias <span style="color:var(--red)">*</span></div>
         <input id="recebivelDiasIntervalo" type="number" inputmode="numeric" pattern="[0-9]*"
           style="width:100%;border-radius:10px;font-size:20px;font-weight:700;padding:11px 12px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);text-align:center;"
-          value="30" readonly aria-label="Periodicidade mensal, mantendo o mesmo dia do mês">
-        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;text-align:center;">Mesmo dia a cada mês</div>
+          value="30" min="1" max="365" aria-label="Intervalo entre recebimentos em dias"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3);">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;text-align:center;">Ex.: 1 para diário, 7 para semanal</div>
         <div id="nrDiasErr" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-top:3px;">Campo obrigatório</div>
+      </div>
+    </div>
+
+    <div class="recebivel-sequencial-box">
+      <label class="recebivel-sequencial-label" for="recebivelSequencialDiasCorridos">
+        <input id="recebivelSequencialDiasCorridos" type="checkbox" onchange="nrAtualizarAjudaSequencial()">
+        <span>Sequencial (dias corridos)</span>
+      </label>
+      <button class="recebivel-info-amarelo" type="button" aria-label="Explicar regra sequencial" aria-controls="recebivelSequencialAjuda" aria-expanded="false" onclick="nrAlternarAjudaSequencial(this)">i</button>
+      <div id="recebivelSequencialAjuda" class="recebivel-sequencial-ajuda" hidden>
+        Marcado: repete em dias corridos, incluindo sábados, domingos e feriados. Desmarcado: datas que caírem em fim de semana ou feriado passam para o próximo dia útil.
       </div>
     </div>
 
     <!-- Observação -->
     <div>
       <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Observação <span style="color:var(--red)">*</span></div>
-      <input id="recebivelObservacao" type="text"
+      <input id="recebivelObservacao" type="text" maxlength="80"
         style="width:100%;border-radius:12px;font-size:15px;padding:13px 16px;border:1.5px solid var(--border-mid);background:var(--surface);color:var(--text);font-family:var(--font-sans);"
-        placeholder="Ex: parcela 1/36, mensalidade..."
+        placeholder="Ex: parcela 1/36, mensalidade... (máx. 80 caracteres)"
         oninput="nrObsInput(this)">
       <div id="recebivelObsErr" style="display:none;color:var(--red);font-size:12px;font-weight:600;margin-top:4px;">Campo obrigatório</div>
     </div>
@@ -2694,7 +2908,15 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260807-menu-personalizavel-v2">
+<link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260804-sequencial-dias-corridos">
+<link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-enquadramento-global">
+<link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
+<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-filtros-ordenados">
+<link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260728-nova-conta-v6">
+<link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
+<link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
+<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260807-loading-fix-v8">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -2720,13 +2942,20 @@
   <div class="modal" style="max-width:720px">
     <div class="modal-header">
       <div>
-        <h3>Selecionar conta financeira</h3>
+        <h3 id="contaFinanceiraBaixaTitle">Selecionar conta financeira</h3>
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="contaFinanceiraBaixaSubtitle">Escolha de onde sairá o dinheiro</div>
       </div>
       <button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalContaFinanceiraBaixa()">X Fechar</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <div class="forma-pagamento-modal-intro">Clique na conta financeira que será usada para pagar este título.</div>
+      <div class="forma-pagamento-modal-intro" id="contaFinanceiraBaixaIntro">Clique na conta financeira que será usada para pagar este título.</div>
+      <label class="conta-financeira-valor-pago" id="contaFinanceiraValorPagoWrap">
+        <span>Valor efetivamente pago</span>
+        <input id="contaFinanceiraValorPago" type="text" inputmode="decimal" autocomplete="off" placeholder="R$ 0,00"
+          oninput="this.value=formatarDigitacaoMoedaFinanceiro(this.value)"
+          onblur="this.value=prepararValorCampoMoedaParaEdicao(this.value)">
+        <small>Este valor será salvo no pagamento e descontado da conta financeira escolhida.</small>
+      </label>
       <div class="conta-financeira-movimentacao-toggle" id="contaFinanceiraMovimentacaoToggle">
         <span class="rotulo">Movimentar saldo da conta?</span>
         <button class="btn btn-ghost btn-sm" type="button" id="btnContaFinanceiraMovimentarSim" onclick="definirMovimentacaoSaldoContaFinanceiraBaixa(true)">Sim</button>
@@ -2763,11 +2992,15 @@
           <input id="editarTituloDataVencimento" type="date">
         </label>
         <label>
-          Valor do título
+          Valor original
+          <input id="editarTituloValorOriginal" type="text" readonly aria-readonly="true" title="Valor preservado do cadastro inicial">
+        </label>
+        <label>
+          Valor previsto/atual
           <input id="editarTituloValorCompra" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00">
         </label>
         <label>
-          Valor pago
+          Valor a pagar/pago
           <input id="editarTituloValorPago" type="text" inputmode="decimal" pattern="[0-9,]*" placeholder="R$ 0,00">
         </label>
         <label>
@@ -2922,27 +3155,31 @@
   </div>
 </div>
 
-<script src="./assets/js/01-core-supabase.js"></script>
+<script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
 <script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js"></script>
-<script src="./assets/js/04-navigation.js"></script>
-<script src="./assets/js/05-shared-helpers.js"></script>
-<script src="./assets/js/10-dashboard.js"></script>
+<script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
+<script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
+<script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
+<script src="./assets/js/10-dashboard.js?v=20260807-menu-limpo-v3"></script>
 <script src="./assets/js/20-checklists.js"></script>
-<script src="./assets/js/21-employees.js"></script>
+<script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js"></script>
-<script src="./assets/js/40-login-preferences.js"></script>
-<script src="./assets/js/41-finance-vault-calendar.js"></script>
+<script src="./assets/js/30-finance.js?v=20260804-sequencial-dias-corridos"></script>
+      <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260807-external-v9"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
+<script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260807-baixa-agrupada-v3"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>
-<script src="./assets/js/50-tasks.js"></script>
+<script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js"></script>
+<script src="./assets/js/60-timeclock.js?v=20260805-data-prevista-relatorio"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
+<script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
 <script src="./assets/js/78-init.js"></script>
 
 <!-- LOGIN INICIAL -->
@@ -2954,19 +3191,19 @@
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div class="login-brand-title">CHECK DIARIO</div>
       <div class="login-brand-sub">ROTINA · CHECKLIST · OPERAÇÃO</div>
-      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.7</div>
+      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.13</div>
     </div>
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->
     <div id="loginFase1" class="login-fase">
-      <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+      <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="on">
         <div class="login-field-group">
           <div class="login-field-label">E-mail de acesso</div>
-          <input type="email" id="username" class="login-input" placeholder="seuemail@empresa.com.br" required autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <input type="email" id="username" name="username" class="login-input" placeholder="seuemail@empresa.com.br" required autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
         </div>
         <div class="login-field-group">
           <div class="login-field-label">Senha</div>
-          <input type="password" id="password" class="login-input pin-secure-input" placeholder="Digite sua senha de acesso" required autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <input type="password" id="password" name="password" class="login-input" placeholder="Digite sua senha de acesso" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
           <div class="login-field-help">O PIN é usado somente no ponto, tarefas e confirmações internas.</div>
         </div>
         <div class="login-checks">
@@ -3026,21 +3263,21 @@
 
     <!-- FOOTER -->
     <div class="login-footer">
-      Desenvolvido por Patrick Dilhe · Versão 3.2.7<br>
+      Desenvolvido por Patrick Dilhe · Versão 3.2.13<br>
       <a href="mailto:ledilhe@gmail.com" style="color:var(--text-dim); text-decoration:none;">ledilhe@gmail.com</a>
     </div>
 
   </div>
 </div>
 
-<script src="./assets/js/79-runtime-extensions.js"></script>
+<script src="./assets/js/79-runtime-extensions.js?v=3.2.18"></script>
   <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
     <div class="escala-modal-card">
-      <div class="escala-modal-title">Novo item da escala</div>
+      <div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>
       <input id="escalaPlantaoEventoId" type="hidden">
       <div class="escala-modal-sub" id="escalaModalDataTexto">Selecione o dia no calendário.</div>
       <div class="escala-modal-grid">
-        <label class="escala-modal-full">Funcionário
+        <label class="escala-modal-full">Responsável
           <select id="escalaPlantaoFuncionario"></select>
         </label>
         <label>Início
@@ -3072,7 +3309,7 @@
       <div class="escala-modal-actions">
         <button class="btn btn-ghost" type="button" onclick="fecharModalCadastroPlantaoEscala()">Cancelar</button>
         <button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" onclick="excluirPlantaoEscala()" style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button>
-        <button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" onclick="salvarPlantaoEscala()">Salvar escala</button>
+        <button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" onclick="salvarPlantaoEscala()">Salvar agenda</button>
       </div>
     </div>
   </div>
@@ -3083,7 +3320,7 @@
 
 
 <!-- PATCH SEGURO: calendário escala abre modal e salva por loja sem mexer no login/ponto -->
-<script id="patch-escala-modal-final-seguro-script" src="./assets/js/81-schedule-modal-patch.js"></script>
+<script id="patch-escala-modal-final-seguro-script" src="./assets/js/81-schedule-modal-patch.js?v=agenda-cadastro-em-branco-20260709"></script>
 
 
 <script id="patch-escala-total-pago-plantao" src="./assets/js/82-schedule-total-patch.js"></script>
@@ -3094,6 +3331,10 @@
 
 
 <script id="patch-relatorio-escala-administrador-final" src="./assets/js/84-schedule-report-patch.js"></script>
+
+
+<script id="patch-agenda-por-loja-sem-funcionario-obrigatorio" src="./assets/js/90-schedule-store-agenda-patch.js?v=agenda-cadastro-em-branco-20260709"></script>
+<script id="padrao-filtro-data-unico" src="./assets/js/92-date-filter-standardizer.js?v=20260727-periodo-obrigatorio"></script>
 
 
 <script id="patch-feriados-loja-auto-zuqui" src="./assets/js/85-holidays-auto-patch.js"></script>
@@ -3128,6 +3369,6 @@
 </html>
 
 
-<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js"></script>
+<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260728-nova-conta-v3"></script>
 
-<script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js"></script>
+<script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js?v=20260804-ajuda-sequencial"></script>

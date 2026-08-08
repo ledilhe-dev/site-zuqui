@@ -1,0 +1,377 @@
+/*
+ * Camada final de enquadramento por dispositivo.
+ * Faixas:
+ * - desktop: acima de 1024px
+ * - tablet: 701px a 1024px
+ * - celular: até 700px
+ */
+html,
+body,
+.shell,
+.main,
+.content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  #cardDashboardGraficosFinanceiros { width:100%!important; max-width:100%!important; padding:12px!important; overflow:hidden!important; font-size:11px!important; }
+  #cardDashboardGraficosFinanceiros .dash-gf-header,
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar { width:100%!important; max-width:100%!important; gap:6px!important; }
+  #cardDashboardGraficosFinanceiros .btn,
+  #cardDashboardGraficosFinanceiros select { min-height:32px!important; padding:5px 7px!important; font-size:10px!important; }
+  #dashGfResumo { display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:7px 10px!important; font-size:10px!important; }
+  #dashGfBarras,#dashGfCurvaCategoria,#dashGfRosca,#dashGfRoscaCategoria,#dashGfTopCategorias,#dashGfDetalhe { width:100%!important; max-width:100%!important; min-width:0!important; box-sizing:border-box!important; }
+  .dash-gf-meses-mobile { display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:6px!important; width:100%!important; }
+  .dash-gf-mes-card,.dash-gf-mes-card.selecionado { width:100%!important; min-width:0!important; min-height:64px!important; padding:6px!important; font-size:9px!important; transform:none!important; }
+  .dash-gf-mes-card strong,.dash-gf-mes-card span,.dash-gf-mes-valor,.dash-gf-mes-valor b { font-size:9px!important; line-height:1.1!important; }
+  #dashGfCurvaCategoria { overflow:hidden!important; }
+  #dashGfCurvaCategoria svg { display:block!important; width:100%!important; max-width:100%!important; height:auto!important; }
+  #dashGfTopCategorias button { grid-template-columns:24px minmax(0,1fr) auto!important; gap:6px!important; padding:6px!important; font-size:10px!important; }
+  #dashGfTopCategorias button > span:nth-child(3) { display:none!important; }
+  #dashGfRosca,#dashGfRoscaCategoria { display:grid!important; grid-template-columns:130px minmax(0,1fr)!important; align-items:start!important; gap:10px!important; overflow:hidden!important; }
+  #dashGfRosca svg,#dashGfRoscaCategoria svg { width:125px!important; height:125px!important; }
+  #dashGfRosca > div,#dashGfRoscaCategoria > div { min-width:0!important; font-size:10px!important; }
+  #dashGfRosca > div > div,#dashGfRoscaCategoria > div > div { padding:2px!important; gap:4px!important; font-size:10px!important; }
+  #dashGfDetalhe { overflow:visible!important; }
+  #dashGfDetalhe .dash-gf-detail-wrap { display:block!important; width:100%!important; max-width:100%!important; overflow-x:scroll!important; overflow-y:hidden!important; -webkit-overflow-scrolling:touch!important; touch-action:pan-x!important; overscroll-behavior-x:contain!important; }
+  #dashGfDetalhe .dash-gf-detail-table { width:1120px!important; min-width:1120px!important; max-width:none!important; table-layout:fixed!important; font-size:10px!important; }
+  #dashGfDetalhe .dash-gf-detail-table th,#dashGfDetalhe .dash-gf-detail-table td { padding:7px 8px!important; font-size:10px!important; }
+  #dashGfDetalhe .dash-gf-detail-hint { display:block!important; margin:4px 0 7px!important; color:var(--text-muted)!important; font-size:10px!important; }
+}
+
+body,
+.main,
+.content {
+  overflow-x: hidden;
+}
+
+.pagina.ativa,
+.pagina.ativa > *,
+.pagina.ativa .card,
+.pagina.ativa .form-row,
+.pagina.ativa [class*="-grid"],
+.pagina.ativa [class*="-row"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pagina.ativa input:not([type="checkbox"]):not([type="radio"]),
+.pagina.ativa select,
+.pagina.ativa textarea,
+.pagina.ativa button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pagina.ativa input[type="date"] {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.pagina.ativa input[type="date"]::-webkit-date-and-time-value,
+.pagina.ativa input[type="date"]::-webkit-datetime-edit {
+  min-width: 0;
+}
+
+/* Desktop e notebooks: aproveita a largura sem deixar o conteúdo escapar. */
+@media (min-width: 1025px) {
+  .pagina.ativa {
+    width: 100%;
+    max-width: 1920px;
+    margin-inline: auto;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    grid-template-columns:
+      minmax(220px, 1.6fr)
+      minmax(125px, .8fr)
+      minmax(125px, .8fr)
+      minmax(170px, 1fr)
+      minmax(130px, .8fr)
+      minmax(120px, .7fr)
+      minmax(90px, .55fr)
+      minmax(100px, .6fr)
+      minmax(160px, 1fr) !important;
+  }
+}
+
+/* Tablet/iPad: nenhuma tela recebe a grade de desktop. */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .content {
+    width: 100% !important;
+    padding: 12px !important;
+    overflow-x: hidden !important;
+  }
+
+  .pagina.ativa {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .pagina.ativa .card {
+    width: 100% !important;
+    padding: 12px !important;
+    overflow: visible;
+  }
+
+  .pagina.ativa .form-row,
+  .pagina.ativa .filters,
+  .pagina.ativa .toolbar,
+  .pagina.ativa .financeiro-filtros-row,
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .pagina.ativa .financeiro-filtros-row:not(.financeiro-selecao-contas-row),
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    align-items: end !important;
+  }
+
+  .pagina.ativa .filter-field-standard,
+  .pagina.ativa .date-filter-standard,
+  .pagina.ativa .date-filter-standard label {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .pagina.ativa .date-filter-standard {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+
+  .pagina.ativa .date-filter-standard .date-filter-criterion-field {
+    grid-column: 1 / -1;
+  }
+
+  /* iPad/Safari mantém uma largura intrínseca grande no date input; contém cada calendário na sua coluna. */
+  #relatorio_recebimentos .date-filter-standard {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    column-gap: 14px !important;
+    overflow: hidden !important;
+  }
+
+  #relatorio_recebimentos .date-filter-standard label {
+    min-inline-size: 0 !important;
+    overflow: hidden !important;
+  }
+
+  #relatorio_recebimentos .date-filter-standard input[type="date"] {
+    display: block !important;
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    height: 38px !important;
+    padding: 5px 7px !important;
+    font-size: 11px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+
+  #relatorio_recebimentos .date-filter-standard input[type="date"]::-webkit-date-and-time-value {
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  /* Cadastro de contas a pagar: ordem visual previsível em duas colunas. */
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    width: 100% !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    grid-column: auto !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: 1 / -1 !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados input,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados select,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados button {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 6px 9px !important;
+    font-size: 11px !important;
+  }
+
+  #financeiro_contasapagar #filtroContaAPagarCategoriasWrap,
+  #financeiro_contasapagar #btnFiltroContaAPagarCategorias {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 9px !important;
+    width: 100% !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro #resumoSelecaoContasAPagarFinanceiro {
+    grid-column: 1 / -1;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  }
+
+  .table-wrap,
+  [class*="table-wrap"],
+  [class*="-tabela-wrap"] {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Celular: controles compactos, duas colunas somente quando há espaço real. */
+@media (max-width: 700px) {
+  .content {
+    width: 100% !important;
+    padding: 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  .pagina.ativa,
+  .pagina.ativa > *,
+  .pagina.ativa .card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    grid-column: auto !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: 1 / -1 !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados input,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados select,
+  #financeiro_contasapagar .contas-pagar-filtros-unificados button,
+  #financeiro_contasapagar #filtroContaAPagarCategoriasWrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro #resumoSelecaoContasAPagarFinanceiro {
+    grid-column: 1 / -1;
+  }
+
+  .pagina.ativa .financeiro-filtros-row:not(.contas-pagar-filtros-unificados):not(.financeiro-selecao-contas-row),
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados,
+  .pagina.ativa .financeiro-filtros-row:not(.financeiro-selecao-contas-row),
+  .pagina.ativa .financeiro-filtros-flex,
+  .pagina.ativa .recebiveis-provisionados-filtros {
+    grid-template-columns: 1fr !important;
+  }
+
+  #acoesSelecaoContasAPagarFinanceiro {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Interface dedicada a tablets/iPad (Chrome e Safari usam o mesmo motor WebKit).
+   Esta regra fica por último para vencer os layouts específicos de cada relatório. */
+@media (min-width: 701px) and (max-width: 1100px) {
+  .pagina.ativa .date-filter-standard {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    column-gap: 22px !important;
+    row-gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 8px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .pagina.ativa .date-filter-standard .date-filter-start-field,
+  .pagina.ativa .date-filter-standard .date-filter-end-field {
+    display: grid !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .pagina.ativa .date-filter-standard input[type="date"] {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 4px 8px !important;
+    border-radius: 9px !important;
+    box-sizing: border-box !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    -webkit-appearance: auto !important;
+    appearance: auto !important;
+    overflow: hidden !important;
+  }
+
+  .pagina.ativa .date-filter-standard .date-filter-criterion-field {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}

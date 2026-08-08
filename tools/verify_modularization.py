@@ -32,7 +32,7 @@ def main() -> None:
     css_refs = re.findall(r'href="(\./assets/css/[^"]+)"', modular)
     js_refs = re.findall(r'src="(\./assets/js/[^"]+)"', modular)
     for ref in css_refs + js_refs:
-        path = INDEX.parent / ref.removeprefix("./")
+        path = INDEX.parent / ref.split("?", 1)[0].removeprefix("./")
         if not path.is_file():
             fail(f"Referência inexistente no HTML: {ref}")
 
@@ -50,8 +50,10 @@ def main() -> None:
     if syntax_failures:
         fail("Falhas de sintaxe:\n" + "\n".join(syntax_failures))
 
-    orphan_css = sorted(path.name for path in CSS_DIR.glob("*.css") if f"./assets/css/{path.name}" not in css_refs)
-    orphan_js = sorted(path.name for path in JS_DIR.glob("*.js") if f"./assets/js/{path.name}" not in js_refs)
+    normalized_css_refs = {ref.split("?", 1)[0] for ref in css_refs}
+    normalized_js_refs = {ref.split("?", 1)[0] for ref in js_refs}
+    orphan_css = sorted(path.name for path in CSS_DIR.glob("*.css") if f"./assets/css/{path.name}" not in normalized_css_refs)
+    orphan_js = sorted(path.name for path in JS_DIR.glob("*.js") if f"./assets/js/{path.name}" not in normalized_js_refs)
     if orphan_css or orphan_js:
         fail(f"Arquivos órfãos: CSS={orphan_css}, JS={orphan_js}")
 
@@ -59,8 +61,8 @@ def main() -> None:
     if not manifest_path.is_file():
         fail("Manifesto de módulos não encontrado")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    expected_manifest = sorted(css_refs) + sorted(js_refs)
-    if manifest != expected_manifest:
+    expected_manifest = sorted(normalized_css_refs) + sorted(normalized_js_refs)
+    if len(manifest) != len(expected_manifest) or set(manifest) != set(expected_manifest):
         fail("O manifesto de módulos não corresponde às referências do index.html")
 
     worker_result = subprocess.run(

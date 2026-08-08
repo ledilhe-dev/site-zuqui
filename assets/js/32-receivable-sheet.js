@@ -81,6 +81,7 @@ function nrAbrir(editar = false) {
       const obsEl = document.getElementById('recebivelObservacao'); if (obsEl) { obsEl.value = ''; obsEl.style.borderColor = ''; }
       const qtdEl = document.getElementById('recebivelQtdParcelas'); if (qtdEl) qtdEl.value = '1';
     const diasEl = document.getElementById('recebivelDiasIntervalo'); if (diasEl) diasEl.value = '30';
+    const seqEl = document.getElementById('recebivelSequencialDiasCorridos'); if (seqEl) seqEl.checked = false;
     const dataPrevistaEl = document.getElementById('recebivelDataPrevista'); if (dataPrevistaEl) dataPrevistaEl.value = '';
       ['nrQtdErr','nrDiasErr','recebivelObsErr'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
       const tt = document.getElementById('nrTitulo'); if (tt) tt.textContent = 'Novo recebível';
@@ -104,6 +105,19 @@ function nrAbrir(editar = false) {
     preencherSelectRecebivelFormasPagamentoFinanceiro(formaAtual);
     preencherSelectRecebivelContasFinanceiras(contaAtual);
   });
+}
+
+function nrAlternarAjudaSequencial(botao) {
+  const ajuda = document.getElementById('recebivelSequencialAjuda');
+  if (!ajuda) return;
+  ajuda.hidden = !ajuda.hidden;
+  botao?.setAttribute('aria-expanded', ajuda.hidden ? 'false' : 'true');
+}
+
+function nrAtualizarAjudaSequencial() {
+  const marcado = document.getElementById('recebivelSequencialDiasCorridos')?.checked === true;
+  const ajuda = document.getElementById('recebivelSequencialAjuda');
+  if (ajuda && marcado) ajuda.hidden = false;
 }
 function nrFechar() {
   const sh = document.getElementById('nrSheet'), ov = document.getElementById('nrOverlay');

@@ -1,0 +1,10 @@
+CONECTOR RAFFINATO 1.2
+
+1. Finalize todos os processos Conector-Raffinato antigos.
+2. Copie esta pasta completa para o servidor.
+3. Execute Conector-Raffinato-Oculto.exe.
+4. Confirme em http://127.0.0.1:8765/health que aparece version 1.2.
+5. Atualize o CheckDiario e teste a conexao.
+
+Use Conector-Raffinato.exe apenas para diagnostico. Nao execute as duas versoes
+ao mesmo tempo.

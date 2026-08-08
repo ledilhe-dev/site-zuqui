@@ -1,0 +1,12 @@
+CONECTOR RAFFINATO 1.1 - CORRECAO PARA NAVEGADORES
+
+1. Feche todas as versoes anteriores no Gerenciador de Tarefas.
+2. Extraia este ZIP em uma pasta permanente.
+3. Execute Conector-Raffinato-Oculto.exe.
+4. Atualize a pagina do CheckDiario com Ctrl+F5.
+
+Esta versao responde as verificacoes CORS e Private Network Access exigidas
+para que o site HTTPS do CheckDiario acesse o conector em 127.0.0.1.
+
+Para diagnostico, use Conector-Raffinato.exe em vez da versao oculta.
+Nao execute os dois simultaneamente.

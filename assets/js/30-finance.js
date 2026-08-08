@@ -481,7 +481,7 @@ async function salvarFormaPagamentoFinanceiro() {
     String(item.id) !== String(formaPagamentoFinanceiroEmEdicaoId || '')
   );
   if (duplicado) {
-    setMsg('msgFormaPagamentoFinanceiro', 'Já existe uma forma de pagamento com este nome.', 'err');
+    setMsg('msgFormaPagamentoFinanceiro', 'J? existe uma forma de pagamento com este nome.', 'err');
     return;
   }
 
@@ -513,7 +513,7 @@ async function salvarFormaPagamentoFinanceiro() {
       setMsg('msgFormaPagamentoFinanceiro', 'Rode o SQL das formas de pagamento antes de usar esta tela.', 'err');
       return;
     }
-    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    setMsg('msgFormaPagamentoFinanceiro', `N?o foi poss?vel salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
 
@@ -525,7 +525,7 @@ async function salvarFormaPagamentoFinanceiro() {
 function editarFormaPagamentoFinanceiro(id) {
   const item = formasPagamentoFinanceiroCache.find(f => String(f.id) === String(id));
   if (!item) {
-    setMsg('msgFormaPagamentoFinanceiro', 'Forma de pagamento não encontrada.', 'err');
+    setMsg('msgFormaPagamentoFinanceiro', 'Forma de pagamento n?o encontrada.', 'err');
     return;
   }
 
@@ -541,7 +541,7 @@ function editarFormaPagamentoFinanceiro(id) {
 
 function cancelarEdicaoFormaPagamentoFinanceiro() {
   limparFormularioFormaPagamentoFinanceiro();
-  setMsg('msgFormaPagamentoFinanceiro', 'Edição cancelada.', 'ok');
+  setMsg('msgFormaPagamentoFinanceiro', 'Edi·o cancelada.', 'ok');
 }
 
 async function toggleFormaPagamentoFinanceiro(id, ativoAtual = true) {
@@ -552,7 +552,7 @@ async function toggleFormaPagamentoFinanceiro(id, ativoAtual = true) {
       setMsg('msgFormaPagamentoFinanceiro', 'Rode o SQL das formas de pagamento antes de usar esta tela.', 'err');
       return;
     }
-    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível alterar status: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    setMsg('msgFormaPagamentoFinanceiro', `N?o foi poss?vel alterar status: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
   setMsg('msgFormaPagamentoFinanceiro', novoStatus ? 'Forma ativada.' : 'Forma inativada.', 'ok');
@@ -568,12 +568,12 @@ async function excluirFormaPagamentoFinanceiro(id) {
     .eq('forma_pagamento_id', id);
 
   if (erroVinculo && !isMissingContasAPagarPagamentoColumnsError(erroVinculo) && !isMissingContasAPagarTableError(erroVinculo)) {
-    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível validar vínculos: ${mensagemErroSupabase(erroVinculo, 'erro desconhecido')}`, 'err');
+    setMsg('msgFormaPagamentoFinanceiro', `N?o foi poss?vel validar v?nculos: ${mensagemErroSupabase(erroVinculo, 'erro desconhecido')}`, 'err');
     return;
   }
 
   if (!erroVinculo && Number(count || 0) > 0) {
-    setMsg('msgFormaPagamentoFinanceiro', 'Não é possível excluir: existem contas vinculadas a esta forma.', 'err');
+    setMsg('msgFormaPagamentoFinanceiro', 'N?o ? poss?vel excluir: existem contas vinculadas a esta forma.', 'err');
     return;
   }
 
@@ -583,12 +583,12 @@ async function excluirFormaPagamentoFinanceiro(id) {
     .eq('forma_pagamento_id', id);
 
   if (erroVinculoRecebiveis && !isMissingRecebiveisTableError(erroVinculoRecebiveis)) {
-    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível validar recebíveis: ${mensagemErroSupabase(erroVinculoRecebiveis, 'erro desconhecido')}`, 'err');
+    setMsg('msgFormaPagamentoFinanceiro', `N?o foi poss?vel validar receb?veis: ${mensagemErroSupabase(erroVinculoRecebiveis, 'erro desconhecido')}`, 'err');
     return;
   }
 
   if (!erroVinculoRecebiveis && Number(countRecebiveis || 0) > 0) {
-    setMsg('msgFormaPagamentoFinanceiro', 'Não é possível excluir: existem recebíveis vinculados a esta forma.', 'err');
+    setMsg('msgFormaPagamentoFinanceiro', 'N?o ? poss?vel excluir: existem receb?veis vinculados a esta forma.', 'err');
     return;
   }
 
@@ -599,10 +599,10 @@ async function excluirFormaPagamentoFinanceiro(id) {
       return;
     }
     if (isForeignKeyViolationError(error)) {
-      setMsg('msgFormaPagamentoFinanceiro', 'Não é possível excluir: forma vinculada a contas já cadastradas.', 'err');
+      setMsg('msgFormaPagamentoFinanceiro', 'N?o ? poss?vel excluir: forma vinculada a contas j? cadastradas.', 'err');
       return;
     }
-    setMsg('msgFormaPagamentoFinanceiro', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    setMsg('msgFormaPagamentoFinanceiro', `N?o foi poss?vel excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
 
@@ -610,7 +610,7 @@ async function excluirFormaPagamentoFinanceiro(id) {
     limparFormularioFormaPagamentoFinanceiro();
   }
 
-  setMsg('msgFormaPagamentoFinanceiro', 'Forma de pagamento excluída.', 'ok');
+  setMsg('msgFormaPagamentoFinanceiro', 'Forma de pagamento exclu?da.', 'ok');
   await carregarFormasPagamentoFinanceiro();
 }
 
@@ -623,7 +623,7 @@ async function solicitarFormaPagamentoObrigatoriaFinanceiro(formaAtual = '') {
 
   const formasAtivas = obterFormasPagamentoAtivasFinanceiro();
   if (!formasAtivas.length) {
-    setMsg('msgBaixarContasFinanceiro', 'Nenhuma forma ativa disponível. Ative ao menos uma em Formas de pagamento.', 'err');
+    setMsg('msgBaixarContasFinanceiro', 'Nenhuma forma ativa dispon?vel. Ative ao menos uma em Formas de pagamento.', 'err');
     return null;
   }
 
@@ -635,7 +635,7 @@ async function solicitarFormaPagamentoObrigatoriaFinanceiro(formaAtual = '') {
 
   const validaSelecionada = formasAtivas.find(item => String(item.id) === String(selecionada.id)) || null;
   if (!validaSelecionada) {
-    setMsg('msgBaixarContasFinanceiro', 'Forma de pagamento inválida. Escolha uma opção ativa cadastrada.', 'err');
+    setMsg('msgBaixarContasFinanceiro', 'Forma de pagamento inv?lida. Escolha uma op·o ativa cadastrada.', 'err');
     return null;
   }
 
@@ -766,9 +766,9 @@ function aplicarFiltroLojasFinanceirasPermitidas(query, lojasPermitidasIds = nul
   return query;
 }
 
-function obterIdsLojasSelecionadasFiltroFinanceiroPage(containerId = '') {
-  const ids = obterIdsLojasSelecionadasFiltroMultiLoja(containerId || '');
-  return ids.length ? ids : obterIdsLojasFinanceirasPermitidas();
+function obterIdsLojasFinanceiroDaSessao() {
+  const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  return lojaSessaoId ? [lojaSessaoId] : obterIdsLojasFinanceirasPermitidas();
 }
 
 function limparFormularioContaFinanceira() {
@@ -786,7 +786,7 @@ async function carregarContasFinanceiras({ render = true, silencioso = false } =
   const lista = document.getElementById('listaContasFinanceiras');
   if (render && lista) lista.innerHTML = '<div class="empty">Carregando...</div>';
 
-  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasContasFinanceiras');
+  const lojasPermitidasIds = obterIdsLojasFinanceiroDaSessao();
   const { data, error } = await executarSemFiltroLojaTemporario(() => {
     let query = sb
       .from('contas_financeiras')
@@ -856,7 +856,7 @@ async function salvarContaFinanceira() {
     return;
   }
   if (!Number.isFinite(saldoAtual)) {
-    setMsg('msgContaFinanceira', 'Informe um saldo atual válido.', 'err');
+    setMsg('msgContaFinanceira', 'Informe um saldo atual v?lido.', 'err');
     return;
   }
 
@@ -886,7 +886,7 @@ async function salvarContaFinanceira() {
       setMsg('msgContaFinanceira', 'Rode o SQL de contas financeiras antes de usar esta tela.', 'err');
       return;
     }
-    setMsg('msgContaFinanceira', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    setMsg('msgContaFinanceira', `N?o foi poss?vel salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
 
@@ -899,7 +899,7 @@ async function salvarContaFinanceira() {
 function editarContaFinanceira(id) {
   const item = contasFinanceirasCache.find(conta => String(conta.id) === String(id));
   if (!item) {
-    setMsg('msgContaFinanceira', 'Conta financeira não encontrada.', 'err');
+    setMsg('msgContaFinanceira', 'Conta financeira n?o encontrada.', 'err');
     return;
   }
   contaFinanceiraEmEdicaoId = id;
@@ -915,14 +915,14 @@ function editarContaFinanceira(id) {
 
 function cancelarEdicaoContaFinanceira() {
   limparFormularioContaFinanceira();
-  setMsg('msgContaFinanceira', 'Edição cancelada.', 'ok');
+  setMsg('msgContaFinanceira', 'Edi·o cancelada.', 'ok');
 }
 
 async function toggleContaFinanceira(id, ativoAtual = true) {
   const novoStatus = !ativoAtual;
   const { error } = await sb.from('contas_financeiras').update({ ativo: novoStatus }).eq('id', id);
   if (error) {
-    setMsg('msgContaFinanceira', `Não foi possível alterar status: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    setMsg('msgContaFinanceira', `N?o foi poss?vel alterar status: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
   setMsg('msgContaFinanceira', novoStatus ? 'Conta ativada.' : 'Conta inativada.', 'ok');
@@ -937,11 +937,11 @@ async function excluirContaFinanceira(id) {
     .select('*', { count: 'exact', head: true })
     .eq('conta_financeira_id', id);
   if (erroRecebiveis && !isMissingRecebiveisTableError(erroRecebiveis) && !isMissingColumnError(erroRecebiveis)) {
-    setMsg('msgContaFinanceira', `Não foi possível validar recebíveis: ${mensagemErroSupabase(erroRecebiveis, 'erro desconhecido')}`, 'err');
+    setMsg('msgContaFinanceira', `N?o foi poss?vel validar receb?veis: ${mensagemErroSupabase(erroRecebiveis, 'erro desconhecido')}`, 'err');
     return;
   }
   if (!erroRecebiveis && Number(countRecebiveis || 0) > 0) {
-    setMsg('msgContaFinanceira', 'Não é possível excluir: existem recebíveis vinculados a esta conta.', 'err');
+    setMsg('msgContaFinanceira', 'N?o ? poss?vel excluir: existem receb?veis vinculados a esta conta.', 'err');
     return;
   }
 
@@ -950,22 +950,22 @@ async function excluirContaFinanceira(id) {
     .select('*', { count: 'exact', head: true })
     .eq('conta_financeira_id', id);
   if (erroMov && !isMissingContasFinanceirasMovimentacoesTableError(erroMov)) {
-    setMsg('msgContaFinanceira', `Não foi possível validar extrato: ${mensagemErroSupabase(erroMov, 'erro desconhecido')}`, 'err');
+    setMsg('msgContaFinanceira', `N?o foi poss?vel validar extrato: ${mensagemErroSupabase(erroMov, 'erro desconhecido')}`, 'err');
     return;
   }
   if (!erroMov && Number(countMov || 0) > 0) {
-    setMsg('msgContaFinanceira', 'Não é possível excluir: esta conta possui extrato financeiro.', 'err');
+    setMsg('msgContaFinanceira', 'N?o ? poss?vel excluir: esta conta possui extrato financeiro.', 'err');
     return;
   }
 
   const { error } = await sb.from('contas_financeiras').delete().eq('id', id);
   if (error) {
-    setMsg('msgContaFinanceira', `Não foi possível excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    setMsg('msgContaFinanceira', `N?o foi poss?vel excluir: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     return;
   }
 
   if (String(contaFinanceiraEmEdicaoId || '') === String(id)) limparFormularioContaFinanceira();
-  setMsg('msgContaFinanceira', 'Conta financeira excluída.', 'ok');
+  setMsg('msgContaFinanceira', 'Conta financeira exclu?da.', 'ok');
   await carregarContasFinanceiras();
   await carregarExtratoContaFinanceira();
 }
@@ -984,7 +984,7 @@ async function carregarExtratoContaFinanceira() {
   const filtroConta = String(document.getElementById('filtroExtratoContaFinanceira')?.value || '').trim();
   const filtroBusca = textoFinanceiroNormalizado(document.getElementById('filtroExtratoContaBusca')?.value || '');
 
-  const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasContasFinanceiras');
+  const lojasPermitidasIds = obterIdsLojasFinanceiroDaSessao();
   let query = sb
     .from('contas_financeiras_movimentacoes')
     .select('id, conta_financeira_id, recebivel_id, tipo, valor, descricao, saldo_apos, created_at, contas_financeiras(nome), recebiveis(id, fornecedores(nome), formas_pagamento(nome))')
@@ -1014,7 +1014,7 @@ async function carregarExtratoContaFinanceira() {
   });
 
   if (!itens.length) {
-    lista.innerHTML = '<div class="empty">Nenhuma movimentação encontrada.</div>';
+    lista.innerHTML = '<div class="empty">Nenhuma movimenta·o encontrada.</div>';
     return;
   }
 
@@ -1025,12 +1025,11 @@ async function carregarExtratoContaFinanceira() {
     const descricao = escaparHtmlBasico(item.descricao || '-');
     const pagador = escaparHtmlBasico(item.recebiveis?.fornecedores?.nome || '');
     const forma = escaparHtmlBasico(item.recebiveis?.formas_pagamento?.nome || '');
-    const detalheRecebivel = [pagador, forma].filter(Boolean).join(' · ');
+    const detalheRecebivel = [pagador, forma].filter(Boolean).join(' ? ');
     return `
       <div class="item">
         <div class="item-info">
           <div class="item-nome">${conta}</div>
-          <div class="item-detalhe">${formatarDataBRFinanceiro(String(item.created_at || '').slice(0, 10))} · ${descricao}</div>
           <div class="item-detalhe">Valor: ${formatarMoedaBRFinanceiro(item.valor || 0)} · Saldo após: ${formatarMoedaBRFinanceiro(item.saldo_apos || 0)}${detalheRecebivel ? ` · ${detalheRecebivel}` : ''}</div>
         </div>
         <div class="item-actions">${tag}</div>
@@ -1062,9 +1061,9 @@ async function registrarMovimentacaoContaFinanceira({ contaFinanceiraId, recebiv
     .update({ saldo_atual: saldoApos, updated_at: new Date().toISOString() })
     .eq('id', contaId));
 
-  // Fallback para bancos que ainda não têm a coluna updated_at em contas_financeiras.
-  // Antes, quando essa coluna faltava, o recebível podia ser salvo mas a tela parava antes de atualizar a lista,
-  // dando a impressão de que o botão Cadastrar não fazia nada.
+  // Fallback para bancos que ainda n?o t?m a coluna updated_at em contas_financeiras.
+  // Antes, quando essa coluna faltava, o receb?vel podia ser salvo mas a tela parava antes de atualizar a lista,
+  // dando a impress?o de que o bot?o Cadastrar n?o fazia nada.
   if (erroUpdate && isMissingColumnError(erroUpdate)) {
     const tentativaSemUpdatedAt = await executarSemFiltroLojaTemporario(() => sb
       .from('contas_financeiras')
@@ -1127,6 +1126,7 @@ async function recebiveisSaldoGerenciadoNoBanco() {
 
 function limparFormularioRecebivelFinanceiro() {
   recebivelFinanceiroEmEdicaoId = null;
+  recFuturoEmEdicaoId = null;
   const campoPagador = document.getElementById('recebivelPagadorBusca');
   const campoPagadorId = document.getElementById('recebivelPagadorId');
   const campoForma = document.getElementById('recebivelFormaPagamentoId');
@@ -1143,11 +1143,13 @@ function limparFormularioRecebivelFinanceiro() {
   nrLimparPagador();
   const campoQtd = document.getElementById('recebivelQtdParcelas');
   const campoDias = document.getElementById('recebivelDiasIntervalo');
+  const campoSequencial = document.getElementById('recebivelSequencialDiasCorridos');
   const campoDataPrevista = document.getElementById('recebivelDataPrevista');
   const campoObs = document.getElementById('recebivelObservacao');
   const campoVal = document.getElementById('recebivelValor');
   if (campoQtd) campoQtd.value = '1';
   if (campoDias) campoDias.value = '30';
+  if (campoSequencial) campoSequencial.checked = false;
   if (campoDataPrevista) campoDataPrevista.value = '';
   if (campoObs) { campoObs.value = ''; campoObs.style.borderColor = ''; }
   if (campoVal) campoVal.value = '';
@@ -1160,7 +1162,7 @@ function limparFormularioRecebivelFinanceiro() {
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
-// Validação inline da observação
+// Valida·o inline da observa·o
 function recebivelObsInput(inp) {
   const e = document.getElementById('recebivelObsErr');
   if (e) e.style.display = inp.value.trim() ? 'none' : '';
@@ -1174,7 +1176,7 @@ async function salvarRecebivelFinanceiro() {
   const btnCadastrarRecebivel = document.getElementById('btnSalvarRecebivelFinanceiro');
   if (btnCadastrarRecebivel) btnCadastrarRecebivel.disabled = true;
   try {
-    // Lê pagador do motor NR (sheet) ou do campo hidden legado (edição)
+    // L? pagador do motor NR (sheet) ou do campo hidden legado (edi·o)
     const pagadorId = String(NR.pagadorId || document.getElementById('nrPagadorId')?.value || '').trim();
     const formaPagamentoId = String(document.getElementById('recebivelFormaPagamentoId')?.value || '').trim();
     const contaFinanceiraId = String(document.getElementById('recebivelContaFinanceiraId')?.value || '').trim();
@@ -1182,11 +1184,12 @@ async function salvarRecebivelFinanceiro() {
     const valorRecebivel = lerValorMonetarioFinanceiro(valorTexto);
     const qtdParcelas = parseInt(document.getElementById('recebivelQtdParcelas')?.value || '1', 10) || 1;
     const diasIntervalo = parseInt(document.getElementById('recebivelDiasIntervalo')?.value || '30', 10) || 30;
+    const sequencialDiasCorridos = document.getElementById('recebivelSequencialDiasCorridos')?.checked === true;
     const dataPrevista = String(document.getElementById('recebivelDataPrevista')?.value || '').trim();
-    const observacao = String(document.getElementById('recebivelObservacao')?.value || '').trim();
+    const observacao = String(document.getElementById('recebivelObservacao')?.value || '').trim().slice(0, 80);
 
     if (!pagadorId) {
-      setMsg('msgRecebivelFinanceiro', 'Selecione um pagador válido na busca de fornecedores.', 'err');
+      setMsg('msgRecebivelFinanceiro', 'Selecione um pagador v?lido na busca de fornecedores.', 'err');
       return;
     }
     if (!formaPagamentoId) {
@@ -1194,15 +1197,15 @@ async function salvarRecebivelFinanceiro() {
       return;
     }
     if (!contaFinanceiraId) {
-      setMsg('msgRecebivelFinanceiro', 'Selecione a conta financeira que receberá este dinheiro.', 'err');
+      setMsg('msgRecebivelFinanceiro', 'Selecione a conta financeira que receber? este dinheiro.', 'err');
       return;
     }
     if (!valorTexto) {
-      setMsg('msgRecebivelFinanceiro', 'Informe o valor do recebível.', 'err');
+      setMsg('msgRecebivelFinanceiro', 'Informe o valor do receb?vel.', 'err');
       return;
     }
     if (!Number.isFinite(valorRecebivel) || valorRecebivel <= 0) {
-      setMsg('msgRecebivelFinanceiro', 'Informe um valor válido para o recebível.', 'err');
+      setMsg('msgRecebivelFinanceiro', 'Informe um valor v?lido para o receb?vel.', 'err');
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataPrevista)) {
@@ -1215,7 +1218,14 @@ async function salvarRecebivelFinanceiro() {
       const obsEl = document.getElementById('recebivelObservacao');
       if (obsErr) obsErr.style.display = '';
       if (obsEl) obsEl.style.borderColor = 'var(--red)';
-      setMsg('msgRecebivelFinanceiro', 'Preencha a observação.', 'err');
+      setMsg('msgRecebivelFinanceiro', 'Preencha a observa·o.', 'err');
+      return;
+    }
+    if (!Number.isInteger(diasIntervalo) || diasIntervalo < 1 || diasIntervalo > 365) {
+      const diasErr = document.getElementById('nrDiasErr');
+      if (diasErr) { diasErr.textContent = 'Informe de 1 a 365 dias'; diasErr.style.display = ''; }
+      document.getElementById('recebivelDiasIntervalo')?.focus();
+      setMsg('msgRecebivelFinanceiro', 'Informe um intervalo válido entre 1 e 365 dias.', 'err');
       return;
     }
 
@@ -1244,6 +1254,59 @@ async function salvarRecebivelFinanceiro() {
       intervalo_dias: diasIntervalo > 0 ? diasIntervalo : 30,
       observacao: observacao || null,
     };
+    // O mesmo formulário edita provisionamentos, que ainda não movimentam saldo.
+    if (recFuturoEmEdicaoId) {
+      const anterior = recFuturosCache.find(item => String(item.id) === String(recFuturoEmEdicaoId));
+      if (!anterior) {
+        setMsg('msgRecebivelFinanceiro', 'Recebimento provisionado não encontrado. Atualize a lista.', 'err');
+        return;
+      }
+      const relacionados = recFuturosCache
+        .filter(item => !item.confirmado_em
+          && String(item.pagador_id) === String(anterior.pagador_id)
+          && String(item.created_at || '') === String(anterior.created_at || '')
+          && Number(item.qtd_recorrencias || 1) === Number(anterior.qtd_recorrencias || 1))
+        .sort((a, b) => Number(a.numero_recorrencia || 1) - Number(b.numero_recorrencia || 1));
+      let alterarTodos = false;
+      if (relacionados.length > 1) {
+        const decisao = await abrirModalConfirmacaoFinanceira({
+          titulo: 'DESEJA ALTERAR EM TODOS LANÇAMENTOS?',
+          subtitulo: 'Este recebimento possui lançamentos relacionados',
+          fornecedor: anterior.fornecedores?.nome || 'Pagador',
+          lancamento: observacao || anterior.observacao || 'Recebimento provisionado',
+          detalhes: [`Lançamentos pendentes relacionados: ${relacionados.length}`],
+          textoSim: 'Sim, alterar todos',
+          textoNao: 'Não, alterar só este',
+        });
+        if (decisao === 'cancelar') return;
+        alterarTodos = decisao === 'sim';
+      }
+      const alvos = alterarTodos ? relacionados : [anterior];
+      const numeroAtual = Number(anterior.numero_recorrencia || 1);
+      for (const alvo of alvos) {
+        const deslocamento = Number(alvo.numero_recorrencia || 1) - numeroAtual;
+        const dados = {
+          pagador_id: pagadorId,
+          forma_pagamento_id: formaPagamentoId,
+          conta_financeira_id: contaFinanceiraId,
+          valor: Number(valorRecebivel.toFixed(2)),
+          data_prevista: alterarTodos ? calcularVencimentoParcelaFinanceiro(dataPrevista, deslocamento, diasIntervalo, sequencialDiasCorridos) : dataPrevista,
+          intervalo_dias: diasIntervalo,
+          sequencial_dias_corridos: sequencialDiasCorridos,
+          observacao: observacao || null,
+        };
+        const { error: erroEdicao } = await executarSemFiltroLojaTemporario(() =>
+          sb.from('recebiveis_futuros').update(dados).eq('id', alvo.id).is('confirmado_em', null)
+        );
+        if (erroEdicao) throw erroEdicao;
+      }
+      recFuturoEmEdicaoId = null;
+      nrFechar();
+      limparFormularioRecebivelFinanceiro();
+      await carregarRecFuturos();
+      setMsg('msgRecFuturosLista', alterarTodos ? 'Todos os recebimentos relacionados foram atualizados.' : 'Recebimento provisionado atualizado.', 'ok');
+      return;
+    }
     const editando = !!recebivelFinanceiroEmEdicaoId;
     if (!editando) {
       const quantidade = Math.max(1, qtdParcelas);
@@ -1253,8 +1316,9 @@ async function salvarRecebivelFinanceiro() {
         forma_pagamento_id: formaPagamentoId,
         conta_financeira_id: contaFinanceiraId,
         valor: Number(valorRecebivel.toFixed(2)),
-        data_prevista: calcularVencimentoParcelaFinanceiro(dataPrevista, indice, 30),
-        intervalo_dias: 30,
+        data_prevista: calcularVencimentoParcelaFinanceiro(dataPrevista, indice, diasIntervalo, sequencialDiasCorridos),
+        intervalo_dias: diasIntervalo,
+        sequencial_dias_corridos: sequencialDiasCorridos,
         qtd_recorrencias: quantidade,
         numero_recorrencia: indice + 1,
         observacao: observacao || null,
@@ -1267,14 +1331,14 @@ async function salvarRecebivelFinanceiro() {
         sb.from('recebiveis_futuros').insert(provisionamentos)
       );
       if (erroProvisionamento) {
-        setMsg('msgRecebivelFinanceiro', `Não foi possível cadastrar os recebimentos: ${mensagemErroSupabase(erroProvisionamento, 'erro desconhecido')}`, 'err');
+        setMsg('msgRecebivelFinanceiro', `N?o foi poss?vel cadastrar os recebimentos: ${mensagemErroSupabase(erroProvisionamento, 'erro desconhecido')}`, 'err');
         return;
       }
 
       nrFechar();
       limparFormularioRecebivelFinanceiro();
       await carregarRecFuturos();
-      setMsg('msgRecFuturosLista', `${quantidade} recebimento(s) provisionado(s), mantendo o dia combinado de cada mês.`, 'ok');
+      setMsg('msgRecFuturosLista', `${quantidade} recebimento(s) provisionado(s) a cada ${diasIntervalo} dia(s)${sequencialDiasCorridos ? ', em dias corridos' : ', com ajuste para dia útil'}.`, 'ok');
       return;
     }
     const payload = editando
@@ -1297,10 +1361,10 @@ async function salvarRecebivelFinanceiro() {
     }
     if (error) {
       if (isMissingRecebiveisTableError(error) || isMissingFornecedoresTableError(error) || isMissingFormasPagamentoTableError(error) || isMissingColumnError(error)) {
-        setMsg('msgRecebivelFinanceiro', 'Rode o SQL mais recente do financeiro para habilitar recebíveis.', 'err');
+        setMsg('msgRecebivelFinanceiro', 'Rode o SQL mais recente do financeiro para habilitar receb?veis.', 'err');
         return;
       }
-      setMsg('msgRecebivelFinanceiro', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+      setMsg('msgRecebivelFinanceiro', `N?o foi poss?vel salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
       return;
     }
     const recebivelId = recebivelSalvo?.id || recebivelFinanceiroEmEdicaoId;
@@ -1312,7 +1376,7 @@ async function salvarRecebivelFinanceiro() {
         recebivelId,
         tipo: 'estorno',
         valor: Number(recebivelAnterior.valor || 0),
-        descricao: 'Estorno por edição de recebível',
+        descricao: 'Estorno por edi·o de receb?vel',
       });
       if (erroEstorno) {
         setMsg('msgRecebivelFinanceiro', `Recebível salvo, mas não foi possível estornar o saldo anterior: ${mensagemErroSupabase(erroEstorno, 'erro desconhecido')}`, 'err');
@@ -1350,8 +1414,8 @@ async function salvarRecebivelFinanceiro() {
     }
 
   } catch (erroInesperado) {
-    console.error('Erro inesperado ao salvar recebível:', erroInesperado);
     setMsg('msgRecebivelFinanceiro', `Não foi possível cadastrar o recebível: ${mensagemErroSupabase(erroInesperado, erroInesperado?.message || 'erro inesperado')}`, 'err');
+    setMsg('msgRecebivelFinanceiro', `N?o foi poss?vel cadastrar o receb?vel: ${mensagemErroSupabase(erroInesperado, erroInesperado?.message || 'erro inesperado')}`, 'err');
   } finally {
     salvandoRecebivelFinanceiroEmAndamento = false;
     if (btnCadastrarRecebivel) btnCadastrarRecebivel.disabled = false;
@@ -1391,7 +1455,7 @@ function atualizarEstadoListaRecebiveisFinanceiro() {
     btn.textContent = visivel ? 'Ocultar recebíveis' : 'Mostrar recebíveis';
     btn.setAttribute('aria-expanded', String(visivel));
   }
-  // Atualizar IDs visíveis e mostrar/ocultar controles de seleção
+  // Atualizar IDs vis?veis e mostrar/ocultar controles de sele·o
   recebiveisFinanceiroVisiveisIds = Array.from(document.querySelectorAll('.checkbox-recebivel-financeiro')).map(el => el.getAttribute('data-recebivel-id'));
   atualizarResumoSelecaoRecebiveisFinanceiro();
 }
@@ -1494,10 +1558,10 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
       return;
     }
     if (isMissingFornecedoresTableError(error) || isMissingFormasPagamentoTableError(error) || isMissingContasFinanceirasTableError(error) || isMissingColumnError(error)) {
-      lista.innerHTML = '<div class="empty">Rode as migrations mais recentes do financeiro para habilitar recebíveis.</div>';
+      lista.innerHTML = '<div class="empty">Rode as migrations mais recentes do financeiro para habilitar receb?veis.</div>';
       return;
     }
-    lista.innerHTML = '<div class="empty">Erro ao carregar recebíveis.</div>';
+    lista.innerHTML = '<div class="empty">Erro ao carregar receb?veis.</div>';
     return;
   }
 
@@ -1528,7 +1592,7 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
   });
 
   if (!itens.length) {
-    lista.innerHTML = '<div class="empty">Nenhum recebível encontrado com os filtros atuais. Use "Mostrar todos" para limpar os filtros e exibir a lista completa.</div>';
+    lista.innerHTML = '<div class="empty">Nenhum receb?vel encontrado com os filtros atuais. Use "Mostrar todos" para limpar os filtros e exibir a lista completa.</div>';
     atualizarEstadoListaRecebiveisFinanceiro();
     return;
   }
@@ -1536,14 +1600,13 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
   // Calcular totais
   const totalRecebiveisCadastrados = itens.reduce((s, i) => s + Number(i.valor || 0), 0);
   
-  // HTML com checkbox "Selecionar todos" e botão "Excluir selecionados"
+  // HTML com checkbox "Selecionar todos" e bot?o "Excluir selecionados"
   const htmlSelecionadores = `
-    <div style="padding:12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-weight:600;">
+    <div class="rec-selection-bar">
+      <label class="rec-select-all">
         <input type="checkbox" id="checkboxSelecionarTodosRecebiveisFinanceiro" onchange="toggleSelecionarTodosRecebiveisFinanceiro()">
         <span>Selecionar todos (${itens.length})</span>
       </label>
-      <button class="btn btn-red btn-sm" id="btnExcluirRecebiveisSelecionadosFinanceiroAlt" type="button" onclick="excluirRecebiveisSelecionadosFinanceiro()" disabled style="display:none;">Excluir selecionados</button>
     </div>`;
 
   // Renderizar cards grandes
@@ -1556,41 +1619,32 @@ async function carregarRecebiveisFinanceiro(opcoes = {}) {
     const conta = escaparHtmlBasico(item.contas_financeiras?.nome || '-');
     
     return `
-      <div style="background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
-        <div>
-          <div style="text-align:center;padding:12px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:12px;">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Data pagamento</div>
-            <div style="font-size:24px;font-weight:700;color:var(--red,#ef4444);">${dataFormatada}</div>
+      <article class="rec-card">
+        <div class="rec-card-main">
+          <div class="rec-card-head">
+            <div class="rec-card-title">${pagador}</div>
+            <div class="rec-card-value">${valor}</div>
           </div>
-          <div style="font-size:13px;color:var(--text);line-height:1.6;">
-            <div style="font-weight:600;margin-bottom:8px;">${pagador}</div>
-            <div style="color:var(--text-muted);font-size:12px;">
-              <div>Forma: ${forma}</div>
-              <div>Conta: ${conta}</div>
-            </div>
+          <div class="rec-card-meta">
+            <div>Cadastro: <strong>${dataFormatada}</strong></div>
+            <div>${forma} &middot; ${conta}</div>
           </div>
         </div>
-        <div>
-          <div style="text-align:center;padding:12px;background:rgba(250,204,21,0.1);border-radius:8px;margin-bottom:12px;">
-            <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Valor</div>
-            <div style="font-size:24px;font-weight:700;color:var(--yellow,#eab308);">${valor}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-            <input type="checkbox" class="checkbox-recebivel-financeiro" data-recebivel-id="${item.id}" ${recebiveisFinanceiroSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecebivelFinanceiro('${item.id}', this.checked)" style="width:22px;height:22px;cursor:pointer;">
-            <span style="font-size:12px;color:var(--text-muted);">Marcar</span>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-ghost btn-sm" onclick="editarRecebivelFinanceiro('${item.id}')" style="flex:1;font-size:12px;">Editar</button>
-            <button class="btn btn-red btn-sm" onclick="excluirRecebivelFinanceiro('${item.id}')" style="flex:1;font-size:12px;">Excluir</button>
-          </div>
+        <div class="rec-card-actions">
+          <label class="rec-check" title="Selecionar recebível">
+            <input type="checkbox" class="checkbox-recebivel-financeiro" data-recebivel-id="${item.id}" ${recebiveisFinanceiroSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecebivelFinanceiro('${item.id}', this.checked)">
+            <span>Selecionar</span>
+          </label>
+          <button class="btn btn-ghost btn-sm" onclick="editarRecebivelFinanceiro('${item.id}')">Editar</button>
+          <button class="btn btn-red btn-sm" onclick="excluirRecebivelFinanceiro('${item.id}')">Excluir</button>
         </div>
-      </div>
+      </article>
     `;
   }).join('');
 
-  lista.innerHTML = htmlSelecionadores + htmlCards;
+  lista.innerHTML = htmlSelecionadores + `<div class="rec-grid">${htmlCards}</div>`;
   
-  // Atualizar estado dos botões
+  // Atualizar estado dos bot?es
   atualizarResumoSelecaoRecebiveisFinanceiro();
   atualizarEstadoListaRecebiveisFinanceiro();
 }
@@ -1607,7 +1661,7 @@ function editarRecebivelFinanceiro(id) {
   NR.pagadorNome = item.fornecedores?.nome || '';
   NR.valor = Number(item.valor || 0);
   NR.modoEdicao = true;
-  // Abrir o sheet no modo edição
+  // Abrir o sheet no modo edi·o
   nrAbrir(true);
   // Preencher campos do sheet
   if (NR.pagadorNome) nrSelPagador(NR.pagadorId, NR.pagadorNome);
@@ -1623,15 +1677,15 @@ function editarRecebivelFinanceiro(id) {
   if (dataPrevistaEl) dataPrevistaEl.value = String(item.created_at || '').slice(0, 10);
   const obsEl = document.getElementById('recebivelObservacao');
   if (obsEl) obsEl.value = item.observacao || '';
-  const tt = document.getElementById('nrTitulo'); if (tt) tt.textContent = 'Editar recebível';
+  const tt = document.getElementById('nrTitulo'); if (tt) tt.textContent = 'Editar receb?vel';
   const bs = document.getElementById('btnSalvarRecebivelFinanceiro'); if (bs) bs.textContent = '✓ Salvar alterações';
   const bc = document.getElementById('btnCancelarRecebivelFinanceiro'); if (bc) bc.style.display = '';
 }
 
 
-// ══════════════════════════════════════════════════════════════════
+// ·································
 // RECEBÍVEIS FUTUROS (PROVISIONAMENTO)
-// ══════════════════════════════════════════════════════════════════
+// ·································
 let recFuturoEmEdicaoId = null;
 let recFuturosCache = [];
 
@@ -1644,11 +1698,11 @@ async function iniciarTelaRecFuturos() {
   ]);
   preencherSelectsRecFuturo();
   preencherPagadoresRecFuturo();
-  // Data prevista padrão: hoje
+  // Data prevista padr?o: hoje
   const hoje = new Date().toISOString().slice(0, 10);
   const campoData = document.getElementById('recFuturoDataPrevista');
   if (campoData && !campoData.value) campoData.value = hoje;
-  // Recorrência toggle
+  // Recorr?ncia toggle
   const chkRec = document.getElementById('recFuturoRecorrente');
   if (chkRec) chkRec.onchange = () => {
     const c = document.getElementById('containerRecFuturoRecorrencia');
@@ -1707,12 +1761,12 @@ async function salvarRecFuturo() {
   const intervaloDias = intervaloDiasTexto ? Number.parseInt(intervaloDiasTexto, 10) : null;
   const valor = lerValorMonetarioFinanceiro(valorTexto);
 
-  if (!pagadorId) { setMsg('msgRecFuturo', 'Selecione um pagador válido.', 'err'); return; }
+  if (!pagadorId) { setMsg('msgRecFuturo', 'Selecione um pagador v?lido.', 'err'); return; }
   if (!formaPagamentoId) { setMsg('msgRecFuturo', 'Selecione uma forma de pagamento.', 'err'); return; }
   if (!contaId) { setMsg('msgRecFuturo', 'Selecione a conta financeira prevista.', 'err'); return; }
-  if (!dataPrevista) { setMsg('msgRecFuturo', 'Informe a 1ª data prevista.', 'err'); return; }
-  if (!Number.isFinite(valor) || valor <= 0) { setMsg('msgRecFuturo', 'Informe um valor válido.', 'err'); return; }
-  if (qtd > 1 && (!intervaloDias || intervaloDias < 1)) { setMsg('msgRecFuturo', 'Informe o intervalo em dias para múltiplas repetições.', 'err'); return; }
+  if (!dataPrevista) { setMsg('msgRecFuturo', 'Informe a 1? data prevista.', 'err'); return; }
+  if (!Number.isFinite(valor) || valor <= 0) { setMsg('msgRecFuturo', 'Informe um valor v?lido.', 'err'); return; }
+  if (qtd > 1 && (!intervaloDias || intervaloDias < 1)) { setMsg('msgRecFuturo', 'Informe o intervalo em dias para m?ltiplas repeti·es.', 'err'); return; }
 
   let empresaId = obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
   let lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
@@ -1775,20 +1829,79 @@ function cancelarEdicaoRecFuturo() {
   fecharModalConfirmarRecFuturo();
 }
 
+function aplicarAtalhoPeriodoRecFuturo(tipo) {
+  const inicioEl = document.getElementById('filtroRecFuturoInicio');
+  const fimEl = document.getElementById('filtroRecFuturoFim');
+  if (!inicioEl || !fimEl) return;
+
+  const formatarDataLocal = data => {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  };
+  const hoje = new Date();
+  const adicionarDias = quantidade => {
+    const data = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    data.setDate(data.getDate() + quantidade);
+    return formatarDataLocal(data);
+  };
+
+  inicioEl.value = tipo === 'atrasados' ? '' : formatarDataLocal(hoje);
+  fimEl.value = tipo === 'atrasados' ? adicionarDias(-1)
+    : tipo === 'hoje' ? formatarDataLocal(hoje)
+      : adicionarDias(tipo === '7d' ? 6 : tipo === '15d' ? 14 : 29);
+
+  const apenasPendentes = document.getElementById('filtroRecFuturoSoAbertos');
+  if (apenasPendentes) apenasPendentes.checked = true;
+  const criterio = document.querySelector('#financeiro_recebiveis .recebiveis-provisionados-card .date-filter-criterion');
+  if (criterio) {
+    const opcaoPrevista = Array.from(criterio.options || []).find(opcao => String(opcao.value).replace('especial:', '') === 'prevista');
+    if (opcaoPrevista) criterio.value = opcaoPrevista.value;
+  }
+  document.querySelectorAll('[data-rec-atalho]').forEach(botao => {
+    botao.classList.toggle('is-active', botao.dataset.recAtalho === tipo);
+  });
+  carregarRecFuturos();
+}
+
+function limparFiltrosRecFuturos() {
+  const busca = document.getElementById('filtroRecFuturoBusca');
+  const usuario = document.getElementById('filtroRecFuturoUsuario');
+  const inicio = document.getElementById('filtroRecFuturoInicio');
+  const fim = document.getElementById('filtroRecFuturoFim');
+  const apenasPendentes = document.getElementById('filtroRecFuturoSoAbertos');
+  const criterio = document.querySelector('#financeiro_recebiveis .recebiveis-provisionados-card .date-filter-criterion');
+
+  if (busca) busca.value = '';
+  if (usuario) usuario.value = '';
+  if (inicio) inicio.value = '';
+  if (fim) fim.value = '';
+  if (apenasPendentes) apenasPendentes.checked = true;
+  if (criterio) {
+    const opcaoPrevista = Array.from(criterio.options || []).find(opcao => String(opcao.value).replace('especial:', '') === 'prevista');
+    if (opcaoPrevista) criterio.value = opcaoPrevista.value;
+  }
+  document.querySelectorAll('#financeiro_recebiveis [data-rec-atalho]').forEach(botao => botao.classList.remove('is-active'));
+  carregarRecFuturos();
+}
+
 async function carregarRecFuturos() {
   const lista = document.getElementById('listaRecFuturos');
   if (!lista) return;
-  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
 
   const soAbertos = document.getElementById('filtroRecFuturoSoAbertos')?.checked !== false;
   const busca = textoFinanceiroNormalizado(document.getElementById('filtroRecFuturoBusca')?.value || '');
   const inicio = String(document.getElementById('filtroRecFuturoInicio')?.value || '').trim();
   const fim = String(document.getElementById('filtroRecFuturoFim')?.value || '').trim();
+  const usuarioFiltro = String(document.getElementById('filtroRecFuturoUsuario')?.value || '').trim();
+  const dataTipo = String(document.querySelector('#financeiro_recebiveis .recebiveis-provisionados-card .date-filter-criterion')?.value || 'especial:prevista').replace('especial:', '');
 
   try {
     const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     let query = sb.from('recebiveis_futuros')
-      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, confirmado_em, confirmado_por_nome, valor_confirmado, conta_financeira_confirmada_id, observacao, criado_por_nome, created_at, intervalo_dias, qtd_recorrencias, numero_recorrencia, loja_id, empresa_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
+      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, data_prevista, confirmado_em, confirmado_por_nome, valor_confirmado, conta_financeira_confirmada_id, observacao, criado_por_nome, created_at, intervalo_dias, sequencial_dias_corridos, qtd_recorrencias, numero_recorrencia, loja_id, empresa_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
       .eq('ativo', true)
       .order('data_prevista', { ascending: true });
     if (soAbertos) query = query.is('confirmado_em', null);
@@ -1797,14 +1910,24 @@ async function carregarRecFuturos() {
     const { data, error } = await query;
     if (error) throw error;
 
+    const filtroUsuario = document.getElementById('filtroRecFuturoUsuario');
+    if (filtroUsuario) {
+      const atual = filtroUsuario.value;
+      const nomes = [...new Set((data || []).map(item => String(item.criado_por_nome || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      filtroUsuario.innerHTML = '<option value="">- Quem lançou -</option>' + nomes.map(nome => `<option value="${escaparHtmlBasico(nome)}">${escaparHtmlBasico(nome)}</option>`).join('');
+      filtroUsuario.value = nomes.includes(atual) ? atual : '';
+    }
+
     recFuturosCache = (data || []).filter(item => {
-      // Isolamento por loja em memória (reforço): nunca mostra recebimento de outra loja.
+      // Isolamento por loja em mem?ria (refor?o): nunca mostra recebimento de outra loja.
       if (lojaSessao && String(item.loja_id || '').trim() !== lojaSessao) return false;
       const pagador = textoFinanceiroNormalizado(item.fornecedores?.nome || '');
       if (busca && !pagador.includes(busca)) return false;
-      const dp = String(item.data_prevista || '').slice(0, 10);
-      if (inicio && dp < inicio) return false;
-      if (fim && dp > fim) return false;
+      if (usuarioFiltro && String(item.criado_por_nome || '').trim() !== usuarioFiltro) return false;
+      const datas = { prevista:item.data_prevista, cadastro:item.created_at, recebimento:item.confirmado_em };
+      const dataReferencia = String(datas[dataTipo] || '').slice(0, 10);
+      if (inicio && (!dataReferencia || dataReferencia < inicio)) return false;
+      if (fim && (!dataReferencia || dataReferencia > fim)) return false;
       return true;
     });
 
@@ -1822,15 +1945,28 @@ async function carregarRecFuturos() {
     const totalPendentesFut = itensPendentesFut.reduce((s, i) => s + Number(i.valor || 0), 0);
     const totalConfirmadosFut = itensConfirmadosFut.reduce((s, i) => s + Number(i.valor_confirmado ?? i.valor ?? 0), 0);
     const resumoFuturosHtml = `
-      <div class="item" style="border-left:3px solid var(--green,#22c55e);">
+      <div class="rec-summary rec-summary-compacto">
         <div class="item-info">
-          <div class="item-nome">Total previsto pendente: ${formatarMoedaBRFinanceiro(totalPendentesFut)} <span style="font-weight:400;color:var(--text-muted);">(${itensPendentesFut.length} lançamento${itensPendentesFut.length === 1 ? '' : 's'})</span></div>
+          <div class="item-nome"><span class="rec-summary-label">Total previsto pendente:</span> <strong class="rec-summary-valor">${formatarMoedaBRFinanceiro(totalPendentesFut)}</strong> <span>(${itensPendentesFut.length} lançamento${itensPendentesFut.length === 1 ? '' : 's'})</span></div>
           ${itensConfirmadosFut.length ? `<div class="item-detalhe">Confirmados no filtro: ${formatarMoedaBRFinanceiro(totalConfirmadosFut)} (${itensConfirmadosFut.length})</div>` : ''}
         </div>
       </div>`;
-    lista.innerHTML = '<div class="lista">' + resumoFuturosHtml + recFuturosCache.map(item => {
+    lista.innerHTML = '<div class="rec-grid">' + resumoFuturosHtml + recFuturosCache.map(item => {
       const confirmado = !!item.confirmado_em;
       const dp = String(item.data_prevista || '').slice(0, 10);
+      const datasPorCriterio = {
+        prevista: item.data_prevista,
+        cadastro: item.created_at,
+        recebimento: item.confirmado_em,
+      };
+      const dataDoFiltro = String(datasPorCriterio[dataTipo] || '').slice(0, 10);
+      const dataDoFiltroFormatada = dataDoFiltro ? formatarDataBRFinanceiro(dataDoFiltro) : '-';
+      const rotulosDataFiltro = {
+        prevista: 'Data prevista',
+        cadastro: 'Data de cadastro',
+        recebimento: 'Data de recebimento',
+      };
+      const rotuloDataFiltro = rotulosDataFiltro[dataTipo] || 'Data';
       const atrasado = !confirmado && dp && dp < hoje;
       const tagStatus = confirmado
         ? `<span class="tag tag-green">✓ Confirmado</span>`
@@ -1838,26 +1974,31 @@ async function carregarRecFuturos() {
           ? `<span class="tag tag-red">Atrasado</span>`
           : `<span class="tag tag-amber">Pendente</span>`;
       return `
-        <div class="item">
-          <div class="item-info">
-            <label class="item-nome" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <input class="checkbox-rec-futuro-financeiro" data-rec-futuro-id="${item.id}" type="checkbox" ${recFuturosSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecFuturo('${item.id}', this.checked)" style="width:22px;height:22px;min-width:22px;accent-color:#22c55e;cursor:pointer;margin:0;appearance:auto;-webkit-appearance:auto;opacity:1;position:relative;z-index:2;">
-              <span>${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador não encontrado')}</span>
-            </label>
+        <article class="rec-card rec-card-future">
+          <div class="rec-card-main">
+            <div class="rec-card-title-line">
+              <label class="rec-card-title rec-check">
+                <input class="checkbox-rec-futuro-financeiro" data-rec-futuro-id="${item.id}" type="checkbox" ${recFuturosSelecionadosIds.has(String(item.id)) ? 'checked' : ''} onchange="atualizarSelecaoRecFuturo('${item.id}', this.checked)">
+                <span>${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador não encontrado')}</span>
+              </label>
+              <span class="rec-futuro-valor-data rec-futuro-valor-data-inline">
+                <strong class="rec-futuro-valor-inline">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
+                <span class="rec-futuro-data-filtrada" title="${rotuloDataFiltro}">${dataDoFiltroFormatada}</span>
+              </span>
+            </div>
+            ${item.observacao ? `<div class="rec-card-observacao" title="${escaparHtmlBasico(item.observacao)}">Obs.: ${escaparHtmlBasico(item.observacao)}</div>` : ''}
             <div class="item-detalhe">
-              Valor previsto: <strong>${formatarMoedaBRFinanceiro(item.valor || 0)}</strong> ·
               Forma: ${escaparHtmlBasico(item.formas_pagamento?.nome || '-')} ·
               Conta: ${escaparHtmlBasico(item.contas_financeiras?.nome || '-')}
             </div>
             <div class="item-detalhe">
               Data prevista: <strong>${formatarDataBRFinanceiro(dp)}</strong>
-              ${item.observacao ? ` · ${escaparHtmlBasico(item.observacao)}` : ''}
-              · Provisionado por: ${escaparHtmlBasico(item.criado_por_nome || '-')}
+              ? Provisionado por: ${escaparHtmlBasico(item.criado_por_nome || '-')}
             </div>
             ${confirmado ? `<div class="item-detalhe" style="color:var(--green);">
               Confirmado em ${formatarDataBRFinanceiro(String(item.confirmado_em || '').slice(0,10))}
-              · Valor: ${formatarMoedaBRFinanceiro(item.valor_confirmado || 0)}
-              · Por: ${escaparHtmlBasico(item.confirmado_por_nome || '-')}
+              ? Valor: ${formatarMoedaBRFinanceiro(item.valor_confirmado || 0)}
+              ? Por: ${escaparHtmlBasico(item.confirmado_por_nome || '-')}
             </div>` : ''}
           </div>
           <div class="rec-futuro-destaque">
@@ -1870,15 +2011,20 @@ async function carregarRecFuturos() {
               <span class="rec-futuro-destaque-valor">${formatarMoedaBRFinanceiro(item.valor || 0)}</span>
             </div>
           </div>
-          <div class="item-actions">
+          <div class="rec-card-actions">
+            <span class="rec-futuro-valor-data rec-futuro-valor-data-acoes">
+              <strong class="rec-futuro-valor-acoes">${formatarMoedaBRFinanceiro(item.valor || 0)}</strong>
+              <span class="rec-futuro-data-filtrada" title="${rotuloDataFiltro}">${dataDoFiltroFormatada}</span>
+            </span>
             ${tagStatus}
-            ${!confirmado ? `<button class="btn btn-green btn-sm" onclick="abrirModalConfirmarRecFuturo('${item.id}')">Confirmar recebimento</button>` : ''}
+            ${!confirmado ? `<button class="btn btn-green btn-sm rec-confirmar-btn" onclick="abrirModalConfirmarRecFuturo('${item.id}')">Confirmar recebimento</button>` : ''}
+            ${confirmado ? `<button class="btn btn-red btn-sm" onclick="estornarRecebimentoFuturo('${item.id}')">Estornar</button>` : ''}
             <button class="btn btn-ghost btn-sm" onclick="editarRecFuturo('${item.id}')">Editar</button>
             <button class="btn btn-red btn-sm" onclick="excluirRecFuturo('${item.id}')">Excluir</button>
           </div>
-        </div>`;
+        </article>`;
     }).join('') + '</div>';
-    // Atualizar IDs visíveis e mostrar/ocultar controles de seleção
+    // Atualizar IDs vis?veis e mostrar/ocultar controles de sele·o
     recFuturosVisiveisIds = Array.from(document.querySelectorAll('.checkbox-rec-futuro-financeiro')).map(el => String(el.getAttribute('data-rec-futuro-id') || ''));
     const idsVisiveis = new Set(recFuturosVisiveisIds);
     recFuturosSelecionadosIds.forEach(id => {
@@ -1891,16 +2037,47 @@ async function carregarRecFuturos() {
 }
 
 function editarRecFuturo(id) {
-  // Form de lançamento removido — editar redireciona para confirmação de recebimento
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  if (!item) return;
+  if (!item.confirmado_em) {
+    recFuturoEmEdicaoId = String(id);
+    recebivelFinanceiroEmEdicaoId = null;
+    NR.pagadorId = item.pagador_id || null;
+    NR.pagadorNome = item.fornecedores?.nome || '';
+    NR.valor = Number(item.valor || 0);
+    NR.modoEdicao = true;
+    nrAbrir(true);
+    if (NR.pagadorNome) nrSelPagador(NR.pagadorId, NR.pagadorNome);
+    preencherSelectRecebivelFormasPagamentoFinanceiro(item.forma_pagamento_id || '');
+    preencherSelectRecebivelContasFinanceiras(item.conta_financeira_id || '');
+    const valor = document.getElementById('recebivelValor'); if (valor) valor.value = nrFmtBR(item.valor || 0);
+    const data = document.getElementById('recebivelDataPrevista'); if (data) data.value = String(item.data_prevista || '').slice(0, 10);
+    const qtd = document.getElementById('recebivelQtdParcelas'); if (qtd) qtd.value = item.qtd_recorrencias || 1;
+    const dias = document.getElementById('recebivelDiasIntervalo'); if (dias) dias.value = item.intervalo_dias || 30;
+    const sequencial = document.getElementById('recebivelSequencialDiasCorridos'); if (sequencial) sequencial.checked = item.sequencial_dias_corridos === true;
+    const obs = document.getElementById('recebivelObservacao'); if (obs) obs.value = item.observacao || '';
+    const titulo = document.getElementById('nrTitulo'); if (titulo) titulo.textContent = 'Editar recebimento provisionado';
+    const salvar = document.getElementById('btnSalvarRecebivelFinanceiro'); if (salvar) salvar.textContent = '✓ Salvar alterações';
+    return;
+  }
+  // Form de lançamento removido ? editar redireciona para confirma·o de recebimento
   abrirModalConfirmarRecFuturo(id);
 }
 
 function configurarCampoValorRecFuturo(valor = 0) {
-  // Campos do form de lançamento futuro removidos — função mantida por compatibilidade
+  // Campos do form de lançamento futuro removidos ? fun·o mantida por compatibilidade
 }
 
 async function excluirRecFuturo(id) {
-  if (!confirm('Excluir este provisionamento?')) return;
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(),
+    titulo: 'Excluir provisionamento',
+    subtitulo: `Confirme sua senha para excluir ${formatarMoedaBRFinanceiro(item?.valor || 0)}.`,
+    textoAcao: 'Excluir',
+    escopo: 'empresa',
+  });
+  if (!confirmacao) return;
   try {
     const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').delete().eq('id', id));
     if (error) throw error;
@@ -1914,16 +2091,17 @@ function abrirModalConfirmarRecFuturo(id) {
   const modal = document.getElementById('modalConfirmarRecFuturo');
   if (!modal) return;
   document.getElementById('modalConfirmarRecFuturoId').value = id;
-  // Pré-preencher com valores previstos
+  // Pr?-preencher com valores previstos
   const hoje = new Date().toISOString().slice(0, 10);
-  document.getElementById('modalConfirmarData').value = hoje;
-  document.getElementById('modalConfirmarValor').value = item.valor > 0 ? formatarMoedaBRFinanceiro(item.valor) : '';
+  document.getElementById('modalConfirmarData').value = item.confirmado_em ? String(item.confirmado_em).slice(0, 10) : hoje;
+  const valorAtual = item.confirmado_em ? Number(item.valor_confirmado ?? item.valor ?? 0) : Number(item.valor || 0);
+  document.getElementById('modalConfirmarValor').value = valorAtual > 0 ? formatarMoedaBRFinanceiro(valorAtual) : '';
   // Preencher select de contas
   const selConta = document.getElementById('modalConfirmarConta');
   if (selConta) {
     selConta.innerHTML = '<option value="">Selecione a conta</option>' +
       (contasFinanceirasCache || []).map(c =>
-        `<option value="${c.id}" ${String(c.id) === String(item.conta_financeira_id) ? 'selected' : ''}>${escaparHtmlBasico(c.nome)}</option>`
+        `<option value="${c.id}" ${String(c.id) === String(item.conta_financeira_confirmada_id || item.conta_financeira_id) ? 'selected' : ''}>${escaparHtmlBasico(c.nome)}</option>`
       ).join('');
   }
   document.getElementById('modalConfirmarObs').value = '';
@@ -1946,22 +2124,64 @@ async function confirmarRecebimentoFuturo() {
 
   if (!dataConfirmacao) { setMsg('msgModalConfirmarRecFuturo', 'Informe a data do recebimento.', 'err'); return; }
   if (!contaId) { setMsg('msgModalConfirmarRecFuturo', 'Selecione a conta financeira.', 'err'); return; }
-  if (!Number.isFinite(valor) || valor <= 0) { setMsg('msgModalConfirmarRecFuturo', 'Informe um valor válido.', 'err'); return; }
+  if (!Number.isFinite(valor) || valor <= 0) { setMsg('msgModalConfirmarRecFuturo', 'Informe um valor v?lido.', 'err'); return; }
 
   const item = recFuturosCache.find(i => String(i.id) === String(id));
-  if (!item) { setMsg('msgModalConfirmarRecFuturo', 'Recebimento não encontrado. Atualize a lista e tente novamente.', 'err'); return; }
+  if (!item) { setMsg('msgModalConfirmarRecFuturo', 'Recebimento n?o encontrado. Atualize a lista e tente novamente.', 'err'); return; }
 
   const confirmadoPorNome = usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Usuário';
   const valorConfirmado = Number(valor.toFixed(2));
-  // Usa a data informada no modal (meio-dia para evitar problemas de fuso horário)
+  const confirmacaoPin = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(),
+    titulo: item.confirmado_em ? 'Confirmar alteração do recebimento' : 'Confirmar baixa do recebimento',
+    subtitulo: `Confirme sua senha para lançar ${formatarMoedaBRFinanceiro(valorConfirmado)} na conta selecionada.`,
+    textoAcao: item.confirmado_em ? 'Salvar alteração' : 'Confirmar recebimento',
+    escopo: 'empresa',
+  });
+  if (!confirmacaoPin) return;
+  // Usa a data informada no modal (meio-dia para evitar problemas de fuso hor?rio)
   const confirmadoEmISO = new Date(`${dataConfirmacao}T12:00:00`).toISOString();
 
-  // Resolver loja/empresa para o novo recebível
+  // Resolver loja/empresa para o novo receb?vel
   const contaSelecionada = (contasFinanceirasCache || []).find(c => String(c.id) === String(contaId)) || null;
   const empresaId = contaSelecionada?.empresa_id || item.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null;
   const lojaId = contaSelecionada?.loja_id || item.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
 
   try {
+    // Se já estava confirmado, editar o recebível real em vez de criar outro.
+    // O trigger do banco ajusta apenas a diferença/transferência; em bancos
+    // antigos fazemos o estorno e a nova entrada explicitamente.
+    if (item.confirmado_em) {
+      const recebivelAnterior = await localizarRecebivelGeradoPorProvisionamento(item);
+      if (!recebivelAnterior) throw new Error('Não foi possível localizar o recebível vinculado para edição.');
+      const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+      const { error: erroEditar } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').update({
+        conta_financeira_id: contaId,
+        valor: valorConfirmado,
+      }).eq('id', recebivelAnterior.id));
+      if (erroEditar) throw erroEditar;
+      if (!saldoGerenciadoNoBanco) {
+        const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: recebivelAnterior.conta_financeira_id, recebivelId: recebivelAnterior.id, tipo: 'estorno', valor: recebivelAnterior.valor, descricao: 'Estorno por edição de recebimento' });
+        if (erroEstorno) throw erroEstorno;
+        const { error: erroEntrada } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: contaId, recebivelId: recebivelAnterior.id, tipo: 'entrada', valor: valorConfirmado, descricao: 'Entrada atualizada de recebimento' });
+        if (erroEntrada) throw erroEntrada;
+      }
+      const { error: erroFuturo } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({
+        confirmado_em: item.confirmado_em,
+        confirmado_por_nome: confirmadoPorNome,
+        valor_confirmado: valorConfirmado,
+        conta_financeira_confirmada_id: contaId,
+      }).eq('id', id));
+      if (erroFuturo) throw erroFuturo;
+      fecharModalConfirmarRecFuturo();
+      await carregarContasFinanceiras({ render: false, silencioso: true });
+      await carregarRecFuturos();
+      recebiveisFinanceiroListaVisivel = true;
+      await carregarRecebiveisFinanceiro();
+      if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+      setMsg('msgRecFuturosLista', 'Recebimento atualizado e saldo recalculado.', 'ok');
+      return;
+    }
     // 1. Marcar o recebimento futuro como confirmado (tabela recebiveis_futuros)
     const payloadConfirmacao = {
       confirmado_em: confirmadoEmISO,
@@ -1972,7 +2192,7 @@ async function confirmarRecebimentoFuturo() {
     let { error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
       sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id)
     );
-    // Fallback para bancos sem as colunas de auditoria da confirmação
+    // Fallback para bancos sem as colunas de auditoria da confirma·o
     if (erroUpdate && isMissingColumnError(erroUpdate)) {
       const tentativaMinima = await executarSemFiltroLojaTemporario(() =>
         sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id)
@@ -1981,7 +2201,7 @@ async function confirmarRecebimentoFuturo() {
     }
     if (erroUpdate) throw erroUpdate;
 
-    // 2. Criar o recebível real para aparecer na tela de Recebíveis
+    // 2. Criar o receb?vel real para aparecer na tela de Recebíveis
     const pagadorNome = item?.fornecedores?.nome || 'pagador';
     const formaNome = item?.formas_pagamento?.nome || 'forma de pagamento';
     const payloadRecebivelBase = {
@@ -2005,7 +2225,7 @@ async function confirmarRecebimentoFuturo() {
       ({ data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivelBase));
     }
     if (erroRecebivel) {
-      // Desfaz a confirmação para não deixar o registro pela metade
+      // Desfaz a confirma·o para n?o deixar o registro pela metade
       try {
         await executarSemFiltroLojaTemporario(() =>
           sb.from('recebiveis_futuros').update({
@@ -2016,14 +2236,14 @@ async function confirmarRecebimentoFuturo() {
           }).eq('id', id)
         );
       } catch (eRollback) {
-        console.warn('Falha ao desfazer confirmação do recebimento futuro:', eRollback);
+        console.warn('Falha ao desfazer confirma·o do recebimento futuro:', eRollback);
       }
       throw erroRecebivel;
     }
     const recebivelId = recebivelSalvo?.id || null;
 
-    // 3. Somar no saldo da conta (apenas se o banco não gerencia o saldo via trigger,
-    //    para não somar em duplicidade — mesma regra do cadastro manual de recebíveis)
+    // 3. Somar no saldo da conta (apenas se o banco n?o gerencia o saldo via trigger,
+    //    para n?o somar em duplicidade ? mesma regra do cadastro manual de receb?veis)
     const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
     if (!saldoGerenciadoNoBanco) {
       const descricao = `Recebível futuro confirmado: ${pagadorNome} via ${formaNome}${obs ? ' - ' + obs : ''}`;
@@ -2054,7 +2274,7 @@ async function confirmarRecebimentoFuturo() {
   }
 }
 
-// ═══════ SELEÇÃO MÚLTIPLA DE RECEBÍVEIS ═══════
+// ···? SELEÃ‡ÃƒO MÃšLTIPLA DE RECEBÍVEIS ···?
 function atualizarSelecaoRecebivelFinanceiro(id, marcado) {
   const chave = String(id || '');
   if (!chave) return;
@@ -2094,8 +2314,8 @@ function atualizarResumoSelecaoRecebiveisFinanceiro() {
   if (btnExcluir) btnExcluir.disabled = !qtdSelecionados;
   if (resumo) {
     resumo.textContent = qtdSelecionados
-      ? `${qtdSelecionados} recebível(is) selecionado(s) de ${totalVisiveis}.`
-      : (totalVisiveis ? `${totalVisiveis} recebível(is) no filtro.` : 'Nenhum recebível selecionado.');
+      ? `${qtdSelecionados} receb?vel(is) selecionado(s) de ${totalVisiveis}.`
+      : (totalVisiveis ? `${totalVisiveis} receb?vel(is) no filtro.` : 'Nenhum receb?vel selecionado.');
   }
 }
 
@@ -2105,12 +2325,16 @@ async function excluirRecebiveisSelecionadosFinanceiro() {
     .map(String);
 
   if (!idsSelecionados.length) {
-    setMsg('msgRecebivelFinanceiro', 'Selecione pelo menos um recebível para excluir.', 'err');
+    setMsg('msgRecebivelFinanceiro', 'Selecione pelo menos um receb?vel para excluir.', 'err');
     return;
   }
 
-  const msg = `Deseja excluir ${idsSelecionados.length} recebível(is)? Esta ação não pode ser desfeita.`;
-  if (!confirm(msg)) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Excluir recebíveis selecionados',
+    subtitulo: `Confirme sua senha para excluir ${idsSelecionados.length} recebível(is).`,
+    textoAcao: 'Excluir selecionados', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
 
   const btnExcluir = document.getElementById('btnExcluirRecebiveisSelecionadosFinanceiro');
   const btnSelecionar = document.getElementById('btnSelecionarTodosRecebiveisFinanceiro');
@@ -2138,7 +2362,7 @@ async function excluirRecebiveisSelecionadosFinanceiro() {
   atualizarResumoSelecaoRecebiveisFinanceiro();
 }
 
-// ═══════ SELEÇÃO MÚLTIPLA DE REC FUTUROS ═══════
+// ···? SELEÃ‡ÃƒO MÃšLTIPLA DE REC FUTUROS ···?
 function atualizarSelecaoRecFuturo(id, marcado) {
   const chave = String(id || '');
   if (!chave) return;
@@ -2204,8 +2428,12 @@ async function excluirRecFuturosSelecionados() {
   const valorSelecionado = (recFuturosCache || [])
     .filter(item => idsSelecionados.includes(String(item.id)))
     .reduce((soma, item) => soma + Number(item.valor || 0), 0);
-  const msg = `Deseja excluir ${idsSelecionados.length} recebimento(s), no total de ${formatarMoedaBRFinanceiro(valorSelecionado)}? Esta ação não pode ser desfeita.`;
-  if (!confirm(msg)) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Excluir provisões selecionadas',
+    subtitulo: `Confirme sua senha para excluir ${idsSelecionados.length} recebimento(s), no total de ${formatarMoedaBRFinanceiro(valorSelecionado)}.`,
+    textoAcao: 'Excluir selecionadas', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
 
   const btnExcluir = document.getElementById('btnExcluirRecFuturosSelecionados');
   const btnSelecionar = document.getElementById('btnSelecionarTodosRecFuturos');
@@ -2232,8 +2460,8 @@ async function excluirRecFuturosSelecionados() {
   setMsg(
     'msgRecFuturosLista',
     falhas
-      ? `${excluidos} recebimento(s) excluído(s); ${falhas} não puderam ser excluídos.`
-      : `${excluidos} recebimento(s) excluído(s) com sucesso.`,
+      ? `${excluidos} recebimento(s) exclu?do(s); ${falhas} n?o puderam ser exclu?dos.`
+      : `${excluidos} recebimento(s) exclu?do(s) com sucesso.`,
     falhas ? 'err' : 'ok'
   );
 
@@ -2241,7 +2469,7 @@ async function excluirRecFuturosSelecionados() {
   atualizarResumoSelecaoRecFuturos();
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ·································
 function exibirResultadoQuitacao(totalPendente = 0, saldoDisponivel = 0, descricao = '') {
   const label = document.getElementById('rfFaltaQuitarLabel');
   const valor = document.getElementById('rfFaltaQuitar');
@@ -2260,7 +2488,7 @@ function exibirResultadoQuitacao(totalPendente = 0, saldoDisponivel = 0, descric
     if (label) label.textContent = 'Saldo após quitar (R$)';
     valor.textContent = formatarMoedaBRFinanceiro(0);
   }
-  if (desc) desc.textContent = descricao || 'Saldo disponível menos total pendente';
+  if (desc) desc.textContent = descricao || 'Saldo dispon?vel menos total pendente';
 }
 
 async function recalcularFaltaQuitar() {
@@ -2277,18 +2505,19 @@ async function recalcularFaltaQuitar() {
     return;
   }
 
-  // Buscar recebimentos futuros pendentes — restritos às lojas marcadas no
-  // filtro do próprio relatório (mesmo mecanismo do Cofre).
+  // Buscar recebimentos futuros pendentes ? restritos ?s lojas marcadas no
+  // filtro do pr?prio relat?rio (mesmo mecanismo do Cofre).
   try {
-    const lojasPermitidasIds = obterIdsLojasSelecionadasFiltroFinanceiroPage('filtroLojasRelatorioFinanceiro');
+    const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || obterLojaAtualParaIsolamento?.() || '').trim();
+    const lojasPermitidasIds = lojaAtualId ? [lojaAtualId] : [];
     if (!Array.isArray(lojasPermitidasIds) || !lojasPermitidasIds.length) {
-      exibirResultadoQuitacao(totalPendente, saldoTotalContas, 'Não foi possível identificar a loja para somar os futuros');
+      exibirResultadoQuitacao(totalPendente, saldoTotalContas, 'N?o foi poss?vel identificar a loja para somar os futuros');
       return;
     }
-    // Mesmo recorte de datas do relatório: futuros previstos dentro do período filtrado.
+    // Mesmo recorte de datas do relat?rio: futuros previstos dentro do período filtrado.
     const futInicio = String(document.getElementById('filtroRelFinanceiroDataInicio')?.value || '').trim();
     const futFim = String(document.getElementById('filtroRelFinanceiroDataFim')?.value || '').trim();
-    const { data: futuros, error: erroFuturos } = await executarSemFiltroLojaTemporario(() => {
+    const { data: futuros, error: erroFuturos } = await executarSemFiltrosTenantTemporario(() => {
       let queryFuturos = sb.from('recebiveis_futuros')
         .select('valor, loja_id, data_prevista')
         .eq('ativo', true)
@@ -2300,7 +2529,7 @@ async function recalcularFaltaQuitar() {
     if (seqCalculo !== window.__faltaQuitarSeq || chk?.checked !== true) return;
     if (erroFuturos) {
       console.warn('Erro ao buscar recebimentos futuros para "Falta para quitar":', erroFuturos);
-      exibirResultadoQuitacao(totalPendente, saldoTotalContas, 'Não foi possível somar os recebimentos futuros');
+      exibirResultadoQuitacao(totalPendente, saldoTotalContas, 'N?o foi poss?vel somar os recebimentos futuros');
       return;
     }
     const idsPermitidosFut = new Set(lojasPermitidasIds.map(id => String(id)));
@@ -2322,26 +2551,26 @@ async function recalcularFaltaQuitar() {
   } catch(e) {
     console.warn('Erro ao buscar futuros:', e);
     if (seqCalculo === window.__faltaQuitarSeq) {
-      exibirResultadoQuitacao(totalPendente, saldoTotalContas, 'Não foi possível somar os recebimentos futuros');
+      exibirResultadoQuitacao(totalPendente, saldoTotalContas, 'N?o foi poss?vel somar os recebimentos futuros');
     }
   }
 }
 
 
-// ══════════════════════════════════════════════════════════════════
+// ·································
 // GRUPOS DE FORNECEDOR
-// ══════════════════════════════════════════════════════════════════
+// ·································
 let grupoFornecedorEmEdicaoId = null;
 let gruposFornecedorCache = [];
 
 
-// ══════════════════════════════════════════════════════════════════
+// ·································
 // IMPORTADOR DE FATURA PDF
-// ══════════════════════════════════════════════════════════════════
+// ·································
 let _faturaItensExtraidos = [];
-// Controla se a pergunta "replicar fornecedor" já foi feita nesta importação
+// Controla se a pergunta "replicar fornecedor" já foi feita nesta importa·o
 let _faturaPerguntouReplicarForn = false;
-// Metadados da importação atual (para o log de auditoria)
+// Metadados da importa·o atual (para o log de auditoria)
 let _faturaBancoDetectado = null;
 let _faturaArquivoNome = null;
 
@@ -2379,6 +2608,8 @@ function faturaVoltarUpload() {
   document.getElementById('faturaStep1').style.display = '';
   const ofxInput = document.getElementById('ofxFileInput');
   if (ofxInput) ofxInput.value = '';
+  const cameraInput = document.getElementById('imagemCompraCameraInput');
+  if (cameraInput) cameraInput.value = '';
   setMsg('msgImportarFatura', '', '');
   _faturaItensExtraidos = [];
 }
@@ -2393,33 +2624,34 @@ function faturaSetProgress(pct, msg) {
 async function faturaHandleFile(file, tipo = 'ofx') {
   if (!file) return;
   setMsg('msgImportarFatura', '', '');
-  // Apenas OFX é suportado
+  // Apenas OFX ? suportado
   await faturaProcessarOFX(file);
 }
 
-// ── Aprendizado de categoria por estabelecimento ───────────────────
-// Normaliza a descrição do lançamento em uma "chave" estável de estabelecimento.
+// · Aprendizado de categoria por estabelecimento ·········?
+// Normaliza a descri·o do lançamento em uma "chave" est?vel de estabelecimento.
 // Ex.: "DL*Google Google" -> "google"; "Mc Donald's Itapema" -> "mcdonalds itapema"
 function faturaChaveEstabelecimento(descricao) {
-  let s = String(descricao || '').toLowerCase();
+  let s = String(descricao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   s = s.replace(/[*]/g, ' ');                    // remove asteriscos de adquirente
   s = s.replace(/\s+\d{1,2}\/\d{1,2}\s*$/, '');  // remove sufixo de parcela "02/06"
-  s = s.replace(/[^a-z0-9\s]/g, ' ');            // só letras/números
+  s = s.replace(/\b(?:compra|aprovada?|credito|debito|pagamento|comercio|ltda|mei)\b/g, ' ');
+  s = s.replace(/[^a-z0-9\s]/g, ' ');            // so letras/numeros
   s = s.replace(/\s+/g, ' ').trim();
-  // pega as primeiras palavras significativas (até 3) para casar variações
+  // pega as primeiras palavras significativas (at? 3) para casar varia·es
   const palavras = s.split(' ').filter(p => p.length >= 3).slice(0, 3);
   return palavras.join(' ') || s;
 }
 
-// Mapa de memória (chave estabelecimento -> categoria_id), montado por importação
+// Mapa de mem?ria (chave estabelecimento -> categoria_id), montado por importa·o
 let _faturaMemoriaCategorias = {};
 
-// Constrói o mapa de aprendizado combinando: (1) histórico de contas a pagar
-// já cadastradas e (2) a tabela dedicada de memória (que tem prioridade).
+// Constr?i o mapa de aprendizado combinando: (1) hist?rico de contas a pagar
+// j? cadastradas e (2) a tabela dedicada de mem?ria (que tem prioridade).
 async function faturaConstruirMemoriaCategorias() {
   const mapa = {};
 
-  // (1) Histórico do banco: agrupa por chave de estabelecimento e escolhe a categoria mais frequente.
+  // (1) Hist?rico do banco: agrupa por chave de estabelecimento e escolhe a categoria mais frequente.
   try {
     const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
     let query = sb.from('contasapagar')
@@ -2432,7 +2664,14 @@ async function faturaConstruirMemoriaCategorias() {
     const { data } = await query;
     const contagem = {}; // chave -> { categoria_id: qtd }
     (data || []).forEach(row => {
-      const baseNome = row?.fornecedores?.nome || row?.observacao || '';
+      if (/Importado do arquivo banc[aá]rio/i.test(String(row?.observacao || ''))) return;
+      // A categoria pertence ao estabelecimento descrito na compra. Usar o
+      // fornecedor/cartao primeiro (ex.: Nubank) mistura categorias de todas
+      // as compras feitas no mesmo cartao.
+      const baseNome = String(row?.observacao || '')
+        .replace(/\s*[Â·-]\s*Importado do arquivo banc[aÃ¡]rio.*$/i, '')
+        .replace(/\s*[Â·-]\s*\d+\/\d+\s*$/i, '')
+        .trim() || row?.fornecedores?.nome || '';
       const chave = faturaChaveEstabelecimento(baseNome);
       if (!chave || !row.categoria_id) return;
       contagem[chave] = contagem[chave] || {};
@@ -2443,21 +2682,22 @@ async function faturaConstruirMemoriaCategorias() {
       if (melhor) mapa[chave] = melhor[0];
     });
   } catch (e) {
-    console.warn('Não foi possível ler histórico para aprendizado de categoria:', e);
+    console.warn('N?o foi poss?vel ler hist?rico para aprendizado de categoria:', e);
   }
 
-  // (2) Tabela dedicada de memória (prioridade sobre o histórico).
+  // (2) Tabela dedicada de mem?ria (prioridade sobre o hist?rico).
   try {
     const { data } = await sb.from('fatura_categoria_memoria')
-      .select('chave_estabelecimento, categoria_id');
+      .select('chave_estabelecimento, categoria_id')
+      .gte('atualizado_em', '2026-07-20T21:20:00.000Z');
     (data || []).forEach(row => {
       if (row.chave_estabelecimento && row.categoria_id) {
         mapa[row.chave_estabelecimento] = row.categoria_id;
       }
     });
   } catch (e) {
-    // Tabela ainda não criada? Segue só com o histórico.
     console.warn('Memória de categorias indisponível (rode o SQL de importação):', e?.message || e);
+    console.warn('Mem?ria de categorias indispon?vel (rode o SQL de importa·o):', e?.message || e);
   }
 
   // valida que as categorias ainda existem no cache atual
@@ -2468,14 +2708,14 @@ async function faturaConstruirMemoriaCategorias() {
   return mapa;
 }
 
-// Salva/atualiza as escolhas de categoria desta importação na tabela de memória,
+// Salva/atualiza as escolhas de categoria desta importa·o na tabela de mem?ria,
 // usando upsert por (empresa_id, loja_id, chave_estabelecimento).
 async function faturaSalvarMemoriaCategorias(itens) {
   try {
     const ator = (typeof obterAtorAuditoriaAtual === 'function') ? obterAtorAuditoriaAtual() : {};
     const vistos = new Map(); // chave -> linha (deduplica dentro do mesmo lote)
     (itens || []).forEach(item => {
-      if (!item.categoria_id) return;
+      if (!item.categoria_id || !item._catEditadaManual) return;
       const chave = faturaChaveEstabelecimento(item.descricao);
       if (!chave) return;
       vistos.set(chave, {
@@ -2497,8 +2737,8 @@ async function faturaSalvarMemoriaCategorias(itens) {
   }
 }
 
-// Verifica quais FITIDs do arquivo OFX já foram lançados (na loja atual).
-// Retorna a lista de descrições já existentes (para avisar o usuário).
+// Verifica quais FITIDs do arquivo OFX j? foram lançados (na loja atual).
+// Retorna a lista de descri·es já existentes (para avisar o usu?rio).
 async function faturaVerificarFitidsJaLancados(itens) {
   const fitids = (itens || []).map(i => i.fitid).filter(Boolean);
   if (!fitids.length) return [];
@@ -2509,28 +2749,28 @@ async function faturaVerificarFitidsJaLancados(itens) {
       .in('ofx_fitid', fitids)
       .is('excluido_em', null));
     if (error) {
-      // Coluna ainda não criada? Não bloqueia a importação (mas avisa no console).
       console.warn('Verificação de duplicidade indisponível (rode o SQL ofx_fitid):', error?.message || error);
+      console.warn('Verifica·o de duplicidade indispon?vel (rode o SQL ofx_fitid):', error?.message || error);
       return [];
     }
     const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     const existentes = (data || []).filter(row => !lojaSessao || String(row.loja_id || '').trim() === lojaSessao);
     const fitidsExistentes = new Set(existentes.map(r => String(r.ofx_fitid)));
-    // monta descrições para o aviso, a partir dos itens do arquivo
+    // monta descri·es para o aviso, a partir dos itens do arquivo
     return (itens || [])
       .filter(i => i.fitid && fitidsExistentes.has(String(i.fitid)))
-      .map(i => `${i.descricao} — ${formatarMoedaBRFinanceiro(i.valor)} (${formatarDataBRFinanceiro(i.data)})`);
+      .map(i => `${i.descricao} ? ${formatarMoedaBRFinanceiro(i.valor)} (${formatarDataBRFinanceiro(i.data)})`);
   } catch (e) {
     console.warn('Falha na verificação de duplicidade OFX:', e?.message || e);
     return [];
   }
 }
 
-// Reconhece uma PARCELA já provisionada no banco para um item parcelado do OFX.
-// O FITID muda a cada fatura, então a trava por identificador não pega parcela
-// gerada em importação anterior. O casamento aqui é por:
-//   nº da parcela + total de parcelas + valor (centavo) + fornecedor (se ambos tiverem)
-//   + proximidade de data (compra ±5 dias OU vencimento ±10 dias).
+// Reconhece uma PARCELA j? provisionada no banco para um item parcelado do OFX.
+// O FITID muda a cada fatura, ent?o a trava por identificador n?o pega parcela
+// gerada em importa·o anterior. O casamento aqui ? por:
+//   n? da parcela + total de parcelas + valor (centavo) + fornecedor (se ambos tiverem)
+//   + proximidade de data (compra ?5 dias OU vencimento ?10 dias).
 function faturaEncontrarParcelaExistente(item, candidatos, fornecedorIdResolvido) {
   if (!(item && item.parcela_atual && item.total_parcelas)) return null;
   const diffDias = (a, b) => {
@@ -2548,8 +2788,8 @@ function faturaEncontrarParcelaExistente(item, candidatos, fornecedorIdResolvido
     if (!mesmoCentavo(c.valor_compra, item.valor)) return false;
     const fornCand = String(c.fornecedor_id || '').trim();
     if (fornItem && fornCand && fornItem !== fornCand) return false;
-    // Amarra por data: compra original igual/próxima OU vencimento provisionado próximo
-    // (provisionamento usa +30 dias; meses reais variam de 28 a 31 — janela de ±10).
+    // Amarra por data: compra original igual/pr?xima OU vencimento provisionado pr?ximo
+    // (provisionamento usa +30 dias; meses reais variam de 28 a 31 ? janela de ?10).
     const dCompra = String(c.data_compra || '').slice(0, 10);
     const compraOk = /^\d{4}-\d{2}-\d{2}$/.test(dCompra) && diffDias(dCompra, item.data) <= 5;
     const dVenc = String(c.data_vencimento || '').slice(0, 10);
@@ -2559,9 +2799,9 @@ function faturaEncontrarParcelaExistente(item, candidatos, fornecedorIdResolvido
 }
 
 // Concilia os itens do OFX contra o que já existe no banco.
-// 1) Por FITID (código único do banco) — match forte.
-// 2) Por valor + data (±3 dias) + fornecedor — para casar lançamentos MANUAIS sem FITID.
-// Marca item._jaLancado e item._motivoConciliacao; NÃO bloqueia a importação.
+// 1) Por FITID (c?digo ?nico do banco) ? match forte.
+// 2) Por valor + data (?3 dias) + fornecedor ? para casar lançamentos MANUAIS sem FITID.
+// Marca item._jaLancado e item._motivoConciliacao; NÃƒO bloqueia a importa·o.
 async function faturaConciliarComBanco(itens) {
   const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
   // Janela de datas para reduzir a busca: do menor ao maior vencimento/compra dos itens.
@@ -2595,7 +2835,7 @@ async function faturaConciliarComBanco(itens) {
   const mesmoCentavo = (a, b) => Math.round(Number(a || 0) * 100) === Math.round(Number(b || 0) * 100);
 
   let qtdFitid = 0, qtdManual = 0, qtdParcela = 0;
-  const adocoesFitid = []; // parcelas provisionadas que vão "adotar" o FITID deste mês
+  const adocoesFitid = []; // parcelas provisionadas que v?o "adotar" o FITID deste m?s
   (itens || []).forEach(item => {
     item._jaLancado = false;
     item._motivoConciliacao = '';
@@ -2607,8 +2847,8 @@ async function faturaConciliarComBanco(itens) {
       qtdFitid++;
       return;
     }
-    // (1.5) PARCELA — "LOJA 04/06" do OFX deste mês × parcela 4/6 já provisionada
-    // numa importação anterior. O FITID muda a cada fatura, então sem esta etapa
+    // (1.5) PARCELA ? "LOJA 04/06" do OFX deste m?s ? parcela 4/6 j? provisionada
+    // numa importa·o anterior. O FITID muda a cada fatura, ent?o sem esta etapa
     // a parcela entraria em dobro.
     const parcelaExistente = faturaEncontrarParcelaExistente(item, candidatos, null);
     if (parcelaExistente) {
@@ -2616,15 +2856,15 @@ async function faturaConciliarComBanco(itens) {
       item._motivoConciliacao = 'parcela';
       item.selecionado = false;
       qtdParcela++;
-      // Adota o FITID deste mês na parcela provisionada: a partir daí, reimportar
-      // o MESMO arquivo cai direto na trava por identificador (índice único).
+      // Adota o FITID deste m?s na parcela provisionada: a partir da?, reimportar
+      // o MESMO arquivo cai direto na trava por identificador (?ndice ?nico).
       if (item.fitid && !parcelaExistente.ofx_fitid) {
         parcelaExistente.ofx_fitid = String(item.fitid);
         adocoesFitid.push({ id: parcelaExistente.id, ofx_fitid: String(item.fitid) });
       }
       return;
     }
-    // (2) valor + data (±3 dias) + fornecedor (rígido). Só tenta se o item já tem fornecedor resolvido.
+    // (2) valor + data (?3 dias) + fornecedor (r?gido). S? tenta se o item j? tem fornecedor resolvido.
     const fornItem = String(item.fornecedor_id || '').trim();
     if (!fornItem) return;
     const dataRef = /^\d{4}-\d{2}-\d{2}$/.test(String(item.vencimento_fatura || '')) ? item.vencimento_fatura : item.data;
@@ -2642,7 +2882,7 @@ async function faturaConciliarComBanco(itens) {
     }
   });
   // Grava o FITID adotado nas parcelas provisionadas (silencioso; melhora as
-  // próximas verificações por identificador). Só preenche onde estava vazio.
+  // pr?ximas verifica·es por identificador). S? preenche onde estava vazio.
   for (const a of adocoesFitid) {
     try {
       await sb.from('contasapagar')
@@ -2658,13 +2898,13 @@ async function faturaConciliarComBanco(itens) {
 }
 
 
-// Regra SEM fechamento: próximo dia X a partir da data da compra (se a compra for
-// no dia X ou antes, vence no mês da compra; senão, no mês seguinte).
-// Regra COM fechamento (diaFechamento informado — lógica de FATURA de cartão):
-//   - compra ANTES do dia de fechamento → entra na fatura que fecha neste mês;
-//   - compra NO dia de fechamento ou DEPOIS → entra na fatura do mês seguinte;
+// Regra SEM fechamento: pr?ximo dia X a partir da data da compra (se a compra for
+// no dia X ou antes, vence no m?s da compra; sen?o, no m?s seguinte).
+// Regra COM fechamento (diaFechamento informado ? l?gica de FATURA de cart?o):
+//   - compra ANTES do dia de fechamento ? entra na fatura que fecha neste m?s;
+//   - compra NO dia de fechamento ou DEPOIS ? entra na fatura do m?s seguinte;
 //   - se o vencimento cai no dia do fechamento ou antes dele, a fatura vence no
-//     mês seguinte ao fechamento (ex.: fecha dia 28, vence dia 5 do mês seguinte).
+//     m?s seguinte ao fechamento (ex.: fecha dia 28, vence dia 5 do m?s seguinte).
 // Ajusta meses curtos (ex.: dia 31 em fevereiro).
 function faturaCalcularVencimentoPorDia(dataCompraISO, diaVencimento, diaFechamento) {
   const dia = Number.parseInt(diaVencimento, 10);
@@ -2675,21 +2915,222 @@ function faturaCalcularVencimentoPorDia(dataCompraISO, diaVencimento, diaFechame
   let anoV = ano, mesV = mes; // mes 1-12
   const fech = Number.parseInt(diaFechamento, 10);
   if (Number.isFinite(fech) && fech >= 1 && fech <= 31) {
-    if (diaCompra >= fech) mesV += 1; // já entrou na fatura seguinte
+    if (diaCompra >= fech) mesV += 1; // j? entrou na fatura seguinte
     if (dia <= fech) mesV += 1;       // fatura vence depois do fechamento
   } else if (diaCompra > dia) {
     mesV += 1;
   }
   while (mesV > 12) { mesV -= 12; anoV += 1; }
-  // último dia do mês de vencimento (trata fevereiro, meses de 30 dias, etc.)
+  // ?ltimo dia do m?s de vencimento (trata fevereiro, meses de 30 dias, etc.)
   const ultimoDia = new Date(anoV, mesV, 0).getDate();
   const diaFinal = Math.min(dia, ultimoDia);
   const mm = String(mesV).padStart(2, '0');
   const dd = String(diaFinal).padStart(2, '0');
-  // Fatura que vence em fim de semana/feriado paga no próximo dia útil.
+  // Fatura que vence em fim de semana/feriado paga no pr?ximo dia ?til.
   return (typeof ajustarVencimentoParaDiaUtilFinanceiro === 'function')
     ? ajustarVencimentoParaDiaUtilFinanceiro(`${anoV}-${mm}-${dd}`)
     : `${anoV}-${mm}-${dd}`;
+}
+
+function faturaObterCategoriaItem(item) {
+  const id = String(item?.categoria_id || '').trim();
+  return id ? (categoriasCompraCache || []).find(c => String(c.id) === id) || null : null;
+}
+
+function faturaObterFornecedorItem(item) {
+  const id = String(item?.fornecedor_id || '').trim();
+  return id ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === id) || null : null;
+}
+
+function faturaHtmlCategoriaBotao(item) {
+  const cat = faturaObterCategoriaItem(item);
+  if (!cat) {
+    return '<span class="fatura-choice-icon vazio">+</span><span>Selecionar categoria</span>';
+  }
+  return `<span class="fatura-choice-icon" style="background:${escaparHtmlBasico(cat.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(cat.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(cat.icone, 24)}</span><span>${escaparHtmlBasico(cat.nome || 'Categoria')}</span>`;
+}
+
+function faturaHtmlFornecedorBotao(item) {
+  const fornecedor = faturaObterFornecedorItem(item);
+  if (!fornecedor) return '<span class="fatura-choice-icon vazio">+</span><span>Selecione um fornecedor</span>';
+  return `<span class="fatura-choice-icon">F</span><span>${escaparHtmlBasico(fornecedor.nome || 'Fornecedor')}</span>`;
+}
+
+function faturaAtualizarCardSelecoes(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const card = document.getElementById('faturaItem_' + itemId);
+  if (!item || !card) return;
+  const catBtn = card.querySelector('[data-fatura-cat-btn]');
+  if (catBtn) {
+    catBtn.innerHTML = faturaHtmlCategoriaBotao(item);
+    catBtn.classList.toggle('selecionado', !!item.categoria_id);
+  }
+  const fornBtn = card.querySelector('[data-fatura-forn-btn]');
+  if (fornBtn) {
+    fornBtn.innerHTML = faturaHtmlFornecedorBotao(item);
+    fornBtn.classList.toggle('selecionado', !!item.fornecedor_id);
+  }
+  const venceBtn = card.querySelector('[data-fatura-venc-fornecedor]');
+  const fornecedor = faturaObterFornecedorItem(item);
+  const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+  if (venceBtn) {
+    const pode = Number.isFinite(dia) && dia >= 1 && dia <= 31;
+    venceBtn.style.display = pode ? '' : 'none';
+    venceBtn.textContent = pode ? `Vence dia ${dia}` : 'Vence dia fornecedor';
+  }
+}
+
+function faturaFecharEscolhaOverlay() {
+  document.getElementById('faturaEscolhaOverlay')?.remove();
+}
+
+function faturaCriarEscolhaOverlay({ titulo = '', subtitulo = '', body = '' } = {}) {
+  faturaFecharEscolhaOverlay();
+  const overlay = document.createElement('div');
+  overlay.id = 'faturaEscolhaOverlay';
+  overlay.className = 'fatura-choice-overlay';
+  overlay.innerHTML = `
+    <div class="fatura-choice-sheet">
+      <div class="fatura-choice-head">
+        <div>
+          <div class="fatura-choice-title">${escaparHtmlBasico(titulo)}</div>
+          <div class="fatura-choice-subtitle">${escaparHtmlBasico(subtitulo || '')}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="faturaFecharEscolhaOverlay()">?</button>
+      </div>
+      <div class="fatura-choice-body">${body}</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function faturaAbrirCategoriasItem(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const cards = [
+    `<button type="button" class="fatura-cat-card ${!item.categoria_id ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '')">
+      <span class="fatura-cat-icone vazio">+</span>
+      <strong>Sem categoria</strong>
+    </button>`,
+    ...(categoriasCompraCache || []).map(cat => `
+      <button type="button" class="fatura-cat-card ${String(cat.id) === String(item.categoria_id || '') ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '${cat.id}')">
+        <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(cat.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(cat.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(cat.icone, 30)}</span>
+        <strong>${escaparHtmlBasico(cat.nome || 'Categoria')}</strong>
+      </button>
+    `),
+  ].join('');
+  faturaCriarEscolhaOverlay({
+    titulo: 'Categoria',
+    subtitulo: item.descricao || '',
+    body: `<div class="fatura-cat-grid">${cards}</div>`,
+  });
+}
+
+function faturaEscolherCategoriaItem(itemId, categoriaId) {
+  faturaAoSelecionarCategoria(itemId, categoriaId);
+  faturaAtualizarCardSelecoes(itemId);
+  faturaFecharEscolhaOverlay();
+}
+
+function faturaAbrirFornecedoresItem(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const opcoes = (fornecedoresFinanceiroCache || []).map(f => `
+    <button type="button" class="fatura-forn-row ${String(f.id) === String(item.fornecedor_id || '') ? 'selecionado' : ''}" data-fatura-forn-nome="${escaparHtmlBasico(String(f.nome || '').toLowerCase())}" onclick="faturaEscolherFornecedorItem('${itemId}', '${f.id}')">
+      <span>${escaparHtmlBasico(f.nome || 'Fornecedor')}</span>
+      ${f.dia_vencimento ? `<small>Vence dia ${escaparHtmlBasico(f.dia_vencimento)}</small>` : ''}
+    </button>
+  `).join('');
+  faturaCriarEscolhaOverlay({
+    titulo: 'Fornecedor',
+    subtitulo: item.descricao || '',
+    body: `
+      <input class="fatura-choice-search" type="search" placeholder="Buscar fornecedor" oninput="faturaFiltrarFornecedoresEscolha(this.value)">
+      ${item._exigeFornecedorManual ? '' : `<button type="button" class="fatura-forn-row novo ${!item.fornecedor_id ? 'selecionado' : ''}" onclick="faturaEscolherFornecedorItem('${itemId}', '')">
+        <span>Novo fornecedor</span>
+        <small>Usar o nome da compra ao lançar</small>
+      </button>`}
+      <div class="fatura-forn-list">${opcoes || '<div class="empty">Nenhum fornecedor cadastrado.</div>'}</div>
+    `,
+  });
+}
+
+function faturaFiltrarFornecedoresEscolha(valor) {
+  const busca = String(valor || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  document.querySelectorAll('#faturaEscolhaOverlay [data-fatura-forn-nome]').forEach(btn => {
+    const nome = String(btn.getAttribute('data-fatura-forn-nome') || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    btn.style.display = !busca || nome.includes(busca) ? '' : 'none';
+  });
+}
+
+async function faturaEscolherFornecedorItem(itemId, fornecedorId) {
+  await faturaAoSelecionarFornecedor(itemId, fornecedorId);
+  faturaAtualizarCardSelecoes(itemId);
+  faturaFecharEscolhaOverlay();
+}
+
+function faturaUsarVencimentoFornecedor(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const fornecedor = faturaObterFornecedorItem(item);
+  const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+  if (!fornecedor || !Number.isFinite(dia) || dia < 1 || dia > 31) return;
+  const venc = faturaCalcularVencimentoPorDia(item.data, dia, fornecedor?.dia_fechamento);
+  if (!venc) return;
+  faturaAoAlterarVencimento(itemId, venc);
+  const input = document.querySelector(`#faturaItem_${itemId} .fatura-input-vencimento`);
+  if (input) {
+    input.value = venc;
+    input.style.boxShadow = '0 0 0 1px var(--accent) inset';
+  }
+}
+
+function faturaAplicarInterfaceMobileRevisao() {
+  (_faturaItensExtraidos || []).forEach(item => {
+    const card = document.getElementById('faturaItem_' + item.id);
+    if (!card || card.dataset.faturaMobileUi === '1') return;
+    card.dataset.faturaMobileUi = '1';
+    card.classList.add('fatura-review-card-enhanced');
+
+    const selectCat = card.querySelector('.fatura-select-categoria');
+    if (selectCat) {
+      selectCat.style.display = 'none';
+      const btnCat = document.createElement('button');
+      btnCat.type = 'button';
+      btnCat.className = `fatura-choice-btn ${item.categoria_id ? 'selecionado' : ''}`;
+      btnCat.setAttribute('data-fatura-cat-btn', '');
+      btnCat.innerHTML = faturaHtmlCategoriaBotao(item);
+      btnCat.onclick = () => faturaAbrirCategoriasItem(item.id);
+      selectCat.insertAdjacentElement('beforebegin', btnCat);
+    }
+
+    const selectForn = card.querySelector('.fatura-select-fornecedor');
+    if (selectForn) {
+      selectForn.style.display = 'none';
+      const btnForn = document.createElement('button');
+      btnForn.type = 'button';
+      btnForn.className = `fatura-choice-btn ${item.fornecedor_id ? 'selecionado' : ''}`;
+      btnForn.setAttribute('data-fatura-forn-btn', '');
+      btnForn.innerHTML = faturaHtmlFornecedorBotao(item);
+      btnForn.onclick = () => faturaAbrirFornecedoresItem(item.id);
+      selectForn.insertAdjacentElement('beforebegin', btnForn);
+    }
+
+    const inputVenc = card.querySelector('.fatura-input-vencimento');
+    if (inputVenc && !card.querySelector('[data-fatura-venc-fornecedor]')) {
+      const fornecedor = faturaObterFornecedorItem(item);
+      const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+      const btnVenc = document.createElement('button');
+      btnVenc.type = 'button';
+      btnVenc.className = 'fatura-venc-fornecedor';
+      btnVenc.setAttribute('data-fatura-venc-fornecedor', '');
+      btnVenc.style.display = Number.isFinite(dia) && dia >= 1 && dia <= 31 ? '' : 'none';
+      btnVenc.textContent = Number.isFinite(dia) && dia >= 1 && dia <= 31 ? `Vence dia ${dia}` : 'Vence dia fornecedor';
+      btnVenc.onclick = () => faturaUsarVencimentoFornecedor(item.id);
+      inputVenc.insertAdjacentElement('beforebegin', btnVenc);
+    }
+  });
 }
 
 async function faturaExibirRevisao(resultado) {
@@ -2700,12 +3141,12 @@ async function faturaExibirRevisao(resultado) {
 
   const total = _faturaItensExtraidos.reduce((s,i) => s + Number(i.valor||0), 0);
   document.getElementById('faturaResumoTexto').textContent =
-    `${resultado.banco || 'Fatura'} · ${_faturaItensExtraidos.length} lançamentos`;
+    `${resultado.banco || 'Fatura'} ? ${_faturaItensExtraidos.length} lançamentos`;
   document.getElementById('faturaResumoValor').textContent =
-    `Total: ${formatarMoedaBRFinanceiro(total)} · Venc: ${formatarDataBRFinanceiro(resultado.vencimento || '')}`;
+    `Total: ${formatarMoedaBRFinanceiro(total)} ? Venc: ${formatarDataBRFinanceiro(resultado.vencimento || '')}`;
 
-  // ── Pré-preenchimento automático ──────────────────────────────────
-  // Garante que os caches necessários estão carregados.
+  // · Pr?-preenchimento autom?tico ·················
+  // Garante que os caches necess?rios estão carregados.
   if (!(fornecedoresFinanceiroCache || []).length && typeof carregarFornecedoresFinanceiro === 'function') {
     try { await carregarFornecedoresFinanceiro(); } catch(e) { /* segue */ }
   }
@@ -2713,20 +3154,47 @@ async function faturaExibirRevisao(resultado) {
     try { await carregarCategoriasCompra(); } catch(e) { /* segue */ }
   }
   // 1) Fornecedor: casa o banco do OFX (Nubank/Inter/Bradesco...) com um fornecedor cadastrado.
-  const fornAuto = faturaEncontrarFornecedorPorBanco(resultado.banco);
-  // 2) Categoria: monta a memória (histórico + tabela de aprendizado).
+  const fornAutoCartao = resultado.referenciaCartao
+    ? faturaEncontrarFornecedorCartaoNaReferencia(resultado.referenciaCartao)
+    : null;
+  const fornAuto = fornAutoCartao || faturaEncontrarFornecedorPorBanco(resultado.banco);
+  // 2) Categoria: monta a mem?ria (hist?rico + tabela de aprendizado).
   await faturaConstruirMemoriaCategorias();
+  await faturaConstruirMemoriaInteligente();
 
   let qtdFornAuto = 0;
   let qtdCatAuto = 0;
   let qtdVencAuto = 0;
+  let qtdObsAuto = 0;
   const fornAutoObj = fornAuto ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornAuto)) : null;
   _faturaItensExtraidos.forEach(item => {
+    const sugestaoHistorico = faturaSugerirPorHistorico(item.descricao);
+    item._sugestaoConfianca = sugestaoHistorico?.confianca || 0;
     let fornDoItem = item.fornecedor_id;
-    if (fornAuto && !item.fornecedor_id) { item.fornecedor_id = fornAuto; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornAuto; }
+    // O banco reconhecido no bloco individual vence qualquer leitura do texto
+    // completo. Assim uma alucinacao do OCR fora da compra nao troca Nubank por outro cartao.
+    const fornCartaoDoItem = item._bancoImagem
+      ? faturaEncontrarFornecedorPorBanco(item._bancoImagem)
+      : null;
+    const fornSugerido = fornCartaoDoItem
+      || fornAutoCartao
+      || (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
+      || faturaEncontrarFornecedorInteligente(item.descricao)
+      || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
+      || fornAuto;
+    if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
     if (!item.categoria_id) {
       const chave = faturaChaveEstabelecimento(item.descricao);
-      const catMem = _faturaMemoriaCategorias[chave];
+      const categoriaSimilar = Object.entries(_faturaMemoriaCategorias || {})
+        .map(([chaveMemoria, categoriaId]) => ({
+          categoriaId,
+          confianca: faturaSimilaridadeDescricao(chave, chaveMemoria),
+        }))
+        .filter(candidato => candidato.confianca >= .72)
+        .sort((a, b) => b.confianca - a.confianca)[0]?.categoriaId;
+      const catMem = (sugestaoHistorico?.confianca >= .62 ? sugestaoHistorico.categoria_id : null)
+        || _faturaMemoriaCategorias[chave]
+        || categoriaSimilar;
       if (catMem) { item.categoria_id = catMem; item._catAuto = true; qtdCatAuto++; }
     }
     // Vencimento pelo dia configurado no fornecedor (se houver), com base na data da compra.
@@ -2736,14 +3204,29 @@ async function faturaExibirRevisao(resultado) {
       const venc = faturaCalcularVencimentoPorDia(item.data, diaVenc, fornObj?.dia_fechamento);
       if (venc) { item.vencimento_fatura = venc; item._vencAuto = true; qtdVencAuto++; }
     }
-    // Inicializa parcelas manuais (provisionamento): 1 por padrão; itens parcelados do OFX
-    // já trazem o total detectado e não usam o campo manual.
-    if (item._parcelasManuais == null) item._parcelasManuais = 1;
-    // Obs editável: pré-preenchida com o nome da compra (memo limpo do OFX).
+    // Inicializa parcelas manuais (provisionamento): 1 por padr?o; itens parcelados do OFX
+    // j? trazem o total detectado e n?o usam o campo manual.
+    if (item._parcelasManuais == null) {
+      const texto = String(item.descricao || '');
+      const mQtd = texto.match(/(?:parcelad[oa]\s*(?:em)?\s*|\bem\s+)?(\d{1,3})\s*x\b/i);
+      const qtdSugerida = mQtd ? Number.parseInt(mQtd[1], 10) : 1;
+      item._parcelasManuais = qtdSugerida >= 2 && qtdSugerida <= 360 ? qtdSugerida : 1;
+      item._parcelasAuto = item._parcelasManuais > 1;
+    }
+    if (!item._modoValorParcelas) item._modoValorParcelas = 'total';
+    // Obs edit?vel: pr?-preenchida com o nome da compra (memo limpo do OFX).
     if (item._obsManual == null) item._obsManual = String(item.descricao || '').trim();
+    if (sugestaoHistorico?.observacao && sugestaoHistorico.confianca >= .68) {
+      const observacaoSugerida = String(sugestaoHistorico.observacao).trim().slice(0, 200);
+      if (observacaoSugerida && observacaoSugerida !== item._obsManual) {
+        item._obsManual = observacaoSugerida;
+        item._obsAuto = true;
+        qtdObsAuto++;
+      }
+    }
   });
 
-  // Conciliação reforçada: marca o que já existe no banco (FITID ou valor+data+fornecedor).
+  // Concilia·o refor?ada: marca o que já existe no banco (FITID ou valor+data+fornecedor).
   const concil = await faturaConciliarComBanco(_faturaItensExtraidos);
 
   const optsCategoria = (selId, auto) =>
@@ -2770,7 +3253,7 @@ async function faturaExibirRevisao(resultado) {
     // Badge de quantas parcelas serão lançadas para este item.
     const qtdLancar = ehParceladoOFX ? (item.total_parcelas - item.parcela_atual + 1) : Math.max(1, Number(item._parcelasManuais || 1));
     const badgeParcelas = qtdLancar > 1
-      ? `<span style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">${qtdLancar} parcelas</span>`
+      ? `<span data-badge-parcelas style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">${qtdLancar} parcelas</span>`
       : '';
     const jaLancado = !!item._jaLancado;
     const rotuloConcil = item._motivoConciliacao === 'fitid' ? 'OFX'
@@ -2779,20 +3262,27 @@ async function faturaExibirRevisao(resultado) {
     const seloConciliado = jaLancado
       ? `<span style="font-size:10px;font-weight:700;color:#fbbf24;background:rgba(251,191,36,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">já lançado · ${rotuloConcil}</span>`
       : '';
-    // Campo de observação editável (pré-preenchido com o nome da compra).
-    const campoObs = `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;flex:1;min-width:180px;">Obs.:
+    // Campo de observa·o edit?vel (pr?-preenchido com o nome da compra).
+    const confiancaPct = Math.round(Number(item._sugestaoConfianca || 0) * 100);
+    const campoObs = `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;flex:1;min-width:180px;">Obs.${item._obsAuto ? ` sugerida ${confiancaPct}%` : ''}:
          <input type="text" maxlength="200" value="${escaparHtmlBasico(item._obsManual || '')}"
-           style="flex:1;min-width:140px;font-size:11px;height:24px;padding:0 6px;"
+           style="flex:1;min-width:140px;font-size:11px;height:24px;padding:0 6px;${item._obsAuto ? corAuto : ''}"
            onchange="faturaAoAlterarObs('${item.id}', this.value)"
-           title="Observação que será gravada no contas a pagar (mantém a marcação 'Importado do arquivo bancário')">
+           title="Observa·o que ser? gravada no contas a pagar (mant?m a marca·o 'Importado do arquivo banc?rio')">
        </label>`;
-    // Campo de parcelas manuais: aparece só quando NÃO é parcelamento detectado do OFX.
+    // Campo de parcelas manuais: aparece s? quando NÃƒO ? parcelamento detectado do OFX.
     const campoParcelasManuais = !ehParceladoOFX
       ? `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Parcelas:
            <input type="number" min="1" max="360" step="1" value="${Math.max(1, Number(item._parcelasManuais || 1))}"
              style="width:54px;font-size:11px;height:24px;padding:0 4px;text-align:center;"
              onchange="faturaAoAlterarParcelasManuais('${item.id}', this.value)"
              title="Quantidade de parcelas a provisionar (vencimento mensal a partir do vencimento definido)">
+         </label>
+         <label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Valor:
+           <select style="font-size:11px;height:24px;padding:0 4px;" onchange="faturaAoAlterarModoValor('${item.id}', this.value)">
+             <option value="total" ${item._modoValorParcelas === 'total' ? 'selected' : ''}>Total (dividir)</option>
+             <option value="parcela" ${item._modoValorParcelas === 'parcela' ? 'selected' : ''}>Por parcela</option>
+           </select>
          </label>`
       : '';
     void campoObs; // usado no template abaixo
@@ -2818,6 +3308,8 @@ async function faturaExibirRevisao(resultado) {
             ${campoParcelasManuais}
             ${campoObs}
             <span style="font-size:13px;font-weight:700;color:var(--text);">${formatarMoedaBRFinanceiro(item.valor)}</span>
+            <button type="button" data-btn-separar class="fatura-btn-separar ${item._divisoesAplicadas ? 'ativo' : ''}"
+              onclick="faturaAbrirSeparacao('${item.id}')">${item._divisoesAplicadas ? `Separado (${item._divisoes.length})` : 'Separar'}</button>
             <select class="fatura-select-categoria" style="font-size:11px;height:24px;padding:0 4px;flex:1;min-width:120px;${item._catAuto ? corAuto : ''}"
               onchange="faturaAoSelecionarCategoria('${item.id}', this.value); this.style.boxShadow='';">
               ${optsCategoria(item.categoria_id, item._catAuto)}
@@ -2832,21 +3324,22 @@ async function faturaExibirRevisao(resultado) {
     </div>`;
   }).join('');
 
-  // Aviso amigável do que foi preenchido automaticamente + conciliação
+  // Aviso amig?vel do que foi preenchido automaticamente + concilia·o
   const partes = [];
   if (qtdFornAuto) partes.push(`fornecedor em ${qtdFornAuto}`);
   if (qtdCatAuto) partes.push(`categoria em ${qtdCatAuto}`);
   if (qtdVencAuto) partes.push(`vencimento em ${qtdVencAuto}`);
+  if (qtdObsAuto) partes.push(`observação padronizada em ${qtdObsAuto}`);
   const msgsConcil = [];
   if (concil && concil.conciliados) {
     const detalhe = [];
-    if (concil.fitid) detalhe.push(`${concil.fitid} pelo código do banco`);
-    if (concil.parcela) detalhe.push(`${concil.parcela} parcela(s) já provisionada(s) de importação anterior`);
+    if (concil.fitid) detalhe.push(`${concil.fitid} pelo c?digo do banco`);
+    if (concil.parcela) detalhe.push(`${concil.parcela} parcela(s) j? provisionada(s) de importa·o anterior`);
     if (concil.manual) detalhe.push(`${concil.manual} por valor/data/fornecedor`);
-    msgsConcil.push(`🔗 ${concil.conciliados} item(ns) já constavam no sistema (${detalhe.join(' e ')}) e foram desmarcados. Os novos seguem prontos para lançar.`);
+    msgsConcil.push(`· ${concil.conciliados} item(ns) já constavam no sistema (${detalhe.join(' e ')}) e foram desmarcados. Os novos seguem prontos para lançar.`);
   }
   const partesMsg = [];
-  if (partes.length) partesMsg.push(`✓ Preenchi automaticamente ${partes.join(', ')} item(ns) (destacados).`);
+  if (partes.length) partesMsg.push(`? Preenchi automaticamente ${partes.join(', ')} item(ns) (destacados).`);
   if (msgsConcil.length) partesMsg.push(msgsConcil.join(' '));
   if (partesMsg.length) {
     setMsg('msgImportarFatura', partesMsg.join('<br>'), concil && concil.conciliados ? 'ok' : 'ok');
@@ -2854,6 +3347,7 @@ async function faturaExibirRevisao(resultado) {
 
   const footer = document.getElementById('faturaFooter');
   footer.style.display = 'flex';
+  faturaAplicarInterfaceMobileRevisao();
   faturaAtualizarFooter();
 }
 
@@ -2862,8 +3356,9 @@ async function faturaAoSelecionarFornecedor(itemId, fornecedorId) {
   if (!item) return;
   item.fornecedor_id = fornecedorId;
   item._fornAuto = false;
+  item._fornEditadoManual = true;
   // Recalcula o vencimento com base no dia configurado no novo fornecedor,
-  // mas só se o usuário ainda não tiver editado o vencimento manualmente.
+  // mas s? se o usu?rio ainda n?o tiver editado o vencimento manualmente.
   if (!item._vencEditadoManual) {
     const fornObj = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
     const diaVenc = fornObj?.dia_vencimento;
@@ -2894,6 +3389,106 @@ function faturaAoAlterarObs(itemId, valor) {
   const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
   if (!item) return;
   item._obsManual = String(valor || '').trim().slice(0, 200);
+  item._obsAuto = false;
+  item._obsEditadaManual = true;
+}
+
+// Variante sem confirmação individual usada pela exclusão em lote.
+async function excluirRecebivelFinanceiroInterno(id, { atualizarTela = false } = {}) {
+  const item = recebiveisFinanceiroCache.find(recebivel => String(recebivel.id) === String(id));
+  if (!item) return false;
+  const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+  if (!saldoGerenciadoNoBanco && item.conta_financeira_id && Number(item.valor || 0) > 0) {
+    const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: item.conta_financeira_id, recebivelId: id, tipo: 'estorno', valor: item.valor, descricao: 'Estorno por exclusão de recebível' });
+    if (erroEstorno) return false;
+  }
+  const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').delete().eq('id', id));
+  if (error) {
+    if (!saldoGerenciadoNoBanco && item.conta_financeira_id && Number(item.valor || 0) > 0) {
+      await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: item.conta_financeira_id, recebivelId: id, tipo: 'entrada', valor: item.valor, descricao: 'Desfaz estorno de exclusão não concluída' });
+    }
+    return false;
+  }
+  recebiveisFinanceiroSelecionadosIds.delete(String(id));
+  if (atualizarTela) await carregarRecebiveisFinanceiro();
+  return true;
+}
+
+async function localizarRecebivelGeradoPorProvisionamento(item) {
+  if (!item?.confirmado_em) return null;
+  const centro = new Date(item.confirmado_em).getTime();
+  const inicio = new Date(centro - 10 * 60 * 1000).toISOString();
+  const fim = new Date(centro + 10 * 60 * 1000).toISOString();
+  let query = sb.from('recebiveis')
+    .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, loja_id, empresa_id')
+    .eq('pagador_id', item.pagador_id)
+    .eq('forma_pagamento_id', item.forma_pagamento_id)
+    .eq('conta_financeira_id', item.conta_financeira_confirmada_id || item.conta_financeira_id)
+    .eq('valor', Number(item.valor_confirmado ?? item.valor ?? 0))
+    .gte('created_at', inicio).lte('created_at', fim);
+  if (item.loja_id) query = query.eq('loja_id', item.loja_id);
+  let { data, error } = await executarSemFiltroLojaTemporario(() => query);
+  if (error) throw error;
+  // A data efetiva pode ter sido informada retroativamente. Nesse caso o
+  // created_at do recebível não fica perto de confirmado_em.
+  if (!data?.length) {
+    let fallback = sb.from('recebiveis')
+      .select('id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, loja_id, empresa_id')
+      .eq('pagador_id', item.pagador_id)
+      .eq('forma_pagamento_id', item.forma_pagamento_id)
+      .eq('conta_financeira_id', item.conta_financeira_confirmada_id || item.conta_financeira_id)
+      .eq('valor', Number(item.valor_confirmado ?? item.valor ?? 0))
+      .order('created_at', { ascending: false }).limit(1);
+    if (item.loja_id) fallback = fallback.eq('loja_id', item.loja_id);
+    const resultado = await executarSemFiltroLojaTemporario(() => fallback);
+    data = resultado.data;
+    error = resultado.error;
+    if (error) throw error;
+  }
+  return (data || []).sort((a, b) => Math.abs(new Date(a.created_at).getTime() - centro) - Math.abs(new Date(b.created_at).getTime() - centro))[0] || null;
+}
+
+async function estornarRecebimentoFuturo(id) {
+  const item = recFuturosCache.find(i => String(i.id) === String(id));
+  if (!item?.confirmado_em) return;
+  const confirmacao = await confirmarAcaoComPin({
+    funcionario: obterFuncionarioOperadorAtual(), titulo: 'Estornar recebimento',
+    subtitulo: `Confirme sua senha para estornar ${formatarMoedaBRFinanceiro(item.valor_confirmado ?? item.valor ?? 0)} e devolver o lançamento para pendente.`,
+    textoAcao: 'Confirmar estorno', escopo: 'empresa',
+  });
+  if (!confirmacao) return;
+  try {
+    const recebivel = await localizarRecebivelGeradoPorProvisionamento(item);
+    if (!recebivel) throw new Error('Não foi possível localizar o recebível gerado por esta confirmação.');
+    const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
+    if (!saldoGerenciadoNoBanco) {
+      const { error: erroSaldo } = await registrarMovimentacaoContaFinanceira({
+        contaFinanceiraId: recebivel.conta_financeira_id,
+        recebivelId: recebivel.id,
+        tipo: 'estorno',
+        valor: recebivel.valor,
+        descricao: 'Estorno de recebimento provisionado',
+      });
+      if (erroSaldo) throw erroSaldo;
+    }
+    const { error: erroExcluir } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').delete().eq('id', recebivel.id));
+    if (erroExcluir) {
+      if (!saldoGerenciadoNoBanco) await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: recebivel.conta_financeira_id, recebivelId: recebivel.id, tipo: 'entrada', valor: recebivel.valor, descricao: 'Desfaz estorno não concluído' });
+      throw erroExcluir;
+    }
+    const { error: erroReabrir } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({
+      confirmado_em: null, confirmado_por_nome: null, valor_confirmado: null, conta_financeira_confirmada_id: null,
+    }).eq('id', id));
+    if (erroReabrir) throw erroReabrir;
+    await carregarContasFinanceiras({ render: false, silencioso: true });
+    await carregarRecFuturos();
+    recebiveisFinanceiroListaVisivel = true;
+    await carregarRecebiveisFinanceiro();
+    if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+    setMsg('msgRecFuturosLista', 'Recebimento estornado e devolvido para pendente.', 'ok');
+  } catch (e) {
+    setMsg('msgRecFuturosLista', `Não foi possível estornar: ${mensagemErroSupabase(e, e?.message || 'erro desconhecido')}`, 'err');
+  }
 }
 
 function faturaAoAlterarParcelasManuais(itemId, valor) {
@@ -2926,13 +3521,329 @@ function faturaAoAlterarParcelasManuais(itemId, valor) {
   }
 }
 
+function faturaNormalizarDescricaoInteligente(descricao) {
+  let texto = String(descricao || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const aliases = [
+    [/\b(?:chat\s*gpt|openai)(?:\s+br(?:asil)?)?\b/g, 'chatgpt'],
+    [/\bspal(?:\s+ind(?:ustria)?(?:\s+brasileira)?\s+de)?\s+bebidas?\b/g, 'coca cola'],
+    [/\bgoogle\s*\*?ads\b/g, 'google ads'],
+    [/\bmeta\s*\*?(?:pay|ads)?\b/g, 'meta'],
+  ];
+  aliases.forEach(([padrao, destino]) => { texto = texto.replace(padrao, destino); });
+  return texto
+    .replace(/\b(?:pagamentos?|servicos?|comercio|industria|brasil|br|ltda|eireli|sa|s a|me|mei)\b/g, ' ')
+    .replace(/\b\d{2,}\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function faturaSimilaridadeDescricao(a, b) {
+  const na = faturaNormalizarDescricaoInteligente(a);
+  const nb = faturaNormalizarDescricaoInteligente(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  const ca = na.replace(/\s/g, ''), cb = nb.replace(/\s/g, '');
+  if ((ca.includes(cb) || cb.includes(ca)) && Math.min(ca.length, cb.length) >= 5) return .92;
+  const ta = new Set(na.split(' ').filter(t => t.length > 1));
+  const tb = new Set(nb.split(' ').filter(t => t.length > 1));
+  const comuns = [...ta].filter(t => tb.has(t)).length;
+  const dice = (2 * comuns) / Math.max(1, ta.size + tb.size);
+  const prefixo = ca.slice(0, 5) === cb.slice(0, 5) ? .12 : 0;
+  return Math.min(1, dice + prefixo);
+}
+
+let _faturaMemoriaInteligente = [];
+// Sugestoes antigas eram gravadas sem confirmacao e podem estar contaminadas.
+const FATURA_MEMORIA_CONFIRMADA_DESDE = '2026-07-20T21:20:00.000Z';
+
+async function faturaConstruirMemoriaInteligente() {
+  const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+  const perfis = [];
+  try {
+    let query = sb.from('fatura_importacao_memoria').select('*')
+      .gte('atualizado_em', FATURA_MEMORIA_CONFIRMADA_DESDE)
+      .order('ultima_utilizacao_em', { ascending: false }).limit(1500);
+    if (lojaId) query = query.eq('loja_id', lojaId);
+    const { data, error } = await query;
+    if (error) throw error;
+    (data || []).forEach(row => perfis.push({
+      chave: row.chave_origem,
+      origem: row.descricao_origem_exemplo,
+      observacao: row.observacao_padrao,
+      fornecedor_id: row.fornecedor_id,
+      categoria_id: row.categoria_id,
+      ocorrencias: Number(row.ocorrencias || 1),
+      explicita: true,
+    }));
+  } catch (e) {
+    console.warn('Memoria inteligente de importacao indisponivel:', e?.message || e);
+  }
+  try {
+    let query = sb.from('contasapagar')
+      .select('observacao,categoria_id,fornecedor_id,fornecedores(nome),created_at')
+      .is('excluido_em', null).order('created_at', { ascending: false }).limit(1500);
+    if (lojaId) query = query.eq('loja_id', lojaId);
+    const { data } = await query;
+    (data || []).forEach(row => {
+      if (/Importado do arquivo banc[aá]rio/i.test(String(row.observacao || ''))) return;
+      const observacao = String(row.observacao || '').replace(/\s*[·-]\s*Importado do arquivo banc[aá]rio.*$/i, '').replace(/\s*[·-]\s*\d+\/\d+\s*$/i, '').trim();
+      const origens = [observacao, row?.fornecedores?.nome].filter(Boolean);
+      origens.forEach(origem => perfis.push({
+        chave: faturaNormalizarDescricaoInteligente(origem), origem, observacao,
+        fornecedor_id: row.fornecedor_id, categoria_id: row.categoria_id,
+        ocorrencias: 1, explicita: false,
+      }));
+    });
+  } catch (e) {
+    console.warn('Historico inteligente de contas indisponivel:', e?.message || e);
+  }
+  _faturaMemoriaInteligente = perfis;
+  return perfis;
+}
+
+function faturaSugerirPorHistorico(descricao) {
+  const chave = faturaNormalizarDescricaoInteligente(descricao);
+  if (!chave) return null;
+  const candidatos = (_faturaMemoriaInteligente || []).map(perfil => {
+    const similaridade = faturaSimilaridadeDescricao(chave, perfil.chave || perfil.origem || perfil.observacao);
+    const bonus = perfil.explicita ? .08 : Math.min(.06, Math.log10(Number(perfil.ocorrencias || 1) + 1) * .03);
+    return { ...perfil, confianca: Math.min(1, similaridade + bonus) };
+  }).filter(item => item.confianca >= .58).sort((a, b) => b.confianca - a.confianca || b.ocorrencias - a.ocorrencias);
+  return candidatos[0] || null;
+}
+
+function faturaEncontrarFornecedorInteligente(descricao) {
+  const candidatos = (fornecedoresFinanceiroCache || []).map(fornecedor => ({
+    id: fornecedor.id,
+    confianca: faturaSimilaridadeDescricao(descricao, fornecedor.nome),
+    tamanho: faturaNormalizarDescricaoInteligente(fornecedor.nome).length,
+  })).filter(item => item.confianca >= .68)
+    .sort((a, b) => b.confianca - a.confianca || b.tamanho - a.tamanho);
+  return candidatos[0]?.id || null;
+}
+
+async function faturaSalvarMemoriaInteligente(itens) {
+  const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+  const empresaId = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
+  if (!lojaId || !empresaId) return;
+  const porChave = new Map();
+  (itens || []).forEach(item => {
+    const chave = faturaNormalizarDescricaoInteligente(item.descricao);
+    if (!chave || (!item._obsEditadaManual && !item._fornEditadoManual && !item._catEditadaManual)) return;
+    porChave.set(chave, {
+      empresa_id: empresaId, loja_id: lojaId, chave_origem: chave,
+      descricao_origem_exemplo: String(item.descricao || '').slice(0, 200),
+      observacao_padrao: item._obsEditadaManual ? (String(item._obsManual || '').trim().slice(0, 200) || null) : null,
+      fornecedor_id: item._fornEditadoManual ? (item.fornecedor_id || null) : null,
+      categoria_id: item._catEditadaManual ? (item.categoria_id || null) : null,
+      ultima_utilizacao_em: new Date().toISOString(), atualizado_em: new Date().toISOString(),
+    });
+  });
+  const linhas = [...porChave.values()];
+  if (!linhas.length) return;
+  try {
+    const { data: existentes } = await sb.from('fatura_importacao_memoria').select('chave_origem,ocorrencias').eq('loja_id', lojaId).in('chave_origem', linhas.map(l => l.chave_origem));
+    const contagens = new Map((existentes || []).map(row => [row.chave_origem, Number(row.ocorrencias || 0)]));
+    linhas.forEach(linha => { linha.ocorrencias = (contagens.get(linha.chave_origem) || 0) + 1; });
+    const { error } = await sb.from('fatura_importacao_memoria').upsert(linhas, { onConflict: 'empresa_id,loja_id,chave_origem' });
+    if (error) throw error;
+  } catch (e) {
+    console.warn('Nao foi possivel salvar a memoria inteligente:', e?.message || e);
+  }
+}
+
+function faturaAoAlterarModoValor(itemId, modo) {
+  const item = _faturaItensExtraidos.find(i => i.id === itemId);
+  if (item) item._modoValorParcelas = modo === 'parcela' ? 'parcela' : 'total';
+}
+
 function faturaAoSelecionarCategoria(itemId, categoriaId) {
   const item = _faturaItensExtraidos.find(i => i.id === itemId);
-  if (item) { item.categoria_id = categoriaId; item._catAuto = false; }
+  if (item) { item.categoria_id = categoriaId; item._catAuto = false; item._catEditadaManual = true; }
+}
+
+function faturaDivisaoCentavos(valor) {
+  return Math.round((Number(valor) || 0) * 100);
+}
+
+function faturaAbrirSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  if (!Array.isArray(item._divisoes) || !item._divisoes.length) {
+    item._divisoes = [{ id: `${item.id}_div_1`, valor: '', categoria_id: item.categoria_id || '' }];
+  }
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaRenderizarSeparacao(item) {
+  document.getElementById('faturaSeparacaoOverlay')?.remove();
+  const totalCentavos = faturaDivisaoCentavos(item.valor);
+  const usadoCentavos = (item._divisoes || []).reduce((s, parte) => s + faturaDivisaoCentavos(parte.valor), 0);
+  const restante = totalCentavos - usadoCentavos;
+  const linhas = (item._divisoes || []).map((parte, indice) => `
+    <div class="fatura-divisao-linha">
+      <label>Valor
+        <input type="text" inputmode="decimal" placeholder="R$ 0,00"
+          value="${parte.valor === '' ? '' : Number(parte.valor || 0).toFixed(2).replace('.', ',')}"
+          onchange="faturaAlterarParte('${item.id}', '${parte.id}', 'valor', this.value)">
+      </label>
+      <label>Categoria
+        <button type="button" class="fatura-divisao-categoria-btn ${parte.categoria_id ? 'selecionado' : ''}"
+          onclick="faturaAbrirCategoriaDivisao('${item.id}', '${parte.id}')">
+          ${faturaHtmlCategoriaDivisao(parte.categoria_id)}
+        </button>
+      </label>
+      ${indice > 0 ? `<button type="button" class="fatura-divisao-remover" onclick="faturaRemoverParte('${item.id}', '${parte.id}')" title="Remover divisão">×</button>` : ''}
+    </div>`).join('');
+  const formatarRestante = centavos => formatarMoedaBRFinanceiro(Math.abs(centavos) / 100);
+  const overlay = document.createElement('div');
+  overlay.id = 'faturaSeparacaoOverlay';
+  overlay.className = 'fatura-separacao-overlay';
+  overlay.innerHTML = `
+    <div class="fatura-separacao-modal" role="dialog" aria-modal="true" aria-label="Separar compra">
+      <div class="fatura-separacao-cabecalho">
+        <div><strong>Separar compra</strong><small>${escaparHtmlBasico(item.descricao)}</small></div>
+        <button type="button" onclick="faturaFecharSeparacao()" aria-label="Fechar">×</button>
+      </div>
+      <div class="fatura-separacao-total">Valor total <strong>${formatarMoedaBRFinanceiro(item.valor)}</strong></div>
+      <div>${linhas}</div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="faturaAdicionarParte('${item.id}')">＋ Adicionar categoria</button>
+      <div class="fatura-separacao-restante ${restante < 0 ? 'excedido' : restante === 0 ? 'completo' : ''}">
+        ${restante < 0 ? `Valor excedido em ${formatarRestante(restante)}` : restante === 0 ? '✓ Valor total distribuído' : `Restam ${formatarRestante(restante)}`}
+      </div>
+      <div class="fatura-separacao-acoes">
+        <button type="button" class="btn btn-ghost" onclick="faturaCancelarSeparacao('${item.id}')">Cancelar divisão</button>
+        <button type="button" class="btn btn-green" ${restante !== 0 ? 'disabled' : ''} onclick="faturaConfirmarSeparacao('${item.id}')">Aplicar separação</button>
+      </div>
+      <small class="fatura-separacao-nota">Parcelas e vencimentos permanecem iguais aos da compra original.</small>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function faturaHtmlCategoriaDivisao(categoriaId) {
+  const categoria = (categoriasCompraCache || []).find(c => String(c.id) === String(categoriaId || ''));
+  if (!categoria) return '<span class="fatura-choice-icon vazio">+</span><span>Selecionar categoria</span>';
+  return `<span class="fatura-choice-icon" style="background:${escaparHtmlBasico(categoria.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(categoria.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(categoria.icone, 26)}</span><span>${escaparHtmlBasico(categoria.nome || 'Categoria')}</span>`;
+}
+
+function faturaAbrirCategoriaDivisao(itemId, parteId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
+  if (!item || !parte) return;
+  document.querySelector('.fatura-divisao-categorias-layer')?.remove();
+  const cards = (categoriasCompraCache || []).map(categoria => `
+    <button type="button" class="fatura-cat-card ${String(categoria.id) === String(parte.categoria_id || '') ? 'selecionado' : ''}"
+      onclick="faturaEscolherCategoriaDivisao('${itemId}', '${parteId}', '${categoria.id}')">
+      <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(categoria.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(categoria.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(categoria.icone, 30)}</span>
+      <strong>${escaparHtmlBasico(categoria.nome || 'Categoria')}</strong>
+    </button>
+  `).join('');
+  const modal = document.querySelector('#faturaSeparacaoOverlay .fatura-separacao-modal');
+  if (!modal) return;
+  const layer = document.createElement('div');
+  layer.className = 'fatura-divisao-categorias-layer';
+  layer.innerHTML = `
+    <div class="fatura-divisao-categorias-head">
+      <div><strong>Categoria da divisão</strong><small>${escaparHtmlBasico(item.descricao || 'Compra')} · ${parte.valor ? formatarMoedaBRFinanceiro(parte.valor) : 'Informe o valor'}</small></div>
+      <button type="button" onclick="faturaFecharCategoriaDivisao()" aria-label="Voltar">×</button>
+    </div>
+    <div class="fatura-cat-grid">${cards}</div>
+  `;
+  modal.appendChild(layer);
+  layer.scrollTop = 0;
+}
+
+function faturaFecharCategoriaDivisao() {
+  document.querySelector('.fatura-divisao-categorias-layer')?.remove();
+}
+
+function faturaEscolherCategoriaDivisao(itemId, parteId, categoriaId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
+  if (!item || !parte) return;
+  parte.categoria_id = categoriaId || '';
+  faturaFecharCategoriaDivisao();
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaAlterarParte(itemId, parteId, campo, valor) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
+  if (!parte) return;
+  if (campo === 'valor') {
+    const texto = String(valor || '').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    parte.valor = texto === '' ? '' : Math.max(0, Number(texto) || 0);
+  } else parte.categoria_id = valor || '';
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaAdicionarParte(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  item._divisoes.push({ id: `${item.id}_div_${Date.now()}`, valor: '', categoria_id: '' });
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaRemoverParte(itemId, parteId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  item._divisoes = item._divisoes.filter(p => String(p.id) !== String(parteId));
+  faturaRenderizarSeparacao(item);
+}
+
+function faturaFecharSeparacao() {
+  document.getElementById('faturaSeparacaoOverlay')?.remove();
+}
+
+function faturaCancelarSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (item) { item._divisoes = null; item._divisoesAplicadas = false; }
+  faturaFecharSeparacao();
+  faturaAtualizarIndicadorSeparacao(itemId);
+}
+
+function faturaConfirmarSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const partes = item._divisoes || [];
+  if (partes.reduce((s, p) => s + faturaDivisaoCentavos(p.valor), 0) !== faturaDivisaoCentavos(item.valor)) {
+    alert('Distribua exatamente o valor total da compra.'); return;
+  }
+  if (partes.length < 2 || partes.some(p => faturaDivisaoCentavos(p.valor) <= 0 || !p.categoria_id)) {
+    alert('Informe pelo menos duas divisões, cada uma com valor e categoria.'); return;
+  }
+  item._divisoesAplicadas = true;
+  faturaFecharSeparacao();
+  faturaAtualizarIndicadorSeparacao(itemId);
+}
+
+function faturaAtualizarIndicadorSeparacao(itemId) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  const card = document.getElementById('faturaItem_' + itemId);
+  const btn = card?.querySelector('[data-btn-separar]');
+  if (!btn || !item) return;
+  btn.textContent = item._divisoesAplicadas ? `Separado (${item._divisoes.length})` : 'Separar';
+  btn.classList.toggle('ativo', !!item._divisoesAplicadas);
+  const btnCategoria = card.querySelector('[data-fatura-cat-btn]');
+  let resumo = card.querySelector('[data-fatura-divisoes-resumo]');
+  if (item._divisoesAplicadas) {
+    if (btnCategoria) btnCategoria.style.display = 'none';
+    if (!resumo) {
+      resumo = document.createElement('div');
+      resumo.setAttribute('data-fatura-divisoes-resumo', '');
+      resumo.className = 'fatura-divisoes-resumo';
+      btn.insertAdjacentElement('afterend', resumo);
+    }
+    resumo.textContent = `${item._divisoes.length} categorias definidas na separação`;
+  } else {
+    if (btnCategoria) btnCategoria.style.display = '';
+    resumo?.remove();
+  }
 }
 
 // Tenta casar o banco detectado no OFX (ex.: "Nubank", "Inter", "Bradesco")
-// com um fornecedor já cadastrado, usando apelidos conhecidos + comparação tolerante.
+// com um fornecedor j? cadastrado, usando apelidos conhecidos + compara·o tolerante.
 // Retorna o id do fornecedor correspondente ou null.
 function faturaEncontrarFornecedorPorBanco(banco) {
   const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -2940,7 +3851,7 @@ function faturaEncontrarFornecedorPorBanco(banco) {
   if (!alvo) return null;
   const lista = fornecedoresFinanceiroCache || [];
 
-  // Monta o conjunto de termos a procurar: o próprio banco + seus apelidos.
+  // Monta o conjunto de termos a procurar: o pr?prio banco + seus apelidos.
   const termos = new Set([alvo]);
   Object.values(FATURA_BANCO_APELIDOS || {}).forEach(apelidos => {
     const apelidosNorm = apelidos.map(norm);
@@ -2962,22 +3873,58 @@ function faturaEncontrarFornecedorPorBanco(banco) {
     return false;
   };
 
+  const candidatos = lista.filter(f => casa(f.nome));
+  // Havendo nomes semelhantes, fornecedor marcado como cartao e a opcao mais
+  // segura para uma importacao de fatura. A escolha continua editavel na revisao.
+  let achado = candidatos.find(f => !!f.is_cartao);
+  if (achado) return achado.id;
   // 1) match exato pelo nome do banco
-  let achado = lista.find(f => norm(f.nome) === alvo);
+  achado = lista.find(f => norm(f.nome) === alvo);
   if (achado) return achado.id;
   // 2) match por apelidos/tolerante
   achado = lista.find(f => casa(f.nome));
   return achado ? achado.id : null;
 }
 
+// No OCR, o emissor do cartao costuma aparecer no cabecalho da notificacao e
+// nao na descricao individual de cada compra. Compara essa referencia somente
+// com fornecedores marcados como cartao, evitando sugerir um fornecedor comum
+// de mesmo nome. "Bradesco Cartoes" casa com "Bradesco Cartao", assim como
+// Nubank, Inter, Ponto Frio e outros nomes cadastrados pelo usuario.
+function faturaEncontrarFornecedorCartaoNaReferencia(referencia) {
+  const normalizar = (s) => String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const compacto = (s) => normalizar(s).replace(/\s+/g, '');
+  const texto = compacto(referencia);
+  if (!texto) return null;
+
+  const candidatos = (fornecedoresFinanceiroCache || [])
+    .filter(f => !!f.is_cartao)
+    .map(f => {
+      const nomeBase = normalizar(f.nome)
+        .replace(/\b(cartao|cartoes|credito|creditos)\b/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+      return { fornecedor: f, chave: compacto(nomeBase || f.nome) };
+    })
+    .filter(c => c.chave.length >= 3 && texto.includes(c.chave))
+    .sort((a, b) => b.chave.length - a.chave.length);
+
+  if (candidatos[0]) return candidatos[0].fornecedor.id;
+  const porBanco = faturaEncontrarFornecedorPorBanco(referencia);
+  const fornecedorBanco = (fornecedoresFinanceiroCache || [])
+    .find(f => String(f.id) === String(porBanco || '') && !!f.is_cartao);
+  return fornecedorBanco?.id || null;
+}
+
 function faturaAtualizarFooter() {
   const sel = _faturaItensExtraidos.filter(i => i.selecionado);
   const total = sel.reduce((s,i) => s + Number(i.valor||0), 0);
   const info = document.getElementById('faturaFooterInfo');
-  if (info) info.textContent = `${sel.length} de ${_faturaItensExtraidos.length} selecionados · ${formatarMoedaBRFinanceiro(total)}`;
+  if (info) info.textContent = `${sel.length} de ${_faturaItensExtraidos.length} selecionados ? ${formatarMoedaBRFinanceiro(total)}`;
 }
 
-// ── Parser OFX ──────────────────────────────────────────────────
+// · Parser OFX ·························
 async function faturaProcessarOFX(file) {
   _faturaPerguntouReplicarForn = false;
   _faturaArquivoNome = file?.name || null;
@@ -2994,12 +3941,12 @@ async function faturaProcessarOFX(file) {
       r.readAsText(file, 'latin1');
     });
 
-    faturaSetProgress(50, 'Interpretando transações...');
+    faturaSetProgress(50, 'Interpretando transa·es...');
     const lancamentos = ofxParseLancamentos(texto);
 
-    if (!lancamentos.length) throw new Error('Nenhuma transação encontrada no arquivo OFX.');
+    if (!lancamentos.length) throw new Error('Nenhuma transa·o encontrada no arquivo OFX.');
 
-    // Extrair info do arquivo. DTEND/DUEDATE vêm como timestamp OFX (ex.: 20260704000000[-3:BRT]);
+    // Extrair info do arquivo. DTEND/DUEDATE v?m como timestamp OFX (ex.: 20260704000000[-3:BRT]);
     // normalizamos com ofxParseData para ISO (YYYY-MM-DD).
     const vencRaw = ofxExtrairTag(texto, 'DTEND') || ofxExtrairTag(texto, 'DUEDATE') || '';
     const vencimento = ofxParseData(vencRaw) || new Date().toISOString().slice(0,10);
@@ -3016,19 +3963,19 @@ async function faturaProcessarOFX(file) {
       parcela_atual: l.parcela_atual,
       total_parcelas: l.total_parcelas,
       vencimento_fatura: vencimento,
-      selecionado: l.valor < 0, // débitos = compras; créditos (pagamentos) desmarcados
+      selecionado: l.valor < 0, // d?bitos = compras; cr?ditos (pagamentos) desmarcados
     }));
 
-    // Anti-duplicação por FITID é agora feita na revisão (conciliação reforçada),
-    // que também cruza lançamentos manuais por valor+data+fornecedor e não bloqueia
-    // a importação — apenas marca o que já existe e deixa os novos prontos para lançar.
-    faturaSetProgress(100, 'Concluído!');
+    // Anti-duplica·o por FITID ? agora feita na revis?o (concilia·o refor?ada),
+    // que tamb?m cruza lançamentos manuais por valor+data+fornecedor e n?o bloqueia
+    // a importa·o ? apenas marca o que já existe e deixa os novos prontos para lançar.
+    faturaSetProgress(100, 'Conclu?do!');
     setTimeout(() => faturaExibirRevisao({ banco, vencimento, total_fatura: total }), 300);
 
   } catch(e) {
     document.getElementById('faturaStep2').style.display = 'none';
     document.getElementById('faturaStep1').style.display = '';
-    setMsg('msgImportarFatura', '❌ ' + (e.message || 'Erro ao processar OFX'), 'err');
+    setMsg('msgImportarFatura', '? ' + (e.message || 'Erro ao processar OFX'), 'err');
   }
 }
 
@@ -3102,7 +4049,7 @@ function ofxDetectarBanco(texto) {
   if (/nubank|nu pagamentos|nu financeira|260\b/.test(amostra)) return 'Nubank';
   if (/bradesco/.test(amostra)) return 'Bradesco';
   if (/banco inter|inter\b|077\b/.test(amostra)) return 'Inter';
-  if (/ita[uú]|341\b/.test(amostra)) return 'Itaú';
+  if (/ita[u?]|341\b/.test(amostra)) return 'Ita?';
   if (/santander|033\b/.test(amostra)) return 'Santander';
   if (/banco do brasil|001\b/.test(amostra)) return 'Banco do Brasil';
   if (/caixa|104\b/.test(amostra)) return 'Caixa';
@@ -3112,12 +4059,12 @@ function ofxDetectarBanco(texto) {
   return fi || 'Banco';
 }
 
-// Apelidos/sinônimos conhecidos para casar o banco com o fornecedor cadastrado.
+// Apelidos/sin?nimos conhecidos para casar o banco com o fornecedor cadastrado.
 const FATURA_BANCO_APELIDOS = {
   'nubank': ['nubank', 'nu', 'nupagamentos', 'nu pagamentos', 'nu financeira'],
   'inter': ['inter', 'bancointer', 'banco inter'],
   'bradesco': ['bradesco'],
-  'itau': ['itau', 'itaú', 'itauunibanco'],
+  'itau': ['itau', 'ita?', 'itauunibanco'],
   'santander': ['santander'],
   'bancodobrasil': ['bancodobrasil', 'bb', 'banco do brasil'],
   'caixa': ['caixa', 'caixaeconomica', 'cef'],
@@ -3125,7 +4072,7 @@ const FATURA_BANCO_APELIDOS = {
   'sicoob': ['sicoob'],
   'sicredi': ['sicredi'],
 };
-// ─────────────────────────────────────────────────────────────────
+// ································?
 
 function faturaSelecionarTodas(checked) {
   _faturaItensExtraidos.forEach(i => i.selecionado = checked);
@@ -3133,21 +4080,202 @@ function faturaSelecionarTodas(checked) {
   faturaAtualizarFooter();
 }
 
+function financeiroChaveDuplicidadeConta(linha = {}) {
+  return [
+    String(linha.fornecedor_id || ''),
+    String(linha.data_compra || '').slice(0, 10),
+    String(linha.data_vencimento || '').slice(0, 10),
+    Math.round(Number(linha.valor_compra || 0) * 100),
+  ].join('|');
+}
+
+async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ignorarIds = [] } = {}) {
+  const itens = (linhas || []).filter(l =>
+    l?.fornecedor_id &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(l.data_compra || '')) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(String(l.data_vencimento || '')) &&
+    Number(l.valor_compra || 0) > 0
+  );
+  if (!itens.length || !lojaId) return [];
+  const ignorar = new Set((ignorarIds || []).map(id => String(id)));
+  const vistos = new Set();
+  const duplicados = [];
+
+  for (const linha of itens) {
+    const chaveLinha = financeiroChaveDuplicidadeConta(linha);
+    if (vistos.has(chaveLinha)) continue;
+    vistos.add(chaveLinha);
+    try {
+      const consultar = () => sb
+        .from('contasapagar')
+        .select('id, fornecedor_id, valor_compra, data_compra, data_vencimento, observacao, criado_por_nome, created_at, loja_id, fornecedores(nome)')
+        .eq('loja_id', lojaId)
+        .eq('fornecedor_id', linha.fornecedor_id)
+        .eq('data_compra', linha.data_compra)
+        .eq('data_vencimento', linha.data_vencimento)
+        .eq('valor_compra', Number(Number(linha.valor_compra || 0).toFixed(2)))
+        .is('excluido_em', null)
+        .limit(5);
+      const { data, error } = typeof executarSemFiltrosTenantTemporario === 'function'
+        ? await executarSemFiltrosTenantTemporario(consultar)
+        : await consultar();
+      if (error) {
+        console.warn('Nao foi possivel verificar duplicidade de conta:', error);
+        continue;
+      }
+      (data || [])
+        .filter(row => !ignorar.has(String(row.id)))
+        .forEach(row => duplicados.push({ linha, existente: row }));
+    } catch (e) {
+      console.warn('Falha ao verificar duplicidade de conta:', e?.message || e);
+    }
+  }
+  return duplicados;
+}
+
+async function financeiroDecidirDuplicidadeContas(duplicados = [], { titulo = 'Conta possivelmente duplicada' } = {}) {
+  if (!duplicados.length) return 'sem_duplicidade';
+  const linhas = duplicados.slice(0, 6).map(({ linha, existente }) => {
+    const fornecedor = existente?.fornecedores?.nome || 'Fornecedor';
+    const pessoa = existente?.criado_por_nome || 'Sistema';
+    const cadastro = formatarDataBRFinanceiro(String(existente?.created_at || '').slice(0, 10));
+    return `
+      <div class="nc-confirm-line fatura-confirm-line">
+        <span>${escaparHtmlBasico(fornecedor)}</span>
+        <strong>${formatarMoedaBRFinanceiro(linha.valor_compra)} <small>Compra: ${formatarDataBRFinanceiro(linha.data_compra)} · Venc: ${formatarDataBRFinanceiro(linha.data_vencimento)}</small><em>Lan?ada por ${escaparHtmlBasico(pessoa)}${cadastro ? ' em ' + escaparHtmlBasico(cadastro) : ''}</em></strong>
+      </div>
+    `;
+  }).join('');
+  const extra = duplicados.length > 6
+    ? `<div class="item-detalhe" style="text-align:center;">+ ${duplicados.length - 6} duplicidade(s)</div>`
+    : '';
+  if (typeof abrirConfirmacaoSistema !== 'function') {
+    return window.confirm('J? existe conta igual. Deseja lançar mesmo assim?') ? 'lancar' : 'cancelar_total';
+  }
+  const decisao = await abrirConfirmacaoSistema({
+    title: titulo,
+    subtitle: 'Ja existe conta ativa com mesmo fornecedor, valor, compra e vencimento.',
+    body: `<div class="nc-confirm-lines">${linhas}${extra}</div>`,
+    cancelText: 'Cancelar',
+    cancelClass: 'btn-red',
+    neutralText: 'Voltar',
+    neutralClass: 'btn-ghost',
+    extraText: 'Ignorar duplicado(s)',
+    extraClass: 'btn-amber',
+    confirmText: 'Lan\u00e7ar mesmo assim',
+    confirmClass: 'btn-green',
+  });
+  if (decisao.acao === 'extra') return 'ignorar';
+  if (decisao.acao === 'neutro') return 'cancelar';
+  if (decisao.confirmado) return 'lancar';
+  return 'cancelar_total';
+}
+
+async function faturaConfirmarLancamentoSelecionados(selecionados) {
+  if (typeof abrirConfirmacaoSistema !== 'function') return true;
+  const total = (selecionados || []).reduce((s, i) => s + Number(i.valor || 0), 0);
+  const totalDestinos = (selecionados || []).reduce((s, item) =>
+    s + (item._divisoesAplicadas ? Math.max(1, item._divisoes?.length || 0) : 1), 0);
+  const itemSemCategoria = item => item._divisoesAplicadas
+    ? !Array.isArray(item._divisoes) || item._divisoes.some(parte => !parte.categoria_id)
+    : !item.categoria_id;
+  const semCategoria = selecionados.filter(itemSemCategoria).length;
+  const semFornecedor = selecionados.filter(i => !i.fornecedor_id).length;
+  const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
+  if (semFornecedorObrigatorio.length) {
+    await abrirConfirmacaoSistema({
+      title: 'Escolha o fornecedor',
+      subtitle: 'Importa·o por imagem exige confer?ncia manual.',
+      body: `<div class="msg err">Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.</div>`,
+      cancelText: 'Voltar',
+      cancelClass: 'btn-ghost',
+      confirmText: 'OK',
+      confirmClass: 'btn-green',
+    });
+    return false;
+  }
+  const linhas = selecionados.slice(0, 8).map(item => {
+    const fornecedor = faturaObterFornecedorItem(item);
+    const categoria = faturaObterCategoriaItem(item);
+    const vencimento = formatarDataBRFinanceiro(String(item.vencimento_fatura || item.data || '').slice(0, 10));
+    const observacao = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
+    const divisoes = item._divisoesAplicadas ? (item._divisoes || []) : [];
+    const detalheCategorias = divisoes.length
+      ? `<div class="fatura-confirm-divisoes">
+          ${divisoes.map(parte => {
+            const categoriaParte = (categoriasCompraCache || []).find(c => String(c.id) === String(parte.categoria_id));
+            return `<div><span>${escaparHtmlBasico(categoriaParte?.nome || 'Categoria não selecionada')}</span><b>${formatarMoedaBRFinanceiro(parte.valor)}</b></div>`;
+          }).join('')}
+          <div class="fatura-confirm-divisoes-total"><span>Total distribuído</span><b>${formatarMoedaBRFinanceiro(divisoes.reduce((s, parte) => s + Number(parte.valor || 0), 0))}</b></div>
+        </div>`
+      : `<div class="fatura-confirm-categoria-unica">Categoria: <b>${escaparHtmlBasico(categoria?.nome || 'Sem categoria')}</b></div>`;
+    return `
+      <div class="nc-confirm-line fatura-confirm-line">
+        <span>${escaparHtmlBasico(item.descricao || 'Compra')}</span>
+        <strong>${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small><em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
+        ${detalheCategorias}
+      </div>
+    `;
+  }).join('');
+  const extras = selecionados.length > 8
+    ? `<div class="item-detalhe" style="text-align:center;">+ ${selecionados.length - 8} lançamento(s)</div>`
+    : '';
+  const avisos = [
+    semFornecedor ? `${semFornecedor} item(ns) sem fornecedor selecionado serão criados como novo fornecedor.` : '',
+    semCategoria ? `${semCategoria} item(ns) estão sem categoria.` : '',
+  ].filter(Boolean).join(' ');
+  const body = `
+    <div class="nc-confirm-lines">
+      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} compra(s) · ${totalDestinos} categoria(s)<small>${formatarMoedaBRFinanceiro(total)}</small></strong></div>
+      ${linhas}
+      ${extras}
+    </div>
+    ${avisos ? `<div class="msg err" style="margin-top:10px;">${escaparHtmlBasico(avisos)}</div>` : ''}
+  `;
+  const decisao = await abrirConfirmacaoSistema({
+    title: 'Conferir lançamentos',
+    subtitle: 'Confira antes de salvar no contas a pagar.',
+    body,
+    cancelText: 'Voltar e ajustar',
+    cancelClass: 'btn-ghost',
+    confirmText: 'OK, lan\u00e7ar',
+    confirmClass: 'btn-green',
+  });
+  return decisao?.confirmado !== false;
+}
+
 async function faturaLancarSelecionados() {
   const selecionados = _faturaItensExtraidos.filter(i => i.selecionado);
   if (!selecionados.length) { alert('Selecione pelo menos um item.'); return; }
+  const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
+  if (semFornecedorObrigatorio.length) {
+    alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.`);
+    return;
+  }
+  const divisoesInvalidas = selecionados.filter(item => item._divisoesAplicadas && (
+    !Array.isArray(item._divisoes) || item._divisoes.length < 2
+    || item._divisoes.some(parte => faturaDivisaoCentavos(parte.valor) <= 0 || !parte.categoria_id)
+    || item._divisoes.reduce((s, parte) => s + faturaDivisaoCentavos(parte.valor), 0) !== faturaDivisaoCentavos(item.valor)
+  ));
+  if (divisoesInvalidas.length) {
+    alert('Revise a separação: todos os valores e categorias são obrigatórios e a soma deve fechar o total.');
+    return;
+  }
+
+  const confirmou = await faturaConfirmarLancamentoSelecionados(selecionados);
+  if (!confirmou) return;
 
   const btn = document.getElementById('btnFaturaLancar');
-  if (btn) { btn.textContent = 'Lançando...'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Lan\u00e7ando...'; btn.disabled = true; }
 
-  // Resolver loja/empresa de forma robusta (mesma lógica do cadastro manual).
-  // É a causa mais comum do erro 400: loja_id/empresa_id vindo nulo.
+  // Resolver loja/empresa de forma robusta (mesma l?gica do cadastro manual).
+  // Ã‰ a causa mais comum do erro 400: loja_id/empresa_id vindo nulo.
   let tenant;
   try {
     tenant = await resolverTenantFornecedorFinanceiro();
   } catch (eTenant) {
-    if (btn) { btn.textContent = 'Lançar selecionados'; btn.disabled = false; }
-    alert(eTenant?.message || 'Não foi possível identificar a loja/empresa. Faça login novamente ou selecione uma loja ativa.');
+    if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
+    alert(eTenant?.message || 'N?o foi poss?vel identificar a loja/empresa. Fa?a login novamente ou selecione uma loja ativa.');
     return;
   }
   const lojaId = tenant.loja_id;
@@ -3160,27 +4288,29 @@ async function faturaLancarSelecionados() {
   let lancados = 0;
   let titulosLancados = 0;
   let titulosComParcelas = 0;
+  let titulosDivididos = 0;
+  let totalCategoriasDivididas = 0;
   let primeiroErro = '';
   const itensComErro = [];
 
-  // Traduz erros técnicos do banco para uma linguagem clara para o usuário.
+  // Traduz erros t?cnicos do banco para uma linguagem clara para o usu?rio.
   const traduzirErroImportacao = (e) => {
     const bruto = [e?.message, e?.details, e?.hint, e?.code].filter(Boolean).join(' - ');
     const txt = bruto.toLowerCase();
     if (String(e?.code) === 'PARCELA_DUPLICADA') {
-      return 'Lançamento DUPLICADO — esta parcela já foi provisionada em uma importação anterior nesta loja (o sistema reconhece pelo nº da parcela, valor e fornecedor, já que o código do banco muda a cada fatura). Bloqueado para evitar conta em dobro.';
+      return 'Lançamento DUPLICADO ? esta parcela já foi provisionada em uma importa·o anterior nesta loja (o sistema reconhece pelo n? da parcela, valor e fornecedor, j? que o c?digo do banco muda a cada fatura). Bloqueado para evitar conta em dobro.';
     }
     if (String(e?.code) === '23505' || txt.includes('uix_contasapagar_ofx_fitid_loja') || txt.includes('duplicate key')) {
-      return 'Lançamento DUPLICADO — este item já foi importado antes nesta loja. O sistema bloqueou para evitar conta em dobro. Se quiser lançar mesmo assim, cadastre manualmente.';
+      return 'Lançamento DUPLICADO ? este item já foi importado antes nesta loja. O sistema bloqueou para evitar conta em dobro. Se quiser lançar mesmo assim, cadastre manualmente.';
     }
     if (String(e?.code) === '23503' || txt.includes('foreign key')) {
-      return 'Referência inválida — fornecedor, categoria ou loja não encontrado no banco.';
+      return 'Refer?ncia inv?lida ? fornecedor, categoria ou loja n?o encontrado no banco.';
     }
     if (String(e?.code) === '42501' || txt.includes('row-level security') || txt.includes('permission')) {
       return 'Sem permissão para lançar nesta loja. Verifique o login e a loja ativa.';
     }
     if (String(e?.code) === '23502' || txt.includes('not-null') || txt.includes('null value')) {
-      return 'Campo obrigatório vazio — confira data, valor e fornecedor do item.';
+      return 'Campo obrigat?rio vazio ? confira data, valor e fornecedor do item.';
     }
     return (typeof mensagemErroSupabase === 'function')
       ? mensagemErroSupabase(e, 'erro desconhecido')
@@ -3199,15 +4329,15 @@ async function faturaLancarSelecionados() {
         const aviso = document.createElement('div');
         aviso.className = 'fatura-item-erro';
         aviso.style.cssText = 'margin-top:6px;font-size:11px;font-weight:700;color:var(--red);background:var(--red-glow);border-radius:6px;padding:4px 8px;';
-        aviso.textContent = '❌ Não lançado: ' + motivo;
+        aviso.textContent = '? Não lançado: ' + motivo;
         row.appendChild(aviso);
       }
-    } catch (_) { /* destaque visual é opcional */ }
+    } catch (_) { /* destaque visual ? opcional */ }
   };
 
   // Trava extra contra duplicidade de PARCELAS: o FITID muda a cada fatura,
-  // então o índice único sozinho não pega parcela já provisionada em
-  // importação anterior. Busca as parcelas ativas da loja uma única vez.
+  // ent?o o ?ndice ?nico sozinho n?o pega parcela j? provisionada em
+  // importa·o anterior. Busca as parcelas ativas da loja uma ?nica vez.
   let parcelasExistentesLoja = [];
   if (selecionados.some(i => i.parcela_atual && i.total_parcelas)) {
     try {
@@ -3247,14 +4377,14 @@ async function faturaLancarSelecionados() {
         }
       }
 
-      if (!fornecedorId) { throw new Error('Não foi possível resolver o fornecedor.'); }
+      if (!fornecedorId) { throw new Error('N?o foi poss?vel resolver o fornecedor.'); }
 
       const hojeISO = new Date().toISOString().slice(0,10);
       const ehDataValida = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || '').trim());
 
       // data_compra nunca pode ser vazia
       const dataCompra = ehDataValida(item.data) ? item.data : hojeISO;
-      // vencimento: usa o do arquivo; se inválido, cai para a data da compra
+      // vencimento: usa o do arquivo; se inv?lido, cai para a data da compra
       const vencimentoBase = ehDataValida(item.vencimento_fatura) ? item.vencimento_fatura : dataCompra;
 
       const ehParceladoOFX = item.total_parcelas && item.parcela_atual;
@@ -3262,7 +4392,7 @@ async function faturaLancarSelecionados() {
       if (ehParceladoOFX && parcelasExistentesLoja.length) {
         const dupParcela = faturaEncontrarParcelaExistente(item, parcelasExistentesLoja, fornecedorId);
         if (dupParcela) {
-          // Aproveita para vincular o FITID deste mês à parcela existente.
+          // Aproveita para vincular o FITID deste m?s ? parcela existente.
           if (dupParcela.id && item.fitid && !dupParcela.ofx_fitid) {
             try {
               await sb.from('contasapagar')
@@ -3271,7 +4401,7 @@ async function faturaLancarSelecionados() {
                 .is('excluido_em', null)
                 .is('ofx_fitid', null);
               dupParcela.ofx_fitid = String(item.fitid);
-            } catch (_) { /* vínculo é opcional */ }
+            } catch (_) { /* v?nculo ? opcional */ }
           }
           throw { code: 'PARCELA_DUPLICADA' };
         }
@@ -3280,18 +4410,27 @@ async function faturaLancarSelecionados() {
         ? item.total_parcelas - item.parcela_atual + 1  // parcelas restantes incluindo atual
         : Math.max(1, parseInt(item._parcelasManuais, 10) || 1); // provisionamento manual
       const intervaloDias = 30;
-      const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
-      // Dia de vencimento do fornecedor, para provisionamento mensal "calendário".
+      // Dia de vencimento do fornecedor, para provisionamento mensal "calend?rio".
       const fornObjLanc = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
       const diaVencForn = fornObjLanc?.dia_vencimento;
+      const dividirValorTotal = !ehParceladoOFX && item._modoValorParcelas !== 'parcela' && qtdParcelas > 1;
+      const partesCompra = item._divisoesAplicadas
+        ? item._divisoes.map(parte => ({ valor: Number(parte.valor), categoria_id: parte.categoria_id }))
+        : [{ valor: Number(item.valor || 0), categoria_id: item.categoria_id || null }];
 
-      // Gerar linhas das parcelas (campos idênticos ao cadastro manual que funciona)
-      const linhas = Array.from({ length: qtdParcelas }, (_, i) => {
+      // Cada categoria vira uma série própria, mantendo quantidade, números de
+      // parcela e calendário da compra original.
+      const linhas = partesCompra.flatMap((parte, indiceParte) => {
+        const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
+        const valorTotalCentavos = Math.round(Number(parte.valor || 0) * 100);
+        const valorBaseCentavos = dividirValorTotal ? Math.floor(valorTotalCentavos / qtdParcelas) : valorTotalCentavos;
+        const centavosRestantes = dividirValorTotal ? valorTotalCentavos % qtdParcelas : 0;
+        return Array.from({ length: qtdParcelas }, (_, i) => {
         // Vencimentos:
-        //  - Parcela ATUAL do OFX (i=0): respeita o vencimento definido na revisão.
+        //  - Parcela ATUAL do OFX (i=0): respeita o vencimento definido na revis?o.
         //  - Parcelas seguintes (OFX) e provisionamento manual: se o fornecedor tem
-        //    dia de vencimento configurado, avança mês a mês mantendo esse dia;
-        //    senão, soma 30 dias (comportamento antigo).
+        //    dia de vencimento configurado, avan?a m?s a m?s mantendo esse dia;
+        //    sen?o, soma 30 dias (comportamento antigo).
         let venc;
         if (ehParceladoOFX && i === 0) {
           venc = ehDataValida(vencimentoBase) ? vencimentoBase : dataCompra;
@@ -3309,18 +4448,22 @@ async function faturaLancarSelecionados() {
         } else {
           venc = adicionarDiasDataISOFinanceiro(vencimentoBase, i * intervaloDias) || vencimentoBase;
         }
-        venc = ajustarVencimentoParaDiaUtilFinanceiro(venc); // sáb/dom/feriado → dia útil
+        venc = ajustarVencimentoParaDiaUtilFinanceiro(venc); // s?b/dom/feriado ? dia ?til
         const numeroParcela = ehParceladoOFX ? item.parcela_atual + i : i + 1;
         const totalRotulo = ehParceladoOFX ? item.total_parcelas : qtdParcelas;
         return {
           fornecedor_id: fornecedorId,
-          categoria_id: item.categoria_id || null,
+          categoria_id: parte.categoria_id || null,
           loja_id: lojaId,
           empresa_id: empresaId,
           data_compra: dataCompra,
           data_pagamento: null,
           data_vencimento: venc,
-          valor_compra: Number(Number(item.valor || 0).toFixed(2)),
+          // Distribui eventual diferenca de centavos nas primeiras parcelas,
+          // garantindo que a soma final seja exatamente o valor informado.
+          valor_compra: dividirValorTotal
+            ? (valorBaseCentavos + (i < centavosRestantes ? 1 : 0)) / 100
+            : Number(Number(parte.valor || 0).toFixed(2)),
           observacao: (() => {
             const obsItem = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
             const base = obsItem ? `${obsItem} · Importado do arquivo bancário` : 'Importado do arquivo bancário';
@@ -3330,16 +4473,45 @@ async function faturaLancarSelecionados() {
           intervalo_parcelas_dias: qtdParcelas > 1 ? intervaloDias : null,
           numero_parcela: numeroParcela,
           grupo_parcelas_id: grupoId,
-          ofx_fitid: i === 0 ? (item.fitid || null) : null,
+          // FITID é único: a primeira linha protege a compra inteira, sem
+          // bloquear as demais divisões por categoria.
+          ofx_fitid: indiceParte === 0 && i === 0 ? (item.fitid || null) : null,
           criado_por_id: criadoPorId,
           criado_por_nome: criadoPorNome,
         };
+        });
       });
+
+      const duplicadosConta = await financeiroBuscarDuplicidadesContas(linhas, { lojaId });
+      if (duplicadosConta.length) {
+        const decisaoDuplicado = await financeiroDecidirDuplicidadeContas(duplicadosConta, {
+          titulo: 'Conta possivelmente duplicada',
+        });
+        if (decisaoDuplicado === 'cancelar_total') {
+          if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
+          fecharImportadorFatura();
+          if (typeof abrirPagina === 'function') {
+            abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));
+          }
+          return;
+        }
+        if (decisaoDuplicado === 'cancelar') {
+          if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
+          return;
+        }
+        if (decisaoDuplicado === 'ignorar') {
+          item.selecionado = false;
+          item._jaLancado = true;
+          item._motivoConciliacao = 'duplicidade';
+          marcarItemComErroNaLista(item, 'Ignorado: já existe conta com mesmo fornecedor, valor, compra e vencimento.');
+          continue;
+        }
+      }
 
       const { error } = await sb.from('contasapagar').insert(linhas);
       if (error) throw error;
       // Alimenta a lista de parcelas existentes: se o MESMO arquivo trouxer o
-      // item repetido, a duplicata é barrada ainda nesta importação.
+      // item repetido, a duplicata ? barrada ainda nesta importa·o.
       if (ehParceladoOFX) {
         linhas.forEach(l => parcelasExistentesLoja.push({
           id: null, ofx_fitid: l.ofx_fitid, fornecedor_id: l.fornecedor_id,
@@ -3350,13 +4522,18 @@ async function faturaLancarSelecionados() {
       }
       lancados += linhas.length;
       titulosLancados += 1;
-      if (linhas.length > 1) titulosComParcelas += 1;
+      if (partesCompra.length > 1) {
+        titulosDivididos += 1;
+        totalCategoriasDivididas += partesCompra.length;
+      }
+      // Divisões por categoria geram várias linhas, mas não são parcelas.
+      if (qtdParcelas > 1) titulosComParcelas += 1;
     } catch(e) {
       console.error('Erro ao lançar item:', item.descricao, e);
       const motivo = traduzirErroImportacao(e);
       if (!primeiroErro) primeiroErro = motivo;
       itensComErro.push({
-        descricao: String(item.descricao || 'Item sem descrição').trim(),
+        descricao: String(item.descricao || 'Item sem descri·o').trim(),
         valor: item.valor,
         data: item.data,
         motivo,
@@ -3370,10 +4547,11 @@ async function faturaLancarSelecionados() {
   // Atualizar cache de fornecedores
   await carregarFornecedoresFinanceiro();
 
-  // Aprendizado: salvar as categorias escolhidas nesta importação (memória).
+  // Aprendizado: salvar as categorias escolhidas nesta importa·o (mem?ria).
   await faturaSalvarMemoriaCategorias(selecionados);
+  await faturaSalvarMemoriaInteligente(selecionados);
 
-  // Auditoria: registrar esta importação (quem/quando/quantos).
+  // Auditoria: registrar esta importa·o (quem/quando/quantos).
   try {
     const valorTotalSel = selecionados.reduce((s, i) => s + Number(i.valor || 0), 0);
     const vencLog = (selecionados.find(i => /^\d{4}-\d{2}-\d{2}$/.test(String(i.vencimento_fatura || '')))?.vencimento_fatura) || null;
@@ -3403,11 +4581,14 @@ async function faturaLancarSelecionados() {
     console.warn('Não foi possível gravar o log de importação (rode o SQL de importação):', eLog?.message || eLog);
   }
 
-  if (btn) { btn.textContent = 'Lançar selecionados'; btn.disabled = false; }
+  if (btn) { btn.textContent = 'Lan\u00e7ar selecionados'; btn.disabled = false; }
 
-  const resumoParcelas = titulosComParcelas
-    ? ` (${titulosLancados} título(s), incluindo ${titulosComParcelas} parcelado(s) → ${lancados} parcelas no total)`
-    : ` (${titulosLancados} título(s))`;
+  const detalhesResumo = [
+    `${titulosLancados} título(s)`,
+    titulosDivididos ? `${titulosDivididos} dividido(s) em ${totalCategoriasDivididas} categorias` : '',
+    titulosComParcelas ? `${titulosComParcelas} parcelado(s)` : '',
+  ].filter(Boolean);
+  const resumoParcelas = ` (${detalhesResumo.join(' · ')})`;
 
   let msg;
   if (erros === 0) {
@@ -3420,12 +4601,12 @@ async function faturaLancarSelecionados() {
       ? formatarDataBRFinanceiro(d)
       : (d || 's/ data');
     const listaErros = itensComErro.map((it, idx) =>
-      `${idx + 1}) ❌ ${it.descricao.toUpperCase()} — ${fmtValor(it.valor)} · compra ${fmtData(it.data)}\n   Motivo: ${it.motivo}`
+      `${idx + 1}) ? ${it.descricao.toUpperCase()} ? ${fmtValor(it.valor)} ? compra ${fmtData(it.data)}\n   Motivo: ${it.motivo}`
     ).join('\n\n');
     msg = `${lancados ? `✅ ${lancados} lançados com sucesso${resumoParcelas}\n` : ''}⚠️ ${erros} item(ns) NÃO foi(ram) lançado(s):\n\n${listaErros}\n\nOs itens com erro ficaram destacados em vermelho na lista para você revisar.`;
   }
 
-  // Só fecha o modal se tudo deu certo; se houve erro, mantém aberto para o usuário corrigir.
+  // S? fecha o modal se tudo deu certo; se houve erro, mant?m aberto para o usu?rio corrigir.
   if (erros === 0) fecharImportadorFatura();
 
   // Recarregar lista de contas
@@ -3433,11 +4614,11 @@ async function faturaLancarSelecionados() {
 
   alert(msg);
 }
-// ══════════════════════════════════════════════════════════════════
+// ·································
 async function carregarGruposFornecedor() {
   const lista = document.getElementById('listaGruposFornecedor');
   if (!lista) return;
-  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
   try {
     const { data, error } = await sb.from('grupos_fornecedor').select('*').eq('ativo', true).order('nome');
     if (error) throw error;
@@ -3529,11 +4710,23 @@ async function excluirGrupoFornecedor(id) {
   } catch(e) { alert('Erro: ' + (e?.message||'')); }
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ·································
 // CATEGORIAS DE COMPRA
-// ══════════════════════════════════════════════════════════════════
+// ·································
 let categoriaEmEdicaoId = null;
 let categoriasCompraCache = [];
+let categoriaInlineEmEdicaoId = null;
+
+function chaveCategoriaCompraEquivalente(nome = '') {
+  const normalizado = String(nome || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  if (!normalizado) return '';
+  const partes = normalizado.split(/\s+/);
+  const ultima = partes.length - 1;
+  if (partes[ultima].length > 3 && partes[ultima].endsWith('S')) partes[ultima] = partes[ultima].slice(0, -1);
+  return partes.join(' ');
+}
 
 function ehImagemCategoriaCompra(valor = '') {
   const fonte = String(valor || '').trim();
@@ -3544,7 +4737,7 @@ function ehImagemCategoriaCompra(valor = '') {
 function htmlIconeCategoriaCompra(valor = '', tamanho = 24) {
   const icone = String(valor || '').trim();
   const px = Math.max(14, Math.min(64, Number(tamanho) || 24));
-  if (!icone) return '<span aria-hidden="true">🏷️</span>';
+  if (!icone) return '<span aria-hidden="true">·?</span>';
   if (ehImagemCategoriaCompra(icone)) {
     return `<img src="${escaparHtmlBasico(icone)}" alt="" style="width:${px}px;height:${px}px;object-fit:cover;border-radius:5px;flex:0 0 ${px}px;" onerror="this.style.display='none'">`;
   }
@@ -3560,16 +4753,16 @@ function carregarImagemCategoriaCompra(input) {
     return;
   }
   if (arquivo.size > 5 * 1024 * 1024) {
-    setMsg('msgCategoriaCompra', 'A imagem deve ter no máximo 5 MB.', 'err');
+    setMsg('msgCategoriaCompra', 'A imagem deve ter no m?ximo 5 MB.', 'err');
     input.value = '';
     return;
   }
 
   const leitor = new FileReader();
-  leitor.onerror = () => setMsg('msgCategoriaCompra', 'Não foi possível ler a imagem escolhida.', 'err');
+  leitor.onerror = () => setMsg('msgCategoriaCompra', 'N?o foi poss?vel ler a imagem escolhida.', 'err');
   leitor.onload = () => {
     const imagem = new Image();
-    imagem.onerror = () => setMsg('msgCategoriaCompra', 'O arquivo escolhido não é uma imagem válida.', 'err');
+    imagem.onerror = () => setMsg('msgCategoriaCompra', 'O arquivo escolhido n?o ? uma imagem v?lida.', 'err');
     imagem.onload = () => {
       const limite = 128;
       const escala = Math.min(1, limite / Math.max(imagem.naturalWidth || 1, imagem.naturalHeight || 1));
@@ -3609,7 +4802,11 @@ function renderizarListaCategoriasCompra() {
     return;
   }
 
-  lista.innerHTML = '<div class="lista">' + categoriasFiltradas.map(c => `
+  lista.innerHTML = '<div class="lista">' + categoriasFiltradas.map(c => {
+    if (String(categoriaInlineEmEdicaoId || '') === String(c.id)) {
+      return renderizarFormularioInlineCategoriaCompra(c);
+    }
+    return `
     <div class="item">
       <div class="item-info" style="display:flex;align-items:center;gap:10px;">
         <span style="width:44px;min-width:44px;display:flex;align-items:center;justify-content:center;">${htmlIconeCategoriaCompra(c.icone, 36)}</span>
@@ -3625,7 +4822,50 @@ function renderizarListaCategoriasCompra() {
         <button class="btn btn-ghost btn-sm" onclick="editarCategoriaCompra('${c.id}')">Editar</button>
         <button class="btn btn-red btn-sm" onclick="excluirCategoriaCompra('${c.id}')">Excluir</button>
       </div>
-    </div>`).join('') + '</div>';
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function renderizarFormularioInlineCategoriaCompra(categoria) {
+  const id = escaparHtmlBasico(categoria.id);
+  const nome = escaparHtmlBasico(categoria.nome || '');
+  const icone = escaparHtmlBasico(categoria.icone || '');
+  const cor = escaparHtmlBasico(categoria.cor || '#3b82f6');
+  const descricao = escaparHtmlBasico(categoria.descricao || '');
+  return `
+    <div class="item categoria-compra-inline-edit" data-categoria-id="${id}">
+      <div class="categoria-compra-inline-preview">
+        ${htmlIconeCategoriaCompra(categoria.icone, 36)}
+      </div>
+      <div class="categoria-compra-inline-grid">
+        <div class="campo-com-label">
+          <label class="campo-label" for="categoriaInlineNome_${id}">Nome</label>
+          <input id="categoriaInlineNome_${id}" type="text" value="${nome}" placeholder="Nome da categoria">
+        </div>
+        <div class="campo-com-label">
+          <label class="campo-label" for="categoriaInlineIcone_${id}">Icone, imagem ou URL</label>
+          <div class="categoria-compra-inline-icon-row">
+            <input id="categoriaInlineIcone_${id}" type="text" value="${icone}" placeholder="Emoji ou URL direta">
+            <label class="btn btn-ghost btn-sm categoria-compra-inline-file" title="Escolher uma imagem do computador">
+              Imagem
+              <input id="categoriaInlineArquivo_${id}" type="file" accept="image/png,image/jpeg,image/webp" onchange="carregarImagemCategoriaCompraInline('${id}', this)" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <div class="campo-com-label categoria-compra-inline-cor">
+          <label class="campo-label" for="categoriaInlineCor_${id}">Cor</label>
+          <input id="categoriaInlineCor_${id}" type="color" value="${cor}">
+        </div>
+        <div class="campo-com-label categoria-compra-inline-desc">
+          <label class="campo-label" for="categoriaInlineDesc_${id}">Descricao</label>
+          <input id="categoriaInlineDesc_${id}" type="text" value="${descricao}" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="item-actions categoria-compra-inline-actions">
+        <button class="btn btn-green btn-sm" type="button" onclick="salvarCategoriaCompraInline('${id}')">Salvar</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="cancelarEdicaoCategoriaCompraInline()">Cancelar</button>
+      </div>
+    </div>`;
 }
 
 function filtrarCategoriasCompraCadastradas() {
@@ -3635,9 +4875,12 @@ function filtrarCategoriasCompraCadastradas() {
 async function carregarCategoriasCompra() {
   const lista = document.getElementById('listaCategorias');
   if (!lista) return;
-  lista.innerHTML = '<div class="empty">Carregando⬦</div>';
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
   try {
-    const { data, error } = await sb.from('categorias_compra').select('*').eq('ativo', true).order('nome');
+    const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    let query = sb.from('categorias_compra').select('*').eq('ativo', true).order('nome');
+    if (lojaSessao) query = query.eq('loja_id', lojaSessao);
+    const { data, error } = await query;
     if (error) throw error;
     categoriasCompraCache = data || [];
     preencherSelectCategoriasCompra();
@@ -3654,7 +4897,7 @@ function preencherSelectCategoriasCompra() {
       return `<option value="${c.id}">${ico}${escaparHtmlBasico(c.nome)}</option>`;
     }).join('');
   ['contaCategoriaId'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = opts; });
-  // Categoria do relatório agora é multi-seleção (checkbox filter) — renderiza via helper, preservando seleção atual.
+  // Categoria do relat?rio agora ? multi-sele·o (checkbox filter) ? renderiza via helper, preservando sele·o atual.
   const catFiltroEl = document.getElementById('filtroRelFinanceiroCategoria');
   if (catFiltroEl && catFiltroEl.classList?.contains('relatorio-check-filter') && typeof renderizarCheckboxFiltroRelatorioFinanceiro === 'function') {
     const selAtual = (typeof obterValoresCheckboxFiltroRelatorioFinanceiro === 'function')
@@ -3668,18 +4911,26 @@ function preencherSelectCategoriasCompra() {
 }
 
 async function salvarCategoriaCompra() {
-  // Padrão de cadastro: nome de categoria sempre em MAIÚSCULAS.
+  // Padr?o de cadastro: nome de categoria sempre em MAIÃšSCULAS.
   const nome = String(document.getElementById('categoriaNome')?.value || '').trim().toUpperCase();
   const icone = String(document.getElementById('categoriaIcone')?.value || '').trim();
   const cor = String(document.getElementById('categoriaCor')?.value || '#3b82f6').trim();
   const desc = String(document.getElementById('categoriaDesc')?.value || '').trim();
   if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
+  const categoriaEquivalente = (categoriasCompraCache || []).find(categoria =>
+    String(categoria.id) !== String(categoriaEmEdicaoId || '')
+      && chaveCategoriaCompraEquivalente(categoria.nome) === chaveCategoriaCompraEquivalente(nome)
+  );
+  if (categoriaEquivalente) {
+    setMsg('msgCategoriaCompra', `Já existe a categoria "${categoriaEquivalente.nome}". Edite a categoria existente para evitar duplicidade.`, 'err');
+    return;
+  }
   if (/^data:image\//i.test(icone) && !ehImagemCategoriaCompra(icone)) {
-    setMsg('msgCategoriaCompra', 'Formato de imagem inválido. Use PNG, JPG ou WEBP.', 'err');
+    setMsg('msgCategoriaCompra', 'Formato de imagem inv?lido. Use PNG, JPG ou WEBP.', 'err');
     return;
   }
   if (icone.length > 150000) {
-    setMsg('msgCategoriaCompra', 'A imagem está muito grande. Use o botão Imagem para comprimi-la antes de salvar.', 'err');
+    setMsg('msgCategoriaCompra', 'A imagem est? muito grande. Use o bot?o Imagem para comprimi-la antes de salvar.', 'err');
     return;
   }
   let tenantCat;
@@ -3702,6 +4953,104 @@ async function salvarCategoriaCompra() {
 }
 
 function editarCategoriaCompra(id) {
+  categoriaInlineEmEdicaoId = id;
+  if (String(categoriaEmEdicaoId || '') === String(id)) {
+    cancelarEdicaoCategoria();
+  }
+  renderizarListaCategoriasCompra();
+  setTimeout(() => {
+    const campo = document.getElementById(`categoriaInlineNome_${id}`);
+    if (campo) {
+      campo.focus();
+      campo.select?.();
+    }
+  }, 0);
+}
+
+function cancelarEdicaoCategoriaCompraInline() {
+  categoriaInlineEmEdicaoId = null;
+  renderizarListaCategoriasCompra();
+}
+
+function carregarImagemCategoriaCompraInline(id, input) {
+  const arquivo = input?.files?.[0];
+  if (!arquivo) return;
+  if (!/^image\/(?:png|jpe?g|webp)$/i.test(String(arquivo.type || ''))) {
+    setMsg('msgCategoriaCompra', 'Escolha uma imagem PNG, JPG ou WEBP.', 'err');
+    input.value = '';
+    return;
+  }
+  if (arquivo.size > 5 * 1024 * 1024) {
+    setMsg('msgCategoriaCompra', 'A imagem deve ter no maximo 5 MB.', 'err');
+    input.value = '';
+    return;
+  }
+
+  const leitor = new FileReader();
+  leitor.onerror = () => setMsg('msgCategoriaCompra', 'Nao foi possivel ler a imagem escolhida.', 'err');
+  leitor.onload = () => {
+    const imagem = new Image();
+    imagem.onerror = () => setMsg('msgCategoriaCompra', 'O arquivo escolhido nao e uma imagem valida.', 'err');
+    imagem.onload = () => {
+      const limite = 128;
+      const escala = Math.min(1, limite / Math.max(imagem.naturalWidth || 1, imagem.naturalHeight || 1));
+      const largura = Math.max(1, Math.round((imagem.naturalWidth || 1) * escala));
+      const altura = Math.max(1, Math.round((imagem.naturalHeight || 1) * escala));
+      const canvas = document.createElement('canvas');
+      canvas.width = largura;
+      canvas.height = altura;
+      const contexto = canvas.getContext('2d');
+      contexto.drawImage(imagem, 0, 0, largura, altura);
+      const campo = document.getElementById(`categoriaInlineIcone_${id}`);
+      if (campo) campo.value = canvas.toDataURL('image/webp', 0.82);
+      setMsg('msgCategoriaCompra', 'Imagem preparada. Clique em Salvar nesta linha para gravar a categoria.', 'ok');
+      input.value = '';
+    };
+    imagem.src = String(leitor.result || '');
+  };
+  leitor.readAsDataURL(arquivo);
+}
+
+async function salvarCategoriaCompraInline(id) {
+  const nome = String(document.getElementById(`categoriaInlineNome_${id}`)?.value || '').trim().toUpperCase();
+  const icone = String(document.getElementById(`categoriaInlineIcone_${id}`)?.value || '').trim();
+  const cor = String(document.getElementById(`categoriaInlineCor_${id}`)?.value || '#3b82f6').trim();
+  const desc = String(document.getElementById(`categoriaInlineDesc_${id}`)?.value || '').trim();
+  if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
+  const categoriaEquivalente = (categoriasCompraCache || []).find(categoria =>
+    String(categoria.id) !== String(id)
+      && chaveCategoriaCompraEquivalente(categoria.nome) === chaveCategoriaCompraEquivalente(nome)
+  );
+  if (categoriaEquivalente) {
+    setMsg('msgCategoriaCompra', `Já existe a categoria "${categoriaEquivalente.nome}". Use a categoria existente.`, 'err');
+    return;
+  }
+  if (/^data:image\//i.test(icone) && !ehImagemCategoriaCompra(icone)) {
+    setMsg('msgCategoriaCompra', 'Formato de imagem invalido. Use PNG, JPG ou WEBP.', 'err');
+    return;
+  }
+  if (icone.length > 150000) {
+    setMsg('msgCategoriaCompra', 'A imagem esta muito grande. Use o botao Imagem para comprimi-la antes de salvar.', 'err');
+    return;
+  }
+  let tenantCat;
+  try {
+    tenantCat = await resolverTenantFornecedorFinanceiro();
+  } catch (eTenant) {
+    setMsg('msgCategoriaCompra', eTenant?.message || 'Nao foi possivel identificar a loja/empresa. Faca login novamente ou selecione uma loja ativa.', 'err');
+    return;
+  }
+  const payload = { nome, icone: icone || null, cor, descricao: desc || null, empresa_id: tenantCat.empresa_id, loja_id: tenantCat.loja_id, ativo: true };
+  try {
+    const { error } = await sb.from('categorias_compra').update(payload).eq('id', id);
+    if (error) throw error;
+    categoriaInlineEmEdicaoId = null;
+    setMsg('msgCategoriaCompra', 'Categoria salva.', 'ok');
+    await carregarCategoriasCompra();
+  } catch(e) { setMsg('msgCategoriaCompra', 'Erro: ' + (mensagemErroSupabase(e, e?.message||'')), 'err'); }
+}
+
+function editarCategoriaCompraNoFormulario(id) {
   const c = categoriasCompraCache.find(x => x.id === id);
   if (!c) return;
   categoriaEmEdicaoId = id;
@@ -3713,6 +5062,7 @@ function editarCategoriaCompra(id) {
 
 function cancelarEdicaoCategoria() {
   categoriaEmEdicaoId = null;
+  categoriaInlineEmEdicaoId = null;
   ['categoriaNome','categoriaIcone','categoriaDesc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const cor = document.getElementById('categoriaCor'); if (cor) cor.value = '#3b82f6';
   const arquivo = document.getElementById('categoriaImagemArquivo'); if (arquivo) arquivo.value = '';
@@ -3729,4 +5079,4 @@ async function excluirCategoriaCompra(id) {
   } catch(e) { alert('Erro: ' + (e?.message||'')); }
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ·································

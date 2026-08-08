@@ -5,3 +5,2389 @@
 .nc-forn-card:active{border-color:var(--accent);background:var(--accent-subtle);}
 .nc-cat-card{padding:12px;border:1.5px solid var(--border-mid);border-radius:12px;background:var(--surface);cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--text);transition:all .15s;}
 .nc-cat-card:active,.nc-cat-card.nc-sel{border-color:var(--accent)!important;background:var(--accent-subtle)!important;color:var(--accent)!important;}
+
+
+.financeiro-contas-page,
+.financeiro-contas-page *,
+.nc-overlay,
+.nc-overlay * {
+  box-sizing: border-box;
+}
+
+/* Revisao mobile do importador de fatura/imagem */
+.fatura-review-card-enhanced {
+  border-radius: 12px !important;
+}
+
+.fatura-choice-btn {
+  min-height: 42px;
+  border: 1px solid var(--border-mid);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.fatura-choice-btn.selecionado {
+  border-color: rgba(34, 197, 94, .55);
+  background: rgba(34, 197, 94, .09);
+}
+
+.fatura-choice-icon {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.fatura-choice-icon.vazio {
+  border-style: dashed;
+  color: var(--accent);
+}
+
+.fatura-venc-fornecedor {
+  min-height: 28px;
+  border: 1px solid rgba(34, 197, 94, .45);
+  background: rgba(34, 197, 94, .12);
+  color: var(--green);
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fatura-choice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9900;
+  background: rgba(0, 0, 0, .62);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fatura-choice-sheet {
+  width: min(720px, 100vw);
+  max-height: 82dvh;
+  background: var(--surface);
+  border: 1px solid var(--border-mid);
+  border-radius: 18px 18px 0 0;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fatura-choice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fatura-choice-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.fatura-choice-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fatura-choice-body {
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.fatura-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.fatura-cat-card {
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 12px;
+  min-height: 104px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.fatura-cat-card.selecionado,
+.fatura-forn-row.selecionado {
+  border-color: rgba(34, 197, 94, .65);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, .25) inset;
+}
+
+.fatura-cat-icone {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.fatura-cat-icone.vazio {
+  border-style: dashed;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+.fatura-cat-card strong {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.fatura-choice-search {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-mid);
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 15px;
+}
+
+.fatura-forn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fatura-forn-row {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.fatura-forn-row.novo {
+  margin-bottom: 10px;
+  border-style: dashed;
+}
+
+.fatura-forn-row span {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.fatura-forn-row small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.fatura-confirm-line {
+  align-items: flex-start !important;
+  gap: 10px !important;
+}
+
+.fatura-confirm-line > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fatura-confirm-line > strong {
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 145px;
+  line-height: 1.15;
+}
+
+.fatura-confirm-line > strong small {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.fatura-confirm-line > strong em {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fatura-confirm-line > strong .fatura-confirm-observacao {
+  color: var(--text);
+  font-weight: 600;
+  max-width: 240px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .fatura-confirm-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fatura-confirm-line > span {
+    font-size: 10.5px !important;
+  }
+
+  .fatura-confirm-line > strong {
+    min-width: 132px;
+    font-size: 11.5px !important;
+  }
+
+  .fatura-confirm-line > strong small {
+    font-size: 10px;
+  }
+
+  .fatura-confirm-line > strong em {
+    max-width: 132px;
+    font-size: 9px;
+  }
+
+  .fatura-confirm-line > strong .fatura-confirm-observacao {
+    max-width: 160px;
+  }
+}
+
+@media (max-width: 720px) {
+  .fatura-review-card-enhanced {
+    padding: 10px !important;
+  }
+
+  .fatura-review-card-enhanced > div > div:last-child {
+    width: 100%;
+  }
+
+  .fatura-review-card-enhanced .fatura-choice-btn {
+    width: 100%;
+    min-width: 100%;
+    min-height: 40px;
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .fatura-review-card-enhanced .fatura-venc-fornecedor {
+    width: 100%;
+    min-height: 26px;
+    margin: 2px 0 5px;
+    font-size: 10px;
+  }
+
+  .fatura-review-card-enhanced .fatura-choice-icon {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+  }
+
+  #faturaListaItens .fatura-review-card-enhanced input[type="date"],
+  #faturaListaItens .fatura-review-card-enhanced input[type="number"],
+  #faturaListaItens .fatura-review-card-enhanced input[type="text"] {
+    min-height: 32px !important;
+    font-size: 12px !important;
+  }
+
+  .fatura-choice-sheet {
+    max-height: 88dvh;
+  }
+
+  .fatura-cat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  #modalImportarFatura {
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  #modalImportarFatura > div {
+    width: 100vw !important;
+    max-height: 100dvh !important;
+    min-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+  }
+
+  #faturaStep1 {
+    padding: 14px !important;
+  }
+
+  #faturaStep1 > div:first-child {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  #ofxDropZone,
+  #imagemCompraDropZone {
+    min-height: 164px;
+    padding: 22px 14px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #faturaStep3 > div:first-child {
+    align-items: flex-start !important;
+    gap: 8px !important;
+    flex-direction: column !important;
+  }
+
+  #faturaListaItens {
+    padding: 10px !important;
+  }
+
+  #faturaListaItens select,
+  #faturaListaItens input[type="date"],
+  #faturaListaItens input[type="number"],
+  #faturaListaItens input[type="text"] {
+    min-height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  #faturaFooter {
+    gap: 10px !important;
+    align-items: stretch !important;
+    flex-direction: column !important;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #faturaFooter > div {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  #faturaFooter .btn {
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .contas-pagar-page-actions {
+    width: 100%;
+  }
+
+  .contas-pagar-page-actions .btn {
+    min-height: 42px;
+  }
+}
+
+.contas-pagar-page-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.contas-pagar-page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.contas-pagar-nova-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 190px;
+  padding: 11px 22px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.contas-pagar-page-actions .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+#financeiro_contasapagar .financeiro-card-title-row {
+  display: grid;
+  grid-template-columns: minmax(160px, auto) auto minmax(280px, 1fr);
+  align-items: end;
+  gap: 10px;
+}
+
+.contas-pagar-date-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.contas-pagar-date-filters .financeiro-filtro-compacto {
+  min-width: 0;
+}
+
+.contas-pagar-date-filters label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.contas-pagar-date-filters input[type="date"] {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  font-size: 12px;
+}
+
+.nc-sheet {
+  overflow-x: hidden;
+}
+
+.nc-sheet-body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.nc-sheet-body input,
+.nc-sheet-body select,
+.nc-sheet-body textarea,
+.nc-sheet-body button {
+  max-width: 100%;
+}
+
+.nc-label-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nc-use-provider-due {
+  min-height: 32px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  font-size: 11px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+#ncMsg:empty {
+  display: none;
+}
+
+/* =========================================================
+   CHECKDIÁRIO - PATCH MOBILE/TABLET FINANCEIRO + TAREFAS
+   Foco: não alterar desktop; apenas telas estreitas e tablets.
+   ========================================================= */
+@media (max-width: 1024px) {
+  body { overflow-x: hidden; }
+  .page, .view, main, .content, .app-main { max-width: 100%; overflow-x: hidden; }
+
+  .topbar, .header-admin, .admin-topbar, .painel-topo {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+  .topbar > *, .header-admin > *, .admin-topbar > *, .painel-topo > * {
+    min-width: 0 !important;
+  }
+
+  .card, .panel, .box, .section, .lista, .item {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Filtros financeiros e cadastros: empilha sem estourar a largura. */
+  #financeiro_contasapagar .form-grid,
+  #financeiro_recebiveis .form-grid,
+  #financeiro_contasapagar .filters,
+  #financeiro_recebiveis .filters,
+  #financeiro_contasapagar .toolbar,
+  #financeiro_recebiveis .toolbar,
+  .financeiro-toolbar,
+  .financeiro-filtros {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  #financeiro_contasapagar input,
+  #financeiro_contasapagar select,
+  #financeiro_contasapagar textarea,
+  #financeiro_recebiveis input,
+  #financeiro_recebiveis select,
+  #financeiro_recebiveis textarea,
+  #financeiro_contasapagar button,
+  #financeiro_recebiveis button {
+    max-width: 100% !important;
+  }
+
+  /* Cards de contas/recebíveis: layout horizontal vira card vertical. */
+  #financeiro_contasapagar .item,
+  #financeiro_recebiveis .item,
+  #listaContasAPagarFinanceiro .item,
+  #listaRecebiveisFinanceiro .item,
+  #listaRecFuturos .item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  #financeiro_contasapagar .item-info,
+  #financeiro_recebiveis .item-info,
+  #listaContasAPagarFinanceiro .item-info,
+  #listaRecebiveisFinanceiro .item-info,
+  #listaRecFuturos .item-info {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }
+
+  #financeiro_contasapagar .item-destaque,
+  #financeiro_recebiveis .item-destaque,
+  #financeiro_contasapagar .rec-futuro-destaque,
+  #financeiro_recebiveis .rec-futuro-destaque,
+  #listaContasAPagarFinanceiro .item-destaque,
+  #listaRecFuturos .rec-futuro-destaque {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+    background: rgba(255,255,255,.03) !important;
+  }
+
+  #financeiro_contasapagar .item-actions,
+  #financeiro_recebiveis .item-actions,
+  #listaContasAPagarFinanceiro .item-actions,
+  #listaRecebiveisFinanceiro .item-actions,
+  #listaRecFuturos .item-actions {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  #financeiro_contasapagar .item-actions .btn,
+  #financeiro_recebiveis .item-actions .btn,
+  #listaContasAPagarFinanceiro .item-actions .btn,
+  #listaRecebiveisFinanceiro .item-actions .btn,
+  #listaRecFuturos .item-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 42px !important;
+  }
+
+  #financeiro_contasapagar .item-detalhe,
+  #financeiro_recebiveis .item-detalhe,
+  #listaContasAPagarFinanceiro .item-detalhe,
+  #listaRecebiveisFinanceiro .item-detalhe,
+  #listaRecFuturos .item-detalhe {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Checklists/tarefas lançadas: evita cards gigantes em celular/tablet. */
+  .tarefa-card, .tarefa-item, .checklist-card, .checklist-item,
+  #listaTarefas .item, #listaConsultaTarefas .item, #listaChecklists .item {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 700px) {
+  body { font-size: 14px; }
+  h1, h2, h3 { line-height: 1.15 !important; overflow-wrap: anywhere; }
+  .btn { min-height: 42px; }
+
+  #financeiro_contasapagar,
+  #financeiro_recebiveis,
+  #tarefas,
+  #checklists,
+  #funcionarios,
+  #perfis {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  #financeiro_contasapagar .form-grid,
+  #financeiro_recebiveis .form-grid,
+  #financeiro_contasapagar .filters,
+  #financeiro_recebiveis .filters,
+  #financeiro_contasapagar .toolbar,
+  #financeiro_recebiveis .toolbar,
+  .financeiro-toolbar,
+  .financeiro-filtros {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  #financeiro_contasapagar input,
+  #financeiro_contasapagar select,
+  #financeiro_contasapagar textarea,
+  #financeiro_contasapagar button,
+  #financeiro_recebiveis input,
+  #financeiro_recebiveis select,
+  #financeiro_recebiveis textarea,
+  #financeiro_recebiveis button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #financeiro_contasapagar .item-nome,
+  #financeiro_recebiveis .item-nome,
+  #listaContasAPagarFinanceiro .item-nome,
+  #listaRecebiveisFinanceiro .item-nome,
+  #listaRecFuturos .item-nome {
+    font-size: 17px !important;
+    line-height: 1.15 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #financeiro_contasapagar .item-destaque span,
+  #financeiro_recebiveis .item-destaque span,
+  #financeiro_contasapagar .rec-futuro-destaque span,
+  #financeiro_recebiveis .rec-futuro-destaque span,
+  #listaContasAPagarFinanceiro .item-destaque span,
+  #listaRecFuturos .rec-futuro-destaque span {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Reduz os números destacados para caber em iPhone sem quebrar o layout. */
+  #financeiro_contasapagar .item-destaque span[style*="font-size:30px"],
+  #financeiro_contasapagar .item-destaque span[style*="font-size:34px"],
+  #financeiro_recebiveis .rec-futuro-destaque-data,
+  #financeiro_recebiveis .rec-futuro-destaque-valor,
+  #listaRecFuturos .rec-futuro-destaque-data,
+  #listaRecFuturos .rec-futuro-destaque-valor {
+    font-size: clamp(24px, 8vw, 34px) !important;
+  }
+
+  #financeiro_contasapagar .item-actions,
+  #financeiro_recebiveis .item-actions,
+  #listaContasAPagarFinanceiro .item-actions,
+  #listaRecebiveisFinanceiro .item-actions,
+  #listaRecFuturos .item-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tabelas dos relatórios em mobile: rolagem horizontal controlada, não quebra a página toda. */
+  table { max-width: 100%; }
+  .table-wrap, .tabela-wrap, .relatorio-tabela, .detalhamento-tabela {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Cards agrupados de contas: a linha interna também empilha. */
+  #listaContasAPagarFinanceiro .item > div[style*="display:flex"][style*="align-items:stretch"] {
+    flex-direction: column !important;
+  }
+
+  .contas-pagar-page-head {
+    grid-template-columns: 1fr !important;
+    justify-items: stretch;
+    text-align: left;
+    gap: 8px;
+  }
+
+  .contas-pagar-page-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .contas-pagar-nova-btn {
+    width: min(100%, 360px) !important;
+    min-width: 0;
+    font-size: 14px !important;
+  }
+
+  #financeiro_contasapagar .financeiro-card-title-row {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  #financeiro_contasapagar .financeiro-card-title-row #btnToggleContasAPagarLista {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  .contas-pagar-date-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .contas-pagar-date-filters label {
+    font-size: 9px;
+  }
+
+  .contas-pagar-date-filters input[type="date"] {
+    height: 42px;
+    padding: 8px 7px;
+    font-size: 11px;
+  }
+
+  .nc-overlay {
+    overflow-x: hidden !important;
+  }
+
+  .nc-sheet {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+  }
+
+  .nc-sheet-body {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  #ncCatGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  #ncCatGrid .nc-cat-card {
+    min-width: 0;
+    padding: 9px 8px !important;
+    gap: 7px;
+    font-size: 12px !important;
+    line-height: 1.18;
+  }
+
+  #ncCatGrid .nc-cat-card span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .nc-grid-2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .nc-venc-parcelas-row input {
+    font-size: 18px !important;
+    padding: 10px 8px !important;
+  }
+
+  .nc-label-action-row {
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .nc-use-provider-due {
+    flex: 0 0 auto;
+    min-height: 30px !important;
+    padding: 5px 7px !important;
+    font-size: 10px !important;
+  }
+
+  #ncModoParcelasWrap {
+    padding: 10px !important;
+  }
+
+  #ncModoParcelasWrap .nc-pill {
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+  }
+
+  #ncToggleParcelado {
+    min-width: 74px !important;
+    white-space: nowrap;
+  }
+
+  #confirmacaoSistemaOverlay .modal-footer {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  #confirmacaoSistemaOverlay .modal-footer .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .nc-confirm-line {
+    grid-template-columns: minmax(86px, .8fr) minmax(0, 1.2fr) !important;
+  }
+
+  #ncObs {
+    padding: 11px 12px !important;
+    font-size: 14px !important;
+  }
+
+  #ncMsg {
+    margin: 0 !important;
+    min-height: 0 !important;
+  }
+
+  #ncBtnSalvar,
+  #ncBtnSalvarNovo,
+  #ncBtnCancelar {
+    padding: 12px 8px !important;
+    min-height: 50px !important;
+    font-size: 13px !important;
+    border-radius: 12px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .contas-pagar-date-filters {
+    grid-template-columns: 1fr;
+  }
+
+  #ncCatGrid .nc-cat-card {
+    font-size: 11px !important;
+  }
+
+  .nc-use-provider-due {
+    white-space: normal;
+    max-width: 118px;
+  }
+}
+
+.nc-confirm-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+#confirmacaoSistemaOverlay {
+  z-index: 100001 !important;
+}
+
+.nc-confirm-line {
+  display: grid;
+  grid-template-columns: minmax(110px, .8fr) minmax(0, 1.2fr);
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.nc-confirm-line span {
+  color: var(--accent-light);
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+
+.nc-confirm-line strong {
+  min-width: 0;
+  color: var(--text);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* Ajuste mobile do detalhamento do dashboard financeiro */
+.dash-gf-detail-title{font-size:12px;color:var(--text-muted);margin:0 0 8px;}
+.dash-gf-detail-hint{display:none;font-size:11px;color:var(--text-muted);margin:-2px 0 8px;}
+.dash-gf-detail-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid rgba(255,255,255,.08);border-radius:10px;max-width:100%;}
+.dash-gf-detail-table{width:100%;min-width:860px;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+.dash-gf-detail-table th{padding:8px 10px;text-align:left;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,.12);letter-spacing:.08em;text-transform:uppercase;font-size:10px;white-space:nowrap;}
+.dash-gf-detail-table th button{display:flex;align-items:center;justify-content:flex-start;gap:5px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;text-align:left}.dash-gf-detail-table th button:hover,.dash-gf-detail-table th.ordenacao-ativa button{color:var(--text)}.dash-gf-detail-table th button span{font-size:9px;opacity:.65}.dash-gf-detail-table th.ordenacao-ativa button span{color:var(--green);opacity:1}
+.dash-gf-detail-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-gf-col-data{width:105px;}
+.dash-gf-col-valor{width:115px;text-align:right;color:#ffd400;text-shadow:0 0 10px rgba(255,212,0,.25);font-weight:900;}.dash-gf-detail-table th.dash-gf-col-valor button{justify-content:flex-end;text-align:right}
+.dash-gf-col-lancado{width:130px;color:var(--text-muted);font-size:11px;}
+.dash-gf-col-fornecedor{width:170px;}
+.dash-gf-col-categoria{width:185px;}
+.dash-gf-col-compra{width:105px;color:var(--text-muted);}
+.dash-gf-col-observacao{width:230px;}
+.dash-gf-col-status{width:95px;}
+.dash-gf-status{font-size:11px;padding:2px 8px;border-radius:99px;display:inline-block;}
+.dash-gf-status.pago{background:rgba(34,197,94,.15);color:#22c55e;}
+.dash-gf-status.pendente{background:rgba(245,158,11,.15);color:#f59e0b;}
+
+@media (max-width: 720px){
+  .dash-gf-detail-title{font-size:18px;line-height:1.2;color:var(--text-muted);margin-top:10px;}
+  .dash-gf-detail-hint{display:block;}
+  .dash-gf-detail-wrap{margin-left:-4px;margin-right:-4px;border-radius:8px;}
+  .dash-gf-detail-table{min-width:690px;font-size:11px;}
+  .dash-gf-detail-table th{font-size:8.5px;letter-spacing:.12em;padding:7px 8px;line-height:1.15;}
+  .dash-gf-detail-table td{padding:9px 8px;line-height:1.25;}
+  .dash-gf-col-data{width:86px;}
+  .dash-gf-col-valor{width:104px;font-size:13px;}
+  .dash-gf-col-lancado{width:82px;font-size:10px;}
+  .dash-gf-col-fornecedor{width:118px;}
+  .dash-gf-col-categoria{width:132px;}
+  .dash-gf-col-compra{width:82px;}
+  .dash-gf-col-observacao{width:170px;}
+  .dash-gf-col-status{width:78px;}
+}
+
+/* Contas a pagar: refinamento mobile pós-validação em aparelho real. */
+@media (max-width: 700px) {
+  html,
+  body,
+  #app,
+  .app-shell,
+  .main-content,
+  .pagina,
+  .financeiro-contas-page {
+    max-width: 100vw !important;
+    overflow-x: clip !important;
+  }
+
+  .contas-pagar-date-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    column-gap: 12px !important;
+    row-gap: 10px !important;
+  }
+
+  .contas-pagar-date-filters .financeiro-filtro-compacto {
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+
+  .contas-pagar-date-filters input[type="date"] {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 44px !important;
+    padding: 8px 10px !important;
+    font-size: 16px !important;
+  }
+
+  .nc-vencimento-wrap {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 92px !important;
+    overflow: visible !important;
+  }
+
+  .nc-label-action-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 7px !important;
+    width: 100%;
+  }
+
+  .nc-label-action-row > div {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+
+  .nc-use-provider-due {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 112px !important;
+    min-height: 28px !important;
+    padding: 5px 8px !important;
+    border-color: rgba(34,197,94,.65) !important;
+    background: rgba(34,197,94,.16) !important;
+    color: #34d399 !important;
+    box-shadow: 0 0 0 1px rgba(34,197,94,.12) inset;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+  }
+
+  #ncVencCustom {
+    display: block;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    margin-top: 7px !important;
+    padding: 12px 14px !important;
+    font-size: 16px !important;
+    overflow: visible !important;
+  }
+
+  .nc-sheet-body input,
+  .nc-sheet-body select,
+  .nc-sheet-body textarea,
+  #financeiro_contasapagar input,
+  #financeiro_contasapagar select,
+  #financeiro_contasapagar textarea {
+    font-size: 16px !important;
+  }
+
+  #ncMsg {
+    display: block;
+    position: static !important;
+    margin: 0 0 8px !important;
+    padding: 0 2px !important;
+    min-height: 0 !important;
+    line-height: 1.25 !important;
+    font-size: 12px !important;
+    overflow-wrap: anywhere;
+  }
+
+  #ncMsg.ok,
+  #ncMsg.err {
+    padding: 7px 9px !important;
+    border-radius: 9px;
+    background: rgba(15,23,42,.92);
+  }
+
+  .nc-sheet-body > div:last-child {
+    gap: 8px !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .nc-use-provider-due {
+    max-width: 86px !important;
+    font-size: 9px !important;
+    padding-inline: 5px !important;
+  }
+}
+
+.categoria-compra-inline-edit {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.categoria-compra-inline-preview {
+  width: 44px;
+  min-width: 44px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 18px;
+}
+
+.categoria-compra-inline-grid {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(210px, 1fr) 64px minmax(180px, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+/* Mobile hardening: evita zoom/overflow recorrente no Chrome/Safari iOS. */
+@media (max-width: 700px) {
+  html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    touch-action: manipulation;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px !important;
+  }
+
+  .app-shell,
+  .main-content,
+  .pagina,
+  .card,
+  .modal,
+  .overlay,
+  #dashboard,
+  #financeiro_contasapagar,
+  #financeiro_baixar_contas,
+  .financeiro-contas-page,
+  .nc-overlay,
+  .nc-sheet,
+  .nc-sheet-body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .pagina {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .card {
+    padding: 10px !important;
+    border-radius: 10px !important;
+  }
+
+  #dashboard .card-title,
+  #dashboard h2,
+  #dashboard h3,
+  #dashboard [id$="Titulo"],
+  .dash-gf-detail-title {
+    max-width: 100%;
+    font-size: 15px !important;
+    line-height: 1.18 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #cardDashboardGraficosFinanceiros > div:first-child,
+  #cardDashboardGraficosFinanceiros > div:first-child > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    max-width: 100%;
+  }
+
+  #dashGfModoBtns,
+  #dashGfStatusBtns {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #dashGfStatusBtns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #dashGfModoBtns .btn,
+  #dashGfStatusBtns .btn,
+  #cardDashboardGraficosFinanceiros .btn-sm,
+  #dashGfOrdenacaoDetalhe {
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 6px 7px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  #dashGfResumo {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px !important;
+    font-size: 11px !important;
+  }
+
+  #dashGfResumo span,
+  #dashGfResumo strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .dash-gf-scroll,
+  #dashGfBarras,
+  #dashGfCurvaCategoria {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  #dashGfCurvaCategoria svg {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .dash-gf-meses-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .dash-gf-mes-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 7px 6px !important;
+    border-radius: 8px !important;
+    font-size: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .dash-gf-mes-card strong,
+  .dash-gf-mes-card span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .dash-gf-mes-valor {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px !important;
+    max-width: 100% !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+  }
+
+  .dash-gf-mes-valor b {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dash-gf-legenda-barras {
+    max-width: 100% !important;
+    flex-wrap: wrap !important;
+    overflow: hidden !important;
+  }
+
+  #dashGfRosca,
+  #dashGfRoscaCategoria {
+    display: grid !important;
+    grid-template-columns: minmax(112px, 132px) minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: start !important;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  #dashGfRosca svg,
+  #dashGfRoscaCategoria svg {
+    width: 118px !important;
+    height: 118px !important;
+    max-width: 100% !important;
+  }
+
+  #dashGfRosca > div,
+  #dashGfRoscaCategoria > div {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 11px !important;
+  }
+
+  #dashGfRosca > div > div,
+  #dashGfRoscaCategoria > div > div {
+    min-width: 0 !important;
+    padding: 2px 3px !important;
+    gap: 4px !important;
+    font-size: 11px !important;
+  }
+
+  #dashGfTopCategorias button {
+    grid-template-columns: 24px minmax(0, 1fr) 42px minmax(64px, auto) !important;
+    gap: 5px !important;
+    padding: 6px !important;
+    font-size: 11px !important;
+  }
+
+  .dash-gf-detail-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    overflow-x: scroll !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain;
+  }
+
+  .dash-gf-detail-table {
+    width: 720px !important;
+    min-width: 720px !important;
+    max-width: none !important;
+    font-size: 10px !important;
+  }
+
+  .dash-gf-detail-table th,
+  .dash-gf-detail-table td {
+    padding: 7px 6px !important;
+  }
+
+  .dash-gf-col-data { width: 74px !important; }
+  .dash-gf-col-valor { width: 88px !important; font-size: 11px !important; }
+  .dash-gf-col-lancado { width: 62px !important; }
+  .dash-gf-col-fornecedor { width: 96px !important; }
+  .dash-gf-col-categoria { width: 110px !important; }
+  .dash-gf-col-compra { width: 74px !important; }
+  .dash-gf-col-observacao { width: 130px !important; }
+
+  #financeiro_contasapagar .card,
+  #financeiro_baixar_contas .card {
+    padding: 10px !important;
+  }
+
+  #financeiro_contasapagar .financeiro-filtros-row,
+  #financeiro_baixar_contas .financeiro-filtros-row,
+  #financeiro_baixar_contas .financeiro-filtros-baixar {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+  }
+
+  #financeiro_contasapagar .item,
+  #financeiro_baixar_contas .item,
+  #listaContasAPagarFinanceiro .item,
+  #listaBaixarContasFinanceiro .item {
+    padding: 9px !important;
+    border-radius: 9px !important;
+  }
+
+  #financeiro_contasapagar .item-detalhe,
+  #financeiro_baixar_contas .item-detalhe,
+  #listaContasAPagarFinanceiro .item-detalhe,
+  #listaBaixarContasFinanceiro .item-detalhe {
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+
+  .nc-sheet-body {
+    padding: 9px 10px !important;
+    gap: 7px !important;
+  }
+
+  #ncCatGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  #ncCatGrid .nc-cat-card {
+    min-height: 48px !important;
+    padding: 7px 7px !important;
+    font-size: 11px !important;
+    line-height: 1.12 !important;
+  }
+
+  #ncCatGrid .nc-cat-card img,
+  #ncCatGrid .nc-cat-card svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .nc-grid-2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  .nc-sheet-body label,
+  .nc-sheet-body [style*="text-transform:uppercase"] {
+    font-size: 10px !important;
+    letter-spacing: .02em !important;
+  }
+
+  #ncValor,
+  #ncDataCompra,
+  #ncVencDia,
+  #ncParcCustom,
+  #ncVencCustom,
+  #ncObs {
+    min-height: 44px !important;
+    padding: 9px 10px !important;
+    font-size: 16px !important;
+    border-radius: 9px !important;
+  }
+
+  #ncModoParcelasWrap {
+    padding: 8px !important;
+    border-radius: 9px !important;
+  }
+
+  #confirmacaoSistemaOverlay {
+    padding: 8px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 22px) !important;
+    border-radius: 10px !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-header {
+    padding: 12px 14px !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-header h3 {
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-header .btn {
+    flex: 0 0 auto;
+    width: auto !important;
+    min-height: 34px !important;
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-body {
+    padding: 10px 14px !important;
+    overflow-x: hidden !important;
+  }
+
+  .nc-confirm-line {
+    grid-template-columns: minmax(82px, .74fr) minmax(0, 1.26fr) !important;
+    gap: 6px !important;
+    padding: 7px 0 !important;
+  }
+
+  .nc-confirm-line span {
+    font-size: 10px !important;
+    letter-spacing: .02em !important;
+  }
+
+  .nc-confirm-line strong {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    text-align: right !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-footer {
+    padding: 10px 14px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  #confirmacaoSistemaOverlay .modal-footer .btn {
+    min-height: 42px !important;
+    padding: 9px 8px !important;
+    font-size: 13px !important;
+  }
+}
+
+.categoria-compra-inline-grid input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+
+.categoria-compra-inline-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.categoria-compra-inline-icon-row input[type="text"] {
+  flex: 1 1 auto;
+}
+
+.categoria-compra-inline-file {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.categoria-compra-inline-cor input[type="color"] {
+  width: 54px;
+  height: 34px;
+  padding: 2px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.categoria-compra-inline-actions {
+  padding-top: 18px;
+}
+
+@media (max-width: 900px) {
+  .categoria-compra-inline-edit {
+    flex-wrap: wrap;
+  }
+  .categoria-compra-inline-grid {
+    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr);
+  }
+  .categoria-compra-inline-cor {
+    max-width: 72px;
+  }
+  .categoria-compra-inline-desc {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .categoria-compra-inline-preview {
+    display: none;
+  }
+  .categoria-compra-inline-grid {
+    grid-template-columns: 1fr;
+  }
+  .categoria-compra-inline-actions {
+    width: 100%;
+    justify-content: flex-start;
+    padding-top: 0;
+  }
+}
+
+/* Dashboard financeiro filtrado no mobile: mantém tudo dentro da viewport. */
+@media (max-width: 700px) {
+  #cardDashboardGraficosFinanceiros,
+  #cardDashboardGraficosFinanceiros * {
+    box-sizing: border-box !important;
+  }
+
+  #cardDashboardGraficosFinanceiros {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    padding: 8px !important;
+  }
+
+  #dashGfBarras,
+  #dashGfCurvaCategoria,
+  #dashGfDetalhe {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #dashGfBarras {
+    overflow: hidden !important;
+  }
+
+  .dash-gf-meses-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .dash-gf-mes-card,
+  .dash-gf-mes-card.selecionado {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 74px !important;
+    padding: 5px 4px !important;
+    gap: 3px !important;
+    border-radius: 7px !important;
+    grid-column: auto !important;
+    transform: none !important;
+  }
+
+  .dash-gf-mes-card > strong {
+    font-size: 10px !important;
+    line-height: 1 !important;
+  }
+
+  .dash-gf-mini-barras {
+    height: 7px !important;
+    gap: 2px !important;
+  }
+
+  .dash-gf-mini-barras i {
+    height: 2px !important;
+  }
+
+  .dash-gf-mes-valor {
+    display: block !important;
+    font-size: 8.5px !important;
+    line-height: 1.08 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .dash-gf-mes-valor b {
+    display: block !important;
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+  }
+
+  .dash-gf-legenda-barras {
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    margin-top: 4px !important;
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  #dashGfCurvaTitulo {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    margin-top: 8px !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #dashGfCurvaCategoria {
+    overflow-x: hidden !important;
+    padding-right: 0 !important;
+  }
+
+  #dashGfCurvaCategoria svg {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
+
+  .dash-gf-detail-title {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    margin: 10px 0 4px !important;
+  }
+
+  .dash-gf-detail-hint {
+    display: block !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    margin: 0 0 6px !important;
+  }
+
+  .dash-gf-detail-wrap {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x !important;
+    border-radius: 7px !important;
+  }
+
+  .dash-gf-detail-table {
+    width: 780px !important;
+    min-width: 780px !important;
+    max-width: none !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    font-size: 10px !important;
+  }
+
+  .dash-gf-detail-table th,
+  .dash-gf-detail-table td {
+    padding: 6px 7px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .dash-gf-detail-table th {
+    font-size: 8px !important;
+    letter-spacing: .06em !important;
+  }
+
+  .dash-gf-col-data { width: 96px !important; }
+  .dash-gf-col-valor { width: 92px !important; font-size: 10px !important; }
+  .dash-gf-col-lancado { width: 92px !important; }
+  .dash-gf-col-fornecedor { width: 120px !important; }
+  .dash-gf-col-categoria { width: 130px !important; }
+  .dash-gf-col-compra { width: 86px !important; }
+  .dash-gf-col-observacao { width: 170px !important; }
+  .dash-gf-col-status { width: 82px !important; }
+}
+
+/* Recebíveis mobile: cabeçalho e filtros não podem ser esmagados por botões full-width. */
+.financeiro-recebiveis-page,
+.financeiro-recebiveis-page * {
+  box-sizing: border-box;
+}
+
+.recebiveis-page-actions {
+  width: 100%;
+}
+
+.recebiveis-novo-btn {
+  justify-content: center;
+  text-align: center;
+}
+
+.recebiveis-card-title-row {
+  min-width: 0;
+}
+
+.recebiveis-card-title-row .card-title {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+@media (max-width: 700px) {
+  #financeiro_recebiveis {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  #financeiro_recebiveis .page-title {
+    text-align: left !important;
+    font-size: 20px !important;
+    line-height: 1.15 !important;
+    margin-bottom: 10px !important;
+    white-space: normal !important;
+  }
+
+  #financeiro_recebiveis .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    padding: 10px !important;
+  }
+
+  .recebiveis-page-actions {
+    display: flex !important;
+    justify-content: center !important;
+    margin: 0 0 10px !important;
+  }
+
+  .recebiveis-novo-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 50px !important;
+    justify-content: center !important;
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row .card-title {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 15px !important;
+    line-height: 1.15 !important;
+    letter-spacing: .04em !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    text-orientation: mixed !important;
+    writing-mode: horizontal-tb !important;
+  }
+
+  #btnToggleRecebiveisLista {
+    width: auto !important;
+    min-width: 88px !important;
+    max-width: 128px !important;
+    min-height: 34px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    align-items: stretch !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #filtroRecebivelBusca,
+  #filtroRecebivelUsuario {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 46px !important;
+    font-size: 16px !important;
+  }
+
+  .recebiveis-date-filters {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    gap: 6px !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .recebiveis-date-filters label {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .recebiveis-date-filters input[type="date"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 46px !important;
+    padding: 8px 9px !important;
+    font-size: 14px !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex > .btn {
+    width: 100% !important;
+    min-height: 44px !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro[style*="display:none"] {
+    display: none !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-title-row .card-title {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 15px !important;
+    line-height: 1.18 !important;
+    letter-spacing: .04em !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    width: 100% !important;
+    align-items: center !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-pendentes-label {
+    min-width: 0 !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-actions .btn {
+    width: auto !important;
+    min-width: 82px !important;
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-filtros > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #filtroRecFuturoBusca {
+    height: 44px !important;
+    font-size: 15px !important;
+  }
+
+  .recebiveis-data-field {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 4px !important;
+    color: var(--text-muted) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+  }
+
+  .recebiveis-data-field span {
+    display: block !important;
+    white-space: nowrap !important;
+  }
+
+  .recebiveis-data-field input[type="date"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    padding: 8px 10px !important;
+    font-size: 14px !important;
+  }
+
+  #acoesSelecaoRecFuturos {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 7px !important;
+    align-items: stretch !important;
+  }
+
+  #acoesSelecaoRecFuturos[style*="display:none"] {
+    display: none !important;
+  }
+
+  #acoesSelecaoRecFuturos .btn,
+  #acoesSelecaoRecFuturos .item-detalhe {
+    width: 100% !important;
+    min-width: 0 !important;
+    text-align: center !important;
+  }
+}
+
+/* Recebíveis mobile compacto: campos alinhados e menores. */
+@media (max-width: 700px) {
+  #financeiro_recebiveis {
+    font-size: 13px !important;
+  }
+
+  #financeiro_recebiveis .card {
+    padding: 8px !important;
+    border-radius: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .recebiveis-novo-btn {
+    min-height: 44px !important;
+    padding: 9px 12px !important;
+    border-radius: 11px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+    margin-bottom: 7px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row .card-title,
+  #financeiro_recebiveis .recebiveis-provisionados-title-row .card-title {
+    font-size: 13px !important;
+    line-height: 1.12 !important;
+    letter-spacing: .08em !important;
+  }
+
+  #btnToggleRecebiveisLista {
+    min-width: 82px !important;
+    max-width: 112px !important;
+    min-height: 32px !important;
+    padding: 5px 7px !important;
+    font-size: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  #financeiro_recebiveis input,
+  #financeiro_recebiveis select,
+  #financeiro_recebiveis button {
+    border-radius: 9px !important;
+  }
+
+  #filtroRecebivelBusca,
+  #filtroRecebivelUsuario,
+  #filtroRecFuturoBusca {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex {
+    gap: 6px !important;
+  }
+
+  .recebiveis-date-filters {
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    gap: 5px !important;
+  }
+
+  .recebiveis-date-filters label {
+    font-size: 10px !important;
+  }
+
+  .recebiveis-date-filters input[type="date"] {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 7px 8px !important;
+    font-size: 12px !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex > .btn {
+    min-height: 38px !important;
+    padding: 7px 8px !important;
+    font-size: 12px !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex > button:nth-last-child(2),
+  #financeiro_recebiveis .financeiro-filtros-flex > button:nth-last-child(1) {
+    width: 100% !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-title-row {
+    gap: 6px !important;
+    margin-bottom: 7px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-actions {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-pendentes-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 12px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-pendentes-label input {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-actions .btn {
+    min-width: 76px !important;
+    min-height: 34px !important;
+    padding: 6px 8px !important;
+    font-size: 10.5px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-filtros {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  #filtroRecFuturoBusca {
+    grid-column: 1 / -1 !important;
+  }
+
+  .recebiveis-data-field {
+    gap: 3px !important;
+    font-size: 10.5px !important;
+  }
+
+  .recebiveis-data-field input[type="date"] {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 7px 8px !important;
+    font-size: 12px !important;
+  }
+
+  #acoesSelecaoRecFuturos {
+    padding: 8px !important;
+    gap: 6px !important;
+  }
+
+  #acoesSelecaoRecFuturos .btn,
+  #acoesSelecaoRecFuturos .item-detalhe {
+    min-height: 36px !important;
+    padding: 7px 8px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Recebíveis mobile definitivo: layout limpo para 360-430px de largura. */
+@media (max-width: 700px) {
+  #financeiro_recebiveis {
+    padding-inline: 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  #financeiro_recebiveis .page-title {
+    display: none !important;
+  }
+
+  #financeiro_recebiveis .card {
+    padding: 8px !important;
+    border-radius: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .recebiveis-page-actions {
+    margin-bottom: 8px !important;
+  }
+
+  .recebiveis-novo-btn {
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-card-title-row,
+  #financeiro_recebiveis .recebiveis-provisionados-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+    align-items: center !important;
+    margin-bottom: 8px !important;
+  }
+
+  #financeiro_recebiveis .recebiveis-provisionados-title-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #financeiro_recebiveis .card-title {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+    letter-spacing: .08em !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    writing-mode: horizontal-tb !important;
+  }
+
+  #btnToggleRecebiveisLista {
+    width: auto !important;
+    min-width: 72px !important;
+    max-width: 98px !important;
+    min-height: 30px !important;
+    padding: 5px 7px !important;
+    font-size: 9.5px !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex,
+  #financeiro_recebiveis .recebiveis-provisionados-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    align-items: end !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #filtroRecebivelBusca,
+  #filtroRecebivelUsuario,
+  #filtroRecFuturoBusca {
+    grid-column: 1 / -1 !important;
+  }
+
+  #financeiro_recebiveis input,
+  #financeiro_recebiveis select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  #financeiro_recebiveis input[type="date"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    color-scheme: dark;
+    font-size: 11px !important;
+    padding: 6px 7px !important;
+  }
+
+  .recebiveis-date-filters {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .recebiveis-data-field {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 3px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    color: var(--text-muted) !important;
+    font-size: 9.5px !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+  }
+
+  .recebiveis-data-field span {
+    display: block !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  #financeiro_recebiveis .financeiro-filtros-flex > .btn {
+    width: 100% !important;
+    min-height: 34px !important;
+    padding: 7px 8px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .recebiveis-provisionados-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 6px !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .recebiveis-pendentes-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+    color: var(--text-muted) !important;
+  }
+
+  .recebiveis-pendentes-label input {
+    width: 17px !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    min-height: 17px !important;
+    padding: 0 !important;
+  }
+
+  .recebiveis-provisionados-actions .btn {
+    width: auto !important;
+    min-width: 70px !important;
+    min-height: 32px !important;
+    padding: 6px 8px !important;
+    border-radius: 8px !important;
+    font-size: 10px !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro,
+  #acoesSelecaoRecFuturos {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+    padding: 7px !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro[style*="display:none"],
+  #acoesSelecaoRecFuturos[style*="display:none"] {
+    display: none !important;
+  }
+
+  #acoesSelecaoRecebiveisFinanceiro .btn,
+  #acoesSelecaoRecFuturos .btn,
+  #acoesSelecaoRecebiveisFinanceiro .item-detalhe,
+  #acoesSelecaoRecFuturos .item-detalhe {
+    width: 100% !important;
+    min-height: 32px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    text-align: center !important;
+  }
+}
+.baixa-fornecedor-resumo{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;margin-bottom:10px;border:1px solid var(--border);border-radius:10px;color:var(--text-muted);font-size:12px}.baixa-fornecedor-lista{display:grid;gap:10px}.baixa-fornecedor-grupo{border:1px solid var(--border);border-radius:12px;background:var(--surface-2,var(--surface));overflow:hidden}.baixa-fornecedor-cabecalho{display:grid;grid-template-columns:auto minmax(220px,1fr) minmax(150px,auto) minmax(160px,auto);align-items:center;gap:16px;padding:16px}.baixa-fornecedor-cabecalho>input{width:16px;height:16px}.baixa-fornecedor-identidade,.baixa-fornecedor-vencimento,.baixa-fornecedor-total{display:flex;flex-direction:column;gap:4px}.baixa-fornecedor-identidade strong{font-size:15px}.baixa-fornecedor-identidade span,.baixa-fornecedor-vencimento span,.baixa-fornecedor-total span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}.baixa-fornecedor-vencimento strong{color:#ff7777}.baixa-fornecedor-total{text-align:right}.baixa-fornecedor-total strong{font-size:20px;color:#ffd400}.baixa-fornecedor-detalhes{border-top:1px solid var(--border);padding:10px 16px}.baixa-fornecedor-detalhes summary{cursor:pointer;color:var(--text-muted);font-size:11px;font-weight:700}.baixa-fornecedor-detalhes ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:5px}.baixa-fornecedor-detalhes li{display:grid;grid-template-columns:90px 1fr auto;gap:10px;font-size:11px;color:var(--text-muted)}.baixa-fornecedor-detalhes li strong{color:var(--text)}.baixa-fornecedor-detalhes li.mais{display:block;font-weight:700}@media(max-width:700px){.baixa-fornecedor-cabecalho{grid-template-columns:auto 1fr;gap:10px}.baixa-fornecedor-vencimento{grid-column:2}.baixa-fornecedor-total{grid-column:2;text-align:left}.baixa-fornecedor-detalhes li{grid-template-columns:75px 1fr}.baixa-fornecedor-detalhes li strong{grid-column:2}}
+
+#navContainer [data-nav-item-id]{position:relative}
+#navContainer .nav-order-handle{position:absolute;right:4px;top:50%;transform:translateY(-50%);z-index:5;display:flex;align-items:center;justify-content:center;width:22px;height:28px;border-radius:7px;color:var(--text-muted);font-size:17px;line-height:1;cursor:grab;touch-action:none;opacity:.48;user-select:none;-webkit-user-select:none}
+#navContainer [data-nav-item-id]:hover>.nav-order-handle,#navContainer .nav-order-handle:focus{opacity:1;background:var(--surface3)}
+#navContainer .nav-touch-moving{opacity:.45!important;outline:2px solid var(--accent);outline-offset:-2px}

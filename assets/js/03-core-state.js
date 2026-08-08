@@ -319,18 +319,7 @@ function obterPaginaAtivaSalva() {
 
 function restaurarPaginaAtivaSalvaOuPadrao() {
   fecharMenusLaterais();
-  // Tela inicial = primeiro nav-btn visível na ordem personalizada do usuário
-  // (a ordem foi aplicada por carregarOrdemNavMenu antes desta chamada)
-  const telaPreferida = typeof obterTelaPreferidaAoLogin === 'function' ? obterTelaPreferidaAoLogin() : null;
-  const primeiroBtnVisivel = Array.from(document.querySelectorAll('#navContainer .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)'))
-    .find(btn => btn.style.display !== 'none' && (!usuarioSistemaLogado || usuarioPodeAcessar(btn.dataset.page)));
-  const paginaPrimeira = telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists';
-  if (document.getElementById(paginaPrimeira) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaPrimeira))) {
-    const botaoPrincipal = document.querySelector(`.nav-btn[data-page="${paginaPrimeira}"]`);
-    abrirPagina(paginaPrimeira, botaoPrincipal);
-    return true;
-  }
-
+  // No F5, restaura primeiro a pagina realmente aberta pelo usuario.
   let paginaSalva = obterPaginaAtivaSalva();
   if (paginaSalva === 'itens') {
     paginaSalva = 'tarefas';
@@ -339,6 +328,17 @@ function restaurarPaginaAtivaSalvaOuPadrao() {
   if (paginaSalva && document.getElementById(paginaSalva) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaSalva))) {
     const botaoSalvo = document.querySelector(`.nav-btn[data-page="${paginaSalva}"]`);
     abrirPagina(paginaSalva, botaoSalvo);
+    return true;
+  }
+
+  // Sem pagina salva valida, usa a tela preferida ou a primeira disponivel.
+  const telaPreferida = typeof obterTelaPreferidaAoLogin === 'function' ? obterTelaPreferidaAoLogin() : null;
+  const primeiroBtnVisivel = Array.from(document.querySelectorAll('#navContainer .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)'))
+    .find(btn => btn.style.display !== 'none' && (!usuarioSistemaLogado || usuarioPodeAcessar(btn.dataset.page)));
+  const paginaPrimeira = telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists';
+  if (document.getElementById(paginaPrimeira) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaPrimeira))) {
+    const botaoPrincipal = document.querySelector(`.nav-btn[data-page="${paginaPrimeira}"]`);
+    abrirPagina(paginaPrimeira, botaoPrincipal);
     return true;
   }
 
@@ -731,6 +731,9 @@ function usuarioEhPerfilGerencialNotificacoes() {
 
 const PERFIL_PERMISSOES = [
   { key: 'dashboard', label: 'Dashboard' },
+  { key: 'estatisticas_atendimento', label: 'Estatísticas de atendimento' },
+  { key: 'estatisticas_atendimento_responder', label: 'Atendimento - responder avaliações' },
+  { key: 'estatisticas_atendimento_conectar', label: 'Atendimento - conectar e sincronizar Google' },
   { key: 'meu_painel', label: 'Meu Painel (personalizado)' },
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
@@ -747,6 +750,7 @@ const PERFIL_PERMISSOES = [
   { key: 'relatorio_financeiro', label: 'Relatório de contas a pagar' },
   { key: 'relatorio_recebimentos', label: 'Relatório de recebimentos' },
   { key: 'relatorio_ajuste_saldo', label: 'Relatório ajuste de saldo' },
+  { key: 'relatorio_sangrias_raffinato', label: 'Relatório de sangrias Raffinato' },
   { key: 'financeiro_fornecedores', label: 'Financeiro - Fornecedores' },
   { key: 'financeiro_formas_pagamento', label: 'Financeiro - Formas de pagamento' },
   { key: 'financeiro_contasapagar', label: 'Financeiro - Contas a pagar' },
@@ -754,8 +758,10 @@ const PERFIL_PERMISSOES = [
   { key: 'financeiro_conta_financeira', label: 'Financeiro - Conta financeira' },
   { key: 'financeiro_recebiveis', label: 'Financeiro - Recebíveis' },
   { key: 'financeiro_cofre', label: 'Financeiro - Cofre' },
+  { key: 'financeiro_sangrias_raffinato', label: 'Integrações - Raffinato' },
   { key: 'financeiro_grupo_fornecedor', label: 'Financeiro - Grupos de Fornecedor' },
   { key: 'financeiro_categorias_compra', label: 'Financeiro - Categorias de Compra' },
+  { key: 'integracoes_financeiras', label: 'Integrações Financeiras' },
   { key: 'funcionarios', label: 'Funcionarios' },
   { key: 'solicitacoes', label: 'Solicitações de acesso / aprovar e-mail' },
   { key: 'emails', label: 'Envio de e-mail' },
@@ -794,6 +800,7 @@ const PERFIL_ACOES_COLUNAS = [
 const PERFIL_MODULOS_MATRIZ_BASE = [
   { nome: 'Operação diária', recursos: [
     { nome: 'Dashboard', visualizar: 'dashboard' },
+    { nome: 'Estatísticas de atendimento', visualizar: 'estatisticas_atendimento', criar: 'estatisticas_atendimento_conectar', editar: 'estatisticas_atendimento_responder' },
     { nome: 'Meu Painel', visualizar: 'meu_painel', editar: 'meu_painel_editar' },
     { nome: 'Execução de checklist', visualizar: 'checklists', criar: 'nova_execucao_manual', editar: 'checklists_editar', excluir: 'excluir_checklist_lancado' },
     { nome: 'Agenda', visualizar: 'agenda', criar: 'cadastro_plantao', editar: 'agenda_editar', excluir: 'excluir_agenda_cadastrada' },
@@ -817,6 +824,10 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
     { nome: 'Categorias de compra', visualizar: 'financeiro_categorias_compra', criar: 'categorias_compra_criar', editar: 'categorias_compra_editar', excluir: 'categorias_compra_excluir' },
     { nome: 'Grupos de fornecedor', visualizar: 'financeiro_grupo_fornecedor', criar: 'grupos_fornecedor_criar', editar: 'grupos_fornecedor_editar', excluir: 'grupos_fornecedor_excluir' },
     { nome: 'Cofre', visualizar: 'financeiro_cofre', editar: 'financeiro_cofre_editar' },
+    { nome: 'Integrações financeiras', visualizar: 'integracoes_financeiras' },
+  ]},
+  { nome: 'Integrações', recursos: [
+    { nome: 'Raffinato', visualizar: 'financeiro_sangrias_raffinato' },
   ]},
   { nome: 'Relatórios', recursos: [
     { nome: 'Relatório de escala/plantões', visualizar: 'relatorio_plantao' },
@@ -826,6 +837,7 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
     { nome: 'Contas a pagar', visualizar: 'relatorio_financeiro' },
     { nome: 'Recebimentos', visualizar: 'relatorio_recebimentos' },
     { nome: 'Ajustes de saldo', visualizar: 'relatorio_ajuste_saldo' },
+    { nome: 'Sangrias Raffinato', visualizar: 'relatorio_sangrias_raffinato' },
   ]},
   { nome: 'Administração', recursos: [
     { nome: 'Solicitações de acesso', visualizar: 'solicitacoes', editar: 'aprovar_solicitacao_acesso' },
@@ -890,6 +902,7 @@ function obterPermissoesBase(codigo) {
       financeiro_grupo_fornecedor: false,
       financeiro_categorias_compra: false,
       financeiro_cofre: false,
+      integracoes_financeiras: false,
       funcionarios: false,
       solicitacoes: true,
       emails: false,
@@ -939,6 +952,7 @@ function obterPermissoesBase(codigo) {
       financeiro_grupo_fornecedor: false,
       financeiro_categorias_compra: false,
       financeiro_cofre: false,
+      integracoes_financeiras: false,
       funcionarios: false,
       solicitacoes: false,
       emails: false,
@@ -986,6 +1000,7 @@ function obterPermissoesBase(codigo) {
     financeiro_conta_financeira: false,
     financeiro_recebiveis: false,
       financeiro_cofre: false,
+      integracoes_financeiras: false,
     funcionarios: false,
     solicitacoes: false,
     emails: false,

@@ -202,16 +202,41 @@ function obterPreferenciasLoginSalvas() {
 }
 
 function salvarPreferenciasLogin({ username = '', password = '', salvarSenha = false, manterConectado = false } = {}) {
+  const emailNormalizado = String(username || '').trim().toLowerCase();
   const payload = {
-    salvarSenha: !!salvarSenha,
+    salvarSenha: !!salvarSenha || !!manterConectado,
     manterConectado: !!manterConectado,
-    username: salvarSenha ? String(username || '').trim() : '',
+    username: (salvarSenha || manterConectado) ? emailNormalizado : '',
   };
   const bruto = JSON.stringify(payload);
   ['zuqui_login_prefs', 'check_diario_login_prefs'].forEach(chave => {
     localStorage.setItem(chave, bruto);
     sessionStorage.setItem(chave, bruto);
   });
+}
+
+function obterSessaoPersistenteLoginSalva() {
+  const chaves = ['zuqui_auth', 'check_diario_auth_persistente'];
+  for (const chave of chaves) {
+    try {
+      const bruto = localStorage.getItem(chave);
+      if (!bruto) continue;
+      const sessao = JSON.parse(bruto);
+      if (sessao && (sessao.id || sessao.email || sessao.username || sessao.nome)) return sessao;
+    } catch (_) {}
+  }
+  return null;
+}
+
+function loginDigitadoConfereComSessaoPersistente(username = '') {
+  const sessao = obterSessaoPersistenteLoginSalva();
+  if (!sessao) return false;
+  const digitado = String(username || '').trim().toLowerCase();
+  if (!digitado) return true;
+  const candidatos = [sessao.email, sessao.username, sessao.usuario, sessao.nome]
+    .map(v => String(v || '').trim().toLowerCase())
+    .filter(Boolean);
+  return candidatos.includes(digitado);
 }
 
 function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
@@ -271,10 +296,12 @@ function restaurarPreferenciasLogin() {
   const save = document.getElementById('savePassword');
   const keep = document.getElementById('keepLoggedIn');
 
-  if (save) save.checked = !!prefs.salvarSenha;
-  if (keep) keep.checked = !!prefs.manterConectado;
-  if (prefs.salvarSenha) {
-    if (user) user.value = String(prefs.username || '');
+  const temSessaoPersistente = !!obterSessaoPersistenteLoginSalva();
+  if (save) save.checked = !!prefs.salvarSenha || temSessaoPersistente;
+  if (keep) keep.checked = !!prefs.manterConectado || temSessaoPersistente;
+  if ((prefs.salvarSenha || prefs.manterConectado || temSessaoPersistente) && user) {
+    const sessao = obterSessaoPersistenteLoginSalva();
+    user.value = String(prefs.username || sessao?.email || sessao?.username || '').trim();
   }
   if (pass) pass.value = '';
 }
@@ -523,7 +550,14 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       atualizarUsuarioTopbar();
       aplicarPermissoesSistema();
     } catch (erro) {
-      console.warn('A sessão não pôde ser revalidada e foi encerrada:', erro);
+      const manterConectado = !!(localStorage.getItem('zuqui_auth') || localStorage.getItem('check_diario_auth_persistente'));
+      console.warn('A sessão não pôde ser revalidada agora:', erro);
+      if (manterConectado) {
+        // Em celular/Safari a aba pode voltar sem rede ou com consulta temporariamente bloqueada por RLS.
+        // Mantém a sessão local para não obrigar o usuário a digitar senha toda hora.
+        persistirSessaoSistemaAtual(true);
+        return;
+      }
       await logout();
       setMsg('msgLogin', 'Seu acesso ou perfil foi alterado. Entre novamente.', 'err');
     } finally {
@@ -1249,8 +1283,22 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const loginComEmail = username.includes('@');
     setMsg('msgLogin', '', '');
 
-    if (!username || !password) {
-      setMsg('msgLogin', 'Preencha usuário e senha.', 'err');
+    if (!username) {
+      setMsg('msgLogin', 'Preencha o e-mail de acesso.', 'err');
+      return;
+    }
+
+    if (!password) {
+      const temSessaoPersistente = !!obterSessaoPersistenteLoginSalva();
+      if (manterConectado && temSessaoPersistente && loginDigitadoConfereComSessaoPersistente(username)) {
+        setMsg('msgLogin', 'Entrando com sessão salva...', 'ok');
+        const restaurou = await restaurarSessaoSistema();
+        if (restaurou) {
+          salvarPreferenciasLogin({ username, salvarSenha: true, manterConectado: true });
+          return;
+        }
+      }
+      setMsg('msgLogin', 'Digite a senha apenas se a sessão salva não estiver disponível.', 'err');
       return;
     }
 
@@ -1436,13 +1484,13 @@ function selecionarTipoAjusteManualAdminPonto(tipo = 'adicionar') {
   document.getElementById('adminAjusteTipoAdicionar')?.classList.toggle('ativo', adminAjusteManualPontoTipoAtual === 'adicionar');
   document.getElementById('adminAjusteTipoAnular')?.classList.toggle('ativo', adminAjusteManualPontoTipoAtual === 'anular');
   const horarioLabel = document.getElementById('adminAjustePontoHorarioLabel');
+  const horarioInput = document.getElementById('adminAjustePontoHorario');
   const batidaLabel = document.getElementById('adminAjustePontoBatidaLabel');
   if (horarioLabel) {
-    horarioLabel.hidden = false;
-    horarioLabel.childNodes[0].textContent = adminAjusteManualPontoTipoAtual === 'anular'
-      ? 'Horário correto (substitui a batida) '
-      : 'Horário correto ';
+    horarioLabel.hidden = adminAjusteManualPontoTipoAtual === 'anular';
+    horarioLabel.childNodes[0].textContent = 'Horário correto ';
   }
+  if (horarioInput && adminAjusteManualPontoTipoAtual === 'anular') horarioInput.value = '';
   if (batidaLabel) batidaLabel.hidden = adminAjusteManualPontoTipoAtual !== 'anular';
   const motivo = document.getElementById('adminAjustePontoMotivo');
   if (motivo) {
@@ -1518,21 +1566,14 @@ async function atualizarBatidasDisponiveisAnulacaoPonto() {
   }
 }
 
-async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso, horarioCorreto }) {
+async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso }) {
   const { registro, intervalos } = await obterRegistroPontoComIntervalosPorFuncionarioData(funcionarioId, dataAjuste);
   if (!registro?.id) return { ok: false, mensagem: 'Nenhum registro de ponto encontrado para essa data.' };
   const batidasAtuais = montarListaBatidasPonto(registro, intervalos).map(item => item.iso);
   const alvo = new Date(batidaIso).getTime();
   const indiceAlvo = batidasAtuais.findIndex(iso => new Date(iso).getTime() === alvo);
   if (indiceAlvo < 0) return { ok: false, mensagem: 'Batida selecionada não foi encontrada.' };
-  const horarioCorrigidoIso = typeof montarIsoAjustePonto === 'function'
-    ? montarIsoAjustePonto(dataAjuste, horarioCorreto)
-    : new Date(`${dataAjuste}T${horarioCorreto}:00`).toISOString();
-  if (!horarioCorrigidoIso || Number.isNaN(new Date(horarioCorrigidoIso).getTime())) {
-    return { ok: false, mensagem: 'Horário correto inválido.' };
-  }
-  const batidas = [...batidasAtuais];
-  batidas[indiceAlvo] = horarioCorrigidoIso;
+  const batidas = batidasAtuais.filter((_, indice) => indice !== indiceAlvo);
   batidas.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
   const jornadaFechada = batidas.length % 2 === 0;
@@ -1553,16 +1594,46 @@ async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso, ho
     retorno_em: item.retorno_em,
   }));
 
-  const { error: erroAtualiza } = await sb.from('ponto_registros').update({ entrada_em: entradaEm, inicio_intervalo_em: inicioIntervaloEm, retorno_intervalo_em: retornoIntervaloEm, saida_em: saidaEm }).eq('id', registro.id);
+  const estadoOriginalRegistro = {
+    entrada_em: registro.entrada_em || null,
+    inicio_intervalo_em: registro.inicio_intervalo_em || null,
+    retorno_intervalo_em: registro.retorno_intervalo_em || null,
+    saida_em: registro.saida_em || null,
+  };
+  const restaurarJornadaOriginal = async () => {
+    await sb.from('ponto_registros').update(estadoOriginalRegistro)
+      .eq('id', registro.id)
+      .eq('funcionario_id', funcionarioId)
+      .eq('data_ponto', dataAjuste);
+    await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
+    if (intervalos.length) {
+      await sb.from('ponto_intervalos').insert(intervalos.map((item, idx) => ({
+        ponto_registro_id: registro.id,
+        ordem: Number(item.ordem || 0) || idx + 2,
+        inicio_em: item.inicio_em || null,
+        retorno_em: item.retorno_em || null,
+      })));
+    }
+  };
+
+  const { error: erroAtualiza } = await sb.from('ponto_registros')
+    .update({ entrada_em: entradaEm, inicio_intervalo_em: inicioIntervaloEm, retorno_intervalo_em: retornoIntervaloEm, saida_em: saidaEm })
+    .eq('id', registro.id)
+    .eq('funcionario_id', funcionarioId)
+    .eq('data_ponto', dataAjuste);
   if (erroAtualiza) return { ok: false, mensagem: mensagemErroSupabase(erroAtualiza, 'erro desconhecido') };
 
   const { error: erroDelete } = await sb.from('ponto_intervalos').delete().eq('ponto_registro_id', registro.id);
   if (erroDelete && !isMissingTimeClockIntervalsTableError(erroDelete)) {
-    return { ok: false, mensagem: `Batida anulada no registro principal, mas houve erro ao limpar intervalos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
+    await restaurarJornadaOriginal();
+    return { ok: false, mensagem: `Não foi possível reorganizar os intervalos: ${mensagemErroSupabase(erroDelete, 'erro desconhecido')}` };
   }
   if (novosIntervalos.length) {
     const { error: erroInsert } = await sb.from('ponto_intervalos').insert(novosIntervalos);
-    if (erroInsert) return { ok: false, mensagem: `Batida anulada, mas houve erro ao recriar intervalos: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}` };
+    if (erroInsert) {
+      await restaurarJornadaOriginal();
+      return { ok: false, mensagem: `Não foi possível recriar os intervalos: ${mensagemErroSupabase(erroInsert, 'erro desconhecido')}` };
+    }
   }
 
   try {
@@ -1574,18 +1645,16 @@ async function anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso, ho
     const auditoriaId = auditorias?.[0]?.id;
     if (auditoriaId) {
       await sb.from('ponto_batidas_auditoria').update({
-        registrado_em: horarioCorrigidoIso,
-        origem_registro: 'ajuste_manual_admin',
+        origem_registro: 'anulado_ajuste_manual_admin',
       }).eq('id', auditoriaId);
     }
   } catch (erroAuditoria) {
-    console.warn('Não foi possível atualizar a auditoria da batida corrigida:', erroAuditoria);
+    console.warn('Não foi possível identificar a batida anulada na auditoria:', erroAuditoria);
   }
 
   return {
     ok: true,
-    mensagem: `Batida das ${formatarHoraPonto(batidaIso)} substituída por ${formatarHoraPonto(horarioCorrigidoIso)}. Jornada recalculada.`,
-    horarioCorrigidoIso,
+    mensagem: `Batida das ${formatarHoraPonto(batidaIso)} removida da jornada e preservada no histórico. Jornada recalculada.`,
   };
 }
 
@@ -1628,8 +1697,8 @@ function montarHtmlAjustesPonto(ajustes = []) {
 }
 
 function abrirModalAjusteManualAdminPonto(funcionarioId = '', tipoInicial = 'adicionar', dataInicial = '') {
-  if (!usuarioEhAdministrador()) {
-    setMsg('msgPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+  if (!usuarioPodeAcessar('ponto_ajustes')) {
+    setMsg('msgPonto', 'Seu perfil não possui permissão para ajustar o ponto.', 'err');
     return;
   }
   const modal = document.getElementById('modalAjusteManualAdminPonto');
@@ -1667,8 +1736,8 @@ function abrirModalAjusteManualAdminPonto(funcionarioId = '', tipoInicial = 'adi
 }
 
 async function salvarAjusteManualAdminPonto() {
-  if (!usuarioEhAdministrador()) {
-    setMsg('msgAjusteManualAdminPonto', 'Somente Administrador pode lançar ajuste manual de ponto.', 'err');
+  if (!usuarioPodeAcessar('ponto_ajustes')) {
+    setMsg('msgAjusteManualAdminPonto', 'Seu perfil não possui permissão para ajustar o ponto.', 'err');
     return;
   }
 
@@ -1679,25 +1748,41 @@ async function salvarAjusteManualAdminPonto() {
   const senha = String(document.getElementById('adminAjustePontoSenha')?.value || '').trim();
   const motivo = String(document.getElementById('adminAjustePontoMotivo')?.value || '').trim();
   const tipo = adminAjusteManualPontoTipoAtual === 'anular' ? 'anular' : 'adicionar';
+  const opcaoFuncionario = document.getElementById('adminAjustePontoFuncionario')?.selectedOptions?.[0] || null;
+  const lojaFuncionarioSelecionado = String(opcaoFuncionario?.dataset?.lojaId || '').trim();
 
-  if (!funcionarioId || !dataAjuste || !horarioAjuste || !senha || !motivo || (tipo === 'anular' && !batidaAnular)) {
+  const horarioObrigatorio = tipo === 'adicionar' && !horarioAjuste;
+  if (!funcionarioId || !dataAjuste || horarioObrigatorio || !senha || !motivo || (tipo === 'anular' && !batidaAnular)) {
     setMsg('msgAjusteManualAdminPonto', tipo === 'anular'
-      ? 'Preencha funcionário, data, batida errada, horário correto, senha do administrador e motivo.'
+      ? 'Preencha funcionário, data, batida errada, senha do administrador e motivo.'
       : 'Preencha funcionário, data, horário, senha do administrador e motivo.', 'err');
     return;
   }
 
   try {
-    let qFuncionarioLoja = sb
+    // A opção foi carregada pela lista já isolada por loja. Usar esse contexto
+    // estável evita combinar o filtro automático do Supabase com uma segunda
+    // leitura de sessão/topbar que pode estar sendo atualizada em paralelo.
+    const criarConsultaFuncionario = () => sb
       .from('funcionarios')
-      .select('id, nome, loja_id, ativo')
+      .select('id, nome, loja_id, ativo');
+    let qFuncionarioLoja = typeof criarConsultaPontoComLojaExplicita === 'function'
+      ? criarConsultaPontoComLojaExplicita(criarConsultaFuncionario)
+      : criarConsultaFuncionario();
+    qFuncionarioLoja = qFuncionarioLoja
       .eq('id', funcionarioId)
       .eq('ativo', true);
-    qFuncionarioLoja = aplicarFiltroLojaAtualPontoQuery(qFuncionarioLoja);
+    if (lojaFuncionarioSelecionado) {
+      qFuncionarioLoja = qFuncionarioLoja.eq('loja_id', lojaFuncionarioSelecionado);
+    }
     const { data: funcionarioLoja, error: erroFuncionarioLoja } = await qFuncionarioLoja.maybeSingle();
     if (erroFuncionarioLoja) throw erroFuncionarioLoja;
-    if (!funcionarioLoja || !funcionarioPertenceLojaAtualPonto(funcionarioLoja)) {
-      setMsg('msgAjusteManualAdminPonto', 'Funcionário não pertence à loja logada. Ajuste bloqueado para proteger o multi-loja.', 'err');
+    if (!funcionarioLoja) {
+      setMsg('msgAjusteManualAdminPonto', 'Não foi possível confirmar o funcionário nesta loja. Atualize a tela e tente novamente.', 'err');
+      return;
+    }
+    if (lojaFuncionarioSelecionado && String(funcionarioLoja.loja_id || '').trim() !== lojaFuncionarioSelecionado) {
+      setMsg('msgAjusteManualAdminPonto', 'O vínculo de loja do funcionário mudou. Atualize a tela antes de ajustar o ponto.', 'err');
       return;
     }
   } catch (error) {
@@ -1713,7 +1798,7 @@ async function salvarAjusteManualAdminPonto() {
     return;
   }
   if (!senhaOk) {
-    setMsg('msgAjusteManualAdminPonto', 'Senha/PIN do administrador inválido.', 'err');
+    setMsg('msgAjusteManualAdminPonto', 'PIN operacional inválido ou sem permissão para ajustar o ponto.', 'err');
     return;
   }
 
@@ -1725,10 +1810,11 @@ async function salvarAjusteManualAdminPonto() {
   let resultado;
   let solicitacaoManual;
   if (tipo === 'anular') {
-    resultado = await anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso: batidaAnular, horarioCorreto: horarioAjuste });
+    resultado = await anularBatidaPontoAdmin({ funcionarioId, dataAjuste, batidaIso: batidaAnular });
+    const horarioBatidaAnulada = formatarHoraPonto(batidaAnular);
     solicitacaoManual = {
       funcionario_id: funcionarioId, funcionario_nome: funcionarioNome, data_ajuste: dataAjuste,
-      horario_ajuste: horarioAjuste, motivo: `[ANULACAO MANUAL ADMIN] Original ${formatarHoraPonto(batidaAnular)} substituída por ${horarioAjuste}. ${motivo}`,
+      horario_ajuste: horarioBatidaAnulada, motivo: `[ANULACAO MANUAL ADMIN] Batida original ${horarioBatidaAnulada} removida da jornada. ${motivo}`,
       status: 'aprovado', aprovado_em: new Date().toISOString(), aprovado_por_id: obterIdAdminAtual(), aprovado_por_nome: obterNomeAdminAtual(),
     };
   } else {
@@ -1745,8 +1831,13 @@ async function salvarAjusteManualAdminPonto() {
     return;
   }
 
-  try { await sb.from('ponto_ajustes_solicitacoes').insert([solicitacaoManual]); }
-  catch (e) { console.warn('Não foi possível registrar o ajuste manual no histórico:', e); }
+  try {
+    const { error: erroHistorico } = await sb.from('ponto_ajustes_solicitacoes').insert([solicitacaoManual]);
+    if (erroHistorico) throw erroHistorico;
+  } catch (e) {
+    setMsg('msgAjusteManualAdminPonto', `A batida foi preservada, mas o histórico não foi salvo. Corrija os dados e tente novamente; o ponto não será duplicado. ${mensagemErroSupabase(e, '')}`, 'err');
+    return;
+  }
 
   setMsg('msgPonto', `${tipo === 'anular' ? 'Batida anulada' : 'Ajuste manual aplicado'} para ${funcionarioNome}. ${resultado.mensagem}`, 'ok');
   fecharModalAjusteManualAdminPonto();
@@ -2071,7 +2162,11 @@ async function registrarPontoFuncionario() {
     // e criar uma nova entrada indevida no mesmo dia.
     const selecionarCampos = 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id';
 
-    let resp = await executarSemFiltroLojaTemporario(() => sb
+    // Suspende tambem o filtro automatico de empresa. O indice unico legado e
+    // global por funcionario/data; alguns registros antigos da ZUQUI ficaram
+    // com empresa_id/loja_id divergentes e, quando ocultos pelo filtro do
+    // frontend, provocavam uma nova tentativa de INSERT e o erro 23505.
+    let resp = await executarSemFiltrosTenantTemporario(() => sb
       .from('ponto_registros')
       .select(selecionarCampos)
       .eq('funcionario_id', funcionarioId)
@@ -2120,11 +2215,11 @@ async function registrarPontoFuncionario() {
       updated_at: agora,
       ...montarCamposAuditoriaPonto(auditoriaPonto, tipoAuditoria),
     };
-    return executarComFallbackColunasPonto(
+    return executarSemFiltrosTenantTemporario(() => executarComFallbackColunasPonto(
       (payload) => sb.from('ponto_registros').update(payload).eq('id', registroId).select('id').maybeSingle(),
       campos,
       { ...camposBasicos, updated_at: agora },
-    );
+    ));
   }
 
   async function registrarAuditoriaSegura(pontoRegistroId, tipoBatida) {
@@ -2152,28 +2247,30 @@ async function registrarPontoFuncionario() {
     registro = await buscarRegistroPontoAbertoOuDoDia();
 
     if (!registro) {
-      const camposEntradaBasicos = {
-        funcionario_id: funcionarioId,
-        data_ponto: dataHoje,
-        entrada_em: agora,
-        inicio_intervalo_em: null,
-        retorno_intervalo_em: null,
-        saida_em: null,
-        loja_id: lojaId,
-        empresa_id: empresaId,
-      };
-      const camposEntrada = { ...camposEntradaBasicos, ...montarCamposAuditoriaPonto(auditoriaPonto, 'entrada') };
-      const respostaEntrada = await executarComFallbackColunasPonto(
-        (payload) => sb.from('ponto_registros').insert([payload]).select('id').maybeSingle(),
-        camposEntrada,
-        camposEntradaBasicos,
-      );
-      if (respostaEntrada.error) throw respostaEntrada.error;
-      pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
-      tipoBatidaRegistrada = 'entrada';
-      tipoAvisoPonto = 'iniciado';
-      descricaoBatida = 'PONTO REGISTRADO';
-    } else {
+      // A abertura passa por RPC SECURITY DEFINER: o banco valida novamente o
+      // PIN e usa loja/empresa do cadastro ativo do funcionario. Assim a RLS
+      // continua protegendo a tabela sem bloquear terminais com claim antigo.
+      const respostaEntrada = await executarSemFiltrosTenantTemporario(() => sb.rpc('abrir_ponto_funcionario_seguro', {
+        p_funcionario_id: funcionarioId,
+        p_pin: pin,
+        p_data: dataHoje,
+        p_entrada_em: agora,
+      }));
+      if (respostaEntrada.error) {
+        throw respostaEntrada.error;
+      }
+      if (respostaEntrada.data?.criado === false) {
+        registro = await buscarRegistroPontoAbertoOuDoDia();
+        if (!registro?.id) throw new Error('O ponto do dia existe, mas nao pode ser carregado pelo terminal.');
+      } else {
+        pontoRegistroAuditoriaId = respostaEntrada.data?.id || '';
+        tipoBatidaRegistrada = 'entrada';
+        tipoAvisoPonto = 'iniciado';
+        descricaoBatida = 'PONTO REGISTRADO';
+      }
+    }
+
+    if (registro) {
       pontoRegistroAuditoriaId = registro.id;
       const intervalosExtras = await carregarIntervalosDoRegistro(registro.id);
       const ultimoExtra = intervalosExtras[intervalosExtras.length - 1] || null;
@@ -2417,9 +2514,16 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       }
     }
 
+    const batidasExistentes = ordenarUnicos(
+      montarListaBatidasPonto(registro, intervalos).map(item => item.iso)
+    );
+    const ajusteMs = new Date(ajusteIso).getTime();
+    const ajusteJaExistia = batidasExistentes.some(iso =>
+      Math.abs(new Date(iso).getTime() - ajusteMs) <= 2 * 60 * 1000
+    );
     const batidas = ordenarUnicos([
-      ...(montarListaBatidasPonto(registro, intervalos).map(item => item.iso)),
-      ajusteIso,
+      ...batidasExistentes,
+      ...(ajusteJaExistia ? [] : [ajusteIso]),
     ]);
 
     const entradaEm = batidas[0] || null;
@@ -2481,7 +2585,13 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
       if (!isMissingTimeClockIntervalsTableError(erroIntervalo)) throw erroIntervalo;
     }
 
-    return { ok: true, mensagem: 'Ajuste manual aplicado editando o registro existente e reorganizando a sequência.' };
+    return {
+      ok: true,
+      ajusteJaExistia,
+      mensagem: ajusteJaExistia
+        ? 'A batida desta tentativa já estava gravada; apenas o histórico foi concluído, sem duplicar o ponto.'
+        : 'Ajuste manual aplicado editando o registro existente e reorganizando a sequência.'
+    };
   } catch (error) {
     return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
   }

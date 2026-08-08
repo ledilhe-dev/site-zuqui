@@ -24,6 +24,7 @@
     try{var ls=JSON.parse(localStorage.getItem('zuqui_usuario_logado')||localStorage.getItem('usuarioSistemaLogado')||'null'); if(ls){add(ls.loja_id); add(ls.lojaId); if(ls.loja)add(ls.loja.id||ls.loja.loja_id);}}catch(e){}
     return ids;
   }
+  function tabelaAgenda(){return window.AGENDA_TABLE || 'agenda';}
   function dataBR(v){var s=String(v||'').slice(0,10),p=s.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
   function hora(v){return String(v||'').slice(0,5);}
   function moeda(v){var n=Number(v||0);try{return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}catch(e){return 'R$ '+n.toFixed(2).replace('.',',');}}
@@ -45,9 +46,9 @@
       var ids=lojaIdsPossiveis();
       var consultas=[];
       if(ids.length){
-        for(var i=0;i<ids.length;i++) consultas.push(window.sb.from('escala_plantoes').select(cols).eq('loja_id',ids[i]).gte('data_plantao',f.inicio).lte('data_plantao',f.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true}));
+        for(var i=0;i<ids.length;i++) consultas.push(window.sb.from(tabelaAgenda()).select(cols).eq('loja_id',ids[i]).gte('data_plantao',f.inicio).lte('data_plantao',f.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true}));
       }
-      consultas.push(window.sb.from('escala_plantoes').select(cols).gte('data_plantao',f.inicio).lte('data_plantao',f.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true}));
+      consultas.push(window.sb.from(tabelaAgenda()).select(cols).gte('data_plantao',f.inicio).lte('data_plantao',f.fim).order('data_plantao',{ascending:true}).order('inicio_hora',{ascending:true}));
       var ultimoErro=null;
       for(var c=0;c<consultas.length;c++){
         var r=await consultas[c];

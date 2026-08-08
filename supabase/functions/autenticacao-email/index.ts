@@ -65,7 +65,7 @@ Deno.serve(async (request) => {
       }
       const authorized = await canManageCredentials(admin, actorType, actorId, actorPassword);
       if (!authorized) {
-        return jsonResponse({ error: "Senha atual inválida ou perfil sem permissão para editar funcionários." }, 403);
+        return jsonResponse({ error: "PIN operacional/senha inválida ou perfil sem permissão para editar funcionários." }, 403);
       }
       const rpcName = action === "admin_set_employee_password"
         ? "definir_credencial_funcionario"
@@ -264,18 +264,30 @@ async function canManageCredentials(
   actorPassword: string,
 ) {
   if (actorType === "admin_loja") {
-    const { data: valid } = await admin.rpc("verificar_credencial_usuario_admin", {
-      p_usuario_id: actorId,
-      p_senha: actorPassword,
-    });
-    return valid === true;
+    const [{ data: loginValido }, { data: pinValido }] = await Promise.all([
+      admin.rpc("verificar_credencial_usuario_admin", {
+        p_usuario_id: actorId,
+        p_senha: actorPassword,
+      }),
+      admin.rpc("verificar_pin_usuario_admin", {
+        p_usuario_id: actorId,
+        p_pin: actorPassword,
+      }),
+    ]);
+    return loginValido === true || pinValido === true;
   }
 
-  const { data: valid } = await admin.rpc("verificar_senha_funcionario", {
-    p_funcionario_id: actorId,
-    p_senha: actorPassword,
-  });
-  if (valid !== true) return false;
+  const [{ data: senhaValida }, { data: pinValido }] = await Promise.all([
+    admin.rpc("verificar_senha_funcionario", {
+      p_funcionario_id: actorId,
+      p_senha: actorPassword,
+    }),
+    admin.rpc("verificar_credencial_funcionario", {
+      p_funcionario_id: actorId,
+      p_senha: actorPassword,
+    }),
+  ]);
+  if (senhaValida !== true && pinValido !== true) return false;
 
   const { data: employee } = await admin
     .from("funcionarios")

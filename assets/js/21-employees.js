@@ -11,8 +11,13 @@ async function carregarFuncionarios() {
   atualizarSelectLojasFuncionario();
   const lista = document.getElementById('listaFuncionarios');
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
-  renderizarFiltroLojasCheckbox('filtroLojasFuncionarios', 'carregarFuncionarios()');
-  const lojasSelecionadas = obterIdsLojasSelecionadasFiltroMultiLoja('filtroLojasFuncionarios');
+  const lojaSessaoFiltroId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+  const lojasSelecionadas = lojaSessaoFiltroId
+    ? [lojaSessaoFiltroId]
+    : obterLojasDisponiveisParaFiltroMultiLoja().map(loja => String(loja.id || '')).filter(Boolean);
+  const todasLojasSelecionadas = !lojaSessaoFiltroId;
+  const termoBusca = String(document.getElementById('buscaFuncionarios')?.value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
   try {
     const executarConsultaFuncionarios = usuarioSistemaLogado?.tipo === 'admin'
@@ -31,6 +36,35 @@ async function carregarFuncionarios() {
 
     let funcionariosVisiveis = data || [];
     const ehAdminSistema = usuarioEhAdministrador();
+    const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
+    const exibindoPainelAdminGlobal = ehAdminSistema && !lojaSessaoId;
+    const idsFuncionariosCarregados = funcionariosVisiveis.map(f => String(f?.id || '')).filter(Boolean);
+    const vinculosPorFuncionario = new Map();
+    const funcionariosComHistoricoVinculos = new Set();
+    const nomesLojasVinculos = new Map();
+    if (idsFuncionariosCarregados.length) {
+      const { data: vinculosTodos, error: erroVinculosTodos } = await executarSemFiltrosTenantTemporario(() => sb
+        .from('funcionario_lojas')
+        .select('funcionario_id, loja_id, ativo')
+        .in('funcionario_id', idsFuncionariosCarregados));
+      if (erroVinculosTodos) throw erroVinculosTodos;
+      const idsLojasDosVinculos = new Set();
+      (vinculosTodos || []).forEach(vinculo => {
+        const funcionarioId = String(vinculo?.funcionario_id || '');
+        const lojaId = String(vinculo?.loja_id || '');
+        if (!funcionarioId) return;
+        funcionariosComHistoricoVinculos.add(funcionarioId);
+        if (vinculo?.ativo !== true || !lojaId) return;
+        if (!vinculosPorFuncionario.has(funcionarioId)) vinculosPorFuncionario.set(funcionarioId, new Set());
+        vinculosPorFuncionario.get(funcionarioId).add(lojaId);
+        idsLojasDosVinculos.add(lojaId);
+      });
+      if (idsLojasDosVinculos.size) {
+        const { data: lojasVinculos, error: erroLojasVinculos } = await executarSemFiltrosTenantTemporario(() => sb
+          .from('lojas').select('id, nome').in('id', [...idsLojasDosVinculos]));
+        if (!erroLojasVinculos) (lojasVinculos || []).forEach(loja => nomesLojasVinculos.set(String(loja.id), loja.nome || 'Loja'));
+      }
+    }
     const lojasPermitidasGestao = obterIdsLojasPermitidasGestaoFuncionarios();
     const funcionariosVinculadosPermitidos = new Set();
     if (!ehAdminSistema) {
@@ -50,25 +84,38 @@ async function carregarFuncionarios() {
         );
       }
     }
+    const idsVinculadosFiltro = new Set();
     if (lojasSelecionadas.length) {
       const idsLojasFiltro = lojasSelecionadas.map(String);
-      const idsVinculados = new Set();
-      try {
-        const { data: vinculosFiltro, error: erroVinculosFiltro } = await executarSemFiltroLojaTemporario(() =>
-          sb.from('funcionario_lojas')
-            .select('funcionario_id, loja_id, ativo')
-            .in('loja_id', idsLojasFiltro)
-            .eq('ativo', true)
-        );
-        if (!erroVinculosFiltro) (vinculosFiltro || []).forEach(v => idsVinculados.add(String(v.funcionario_id || '')));
-      } catch (erroVinculosFiltro) {
-        console.warn('Não foi possível considerar vínculos multi-loja na lista de funcionários:', erroVinculosFiltro);
-      }
-      funcionariosVisiveis = funcionariosVisiveis.filter(f =>
-        f?.é_administrador === true
-        || idsLojasFiltro.includes(String(f?.loja_id || ''))
-        || idsVinculados.has(String(f?.id || ''))
-      );
+      vinculosPorFuncionario.forEach((lojas, funcionarioId) => {
+        if ([...lojas].some(lojaId => idsLojasFiltro.includes(lojaId))) idsVinculadosFiltro.add(funcionarioId);
+      });
+      funcionariosVisiveis = funcionariosVisiveis.filter(f => {
+        if (f?.é_administrador === true) return true;
+        const funcionarioId = String(f?.id || '');
+        const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
+        const possuiVinculoAtivo = (vinculosPorFuncionario.get(funcionarioId)?.size || 0) > 0;
+        const pertenceFiltroPorVinculo = idsVinculadosFiltro.has(funcionarioId);
+        // loja_id e apenas compatibilidade para cadastros que nunca passaram
+        // pela tabela funcionario_lojas. Vinculo desativado nunca e herdado.
+        const pertenceFiltroLegado = !teveVinculos && idsLojasFiltro.includes(String(f?.loja_id || ''));
+        const semAcessoAtivo = !possuiVinculoAtivo && (teveVinculos || !f?.loja_id);
+        return pertenceFiltroPorVinculo
+          || pertenceFiltroLegado
+          || (exibindoPainelAdminGlobal && todasLojasSelecionadas && semAcessoAtivo);
+      });
+    }
+
+    if (termoBusca) {
+      funcionariosVisiveis = funcionariosVisiveis.filter(f => {
+        const tipoAcesso = f?.é_administrador === true
+          ? 'administrador global'
+          : (f?.email ? 'gerencial email senha' : 'operacional pin');
+        const texto = [f?.nome, f?.email, f?.perfis?.nome, f?.perfis?.codigo, tipoAcesso]
+          .filter(Boolean).join(' ')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        return texto.includes(termoBusca);
+      });
     }
 
     if (!funcionariosVisiveis.length) {
@@ -79,9 +126,19 @@ async function carregarFuncionarios() {
     const lojaAtualId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     const ehAdminGlobal = usuarioEhAdministrador();
     lista.innerHTML = '<div class="lista">' + funcionariosVisiveis.map(f => {
+      const funcionarioId = String(f?.id || '');
+      const lojasAtivas = [...(vinculosPorFuncionario.get(funcionarioId) || [])];
+      const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
+      const nomesLojasAtivas = lojasAtivas.map(id => nomesLojasVinculos.get(id) || 'Loja').filter(Boolean);
+      const semAcessoAtivo = f?.é_administrador !== true && !lojasAtivas.length && (teveVinculos || !f?.loja_id);
       const nomeLoja = f?.é_administrador === true
         ? 'Todas as lojas (Administrador do Sistema)'
-        : (obterNomeLojaFiltroMultiLoja(f.loja_id) || (!f.loja_id ? 'Acesso por vínculos' : '-'));
+        : (nomesLojasAtivas.join(', ')
+          || (!teveVinculos && obterNomeLojaFiltroMultiLoja(f.loja_id))
+          || 'Sem loja vinculada');
+      const tipoAcesso = f?.é_administrador === true
+        ? 'Administrador global'
+        : (f?.email ? 'Gerencial (e-mail e senha)' : 'Operacional (PIN)');
       // Admin global pode editar qualquer funcionário (não tem loja_id vinculada).
       const dentroDoEscopoDaLoja = ehAdminGlobal || (
         f?.é_administrador !== true
@@ -94,18 +151,19 @@ async function carregarFuncionarios() {
       <div class="item tarefa-cadastrada-item">
         <div class="item-info">
           <div class="item-nome">${f.nome}</div>
-          <div class="item-detalhe">Loja: ${nomeLoja || '-'} · E-mail: ${f.email || '-'} · Senha protegida${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
+          <div class="item-detalhe">Loja: ${nomeLoja || '-'} · Acesso: ${tipoAcesso} · E-mail: ${f.email || '-'} · Senha protegida${f.perfis?.nome ? ' · Perfil: ' + f.perfis.nome : ' · Perfil: Pendente'}</div>
           <div class="item-detalhe">Turno: ${f.horario_trabalho_inicio || '--:--'} às ${f.horario_trabalho_fim || '--:--'} · Intervalos: ${resumirIntervalosSemanaFuncionario(f.intervalos_semana, f.tempo_intervalo_minutos)}</div>
         </div>
         <div class="item-actions">
           ${f.ativo ? '' : '<span class="tag tag-gray">Inativo</span>'}
+          ${semAcessoAtivo ? '<span class="tag tag-amber">Sem loja vinculada</span>' : ''}
           ${!f.email ? '<span class="tag tag-gray">Sem e-mail</span>' : f.email_verificado === true ? '<span class="tag tag-green">E-mail ok</span>' : '<span class="tag tag-amber">E-mail pendente</span>'}
           ${podeEditarNestaLoja && f.email && f.email_verificado !== true ? `<button class="btn btn-ghost btn-sm" onclick="reenviarVerificacaoFuncionarioLista('${f.id}', '${String(f.email || '').replace(/'/g, "\\'")}', '${String(f.nome || '').replace(/'/g, "\\'")}')">Reenviar e-mail</button>` : ''}
           ${podeEditarNestaLoja ? `
             <button class="btn btn-ghost btn-sm" onclick="editarFuncionario('${f.id}')">Editar</button>
             <button class="btn btn-amber btn-sm" onclick="toggleFuncionario('${f.id}', ${f.ativo})">${f.ativo ? 'Desativar' : 'Ativar'}</button>
           ` : ''}
-          ${podeExcluirNestaLoja ? `<button class="btn btn-red" onclick="excluirFuncionario('${f.id}')">Excluir</button>` : ''}
+          ${podeExcluirNestaLoja ? `<button type="button" class="btn btn-red" onclick="excluirFuncionario('${f.id}')">Excluir</button>` : ''}
           ${!dentroDoEscopoDaLoja && (usuarioPodeAcaoFuncionarios('editar') || usuarioPodeAcaoFuncionarios('excluir')) ? '<span class="tag tag-gray">Troque a loja para gerenciar</span>' : ''}
         </div>
       </div>`;
@@ -692,9 +750,9 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       const idsLojas = [...new Set(vinculosBase.map(v => String(v.loja_id || '')).filter(Boolean))];
       let lojasPorId = new Map();
       if (idsLojas.length) {
-        let resLojas = await executarSemFiltroLojaTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo, cidade').in('id', idsLojas));
+        let resLojas = await executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo, cidade').in('id', idsLojas));
         if (resLojas.error && isMissingColumnError(resLojas.error)) {
-          resLojas = await executarSemFiltroLojaTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo').in('id', idsLojas));
+          resLojas = await executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, empresa_id, codigo').in('id', idsLojas));
         }
         if (resLojas.error) throw resLojas.error;
         lojasPorId = new Map((resLojas.data || []).map(loja => [String(loja.id), loja]));
@@ -702,7 +760,7 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       const idsPerfis = [...new Set(vinculosBase.map(v => String(v.perfil_id || '')).filter(Boolean))];
       let perfisPorId = new Map();
       if (idsPerfis.length) {
-        const resPerfis = await executarSemFiltroLojaTemporario(() => sb.from('perfis').select('id, nome').in('id', idsPerfis));
+        const resPerfis = await executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome').in('id', idsPerfis));
         if (!resPerfis.error) perfisPorId = new Map((resPerfis.data || []).map(perfil => [String(perfil.id), perfil]));
       }
       const vinculos = vinculosBase.map(v => ({ ...v, lojas: lojasPorId.get(String(v.loja_id || '')) || null, perfis: perfisPorId.get(String(v.perfil_id || '')) || null }));
@@ -910,10 +968,10 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     if (pin || senhaAcesso) {
       const confirmacao = await abrirModalPin({
         titulo: 'Confirmar troca de senha',
-        subtitulo: 'Digite a sua própria senha para autorizar a senha deste funcionário.',
+        subtitulo: 'Digite seu PIN operacional ou sua senha gerencial para autorizar esta alteração.',
         textoAcao: 'Autorizar alteração',
         exibirUsuario: false,
-        placeholderInput: 'Sua senha atual',
+        placeholderInput: 'Seu PIN ou senha gerencial',
       });
       if (!confirmacao?.pin) {
         setMsg('msgFuncionarios', 'Alteração de senha cancelada.', 'err');
@@ -986,7 +1044,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       ? {
           nome,
           email: emailInformado ? email : null,
-          loja_id: lojaId,
           é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
@@ -1271,9 +1328,20 @@ async function excluirFuncionario(id) {
     setMsg('msgFuncionarios', 'Seu perfil não permite excluir funcionários.', 'err');
     return;
   }
-  const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true, acao: 'excluir' });
-  if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
-  if (!confirm('Excluir este funcionário?')) return;
+  const confirmacao = await abrirConfirmacaoSistema({
+    title: 'Excluir funcionário',
+    subtitle: 'Esta ação remove o acesso do usuário.',
+    body: 'Confirma a exclusão deste funcionário? Os registros históricos serão preservados sempre que houver vínculos obrigatórios.',
+    confirmText: 'Excluir funcionário',
+    confirmClass: 'btn-red',
+    cancelText: 'Cancelar',
+  });
+  if (!confirmacao?.confirmado) return;
+
+  try {
+    setMsg('msgFuncionarios', 'Validando e preparando a exclusão...', 'ok');
+    const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true, acao: 'excluir' });
+    if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   // Busca SEM filtro de loja: funcionários órfãos (sem loja) ou de outra loja
   // não seriam encontrados pelo filtro padrão, impedindo a exclusão.
   const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() =>
@@ -1322,6 +1390,10 @@ async function excluirFuncionario(id) {
   setMsg('msgFuncionarios', 'Funcionário excluído com sucesso.', 'ok');
   carregarFuncionarios();
   carregarSolicitacoesAcesso();
+  } catch (erroExclusao) {
+    console.error('Erro inesperado ao excluir funcionário:', erroExclusao);
+    setMsg('msgFuncionarios', `Não foi possível excluir o funcionário: ${mensagemErroSupabase(erroExclusao, 'erro inesperado')}`, 'err');
+  }
 }
 
 async function toggleFuncionario(id, ativo) {

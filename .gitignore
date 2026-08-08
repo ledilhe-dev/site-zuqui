@@ -5,3 +5,7 @@ backup/codigo-antigo/site-zuqui-publish.worktrees/
 supabase/.temp/
 tools/__pycache__/
 *.pyc
+tools/raffinato-bridge/credentials.local.json
+tools/raffinato-bridge/*.log
+tools/raffinato-bridge/integracoes-raffinato.dat
+tools/raffinato-bridge/.venv/

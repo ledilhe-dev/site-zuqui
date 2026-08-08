@@ -1,0 +1,11 @@
+CONECTOR RAFFINATO 1.3 - PORTA 8766
+
+Esta versao usa a nova porta 8766 para evitar conflito com conectores antigos.
+
+1. Copie esta pasta completa para o servidor.
+2. Execute Conector-Raffinato-Oculto-v1.3.exe.
+3. Abra http://127.0.0.1:8766/health.
+4. Confirme: version 1.3 e port 8766.
+5. Atualize o CheckDiario com Ctrl+Shift+R.
+
+O conector antigo na porta 8765 pode ser encerrado depois.

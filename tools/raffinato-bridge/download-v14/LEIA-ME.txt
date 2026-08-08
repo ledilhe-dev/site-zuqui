@@ -1,0 +1,15 @@
+CONECTOR RAFFINATO 1.4 - APLICATIVO DE BANDEJA
+
+1. Encerre os conectores antigos.
+2. Copie esta pasta para o servidor.
+3. Execute Conector-Raffinato-v1.4.exe.
+4. O icone SR aparecera junto ao relogio do Windows.
+
+Clique com o botao direito no icone para:
+- conferir o status;
+- abrir o CheckDiario;
+- abrir o diagnostico;
+- encerrar o conector corretamente.
+
+Se tentar executar novamente, o Windows avisara que o conector ja esta aberto.
+Diagnostico: http://127.0.0.1:8766/health

@@ -1,0 +1,17 @@
+CONECTOR RAFFINATO 1.5 - ACESSO EXTERNO
+
+1. Encerre o Conector Raffinato 1.4 pelo icone da bandeja do Windows.
+2. Mantenha o arquivo integracoes-raffinato.dat existente no servidor.
+3. Copie Conector-Raffinato-v1.5.exe para a mesma pasta do conector anterior.
+4. Execute Conector-Raffinato-v1.5.exe.
+5. Libere o aplicativo no Windows Defender/Firewall, caso o Windows solicite.
+6. Mantenha o conector aberto no servidor com acesso ao Raffinato/Radmin VPN.
+
+Diagnostico local:
+http://127.0.0.1:8766/health
+
+O retorno deve indicar version 1.5 e external_sync true.
+
+IMPORTANTE:
+- Nao apague integracoes-raffinato.dat; ele contem as configuracoes protegidas.
+- O pacote nao inclui senhas ou credenciais de banco.
