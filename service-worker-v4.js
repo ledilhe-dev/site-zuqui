@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v146-dashboard-login-ponto';
+const CACHE_NAME = 'check-diario-pwa-v147-correcao-total-trabalhado';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

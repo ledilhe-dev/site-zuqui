@@ -827,13 +827,12 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
     const fimMs = new Date(fimJornada).getTime();
     if (!Number.isNaN(entradaMs) && !Number.isNaN(fimMs) && fimMs > entradaMs) {
       const duracaoBrutaMin = Math.floor((fimMs - entradaMs) / 60000);
-      const intervaloMin = lista.reduce((acc, item) => {
-        if (!item.inicio_em || !item.retorno_em) return acc;
-        const inicioMs = new Date(item.inicio_em).getTime();
-        const retornoMs = new Date(item.retorno_em).getTime();
-        if (Number.isNaN(inicioMs) || Number.isNaN(retornoMs) || retornoMs <= inicioMs) return acc;
-        return acc + Math.floor((retornoMs - inicioMs) / 60000);
-      }, 0);
+      // Usa a mesma consolidação aplicada ao "Total intervalo". O descanso pode
+      // existir simultaneamente nos campos principais de ponto_registros e em
+      // ponto_intervalos; somar a lista diretamente descontava a mesma faixa duas
+      // vezes quando os registros eram iguais ou sobrepostos.
+      const intervalosConcluidos = lista.filter(item => item?.inicio_em && item?.retorno_em);
+      const intervaloMin = calcularTotalIntervalosPonto(intervalosConcluidos, null);
       totalMinutos = Math.max(0, duracaoBrutaMin - intervaloMin);
     }
   }
