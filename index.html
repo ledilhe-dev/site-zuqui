@@ -2900,7 +2900,8 @@
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260807-stage3">
 <link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=20260807-theme-v2">
-<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260807-identity-v1">
+<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260807-avatar-editor-v1">
+<link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3152,8 +3153,8 @@
           <span class="account-avatar account-avatar-large" id="minhaContaAvatar">U</span>
           <div class="account-avatar-actions">
             <strong id="minhaContaNome">Usuário</strong>
-            <span>JPG, PNG ou WEBP, até 2 MB. A prévia não é salva nesta versão.</span>
-            <div><label class="btn btn-ghost btn-sm" for="minhaContaFotoInput">Escolher foto</label><input id="minhaContaFotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="previsualizarAvatarMinhaConta(this)" hidden><button class="btn btn-ghost btn-sm" type="button" onclick="removerAvatarMinhaConta()">Remover</button></div>
+            <span>JPG, PNG ou WEBP, até 10 MB. A foto permanece somente nesta sessão.</span>
+            <div><label class="btn btn-ghost btn-sm" id="minhaContaEscolherFoto" for="minhaContaFotoInput">Escolher foto</label><input id="minhaContaFotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="previsualizarAvatarMinhaConta(this)" hidden><button class="btn btn-ghost btn-sm" id="minhaContaRemoverFoto" type="button" onclick="removerAvatarMinhaConta()" hidden>Remover foto</button></div>
           </div>
         </div>
         <dl class="account-details"><div><dt>Empresa atual</dt><dd id="minhaContaEmpresa">-</dd></div><div><dt>Loja atual</dt><dd id="minhaContaLoja">-</dd></div></dl>
@@ -3172,12 +3173,34 @@
   </div>
 </div>
 
+<div class="avatar-crop-overlay" id="avatarCropOverlay" aria-hidden="true">
+  <div class="avatar-crop-modal" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitulo">
+    <header class="avatar-crop-header">
+      <div><span class="avatar-crop-kicker">Foto de perfil</span><h3 id="avatarCropTitulo">Ajuste o enquadramento</h3><p>Arraste a foto e use o zoom para destacar seu rosto.</p></div>
+      <button class="avatar-crop-close" type="button" onclick="cancelarRecorteAvatar()" aria-label="Fechar editor">×</button>
+    </header>
+    <div class="avatar-crop-body">
+      <div class="avatar-crop-stage"><img id="avatarCropImage" alt="Imagem escolhida para recorte"></div>
+      <div class="avatar-crop-controls">
+        <button class="avatar-crop-icon-btn" type="button" onclick="alterarZoomAvatar(-10)" aria-label="Reduzir zoom">−</button>
+        <label for="avatarCropZoom">Zoom</label>
+        <input id="avatarCropZoom" type="range" min="0" max="100" value="0" step="1" oninput="definirZoomAvatar(this.value)">
+        <button class="avatar-crop-icon-btn" type="button" onclick="alterarZoomAvatar(10)" aria-label="Ampliar zoom">+</button>
+        <button class="btn btn-ghost btn-sm avatar-crop-center" type="button" onclick="centralizarRecorteAvatar()">Centralizar</button>
+      </div>
+      <p class="avatar-crop-help">Dica: use a roda do mouse ou o gesto de pinça para ajustar o zoom.</p>
+    </div>
+    <footer class="avatar-crop-footer"><button class="btn btn-ghost" type="button" onclick="cancelarRecorteAvatar()">Cancelar</button><button class="btn btn-primary" id="avatarCropAplicar" type="button" onclick="aplicarRecorteAvatar()">Aplicar foto</button></footer>
+  </div>
+</div>
+
+<script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
 <script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
 <script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
-<script src="./assets/js/06-theme-interface.js?v=20260807-theme-v2"></script>
+<script src="./assets/js/06-theme-interface.js?v=20260807-avatar-editor-v1"></script>
 <script src="./assets/js/10-dashboard.js?v=20260807-menu-limpo-v3"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>

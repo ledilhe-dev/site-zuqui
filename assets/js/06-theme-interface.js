@@ -2,6 +2,9 @@ const CHECKDIARIO_THEME_LEGACY_KEY = 'checkdiario-theme';
 const CHECKDIARIO_THEME_BOOTSTRAP_KEY = 'checkdiario-theme-bootstrap';
 const CHECKDIARIO_THEMES = new Set(['light', 'dark', 'system']);
 let minhaContaAvatarUrl = '';
+let avatarCropper = null;
+let avatarCropArquivoUrl = '';
+let avatarCropZoomBase = 1;
 
 function temaEfetivoCheckDiario(preferencia) {
   return preferencia === 'system'
@@ -80,6 +83,10 @@ function aplicarAvatarMinhaConta() {
     avatar.textContent = minhaContaAvatarUrl ? '' : iniciais;
     avatar.style.backgroundImage = minhaContaAvatarUrl ? `url("${minhaContaAvatarUrl}")` : '';
   });
+  const escolher = document.getElementById('minhaContaEscolherFoto');
+  const remover = document.getElementById('minhaContaRemoverFoto');
+  if (escolher) escolher.textContent = minhaContaAvatarUrl ? 'Trocar foto' : 'Escolher foto';
+  if (remover) remover.hidden = !minhaContaAvatarUrl;
 }
 
 function nomeEmpresaMinhaConta(usuario = {}) {
@@ -156,18 +163,135 @@ function fecharMinhaConta() {
 function previsualizarAvatarMinhaConta(input) {
   const arquivo = input?.files?.[0];
   if (!arquivo) return;
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(arquivo.type) || arquivo.size > 2 * 1024 * 1024) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(arquivo.type) || arquivo.size > 10 * 1024 * 1024) {
     input.value = '';
-    if (typeof alert === 'function') alert('Escolha uma imagem JPG, PNG ou WEBP de até 2 MB.');
+    if (typeof alert === 'function') alert('Escolha uma imagem JPG, PNG ou WEBP de até 10 MB.');
     return;
   }
-  if (minhaContaAvatarUrl) URL.revokeObjectURL(minhaContaAvatarUrl);
-  minhaContaAvatarUrl = URL.createObjectURL(arquivo);
+  if (typeof Cropper !== 'function') {
+    input.value = '';
+    if (typeof alert === 'function') alert('O editor de foto não pôde ser carregado. Verifique sua conexão e tente novamente.');
+    return;
+  }
+  destruirEditorRecorteAvatar();
+  avatarCropArquivoUrl = URL.createObjectURL(arquivo);
+  const imagem = document.getElementById('avatarCropImage');
+  const overlay = document.getElementById('avatarCropOverlay');
+  if (!imagem || !overlay) {
+    destruirEditorRecorteAvatar();
+    input.value = '';
+    return;
+  }
+  imagem.src = avatarCropArquivoUrl;
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('avatar-crop-open');
+  requestAnimationFrame(() => {
+    avatarCropper = new Cropper(imagem, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      background: false,
+      guides: false,
+      center: true,
+      highlight: false,
+      cropBoxMovable: false,
+      cropBoxResizable: false,
+      toggleDragModeOnDblclick: false,
+      responsive: true,
+      restore: false,
+      zoomOnWheel: true,
+      wheelZoomRatio: 0.08,
+      ready() {
+        avatarCropZoomBase = avatarCropper.getImageData().ratio || 1;
+        const zoom = document.getElementById('avatarCropZoom');
+        if (zoom) zoom.value = '0';
+      },
+      zoom(event) {
+        if (!avatarCropper || !avatarCropZoomBase) return;
+        const valor = Math.max(0, Math.min(100, ((event.detail.ratio / avatarCropZoomBase) - 1) * 25));
+        const zoom = document.getElementById('avatarCropZoom');
+        if (zoom) zoom.value = String(Math.round(valor));
+      }
+    });
+  });
+}
+
+function destruirEditorRecorteAvatar() {
+  avatarCropper?.destroy();
+  avatarCropper = null;
+  if (avatarCropArquivoUrl) URL.revokeObjectURL(avatarCropArquivoUrl);
+  avatarCropArquivoUrl = '';
+}
+
+function fecharEditorRecorteAvatar() {
+  const overlay = document.getElementById('avatarCropOverlay');
+  overlay?.classList.remove('open');
+  overlay?.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('avatar-crop-open');
+}
+
+function cancelarRecorteAvatar() {
+  fecharEditorRecorteAvatar();
+  destruirEditorRecorteAvatar();
+  const input = document.getElementById('minhaContaFotoInput');
+  if (input) input.value = '';
+}
+
+function definirZoomAvatar(valor) {
+  if (!avatarCropper) return;
+  const nivel = Math.max(0, Math.min(100, Number(valor) || 0));
+  avatarCropper.zoomTo(avatarCropZoomBase * (1 + nivel / 25));
+}
+
+function alterarZoomAvatar(delta) {
+  const controle = document.getElementById('avatarCropZoom');
+  if (!controle) return;
+  controle.value = String(Math.max(0, Math.min(100, Number(controle.value) + delta)));
+  definirZoomAvatar(controle.value);
+}
+
+function centralizarRecorteAvatar() {
+  if (!avatarCropper) return;
+  avatarCropper.reset();
+  avatarCropZoomBase = avatarCropper.getImageData().ratio || 1;
+  const zoom = document.getElementById('avatarCropZoom');
+  if (zoom) zoom.value = '0';
+}
+
+function aplicarRecorteAvatar() {
+  if (!avatarCropper) return;
+  const recorte = avatarCropper.getCroppedCanvas({
+    width: 512,
+    height: 512,
+    minWidth: 512,
+    minHeight: 512,
+    maxWidth: 512,
+    maxHeight: 512,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high'
+  });
+  if (!recorte) return;
+  const avatar = document.createElement('canvas');
+  avatar.width = 512;
+  avatar.height = 512;
+  const contexto = avatar.getContext('2d');
+  contexto.imageSmoothingEnabled = true;
+  contexto.imageSmoothingQuality = 'high';
+  contexto.beginPath();
+  contexto.arc(256, 256, 256, 0, Math.PI * 2);
+  contexto.clip();
+  contexto.drawImage(recorte, 0, 0, 512, 512);
+  minhaContaAvatarUrl = avatar.toDataURL('image/png');
   aplicarAvatarMinhaConta();
+  fecharEditorRecorteAvatar();
+  destruirEditorRecorteAvatar();
+  const input = document.getElementById('minhaContaFotoInput');
+  if (input) input.value = '';
 }
 
 function removerAvatarMinhaConta() {
-  if (minhaContaAvatarUrl) URL.revokeObjectURL(minhaContaAvatarUrl);
   minhaContaAvatarUrl = '';
   const input = document.getElementById('minhaContaFotoInput');
   if (input) input.value = '';
@@ -184,5 +308,9 @@ document.addEventListener('click', (event) => {
     if (menu) menu.hidden = true;
   }
 });
-document.addEventListener('keydown', (event) => { if (event.key === 'Escape') fecharMinhaConta(); });
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  if (document.getElementById('avatarCropOverlay')?.classList.contains('open')) cancelarRecorteAvatar();
+  else fecharMinhaConta();
+});
 document.addEventListener('DOMContentLoaded', carregarTemaInterface, { once: true });
