@@ -1032,6 +1032,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       perfil_id: funcionario.perfil_id,
       loja_id: loja?.id || funcionario.loja_id || null,
       empresa_id: loja?.empresa_id || funcionario.empresa_id || null,
+      empresa_nome: loja?.empresa_nome || loja?.nome_empresa || loja?.empresas?.nome || loja?.empresa?.nome || funcionario.empresa_nome || funcionario.nome_empresa || null,
       loja_nome: loja?.nome || funcionario.loja_nome || null,
       perfil: perfilFuncionario,
       lojas_permitidas: Array.isArray(window.__loginLojasPermitidasAtual) ? window.__loginLojasPermitidasAtual : []

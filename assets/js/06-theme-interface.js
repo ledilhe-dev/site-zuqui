@@ -82,6 +82,37 @@ function aplicarAvatarMinhaConta() {
   });
 }
 
+function nomeEmpresaMinhaConta(usuario = {}) {
+  const empresaDireta = usuario.empresa_nome
+    || usuario.nome_empresa
+    || usuario.empresa?.nome
+    || (typeof usuario.empresa === 'string' ? usuario.empresa : '');
+  if (String(empresaDireta || '').trim()) return String(empresaDireta).trim();
+
+  const empresaId = String(usuario.empresa_id || '').trim();
+  const lojaAtual = (usuario.lojas_permitidas || []).find((loja) =>
+    String(loja?.id || loja?.loja_id || '') === String(usuario.loja_id || '')
+  );
+  const empresaDaLoja = lojaAtual?.empresa_nome || lojaAtual?.nome_empresa
+    || lojaAtual?.empresas?.nome || lojaAtual?.empresa?.nome;
+  if (String(empresaDaLoja || '').trim()) return String(empresaDaLoja).trim();
+
+  const cachesConhecidos = [
+    typeof empresasSaasCache !== 'undefined' ? empresasSaasCache : [],
+    typeof _empresasCacheVinculos !== 'undefined' ? _empresasCacheVinculos : []
+  ];
+  for (const cache of cachesConhecidos) {
+    const empresa = (cache || []).find((item) => String(item?.id || '') === empresaId);
+    const nome = empresa?.nome || empresa?.nome_fantasia || empresa?.razao_social;
+    if (String(nome || '').trim()) return String(nome).trim();
+  }
+
+  const opcaoEmpresa = [...document.querySelectorAll('select option')].find((opcao) =>
+    String(opcao.value || '') === empresaId && String(opcao.textContent || '').trim()
+  );
+  return String(opcaoEmpresa?.textContent || 'Empresa não identificada').trim();
+}
+
 function atualizarMinhaContaInterface() {
   const usuario = window.usuarioSistemaLogado || {};
   const nome = nomeUsuarioMinhaConta();
@@ -89,7 +120,7 @@ function atualizarMinhaContaInterface() {
   const empresaEl = document.getElementById('minhaContaEmpresa');
   const lojaEl = document.getElementById('minhaContaLoja');
   if (nomeEl) nomeEl.textContent = nome;
-  if (empresaEl) empresaEl.textContent = String(usuario.empresa_nome || usuario.nome_empresa || usuario.empresa || 'Empresa atual');
+  if (empresaEl) empresaEl.textContent = nomeEmpresaMinhaConta(usuario);
   if (lojaEl) lojaEl.textContent = String(usuario.loja_nome || usuario.nome_loja || document.getElementById('topbar-store-name')?.textContent || '-');
   aplicarAvatarMinhaConta();
   atualizarControlesTema(document.documentElement.dataset.themePreference || 'system');
