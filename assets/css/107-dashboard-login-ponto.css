@@ -1,0 +1,405 @@
+/* ETAPA 2 — Dashboard, Login e Ponto
+   Camada exclusivamente visual. IDs, handlers e regras funcionais permanecem intactos. */
+
+/* ===== Login ===== */
+.login-screen {
+  padding: clamp(12px, 3vw, 32px);
+  background:
+    radial-gradient(circle at 50% 14%, rgba(245, 158, 11, .10), transparent 32%),
+    linear-gradient(135deg, #070b10 0%, #091019 55%, #080c11 100%) !important;
+}
+
+.login-card {
+  width: min(100%, 440px);
+  padding: clamp(22px, 4vw, 34px);
+  border-color: rgba(148, 163, 184, .28) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(165deg, rgba(17, 27, 40, .98), rgba(12, 20, 31, .98)) !important;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .035) !important;
+}
+
+.login-brand { margin-bottom: 24px; }
+.login-brand img {
+  width: 64px;
+  height: 64px;
+  padding: 8px;
+  border: 1px solid rgba(36, 199, 122, .28);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(36, 199, 122, .14), rgba(36, 199, 122, .035));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .28);
+}
+.login-brand-title { font-size: clamp(21px, 4vw, 25px); font-weight: 800; }
+.login-brand-sub { margin-top: 5px; font-size: 10px; letter-spacing: .22em; }
+.login-version-protecao { margin-top: 12px; font-size: 10px; letter-spacing: .045em; }
+.login-form { gap: 12px; }
+.login-field-group { gap: 7px; }
+.login-field-label { color: var(--ui-text-secondary); font-size: 11px; letter-spacing: .075em; }
+.login-input,
+.login-store-search {
+  min-height: 46px !important;
+  padding: 10px 13px !important;
+  background: rgba(7, 13, 21, .72) !important;
+  border-color: rgba(148, 163, 184, .24) !important;
+}
+.login-input:hover,
+.login-store-search:hover { border-color: rgba(148, 163, 184, .42) !important; }
+.login-input:focus,
+.login-store-search:focus { border-color: var(--ui-primary) !important; box-shadow: var(--ui-focus-ring) !important; }
+.login-field-help { color: var(--ui-text-muted); font-size: 11px; line-height: 1.45; }
+.login-checks { gap: 12px; margin: 1px 0 2px; }
+.login-check-label {
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text-secondary);
+}
+.login-check-label:hover { background: rgba(148, 163, 184, .07); color: var(--ui-text); }
+.login-check-label input[type="checkbox"] { width: 18px !important; height: 18px !important; }
+.login-btn-primary { min-height: 48px; font-size: 14px; box-shadow: 0 9px 24px rgba(245, 158, 11, .18); }
+.login-btn-secondary { min-height: 42px; }
+.login-btn-primary:disabled,
+.login-btn-secondary:disabled { cursor: not-allowed; opacity: .55; box-shadow: none; transform: none; }
+.login-btn-primary[aria-busy="true"],
+.login-btn-primary.loading { color: transparent !important; position: relative; pointer-events: none; }
+.login-btn-primary[aria-busy="true"]::after,
+.login-btn-primary.loading::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px;
+  border: 2px solid rgba(8, 13, 20, .35);
+  border-top-color: #081018;
+  border-radius: 50%;
+  animation: ui-stage2-spin .7s linear infinite;
+}
+.login-divider { margin: 5px 0 2px; color: var(--ui-text-muted); }
+.login-request-box,
+.login-auth-box { border-radius: var(--ui-radius-md); background: rgba(7, 13, 21, .52); }
+.login-store-option { min-height: 58px; border-color: rgba(148, 163, 184, .18); }
+.login-footer { margin-top: 18px; line-height: 1.55; }
+
+/* ===== Dashboard ===== */
+#dashboard,
+#meu_painel { max-width: 1500px; margin-inline: auto; }
+#dashboard > .card { margin-bottom: var(--ui-space-5); }
+#cardDashboardGraficosFinanceiros {
+  overflow: visible;
+  background: linear-gradient(155deg, rgba(19, 30, 45, .98), rgba(13, 22, 34, .98));
+}
+#cardDashboardGraficosFinanceiros .dash-gf-header {
+  align-items: flex-start !important;
+  gap: 14px !important;
+  padding-bottom: 15px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: clamp(16px, 2vw, 20px);
+}
+#cardDashboardGraficosFinanceiros .dash-gf-toolbar { justify-content: flex-end; }
+#cardDashboardGraficosFinanceiros .dash-gf-toolbar > div,
+#cardDashboardGraficosFinanceiros .dash-gf-toolbar > span { min-width: 0; }
+#dashGfModoBtns,
+#dashGfStatusBtns {
+  padding: 3px;
+  gap: 2px;
+  border-color: var(--ui-border) !important;
+  border-radius: var(--ui-radius-sm) !important;
+  background: rgba(7, 13, 21, .46);
+}
+#dashGfModoBtns .btn,
+#dashGfStatusBtns .btn { min-height: 32px; padding-inline: 10px; }
+#dashGfResumo {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(125px, 1fr));
+  gap: 10px !important;
+  margin-bottom: 20px !important;
+}
+#dashGfResumo > span {
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: rgba(7, 13, 21, .42);
+  color: var(--ui-text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+#dashGfResumo strong { display: block; margin-top: 5px; color: var(--ui-text); font-size: 16px; letter-spacing: -.02em; }
+#cardDashboardGraficosFinanceiros .dash-gf-grid > div {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: rgba(7, 13, 21, .28);
+}
+.dash-gf-scroll { scrollbar-color: var(--ui-border-strong) transparent; }
+.dash-gf-mes-card {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-2) !important;
+  transition: border-color var(--ui-transition), background var(--ui-transition), transform var(--ui-transition);
+}
+.dash-gf-mes-card:hover { border-color: var(--ui-border-strong) !important; transform: translateY(-1px); }
+.dash-gf-mes-card.selecionado { border-color: var(--ui-primary) !important; box-shadow: 0 0 0 2px var(--ui-primary-soft); }
+.dash-gf-detail-wrap { border-color: var(--ui-border) !important; background: rgba(7, 13, 21, .28); }
+.dash-gf-detail-table tbody tr:hover { background: rgba(245, 158, 11, .045); }
+.dash-gf-status { font-weight: 700; }
+#cardDashboardExecucoesRecentes .card-title { margin-bottom: 14px; }
+#dash-execucoes .empty,
+#dashboard .empty,
+#meu_painel .empty {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  border: 1px dashed var(--ui-border-strong);
+  border-radius: var(--ui-radius-md);
+  background: rgba(7, 13, 21, .24);
+  color: var(--ui-text-muted);
+  text-align: center;
+}
+.meu-painel-grid { gap: 14px !important; }
+.meu-painel-widget {
+  min-height: 132px;
+  padding: 16px !important;
+  border-color: var(--ui-border) !important;
+  background: linear-gradient(150deg, var(--ui-surface-2), rgba(13, 22, 34, .98)) !important;
+  box-shadow: var(--ui-shadow-sm);
+}
+.meu-painel-widget-label { color: var(--ui-text-secondary) !important; font-size: 11px !important; letter-spacing: .055em; text-transform: uppercase; }
+.meu-painel-widget-valor { margin-top: 12px; color: var(--ui-text) !important; font-size: clamp(22px, 3vw, 30px) !important; letter-spacing: -.035em; }
+.meu-painel-widget-desc { margin-top: 6px; color: var(--ui-text-muted) !important; line-height: 1.45; }
+.meu-painel-atalho { min-height: 104px; }
+.meu-painel-editor-item { min-height: 40px; border-radius: var(--ui-radius-sm) !important; }
+
+/* ===== Ponto ===== */
+#bater_ponto { max-width: 1500px; margin-inline: auto; }
+#bater_ponto > .card,
+#bater_ponto .ponto-topo-grid > .card { margin-bottom: var(--ui-space-5); }
+#bater_ponto .ponto-topo-grid > .card:first-child {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(36, 199, 122, .28);
+  background: linear-gradient(145deg, rgba(18, 35, 36, .98), rgba(14, 25, 37, .98));
+}
+#bater_ponto .ponto-topo-grid > .card:first-child::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(var(--ui-success), #0f9f61);
+}
+#bater_ponto .ponto-topo-grid > .card:first-child .card-title {
+  margin-bottom: 14px;
+  font-size: clamp(17px, 2vw, 21px);
+}
+#bater_ponto .ponto-registro-row { gap: 10px !important; align-items: stretch !important; }
+#bater_ponto #pontoPinInput {
+  min-width: 180px;
+  min-height: 48px !important;
+  font-size: 16px;
+  letter-spacing: .08em;
+  text-align: center;
+}
+#bater_ponto .ponto-registro-row .btn {
+  min-height: 48px;
+  padding-inline: 18px;
+  font-weight: 750;
+}
+#bater_ponto .ponto-registro-row .btn-green { box-shadow: 0 8px 22px rgba(36, 199, 122, .15); }
+#bater_ponto .ponto-registro-row .btn:disabled { box-shadow: none; }
+#bater_ponto .ponto-info-regra-btn { min-width: 44px; min-height: 44px; }
+#bater_ponto .msg:not(:empty) {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: rgba(7, 13, 21, .42);
+}
+#bater_ponto .ponto-tempo-aviso-card { background: linear-gradient(145deg, rgba(35, 29, 16, .72), var(--ui-surface)); }
+#bater_ponto .ponto-tempo-aviso-row { gap: 10px !important; align-items: end !important; }
+#bater_ponto .ponto-tempo-aviso-status { min-height: 42px; border: 1px solid rgba(245, 158, 11, .24); background: var(--ui-warning-soft); }
+#bater_ponto .ponto-tempo-aviso-help { margin-top: 11px; color: var(--ui-text-muted); line-height: 1.45; }
+#bater_ponto .ponto-horas-card,
+#bater_ponto > .card:last-child { overflow: hidden; }
+.dashboard-period-tabs {
+  gap: 4px !important;
+  padding: 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: rgba(7, 13, 21, .38);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dashboard-period-tabs::-webkit-scrollbar { display: none; }
+.dashboard-period-btn {
+  min-height: 36px;
+  padding: 7px 13px !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px !important;
+  color: var(--ui-text-muted) !important;
+  white-space: nowrap;
+}
+.dashboard-period-btn:hover { color: var(--ui-text) !important; background: rgba(148, 163, 184, .08) !important; }
+.dashboard-period-btn.active {
+  border-color: rgba(245, 158, 11, .34) !important;
+  background: var(--ui-primary-soft) !important;
+  color: #ffd078 !important;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, .08);
+}
+#bater_ponto .ponto-horas-grid { gap: clamp(18px, 4vw, 34px) !important; align-items: center; }
+#horasPieDashboard.ponto-horas-pie { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04), 0 12px 32px rgba(0, 0, 0, .18); }
+.prod-pie-center { background: var(--ui-surface) !important; box-shadow: inset 0 0 0 1px var(--ui-border); }
+.prod-pie-value { color: var(--ui-text) !important; font-size: clamp(22px, 4vw, 30px); }
+.prod-pie-label { color: var(--ui-text-muted) !important; }
+.prod-stats { gap: 10px !important; }
+.prod-stat {
+  padding: 14px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius-md) !important;
+  background: rgba(7, 13, 21, .34) !important;
+}
+.prod-stat-label { color: var(--ui-text-muted) !important; }
+.prod-stat-value { margin-top: 5px; color: var(--ui-text) !important; font-size: clamp(18px, 3vw, 24px) !important; }
+.prod-period-info { color: var(--ui-text-muted) !important; }
+.prod-func-list { border-color: var(--ui-border) !important; background: rgba(7, 13, 21, .28) !important; }
+.prod-func-row { min-height: 42px; padding-block: 8px; border-bottom: 1px solid var(--ui-border); }
+.prod-func-row:last-child { border-bottom: 0; }
+#pontoResumoHoje .ponto-resumo-lista { gap: 10px !important; }
+#pontoResumoHoje .ponto-resumo-linha {
+  gap: 12px !important;
+  padding: 14px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius-md) !important;
+  background: rgba(7, 13, 21, .3) !important;
+}
+#pontoResumoHoje .ponto-resumo-linha:hover { border-color: var(--ui-border-strong) !important; }
+#pontoResumoHoje .ponto-resumo-nome { color: var(--ui-text) !important; font-size: 14px; }
+.ponto-periodo-chip { min-height: 34px; padding: 7px 10px !important; border-color: var(--ui-border) !important; }
+.ponto-periodo-chip.aberto { border-color: rgba(36, 199, 122, .38) !important; background: var(--ui-success-soft) !important; }
+.ponto-retorno-destaque { border-radius: var(--ui-radius-md) !important; }
+
+/* Modais e feedback do Ponto */
+.ponto-ajuste-modal-overlay,
+.ponto-pendente-overlay,
+.ponto-info-modal-overlay { padding: 16px !important; backdrop-filter: blur(5px); }
+.ponto-ajuste-modal-card,
+.ponto-pendente-card,
+.ponto-entrada-alerta-card,
+.ponto-info-modal-card {
+  width: min(620px, 100%) !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow-y: auto !important;
+  padding: clamp(18px, 3vw, 26px) !important;
+  border-color: var(--ui-border-strong) !important;
+  border-radius: var(--ui-radius-lg) !important;
+  background: linear-gradient(155deg, var(--ui-surface-2), var(--ui-surface)) !important;
+  box-shadow: var(--ui-shadow-lg) !important;
+}
+.ponto-ajuste-modal-title,
+.ponto-pendente-title,
+.ponto-entrada-alerta-title { color: var(--ui-text) !important; font-size: clamp(18px, 3vw, 22px) !important; }
+.ponto-ajuste-modal-sub,
+.ponto-pendente-texto,
+.ponto-entrada-alerta-texto { color: var(--ui-text-secondary) !important; line-height: 1.55; }
+.ponto-ajuste-form { gap: 13px !important; }
+.ponto-ajuste-actions,
+.ponto-pendente-acoes,
+.ponto-info-modal-actions {
+  position: sticky;
+  bottom: -1px;
+  z-index: 2;
+  padding-top: 14px;
+  background: linear-gradient(transparent, var(--ui-surface) 30%);
+}
+.ponto-feedback-card { border-radius: var(--ui-radius-lg) !important; box-shadow: var(--ui-shadow-lg) !important; }
+
+@keyframes ui-stage2-spin { to { transform: rotate(360deg); } }
+
+/* ===== Responsividade crítica ===== */
+@media (max-width: 1024px) {
+  #dashGfResumo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #cardDashboardGraficosFinanceiros .dash-gf-header { display: block !important; }
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar { width: 100% !important; margin-top: 13px; justify-content: flex-start; }
+}
+
+@media (max-width: 768px) {
+  #dashboard > .card,
+  #bater_ponto > .card,
+  #bater_ponto .ponto-topo-grid > .card { padding: 15px !important; }
+  #dashGfResumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #cardDashboardGraficosFinanceiros .dash-gf-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  #bater_ponto .ponto-registro-row { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #bater_ponto #pontoPinInput { grid-column: 1 / -1; width: 100% !important; }
+  #bater_ponto .ponto-info-regra-btn { min-width: 0; }
+  #bater_ponto .ponto-horas-grid { grid-template-columns: 1fr !important; }
+  #horasPieDashboard.ponto-horas-pie { margin-inline: auto; }
+}
+
+@media (max-width: 560px) {
+  .login-screen { align-items: flex-start; overflow-y: auto; }
+  .login-card { margin-block: auto; padding: 20px 16px; border-radius: 18px !important; }
+  .login-brand { margin-bottom: 18px; }
+  .login-brand img { width: 56px; height: 56px; margin-bottom: 9px; }
+  .login-checks { grid-template-columns: 1fr 1fr; gap: 5px; }
+  .login-check-label { padding-inline: 4px; font-size: 11px; }
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #dashGfModoBtns,
+  #dashGfStatusBtns { grid-column: 1 / -1; display: grid !important; grid-auto-flow: column; }
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar > .btn,
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar > span,
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar > select { width: 100% !important; max-width: none !important; }
+  #dashGfAnoLabel { align-self: center; }
+  #dashGfResumo { gap: 7px !important; }
+  #dashGfResumo > span { padding: 10px; }
+  #dashGfResumo strong { font-size: 14px; overflow-wrap: anywhere; }
+  #cardDashboardGraficosFinanceiros .dash-gf-grid > div { padding: 11px; }
+  .dash-gf-meses-mobile { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .meu-painel-grid { grid-template-columns: 1fr !important; }
+  .meu-painel-widget { min-height: 116px; }
+  #bater_ponto .ponto-registro-row { grid-template-columns: 1fr; }
+  #bater_ponto .ponto-registro-row > * { width: 100% !important; }
+  #bater_ponto .ponto-registro-row .btn { min-height: 48px; }
+  #bater_ponto .ponto-tempo-aviso-row { display: grid !important; grid-template-columns: 1fr; }
+  #bater_ponto .ponto-tempo-aviso-row > * { width: 100% !important; }
+  #bater_ponto .ponto-horas-tabs,
+  #bater_ponto .ponto-resumo-dia-tabs { justify-content: flex-start !important; }
+  #pontoResumoHoje .ponto-resumo-linha { display: grid !important; grid-template-columns: 1fr !important; }
+  #pontoResumoHoje .ponto-resumo-tag { justify-content: flex-start !important; }
+  .ponto-ajuste-modal-overlay,
+  .ponto-pendente-overlay,
+  .ponto-info-modal-overlay { padding: 8px !important; align-items: flex-end !important; }
+  .ponto-ajuste-modal-card,
+  .ponto-pendente-card,
+  .ponto-entrada-alerta-card,
+  .ponto-info-modal-card { max-height: calc(100dvh - 16px) !important; border-radius: 18px !important; }
+  .ponto-ajuste-actions,
+  .ponto-pendente-acoes { display: grid !important; grid-template-columns: 1fr; }
+  .ponto-ajuste-actions .btn,
+  .ponto-pendente-acoes .btn { width: 100%; min-height: 46px; }
+}
+
+@media (max-width: 390px) {
+  .login-card { width: 100%; padding-inline: 14px; }
+  .login-brand-title { font-size: 20px; }
+  .login-brand-sub { letter-spacing: .15em; }
+  .login-checks { display: grid; }
+  #dashGfResumo { grid-template-columns: 1fr 1fr; }
+  #dashGfResumo > span:last-child { grid-column: 1 / -1; }
+  .dashboard-period-btn { padding-inline: 11px !important; }
+}
+
+@media (max-width: 340px) {
+  .login-checks { grid-template-columns: 1fr; }
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar { grid-template-columns: 1fr; }
+  #dashGfModoBtns,
+  #dashGfStatusBtns { grid-column: 1; overflow-x: auto !important; }
+  #dashGfResumo { grid-template-columns: 1fr; }
+  #dashGfResumo > span:last-child { grid-column: auto; }
+  .dash-gf-meses-mobile { grid-template-columns: 1fr !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-btn-primary[aria-busy="true"]::after,
+  .login-btn-primary.loading::after { animation-duration: 1.5s; }
+}
