@@ -1164,11 +1164,11 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
       const maior = Math.max(1, ...topCategorias.map(([, item]) => Number(item.valor || 0)));
       elTopCategorias.innerHTML = topCategorias.map(([chave, item], indice) => {
         const percentual = Math.max(3, (item.valor / maior) * 100);
-        return `<button type="button" onclick="dashGfToggleCategoria('${_dashGfSanitizarChave(chave)}')" title="Filtrar por ${escaparHtmlBasico(item.nome)}" style="display:grid;grid-template-columns:24px minmax(120px,1.5fr) minmax(60px,.8fr) auto;align-items:center;gap:8px;width:100%;padding:7px 8px;margin-bottom:5px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:${F.categoriaIds.has(chave) ? 'rgba(59,130,246,.16)' : 'rgba(255,255,255,.025)'};color:var(--text);cursor:pointer;text-align:left;">
-          <strong style="color:${indice < 3 ? '#fbbf24' : 'var(--text-muted)'};">${indice + 1}º</strong>
-          <span style="display:flex;align-items:center;gap:7px;min-width:0;">${htmlIconeCategoriaCompra(item.icone, 28)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escaparHtmlBasico(item.nome)}</span></span>
-          <span style="height:9px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;"><span style="display:block;width:${percentual.toFixed(1)}%;height:100%;border-radius:99px;background:linear-gradient(90deg,${item.cor || '#3b82f6'},#22c55e);"></span></span>
-          <strong style="white-space:nowrap;">${fmt(item.valor)}</strong>
+        return `<button type="button" class="dash-gf-category-rank${F.categoriaIds.has(chave) ? ' is-selected' : ''}" onclick="dashGfToggleCategoria('${_dashGfSanitizarChave(chave)}')" title="Filtrar por ${escaparHtmlBasico(item.nome)}">
+          <strong class="dash-gf-category-position${indice < 3 ? ' is-top' : ''}">${indice + 1}º</strong>
+          <span class="dash-gf-category-name">${htmlIconeCategoriaCompra(item.icone, 28)}<span>${escaparHtmlBasico(item.nome)}</span></span>
+          <span class="dash-gf-category-track"><span style="width:${percentual.toFixed(1)}%;background:linear-gradient(90deg,${item.cor || '#3b82f6'},#22c55e);"></span></span>
+          <strong class="dash-gf-category-value">${fmt(item.valor)}</strong>
         </button>`;
       }).join('');
     }

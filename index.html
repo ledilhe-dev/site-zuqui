@@ -415,9 +415,17 @@
         <button class="topbar-store-switch" id="topbarStoreSwitchBtn" type="button" onclick="event.stopPropagation(); abrirTrocaLojaTopbar();">Trocar</button>
       </div>
       <div class="topbar-actions">
-        <div class="topbar-user" id="topbarUserInfo" hidden>
-          <div class="topbar-user-label">Usuário logado</div>
-          <div class="topbar-user-name" id="topbar-user-name">-</div>
+        <div class="topbar-user account-menu-wrap" id="topbarUserInfo" hidden>
+          <button class="account-menu-trigger" type="button" onclick="toggleMenuMinhaConta(event)" aria-haspopup="menu" aria-expanded="false">
+            <span class="account-avatar" id="topbarAccountAvatar">U</span>
+            <span class="topbar-user-name" id="topbar-user-name">-</span><span aria-hidden="true">▾</span>
+          </button>
+          <div class="account-menu" id="accountMenu" role="menu" hidden>
+            <button type="button" role="menuitem" onclick="abrirMinhaConta('conta')">Minha conta</button>
+            <button type="button" role="menuitem" onclick="abrirMinhaConta('aparencia')">Aparência</button>
+            <hr>
+            <button class="account-menu-logout" type="button" role="menuitem" onclick="logout()">Sair</button>
+          </div>
         </div>
         <div class="notification-panel" id="notificationPanel">
           <div class="notification-header">
@@ -3127,6 +3135,39 @@
       <button class="btn btn-amber" type="button" id="confirmacaoSistemaNeutro" onclick="resolverConfirmacaoSistema('neutro')" style="display:none">Não</button>
       <button class="btn btn-green" type="button" id="confirmacaoSistemaConfirmar" onclick="resolverConfirmacaoSistema(true)">Confirmar</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay account-overlay" id="minhaContaOverlay" aria-hidden="true">
+  <div class="modal account-modal" role="dialog" aria-modal="true" aria-labelledby="minhaContaTitulo">
+    <div class="modal-header">
+      <div><h3 id="minhaContaTitulo">Minha conta</h3><div class="account-modal-sub">Conta e preferências visuais</div></div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharMinhaConta()" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body account-modal-body">
+      <section class="account-section" id="minhaContaSecaoConta">
+        <h4>Conta</h4>
+        <div class="account-identity">
+          <span class="account-avatar account-avatar-large" id="minhaContaAvatar">U</span>
+          <div class="account-avatar-actions">
+            <strong id="minhaContaNome">Usuário</strong>
+            <span>JPG, PNG ou WEBP, até 2 MB. A prévia não é salva nesta versão.</span>
+            <div><label class="btn btn-ghost btn-sm" for="minhaContaFotoInput">Escolher foto</label><input id="minhaContaFotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="previsualizarAvatarMinhaConta(this)" hidden><button class="btn btn-ghost btn-sm" type="button" onclick="removerAvatarMinhaConta()">Remover</button></div>
+          </div>
+        </div>
+        <dl class="account-details"><div><dt>Empresa atual</dt><dd id="minhaContaEmpresa">-</dd></div><div><dt>Loja atual</dt><dd id="minhaContaLoja">-</dd></div></dl>
+      </section>
+      <section class="account-section" id="minhaContaSecaoAparencia">
+        <h4>Aparência</h4>
+        <p>Esta escolha é salva somente para este usuário nesta loja.</p>
+        <div class="account-theme-options" role="radiogroup" aria-label="Tema">
+          <button type="button" data-account-theme="light" onclick="definirTemaInterface('light')">☀ <strong>Claro</strong></button>
+          <button type="button" data-account-theme="dark" onclick="definirTemaInterface('dark')">🌙 <strong>Escuro</strong></button>
+          <button type="button" data-account-theme="system" onclick="definirTemaInterface('system')">◐ <strong>Sistema</strong></button>
+        </div>
+      </section>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary" type="button" onclick="fecharMinhaConta()">Concluir</button></div>
   </div>
 </div>
 

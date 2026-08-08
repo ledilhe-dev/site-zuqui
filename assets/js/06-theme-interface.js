@@ -1,10 +1,47 @@
-const CHECKDIARIO_THEME_KEY = 'checkdiario-theme';
+const CHECKDIARIO_THEME_LEGACY_KEY = 'checkdiario-theme';
+const CHECKDIARIO_THEME_BOOTSTRAP_KEY = 'checkdiario-theme-bootstrap';
 const CHECKDIARIO_THEMES = new Set(['light', 'dark', 'system']);
+let minhaContaAvatarUrl = '';
 
 function temaEfetivoCheckDiario(preferencia) {
   return preferencia === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : preferencia;
+}
+
+function identidadePreferenciasVisuais() {
+  const usuario = window.usuarioSistemaLogado || null;
+  if (!usuario) return null;
+  const usuarioId = usuario.id
+    ? `usuario-${usuario.id}`
+    : `admin-${usuario.username || usuario.email || 'principal'}`;
+  const lojaId = String((typeof obterLojaIdSessao === 'function' && obterLojaIdSessao()) || usuario.loja_id || 'global');
+  return { usuarioId, lojaId };
+}
+
+function chaveTemaPreferenciasVisuais() {
+  const identidade = identidadePreferenciasVisuais();
+  return identidade
+    ? `checkdiario.preferences.${encodeURIComponent(identidade.usuarioId)}.${encodeURIComponent(identidade.lojaId)}.theme`
+    : null;
+}
+
+function obterPreferenciaTemaAtual() {
+  const chave = chaveTemaPreferenciasVisuais();
+  if (chave) return localStorage.getItem(chave) || 'system';
+  return localStorage.getItem(CHECKDIARIO_THEME_BOOTSTRAP_KEY)
+    || localStorage.getItem(CHECKDIARIO_THEME_LEGACY_KEY)
+    || 'system';
+}
+
+function atualizarControlesTema(escolha) {
+  const seletor = document.getElementById('themeSelector');
+  if (seletor) seletor.value = escolha;
+  document.querySelectorAll('[data-account-theme]').forEach((botao) => {
+    const ativo = botao.dataset.accountTheme === escolha;
+    botao.classList.toggle('is-active', ativo);
+    botao.setAttribute('aria-checked', String(ativo));
+  });
 }
 
 function aplicarTemaInterface(preferencia, persistir = true) {
@@ -13,19 +50,108 @@ function aplicarTemaInterface(preferencia, persistir = true) {
   document.documentElement.dataset.themePreference = escolha;
   document.documentElement.dataset.theme = efetivo;
   document.documentElement.style.colorScheme = efetivo;
-  if (persistir) localStorage.setItem(CHECKDIARIO_THEME_KEY, escolha);
-  const seletor = document.getElementById('themeSelector');
-  if (seletor) seletor.value = escolha;
+  if (persistir) {
+    const chave = chaveTemaPreferenciasVisuais();
+    if (chave) localStorage.setItem(chave, escolha);
+    localStorage.setItem(CHECKDIARIO_THEME_BOOTSTRAP_KEY, escolha);
+  }
+  atualizarControlesTema(escolha);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = efetivo === 'dark' ? '#0B1220' : '#F8FAFC';
   window.dispatchEvent(new CustomEvent('checkdiario:themechange', { detail: { preference: escolha, theme: efetivo } }));
 }
 
 function definirTemaInterface(preferencia) { aplicarTemaInterface(preferencia, true); }
-async function carregarTemaInterface() { aplicarTemaInterface(localStorage.getItem(CHECKDIARIO_THEME_KEY) || 'system', false); }
+async function carregarTemaInterface() { aplicarTemaInterface(obterPreferenciaTemaAtual(), false); atualizarMinhaContaInterface(); }
+
+function nomeUsuarioMinhaConta() {
+  const usuario = window.usuarioSistemaLogado || {};
+  return String(usuario.nome || usuario.username || usuario.email || 'Usuário').trim();
+}
+
+function iniciaisUsuarioMinhaConta() {
+  const partes = nomeUsuarioMinhaConta().split(/\s+/).filter(Boolean);
+  return ((partes[0]?.[0] || 'U') + (partes.length > 1 ? partes.at(-1)[0] : '')).toUpperCase();
+}
+
+function aplicarAvatarMinhaConta() {
+  const iniciais = iniciaisUsuarioMinhaConta();
+  document.querySelectorAll('#topbarAccountAvatar,#minhaContaAvatar').forEach((avatar) => {
+    avatar.textContent = minhaContaAvatarUrl ? '' : iniciais;
+    avatar.style.backgroundImage = minhaContaAvatarUrl ? `url("${minhaContaAvatarUrl}")` : '';
+  });
+}
+
+function atualizarMinhaContaInterface() {
+  const usuario = window.usuarioSistemaLogado || {};
+  const nome = nomeUsuarioMinhaConta();
+  const nomeEl = document.getElementById('minhaContaNome');
+  const empresaEl = document.getElementById('minhaContaEmpresa');
+  const lojaEl = document.getElementById('minhaContaLoja');
+  if (nomeEl) nomeEl.textContent = nome;
+  if (empresaEl) empresaEl.textContent = String(usuario.empresa_nome || usuario.nome_empresa || usuario.empresa || 'Empresa atual');
+  if (lojaEl) lojaEl.textContent = String(usuario.loja_nome || usuario.nome_loja || document.getElementById('topbar-store-name')?.textContent || '-');
+  aplicarAvatarMinhaConta();
+  atualizarControlesTema(document.documentElement.dataset.themePreference || 'system');
+}
+
+function toggleMenuMinhaConta(event) {
+  event?.stopPropagation();
+  const menu = document.getElementById('accountMenu');
+  const trigger = document.querySelector('.account-menu-trigger');
+  if (!menu) return;
+  menu.hidden = !menu.hidden;
+  trigger?.setAttribute('aria-expanded', String(!menu.hidden));
+}
+
+function abrirMinhaConta(secao = 'conta') {
+  const menu = document.getElementById('accountMenu');
+  if (menu) menu.hidden = true;
+  atualizarMinhaContaInterface();
+  const overlay = document.getElementById('minhaContaOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  const alvo = document.getElementById(secao === 'aparencia' ? 'minhaContaSecaoAparencia' : 'minhaContaSecaoConta');
+  setTimeout(() => alvo?.scrollIntoView({ block: 'nearest' }), 0);
+}
+
+function fecharMinhaConta() {
+  const overlay = document.getElementById('minhaContaOverlay');
+  overlay?.classList.remove('open');
+  overlay?.setAttribute('aria-hidden', 'true');
+}
+
+function previsualizarAvatarMinhaConta(input) {
+  const arquivo = input?.files?.[0];
+  if (!arquivo) return;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(arquivo.type) || arquivo.size > 2 * 1024 * 1024) {
+    input.value = '';
+    if (typeof alert === 'function') alert('Escolha uma imagem JPG, PNG ou WEBP de até 2 MB.');
+    return;
+  }
+  if (minhaContaAvatarUrl) URL.revokeObjectURL(minhaContaAvatarUrl);
+  minhaContaAvatarUrl = URL.createObjectURL(arquivo);
+  aplicarAvatarMinhaConta();
+}
+
+function removerAvatarMinhaConta() {
+  if (minhaContaAvatarUrl) URL.revokeObjectURL(minhaContaAvatarUrl);
+  minhaContaAvatarUrl = '';
+  const input = document.getElementById('minhaContaFotoInput');
+  if (input) input.value = '';
+  aplicarAvatarMinhaConta();
+}
 
 const temaSistemaMedia = window.matchMedia('(prefers-color-scheme: dark)');
 temaSistemaMedia.addEventListener?.('change', () => {
-  if ((localStorage.getItem(CHECKDIARIO_THEME_KEY) || 'system') === 'system') aplicarTemaInterface('system', false);
+  if (obterPreferenciaTemaAtual() === 'system') aplicarTemaInterface('system', false);
 });
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.account-menu-wrap')) {
+    const menu = document.getElementById('accountMenu');
+    if (menu) menu.hidden = true;
+  }
+});
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') fecharMinhaConta(); });
 document.addEventListener('DOMContentLoaded', carregarTemaInterface, { once: true });
