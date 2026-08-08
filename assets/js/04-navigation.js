@@ -203,7 +203,31 @@ function atualizarBotaoDesktopSidebar() {
   botao.title = recolhido ? 'Expandir menu lateral' : 'Recolher menu lateral';
 }
 
+let sidebarTooltipFlutuante = null;
+
+function ocultarTooltipDesktopSidebar() {
+  sidebarTooltipFlutuante?.classList.remove('open');
+}
+
+function mostrarTooltipDesktopSidebar(botao) {
+  if (!document.body.classList.contains('sidebar-collapsed') || window.innerWidth <= 900) return;
+  const titulo = botao?.dataset?.sidebarTooltip;
+  if (!titulo) return;
+  if (!sidebarTooltipFlutuante) {
+    sidebarTooltipFlutuante = document.createElement('div');
+    sidebarTooltipFlutuante.className = 'sidebar-floating-tooltip';
+    sidebarTooltipFlutuante.setAttribute('role', 'tooltip');
+    document.body.appendChild(sidebarTooltipFlutuante);
+  }
+  const caixa = botao.getBoundingClientRect();
+  sidebarTooltipFlutuante.textContent = titulo;
+  sidebarTooltipFlutuante.style.left = `${Math.round(caixa.right + 12)}px`;
+  sidebarTooltipFlutuante.style.top = `${Math.round(caixa.top + caixa.height / 2)}px`;
+  sidebarTooltipFlutuante.classList.add('open');
+}
+
 function toggleDesktopSidebar() {
+  ocultarTooltipDesktopSidebar();
   const recolhido = document.body.classList.toggle('sidebar-collapsed');
   try { localStorage.setItem('checkdiario:sidebar-recolhida', recolhido ? '1' : '0'); } catch (_) {}
   atualizarBotaoDesktopSidebar();
@@ -215,8 +239,21 @@ function inicializarDesktopSidebar() {
   document.body.classList.toggle('sidebar-collapsed', recolhido);
   document.querySelectorAll('.sidebar .nav-btn').forEach((botao) => {
     const titulo = botao.querySelector('.nav-title')?.textContent?.trim();
-    if (titulo) botao.title = titulo;
+    if (titulo) {
+      botao.title = titulo;
+      botao.dataset.sidebarTooltip = titulo;
+      botao.setAttribute('aria-label', titulo);
+      if (botao.dataset.sidebarTooltipBound !== 'true') {
+        botao.dataset.sidebarTooltipBound = 'true';
+        botao.addEventListener('mouseenter', () => mostrarTooltipDesktopSidebar(botao));
+        botao.addEventListener('mouseleave', ocultarTooltipDesktopSidebar);
+        botao.addEventListener('focus', () => mostrarTooltipDesktopSidebar(botao));
+        botao.addEventListener('blur', ocultarTooltipDesktopSidebar);
+      }
+    }
   });
+  window.addEventListener('resize', ocultarTooltipDesktopSidebar, { passive: true });
+  document.querySelector('.sidebar')?.addEventListener('scroll', ocultarTooltipDesktopSidebar, { passive: true });
   atualizarBotaoDesktopSidebar();
 }
 
