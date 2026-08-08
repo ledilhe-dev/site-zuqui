@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v150-account-preferences';
+const CACHE_NAME = 'check-diario-pwa-v151-identity-evolution';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

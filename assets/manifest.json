@@ -19,6 +19,7 @@
   "./assets/css/107-dashboard-login-ponto.css",
   "./assets/css/108-premium-brand.css",
   "./assets/css/109-theme-contrast.css",
+  "./assets/css/110-identity-evolution.css",
   "./assets/js/00-theme-bootstrap.js",
   "./assets/js/00-cep-mask.js",
   "./assets/js/01-core-supabase.js",
