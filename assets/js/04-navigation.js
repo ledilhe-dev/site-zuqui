@@ -1,6 +1,5 @@
 // ---- NAVIGATION ----
 const topTitles = {
-  meu_painel: ['Meu Painel', 'Dashboard personalizado'],
   dashboard: ['Dashboard', 'Visao geral do sistema'],
   estatisticas_atendimento: ['Estatísticas de atendimento', 'Avaliações e reputação no Google'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
@@ -200,8 +199,8 @@ function atualizarBotaoDesktopSidebar() {
   const recolhido = document.body.classList.contains('sidebar-collapsed');
   botao.textContent = recolhido ? '›' : '‹';
   botao.setAttribute('aria-expanded', String(!recolhido));
-  botao.setAttribute('aria-label', recolhido ? 'Mostrar menu lateral' : 'Esconder menu lateral');
-  botao.title = recolhido ? 'Mostrar menu lateral' : 'Esconder menu lateral';
+  botao.setAttribute('aria-label', recolhido ? 'Expandir menu lateral' : 'Recolher menu lateral');
+  botao.title = recolhido ? 'Expandir menu lateral' : 'Recolher menu lateral';
 }
 
 function toggleDesktopSidebar() {
@@ -214,6 +213,10 @@ function inicializarDesktopSidebar() {
   let recolhido = false;
   try { recolhido = localStorage.getItem('checkdiario:sidebar-recolhida') === '1'; } catch (_) {}
   document.body.classList.toggle('sidebar-collapsed', recolhido);
+  document.querySelectorAll('.sidebar .nav-btn').forEach((botao) => {
+    const titulo = botao.querySelector('.nav-title')?.textContent?.trim();
+    if (titulo) botao.title = titulo;
+  });
   atualizarBotaoDesktopSidebar();
 }
 
@@ -626,7 +629,6 @@ function abrirPagina(id, botao) {
   salvarPaginaAtiva(id);
   atualizarEstadoMenuIntegracoesFinanceiras(paginaPertenceMenuIntegracoesFinanceiras(id));
   if (paginaPertenceMenuIntegracoesFinanceiras(id) && typeof carregarPaginaIntegracoesFinanceiras === 'function') carregarPaginaIntegracoesFinanceiras(id);
-  if (id === 'meu_painel') carregarMeuPainel();
   if (id === 'dashboard') carregarDashboard();
   if (id === 'estatisticas_atendimento' && typeof carregarEstatisticasAtendimento === 'function') carregarEstatisticasAtendimento();
   if (id === 'checklists') { carregarChecklists(); }

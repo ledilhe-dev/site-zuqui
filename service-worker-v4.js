@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v153-avatar-editor';
+const CACHE_NAME = 'check-diario-pwa-v154-final-ux';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

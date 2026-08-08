@@ -734,7 +734,6 @@ const PERFIL_PERMISSOES = [
   { key: 'estatisticas_atendimento', label: 'Estatísticas de atendimento' },
   { key: 'estatisticas_atendimento_responder', label: 'Atendimento - responder avaliações' },
   { key: 'estatisticas_atendimento_conectar', label: 'Atendimento - conectar e sincronizar Google' },
-  { key: 'meu_painel', label: 'Meu Painel (personalizado)' },
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'agenda', label: 'Agenda' },
@@ -801,7 +800,6 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
   { nome: 'Operação diária', recursos: [
     { nome: 'Dashboard', visualizar: 'dashboard' },
     { nome: 'Estatísticas de atendimento', visualizar: 'estatisticas_atendimento', criar: 'estatisticas_atendimento_conectar', editar: 'estatisticas_atendimento_responder' },
-    { nome: 'Meu Painel', visualizar: 'meu_painel', editar: 'meu_painel_editar' },
     { nome: 'Execução de checklist', visualizar: 'checklists', criar: 'nova_execucao_manual', editar: 'checklists_editar', excluir: 'excluir_checklist_lancado' },
     { nome: 'Agenda', visualizar: 'agenda', criar: 'cadastro_plantao', editar: 'agenda_editar', excluir: 'excluir_agenda_cadastrada' },
     { nome: 'Alertas rápidos', visualizar: 'tarefas_rapidas', criar: 'enviar_alertas_rapidas', editar: 'confirmar_alertas_rapidas', excluir: 'excluir_alertas_rapidas' },
@@ -878,7 +876,6 @@ function obterPermissoesBase(codigo) {
   if (codigoNormalizado === 'VENDEDOR') {
     return {
       dashboard: false,
-      meu_painel: false,
       checklists: false,
       bater_ponto: false,
       agenda: false,
@@ -978,7 +975,6 @@ function obterPermissoesBase(codigo) {
 
   return {
     dashboard: false,
-      meu_painel: false,
     checklists: true,
     bater_ponto: true,
     agenda: false,

@@ -52,7 +52,6 @@
 <body>
 <div id="appVersionBadge" class="app-version-badge" style="display:none;">INDEX 4.4</div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
-<button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" type="button" onclick="toggleDesktopSidebar()" aria-label="Esconder menu lateral" aria-expanded="true" title="Esconder menu lateral">‹</button>
 <div class="shell">
 
   <!-- SIDEBAR -->
@@ -64,6 +63,7 @@
         <span>Painel Operacional</span>
       </div>
     </div>
+    <button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" type="button" onclick="toggleDesktopSidebar()" aria-label="Recolher menu lateral" aria-expanded="true" title="Recolher menu lateral">‹</button>
     <div id="navContainer" style="flex:1;overflow-y:auto;">
     <div id="navgrp_operacao" class="nav-group featured">
       <div class="nav-label">Operação diária</div>
@@ -119,14 +119,6 @@
           <span class="nav-hint">Avisos pontuais para equipe</span>
         </span>
       </button></div>
-      <div data-nav-item-id="meu_painel" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="meu_painel" onclick="abrirPagina('meu_painel', this)">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="nav-copy">
-              <span class="nav-title">Meu Painel</span>
-              <span class="nav-hint">Dashboard personalizado</span>
-            </span>
-          </span>
-        </button></div>
       <div data-nav-item-id="dashboard" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
         <span class="nav-copy">
           <span class="nav-title">Dashboard</span>
@@ -454,48 +446,6 @@
     <div class="content">
 
       <!--  DASHBOARD  -->
-      <section id="meu_painel" class="pagina">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-          <div class="page-title" style="margin:0;">Meu Painel</div>
-          <button class="btn btn-ghost btn-sm" onclick="abrirEditorMeuPainel()" style="font-size:11px;">
-            ✏️ Personalizar
-          </button>
-        </div>
-        <div class="msg" id="msgMeuPainel"></div>
-        <div id="meuPainelGrid" class="meu-painel-grid">
-          <div class="empty" style="grid-column:1/-1;">Carregando seu painel⬦</div>
-        </div>
-
-        <!-- Modal editor de widgets -->
-        <div id="modalMeuPainel" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,.7);align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto;">
-          <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:var(--radius-lg);width:min(680px,96vw);box-shadow:var(--shadow-lg);overflow:hidden;">
-            <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-              <div>
-                <div style="font-size:13px;font-weight:700;">Personalizar Meu Painel</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Clique nos itens para adicionar ou remover do seu painel</div>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="fecharEditorMeuPainel()" style="font-size:18px;padding:0 8px;">×</button>
-            </div>
-            <!-- Aba widgets -->
-            <div id="abaConteudoWidgets">
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">📊 Indicadores financeiros</div>
-              <div class="meu-painel-editor" id="editorWidgetsFinanceiro"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.4px;">💰 Atalhos — Financeiro</div>
-              <div class="meu-painel-editor" id="editorWidgetsAtalhosFinanceiro"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.4px;">⚡ Atalhos — Operação</div>
-              <div class="meu-painel-editor" id="editorWidgetsAtalhosOp"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.4px;">⚙️ Atalhos — Administração</div>
-              <div class="meu-painel-editor" id="editorWidgetsAtalhosAdm"></div>
-            </div><!-- /abaConteudoWidgets -->
-
-            <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
-              <button class="btn btn-ghost btn-sm" onclick="fecharEditorMeuPainel()">Fechar</button>
-              <button class="btn btn-green" onclick="salvarMeuPainel()">Salvar painel</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="dashboard" class="pagina">
         <div class="card" id="cardDashboardGraficosFinanceiros">
           <div class="card-title dash-gf-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
@@ -2900,7 +2850,7 @@
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260807-stage3">
 <link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=20260807-theme-v2">
-<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260807-avatar-editor-v1">
+<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260807-final-ux-v1">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3147,7 +3097,8 @@
       <button class="btn btn-ghost btn-sm" type="button" onclick="fecharMinhaConta()" aria-label="Fechar">×</button>
     </div>
     <div class="modal-body account-modal-body">
-      <section class="account-section" id="minhaContaSecaoConta">
+      <nav class="account-tabs" role="tablist" aria-label="Configurações da conta"><button id="minhaContaAbaConta" type="button" role="tab" onclick="selecionarAbaMinhaConta('conta')">Conta</button><button id="minhaContaAbaAparencia" type="button" role="tab" onclick="selecionarAbaMinhaConta('aparencia')">Aparência</button></nav>
+      <section class="account-section account-tab-panel" id="minhaContaSecaoConta" role="tabpanel" aria-labelledby="minhaContaAbaConta">
         <h4>Conta</h4>
         <div class="account-identity">
           <span class="account-avatar account-avatar-large" id="minhaContaAvatar">U</span>
@@ -3159,7 +3110,7 @@
         </div>
         <dl class="account-details"><div><dt>Empresa atual</dt><dd id="minhaContaEmpresa">-</dd></div><div><dt>Loja atual</dt><dd id="minhaContaLoja">-</dd></div></dl>
       </section>
-      <section class="account-section" id="minhaContaSecaoAparencia">
+      <section class="account-section account-tab-panel" id="minhaContaSecaoAparencia" role="tabpanel" aria-labelledby="minhaContaAbaAparencia" hidden>
         <h4>Aparência</h4>
         <p>Esta escolha é salva somente para este usuário nesta loja.</p>
         <div class="account-theme-options" role="radiogroup" aria-label="Tema">
@@ -3200,7 +3151,7 @@
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
 <script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
-<script src="./assets/js/06-theme-interface.js?v=20260807-avatar-editor-v1"></script>
+<script src="./assets/js/06-theme-interface.js?v=20260807-final-ux-v1"></script>
 <script src="./assets/js/10-dashboard.js?v=20260807-menu-limpo-v3"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
@@ -3244,7 +3195,7 @@
         </div>
         <div class="login-field-group">
           <div class="login-field-label">Senha</div>
-          <input type="password" id="password" name="password" class="login-input" placeholder="Digite sua senha de acesso" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <div class="login-password-wrap"><input type="password" id="password" name="password" class="login-input" placeholder="Digite sua senha de acesso" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="login-password-toggle" id="loginPasswordToggle" type="button" onclick="alternarVisibilidadeSenhaLogin()" aria-label="Exibir senha" title="Exibir senha"><span class="login-eye-show" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></span><span class="login-eye-hide" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 4 16 16M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a18 18 0 0 1-2.2 2.8M8.2 8.3C4.7 10 2.5 12 2.5 12s3.5 6 9.5 6c1.2 0 2.3-.2 3.3-.6M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"/></svg></span></button></div>
           <div class="login-field-help">O PIN é usado somente no ponto, tarefas e confirmações internas.</div>
         </div>
         <div class="login-checks">

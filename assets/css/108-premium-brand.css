@@ -81,13 +81,13 @@ body { color: var(--cd-navy); background: var(--cd-bg); }
 }
 .content > .pagina,
 .content > section,
-#dashboard, #meu_painel, #bater_ponto,
+#dashboard, #bater_ponto,
 [id^="relatorio_"], [id^="financeiro_"], [id^="integracoes_financeiras_"] {
   width: 100% !important;
   max-width: none !important;
   margin-inline: 0 !important;
 }
-.dashboard-grid, .cards-grid, .meu-painel-grid, .dashboard-prod-grid,
+.dashboard-grid, .cards-grid, .dashboard-prod-grid,
 .dash-gf-grid, .rf-dashboard-grid, .rf-dashboard-pizzas-grid,
 .financeiro-grid, .relatorio-grid, .escala-layout {
   width: 100% !important;
@@ -216,7 +216,7 @@ body.sidebar-collapsed .logo::before { width: 50px; height: 50px; background-ima
 hr, .divider, .separator { border-color: var(--cd-border) !important; }
 
 /* Ações */
-.btn, button:not(.nav-btn):not(.dashboard-period-btn):not(.meu-painel-widget-remover) { border-radius: var(--cd-radius-sm) !important; }
+.btn, button:not(.nav-btn):not(.dashboard-period-btn) { border-radius: var(--cd-radius-sm) !important; }
 .btn-green, .btn-primary, .login-btn-primary {
   border-color: var(--cd-primary) !important;
   color: #052e16 !important;
@@ -320,13 +320,13 @@ tbody tr:hover td { background: #f8fafc !important; }
 /* Dashboard, Ponto, escalas e financeiro */
 #cardDashboardGraficosFinanceiros, #bater_ponto .ponto-topo-grid > .card:first-child { background: #fff !important; }
 #cardDashboardGraficosFinanceiros .dash-gf-grid > div, #dashGfResumo > span, .prod-stat, .prod-func-list,
-#pontoResumoHoje .ponto-resumo-linha, .meu-painel-widget, .escala-side-card, .escala-calendario-card {
+#pontoResumoHoje .ponto-resumo-linha, .escala-side-card, .escala-calendario-card {
   border-color: var(--cd-border) !important;
   color: var(--cd-navy) !important;
   background: var(--cd-surface-soft) !important;
   box-shadow: none !important;
 }
-#dashGfResumo strong, .prod-stat-value, .prod-pie-value, .meu-painel-widget-valor { color: var(--cd-navy) !important; }
+#dashGfResumo strong, .prod-stat-value, .prod-pie-value { color: var(--cd-navy) !important; }
 .dashboard-period-tabs { border-color: var(--cd-border) !important; background: #f1f5f9 !important; }
 .dashboard-period-btn { color: var(--cd-muted) !important; }
 .dashboard-period-btn:hover { color: var(--cd-navy) !important; background: #fff !important; }
@@ -350,7 +350,7 @@ tbody tr:hover td { background: #f8fafc !important; }
   .content { padding-inline: clamp(24px, 2.5vw, 40px) !important; }
   .content > .pagina,
   .content > section { width: 100% !important; }
-  .meu-painel-grid, .cards-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; }
+  .cards-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; }
   #cardDashboardGraficosFinanceiros .dash-gf-grid,
   .dashboard-prod-grid, .rf-dashboard-grid, .financeiro-grid, .relatorio-grid {
     grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
@@ -359,7 +359,7 @@ tbody tr:hover td { background: #f8fafc !important; }
 
 @media (min-width: 2200px) {
   .content { padding-inline: 40px !important; }
-  .meu-painel-grid, .cards-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important; }
+  .cards-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important; }
   #dashGfResumo { grid-template-columns: repeat(5, minmax(180px, 1fr)) !important; }
 }
 
@@ -368,7 +368,7 @@ tbody tr:hover td { background: #f8fafc !important; }
   .topbar { background: rgba(255, 255, 255, .96) !important; }
   .card { border-radius: 11px !important; }
   .table-wrap, .table-responsive, .dash-gf-detail-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-  .dashboard-grid, .cards-grid, .meu-painel-grid, .dashboard-prod-grid,
+  .dashboard-grid, .cards-grid, .dashboard-prod-grid,
   .dash-gf-grid, .rf-dashboard-grid, .rf-dashboard-pizzas-grid,
   .financeiro-grid, .relatorio-grid, .escala-layout {
     grid-template-columns: minmax(0, 1fr) !important;

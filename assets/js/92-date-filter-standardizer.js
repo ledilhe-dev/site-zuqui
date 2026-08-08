@@ -162,7 +162,7 @@
     rotularFiltros();
     document.querySelectorAll('.date-filter-standard').forEach((wrapper, indice, todos) => {
       const bloco = blocoDo(wrapper);
-      const primeiro = todos.find(item => item !== wrapper && blocoDo(item) === bloco);
+      const primeiro = [...todos].find(item => item !== wrapper && blocoDo(item) === bloco);
       if (primeiro) wrapper.remove();
     });
     const inicios = [...document.querySelectorAll('input[type="date"][id^="filtro"][id$="Inicio"]')]

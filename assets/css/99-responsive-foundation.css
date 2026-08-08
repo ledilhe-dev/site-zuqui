@@ -93,7 +93,7 @@ input, select, textarea, button { max-width:100%; }
     gap:8px!important;
   }
   .date-filter-standard { grid-template-columns:repeat(auto-fit,minmax(125px,1fr))!important; }
-  .dashboard-prod-grid, .meu-painel-grid { grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important; }
+  .dashboard-prod-grid { grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important; }
   .stats-grid { grid-template-columns:repeat(auto-fit,minmax(160px,1fr))!important; }
 
   .form-row input, .form-row select, .form-row textarea {

@@ -142,6 +142,25 @@ function toggleMenuMinhaConta(event) {
   trigger?.setAttribute('aria-expanded', String(!menu.hidden));
 }
 
+function selecionarAbaMinhaConta(secao = 'conta') {
+  const abaAtiva = secao === 'aparencia' ? 'aparencia' : 'conta';
+  const secoes = {
+    conta: document.getElementById('minhaContaSecaoConta'),
+    aparencia: document.getElementById('minhaContaSecaoAparencia')
+  };
+  const abas = {
+    conta: document.getElementById('minhaContaAbaConta'),
+    aparencia: document.getElementById('minhaContaAbaAparencia')
+  };
+  Object.keys(secoes).forEach((chave) => {
+    const ativa = chave === abaAtiva;
+    if (secoes[chave]) secoes[chave].hidden = !ativa;
+    abas[chave]?.classList.toggle('is-active', ativa);
+    abas[chave]?.setAttribute('aria-selected', String(ativa));
+    abas[chave]?.setAttribute('tabindex', ativa ? '0' : '-1');
+  });
+}
+
 function abrirMinhaConta(secao = 'conta') {
   const menu = document.getElementById('accountMenu');
   if (menu) menu.hidden = true;
@@ -150,8 +169,7 @@ function abrirMinhaConta(secao = 'conta') {
   if (!overlay) return;
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
-  const alvo = document.getElementById(secao === 'aparencia' ? 'minhaContaSecaoAparencia' : 'minhaContaSecaoConta');
-  setTimeout(() => alvo?.scrollIntoView({ block: 'nearest' }), 0);
+  selecionarAbaMinhaConta(secao);
 }
 
 function fecharMinhaConta() {
@@ -296,6 +314,20 @@ function removerAvatarMinhaConta() {
   const input = document.getElementById('minhaContaFotoInput');
   if (input) input.value = '';
   aplicarAvatarMinhaConta();
+}
+
+function alternarVisibilidadeSenhaLogin() {
+  const senha = document.getElementById('password');
+  const botao = document.getElementById('loginPasswordToggle');
+  if (!senha || !botao) return;
+  const exibir = senha.type === 'password';
+  senha.type = exibir ? 'text' : 'password';
+  botao.classList.toggle('is-visible', exibir);
+  botao.setAttribute('aria-label', exibir ? 'Ocultar senha' : 'Exibir senha');
+  botao.title = exibir ? 'Ocultar senha' : 'Exibir senha';
+  senha.focus({ preventScroll: true });
+  const fim = senha.value.length;
+  try { senha.setSelectionRange(fim, fim); } catch (_) {}
 }
 
 const temaSistemaMedia = window.matchMedia('(prefers-color-scheme: dark)');
