@@ -1,7 +1,11 @@
 const CHECKDIARIO_THEME_LEGACY_KEY = 'checkdiario-theme';
 const CHECKDIARIO_THEME_BOOTSTRAP_KEY = 'checkdiario-theme-bootstrap';
+const CHECKDIARIO_AVATAR_LOCAL_KEY = 'checkdiario-account-avatar';
 const CHECKDIARIO_THEMES = new Set(['light', 'dark', 'system']);
-let minhaContaAvatarUrl = '';
+let minhaContaAvatarUrl = (() => {
+  try { return localStorage.getItem(CHECKDIARIO_AVATAR_LOCAL_KEY) || ''; }
+  catch (_) { return ''; }
+})();
 let avatarCropper = null;
 let avatarCropArquivoUrl = '';
 let avatarCropZoomBase = 1;
@@ -337,6 +341,7 @@ function aplicarRecorteAvatar() {
   contexto.clip();
   contexto.drawImage(recorte, 0, 0, 512, 512);
   minhaContaAvatarUrl = avatar.toDataURL('image/png');
+  try { localStorage.setItem(CHECKDIARIO_AVATAR_LOCAL_KEY, minhaContaAvatarUrl); } catch (_) {}
   aplicarAvatarMinhaConta();
   fecharEditorRecorteAvatar();
   destruirEditorRecorteAvatar();
@@ -346,6 +351,7 @@ function aplicarRecorteAvatar() {
 
 function removerAvatarMinhaConta() {
   minhaContaAvatarUrl = '';
+  try { localStorage.removeItem(CHECKDIARIO_AVATAR_LOCAL_KEY); } catch (_) {}
   const input = document.getElementById('minhaContaFotoInput');
   if (input) input.value = '';
   aplicarAvatarMinhaConta();

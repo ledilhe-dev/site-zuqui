@@ -1382,39 +1382,6 @@
     #escala_plantoes .escala-feriado-label { width:100%!important;max-width:100%!important;padding:2px!important;font-size:7px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important; }
     #escala_plantoes .escala-legenda { align-items:flex-start!important;flex-wrap:wrap!important; }
 
-    /* Execuções recentes: tabela vira cartões legíveis, sem colunas escondidas. */
-    #dash-execucoes { width:100%!important;overflow:visible!important; }
-    #dash-execucoes .recent-table { display:block!important;width:100%!important;min-width:0!important; }
-    #dash-execucoes .recent-table thead { display:none!important; }
-    #dash-execucoes .recent-table tbody { display:grid!important;gap:7px!important;width:100%!important; }
-    #dash-execucoes .recent-table tr {
-      display:grid!important;
-      grid-template-columns:repeat(2,minmax(0,1fr))!important;
-      gap:7px!important;
-      width:100%!important;
-      padding:8px!important;
-      border:1px solid var(--border-mid)!important;
-      border-radius:8px!important;
-      background:rgba(255,255,255,.018)!important;
-    }
-    #dash-execucoes .recent-table td {
-      display:flex!important;
-      flex-direction:column!important;
-      gap:2px!important;
-      min-width:0!important;
-      padding:0!important;
-      border:0!important;
-      font-size:10px!important;
-      overflow-wrap:anywhere!important;
-    }
-    #dash-execucoes .recent-table td::before { color:var(--text-dim);font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.35px; }
-    #dash-execucoes .recent-table td:nth-child(1) { grid-column:1/-1!important;font-weight:800; }
-    #dash-execucoes .recent-table td:nth-child(1)::before { content:'Tarefa'; }
-    #dash-execucoes .recent-table td:nth-child(2)::before { content:'Funcionário'; }
-    #dash-execucoes .recent-table td:nth-child(3)::before { content:'Início'; }
-    #dash-execucoes .recent-table td:nth-child(4)::before { content:'Fim'; }
-    #dash-execucoes .recent-table td:nth-child(5)::before { content:'Status'; }
-    #dash-execucoes .recent-table td:nth-child(6)::before { content:'Ação'; }
   }
 
   /* densidade-global-e-perfis-20260621 */

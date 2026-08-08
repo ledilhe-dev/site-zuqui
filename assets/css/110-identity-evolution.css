@@ -144,3 +144,146 @@ body.avatar-crop-open{overflow:hidden!important}
 
 /* Teclado virtual: o formulário permanece rolável e o campo focado visível. */
 @media(max-width:600px){#loginScreen{align-items:flex-start!important;overflow-y:auto!important;overscroll-behavior:contain;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))!important}.login-card{margin-block:auto!important;max-height:none!important;overflow:visible!important}.login-input{scroll-margin-block:96px}.account-tabs{position:sticky;top:0;z-index:2}}
+
+/* Etapa 2 mobile: topo compacto e dashboard financeiro legível. */
+@media(max-width:900px){
+  .topbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center!important;
+    min-height:0!important;
+    padding:max(5px,env(safe-area-inset-top)) 8px 5px!important;
+    gap:4px 6px!important;
+  }
+  .topbar-main{
+    grid-column:1/-1!important;
+    display:grid!important;
+    grid-template-columns:38px minmax(0,1fr) minmax(0,1fr) auto!important;
+    align-items:center!important;
+    width:100%!important;
+    min-height:38px!important;
+    gap:5px!important;
+  }
+  .topbar-main .theme-switcher{display:none!important}
+  .topbar-main .mobile-menu-btn{width:38px!important;height:38px!important;min-height:38px!important;padding:0!important}
+  .topbar-clock,.topbar-business-day{
+    width:100%!important;
+    min-width:0!important;
+    min-height:38px!important;
+    height:38px!important;
+    padding:4px!important;
+    gap:1px!important;
+  }
+  .topbar-info-label{font-size:6.5px!important;letter-spacing:.35px!important}
+  .topbar-clock-time,.topbar-business-day-date{font-size:clamp(14px,4.4vw,18px)!important}
+  #topbarVersionBadge{min-height:16px!important;padding:2px 4px!important;font-size:6.5px!important}
+  .topbar-store{
+    grid-column:1!important;
+    grid-row:2!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    min-height:42px!important;
+    height:42px!important;
+    padding:5px 7px!important;
+    gap:6px!important;
+  }
+  .topbar-store-switch{min-height:32px!important;padding:5px 8px!important;font-size:10px!important}
+  .topbar-user-label{font-size:7px!important;letter-spacing:.45px!important}
+  .topbar-store-name{font-size:12px!important}
+  .topbar-actions{
+    grid-column:2!important;
+    grid-row:2!important;
+    display:flex!important;
+    align-items:center!important;
+    width:auto!important;
+    min-width:0!important;
+    gap:5px!important;
+  }
+  #topbarUserInfo{
+    width:42px!important;
+    min-width:42px!important;
+    max-width:42px!important;
+    min-height:40px!important;
+    height:40px!important;
+    padding:0!important;
+    border:0!important;
+  }
+  .account-menu-trigger{width:42px!important;min-width:42px!important;height:40px!important;min-height:40px!important;padding:2px!important;justify-content:center!important}
+  .account-menu-trigger>.topbar-user-name,.account-menu-trigger>span[aria-hidden="true"]{display:none!important}
+  .account-avatar{width:36px!important;height:36px!important;flex-basis:36px!important;background-repeat:no-repeat!important;background-position:center!important;background-size:cover!important}
+  .topbar-actions .notification-btn{width:42px!important;min-width:42px!important;height:40px!important;min-height:40px!important}
+  .topbar-actions>.btn-red{display:none!important}
+
+  #cardDashboardGraficosFinanceiros{padding:10px!important}
+  #cardDashboardGraficosFinanceiros .dash-gf-grid>div{padding:8px!important}
+  #cardDashboardGraficosFinanceiros .dash-gf-header{display:block!important;margin-bottom:7px!important}
+  #cardDashboardGraficosFinanceiros .dash-gf-header>span{display:block;margin-bottom:7px;font-size:11px;line-height:1.25}
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    width:100%!important;
+    gap:5px!important;
+  }
+  #dashGfModoBtns,#dashGfStatusBtns{grid-column:1/-1;display:grid!important;width:100%!important}
+  #dashGfModoBtns{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #dashGfStatusBtns{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #dashGfModoBtns .btn,#dashGfStatusBtns .btn{width:100%!important;min-height:34px!important;padding:4px 5px!important}
+  #dashGfFornWrap,#dashGfCatWrap,#dashGfOrdenacaoDetalhe{width:100%!important;min-width:0!important;max-width:none!important}
+  #btnDashGfFornecedores,#btnDashGfCategorias,#dashGfOrdenacaoDetalhe{width:100%!important;min-width:0!important;min-height:34px!important;padding:4px 5px!important;font-size:9px!important}
+  #dashGfResumo{gap:6px!important;margin-bottom:9px!important;font-size:10px!important}
+
+  #dashGfRoscaCategoria{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    justify-items:stretch!important;
+    gap:10px!important;
+    width:100%!important;
+    overflow:visible!important;
+  }
+  #dashGfRoscaCategoria>svg{
+    justify-self:center!important;
+    width:clamp(170px,52vw,210px)!important;
+    height:clamp(170px,52vw,210px)!important;
+    max-width:100%!important;
+  }
+  #dashGfRoscaCategoria>div{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+  #dashGfRoscaCategoria>div>div{
+    display:grid!important;
+    grid-template-columns:11px minmax(0,1fr) auto auto!important;
+    align-items:center!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:6px!important;
+    padding:5px 3px!important;
+    font-size:10px!important;
+    word-break:normal!important;
+    overflow-wrap:normal!important;
+  }
+  #dashGfRoscaCategoria>div>div>span:nth-child(2){
+    display:flex!important;
+    min-width:0!important;
+    gap:6px!important;
+    line-height:1.2!important;
+    word-break:normal!important;
+    overflow-wrap:break-word!important;
+  }
+  #dashGfRoscaCategoria>div>div>span:nth-child(2)>img{
+    width:32px!important;
+    height:32px!important;
+    flex:0 0 32px!important;
+    object-fit:contain!important;
+  }
+  #dashGfRoscaCategoria>div>div>strong,#dashGfRoscaCategoria>div>div>span:last-child{white-space:nowrap!important}
+}
+
+@media(max-width:380px){
+  #topbarVersionBadge{display:none!important}
+  .topbar-main{grid-template-columns:38px minmax(0,1fr) minmax(0,1fr)!important}
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #dashGfModoBtns,#dashGfStatusBtns{grid-column:1/-1}
+}

@@ -5724,29 +5724,6 @@
     }
 
     /* ---- DASHBOARD EXTRAS ---- */
-    .recent-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      min-width: 640px;
-    }
-    .recent-table th {
-      text-align: left;
-      padding: 8px 12px;
-      color: var(--text-dim);
-      font-weight: 600;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid var(--border);
-    }
-    .recent-table td {
-      padding: 7px 9px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    .recent-table tr:last-child td { border-bottom: none; }
-    .recent-table tr:hover td { background: var(--surface2); }
     .dashboard-prod-grid {
       display: grid;
       grid-template-columns: 220px 1fr;
@@ -6235,7 +6212,6 @@
         width: 100%;
         justify-content: center;
       }
-      #dash-execucoes { overflow-x: auto; }
       .dashboard-prod-grid { grid-template-columns: 1fr; }
       .prod-pie { width: 170px; height: 170px; }
       .prod-pie-center { width: 110px; height: 110px; }

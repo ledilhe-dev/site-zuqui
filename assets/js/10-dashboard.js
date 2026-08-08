@@ -874,33 +874,6 @@ window.addEventListener('resize', () => {
 async function carregarDashboard() {
   carregarNotificacoes();
   carregarGraficosFinanceirosDashboard();
-
-  const el = document.getElementById('dash-execucoes');
-  if (!el) return;
-  el.innerHTML = '<div class="empty">Carregando...</div>';
-  const [funcionariosRes, execucoesRecentesRes] = await Promise.all([
-    sb.from('funcionarios').select('id, nome').eq('ativo', true),
-    sb.from('checklist_execucoes')
-      .select('id, status, funcionario_id, iniciado_em, inicio_confirmado_em, finalizado_em, finalizacao_confirmada_em, tarefas(nome, descricao, horario_limite), checklists(nome)')
-      .order('iniciado_em', { ascending: false })
-      .limit(12),
-  ]);
-  const funcionariosMap = Object.fromEntries((funcionariosRes?.data || []).map(item => [String(item.id), item.nome || 'Funcionário']));
-  const execucoesRecentes = execucoesRecentesRes?.data || [];
-  if (execucoesRecentesRes?.error || !execucoesRecentes.length) {
-    el.innerHTML = '<div class="empty">Nenhuma execução encontrada</div>';
-    return;
-  }
-  el.innerHTML = `<table class="recent-table">
-    <thead><tr><th>Tarefa</th><th>Funcionário</th><th>Início</th><th>Fim</th><th>Status</th><th></th></tr></thead>
-    <tbody>${execucoesRecentes.map(e => {
-      const inicio = e.inicio_confirmado_em || e.iniciado_em || null;
-      const fim = e.finalizacao_confirmada_em || e.finalizado_em || null;
-      const nomeTarefa = e.tarefas?.nome ?? e.checklists?.nome ?? '-';
-      const nomeFuncionario = funcionariosMap[String(e.funcionario_id)] ?? '-';
-      return `<tr><td>${nomeTarefa}</td><td>${nomeFuncionario}</td><td>${fmtDate(inicio)}</td><td>${fmtDate(fim)}</td><td>${tagStatus(e.status)}</td><td>${e.status === 'aberto' || e.status === 'pausado' ? `<button class="btn btn-amber btn-sm" onclick="abrirModal('${e.id}')">Abrir</button>` : ''}</td></tr>`;
-    }).join('')}</tbody>
-  </table>`;
 }
 
 function trocarPeriodoProdutividade(periodo, botao = null) {

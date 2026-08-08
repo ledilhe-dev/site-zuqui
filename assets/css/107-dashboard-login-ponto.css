@@ -143,8 +143,6 @@
 .dash-gf-detail-wrap { border-color: var(--ui-border) !important; background: rgba(7, 13, 21, .28); }
 .dash-gf-detail-table tbody tr:hover { background: rgba(245, 158, 11, .045); }
 .dash-gf-status { font-weight: 700; }
-#cardDashboardExecucoesRecentes .card-title { margin-bottom: 14px; }
-#dash-execucoes .empty,
 #dashboard .empty {
   min-height: 120px;
   display: grid;
