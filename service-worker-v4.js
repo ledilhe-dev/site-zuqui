@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v148-premium-brand';
+const CACHE_NAME = 'check-diario-pwa-v149-accessible-themes';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

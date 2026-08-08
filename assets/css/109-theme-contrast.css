@@ -1,0 +1,66 @@
+/* Temas acessiveis; esta camada altera somente apresentacao. */
+:root, :root[data-theme="light"] {
+  --cd-bg:#f8fafc; --cd-surface:#fff; --cd-surface-soft:#f1f5f9; --cd-surface-elevated:#fff;
+  --cd-navy:#0f172a; --cd-slate:#475569; --cd-muted:#64748b; --cd-disabled:#94a3b8;
+  --cd-border:#e2e8f0; --cd-border-strong:#cbd5e1;
+  --chart-label:#64748b; --chart-title:#334155; --chart-grid:#e2e8f0;
+  --bg:var(--cd-bg); --bg-deep:#f1f5f9; --surface:var(--cd-surface); --surface2:var(--cd-surface-soft);
+  --surface3:#e2e8f0; --surface4:#cbd5e1; --surface-raised:var(--cd-surface-elevated); --bg-card:var(--cd-surface);
+  --border:var(--cd-border); --border-mid:var(--cd-border-strong); --border-bright:#94a3b8;
+  --text:#0f172a; --text-soft:#475569; --text-muted:#64748b; --text-dim:#94a3b8;
+  --ui-bg:var(--cd-bg); --ui-surface:var(--cd-surface); --ui-surface-2:var(--cd-surface-soft);
+  --ui-surface-raised:var(--cd-surface-elevated); --ui-border:var(--cd-border); --ui-border-strong:var(--cd-border-strong);
+  --ui-text:#0f172a; --ui-text-secondary:#475569; --ui-text-muted:#64748b;
+}
+:root[data-theme="dark"] {
+  --cd-bg:#0b1220; --cd-surface:#0f172a; --cd-surface-soft:#162033; --cd-surface-elevated:#1e293b;
+  --cd-navy:#f8fafc; --cd-slate:#cbd5e1; --cd-muted:#94a3b8; --cd-disabled:#64748b;
+  --cd-border:#273449; --cd-border-strong:#3a4960; --cd-primary-soft:rgba(34,197,94,.14); --cd-accent-soft:rgba(6,182,212,.14);
+  --cd-shadow-sm:0 4px 16px rgba(0,0,0,.22); --cd-shadow-md:0 14px 36px rgba(0,0,0,.3);
+  --chart-label:#94a3b8; --chart-title:#e2e8f0; --chart-grid:#273449;
+  --bg:var(--cd-bg); --bg-deep:#070d18; --surface:var(--cd-surface); --surface2:var(--cd-surface-soft);
+  --surface3:var(--cd-surface-elevated); --surface4:#26354b; --surface-raised:var(--cd-surface-elevated); --bg-card:var(--cd-surface);
+  --border:var(--cd-border); --border-mid:var(--cd-border-strong); --border-bright:#53637a;
+  --text:#f8fafc; --text-soft:#cbd5e1; --text-muted:#94a3b8; --text-dim:#64748b;
+  --ui-bg:var(--cd-bg); --ui-surface:var(--cd-surface); --ui-surface-2:var(--cd-surface-soft);
+  --ui-surface-raised:var(--cd-surface-elevated); --ui-border:var(--cd-border); --ui-border-strong:var(--cd-border-strong);
+  --ui-text:#f8fafc; --ui-text-secondary:#cbd5e1; --ui-text-muted:#94a3b8;
+}
+body,.shell,.main,main,.content{color:var(--text)!important;background:var(--bg)!important}
+.topbar{color:var(--text)!important;background:color-mix(in srgb,var(--surface) 92%,transparent)!important;border-color:var(--border)!important}
+.topbar h1,.page-title,.card-title,h1,h2,h3,h4,strong,th{color:var(--text)!important}
+.sub,.page-sub,small,.help,.hint,label,.topbar-info-label,.topbar-user-label{color:var(--text-muted)!important}
+.card,.item,.painel,.panel,.widget,.modal,.modal-content,.dropdown-menu,.notification-panel,[class*="-card"]:not(.login-card){color:var(--text)!important;background:var(--surface)!important;border-color:var(--border)!important}
+input,select,textarea{color:var(--text)!important;background:var(--surface)!important;border-color:var(--border-mid)!important}
+input::placeholder,textarea::placeholder{color:var(--text-dim)!important;opacity:1}
+input:disabled,select:disabled,textarea:disabled,button:disabled{color:var(--cd-disabled)!important;opacity:.72}
+table,thead,tbody,tr,td,th{border-color:var(--border)!important} td{color:var(--text-soft)!important} tbody tr:hover td{background:var(--surface2)!important}
+.table-wrap,.table-responsive,.dash-gf-detail-wrap,table,.dropdown,.dropdown-menu,[class*="dropdown"]{color:var(--text-soft)!important;background:var(--surface)!important;border-color:var(--border)!important}
+.badge,.tag,.chip{color:var(--text)!important}
+.dash-gf-ranking-item,.dash-gf-ranking-row,[class*="ranking-"]{color:var(--text)!important;background:var(--surface2)!important;border-color:var(--border)!important}
+.dash-gf-ranking-item:hover,.dash-gf-ranking-row:hover,[class*="ranking-"]:hover{background:color-mix(in srgb,var(--surface2) 78%,var(--cd-accent) 22%)!important}
+.dash-gf-ranking-item strong,.dash-gf-ranking-row strong{color:var(--text)!important}.dash-gf-ranking-item small,.dash-gf-ranking-row small{color:var(--text-muted)!important}
+.dash-gf-bar,.dash-gf-progress,[class*="ranking-"] [class*="bar"]{background-color:var(--chart-grid)!important}
+.dash-gf-axis,.dash-gf-month,.chart-label,.chart-legend,[class*="grafico"] text{color:var(--chart-label)!important;fill:var(--chart-label)!important}
+.dash-gf-title,.chart-title{color:var(--chart-title)!important;fill:var(--chart-title)!important}.dash-gf-grid-line,.chart-grid{border-color:var(--chart-grid)!important;stroke:var(--chart-grid)!important}
+.sidebar{color:#cbd5e1!important}.sidebar .nav-btn{color:#cbd5e1!important;background:transparent!important;transition:background-color .18s ease,color .18s ease,border-color .18s ease,transform .18s ease!important}
+.sidebar .nav-btn:hover{color:#f8fafc!important;background:rgba(148,163,184,.12)!important}.sidebar .nav-btn.active,.sidebar .nav-btn.ativo,.sidebar .nav-btn[aria-current="page"]{color:#f0fdf4!important;font-weight:700!important;background:linear-gradient(90deg,rgba(34,197,94,.2),rgba(6,182,212,.09))!important;box-shadow:inset 3px 0 #22c55e!important}
+.theme-switcher{position:relative;flex:0 0 auto}.theme-switcher::before{content:"◐";position:absolute;left:9px;top:50%;translate:0 -50%;z-index:1;color:var(--text-muted);pointer-events:none}.theme-switcher select{min-height:36px!important;width:102px;padding:6px 24px 6px 28px!important;border-radius:9px!important;font-size:11px!important;font-weight:700!important;cursor:pointer}
+:root[data-theme="dark"] .topbar-clock:hover,:root[data-theme="dark"] .topbar-business-day:hover,:root[data-theme="dark"] .topbar-store:hover,:root[data-theme="dark"] .topbar-user:hover,:root[data-theme="dark"] .notification-btn:hover,:root[data-theme="dark"] .item:hover{background:var(--cd-surface-elevated)!important}
+:root[data-theme="dark"] .sidebar-collapse-toggle{color:var(--text-soft)!important;background:var(--cd-surface-elevated)!important;border-color:var(--border)!important}
+:root[data-theme="light"] .login-screen{background:radial-gradient(circle at 18% 16%,rgba(34,197,94,.12),transparent 31%),radial-gradient(circle at 84% 72%,rgba(6,182,212,.11),transparent 34%),linear-gradient(145deg,#f8fafc 0%,#eef5f3 52%,#e8f3f7 100%)!important}
+:root[data-theme="light"] .login-card{color:#0f172a!important;background:rgba(255,255,255,.9)!important;border-color:#d7e0ea!important;box-shadow:0 28px 80px rgba(15,23,42,.14)!important}
+:root[data-theme="light"] .login-brand::before{background-image:url("../brand/logo-checkdiario-horizontal.svg")!important}
+:root[data-theme="light"] .login-field-label,:root[data-theme="light"] .login-check-label{color:#475569!important}
+:root[data-theme="light"] .login-field-help,:root[data-theme="light"] .login-hint,:root[data-theme="light"] .login-footer,:root[data-theme="light"] .login-divider{color:#64748b!important}
+:root[data-theme="light"] .login-input,:root[data-theme="light"] .login-store-search{color:#0f172a!important;background:#fff!important;border-color:#cbd5e1!important}
+:root[data-theme="light"] .login-btn-secondary{color:#334155!important;background:#f8fafc!important;border-color:#cbd5e1!important}
+:root[data-theme="light"] #financeiro_contasapagar .contas-pagar-filtros-unificados input,
+:root[data-theme="light"] #financeiro_contasapagar .contas-pagar-filtros-unificados select,
+:root[data-theme="light"] .filter-field-standard input,:root[data-theme="light"] .filter-field-standard select{color:#0f172a!important;background:#fff!important;border-color:#cbd5e1!important}
+:root[data-theme="dark"] .login-input,:root[data-theme="dark"] .login-store-search{color:#f8fafc!important;background:rgba(2,8,23,.46)!important;border-color:rgba(148,163,184,.32)!important}
+:root[data-theme="dark"] .login-footer{color:#94a3b8!important}
+:root[data-theme="dark"] #cardDashboardGraficosFinanceiros,:root[data-theme="dark"] #bater_ponto .ponto-topo-grid>.card:first-child,:root[data-theme="dark"] .prod-pie-center,:root[data-theme="dark"] .ponto-periodo-chip,:root[data-theme="dark"] .dashboard-period-btn:hover{background:var(--surface)!important}
+:root[data-theme="dark"] .dashboard-period-tabs{background:var(--surface2)!important}
+:root[data-theme="dark"] .btn-ghost,:root[data-theme="dark"] button:disabled{color:var(--text-soft)!important;background:var(--surface2)!important;border-color:var(--border-mid)!important}
+@media(max-width:768px){.theme-switcher select{width:42px;color:transparent!important;padding-inline:0!important}.theme-switcher::before{left:14px;color:var(--text)!important}}

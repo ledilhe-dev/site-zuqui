@@ -15,6 +15,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CheckDiário">
   <title>CheckDiário</title>
+  <script src="./assets/js/00-theme-bootstrap.js?v=20260807-theme-v1"></script>
   <!--
     Versão 3.2.13 - Restaurar vencimento no mobile
     Principais ajustes:
@@ -384,6 +385,14 @@
     <div class="topbar">
       <div class="topbar-main">
         <button class="btn btn-ghost mobile-menu-btn" type="button" onclick="toggleMobileMenu()" aria-label="Abrir menu">☰</button>
+        <label class="theme-switcher" title="Tema da interface">
+          <span class="sr-only">Tema</span>
+          <select id="themeSelector" aria-label="Tema da interface" onchange="definirTemaInterface(this.value)">
+            <option value="light">Claro</option>
+            <option value="dark">Escuro</option>
+            <option value="system">Sistema</option>
+          </select>
+        </label>
         <div id="topbarTitleWrap">
           <h1 id="topbar-title">Checklists</h1>
           <div class="sub" id="topbar-sub"></div>
@@ -459,11 +468,6 @@
               </div>
               <button class="btn btn-ghost btn-sm" onclick="fecharEditorMeuPainel()" style="font-size:18px;padding:0 8px;">×</button>
             </div>
-            <!-- Abas do modal -->
-            <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:14px;">
-              <button onclick="trocarAbaEditor('widgets')" id="abaEditorWidgets" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--accent);border-bottom:2px solid var(--accent);">🧩 Widgets</button>
-              <button onclick="trocarAbaEditor('tema')" id="abaEditorTema" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;">🎨 Aparência</button>
-            </div>
             <!-- Aba widgets -->
             <div id="abaConteudoWidgets">
               <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">📊 Indicadores financeiros</div>
@@ -476,24 +480,6 @@
               <div class="meu-painel-editor" id="editorWidgetsAtalhosAdm"></div>
             </div><!-- /abaConteudoWidgets -->
 
-            <!-- Aba aparência -->
-            <div id="abaConteudoTema" style="display:none;">
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;">Temas predefinidos</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;" id="gridTemasPredefinidos"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Cor de destaque personalizada</div>
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <input type="color" id="corAcentoPersonalizado" value="#f0a500" style="width:44px;height:36px;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border-mid);">
-                <div>
-                  <div style="font-size:12px;color:var(--text);">Cor de destaque</div>
-                  <div style="font-size:11px;color:var(--text-muted);">Afeta botões, links e elementos ativos</div>
-                </div>
-                <button class="btn btn-ghost btn-sm" onclick="aplicarCorAcentoPersonalizado()">Aplicar</button>
-                <button class="btn btn-ghost btn-sm" onclick="resetarTema()">Restaurar padrão</button>
-              </div>
-              <div style="margin-top:14px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted);">
-                💡 Dica: use temas diferentes em cada loja para identificar rapidamente em qual você está logado.
-              </div>
-            </div>
             <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
               <button class="btn btn-ghost btn-sm" onclick="fecharEditorMeuPainel()">Fechar</button>
               <button class="btn btn-green" onclick="salvarMeuPainel()">Salvar painel</button>
@@ -2905,6 +2891,7 @@
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260807-stage1">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260807-stage3">
+<link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=20260807-theme-v1">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3148,6 +3135,7 @@
 <script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
 <script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
+<script src="./assets/js/06-theme-interface.js?v=20260807-theme-v1"></script>
 <script src="./assets/js/10-dashboard.js?v=20260807-menu-limpo-v3"></script>
 <script src="./assets/js/20-checklists.js"></script>
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>

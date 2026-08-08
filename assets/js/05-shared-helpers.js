@@ -1313,7 +1313,7 @@ function aplicarPermissoesSistema() {
   atualizarVisibilidadeCheckboxAdmin();
   // Ordem do menu é carregada explicitamente antes de restaurarPaginaAtivaSalvaOuPadrao
   // Recarregar tema da loja atual sempre que as permissões são reaplicadas
-  if (usuarioSistemaLogado) carregarTemaUsuario();
+  if (usuarioSistemaLogado) carregarTemaInterface();
   document.documentElement.classList.remove('admin-fouc-pendente');
 }
 

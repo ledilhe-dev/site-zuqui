@@ -542,8 +542,7 @@ function fecharEditorMeuPainel() {
 async function salvarMeuPainel() {
   fecharEditorMeuPainel();
   await salvarPreferenciaMeuPainel('meu_painel_widgets', _meuPainelConfig);
-  await salvarTema();
-  setMsg('msgMeuPainel', 'Painel e aparência salvos.', 'ok');
+  setMsg('msgMeuPainel', 'Painel salvo.', 'ok');
   await renderizarMeuPainel();
   setTimeout(() => setMsg('msgMeuPainel', '', ''), 3000);
 }
