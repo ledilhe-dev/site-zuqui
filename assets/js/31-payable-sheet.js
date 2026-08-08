@@ -275,8 +275,14 @@ function ncObsInput(inp) {
 }
 
 // ── Categorias ──────────────────────────────────────────────────
+let ncCategoriasCarregando = null;
+
 function ncMontarCategorias() {
   const grid = document.getElementById('ncCatGrid'); if (!grid) return;
+  if (ncCategoriasCarregando && !(categoriasCompraCache || []).length) {
+    grid.innerHTML = '<div class="nc-cat-empty" role="status">Carregando categorias...</div>';
+    return;
+  }
   const porChave = new Map();
   (categoriasCompraCache || []).forEach(categoria => {
     const chave = typeof chaveCategoriaCompraEquivalente === 'function'
@@ -309,7 +315,12 @@ function ncFiltrarCategorias(termo = '') {
     if (exibir) visiveis += 1;
   });
   grid.querySelector('.nc-cat-empty')?.remove();
-  if (!visiveis) grid.insertAdjacentHTML('beforeend', '<div class="nc-cat-empty">Nenhuma categoria encontrada.</div>');
+  if (!visiveis) {
+    const mensagem = ncCategoriasCarregando && !(categoriasCompraCache || []).length
+      ? 'Carregando categorias...'
+      : 'Nenhuma categoria encontrada.';
+    grid.insertAdjacentHTML('beforeend', `<div class="nc-cat-empty" role="status">${mensagem}</div>`);
+  }
 }
 
 function ncSelCat(el) {
@@ -408,9 +419,13 @@ function ncAbrir(editar) {
   }
   if (typeof carregarFornecedoresFinanceiro === 'function') carregarFornecedoresFinanceiro().then(() => ncAtualizarBotaoVencFornecedor()).catch(() => {});
   if (!(categoriasCompraCache || []).length && typeof carregarCategoriasCompra === 'function') {
-    carregarCategoriasCompra().then(() => ncMontarCategorias()).catch(() => {});
+    ncCategoriasCarregando ||= Promise.resolve(carregarCategoriasCompra())
+      .finally(() => { ncCategoriasCarregando = null; });
+    ncMontarCategorias();
+    ncCategoriasCarregando.then(() => ncMontarCategorias()).catch(() => ncMontarCategorias());
+  } else {
+    ncMontarCategorias();
   }
-  ncMontarCategorias();
   ncAtualizarBotaoVencFornecedor();
   const ov = document.getElementById('ncOverlay'); if (!ov) return;
   ov.style.display = 'flex';
