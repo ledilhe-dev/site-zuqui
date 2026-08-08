@@ -15,6 +15,7 @@
   "./assets/css/103-vault-responsive.css",
   "./assets/css/104-device-layout.css",
   "./assets/css/105-raffinato-sangrias.css",
+  "./assets/css/106-ui-foundation.css",
   "./assets/js/00-cep-mask.js",
   "./assets/js/01-core-supabase.js",
   "./assets/js/02-core-version.js",
