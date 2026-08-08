@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">CheckDiário</title><desc id="desc">Gestão que organiza. Resultados que crescem.</desc>
+  <defs><linearGradient id="cd-gradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22C55E"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs>
+  <rect x="34" y="34" width="210" height="210" rx="48" fill="none" stroke="url(#cd-gradient)" stroke-width="24"/><path d="M83 139l45 45 82-90" fill="none" stroke="#0F172A" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="285" y="170" font-family="Inter,Arial,sans-serif" font-size="116" font-weight="700" fill="#0F172A">Check</text><text x="610" y="170" font-family="Inter,Arial,sans-serif" font-size="116" font-weight="700" fill="url(#cd-gradient)">Diário</text><text x="290" y="225" font-family="Inter,Arial,sans-serif" font-size="34" fill="#334155">Gestão que organiza. Resultados que crescem.</text>
+</svg>

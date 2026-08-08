@@ -1,0 +1,396 @@
+/* ETAPA 03 — Identidade visual premium CheckDiário
+   Camada exclusivamente visual, baseada no brand kit oficial. */
+
+:root {
+  --cd-primary: #22c55e;
+  --cd-primary-hover: #16a34a;
+  --cd-primary-soft: #dcfce7;
+  --cd-accent: #06b6d4;
+  --cd-accent-soft: #cffafe;
+  --cd-navy: #0f172a;
+  --cd-slate: #334155;
+  --cd-muted: #64748b;
+  --cd-bg: #f1f5f9;
+  --cd-surface: #ffffff;
+  --cd-surface-soft: #f8fafc;
+  --cd-border: #dbe3ec;
+  --cd-border-strong: #cbd5e1;
+  --cd-success: #16a34a;
+  --cd-warning: #f59e0b;
+  --cd-danger: #dc2626;
+  --cd-info: #0284c7;
+  --cd-radius-sm: 8px;
+  --cd-radius-md: 12px;
+  --cd-radius-lg: 18px;
+  --cd-shadow-sm: 0 4px 14px rgba(15, 23, 42, .06);
+  --cd-shadow-md: 0 12px 34px rgba(15, 23, 42, .09);
+  --cd-shadow-lg: 0 28px 70px rgba(15, 23, 42, .16);
+  --cd-focus: 0 0 0 3px rgba(6, 182, 212, .2);
+
+  /* Compatibilidade com os tokens históricos. */
+  --bg: var(--cd-bg);
+  --bg-deep: #e9eff6;
+  --surface: var(--cd-surface);
+  --surface2: var(--cd-surface-soft);
+  --surface-raised: var(--cd-surface);
+  --bg-card: var(--cd-surface);
+  --border: var(--cd-border);
+  --border-mid: var(--cd-border-strong);
+  --text: var(--cd-navy);
+  --text-muted: var(--cd-muted);
+  --text-dim: #94a3b8;
+  --accent: var(--cd-primary);
+  --green: var(--cd-success);
+  --amber: var(--cd-warning);
+  --red: var(--cd-danger);
+  --ui-bg: var(--cd-bg);
+  --ui-surface: var(--cd-surface);
+  --ui-surface-2: var(--cd-surface-soft);
+  --ui-surface-raised: var(--cd-surface);
+  --ui-border: var(--cd-border);
+  --ui-border-strong: var(--cd-border-strong);
+  --ui-text: var(--cd-navy);
+  --ui-text-secondary: var(--cd-slate);
+  --ui-text-muted: var(--cd-muted);
+  --ui-primary: var(--cd-primary);
+  --ui-primary-hover: var(--cd-primary-hover);
+  --ui-primary-soft: var(--cd-primary-soft);
+  --ui-success: var(--cd-success);
+  --ui-warning: var(--cd-warning);
+  --ui-danger: var(--cd-danger);
+  --ui-info: var(--cd-info);
+  --ui-shadow-sm: var(--cd-shadow-sm);
+  --ui-shadow-md: var(--cd-shadow-md);
+  --ui-shadow-lg: var(--cd-shadow-lg);
+  --ui-focus-ring: var(--cd-focus);
+}
+
+html, body, button, input, select, textarea { font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif !important; }
+body { color: var(--cd-navy); background: var(--cd-bg); }
+.shell, .main, main, .content { background: var(--cd-bg) !important; }
+.content { scrollbar-color: var(--cd-border-strong) transparent; }
+::selection { color: #052e16; background: rgba(34, 197, 94, .28); }
+
+/* Layout fluido: evita corredores vazios em monitores grandes. */
+.main, main { min-width: 0; width: 100%; }
+.content {
+  width: 100% !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
+  padding-inline: clamp(18px, 2vw, 40px) !important;
+}
+.content > .pagina,
+.content > section,
+#dashboard, #meu_painel, #bater_ponto,
+[id^="relatorio_"], [id^="financeiro_"], [id^="integracoes_financeiras_"] {
+  width: 100% !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
+}
+.dashboard-grid, .cards-grid, .meu-painel-grid, .dashboard-prod-grid,
+.dash-gf-grid, .rf-dashboard-grid, .rf-dashboard-pizzas-grid,
+.financeiro-grid, .relatorio-grid, .escala-layout {
+  width: 100% !important;
+  max-width: none !important;
+}
+.table-wrap, .table-responsive, .dash-gf-detail-wrap, table { max-width: none !important; }
+
+/* Marca e navegação */
+.sidebar {
+  width: 272px;
+  min-width: 272px;
+  flex: 0 0 272px !important;
+  padding: 18px 14px 16px !important;
+  border-right: 0 !important;
+  background: linear-gradient(180deg, #0f172a 0%, #111c31 58%, #0b1324 100%) !important;
+  box-shadow: 8px 0 30px rgba(15, 23, 42, .12);
+}
+.sidebar::after { opacity: .16 !important; background: linear-gradient(90deg, transparent, rgba(6, 182, 212, .4)) !important; }
+.logo {
+  min-height: 68px;
+  margin: 0 2px 16px !important;
+  padding: 8px 6px 15px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, .14);
+}
+.logo > * { display: none !important; }
+.logo::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 58px;
+  background: url("../brand/logo-checkdiario-horizontal-dark.svg") left center / contain no-repeat;
+}
+.nav-group { margin-bottom: 16px; }
+.nav-label {
+  padding: 0 11px 7px !important;
+  color: #7f8da5 !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: .13em !important;
+}
+.nav-btn {
+  position: relative;
+  min-height: 46px;
+  margin: 2px 0;
+  padding: 8px 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease !important;
+}
+.nav-btn:hover {
+  color: #fff !important;
+  border-color: rgba(148, 163, 184, .12) !important;
+  background: rgba(255, 255, 255, .065) !important;
+  transform: translateX(2px);
+}
+.nav-btn.active,
+.nav-btn.ativo,
+.nav-btn[aria-current="page"] {
+  color: #f0fdf4 !important;
+  border-color: rgba(34, 197, 94, .2) !important;
+  background: linear-gradient(90deg, rgba(34, 197, 94, .17), rgba(6, 182, 212, .07)) !important;
+  box-shadow: inset 3px 0 var(--cd-primary);
+}
+.nav-btn .icon {
+  width: 30px !important;
+  height: 30px !important;
+  border: 1px solid rgba(148, 163, 184, .15) !important;
+  border-radius: 8px !important;
+  color: #94a3b8 !important;
+  background: rgba(255, 255, 255, .045) !important;
+}
+.nav-btn.active .icon, .nav-btn.ativo .icon { color: #86efac !important; border-color: rgba(34, 197, 94, .25) !important; background: rgba(34, 197, 94, .12) !important; }
+.nav-title { font-size: 12px !important; font-weight: 600 !important; }
+.nav-hint { color: #7f8da5 !important; font-size: 9px !important; }
+.nav-sub-btn { min-height: 38px; margin-left: 14px; padding-left: 15px !important; }
+.sidebar-collapse-toggle { border-color: var(--cd-border) !important; color: var(--cd-slate) !important; background: #fff !important; box-shadow: var(--cd-shadow-sm) !important; }
+body.sidebar-collapsed .sidebar { width: 78px !important; padding-inline: 12px !important; }
+body.sidebar-collapsed .sidebar { min-width: 78px !important; flex-basis: 78px !important; }
+body.sidebar-collapsed .logo { padding-inline: 0 !important; }
+body.sidebar-collapsed .logo::before { width: 50px; height: 50px; background-image: url("../brand/logo-checkdiario-icon.svg"); background-position: center; }
+
+/* Topbar */
+.topbar {
+  min-height: 78px;
+  padding: 13px 22px !important;
+  border-bottom: 1px solid var(--cd-border) !important;
+  background: rgba(255, 255, 255, .9) !important;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, .02) !important;
+  backdrop-filter: blur(14px);
+}
+.topbar h1 { color: var(--cd-navy) !important; font-size: 17px !important; font-weight: 750 !important; }
+.topbar .sub { color: var(--cd-muted) !important; }
+.topbar-clock, .topbar-business-day, .topbar-store, .topbar-user, .notification-btn, .topbar-store-switch {
+  border-color: var(--cd-border) !important;
+  color: var(--cd-slate) !important;
+  background: var(--cd-surface-soft) !important;
+  box-shadow: none !important;
+}
+.topbar-clock:hover, .topbar-business-day:hover, .topbar-store:hover, .topbar-user:hover, .notification-btn:hover {
+  border-color: rgba(6, 182, 212, .35) !important;
+  background: #fff !important;
+  box-shadow: var(--cd-shadow-sm) !important;
+}
+.topbar-info-label, .topbar-user-label { color: var(--cd-muted) !important; }
+.topbar-clock-time, .topbar-business-day-date, .topbar-store-name, .topbar-user-name { color: var(--cd-navy) !important; }
+
+/* Conteúdo, cartões e hierarquia */
+.page-title { color: var(--cd-navy) !important; font-size: clamp(20px, 2.2vw, 28px) !important; font-weight: 750 !important; letter-spacing: -.035em !important; }
+.page-sub { color: var(--cd-muted) !important; line-height: 1.55; }
+.card, .item, .painel, .panel, .widget, [class*="-card"]:not(.login-card) {
+  border-color: var(--cd-border) !important;
+  color: var(--cd-navy);
+  background: var(--cd-surface) !important;
+  box-shadow: var(--cd-shadow-sm) !important;
+}
+.card { padding: clamp(16px, 2vw, 22px) !important; border-radius: var(--cd-radius-md) !important; }
+.card:hover { border-color: var(--cd-border-strong) !important; }
+.card-title { color: var(--cd-navy) !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: -.012em !important; }
+.item { border-radius: var(--cd-radius-sm) !important; }
+.item:hover { border-color: rgba(6, 182, 212, .3) !important; background: #fbfdff !important; }
+.item-nome, .item-title { color: var(--cd-navy) !important; }
+.item-detalhe, .item-sub, .empty { color: var(--cd-muted) !important; }
+.empty { border-color: var(--cd-border-strong) !important; background: var(--cd-surface-soft) !important; }
+hr, .divider, .separator { border-color: var(--cd-border) !important; }
+
+/* Ações */
+.btn, button:not(.nav-btn):not(.dashboard-period-btn):not(.meu-painel-widget-remover) { border-radius: var(--cd-radius-sm) !important; }
+.btn-green, .btn-primary, .login-btn-primary {
+  border-color: var(--cd-primary) !important;
+  color: #052e16 !important;
+  background: var(--cd-primary) !important;
+  box-shadow: 0 7px 18px rgba(34, 197, 94, .2) !important;
+}
+.btn-green:hover, .btn-primary:hover, .login-btn-primary:hover { border-color: var(--cd-primary-hover) !important; background: #4ade80 !important; transform: translateY(-1px); }
+.btn-ghost, .btn-secondary, .login-btn-secondary {
+  border-color: var(--cd-border) !important;
+  color: var(--cd-slate) !important;
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04) !important;
+}
+.btn-ghost:hover, .btn-secondary:hover, .login-btn-secondary:hover { border-color: #a9b7c8 !important; color: var(--cd-navy) !important; background: var(--cd-surface-soft) !important; }
+.btn-red, .btn-danger { border-color: #fecaca !important; color: #b91c1c !important; background: #fff1f2 !important; box-shadow: none !important; }
+.btn-red:hover, .btn-danger:hover { border-color: #fca5a5 !important; background: #ffe4e6 !important; }
+.btn-amber { border-color: #fde68a !important; color: #92400e !important; background: #fffbeb !important; box-shadow: none !important; }
+.btn:disabled, button:disabled { opacity: .5 !important; box-shadow: none !important; transform: none !important; }
+
+/* Formulários */
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea, .login-input, .login-store-search {
+  border-color: var(--cd-border-strong) !important;
+  color: var(--cd-navy) !important;
+  background: #fff !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, .025) !important;
+}
+input::placeholder, textarea::placeholder { color: #94a3b8 !important; }
+input:hover, select:hover, textarea:hover { border-color: #a8b7c8 !important; }
+input:focus, select:focus, textarea:focus { border-color: var(--cd-accent) !important; box-shadow: var(--cd-focus) !important; }
+input:disabled, select:disabled, textarea:disabled, input[readonly], textarea[readonly] { color: var(--cd-muted) !important; background: #f1f5f9 !important; }
+label, .label, .field-label, .login-field-label { color: var(--cd-slate) !important; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--cd-primary); }
+
+/* Tabelas, badges e feedback */
+.table-wrap, .table-responsive, .dash-gf-detail-wrap { border-color: var(--cd-border) !important; background: #fff !important; }
+table { color: var(--cd-slate) !important; background: #fff !important; }
+th { border-color: var(--cd-border) !important; color: var(--cd-muted) !important; background: #f8fafc !important; }
+.content table thead th, .content table thead td { color: var(--cd-muted) !important; background: #f8fafc !important; }
+td { border-color: #e8edf3 !important; }
+tbody tr:hover td { background: #f8fafc !important; }
+.tag, .badge, [class*="status-"] { font-weight: 650; }
+.tag-green, .status-ok, .badge-success { color: #15803d !important; background: #dcfce7 !important; border-color: #bbf7d0 !important; }
+.tag-amber, .status-warning { color: #a16207 !important; background: #fef3c7 !important; border-color: #fde68a !important; }
+.tag-red, .status-error { color: #b91c1c !important; background: #fee2e2 !important; border-color: #fecaca !important; }
+.msg.ok, .msg.success { color: #166534 !important; border-color: #bbf7d0 !important; background: #f0fdf4 !important; }
+.msg.err, .msg.error { color: #991b1b !important; border-color: #fecaca !important; background: #fef2f2 !important; }
+.msg.info { color: #075985 !important; border-color: #bae6fd !important; background: #f0f9ff !important; }
+.toast { border-color: var(--cd-border) !important; color: var(--cd-navy) !important; background: rgba(255, 255, 255, .97) !important; box-shadow: var(--cd-shadow-lg) !important; }
+[role="tooltip"], .tooltip { color: #f8fafc !important; background: var(--cd-navy) !important; box-shadow: var(--cd-shadow-md) !important; }
+
+/* Modais e menus */
+.overlay, [class*="modal-overlay"], [class*="-overlay"] { backdrop-filter: blur(5px); }
+.modal, .modal-card, [class*="modal-card"] {
+  border-color: var(--cd-border) !important;
+  color: var(--cd-navy) !important;
+  background: #fff !important;
+  box-shadow: var(--cd-shadow-lg) !important;
+}
+.modal-title, [class*="modal-title"] { color: var(--cd-navy) !important; }
+.modal-sub, [class*="modal-sub"] { color: var(--cd-muted) !important; }
+.modal-header, .modal-footer, .modal-actions { border-color: var(--cd-border) !important; }
+.dropdown, .dropdown-menu, [class*="dropdown"] { border-color: var(--cd-border) !important; color: var(--cd-slate) !important; background: #fff !important; box-shadow: var(--cd-shadow-md) !important; }
+
+/* Login */
+.login-screen {
+  background:
+    radial-gradient(circle at 18% 16%, rgba(34, 197, 94, .17), transparent 31%),
+    radial-gradient(circle at 84% 72%, rgba(6, 182, 212, .16), transparent 34%),
+    linear-gradient(145deg, #0f172a 0%, #16243b 52%, #0c182b 100%) !important;
+}
+.login-screen::before { opacity: .22 !important; }
+.login-card {
+  width: min(100%, 456px) !important;
+  border: 1px solid rgba(255, 255, 255, .2) !important;
+  color: #e2e8f0 !important;
+  background: rgba(15, 23, 42, .79) !important;
+  box-shadow: 0 34px 90px rgba(2, 8, 23, .42) !important;
+  backdrop-filter: blur(22px);
+}
+.login-brand { margin-bottom: 24px !important; }
+.login-brand > *:not(.login-version-protecao) { display: none !important; }
+.login-brand::before {
+  content: "";
+  display: block;
+  width: min(100%, 350px);
+  height: 88px;
+  margin: 0 auto 10px;
+  background: url("../brand/logo-checkdiario-horizontal-dark.svg") center / contain no-repeat;
+}
+.login-version-protecao { color: #86efac !important; border-color: rgba(34, 197, 94, .28) !important; background: rgba(34, 197, 94, .1) !important; }
+.login-field-label, .login-check-label { color: #cbd5e1 !important; }
+.login-field-help, .login-hint, .login-footer { color: #94a3b8 !important; }
+.login-input, .login-store-search { color: #f8fafc !important; border-color: rgba(148, 163, 184, .32) !important; background: rgba(2, 8, 23, .46) !important; box-shadow: none !important; }
+.login-input:hover, .login-store-search:hover { border-color: rgba(148, 163, 184, .58) !important; }
+.login-input:focus, .login-store-search:focus { border-color: var(--cd-accent) !important; box-shadow: 0 0 0 3px rgba(6, 182, 212, .18) !important; }
+.login-btn-secondary { color: #dbe7f3 !important; border-color: rgba(148, 163, 184, .24) !important; background: rgba(255, 255, 255, .045) !important; }
+.login-btn-secondary:hover { color: #fff !important; border-color: rgba(148, 163, 184, .44) !important; background: rgba(255, 255, 255, .08) !important; }
+.login-divider { color: #7f8da5 !important; }
+.login-divider::before, .login-divider::after { background: rgba(148, 163, 184, .22) !important; }
+
+/* Dashboard, Ponto, escalas e financeiro */
+#cardDashboardGraficosFinanceiros, #bater_ponto .ponto-topo-grid > .card:first-child { background: #fff !important; }
+#cardDashboardGraficosFinanceiros .dash-gf-grid > div, #dashGfResumo > span, .prod-stat, .prod-func-list,
+#pontoResumoHoje .ponto-resumo-linha, .meu-painel-widget, .escala-side-card, .escala-calendario-card {
+  border-color: var(--cd-border) !important;
+  color: var(--cd-navy) !important;
+  background: var(--cd-surface-soft) !important;
+  box-shadow: none !important;
+}
+#dashGfResumo strong, .prod-stat-value, .prod-pie-value, .meu-painel-widget-valor { color: var(--cd-navy) !important; }
+.dashboard-period-tabs { border-color: var(--cd-border) !important; background: #f1f5f9 !important; }
+.dashboard-period-btn { color: var(--cd-muted) !important; }
+.dashboard-period-btn:hover { color: var(--cd-navy) !important; background: #fff !important; }
+.dashboard-period-btn.active { color: #166534 !important; border-color: #bbf7d0 !important; background: #dcfce7 !important; box-shadow: 0 1px 3px rgba(15, 23, 42, .08) !important; }
+.prod-pie-center { color: var(--cd-navy) !important; background: #fff !important; }
+.ponto-periodo-chip { color: var(--cd-slate) !important; border-color: var(--cd-border) !important; background: #fff !important; }
+.ponto-periodo-chip.aberto { color: #166534 !important; border-color: #86efac !important; background: #f0fdf4 !important; }
+.escala-toolbar, .escala-legenda { border-color: var(--cd-border) !important; }
+.if-page-content, [class^="rf-"], [class*=" financeiro-"] { color: var(--cd-slate); }
+
+/* Movimento sutil e acessível */
+@keyframes cd-premium-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.pagina.active, .pagina.ativa { animation: cd-premium-enter .2s ease both; }
+
+@media (max-width: 1024px) {
+  .sidebar { width: min(290px, 88vw); }
+  .topbar { min-height: 70px; padding: 10px 14px !important; }
+}
+
+@media (min-width: 1600px) {
+  .content { padding-inline: clamp(24px, 2.5vw, 40px) !important; }
+  .content > .pagina,
+  .content > section { width: 100% !important; }
+  .meu-painel-grid, .cards-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; }
+  #cardDashboardGraficosFinanceiros .dash-gf-grid,
+  .dashboard-prod-grid, .rf-dashboard-grid, .financeiro-grid, .relatorio-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 2200px) {
+  .content { padding-inline: 40px !important; }
+  .meu-painel-grid, .cards-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important; }
+  #dashGfResumo { grid-template-columns: repeat(5, minmax(180px, 1fr)) !important; }
+}
+
+@media (max-width: 768px) {
+  .content { padding: 12px !important; }
+  .topbar { background: rgba(255, 255, 255, .96) !important; }
+  .card { border-radius: 11px !important; }
+  .table-wrap, .table-responsive, .dash-gf-detail-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .dashboard-grid, .cards-grid, .meu-painel-grid, .dashboard-prod-grid,
+  .dash-gf-grid, .rf-dashboard-grid, .rf-dashboard-pizzas-grid,
+  .financeiro-grid, .relatorio-grid, .escala-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .content { padding: 8px !important; }
+  .topbar { padding: 8px !important; }
+  .login-card { padding: 20px 15px !important; border-radius: 20px !important; }
+  .login-brand::before { height: 76px; }
+  .page-title { font-size: 21px !important; }
+  .card { padding: 14px !important; }
+  .btn, button { min-height: 42px; }
+}
+
+@media (max-width: 340px) {
+  .content { padding-inline: 6px !important; }
+  .login-brand::before { height: 66px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagina.active, .pagina.ativa { animation: none; }
+  .nav-btn, .btn, button { transition: none !important; }
+}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v147-correcao-total-trabalhado';
+const CACHE_NAME = 'check-diario-pwa-v148-premium-brand';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
@@ -6,6 +6,10 @@ const CORE_ASSETS = [
   './config.js',
   ASSET_MANIFEST,
   './manifest.webmanifest',
+  './assets/brand/logo-checkdiario-horizontal.svg',
+  './assets/brand/logo-checkdiario-horizontal-dark.svg',
+  './assets/brand/logo-checkdiario-icon.svg',
+  './assets/brand/favicon.svg',
   './icon-192.png',
   './icon-512.png',
   './favicon-check-diario.svg',

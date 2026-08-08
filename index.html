@@ -9,12 +9,12 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-version" content="3.2.13">
-  <meta name="theme-color" content="#090b10">
+  <meta name="theme-color" content="#0F172A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
-  <title>CHECK DIARIO</title>
+  <meta name="apple-mobile-web-app-title" content="CheckDiário">
+  <title>CheckDiário</title>
   <!--
     Versão 3.2.13 - Restaurar vencimento no mobile
     Principais ajustes:
@@ -26,11 +26,9 @@
     - Segurança: fallback de consulta de ponto usa inner join (funcionarios.loja_id) para evitar vazamento entre lojas.
   -->
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
-  <link rel="apple-touch-icon" href="./logo-check-diario.svg">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxOCIgZmlsbD0iIzBBMEYwRCIvPgogIDxyZWN0IHg9IjciIHk9IjciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcng9IjE1IiBmaWxsPSIjMTYzNjI2Ii8+CiAgPHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iMjQiIGhlaWdodD0iMzIiIHJ4PSI1IiBmaWxsPSIjRjRGRkY3Ii8+CiAgPGNpcmNsZSBjeD0iNDQiIGN5PSI0MSIgcj0iMTAiIGZpbGw9IiMyMkM1NUUiLz4KICA8cGF0aCBkPSJNMzkuNSA0MUw0MyA0NC41TDQ5IDM4LjUiIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K">
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="./assets/brand/favicon.svg">
+  <link rel="apple-touch-icon" href="./assets/brand/logo-checkdiario-icon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
@@ -58,7 +56,7 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="logo">
+    <div class="logo" aria-label="CheckDiário">
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div>
         <strong>CHECK DIARIO</strong>
@@ -69,14 +67,12 @@
     <div id="navgrp_operacao" class="nav-group featured">
       <div class="nav-label">Operação diária</div>
       <div data-nav-item-id="bater_ponto" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="bater_ponto" onclick="abrirPagina('bater_ponto', this)">
-        <span class="icon">PT</span>
         <span class="nav-copy">
           <span class="nav-title">Bater ponto</span>
           <span class="nav-hint">Registro de jornada</span>
         </span>
       </button></div>
       <div data-nav-item-id="escala_plantoes" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="escala_plantoes" onclick="abrirPagina('escala_plantoes', this)">
-        <span class="icon">EP</span>
         <span class="nav-copy">
           <span class="nav-title">Agenda</span>
           <span class="nav-hint">Calendário de turnos, domingos e feriados</span>
@@ -85,7 +81,6 @@
       <div data-nav-item-id="checklist" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><div class="nav-group-checklist" id="menuChecklistGroup" style="display:block">
         <button class="nav-btn nav-btn-parent" id="btnMenuChecklist" type="button" onclick="toggleMenuChecklistSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">CK</span>
             <span class="nav-copy">
               <span class="nav-title">Checklist</span>
               <span class="nav-hint">Funções de checklist</span>
@@ -118,7 +113,6 @@
         </div>
       </div></div>
       <div data-nav-item-id="tarefas_rapidas" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn nav-btn-alerta" data-page="tarefas_rapidas" onclick="abrirPagina('tarefas_rapidas', this)">
-        <span class="icon">AR</span>
         <span class="nav-copy">
           <span class="nav-title">Alertas rápidas</span>
           <span class="nav-hint">Avisos pontuais para equipe</span>
@@ -126,7 +120,6 @@
       </button></div>
       <div data-nav-item-id="meu_painel" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="meu_painel" onclick="abrirPagina('meu_painel', this)">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">MP</span>
             <span class="nav-copy">
               <span class="nav-title">Meu Painel</span>
               <span class="nav-hint">Dashboard personalizado</span>
@@ -134,14 +127,12 @@
           </span>
         </button></div>
       <div data-nav-item-id="dashboard" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
-        <span class="icon">DB</span>
         <span class="nav-copy">
           <span class="nav-title">Dashboard</span>
           <span class="nav-hint">Resumo rapido da operacao</span>
         </span>
       </button></div>
       <div data-nav-item-id="estatisticas_atendimento" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="estatisticas_atendimento" onclick="abrirPagina('estatisticas_atendimento', this)">
-        <span class="icon">EA</span>
         <span class="nav-copy"><span class="nav-title">Estatísticas de atendimento</span><span class="nav-hint">Avaliações do Google</span></span>
       </button></div>
     </div>
@@ -150,7 +141,6 @@
       <div class="nav-group-relatorios" id="menuRelatoriosGroup" data-nav-item-id="relatorios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuRelatorios" type="button" onclick="toggleMenuRelatoriosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">RL</span>
             <span class="nav-copy">
               <span class="nav-title">Relatórios</span>
               <span class="nav-hint">Funções de relatório</span>
@@ -211,7 +201,6 @@
     <div id="navgrp_integracoes" class="nav-group">
       <div class="nav-label">Integrações</div>
       <button class="nav-btn" data-nav-item-id="raffinato" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" data-page="financeiro_sangrias_raffinato" onclick="abrirPagina('financeiro_sangrias_raffinato', this)">
-        <span class="icon">RF</span>
         <span class="nav-copy"><span class="nav-title">Raffinato</span><span class="nav-hint">Conexão SQL e sangrias</span></span>
       </button>
     </div>
@@ -220,7 +209,6 @@
       <div class="nav-group-financeiro" id="menuFinanceiroGroup" data-nav-item-id="financeiro" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFinanceiro" type="button" onclick="toggleMenuFinanceiroSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">FI</span>
             <span class="nav-copy">
               <span class="nav-title">Financeiro</span>
               <span class="nav-hint">Fornecedores e contas</span>
@@ -282,7 +270,7 @@
       <div class="nav-label">Integrações</div>
       <div class="nav-group-financeiro" id="menuIntegracoesFinanceirasGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuIntegracoesFinanceiras" type="button" onclick="toggleMenuIntegracoesFinanceirasSubmenu()">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="icon">IF</span><span class="nav-copy"><span class="nav-title">Integrações Financeiras</span><span class="nav-hint">Bancos, cartões e conciliação</span></span></span>
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="nav-copy"><span class="nav-title">Integrações Financeiras</span><span class="nav-hint">Bancos, cartões e conciliação</span></span></span>
           <span class="nav-caret">▾</span>
         </button>
         <div class="nav-submenu">
@@ -303,7 +291,6 @@
       <div class="nav-group-funcionarios" id="menuFuncionariosGroup" data-nav-item-id="administracao_funcionarios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFuncionarios" type="button" onclick="toggleMenuFuncionariosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">CF</span>
             <span class="nav-copy">
               <span class="nav-title">Configuração de funcionários</span>
               <span class="nav-hint">Equipe e perfis</span>
@@ -332,7 +319,6 @@
       <div class="nav-group-configuracao" id="menuConfiguracoesGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuConfiguracoes" type="button" onclick="toggleMenuConfiguracoesSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">CG</span>
             <span class="nav-copy">
               <span class="nav-title">Configuração</span>
               <span class="nav-hint">Ajustes do sistema</span>
@@ -368,7 +354,6 @@
       <div class="nav-group-saas" id="menuSaasGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuSaas" type="button" onclick="toggleMenuSaasSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">SA</span>
             <span class="nav-copy">
               <span class="nav-title">Administração SaaS</span>
               <span class="nav-hint">Clientes, empresas e lojas</span>
@@ -2919,6 +2904,7 @@
 <link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260807-loading-fix-v8">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260807-stage1">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
+<link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260807-stage3">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -3189,7 +3175,7 @@
   <div class="login-card">
 
     <!-- BRAND -->
-    <div class="login-brand">
+    <div class="login-brand" aria-label="CheckDiário — Gestão que organiza. Resultados que crescem.">
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div class="login-brand-title">CHECK DIARIO</div>
       <div class="login-brand-sub">ROTINA · CHECKLIST · OPERAÇÃO</div>
