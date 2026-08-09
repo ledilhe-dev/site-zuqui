@@ -114,6 +114,27 @@
 
 /* Editor de avatar em memória — CropperJS */
 body.avatar-crop-open{overflow:hidden!important}
+
+/* Estados visuais finais do cadastro de contas a pagar. Mantidos aqui para
+   prevalecer sobre as regras genéricas de card/modal do tema. */
+#ncOverlay #ncSheet #ncCatGrid button.nc-cat-card.nc-sel {
+  border-color:#6366f1!important;
+  background:#eef0ff!important;
+  color:#272c78!important;
+  box-shadow:0 0 0 2px rgba(99,102,241,.1)!important;
+}
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation)>.modal {
+  border-color:#e1e5ed!important;
+  background:#f8f9fc!important;
+}
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation)>.modal>.modal-header,
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation)>.modal>.modal-body {
+  background:#f8f9fc!important;
+}
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation)>.modal>.modal-footer {
+  border-top-color:#e1e5ed!important;
+  background:#f3f5f9!important;
+}
 .avatar-crop-overlay{position:fixed;inset:0;z-index:12000;display:none;place-items:center;padding:20px;background:rgba(2,8,23,.78);backdrop-filter:blur(8px)}
 .avatar-crop-overlay.open{display:grid}
 .avatar-crop-modal{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;width:min(760px,calc(100vw - 32px));min-width:0;max-height:min(860px,calc(100dvh - 32px));overflow:hidden;border:1px solid var(--border);border-radius:20px;color:var(--text);background:var(--surface);box-shadow:0 32px 100px rgba(2,8,23,.5)}

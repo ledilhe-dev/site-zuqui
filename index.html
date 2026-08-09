@@ -2610,6 +2610,10 @@
         <div class="nc-category-title" style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Categoria <span style="color:var(--red)">*</span></div>
         <input id="ncCatBusca" type="search" autocomplete="off" placeholder="Pesquisar categoria" aria-label="Pesquisar categoria pelo nome" oninput="ncFiltrarCategorias(this.value)">
       </div>
+      <div class="nc-selected-category" aria-live="polite">
+        <span class="nc-selected-category-label">Categoria selecionada</span>
+        <div id="ncSelectedCategoryValue" class="nc-selected-category-empty">Nenhuma categoria selecionada</div>
+      </div>
       <div id="ncCatGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
     </div>
 
@@ -2835,7 +2839,7 @@
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-enquadramento-global">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
 <link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-filtros-ordenados">
-<link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260809-categoria-clique-v9">
+<link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260809-categoria-visual-v10">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 <link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
 <link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260807-loading-fix-v8">
@@ -2843,7 +2847,7 @@
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
 <link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=20260808-pilot-v1">
-<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260808-sidebar-axis-v3">
+<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260809-categoria-visual-v4">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3065,7 +3069,7 @@
         <h3 id="confirmacaoSistemaTitle">Confirmar ação</h3>
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="confirmacaoSistemaSubtitle"></div>
       </div>
-      <button class="btn btn-ghost btn-sm" type="button" onclick="resolverConfirmacaoSistema(false)">X Fechar</button>
+      <button class="btn btn-ghost btn-sm confirmacao-sistema-fechar" type="button" onclick="resolverConfirmacaoSistema(false)" title="Fechar" aria-label="Fechar">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div id="confirmacaoSistemaBody" style="font-size:14px;color:var(--text);line-height:1.5"></div>
@@ -3354,6 +3358,6 @@
 </html>
 
 
-<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260809-categorias-v5"></script>
+<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260809-categoria-visual-v7"></script>
 
 <script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js?v=20260804-ajuda-sequencial"></script>

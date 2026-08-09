@@ -150,6 +150,7 @@
 }
 
 #ncSheet #ncCatGrid .nc-cat-card {
+  position: relative;
   width: 100%;
   min-width: 0 !important;
   min-height: 58px;
@@ -157,9 +158,35 @@
   appearance: none;
   border-radius: 11px !important;
   font-family: inherit;
-  font-size: clamp(11px, .78vw, 14px) !important;
-  line-height: 1.18;
+  font-size: 13px !important;
+  font-weight: 600;
+  line-height: 1.2;
   text-align: left;
+}
+
+#ncSheet #ncCatGrid .nc-cat-card.nc-sel {
+  padding-right: 36px !important;
+  border: 1.5px solid #6366f1 !important;
+  background: #eef0ff !important;
+  color: #272c78 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, .1) !important;
+}
+
+#ncSheet #ncCatGrid .nc-cat-card.nc-sel::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6366f1;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 #ncSheet #ncCatGrid .nc-cat-card[hidden] {
@@ -169,6 +196,154 @@
 #ncSheet #ncCatGrid .nc-cat-card span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+#ncSheet .nc-selected-category {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+#ncSheet .nc-selected-category-label {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+}
+
+#ncSheet .nc-selected-category-empty {
+  color: #8a94a6;
+  font-size: 12px;
+}
+
+#ncSheet .nc-selected-category-chip {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  padding: 7px 8px 7px 9px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #d7d9ff;
+  border-radius: 8px;
+  background: #f0f1ff;
+  color: #272c78;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#ncSheet .nc-selected-category-chip > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#ncSheet .nc-selected-category-chip > button {
+  display: grid;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #5960c7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+}
+
+#ncSheet .nc-selected-category-chip > button:hover {
+  background: rgba(99, 102, 241, .1);
+}
+
+/* Conferência do lançamento de contas a pagar, sem afetar outros modais. */
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .modal {
+  overflow: hidden;
+  border-color: #e1e5ed;
+  background: #f8f9fc;
+  box-shadow: 0 16px 42px rgba(31, 41, 55, .16);
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .modal-header {
+  border-bottom-color: #e4e8f0;
+  background: #f8f9fc;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .modal-header h3 {
+  color: #182033;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) #confirmacaoSistemaSubtitle {
+  color: #687386 !important;
+  font-size: 12px !important;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .modal-body {
+  background: #f8f9fc;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-line {
+  border-bottom-color: #e4e8f0;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-line span {
+  color: #737e91;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-line strong {
+  color: #252d3d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .modal-footer {
+  justify-content: flex-end;
+  border-top: 1px solid #e1e5ed;
+  background: #f3f5f9;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) #confirmacaoSistemaCancelar {
+  border: 1px solid #d5dae4 !important;
+  background: #fff !important;
+  color: #4b5565 !important;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) #confirmacaoSistemaCancelar:hover {
+  border-color: #c4cad6 !important;
+  background: #f8f9fc !important;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) #confirmacaoSistemaConfirmar {
+  border-color: #5b5fef !important;
+  background: #5b5fef !important;
+  color: #fff !important;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) #confirmacaoSistemaConfirmar:hover {
+  border-color: #4d51d8 !important;
+  background: #4d51d8 !important;
+}
+
+#confirmacaoSistemaOverlay .confirmacao-sistema-fechar {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
 }
 
 #ncSheet .nc-cat-empty {
@@ -446,6 +621,11 @@
   #ncSheet .nc-category-head {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  #ncSheet .nc-selected-category {
+    grid-template-columns: 1fr;
+    gap: 5px;
   }
 
   #ncSheet #ncCatGrid {

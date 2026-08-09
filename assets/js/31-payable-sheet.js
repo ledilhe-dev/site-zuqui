@@ -277,6 +277,23 @@ function ncObsInput(inp) {
 // ── Categorias ──────────────────────────────────────────────────
 let ncCategoriasCarregando = null;
 
+function ncNomeCategoriaApresentacao(nome = '') {
+  return String(nome).trim().toLocaleLowerCase('pt-BR').replace(/(^|[\s/()-])([a-záàâãéêíóôõúüç])/giu, (_, prefixo, letra) => prefixo + letra.toLocaleUpperCase('pt-BR'));
+}
+
+function ncAtualizarCategoriaSelecionadaUI() {
+  const container = document.getElementById('ncSelectedCategoryValue');
+  if (!container) return;
+  const categoria = (categoriasCompraCache || []).find(item => String(item.id) === String(NC.catId || ''));
+  if (!categoria) {
+    container.className = 'nc-selected-category-empty';
+    container.textContent = 'Nenhuma categoria selecionada';
+    return;
+  }
+  container.className = 'nc-selected-category-chip';
+  container.innerHTML = `${htmlIconeCategoriaCompra(categoria.icone, 22)}<span>${escaparHtmlBasico(ncNomeCategoriaApresentacao(categoria.nome || ''))}</span><button type="button" onclick="ncLimparCat()" title="Remover categoria" aria-label="Remover categoria">×</button>`;
+}
+
 function ncMontarCategorias() {
   const grid = document.getElementById('ncCatGrid'); if (!grid) return;
   if (ncCategoriasCarregando && !(categoriasCompraCache || []).length) {
@@ -298,9 +315,10 @@ function ncMontarCategorias() {
   const cats = Array.from(porChave.values());
   grid.innerHTML = cats.map(c => {
     const sel = NC.catId && String(c.id) === String(NC.catId);
-    return `<button type="button" class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${escaparHtmlBasico(String(c.id || ''))}" data-nome="${escaparHtmlBasico(c.nome || '')}" aria-pressed="${sel ? 'true' : 'false'}" style="padding:10px;font-size:13px;">${htmlIconeCategoriaCompra(c.icone, 28)}<span>${escaparHtmlBasico(c.nome || '')}</span></button>`;
+    return `<button type="button" class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${escaparHtmlBasico(String(c.id || ''))}" data-nome="${escaparHtmlBasico(c.nome || '')}" aria-pressed="${sel ? 'true' : 'false'}" style="padding:10px;font-size:13px;">${htmlIconeCategoriaCompra(c.icone, 28)}<span>${escaparHtmlBasico(ncNomeCategoriaApresentacao(c.nome || ''))}</span></button>`;
   }).join('');
   ncFiltrarCategorias(document.getElementById('ncCatBusca')?.value || '');
+  ncAtualizarCategoriaSelecionadaUI();
 }
 
 function ncFiltrarCategorias(termo = '') {
@@ -325,17 +343,31 @@ function ncFiltrarCategorias(termo = '') {
 
 function ncSelCat(el) {
   if (!el?.classList?.contains('nc-cat-card')) return;
+  const categoryId = String(el.dataset.id || '').trim();
+  if (!categoryId) return;
   document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o => {
     o.classList.remove('nc-sel');
     o.setAttribute('aria-pressed', 'false');
   });
   el.classList.add('nc-sel');
   el.setAttribute('aria-pressed', 'true');
-  NC.catId = el.dataset.id || null;
+  NC.catId = categoryId;
   const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
   const busca = document.getElementById('ncCatBusca');
   if (busca) busca.value = '';
   ncFiltrarCategorias('');
+  ncAtualizarCategoriaSelecionadaUI();
+}
+
+function ncLimparCat() {
+  NC.catId = null;
+  const campo = document.getElementById('contaCategoriaId');
+  if (campo) campo.value = '';
+  document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(card => {
+    card.classList.remove('nc-sel');
+    card.setAttribute('aria-pressed', 'false');
+  });
+  ncAtualizarCategoriaSelecionadaUI();
 }
 
 // Um unico listener atende os cards recriados apos o carregamento/pesquisa.
@@ -469,7 +501,7 @@ async function ncConferirContaSalva(resumo = {}, resultado = {}) {
     ['OBSERVACAO', resumo.obs || '-'],
   ];
   const body = `
-    <div class="nc-confirm-lines">
+    <div class="nc-confirm-lines nc-payable-confirmation">
       ${linhas.map(([label, valor]) => `
         <div class="nc-confirm-line">
           <span>${label}</span>
@@ -482,8 +514,8 @@ async function ncConferirContaSalva(resumo = {}, resultado = {}) {
     title: 'Conferir lançamento',
     subtitle: 'Confira os dados antes de finalizar.',
     body,
-    cancelText: 'CORRIGIR',
-    cancelClass: 'btn-red',
+    cancelText: 'Corrigir',
+    cancelClass: 'btn-ghost',
     confirmText: 'OK',
     confirmClass: 'btn-green',
   });
