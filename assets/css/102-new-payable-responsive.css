@@ -97,7 +97,6 @@
 
 #ncSheet .nc-valor-compra-row {
   grid-column: span 6 !important;
-  grid-row: 2;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
   gap: 14px !important;
@@ -110,7 +109,8 @@
 
 #ncSheet .nc-category-section {
   grid-column: span 6 !important;
-  grid-row: 2 / span 3;
+  min-width: 0 !important;
+  min-height: 0 !important;
   padding: 14px !important;
   border: 0;
   border-radius: 12px;
@@ -149,10 +149,13 @@
 }
 
 #ncSheet #ncCatGrid .nc-cat-card {
+  width: 100%;
   min-width: 0 !important;
   min-height: 58px;
   padding: 9px 11px !important;
+  appearance: none;
   border-radius: 11px !important;
+  font-family: inherit;
   font-size: clamp(11px, .78vw, 14px) !important;
   line-height: 1.18;
   text-align: left;
@@ -177,7 +180,6 @@
 
 #ncSheet .nc-venc-parcelas-row {
   grid-column: span 6 !important;
-  grid-row: 3;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 14px !important;
@@ -185,7 +187,6 @@
 
 #ncSheet .nc-vencimento-wrap {
   grid-column: 1 / 4 !important;
-  grid-row: 4;
   min-width: 0 !important;
 }
 

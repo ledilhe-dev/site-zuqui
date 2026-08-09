@@ -298,7 +298,7 @@ function ncMontarCategorias() {
   const cats = Array.from(porChave.values());
   grid.innerHTML = cats.map(c => {
     const sel = NC.catId && String(c.id) === String(NC.catId);
-    return `<div class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${c.id}" data-nome="${escaparHtmlBasico(c.nome || '')}" onclick="ncSelCat(this)" style="padding:10px;font-size:13px;">${htmlIconeCategoriaCompra(c.icone, 28)}<span>${escaparHtmlBasico(c.nome || '')}</span></div>`;
+    return `<button type="button" class="nc-cat-card${sel ? ' nc-sel' : ''}" data-id="${escaparHtmlBasico(String(c.id || ''))}" data-nome="${escaparHtmlBasico(c.nome || '')}" aria-pressed="${sel ? 'true' : 'false'}" style="padding:10px;font-size:13px;">${htmlIconeCategoriaCompra(c.icone, 28)}<span>${escaparHtmlBasico(c.nome || '')}</span></button>`;
   }).join('');
   ncFiltrarCategorias(document.getElementById('ncCatBusca')?.value || '');
 }
@@ -324,13 +324,26 @@ function ncFiltrarCategorias(termo = '') {
 }
 
 function ncSelCat(el) {
-  document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o => o.classList.remove('nc-sel'));
-  el.classList.add('nc-sel'); NC.catId = el.dataset.id || null;
+  if (!el?.classList?.contains('nc-cat-card')) return;
+  document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o => {
+    o.classList.remove('nc-sel');
+    o.setAttribute('aria-pressed', 'false');
+  });
+  el.classList.add('nc-sel');
+  el.setAttribute('aria-pressed', 'true');
+  NC.catId = el.dataset.id || null;
   const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
   const busca = document.getElementById('ncCatBusca');
   if (busca) busca.value = '';
   ncFiltrarCategorias('');
 }
+
+// Um unico listener atende os cards recriados apos o carregamento/pesquisa.
+// Assim a selecao nao depende de handlers inline no HTML dinamico.
+document.getElementById('ncCatGrid')?.addEventListener('click', event => {
+  const card = event.target.closest('.nc-cat-card');
+  if (card) ncSelCat(card);
+});
 
 // ── Fornecedor ──────────────────────────────────────────────────
 let ncCarregandoFornecedores = null;

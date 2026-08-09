@@ -4874,8 +4874,9 @@ function filtrarCategoriasCompraCadastradas() {
 
 async function carregarCategoriasCompra() {
   const lista = document.getElementById('listaCategorias');
-  if (!lista) return;
-  lista.innerHTML = '<div class="empty">Carregando...</div>';
+  if (lista) {
+    lista.innerHTML = '<div class="empty">Carregando...</div>';
+  }
   try {
     const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     let query = sb.from('categorias_compra').select('*').eq('ativo', true).order('nome');
@@ -4884,9 +4885,15 @@ async function carregarCategoriasCompra() {
     if (error) throw error;
     categoriasCompraCache = data || [];
     preencherSelectCategoriasCompra();
-    renderizarListaCategoriasCompra();
+    if (lista) {
+      renderizarListaCategoriasCompra();
+    }
   } catch(e) {
-    lista.innerHTML = `<div class="empty">Erro: ${mensagemErroSupabase(e, e?.message||'')}</div>`;
+    if (lista) {
+      lista.innerHTML = `<div class="empty">Erro: ${mensagemErroSupabase(e, e?.message||'')}</div>`;
+    } else {
+      console.warn('Não foi possível carregar categorias de compra:', e);
+    }
   }
 }
 
