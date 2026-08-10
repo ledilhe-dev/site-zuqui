@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.13"
+CONNECTOR_VERSION = "1.6.14"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -180,21 +180,66 @@ DROP TABLE IF EXISTS #IdsFaturamento;
 SQL_PRODUTOS = """
 SET NOCOUNT ON;
 DROP TABLE IF EXISTS #IdsVendas;
-SELECT D.Id,CONVERT(date,D.Data) AS Data INTO #IdsVendas FROM dbo.DocumentoFiscal D WITH (NOLOCK)
-WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0;
+SELECT D.Id,CONVERT(date,D.Data) AS Data,D.Hora,D.EhContingencia,
+ CAST(ISNULL((SELECT SUM(ISNULL(FX.Valor,0)-ISNULL(FX.ValorTroco,0)) FROM dbo.FormaPagamentoCupomFiscal FX WITH(NOLOCK) WHERE FX.IdDocumentoFiscal=D.Id AND (? IS NULL OR FX.IdFormaPagamento=?)),0) AS decimal(19,4)) valor_documento,
+ CAST(CASE WHEN ? IS NULL THEN 1 ELSE
+   ISNULL((SELECT SUM(ISNULL(FR.Valor,0)-ISNULL(FR.ValorTroco,0)) FROM dbo.FormaPagamentoCupomFiscal FR WITH(NOLOCK) WHERE FR.IdDocumentoFiscal=D.Id AND FR.IdFormaPagamento=?),0)
+   /NULLIF((SELECT SUM(ISNULL(FT.Valor,0)-ISNULL(FT.ValorTroco,0)) FROM dbo.FormaPagamentoCupomFiscal FT WITH(NOLOCK) WHERE FT.IdDocumentoFiscal=D.Id),0) END AS decimal(19,8)) fator_pagamento,
+ CASE WHEN EXISTS(SELECT 1 FROM dbo.ItemDocumentoFiscal IX WITH(NOLOCK) WHERE IX.IdDocumentoFiscal=D.Id) THEN 1 ELSE 0 END tem_item
+INTO #IdsVendas FROM dbo.DocumentoFiscal D WITH (NOLOCK)
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal FE WITH(NOLOCK) WHERE FE.IdDocumentoFiscal=D.Id AND (? IS NULL OR FE.IdFormaPagamento=?))
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?;
 CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
 SELECT P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
- SUM(ISNULL(I.Quantidade,0)) quantidade,
+ SUM(ISNULL(I.Quantidade,0)*X.fator_pagamento) quantidade,
  CAST(CASE WHEN SUM(ISNULL(I.Quantidade,0))<>0 THEN SUM(ISNULL(I.ValorTotal,0))/SUM(ISNULL(I.Quantidade,0)) ELSE 0 END AS decimal(19,4)) preco_medio,
- SUM(ISNULL(I.ValorTotal,0)) total_faturado
+ SUM(ISNULL(I.ValorTotal,0)*X.fator_pagamento) total_faturado
 FROM #IdsVendas X JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=X.Id
 JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
 WHERE (? IS NULL OR P.Id=? OR P.Nome LIKE ?) AND (? IS NULL OR A.Id=?)
 GROUP BY P.Id,P.Nome,A.Id,A.Nome ORDER BY total_faturado DESC;
-SELECT X.Data data,SUM(ISNULL(I.ValorTotal,0)) total_faturado,SUM(ISNULL(I.Quantidade,0)) quantidade
+SELECT X.Data data,SUM(ISNULL(I.ValorTotal,0)*X.fator_pagamento) total_faturado,SUM(ISNULL(I.Quantidade,0)*X.fator_pagamento) quantidade
 FROM #IdsVendas X JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=X.Id
 GROUP BY X.Data ORDER BY data;
+SELECT X.Id id_documento_fiscal,X.Data data,X.Hora hora,X.EhContingencia,X.valor_documento,
+ FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
+ SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor
+FROM #IdsVendas X
+JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=X.Id
+JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=F.IdFormaPagamento
+WHERE ISNULL(X.EhContingencia,0)=1 AND (? IS NULL OR F.IdFormaPagamento=?)
+GROUP BY X.Id,X.Data,X.Hora,X.EhContingencia,X.valor_documento,FP.Id,FP.Nome
+ORDER BY X.Data,X.Hora,X.Id,FP.Nome;
+SELECT
+ SUM(CASE WHEN X.tem_item=1 THEN X.valor_documento ELSE 0 END) total_documentos_produtos,
+ SUM(CASE WHEN ISNULL(X.EhContingencia,0)=1 THEN X.valor_documento ELSE 0 END) total_contingencia,
+ SUM(X.valor_documento) total_financeiro,
+ SUM(CASE WHEN X.tem_item=0 AND ISNULL(X.EhContingencia,0)=0 THEN X.valor_documento ELSE 0 END) diferenca_nao_explicada,
+ COUNT(*) documentos_financeiro,
+ SUM(CASE WHEN X.tem_item=1 THEN 1 ELSE 0 END) documentos_produtos,
+ SUM(CASE WHEN ISNULL(X.EhContingencia,0)=1 THEN 1 ELSE 0 END) documentos_contingencia
+FROM #IdsVendas X;
 DROP TABLE IF EXISTS #IdsVendas;
+"""
+
+SQL_MOVIMENTO_FATURAMENTO_PERIODO = """
+SET NOCOUNT ON;
+SELECT CONVERT(date,D.Data) data,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
+ SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_movimento,
+ COUNT(DISTINCT D.Id) quantidade_documentos,
+ MIN(DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))) primeiro_documento,
+ MAX(DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))) ultimo_documento
+FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id
+JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=F.IdFormaPagamento
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?
+ AND (? IS NULL OR FP.Id=?)
+GROUP BY CONVERT(date,D.Data),FP.Id,FP.Nome
+ORDER BY data,FP.Nome;
 """
 
 SQL_PRODUTOS_DIARIO = """
@@ -207,6 +252,32 @@ JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto
 LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
 WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
 GROUP BY CONVERT(date,D.Data),P.Id,P.Nome,A.Id,A.Nome;
+"""
+
+SQL_BASE_CANONICA_SYNC = """
+SET NOCOUNT ON;
+SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
+ CONVERT(varchar(8),CAST(D.Hora AS time),108) hora,D.Tipo tipo,
+ CAST(CASE WHEN ISNULL(D.EhContingencia,0)=1 THEN 1 ELSE 0 END AS bit) eh_contingencia,
+ FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
+ SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
+FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id
+JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=F.IdFormaPagamento
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,D.Tipo,D.EhContingencia,FP.Id,FP.Nome;
+SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
+ CONVERT(varchar(8),CAST(D.Hora AS time),108) hora,COALESCE(P.Id,I.IdProduto) codigo,
+ COALESCE(P.Nome,CONCAT('Produto ',I.IdProduto)) produto,A.Id id_agrupamento,A.Nome agrupamento,
+ SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
+ SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) total_faturado
+FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=D.Id
+LEFT JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto
+LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id)
+GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,P.Id,P.Nome,I.IdProduto,A.Id,A.Nome;
 """
 
 SQL_VENDAS_ANALISE = """
@@ -417,6 +488,19 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         "action":"products_sync","token":config["relay_token"],
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":products,
     },timeout=90)
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=90; cursor=connection.cursor()
+        cursor.execute(SQL_BASE_CANONICA_SYNC,start.date(),end.date()+timedelta(days=1),filial,
+                       start.date(),end.date()+timedelta(days=1),filial)
+        documents=rows_as_dicts(cursor); canonical_items=[]
+        while cursor.nextset():
+            if cursor.description:
+                canonical_items=rows_as_dicts(cursor); break
+    relay_post({
+        "action":"canonical_sync","token":config["relay_token"],
+        "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),
+        "documents":documents,"items":canonical_items,
+    },timeout=120)
 
 
 def relay_sync_loop(stop_event: threading.Event) -> None:
@@ -692,9 +776,25 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
     payment = int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
     sql_started = time.perf_counter()
     logger.info("SQL EXECUTADA: FATURAMENTO_HIBRIDO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
-    daily = query_faturamento_diario(config, start.date(), end.date(), filial)
+    coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
+    daily = query_faturamento_diario(config, start.date(), coarse_end, filial)
     if payment is not None:
         daily = [item for item in daily if int(item["id_forma_pagamento"]) == payment]
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout=30; cursor=connection.cursor(); cursor.execute(
+            SQL_MOVIMENTO_FATURAMENTO_PERIODO,start.date(),coarse_end,filial,start,end,payment,payment
+        ); movement_rows=rows_as_dicts(cursor)
+    movement_by_key={(str(item["data"]),int(item["id_forma_pagamento"])):item for item in movement_rows}
+    for item in daily:
+        exact=movement_by_key.get((str(item["data"]),int(item["id_forma_pagamento"])))
+        item["valor_movimento"]=float(exact.get("valor_movimento") or 0) if exact else 0
+    existing={(str(item["data"]),int(item["id_forma_pagamento"])) for item in daily}
+    for exact in movement_rows:
+        key=(str(exact["data"]),int(exact["id_forma_pagamento"]))
+        if key not in existing:
+            daily.append({**exact,"valor_abertura":0,"valor_suprimento":0,"valor_sangria":0,
+                          "valor_retirada":0,"valor_apurado":0,"valor_confirmado":0,
+                          "caixa_aberto":False,"valor_confirmado_disponivel":False})
     grouped: dict[int, dict[str, Any]] = {}
     for item in daily:
         target=grouped.setdefault(int(item["id_forma_pagamento"]), {"id_forma_pagamento":item["id_forma_pagamento"],"forma_pagamento":item["forma_pagamento"]})
@@ -703,34 +803,65 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
         target["caixa_aberto"]=bool(target.get("caixa_aberto")) or bool(item.get("caixa_aberto"))
         target["valor_confirmado_disponivel"]=bool(target.get("valor_confirmado_disponivel")) or bool(item.get("valor_confirmado_disponivel"))
     rows=list(grouped.values())
-    evolution=[{"data":item["data"],"id_forma_pagamento":item["id_forma_pagamento"],"forma_pagamento":item["forma_pagamento"],"valor_movimento":item["valor_movimento"]} for item in daily]
+    evolution=[{"data":item["data"],"id_forma_pagamento":item["id_forma_pagamento"],"forma_pagamento":item["forma_pagamento"],"valor_movimento":item["valor_movimento"]} for item in movement_rows]
     keys = ("valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_apurado","valor_confirmado")
     totals = {key: sum(float(row.get(key) or 0) for row in rows) for key in keys}
     logger.info("TEMPO SQL: FATURAMENTO %.3fs | formas=%s | evolucao=%s", time.perf_counter() - sql_started, len(rows), len(evolution))
     open_cash=any(bool(item.get("caixa_aberto")) for item in daily); has_closed=any(bool(item.get("valor_confirmado_disponivel")) for item in daily)
     if open_cash and not has_closed: totals["valor_confirmado"] = None
     totals["valor_retirada"] = sum(float(row.get("valor_retirada") or 0) for row in rows)
+    first=min((item.get("primeiro_documento") for item in movement_rows if item.get("primeiro_documento")),default=None)
+    last=max((item.get("ultimo_documento") for item in movement_rows if item.get("ultimo_documento")),default=None)
     return {"formas_pagamento": rows, "totalizadores": totals, "evolucao": evolution,
-            "caixa_aberto":open_cash, "valor_confirmado_parcial":open_cash and has_closed}
+            "caixa_aberto":open_cash, "valor_confirmado_parcial":open_cash and has_closed,
+            "periodo":{"inicio":start.isoformat(),"fim_exclusivo":end.isoformat(),
+                       "primeiro_documento":first,"ultimo_documento":last,
+                       "quantidade_documentos":sum(int(item.get("quantidade_documentos") or 0) for item in movement_rows)}}
 
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     start = parse_datetime(body.get("inicio"), "Início"); end = parse_datetime(body.get("fim_exclusivo"), "Fim exclusivo")
-    filial = resolve_raffinato_filial(config, body); product_text=str(body.get("produto") or body.get("id_produto") or "").strip(); product=int(product_text) if product_text.isdigit() else None; product_filter=product_text or None; product_like=f"%{product_text}%" if product_text else None; group = int(body["id_agrupamento"]) if body.get("id_agrupamento") else None
+    filial = resolve_raffinato_filial(config, body); product_text=str(body.get("produto") or body.get("id_produto") or "").strip(); product=int(product_text) if product_text.isdigit() else None; product_filter=product_text or None; product_like=f"%{product_text}%" if product_text else None; group = int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; payment=int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
     sql_started=time.perf_counter()
+    coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
     with pyodbc.connect(connection_string(config), timeout=8) as connection:
-        connection.timeout=30; cursor=connection.cursor(); cursor.execute(SQL_PRODUTOS,start.date(),end.date(),filial,product_filter,product,product_like,group,group)
-        items=rows_as_dicts(cursor); evolution=[]
+        connection.timeout=30; cursor=connection.cursor(); cursor.execute(
+            SQL_PRODUTOS,payment,payment,payment,payment,
+            start.date(),coarse_end,filial,payment,payment,start,end,
+            product_filter,product,product_like,group,group,payment,payment
+        )
+        items=rows_as_dicts(cursor); evolution=[]; contingencias=[]; conciliacao={}
         while cursor.nextset():
             if cursor.description:
                 evolution=rows_as_dicts(cursor); break
+        while cursor.nextset():
+            if cursor.description:
+                contingencias=rows_as_dicts(cursor); break
+        while cursor.nextset():
+            if cursor.description:
+                rows=rows_as_dicts(cursor); conciliacao=rows[0] if rows else {}; break
+    total_produtos=sum(float(item.get("total_faturado") or 0) for item in items)
+    total_financeiro=float(conciliacao.get("total_financeiro") or 0)
+    total_contingencia=float(conciliacao.get("total_contingencia") or 0)
+    total_produtos=round(total_produtos,2); total_financeiro=round(total_financeiro,2); total_contingencia=round(total_contingencia,2)
+    ajustes=round(total_financeiro-total_contingencia-total_produtos,2)
     totals={
-        "faturamento":sum(float(item.get("total_faturado") or 0) for item in items),
+        "faturamento":total_financeiro,
+        "produtos_identificados":total_produtos,
+        "contingencia":total_contingencia,
+        "ajustes_pedido":ajustes,
+        "total_reconciliado":round(total_produtos+total_contingencia+ajustes,2),
+        "diferenca_conciliacao":round(total_financeiro-(total_produtos+total_contingencia+ajustes),2),
         "quantidade":sum(float(item.get("quantidade") or 0) for item in items),
         "produtos":len(items),
+        "documentos_financeiro":int(conciliacao.get("documentos_financeiro") or 0),
+        "documentos_produtos":int(conciliacao.get("documentos_produtos") or 0),
+        "documentos_contingencia":int(conciliacao.get("documentos_contingencia") or 0),
+        "diferenca_nao_explicada":float(conciliacao.get("diferenca_nao_explicada") or 0),
     }
     logger.info("TEMPO SQL: PRODUTOS %.3fs | produtos=%s",time.perf_counter()-sql_started,len(items))
-    return {"items":items,"evolucao":evolution,"totalizadores":totals}
+    return {"items":items,"evolucao":evolution,"contingencias":contingencias,"totalizadores":totals,
+            "periodo":{"inicio":start.isoformat(),"fim_exclusivo":end.isoformat()}}
 
 
 def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -1096,7 +1227,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.13"
+    server_version = "CheckDiarioRaffinato/1.6.14"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -1261,7 +1392,9 @@ class Handler(BaseHTTPRequestHandler):
                     result["valor_em_aberto"] = analysis["totais_operacionais"]["em_aberto"]
                     result["cache_version"] = CACHE_SCHEMA_VERSION
                 elif route == "/api/raffinato/produtos":
-                    result = query_cached_products(store_id, body)
+                    # Produtos e contingencia precisam respeitar Data + Hora. O cache
+                    # diario legado nao possui granularidade suficiente para isso.
+                    result = query_produtos(config, body)
                 else:
                     result = query_cached_cross(store_id, body)
                 self.send_json(200, result)

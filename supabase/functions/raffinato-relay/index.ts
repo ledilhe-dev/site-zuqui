@@ -98,6 +98,62 @@ Deno.serve(async (request) => {
       return json({ok:true,quantidade:items.length});
     }
 
+    if (body.action === "canonical_sync") {
+      const integration = await integrationForToken(admin, validateToken(body.token));
+      const inicio=validateDate(body.inicio,"inicio"),fim=validateDate(body.fim,"fim");
+      if(fim<inicio)throw new Error("Periodo invalido.");
+      const documents=Array.isArray(body.documents)?body.documents.slice(0,100000):[];
+      const items=Array.isArray(body.items)?body.items.slice(0,100000):[];
+      for(const table of ["raffinato_documentos_faturados_cache","raffinato_itens_faturados_cache"]){
+        const {error}=await admin.from(table).delete().eq("empresa_id",integration.empresa_id)
+          .eq("loja_id",integration.loja_id).gte("data",inicio).lte("data",fim);
+        if(error)throw error;
+      }
+      for(let offset=0;offset<documents.length;offset+=1000){
+        const rows=documents.slice(offset,offset+1000).map((x:any)=>({
+          empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:Number(x.id_filial||1),
+          id_documento_fiscal:Number(x.id_documento_fiscal),data:validateDate(x.data,"data"),hora:String(x.hora||"00:00:00").slice(0,8),
+          tipo:x.tipo==null?null:String(x.tipo).slice(0,20),eh_contingencia:Boolean(x.eh_contingencia),
+          id_forma_pagamento:Number(x.id_forma_pagamento),forma_pagamento:String(x.forma_pagamento||"Sem forma").slice(0,200),
+          valor_pagamento:Number(x.valor_pagamento||0),sincronizado_em:new Date().toISOString(),
+        }));
+        const {error}=await admin.from("raffinato_documentos_faturados_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_documento_fiscal,id_forma_pagamento"});if(error)throw error;
+      }
+      for(let offset=0;offset<items.length;offset+=1000){
+        const rows=items.slice(offset,offset+1000).map((x:any)=>({
+          empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:Number(x.id_filial||1),
+          id_documento_fiscal:Number(x.id_documento_fiscal),data:validateDate(x.data,"data"),hora:String(x.hora||"00:00:00").slice(0,8),
+          codigo:Number(x.codigo),produto:String(x.produto||"").slice(0,300),id_agrupamento:x.id_agrupamento==null?null:Number(x.id_agrupamento),
+          agrupamento:x.agrupamento==null?null:String(x.agrupamento).slice(0,300),quantidade:Number(x.quantidade||0),
+          total_faturado:Number(x.total_faturado||0),sincronizado_em:new Date().toISOString(),
+        }));
+        const {error}=await admin.from("raffinato_itens_faturados_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_documento_fiscal,codigo"});if(error)throw error;
+      }
+      return json({ok:true,documentos:documents.length,itens:items.length});
+    }
+
+    if (body.action === "products_canonical_dashboard") {
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);
+      if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
+      const startDate=start.slice(0,10),endDate=end.slice(0,10),payment=body.id_forma_pagamento?Number(body.id_forma_pagamento):null;
+      const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",startDate).lte("data",endDate).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=start&&dt<end;});};
+      const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,id_forma_pagamento,forma_pagamento,valor_pagamento");
+      const allByDoc=new Map<string,number>();for(const d of docs)allByDoc.set(String(d.id_documento_fiscal),(allByDoc.get(String(d.id_documento_fiscal))||0)+Number(d.valor_pagamento||0));
+      const selectedDocs=payment?docs.filter(x=>Number(x.id_forma_pagamento)===payment):docs;
+      const selectedByDoc=new Map<string,number>();for(const d of selectedDocs)selectedByDoc.set(String(d.id_documento_fiscal),(selectedByDoc.get(String(d.id_documento_fiscal))||0)+Number(d.valor_pagamento||0));
+      const ids=new Set(selectedDocs.map(x=>String(x.id_documento_fiscal))),product=String(body.produto||"").trim().toLocaleLowerCase(),group=body.id_agrupamento?Number(body.id_agrupamento):null;
+      let sourceItems=(await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado")).filter(x=>ids.has(String(x.id_documento_fiscal)));
+      if(group)sourceItems=sourceItems.filter(x=>Number(x.id_agrupamento)===group);if(product)sourceItems=sourceItems.filter(x=>/^\d+$/.test(product)?Number(x.codigo)===Number(product):String(x.produto||"").toLocaleLowerCase().includes(product));
+      const products=new Map<string,any>(),days=new Map<string,any>();
+      for(const x of sourceItems){const id=String(x.id_documento_fiscal),factor=payment?(selectedByDoc.get(id)||0)/(allByDoc.get(id)||1):1,key=String(x.codigo),row=products.get(key)||{codigo:x.codigo,produto:x.produto,id_agrupamento:x.id_agrupamento,agrupamento:x.agrupamento,quantidade:0,total_faturado:0};row.quantidade+=Number(x.quantidade||0)*factor;row.total_faturado+=Number(x.total_faturado||0)*factor;products.set(key,row);const day=days.get(x.data)||{data:x.data,total_faturado:0,quantidade:0};day.total_faturado+=Number(x.total_faturado||0)*factor;day.quantidade+=Number(x.quantidade||0)*factor;days.set(x.data,day);}
+      const resultItems=[...products.values()].map(x=>({...x,preco_medio:x.quantidade?x.total_faturado/x.quantidade:0})).sort((a,b)=>b.total_faturado-a.total_faturado),identified=resultItems.reduce((s,x)=>s+x.total_faturado,0);
+      const contingencyDocs=new Set(selectedDocs.filter(x=>x.eh_contingencia).map(x=>String(x.id_documento_fiscal))),contingencies=selectedDocs.filter(x=>x.eh_contingencia).map(x=>({...x,valor:Number(x.valor_pagamento||0)})),contingency=[...contingencyDocs].reduce((s,id)=>s+(selectedByDoc.get(id)||0),0),financial=[...selectedByDoc.values()].reduce((s,x)=>s+x,0),unexplained=[...ids].filter(id=>!contingencyDocs.has(id)&&!sourceItems.some(x=>String(x.id_documento_fiscal)===id));
+      const adjustments=Math.round((financial-identified-contingency)*100)/100;
+      return json({items:resultItems,evolucao:[...days.values()].sort((a,b)=>String(a.data).localeCompare(String(b.data))),contingencias:contingencies,totalizadores:{faturamento:financial,produtos_identificados:identified,contingencia:contingency,ajustes_pedido:adjustments,total_reconciliado:identified+contingency+adjustments,diferenca_conciliacao:Math.round((financial-identified-contingency-adjustments)*100)/100,quantidade:resultItems.reduce((s,x)=>s+x.quantidade,0),produtos:resultItems.length,documentos_financeiro:ids.size,documentos_produtos:new Set(sourceItems.map(x=>String(x.id_documento_fiscal))).size,documentos_contingencia:contingencyDocs.size,diferenca_nao_explicada:unexplained.reduce((s,id)=>s+(selectedByDoc.get(id)||0),0)},origem_consulta:"base_canonica"});
+    }
+
     if (body.action === "products_dashboard") {
       validateUuid(body.empresa_id,"empresa"); validateUuid(body.loja_id,"loja");
       await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
@@ -143,22 +199,28 @@ Deno.serve(async (request) => {
         .eq("empresa_id", body.empresa_id).eq("loja_id", body.loja_id).gte("data", inicio).lt("data", fimExclusivo).order("data").limit(10000);
       if (payment) query = query.eq("id_forma_pagamento", payment);
       const { data, error } = await query; if (error) throw error;
+      const startDateTime=String(body.inicio||"").slice(0,19),endDateTime=String(body.fim_exclusivo||"").slice(0,19),exactRows:any[]=[];
+      for(let offset=0;offset<100000;offset+=1000){let exactQuery=admin.from("raffinato_documentos_faturados_cache").select("data,hora,id_documento_fiscal,id_forma_pagamento,forma_pagamento,valor_pagamento").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",inicio).lte("data",fimExclusivo).order("data").range(offset,offset+999);if(payment)exactQuery=exactQuery.eq("id_forma_pagamento",payment);const {data:page,error:pageError}=await exactQuery;if(pageError)throw pageError;exactRows.push(...(page||[]));if(!page||page.length<1000)break;}
+      const exact=exactRows.filter(x=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=startDateTime&&dt<endDateTime;}),exactMap=new Map<string,any>();
+      for(const row of exact){const key=`${row.data}|${row.id_forma_pagamento}`,item=exactMap.get(key)||{data:row.data,id_forma_pagamento:row.id_forma_pagamento,forma_pagamento:row.forma_pagamento,valor_movimento:0,documentos:new Set<string>(),primeiro_documento:null,ultimo_documento:null},dt=`${row.data}T${String(row.hora).slice(0,8)}`;item.valor_movimento+=Number(row.valor_pagamento||0);item.documentos.add(String(row.id_documento_fiscal));item.primeiro_documento=!item.primeiro_documento||dt<item.primeiro_documento?dt:item.primeiro_documento;item.ultimo_documento=!item.ultimo_documento||dt>item.ultimo_documento?dt:item.ultimo_documento;exactMap.set(key,item);}
       const keys = ["valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_retirada","valor_apurado","valor_confirmado"];
       const forms = new Map<string, any>(); const evolution:any[] = [];
       let openCash=false, hasClosed=false;
       for (const row of data || []) {
         const id=String(row.id_forma_pagamento), item=forms.get(id)||{id_forma_pagamento:row.id_forma_pagamento,forma_pagamento:row.forma_pagamento};
-        for (const key of keys) item[key]=Number(item[key]||0)+Number(row[key]||0);
+        for (const key of keys) item[key]=Number(item[key]||0)+Number(key==="valor_movimento"?(exactMap.get(`${row.data}|${row.id_forma_pagamento}`)?.valor_movimento||0):(row[key]||0));
         item.caixa_aberto=Boolean(item.caixa_aberto)||Boolean(row.caixa_aberto);
         item.valor_confirmado_disponivel=Boolean(item.valor_confirmado_disponivel)||Boolean(row.valor_confirmado_disponivel);
         openCash=openCash||Boolean(row.caixa_aberto);hasClosed=hasClosed||Boolean(row.valor_confirmado_disponivel);
-        forms.set(id,item); evolution.push({data:row.data,id_forma_pagamento:row.id_forma_pagamento,forma_pagamento:row.forma_pagamento,valor_movimento:Number(row.valor_movimento||0)});
+        forms.set(id,item); evolution.push({data:row.data,id_forma_pagamento:row.id_forma_pagamento,forma_pagamento:row.forma_pagamento,valor_movimento:Number(exactMap.get(`${row.data}|${row.id_forma_pagamento}`)?.valor_movimento||0)});
       }
       const formas_pagamento=[...forms.values()]; const totalizadores:any={};
       for (const key of keys) totalizadores[key]=formas_pagamento.reduce((sum,item)=>sum+Number(item[key]||0),0);
       if(openCash&&!hasClosed)totalizadores.valor_confirmado=null;
+      const documentIds=new Set(exact.map(x=>String(x.id_documento_fiscal))),instants=exact.map(x=>`${x.data}T${String(x.hora).slice(0,8)}`).sort();
       return json({ formas_pagamento,totalizadores,evolucao:evolution,caixa_aberto:openCash,
-        valor_confirmado_parcial:openCash&&hasClosed,origem_consulta:"sincronizacao" });
+        valor_confirmado_parcial:openCash&&hasClosed,origem_consulta:"base_canonica",
+        periodo:{inicio:startDateTime,fim_exclusivo:endDateTime,quantidade_documentos:documentIds.size,primeiro_documento:instants[0]||null,ultimo_documento:instants.at(-1)||null} });
     }
 
     if (body.action === "billing_forms") {
