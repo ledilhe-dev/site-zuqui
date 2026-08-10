@@ -20,7 +20,7 @@ import urllib.request
 import urllib.error
 from urllib.parse import urlparse
 from ctypes import wintypes
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -403,7 +403,11 @@ def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datet
 
 
 def decimal_json(value: Any) -> Any:
-    return float(value) if isinstance(value, Decimal) else value
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    return value
 
 
 def rows_as_dicts(cursor: Any) -> list[dict[str, Any]]:
@@ -520,7 +524,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.reject_origin():
             return
         if self.route_path() == "/health":
-            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": "1.6", "port": 8766, "tray": True, "external_sync": True})
+            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": "1.6.2", "port": 8766, "tray": True, "external_sync": True})
             return
         self.send_json(404, {"error": "Rota não encontrada."})
 
@@ -649,7 +653,7 @@ def run_tray(server: ThreadingHTTPServer) -> None:
     import pystray
 
     def show_status(icon, _item):
-        icon.notify(f"Ativo em 127.0.0.1:{PORT} · versão 1.6", "Conector Raffinato")
+        icon.notify(f"Ativo em 127.0.0.1:{PORT} · versão 1.6.2", "Conector Raffinato")
 
     def open_checkdiario(_icon, _item):
         webbrowser.open("https://checkdiario.com.br")

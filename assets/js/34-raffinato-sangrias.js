@@ -529,11 +529,22 @@ async function consultarSangriasRaffinato() {
     if (empty) { empty.hidden = false; empty.innerHTML = '<div><div class="raffinato-spinner"></div><strong>Consultando o Raffinato</strong>Aguarde a resposta pela rede Radmin VPN.</div>'; }
 
     const contexto = contextoRaffinato();
-    const payload = await raffinatoRelay({
-      action:'dashboard', inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
-      empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
-      usuario_id:String(usuarioSistemaLogado?.id || ''),
-    });
+    let payload;
+    try {
+      // Fonte de verdade: consulta o DocumentoFiscal diretamente no Raffinato.
+      payload = await raffinatoBridgePost('/api/sangrias', {
+        inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
+        loja_id:contexto.lojaId,
+      });
+    } catch (localError) {
+      // Permite consultar em celular ou computador no qual o conector não esteja aberto.
+      payload = await raffinatoRelay({
+        action:'dashboard', inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
+        empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
+        usuario_id:String(usuarioSistemaLogado?.id || ''),
+      });
+      payload.origem_consulta = 'sincronizacao';
+    }
     raffinatoSangrias = Array.isArray(payload.items) ? payload.items.map(normalizarMovimentoRaffinato) : [];
     raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
     raffinatoBuscaDetalhe = '';
@@ -541,7 +552,7 @@ async function consultarSangriasRaffinato() {
     if (buscaDetalhe) buscaDetalhe.value = '';
     renderizarSangriasRaffinato(raffinatoSangrias, Number(payload.total || 0));
     atualizarStatusConectorRaffinato('online', 'Raffinato conectado');
-    if (msg) { const retiradas = raffinatoSangrias.filter(ehRetiradaCofreRaffinato).length; msg.className = 'msg ok'; msg.textContent = `${raffinatoSangrias.length - retiradas} sangria(s) e ${retiradas} retirada(s) para cofre encontradas.`; }
+    if (msg) { const retiradas = raffinatoSangrias.filter(ehRetiradaCofreRaffinato).length; msg.className = 'msg ok'; msg.textContent = `${raffinatoSangrias.length - retiradas} sangria(s) e ${retiradas} retirada(s) para cofre encontradas${payload.origem_consulta === 'sincronizacao' ? ' na sincronização' : ' diretamente no Raffinato'}.`; }
   } catch (error) {
     if (error?.name === 'AbortError') {
       if (msg) { msg.className = 'msg'; msg.textContent = 'Consulta cancelada.'; }
