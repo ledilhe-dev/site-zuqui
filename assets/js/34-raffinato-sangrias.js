@@ -103,14 +103,34 @@ async function alternarSenhaRaffinato(event) {
   const input = document.getElementById('raffinatoDbPassword');
   const button = document.getElementById('raffinatoPasswordToggle');
   if (!input || !button) return;
-  const mostrar = input.getAttribute('type') === 'password';
+  const mostrar = button.getAttribute('aria-pressed') !== 'true';
+  const inicioSelecao = input.selectionStart;
+  const fimSelecao = input.selectionEnd;
   if (mostrar && raffinatoIntegracaoAtual && input.dataset.senhaDigitada !== 'true' && input.dataset.senhaCarregada !== 'true') {
     try {
+      if (typeof usuarioEhAdminOuPerfilAdmin === 'function' && !usuarioEhAdminOuPerfilAdmin()) {
+        throw new Error('Somente um administrador pode visualizar a senha SQL salva.');
+      }
+      const confirmacao = typeof abrirModalPin === 'function' ? await abrirModalPin({
+        titulo:'Mostrar senha do banco',
+        subtitulo:'Confirme seu PIN ou senha administrativa para visualizar temporariamente a senha SQL.',
+        textoUsuario:`Administrador: ${usuarioSistemaLogado?.nome || 'usuário atual'}`,
+        textoAcao:'Autorizar',
+        placeholderInput:'PIN ou senha administrativa',
+      }) : null;
+      if (!confirmacao?.pin) return;
+      const autorizado = typeof obterFuncionarioAtivoPorPinEmpresa === 'function'
+        ? await obterFuncionarioAtivoPorPinEmpresa(confirmacao.pin)
+        : null;
+      if (!autorizado || String(autorizado.id || '') !== String(usuarioSistemaLogado?.id || '')) {
+        throw new Error('PIN ou senha administrativa inválida.');
+      }
       button.disabled = true;
       button.textContent = 'Carregando...';
       const { lojaId } = contextoRaffinato();
       const result = await raffinatoBridgePost('/api/integracoes/raffinato/senha', { loja_id:lojaId });
       input.value = String(result.pwd || '');
+      if (!input.value) throw new Error('A senha protegida não foi encontrada no conector desta loja.');
       input.dataset.senhaCarregada = 'true';
     } catch (error) {
       const msg = document.getElementById('msgRaffinatoIntegracao');
@@ -122,10 +142,25 @@ async function alternarSenhaRaffinato(event) {
     }
   }
   input.setAttribute('type', mostrar ? 'text' : 'password');
+  input.classList.toggle('raffinato-password-revealed', mostrar);
   button.textContent = mostrar ? 'Ocultar' : 'Mostrar';
   button.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  button.setAttribute('title', mostrar ? 'Ocultar senha' : 'Mostrar senha');
   button.setAttribute('aria-pressed', String(mostrar));
-  input.focus({ preventScroll:true });
+  if (document.activeElement === input) {
+    input.focus({ preventScroll:true });
+    if (inicioSelecao != null && fimSelecao != null) input.setSelectionRange(inicioSelecao, fimSelecao);
+  }
+}
+
+function limparSenhaReveladaRaffinato() {
+  const input=document.getElementById('raffinatoDbPassword'),button=document.getElementById('raffinatoPasswordToggle');
+  if (!input || !button) return;
+  if (input.dataset.senhaCarregada === 'true' && input.dataset.senhaDigitada !== 'true') input.value='';
+  delete input.dataset.senhaCarregada;
+  input.type='password';
+  input.classList.remove('raffinato-password-revealed','pin-secure-input');
+  button.textContent='Mostrar';button.setAttribute('aria-label','Mostrar senha');button.setAttribute('title','Mostrar senha');button.setAttribute('aria-pressed','false');
 }
 
 function iniciarBotaoSenhaRaffinato() {
@@ -137,8 +172,9 @@ function iniciarBotaoSenhaRaffinato() {
   input.setAttribute('data-lpignore','true');
   input.setAttribute('data-1p-ignore','true');
   input.setAttribute('data-bwignore','true');
-  input.addEventListener('keydown',()=>{ input.dataset.senhaDigitada='true'; });
-  input.addEventListener('paste',()=>{ input.dataset.senhaDigitada='true'; });
+  input.addEventListener('input',event=>{if(event.isTrusted){input.dataset.senhaDigitada='true';delete input.dataset.senhaCarregada;}});
+  document.addEventListener('click',event=>{const pageButton=event.target.closest?.('[data-page]');if(pageButton&&pageButton.dataset.page!=='financeiro_sangrias_raffinato')limparSenhaReveladaRaffinato()},true);
+  window.addEventListener('pagehide',limparSenhaReveladaRaffinato);
 }
 
 window.alternarSenhaRaffinato = alternarSenhaRaffinato;
@@ -165,8 +201,9 @@ function preencherFormularioIntegracaoRaffinato(item) {
   delete document.getElementById('raffinatoDbPassword').dataset.senhaDigitada;
   document.getElementById('raffinatoDbPassword').placeholder = item ? 'Senha protegida; preencha apenas para alterar' : 'Senha do banco';
   document.getElementById('raffinatoDbPassword').type = 'password';
+  document.getElementById('raffinatoDbPassword').classList.remove('raffinato-password-revealed','pin-secure-input');
   const passwordToggle=document.getElementById('raffinatoPasswordToggle');
-  if(passwordToggle){passwordToggle.textContent='Mostrar';passwordToggle.setAttribute('aria-label','Mostrar senha');passwordToggle.setAttribute('aria-pressed','false');}
+  if(passwordToggle){passwordToggle.textContent='Mostrar';passwordToggle.setAttribute('aria-label','Mostrar senha');passwordToggle.setAttribute('title','Mostrar senha');passwordToggle.setAttribute('aria-pressed','false');}
   document.getElementById('raffinatoDeleteIntegrationBtn').hidden = !item;
   const ocultarConsulta = !item || item.status !== 'ativa';
   document.getElementById('raffinatoSangriasPanel').hidden = ocultarConsulta;

@@ -30,6 +30,7 @@
 .raffinato-password-control input { min-width:0; }
 .raffinato-password-toggle { min-width:76px; padding:0 12px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
 .raffinato-password-toggle:hover,.raffinato-password-toggle:focus-visible { border-color:var(--raffinato-accent); color:var(--raffinato-accent); }
+#raffinatoDbPassword.raffinato-password-revealed { -webkit-text-security:none!important; text-security:none!important; }
 .raffinato-actions { display:flex; gap:8px; align-items:center; }
 .raffinato-btn-query { background:linear-gradient(135deg,#fb923c,#ea580c) !important; border-color:#ea580c !important; color:#fff !important; }
 .raffinato-shortcuts { display:flex; gap:7px; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
