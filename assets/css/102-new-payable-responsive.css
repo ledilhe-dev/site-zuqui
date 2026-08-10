@@ -189,6 +189,12 @@
   line-height: 1;
 }
 
+#ncSheet #ncCatGrid .nc-cat-card.nc-split-selected {
+  border-color: #aeb2f4 !important;
+  background: #f4f5ff !important;
+  color: #3d438b !important;
+}
+
 #ncSheet #ncCatGrid .nc-cat-card[hidden] {
   display: none !important;
 }
@@ -261,6 +267,176 @@
 #ncSheet .nc-selected-category-chip > button:hover {
   background: rgba(99, 102, 241, .1);
 }
+
+#ncSheet .nc-split-category-row {
+  display: flex;
+  margin: 0 0 10px;
+  justify-content: flex-end;
+}
+
+#ncSheet .nc-split-category-row .btn {
+  min-height: 32px !important;
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+}
+
+#ncSheet .nc-split-panel {
+  margin: 0 0 10px;
+  padding: 11px;
+  border: 1px solid #d7d9ff;
+  border-radius: 10px;
+  background: #f8f9ff;
+}
+
+#ncSheet .nc-split-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+#ncSheet .nc-split-panel-head strong {
+  color: #272c78;
+  font-size: 11px;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+#ncSheet .nc-split-panel-head button,
+#ncSheet .nc-split-add {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5960c7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+#ncSheet .nc-split-lines {
+  display: grid;
+  gap: 7px;
+}
+
+#ncSheet .nc-split-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 118px 24px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid #e1e5ec;
+  border-radius: 8px;
+  background: #fff;
+}
+
+#ncSheet .nc-split-category-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: #252d3d;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#ncSheet .nc-split-category-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#ncSheet .nc-split-line input {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 6px 8px !important;
+  text-align: right;
+  font-size: 12px !important;
+}
+
+#ncSheet .nc-split-line > button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8b94a5;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+#ncSheet .nc-split-add {
+  margin-top: 8px;
+}
+
+#ncSheet .nc-split-empty {
+  padding: 6px;
+  color: #7b8495;
+  font-size: 11px;
+}
+
+#ncSheet .nc-split-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 9px;
+}
+
+#ncSheet .nc-split-totals span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 6px 7px;
+  border-radius: 7px;
+  background: #eef1f6;
+  color: #737e91;
+  font-size: 9px;
+}
+
+#ncSheet .nc-split-totals strong {
+  margin-top: 2px;
+  color: #252d3d;
+  font-size: 11px;
+}
+
+#ncSheet .nc-split-totals .complete { background: #edf8f1; color: #39724e; }
+#ncSheet .nc-split-totals .pending { background: #fff7e7; color: #8a641c; }
+#ncSheet .nc-split-totals .exceeded { background: #fff0f0; color: #a84444; }
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split {
+  display: grid;
+  grid-template-columns: minmax(110px, .8fr) minmax(0, 1.2fr);
+  gap: 10px;
+  padding: 9px 0;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split > span {
+  color: #6f7a8c;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split > div > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split strong,
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split b {
+  color: #242b3a;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 1;
+  -webkit-text-fill-color: #242b3a;
+}
+
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split b { white-space: nowrap; }
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split-total { margin-top: 3px; border-top: 1px solid #e1e5ec; }
 
 /* Conferência do lançamento de contas a pagar, sem afetar outros modais. */
 #confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .modal {
@@ -626,6 +802,33 @@
   #ncSheet .nc-selected-category {
     grid-template-columns: 1fr;
     gap: 5px;
+  }
+
+  #ncSheet .nc-split-line {
+    grid-template-columns: minmax(0, 1fr) 24px;
+  }
+
+  #ncSheet .nc-split-line input {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #ncSheet .nc-split-line > button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  #ncSheet .nc-split-totals {
+    grid-template-columns: 1fr;
+  }
+
+  #confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  #confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split > div > div {
+    align-items: flex-start;
   }
 
   #ncSheet #ncCatGrid {

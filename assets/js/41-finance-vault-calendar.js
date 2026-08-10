@@ -773,7 +773,7 @@ function calcularVencimentoParcelaFinanceiro(baseISO, idx, intervaloDias, sequen
   return ajustarVencimentoParaDiaUtilFinanceiro(`${anoV}-${String(mesV).padStart(2, '0')}-${String(diaV).padStart(2, '0')}`);
 }
 
-async function salvarContaAPagarFinanceiro() {
+async function salvarContaAPagarFinanceiro(opcoes = {}) {
   const campoFornecedor = document.getElementById('contaFornecedorBusca');
   const campoFornecedorId = document.getElementById('contaFornecedorId');
   preencherSelectLojaContaAPagarFinanceiro(document.getElementById('contaLojaId')?.value || '');
@@ -804,7 +804,10 @@ async function salvarContaAPagarFinanceiro() {
     return;
   }
   const categoriaId = String(document.getElementById('contaCategoriaId')?.value || '').trim();
-  if (!categoriaId) {
+  const divisoesCategoria = Array.isArray(opcoes.divisoes)
+    ? opcoes.divisoes.map(parte => ({ valor: Number(parte.valor), categoria_id: String(parte.categoria_id || '').trim() }))
+    : [];
+  if (!categoriaId && !divisoesCategoria.length) {
     setMsg('msgContaAPagarFinanceiro', 'Selecione uma categoria de compra.', 'err');
     return;
   }
@@ -829,6 +832,14 @@ async function salvarContaAPagarFinanceiro() {
   if (!Number.isFinite(valorCompra) || valorCompra <= 0) {
     setMsg('msgContaAPagarFinanceiro', 'Informe um valor de compra válido.', 'err');
     return;
+  }
+  if (divisoesCategoria.length) {
+    const valorEsperado = Number(opcoes.valorTotal ?? valorCompra);
+    const somaDivisoes = divisoesCategoria.reduce((total, parte) => total + Math.round(parte.valor * 100), 0);
+    if (editando || divisoesCategoria.length < 2 || divisoesCategoria.some(parte => !parte.categoria_id || !Number.isFinite(parte.valor) || parte.valor <= 0) || somaDivisoes !== Math.round(valorEsperado * 100)) {
+      setMsg('msgContaAPagarFinanceiro', 'Revise a divisão por categorias antes de salvar.', 'err');
+      return;
+    }
   }
 
   const atorAuditoria = obterAtorAuditoriaAtual();
@@ -992,15 +1003,28 @@ async function salvarContaAPagarFinanceiro() {
     qtd_parcelas: qtdParcelasValidada,
     intervalo_parcelas_dias: intervaloParcelasDiasFinal,
   };
-  const linhas = Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
-    ...payloadBase,
-    data_pagamento: null,
-    data_vencimento: calcularVencimentoParcelaFinanceiro(dataVencimento, idx, intervaloParcelasDiasFinal),
-    numero_parcela: idx + 1,
-    grupo_parcelas_id: grupoParcelasId,
-    criado_por_id: atorAuditoria.funcionarioId || null,
-    criado_por_nome: atorAuditoria.nome || 'Sistema',
-  }));
+  const seriesCategoria = divisoesCategoria.length
+    ? divisoesCategoria
+    : [{ valor: Number(valorCompra.toFixed(2)), categoria_id: categoriaId }];
+  const linhas = seriesCategoria.flatMap((parte, indiceParte) => {
+    const grupoParteId = indiceParte === 0 ? grupoParcelasId : gerarGrupoParcelasIdFinanceiro();
+    const valorTotalCentavos = Math.round(parte.valor * 100);
+    const valorBaseCentavos = opcoes.dividirValorTotal ? Math.floor(valorTotalCentavos / qtdParcelasValidada) : valorTotalCentavos;
+    const centavosRestantes = opcoes.dividirValorTotal ? valorTotalCentavos % qtdParcelasValidada : 0;
+    return Array.from({ length: qtdParcelasValidada }).map((_, idx) => ({
+      ...payloadBase,
+      categoria_id: parte.categoria_id,
+      valor_compra: opcoes.dividirValorTotal
+        ? (valorBaseCentavos + (idx < centavosRestantes ? 1 : 0)) / 100
+        : Number(parte.valor.toFixed(2)),
+      data_pagamento: null,
+      data_vencimento: calcularVencimentoParcelaFinanceiro(dataVencimento, idx, intervaloParcelasDiasFinal),
+      numero_parcela: idx + 1,
+      grupo_parcelas_id: grupoParteId,
+      criado_por_id: atorAuditoria.funcionarioId || null,
+      criado_por_nome: atorAuditoria.nome || 'Sistema',
+    }));
+  });
 
   if (typeof financeiroBuscarDuplicidadesContas === 'function' && typeof financeiroDecidirDuplicidadeContas === 'function') {
     const duplicadosConta = await financeiroBuscarDuplicidadesContas(linhas, { lojaId: lojaSelecionada.id });
@@ -1038,13 +1062,13 @@ async function salvarContaAPagarFinanceiro() {
 
   limparFormularioContaAPagarFinanceiro();
   if (campoFornecedor) campoFornecedor.blur();
-  setMsg('msgContaAPagarFinanceiro', `${qtdParcelasValidada} conta(s) cadastrada(s) com sucesso.`, 'ok');
+  setMsg('msgContaAPagarFinanceiro', `${linhas.length} conta(s) cadastrada(s) com sucesso.`, 'ok');
   resetarFiltrosContasAPagarFinanceiro({ manterListaVisivel: true });
   carregarContasAPagarFinanceiro();
   return {
     ok: true,
     ids: (contasSalvas || []).map(item => item.id).filter(Boolean),
-    quantidade: qtdParcelasValidada,
+    quantidade: linhas.length,
     grupoParcelasId,
   };
 }

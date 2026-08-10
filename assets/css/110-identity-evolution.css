@@ -135,6 +135,26 @@ body.avatar-crop-open{overflow:hidden!important}
   border-top-color:#e1e5ed!important;
   background:#f3f5f9!important;
 }
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-line>strong,
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split strong,
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split b {
+  color:#242b3a!important;
+  opacity:1!important;
+  visibility:visible!important;
+  -webkit-text-fill-color:#242b3a!important;
+}
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) #confirmacaoSistemaTitle {
+  color:#182033!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#182033!important;
+}
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) #confirmacaoSistemaSubtitle,
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-line>span,
+#confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split>span {
+  color:#6f7a8c!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#6f7a8c!important;
+}
 .avatar-crop-overlay{position:fixed;inset:0;z-index:12000;display:none;place-items:center;padding:20px;background:rgba(2,8,23,.78);backdrop-filter:blur(8px)}
 .avatar-crop-overlay.open{display:grid}
 .avatar-crop-modal{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;width:min(760px,calc(100vw - 32px));min-width:0;max-height:min(860px,calc(100dvh - 32px));overflow:hidden;border:1px solid var(--border);border-radius:20px;color:var(--text);background:var(--surface);box-shadow:0 32px 100px rgba(2,8,23,.5)}

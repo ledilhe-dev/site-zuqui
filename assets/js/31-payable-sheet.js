@@ -14,6 +14,8 @@ const NC = {
   lojaId: null,
   salvando: false,
   aplicarVencimentoGrupo: false,
+  divisoes: [],
+  modoDivisao: false,
 };
 window.NC = NC;
 
@@ -36,7 +38,7 @@ function ncValorFocus(inp) {
   inp.value = inp.value.replace(/[R$\s]/g, '').trim();
   setTimeout(() => inp.select(), 0);
 }
-function ncValorInput(inp) { NC.valor = ncParseValor(inp.value); ncAtuParcelasInfo(); }
+function ncValorInput(inp) { NC.valor = ncParseValor(inp.value); ncAtuParcelasInfo(); if (NC.modoDivisao) ncAtualizarResumoDivisao(); }
 function ncValorBlur(inp) {
   const v = ncParseValor(inp.value);
   NC.valor = v;
@@ -294,6 +296,101 @@ function ncAtualizarCategoriaSelecionadaUI() {
   container.innerHTML = `${htmlIconeCategoriaCompra(categoria.icone, 22)}<span>${escaparHtmlBasico(ncNomeCategoriaApresentacao(categoria.nome || ''))}</span><button type="button" onclick="ncLimparCat()" title="Remover categoria" aria-label="Remover categoria">×</button>`;
 }
 
+function ncCentavos(valor) {
+  return typeof faturaDivisaoCentavos === 'function'
+    ? faturaDivisaoCentavos(valor)
+    : Math.round((Number(valor) || 0) * 100);
+}
+
+function ncDivisoesValidas() {
+  const divisoes = Array.isArray(NC.divisoes) ? NC.divisoes : [];
+  if (divisoes.length < 2) return [];
+  const normalizadas = divisoes.map(parte => ({
+    valor: ncCentavos(parte.valor) / 100,
+    categoria_id: String(parte.categoria_id || '').trim(),
+  }));
+  if (normalizadas.some(parte => parte.valor <= 0 || !parte.categoria_id)) return [];
+  if (normalizadas.reduce((total, parte) => total + ncCentavos(parte.valor), 0) !== ncCentavos(NC.valor)) return [];
+  return normalizadas;
+}
+
+function ncAtualizarResumoDivisao() {
+  const painel = document.getElementById('ncSplitPanel');
+  const botao = document.getElementById('ncSplitCategoryButton');
+  if (botao) {
+    botao.hidden = !!NC.modoEdicao || !!NC.modoDivisao;
+  }
+  if (!painel) return;
+  document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(card => {
+    const adicionada = !!NC.modoDivisao && (NC.divisoes || []).some(parte => String(parte.categoria_id) === String(card.dataset.id));
+    card.classList.toggle('nc-split-selected', adicionada);
+    if (NC.modoDivisao) card.setAttribute('aria-pressed', String(adicionada));
+  });
+  painel.hidden = !NC.modoDivisao;
+  document.querySelector('.nc-selected-category')?.toggleAttribute('hidden', !!NC.modoDivisao);
+  if (!NC.modoDivisao) { painel.innerHTML = ''; return; }
+  const total = ncCentavos(NC.valor);
+  const distribuido = (NC.divisoes || []).reduce((soma, parte) => soma + ncCentavos(parte.valor), 0);
+  const restante = total - distribuido;
+  const linhas = (NC.divisoes || []).map(parte => {
+    const categoria = (categoriasCompraCache || []).find(item => String(item.id) === String(parte.categoria_id));
+    return `<div class="nc-split-line">
+      <div class="nc-split-category-name">${htmlIconeCategoriaCompra(categoria?.icone, 24)}<span>${escaparHtmlBasico(ncNomeCategoriaApresentacao(categoria?.nome || 'Categoria'))}</span></div>
+      <input type="text" inputmode="decimal" value="${parte.valor === '' ? '' : Number(parte.valor || 0).toFixed(2).replace('.', ',')}" placeholder="R$ 0,00" aria-label="Valor para ${escaparHtmlBasico(categoria?.nome || 'categoria')}" onchange="ncAlterarDivisao('${parte.id}', this.value)">
+      <button type="button" onclick="ncRemoverDivisao('${parte.id}')" title="Remover categoria" aria-label="Remover categoria">×</button>
+    </div>`;
+  }).join('');
+  painel.innerHTML = `<div class="nc-split-panel-head"><strong>Divisão por categoria</strong><button type="button" onclick="ncCancelarDivisaoCategorias()">Cancelar divisão</button></div>
+    <div class="nc-split-lines">${linhas || '<div class="nc-split-empty">Selecione uma categoria no grid abaixo.</div>'}</div>
+    <button type="button" class="nc-split-add" onclick="document.getElementById('ncCatBusca')?.focus()">＋ Adicionar categoria pelo grid</button>
+    <div class="nc-split-totals"><span>Total da conta <strong>${ncFmtBR(total / 100)}</strong></span><span>Distribuído <strong>${ncFmtBR(distribuido / 100)}</strong></span><span class="${restante === 0 ? 'complete' : restante < 0 ? 'exceeded' : 'pending'}">${restante < 0 ? 'Excedente' : 'Restante'} <strong>${ncFmtBR(Math.abs(restante) / 100)}</strong></span></div>`;
+}
+
+function ncAtivarDivisaoCategorias() {
+  if (NC.modoEdicao) return;
+  const campoValor = document.getElementById('ncValor');
+  NC.valor = ncParseValor(campoValor?.value || '');
+  if (!NC.valor || NC.valor <= 0) {
+    const msg = document.getElementById('ncMsg');
+    if (msg) { msg.textContent = 'Informe o valor antes de dividir em categorias.'; msg.className = 'msg err'; }
+    campoValor?.focus();
+    return;
+  }
+  NC.modoDivisao = true;
+  NC.divisoes = [];
+  if (NC.catId) NC.divisoes.push({ id: `nc_div_${Date.now()}`, valor: '', categoria_id: NC.catId });
+  ncLimparCat();
+  ncAtualizarResumoDivisao();
+}
+
+function ncAdicionarCategoriaDivisao(categoriaId) {
+  if ((NC.divisoes || []).some(parte => String(parte.categoria_id) === String(categoriaId))) {
+    const msg = document.getElementById('ncMsg');
+    if (msg) { msg.textContent = 'Essa categoria já está na divisão.'; msg.className = 'msg err'; }
+    return;
+  }
+  NC.divisoes.push({ id: `nc_div_${Date.now()}_${NC.divisoes.length}`, valor: '', categoria_id: String(categoriaId) });
+  ncAtualizarResumoDivisao();
+}
+
+function ncAlterarDivisao(id, valor) {
+  const parte = (NC.divisoes || []).find(item => String(item.id) === String(id));
+  if (!parte) return;
+  parte.valor = ncParseValor(valor) ?? '';
+  ncAtualizarResumoDivisao();
+}
+
+function ncRemoverDivisao(id) {
+  NC.divisoes = (NC.divisoes || []).filter(parte => String(parte.id) !== String(id));
+  ncAtualizarResumoDivisao();
+}
+
+function ncCancelarDivisaoCategorias() {
+  NC.divisoes = [];
+  NC.modoDivisao = false;
+  ncAtualizarResumoDivisao();
+}
+
 function ncMontarCategorias() {
   const grid = document.getElementById('ncCatGrid'); if (!grid) return;
   if (ncCategoriasCarregando && !(categoriasCompraCache || []).length) {
@@ -345,6 +442,10 @@ function ncSelCat(el) {
   if (!el?.classList?.contains('nc-cat-card')) return;
   const categoryId = String(el.dataset.id || '').trim();
   if (!categoryId) return;
+  if (NC.modoDivisao) {
+    ncAdicionarCategoriaDivisao(categoryId);
+    return;
+  }
   document.querySelectorAll('#ncCatGrid .nc-cat-card').forEach(o => {
     o.classList.remove('nc-sel');
     o.setAttribute('aria-pressed', 'false');
@@ -352,11 +453,13 @@ function ncSelCat(el) {
   el.classList.add('nc-sel');
   el.setAttribute('aria-pressed', 'true');
   NC.catId = categoryId;
+  NC.divisoes = [];
   const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
   const busca = document.getElementById('ncCatBusca');
   if (busca) busca.value = '';
   ncFiltrarCategorias('');
   ncAtualizarCategoriaSelecionadaUI();
+  ncAtualizarResumoDivisao();
 }
 
 function ncLimparCat() {
@@ -422,7 +525,7 @@ function ncLimparForn() {
 // ── Abrir / Fechar ──────────────────────────────────────────────
 function ncAbrir(editar) {
   if (!editar) {
-    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, parcelado: false, modoEdicao: false, modo: 'total', lojaId: null, salvando: false, aplicarVencimentoGrupo: false });
+    Object.assign(NC, { fornId: null, fornNome: null, catId: null, dataCompra: null, dataVenc: null, valor: null, obs: '', parcelas: 1, intervalo: 30, parcelado: false, modoEdicao: false, modo: 'total', lojaId: null, salvando: false, aplicarVencimentoGrupo: false, divisoes: [], modoDivisao: false });
     // Limpa campos visuais
     const fi = document.getElementById('ncFornBusca'); if (fi) { fi.value = ''; fi.style.display = ''; }
     const fsr = document.getElementById('ncFornRes'); if (fsr) fsr.innerHTML = '';
@@ -472,6 +575,7 @@ function ncAbrir(editar) {
     ncMontarCategorias();
   }
   ncAtualizarBotaoVencFornecedor();
+  ncAtualizarResumoDivisao();
   const ov = document.getElementById('ncOverlay'); if (!ov) return;
   ov.style.display = 'flex';
   const body = document.querySelector('#ncSheet .nc-sheet-body');
@@ -496,7 +600,7 @@ async function ncConferirContaSalva(resumo = {}, resultado = {}) {
     ['VALOR', ncFmtBR(resumo.valorParcela || resumo.valor || 0)],
     ['VENCIMENTO', resumo.dataVencBR || '-'],
     ...(resumo.vencimentosParcelas?.length > 1 ? [['VENCIMENTOS DAS PARCELAS', resumo.vencimentosParcelas.join(' · ')]] : []),
-    ['CATEGORIA', resumo.catNome || '-'],
+    ...(!resumo.divisoes?.length ? [['CATEGORIA', resumo.catNome || '-']] : []),
     ['PARCELAS', `${resumo.parcelas || 1}x`],
     ['OBSERVACAO', resumo.obs || '-'],
   ];
@@ -508,6 +612,7 @@ async function ncConferirContaSalva(resumo = {}, resultado = {}) {
           <strong>${escaparHtmlBasico(String(valor || '-'))}</strong>
         </div>
       `).join('')}
+      ${resumo.divisoes?.length ? `<div class="nc-confirm-split"><span>CATEGORIAS</span><div>${resumo.divisoes.map(parte => `<div><strong>${escaparHtmlBasico(parte.nome)}</strong><b>${escaparHtmlBasico(ncFmtBR(parte.valor))}</b></div>`).join('')}<div class="nc-confirm-split-total"><strong>TOTAL</strong><b>${escaparHtmlBasico(ncFmtBR(resumo.divisoes.reduce((total, parte) => total + parte.valor, 0)))}</b></div></div></div>` : ''}
     </div>
   `;
   const decisao = await abrirConfirmacaoSistema({
@@ -587,7 +692,8 @@ async function ncSalvar(salvarENovo = false) {
 
   if (!NC.fornId) { if (msg) { msg.textContent = 'Selecione um fornecedor.'; msg.className = 'msg err'; } return; }
   if (NC.valor == null || NC.valor <= 0) { if (msg) { msg.textContent = 'Informe o valor corretamente.'; msg.className = 'msg err'; } return; }
-  if (!NC.catId) { if (msg) { msg.textContent = 'Selecione uma categoria.'; msg.className = 'msg err'; } return; }
+  const divisoesCategoria = ncDivisoesValidas();
+  if (!NC.catId && !divisoesCategoria.length) { if (msg) { msg.textContent = 'Selecione uma categoria ou divida o valor entre categorias.'; msg.className = 'msg err'; } return; }
   if (temErro) { if (msg) { msg.textContent = 'Preencha os campos obrigatórios.'; msg.className = 'msg err'; } return; }
 
   if (!NC.dataVenc) NC.dataVenc = NC.dataCompra || new Date().toISOString().split('T')[0];
@@ -596,12 +702,22 @@ async function ncSalvar(salvarENovo = false) {
   // 6. Calcula valor correto por parcela
   const valorParcela = NC.modo === 'total' ? Math.round((NC.valor / NC.parcelas) * 100) / 100 : NC.valor;
   const categoriaSelecionada = (categoriasCompraCache || []).find(c => String(c.id) === String(NC.catId)) || null;
+  const categoriasResumo = divisoesCategoria.length
+    ? divisoesCategoria.map(parte => {
+      const categoria = (categoriasCompraCache || []).find(c => String(c.id) === String(parte.categoria_id));
+      return `${categoria?.nome || 'Categoria'}: ${ncFmtBR(parte.valor)}`;
+    }).join(' · ')
+    : (categoriaSelecionada?.nome || '');
   const resumoConferencia = {
     fornNome: NC.fornNome,
     valor: NC.valor,
     valorParcela,
     dataVencBR: toddmmaaaa(NC.dataVenc),
-    catNome: categoriaSelecionada?.nome || '',
+    catNome: categoriasResumo,
+    divisoes: divisoesCategoria.map(parte => ({
+      nome: (categoriasCompraCache || []).find(c => String(c.id) === String(parte.categoria_id))?.nome || 'Categoria',
+      valor: parte.valor,
+    })),
     parcelas: NC.parcelas,
     obs: NC.obs,
     vencimentosParcelas: Array.from({ length: NC.parcelas }, (_, indice) => {
@@ -625,7 +741,7 @@ async function ncSalvar(salvarENovo = false) {
   const fb = document.getElementById('contaFornecedorBusca'); if (fb) fb.value = NC.fornNome;
   const fi = document.getElementById('contaFornecedorId'); if (fi) fi.value = NC.fornId;
   const cv = document.getElementById('contaValorCompra'); if (cv) cv.value = valorParcela.toFixed(2).replace('.', ',');
-  const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || '';
+  const cs = document.getElementById('contaCategoriaId'); if (cs) cs.value = NC.catId || divisoesCategoria[0]?.categoria_id || '';
   const co = document.getElementById('contaObservacao'); if (co) co.value = NC.obs || 'Lançamento manual';
   const cqp = document.getElementById('contaQtdParcelas'); if (cqp) cqp.value = NC.parcelas > 1 ? NC.parcelas : '';
   const cip = document.getElementById('contaIntervaloParcelasDias'); if (cip) cip.value = NC.parcelas > 1 ? NC.intervalo : '';
@@ -642,7 +758,11 @@ async function ncSalvar(salvarENovo = false) {
   if (msgOrig) { msgOrig.textContent = ''; msgOrig.className = 'msg'; }
 
   try {
-    const resultadoSalvar = await salvarContaAPagarFinanceiro();
+    const resultadoSalvar = await salvarContaAPagarFinanceiro({
+      divisoes: divisoesCategoria,
+      valorTotal: NC.valor,
+      dividirValorTotal: NC.modo === 'total' && NC.parcelas > 1,
+    });
     if (resultadoSalvar?.ignorado) {
       if (msg) { msg.textContent = msgOrig?.textContent || 'Lançamento ignorado por duplicidade.'; msg.className = 'msg ok'; }
       NC.salvando = false;
@@ -730,6 +850,8 @@ if (typeof _ncOrigEditar === 'function') {
       NC.intervalo = parseInt(cip ? cip.value : '30', 10) || 30;
       NC.parcelado = NC.parcelas > 1;
       NC.modoEdicao = true;
+      NC.divisoes = [];
+      NC.modoDivisao = false;
       NC.aplicarVencimentoGrupo = false;
       NC.modo = NC.parcelado ? 'parcela' : 'total';
 
