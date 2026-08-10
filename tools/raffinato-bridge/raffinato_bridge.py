@@ -38,6 +38,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
+CONNECTOR_VERSION = "1.6.3"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -86,7 +87,7 @@ SELECT
     CONVERT(VARCHAR(8), DataHora, 108) AS hora_formatada,
     CONVERT(VARCHAR(10), DataHora, 103) AS data_formatada
 FROM MovimentosCaixa
-WHERE DataHora >= ? AND DataHora < ?
+WHERE DataHora >= ? AND DataHora < ? AND IdFilial = ?
 ORDER BY DataHora;
 """
 
@@ -111,6 +112,19 @@ FROM dbo.FechamentoCaixa FC JOIN dbo.FechamentoCaixaFormaPagamento FCFP ON FCFP.
 JOIN dbo.FormaPagamento FP ON FP.Id=FCFP.IdFormaPagamento
 WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=? AND (? IS NULL OR FP.Id=?)
 GROUP BY CONVERT(date,FC.Data),FP.Id,FP.Nome ORDER BY data,FP.Nome;
+"""
+
+SQL_FATURAMENTO_TOTALIZADOR = """
+SELECT
+ SUM(ISNULL(FCFP.ValorMovimento,0)) AS total_valor_movimento,
+ SUM(ISNULL(FCFP.ValorAbertura,0)) AS total_abertura,
+ SUM(ISNULL(FCFP.ValorSuprimento,0)) AS total_suprimento,
+ SUM(ISNULL(FCFP.ValorSangria,0)) AS total_sangria,
+ SUM(ISNULL(FCFP.ValorApurado,0)) AS total_apurado,
+ SUM(ISNULL(FCFP.ValorConfirmado,0)) AS total_confirmado
+FROM dbo.FechamentoCaixa FC
+JOIN dbo.FechamentoCaixaFormaPagamento FCFP ON FCFP.IdFechamentoCaixa=FC.Id
+WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=?;
 """
 
 SQL_PRODUTOS = """
@@ -245,7 +259,7 @@ def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
 
 
 def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
-    result = query_sangrias(config, start, end + timedelta(seconds=1))
+    result = query_sangrias(config, start, end + timedelta(seconds=1), resolve_raffinato_filial(config, {}))
     relay_post({
         "action": "sync", "token": config["relay_token"],
         "inicio": start.strftime("%Y-%m-%d"), "fim": end.strftime("%Y-%m-%d"),
@@ -356,7 +370,7 @@ def parse_datetime(value: Any, field: str) -> datetime:
         raise ValueError(f"{field} inválido.") from exc
 
 
-def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datetime) -> dict[str, Any]:
+def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datetime, filial: int) -> dict[str, Any]:
     if end_exclusive <= start:
         raise ValueError("O fim do período deve ser posterior ao início.")
     if (end_exclusive - start).days > MAX_INTERVAL_DAYS:
@@ -364,7 +378,8 @@ def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datet
 
     with pyodbc.connect(connection_string(config)) as connection:
         cursor = connection.cursor()
-        cursor.execute(SQL_SANGRIAS, start, end_exclusive)
+        logger.info("SQL EXECUTADA: SQL_SANGRIAS | inicio=%s | fim_exclusivo=%s | id_filial=%s", start.isoformat(), end_exclusive.isoformat(), filial)
+        cursor.execute(SQL_SANGRIAS, start, end_exclusive, filial)
         rows = cursor.fetchall()
 
     items: list[dict[str, Any]] = []
@@ -435,12 +450,23 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
     filial = resolve_raffinato_filial(config, body)
     payment = int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
     with pyodbc.connect(connection_string(config)) as connection:
+        logger.info("SQL EXECUTADA: SQL_FATURAMENTO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
         cursor = connection.cursor(); cursor.execute(SQL_FATURAMENTO, start, end, filial, payment, payment)
         rows = rows_as_dicts(cursor)
+        logger.info("SQL EXECUTADA: SQL_FATURAMENTO_TOTALIZADOR | inicio=%s | fim_exclusivo=%s | id_filial=%s", start.isoformat(), end.isoformat(), filial)
+        cursor.execute(SQL_FATURAMENTO_TOTALIZADOR, start, end, filial)
+        total_row = rows_as_dicts(cursor)[0]
+        totals = {
+            "valor_movimento": float(total_row.get("total_valor_movimento") or 0),
+            "valor_abertura": float(total_row.get("total_abertura") or 0),
+            "valor_suprimento": float(total_row.get("total_suprimento") or 0),
+            "valor_sangria": float(total_row.get("total_sangria") or 0),
+            "valor_apurado": float(total_row.get("total_apurado") or 0),
+            "valor_confirmado": float(total_row.get("total_confirmado") or 0),
+        }
+        logger.info("SQL EXECUTADA: SQL_FATURAMENTO_EVOLUCAO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
         cursor.execute(SQL_FATURAMENTO_EVOLUCAO, start, end, filial, payment, payment)
         evolution = rows_as_dicts(cursor)
-    keys = ("valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_apurado","valor_confirmado")
-    totals = {key: sum(float(row.get(key) or 0) for row in rows) for key in keys}
     return {"formas_pagamento": rows, "totalizadores": totals, "evolucao": evolution}
 
 
@@ -524,7 +550,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.reject_origin():
             return
         if self.route_path() == "/health":
-            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": "1.6.2", "port": 8766, "tray": True, "external_sync": True})
+            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True})
             return
         self.send_json(404, {"error": "Rota não encontrada."})
 
@@ -551,6 +577,10 @@ class Handler(BaseHTTPRequestHandler):
             if length <= 0 or length > MAX_BODY_BYTES:
                 raise ValueError("Requisição inválida.")
             body = json.loads(self.rfile.read(length).decode("utf-8"))
+            logger.info(
+                "ROTA RECEBIDA: %s | VERSAO DO CONECTOR: %s | IDFILIAL RECEBIDO: %s | DATA INICIAL RECEBIDA: %s | DATA FINAL RECEBIDA: %s",
+                route, CONNECTOR_VERSION, body.get("id_filial"), body.get("inicio"), body.get("fim_exclusivo") or body.get("fim"),
+            )
             if route == "/api/integracoes/raffinato/testar":
                 store_id = validate_store_id(body.get("loja_id"))
                 saved = load_store_configs().get(store_id, {})
@@ -608,16 +638,18 @@ class Handler(BaseHTTPRequestHandler):
             if not raw_end_exclusive:
                 end += timedelta(seconds=1)
             store_id = validate_store_id(body.get("loja_id"))
-            result = query_sangrias(get_store_config(store_id), start, end)
+            config = get_store_config(store_id)
+            filial = resolve_raffinato_filial(config, body)
+            result = query_sangrias(config, start, end, filial)
             self.send_json(200, result)
         except (ValueError, json.JSONDecodeError) as exc:
             self.send_json(400, {"error": str(exc)})
         except pyodbc.Error as exc:
             logger.exception("Falha de conexão/consulta ao Raffinato")
-            self.send_json(503, {"error": "Não foi possível acessar o Raffinato. Verifique o Radmin VPN e o SQL Server."})
-        except Exception:
+            self.send_json(503, {"error": f"Erro SQL Raffinato: {exc}"})
+        except Exception as exc:
             logger.exception("Falha inesperada")
-            self.send_json(500, {"error": "Falha interna no conector Raffinato."})
+            self.send_json(500, {"error": f"Falha interna no conector Raffinato: {type(exc).__name__}: {exc}"})
 
 
 def show_windows_message(title: str, message: str, error: bool = False) -> None:
@@ -653,7 +685,7 @@ def run_tray(server: ThreadingHTTPServer) -> None:
     import pystray
 
     def show_status(icon, _item):
-        icon.notify(f"Ativo em 127.0.0.1:{PORT} · versão 1.6.2", "Conector Raffinato")
+        icon.notify(f"Ativo em 127.0.0.1:{PORT} · versão {CONNECTOR_VERSION}", "Conector Raffinato")
 
     def open_checkdiario(_icon, _item):
         webbrowser.open("https://checkdiario.com.br")

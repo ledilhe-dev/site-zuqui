@@ -73,7 +73,7 @@ async function consultarFaturamentoRaffinato() {
   try {
     const period = rbPeriod(), context = contextoRaffinato(), paymentId = document.getElementById('rbFormaPagamento').value || null;
     rbPeriodLabel = `${period.data_inicial} a ${period.data_final_exclusiva}`; button.disabled = true; button.textContent = 'Consultando...'; message.className='msg'; message.textContent='';
-    const payload = await raffinatoBridgePost('/api/raffinato/faturamento', { ...period, id_forma_pagamento:paymentId, loja_id:context.lojaId });
+    const payload = await raffinatoBridgePost('/api/raffinato/faturamento', { ...period, id_forma_pagamento:paymentId, loja_id:context.lojaId, id_filial:1 });
     rbRender(payload); status.classList.add('is-ready'); status.querySelector('strong').textContent='Dados carregados'; message.className='msg ok'; message.textContent='Consulta concluída.';
   } catch (error) {
     message.className='msg err'; message.textContent = error?.message || 'Não foi possível consultar o faturamento.';

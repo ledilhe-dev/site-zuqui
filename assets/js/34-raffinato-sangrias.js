@@ -534,7 +534,7 @@ async function consultarSangriasRaffinato() {
       // Fonte de verdade: consulta o DocumentoFiscal diretamente no Raffinato.
       payload = await raffinatoBridgePost('/api/sangrias', {
         inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
-        loja_id:contexto.lojaId,
+        loja_id:contexto.lojaId, id_filial:1,
       });
     } catch (localError) {
       // Permite consultar em celular ou computador no qual o conector não esteja aberto.
