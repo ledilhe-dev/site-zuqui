@@ -773,6 +773,7 @@ function obterIdsLojasFinanceiroDaSessao() {
 
 function limparFormularioContaFinanceira() {
   contaFinanceiraEmEdicaoId = null;
+  fornecedorCartaoContaFinanceiraEmEdicaoId = null;
   const campoNome = document.getElementById('contaFinanceiraNome');
   if (campoNome) campoNome.value = '';
   configurarCampoSaldoContaFinanceira(true);
@@ -780,6 +781,71 @@ function limparFormularioContaFinanceira() {
   const btnCancelar = document.getElementById('btnCancelarContaFinanceira');
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
   if (btnCancelar) btnCancelar.style.display = 'none';
+  const config = document.getElementById('contaFinanceiraCartaoConfig');
+  const check = document.getElementById('contaFinanceiraIsCartao');
+  if (config) config.hidden = true;
+  if (check) check.checked = false;
+  ['contaFinanceiraDiaFechamento','contaFinanceiraDiaVencimento'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function alternarCamposCartaoContaFinanceira() {
+  const marcado = !!document.getElementById('contaFinanceiraIsCartao')?.checked;
+  const campos = document.getElementById('contaFinanceiraCartaoCampos');
+  if (campos) campos.hidden = !marcado;
+}
+
+async function carregarConfiguracoesCartaoContaFinanceira() {
+  const lista = document.getElementById('listaConfiguracoesCartaoContaFinanceira');
+  if (!lista) return;
+  const lojas = obterIdsLojasFinanceiroDaSessao();
+  const { data, error } = await executarSemFiltroLojaTemporario(() => {
+    let query = sb.from('fornecedores').select('id,nome,is_cartao,dia_fechamento,dia_vencimento,loja_id,empresa_id').order('nome');
+    if (lojas.length) query = query.in('loja_id', lojas);
+    return query;
+  });
+  if (error) { lista.innerHTML='<div class="empty">Não foi possível carregar cartões e reembolsos.</div>'; return; }
+  configuracoesCartaoContaFinanceiraCache = data || [];
+  const visiveis = configuracoesCartaoContaFinanceiraCache.filter(item => item.is_cartao || /reembolso/i.test(String(item.nome || '')));
+  if (!visiveis.length) { lista.innerHTML='<div class="empty">Nenhum cartão ou reembolso cadastrado nesta loja.</div>'; return; }
+  lista.innerHTML='<div class="lista">'+visiveis.map(item=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(item.nome||'-')}</div><div class="item-detalhe">${item.is_cartao?'Cartão':'Reembolso'}${item.dia_fechamento?` · Fecha dia ${item.dia_fechamento}`:''}${item.dia_vencimento?` · Vence dia ${item.dia_vencimento}`:''}</div></div><div class="item-actions"><button class="btn btn-ghost btn-sm" onclick="abrirEdicaoFornecedorPelaConta('${item.id}')">Editar configuração</button></div></div>`).join('')+'</div>';
+}
+
+function abrirEdicaoFornecedorPelaConta(id) {
+  abrirPagina('financeiro_fornecedores');
+  if (!(fornecedoresFinanceiroCache || []).some(item => String(item.id) === String(id))) {
+    carregarFornecedoresFinanceiro().then(() => editarFornecedorFinanceiro(id));
+  } else editarFornecedorFinanceiro(id);
+}
+
+function carregarVinculoCartaoContaFinanceira(conta) {
+  const config=document.getElementById('contaFinanceiraCartaoConfig'),vinculo=document.getElementById('contaFinanceiraCartaoVinculo');
+  const chave=textoFinanceiroNormalizado(conta?.nome||'');
+  const fornecedor=(fornecedoresFinanceiroCache||[]).find(item=>textoFinanceiroNormalizado(item.nome||'')===chave)
+    || configuracoesCartaoContaFinanceiraCache.find(item=>textoFinanceiroNormalizado(item.nome||'')===chave);
+  if (config) config.hidden=false;
+  fornecedorCartaoContaFinanceiraEmEdicaoId=fornecedor?.id||null;
+  const check=document.getElementById('contaFinanceiraIsCartao'); if(check) check.checked=!!fornecedor?.is_cartao;
+  const fechamento=document.getElementById('contaFinanceiraDiaFechamento'); if(fechamento) fechamento.value=fornecedor?.dia_fechamento??'';
+  const vencimento=document.getElementById('contaFinanceiraDiaVencimento'); if(vencimento) vencimento.value=fornecedor?.dia_vencimento??'';
+  if (vinculo) vinculo.textContent=fornecedor?`Vinculado ao fornecedor existente “${fornecedor.nome}”.`:'Não há fornecedor de mesmo nome. Cadastre ou vincule primeiro em Cadastro de fornecedor; nenhum registro será criado automaticamente.';
+  if (check) check.disabled=!fornecedor;
+  alternarCamposCartaoContaFinanceira();
+}
+
+function validarDiaCartaoContaFinanceira(id, rotulo) {
+  const texto=String(document.getElementById(id)?.value||'').trim();
+  if(!texto) return null;
+  const dia=Number.parseInt(texto,10);
+  if(!Number.isFinite(dia)||dia<1||dia>31) throw new Error(`${rotulo} deve ser entre 1 e 31.`);
+  return dia;
+}
+
+async function salvarVinculoCartaoContaFinanceira() {
+  if (!fornecedorCartaoContaFinanceiraEmEdicaoId) return;
+  const isCartao=!!document.getElementById('contaFinanceiraIsCartao')?.checked;
+  const payload={is_cartao:isCartao,dia_fechamento:isCartao?validarDiaCartaoContaFinanceira('contaFinanceiraDiaFechamento','Dia de fechamento'):null,dia_vencimento:isCartao?validarDiaCartaoContaFinanceira('contaFinanceiraDiaVencimento','Dia de vencimento'):null};
+  const { error }=await sb.from('fornecedores').update(payload).eq('id',fornecedorCartaoContaFinanceiraEmEdicaoId);
+  if(error) throw error;
 }
 
 async function carregarContasFinanceiras({ render = true, silencioso = false } = {}) {
@@ -839,6 +905,8 @@ async function carregarContasFinanceiras({ render = true, silencioso = false } =
     }
   }
 
+  if (render) await carregarConfiguracoesCartaoContaFinanceira();
+
   return contasFinanceirasCache;
 }
 
@@ -880,6 +948,10 @@ async function salvarContaFinanceira() {
     query = sb.from('contas_financeiras').insert([{ ...payload, ativo: true, loja_id: tenant.loja_id, empresa_id: tenant.empresa_id }]);
   }
 
+  if (contaFinanceiraEmEdicaoId && fornecedorCartaoContaFinanceiraEmEdicaoId) {
+    try { validarDiaCartaoContaFinanceira('contaFinanceiraDiaFechamento','Dia de fechamento'); validarDiaCartaoContaFinanceira('contaFinanceiraDiaVencimento','Dia de vencimento'); }
+    catch (validationError) { setMsg('msgContaFinanceira',validationError.message,'err'); return; }
+  }
   const { error } = await query;
   if (error) {
     if (isMissingContasFinanceirasTableError(error) || isMissingColumnError(error)) {
@@ -890,6 +962,8 @@ async function salvarContaFinanceira() {
     return;
   }
 
+  try { await salvarVinculoCartaoContaFinanceira(); }
+  catch (cardError) { setMsg('msgContaFinanceira',`Conta salva, mas a configuração do cartão não foi atualizada: ${mensagemErroSupabase(cardError,'erro desconhecido')}`,'err'); return; }
   limparFormularioContaFinanceira();
   setMsg('msgContaFinanceira', editando ? 'Conta financeira atualizada.' : 'Conta financeira cadastrada.', 'ok');
   await carregarContasFinanceiras();
@@ -910,6 +984,7 @@ function editarContaFinanceira(id) {
   const btnCancelar = document.getElementById('btnCancelarContaFinanceira');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+  carregarVinculoCartaoContaFinanceira(item);
   setMsg('msgContaFinanceira', `Editando conta: ${item.nome || '-'}.`, 'ok');
 }
 

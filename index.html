@@ -1988,12 +1988,23 @@
             <button class="btn btn-green" id="btnSalvarContaFinanceira" type="button" onclick="salvarContaFinanceira()">Cadastrar</button>
             <button class="btn btn-ghost" id="btnCancelarContaFinanceira" type="button" onclick="cancelarEdicaoContaFinanceira()" style="display:none">Cancelar</button>
           </div>
+          <div class="conta-cartao-config" id="contaFinanceiraCartaoConfig" hidden>
+            <div class="conta-cartao-config-head"><div><strong>Configuração de cartão no Contas a Pagar</strong><span>Utiliza o fornecedor de mesmo nome e a regra já existente no vencimento das faturas.</span></div><label><input id="contaFinanceiraIsCartao" type="checkbox" onchange="alternarCamposCartaoContaFinanceira()"> É cartão</label></div>
+            <div class="conta-cartao-config-fields" id="contaFinanceiraCartaoCampos" hidden><label>Dia de fechamento<input id="contaFinanceiraDiaFechamento" type="number" min="1" max="31" inputmode="numeric"></label><label>Dia de vencimento<input id="contaFinanceiraDiaVencimento" type="number" min="1" max="31" inputmode="numeric"></label></div>
+            <div class="page-sub" id="contaFinanceiraCartaoVinculo"></div>
+          </div>
           <div class="msg" id="msgContaFinanceira"></div>
         </div>
 
         <div class="card">
           <div class="card-title">Contas cadastradas</div>
           <div id="listaContasFinanceiras"><div class="empty">Carregando...</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Cartões e reembolsos do Contas a Pagar</div>
+          <div class="page-sub">Cadastros existentes em fornecedores. A edição mantém a mesma regra usada no lançamento das contas.</div>
+          <div id="listaConfiguracoesCartaoContaFinanceira"><div class="empty">Carregando...</div></div>
         </div>
 
         <div class="card">
@@ -2882,7 +2893,7 @@
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260804-sequencial-dias-corridos">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-enquadramento-global">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
-<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-filtros-ordenados">
+<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260809-cartoes-contas">
 <link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260809-rateio-manual-v11">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 <link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
@@ -3191,7 +3202,7 @@
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
 <script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
 <script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
+<script src="./assets/js/03-core-state.js?v=20260809-cartoes-contas"></script>
 <script src="./assets/js/04-navigation.js?v=20260730-conciliacao-no-financeiro"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
@@ -3200,7 +3211,7 @@
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260809-categorias-modal"></script>
+<script src="./assets/js/30-finance.js?v=20260809-cartoes-contas"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260807-external-v9"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-v1"></script>
