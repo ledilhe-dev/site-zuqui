@@ -15,6 +15,7 @@ const topTitles = {
   relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
   relatorio_sangrias_raffinato: ['Relatório de Sangrias', 'Análise de sangrias do Raffinato por loja'],
   relatorio_faturamento_raffinato: ['Faturamento Raffinato', 'Análise de vendas por forma de pagamento'],
+  relatorio_produtos_raffinato: ['Produtos faturados Raffinato', 'Produtos vendidos, quantidades e faturamento'],
   relatorio_vendas_raffinato: ['Análise de Vendas Raffinato', 'Produtos × formas de pagamento'],
   financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
   financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
@@ -54,7 +55,7 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato', 'relatorio_faturamento_raffinato', 'relatorio_vendas_raffinato'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato', 'relatorio_faturamento_raffinato', 'relatorio_produtos_raffinato', 'relatorio_vendas_raffinato'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
@@ -686,6 +687,7 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_ajuste_saldo') { carregarRelatorioAjusteSaldo(); }
   if (id === 'relatorio_sangrias_raffinato' && typeof iniciarTelaRelatorioSangriasRaffinato === 'function') { iniciarTelaRelatorioSangriasRaffinato(); }
   if (id === 'relatorio_faturamento_raffinato' && typeof iniciarTelaFaturamentoRaffinato === 'function') { iniciarTelaFaturamentoRaffinato(); }
+  if (id === 'relatorio_produtos_raffinato' && typeof iniciarTelaProdutosRaffinato === 'function') { iniciarTelaProdutosRaffinato(); }
   if (id === 'relatorio_vendas_raffinato' && typeof iniciarTelaAnaliseVendasRaffinato === 'function') { iniciarTelaAnaliseVendasRaffinato(); }
   if (id === 'financeiro_fornecedores') {
     limparFormularioFornecedorFinanceiro();

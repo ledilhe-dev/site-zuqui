@@ -752,6 +752,7 @@ const PERFIL_PERMISSOES = [
   { key: 'relatorio_recebimentos', label: 'Relatório de recebimentos' },
   { key: 'relatorio_ajuste_saldo', label: 'Relatório ajuste de saldo' },
   { key: 'relatorio_sangrias_raffinato', label: 'Relatório de sangrias Raffinato' },
+  { key: 'relatorio_produtos_raffinato', label: 'Produtos faturados Raffinato' },
   { key: 'financeiro_fornecedores', label: 'Financeiro - Fornecedores' },
   { key: 'financeiro_formas_pagamento', label: 'Financeiro - Formas de pagamento' },
   { key: 'financeiro_contasapagar', label: 'Financeiro - Contas a pagar' },
@@ -838,6 +839,7 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
     { nome: 'Recebimentos', visualizar: 'relatorio_recebimentos' },
     { nome: 'Ajustes de saldo', visualizar: 'relatorio_ajuste_saldo' },
     { nome: 'Sangrias Raffinato', visualizar: 'relatorio_sangrias_raffinato' },
+    { nome: 'Produtos faturados Raffinato', visualizar: 'relatorio_produtos_raffinato' },
   ]},
   { nome: 'Administração', recursos: [
     { nome: 'Solicitações de acesso', visualizar: 'solicitacoes', editar: 'aprovar_solicitacao_acesso' },

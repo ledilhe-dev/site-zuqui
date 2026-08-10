@@ -38,7 +38,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.4"
+CONNECTOR_VERSION = "1.6.5"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -120,7 +120,7 @@ DROP TABLE IF EXISTS #FechamentosPeriodo;
 SQL_PRODUTOS = """
 SET NOCOUNT ON;
 DROP TABLE IF EXISTS #IdsVendas;
-SELECT D.Id INTO #IdsVendas FROM dbo.DocumentoFiscal D WITH (NOLOCK)
+SELECT D.Id,CONVERT(date,D.Data) AS Data INTO #IdsVendas FROM dbo.DocumentoFiscal D WITH (NOLOCK)
 WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0;
 CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
 SELECT P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
@@ -129,8 +129,11 @@ SELECT P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
  SUM(ISNULL(I.ValorTotal,0)) total_faturado
 FROM #IdsVendas X JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=X.Id
 JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
-WHERE (? IS NULL OR P.Id=?) AND (? IS NULL OR A.Id=?)
+WHERE (? IS NULL OR P.Id=? OR P.Nome LIKE ?) AND (? IS NULL OR A.Id=?)
 GROUP BY P.Id,P.Nome,A.Id,A.Nome ORDER BY total_faturado DESC;
+SELECT X.Data data,SUM(ISNULL(I.ValorTotal,0)) total_faturado,SUM(ISNULL(I.Quantidade,0)) quantidade
+FROM #IdsVendas X JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=X.Id
+GROUP BY X.Data ORDER BY data;
 DROP TABLE IF EXISTS #IdsVendas;
 """
 
@@ -165,6 +168,17 @@ SELECT I.data,I.id_documento_fiscal,I.codigo,I.produto,I.id_agrupamento,I.agrupa
  CAST(I.faturamento_produto*P.valor_pagamento/NULLIF(P.total_pagamentos,0) AS decimal(19,4)) valor_atribuido
 FROM Itens I JOIN PagamentosComTotal P ON P.id_documento_fiscal=I.id_documento_fiscal
 ORDER BY I.data,I.produto,P.forma_pagamento;
+DROP TABLE IF EXISTS #IdsVendas;
+"""
+
+SQL_PAYMENT_SOURCE_COUNTS = """
+SET NOCOUNT ON; DROP TABLE IF EXISTS #IdsVendas;
+SELECT D.Id INTO #IdsVendas FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0;
+CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
+SELECT 'FormaPagamentoCupomFiscal' origem,COUNT(*) registros,SUM(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0)) valor
+FROM #IdsVendas X JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=X.Id
+HAVING COUNT(*)>0;
 DROP TABLE IF EXISTS #IdsVendas;
 """
 
@@ -480,10 +494,21 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     start = parse_datetime(body.get("inicio"), "Início"); end = parse_datetime(body.get("fim_exclusivo"), "Fim exclusivo")
-    filial = resolve_raffinato_filial(config, body); product = int(body["id_produto"]) if body.get("id_produto") else None; group = int(body["id_agrupamento"]) if body.get("id_agrupamento") else None
+    filial = resolve_raffinato_filial(config, body); product_text=str(body.get("produto") or body.get("id_produto") or "").strip(); product=int(product_text) if product_text.isdigit() else None; product_filter=product_text or None; product_like=f"%{product_text}%" if product_text else None; group = int(body["id_agrupamento"]) if body.get("id_agrupamento") else None
+    sql_started=time.perf_counter()
     with pyodbc.connect(connection_string(config), timeout=8) as connection:
-        connection.timeout=30; cursor=connection.cursor(); cursor.execute(SQL_PRODUTOS,start.date(),end.date(),filial,product,product,group,group)
-        return {"items":rows_as_dicts(cursor)}
+        connection.timeout=30; cursor=connection.cursor(); cursor.execute(SQL_PRODUTOS,start.date(),end.date(),filial,product_filter,product,product_like,group,group)
+        items=rows_as_dicts(cursor); evolution=[]
+        while cursor.nextset():
+            if cursor.description:
+                evolution=rows_as_dicts(cursor); break
+    totals={
+        "faturamento":sum(float(item.get("total_faturado") or 0) for item in items),
+        "quantidade":sum(float(item.get("quantidade") or 0) for item in items),
+        "produtos":len(items),
+    }
+    logger.info("TEMPO SQL: PRODUTOS %.3fs | produtos=%s",time.perf_counter()-sql_started,len(items))
+    return {"items":items,"evolucao":evolution,"totalizadores":totals}
 
 
 def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -513,11 +538,11 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
             "items": items, "rateio": None, "filial": filial,
         }
     logger.info("TEMPO SQL: VENDAS_ANALISE %.3fs | registros=%s",time.perf_counter()-sql_started,len(items))
-    return {"items":items,"rateio":"proporcional_decimal","filial":filial}
+    return {"items":items,"fontes_pagamento":[{"origem":"FormaPagamentoCupomFiscal"}],"rateio":"proporcional_decimal","filial":filial}
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.4"
+    server_version = "CheckDiarioRaffinato/1.6.5"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
