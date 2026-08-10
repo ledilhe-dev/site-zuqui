@@ -98,12 +98,29 @@ function mensagemAmigavelErroRaffinato(error) {
   return message || 'Falha no conector Raffinato.';
 }
 
-function alternarSenhaRaffinato(event) {
+async function alternarSenhaRaffinato(event) {
   event?.preventDefault();
   const input = document.getElementById('raffinatoDbPassword');
   const button = document.getElementById('raffinatoPasswordToggle');
   if (!input || !button) return;
   const mostrar = input.getAttribute('type') === 'password';
+  if (mostrar && raffinatoIntegracaoAtual && input.dataset.senhaDigitada !== 'true' && input.dataset.senhaCarregada !== 'true') {
+    try {
+      button.disabled = true;
+      button.textContent = 'Carregando...';
+      const { lojaId } = contextoRaffinato();
+      const result = await raffinatoBridgePost('/api/integracoes/raffinato/senha', { loja_id:lojaId });
+      input.value = String(result.pwd || '');
+      input.dataset.senhaCarregada = 'true';
+    } catch (error) {
+      const msg = document.getElementById('msgRaffinatoIntegracao');
+      if (msg) { msg.className = 'msg err'; msg.textContent = error?.message || 'Não foi possível recuperar a senha protegida.'; }
+      button.textContent = 'Mostrar';
+      return;
+    } finally {
+      button.disabled = false;
+    }
+  }
   input.setAttribute('type', mostrar ? 'text' : 'password');
   button.textContent = mostrar ? 'Ocultar' : 'Mostrar';
   button.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
@@ -113,8 +130,15 @@ function alternarSenhaRaffinato(event) {
 
 function iniciarBotaoSenhaRaffinato() {
   const button = document.getElementById('raffinatoPasswordToggle');
-  if (!button) return;
+  const input = document.getElementById('raffinatoDbPassword');
+  if (!button || !input) return;
   button.onclick = alternarSenhaRaffinato;
+  input.setAttribute('autocomplete','off');
+  input.setAttribute('data-lpignore','true');
+  input.setAttribute('data-1p-ignore','true');
+  input.setAttribute('data-bwignore','true');
+  input.addEventListener('keydown',()=>{ input.dataset.senhaDigitada='true'; });
+  input.addEventListener('paste',()=>{ input.dataset.senhaDigitada='true'; });
 }
 
 window.alternarSenhaRaffinato = alternarSenhaRaffinato;
@@ -137,6 +161,8 @@ function preencherFormularioIntegracaoRaffinato(item) {
   document.getElementById('raffinatoDatabase').value = item?.banco_dados || '';
   document.getElementById('raffinatoDbUser').value = item?.usuario_mascarado || '';
   document.getElementById('raffinatoDbPassword').value = '';
+  delete document.getElementById('raffinatoDbPassword').dataset.senhaCarregada;
+  delete document.getElementById('raffinatoDbPassword').dataset.senhaDigitada;
   document.getElementById('raffinatoDbPassword').placeholder = item ? 'Senha protegida; preencha apenas para alterar' : 'Senha do banco';
   document.getElementById('raffinatoDbPassword').type = 'password';
   const passwordToggle=document.getElementById('raffinatoPasswordToggle');

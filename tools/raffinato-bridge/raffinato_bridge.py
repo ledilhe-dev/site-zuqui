@@ -40,7 +40,8 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.11"
+CONNECTOR_VERSION = "1.6.12"
+CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -754,6 +755,9 @@ def cache_connection() -> sqlite3.Connection:
     connection.execute("PRAGMA journal_mode=WAL")
     connection.execute("PRAGMA synchronous=NORMAL")
     connection.executescript("""
+    CREATE TABLE IF NOT EXISTS cache_schema (
+      id INTEGER PRIMARY KEY CHECK(id=1), version INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS cache_meta (
       loja_id TEXT PRIMARY KEY, ultima_sincronizacao TEXT, ultima_data TEXT,
       ultimo_documento INTEGER DEFAULT 0, status TEXT, mensagem TEXT
@@ -810,6 +814,23 @@ def cache_connection() -> sqlite3.Connection:
     CREATE INDEX IF NOT EXISTS ix_documento_dimensao_periodo ON documento_dimensao_diario(loja_id,id_filial,data);
     CREATE INDEX IF NOT EXISTS ix_vendas_status_periodo ON vendas_status_diario(loja_id,id_filial,data,aberto,faturado);
     """)
+    schema_row = connection.execute("SELECT version FROM cache_schema WHERE id=1").fetchone()
+    if not schema_row or int(schema_row["version"]) != CACHE_SCHEMA_VERSION:
+        with connection:
+            for table in (
+                "cache_dias_sincronizados", "produtos_diario", "produto_pagamento_diario",
+                "documentos_diario", "produto_pagamento_modulo_diario",
+                "documento_dimensao_diario", "vendas_status_diario",
+            ):
+                connection.execute(f"DELETE FROM {table}")
+            connection.execute(
+                "UPDATE cache_meta SET status='pendente',mensagem='Cache atualizado; aguardando reconstrução',ultima_data=NULL"
+            )
+            connection.execute(
+                "INSERT INTO cache_schema(id,version) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET version=excluded.version",
+                (CACHE_SCHEMA_VERSION,),
+            )
+        logger.info("CACHE INVALIDADO: schema atualizado para versao %s", CACHE_SCHEMA_VERSION)
     return connection
 
 
@@ -1045,6 +1066,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
         total_em_aberto=round(sum(float(x.get("valor") or 0) for x in operacoes_abertas),2)
     for x in items:x["preco_medio"]=x["valor_atribuido"]/x["quantidade_atribuida"] if x["quantidade_atribuida"] else 0;x["id_documento_fiscal"]="agregado"
     return {"items":items,"documentos_dimensao":dimensions,"operacoes_abertas":operacoes_abertas,
+      "cache_version":CACHE_SCHEMA_VERSION,
       "modulos_faturados":modulos_faturados,"totais_operacionais":{"recebido":total_recebido,
       "em_aberto":total_em_aberto,"previsto":round(total_recebido+total_em_aberto,2)},
       "duplicidades":duplicidades,"rateio":"cache_diario_modulo_decimal","totalizadores":{"documentos":documentos},
@@ -1052,7 +1074,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.11"
+    server_version = "CheckDiarioRaffinato/1.6.12"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -1130,6 +1152,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/raffinato/cache-status",
             "/api/raffinato/cache-refresh",
             "/api/integracoes/raffinato/testar",
+            "/api/integracoes/raffinato/senha",
             "/api/integracoes/raffinato/salvar",
             "/api/integracoes/raffinato/excluir",
             "/api/integracoes/raffinato/parear",
@@ -1152,6 +1175,13 @@ class Handler(BaseHTTPRequestHandler):
                 saved = load_store_configs().get(store_id, {})
                 result = test_connection(config_from_body(body, saved))
                 self.send_json(200, result)
+                return
+            if route == "/api/integracoes/raffinato/senha":
+                store_id = validate_store_id(body.get("loja_id"))
+                saved = load_store_configs().get(store_id)
+                if not saved or not saved.get("pwd"):
+                    raise ValueError("Senha SQL não encontrada no conector desta loja.")
+                self.send_json(200, {"pwd":saved["pwd"]})
                 return
             if route == "/api/integracoes/raffinato/salvar":
                 store_id = validate_store_id(body.get("loja_id"))
@@ -1194,12 +1224,20 @@ class Handler(BaseHTTPRequestHandler):
                 elif route == "/api/raffinato/cache-refresh":
                     if body.get("inicio") and body.get("fim_exclusivo"):
                         request_cache_range(store_id,parse_datetime(body["inicio"],"Inicio").date(),parse_datetime(body["fim_exclusivo"],"Fim").date())
-                    else: request_cache_refresh()
-                    result={"ok":True,"message":"Sincronizacao incremental solicitada."}
+                        result={"ok":True,"message":"Sincronizacao do periodo solicitada."}
+                    else:
+                        filial=resolve_raffinato_filial(config,body)
+                        with CACHE_SYNC_LOCK:
+                            sync_cache_day(store_id,config,date.today(),filial)
+                        result={"ok":True,"message":"Dados de hoje atualizados.","cache_version":CACHE_SCHEMA_VERSION}
                 elif route == "/api/raffinato/formas-pagamento":
                     result = query_formas_pagamento(config)
                 elif route == "/api/raffinato/faturamento":
                     result = query_faturamento(config, body)
+                    analysis = query_cached_cross(store_id, body)
+                    result["operacoes_abertas"] = analysis["operacoes_abertas"]
+                    result["valor_em_aberto"] = analysis["totais_operacionais"]["em_aberto"]
+                    result["cache_version"] = CACHE_SCHEMA_VERSION
                 elif route == "/api/raffinato/produtos":
                     result = query_cached_products(store_id, body)
                 else:

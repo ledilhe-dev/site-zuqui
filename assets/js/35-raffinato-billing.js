@@ -65,6 +65,9 @@ function rbRender(payload) {
   rbTotals = payload.totalizadores || {};
   const keys = [['rbTotalMovimento','valor_movimento'],['rbTotalAbertura','valor_abertura'],['rbTotalSuprimento','valor_suprimento'],['rbTotalSangria','valor_sangria'],['rbTotalApurado','valor_apurado'],['rbTotalConfirmado','valor_confirmado']];
   keys.forEach(([id,key]) => document.getElementById(id).textContent = rbMoney(rbNumber(rbTotals,key)));
+  const openOperations=Array.isArray(payload.operacoes_abertas)?payload.operacoes_abertas:[];
+  const openValue=payload.valor_em_aberto!=null?Number(payload.valor_em_aberto):openOperations.reduce((sum,item)=>sum+Number(item.valor||0),0);
+  document.getElementById('rbTotalOpen').textContent=rbMoney(openValue);
   if (rbTotals.valor_confirmado === null) document.getElementById('rbTotalConfirmado').textContent = 'Aguardando fechamento';
   ['rbKpis','rbAnalytics','rbTableCard'].forEach(id => document.getElementById(id).hidden = false);
   const ordered = [...rbRows].sort((a,b) => rbNumber(b,'valor_movimento') - rbNumber(a,'valor_movimento'));

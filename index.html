@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.2.18">
+  <meta name="app-version" content="3.2.19">
   <meta name="theme-color" content="#0F172A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
   <title>CheckDiário</title>
   <script src="./assets/js/00-theme-bootstrap.js?v=20260807-theme-v1"></script>
   <!--
-    Versão 3.2.18 - Módulos e operações Raffinato separados
+    Versão 3.2.19 - Cache, senha e filtros Raffinato corrigidos
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -2325,7 +2325,7 @@
             <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
-            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.11.exe" download>Baixar conector 1.6.11 corrigido</a>
+            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.12.exe" download>Baixar conector 1.6.12 corrigido</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
@@ -2414,7 +2414,7 @@
           <div class="msg" id="rbMessage"></div>
         </div>
         <div class="rb-kpis" id="rbKpis" hidden>
-          <div class="stat-card"><div class="stat-label">Movimento</div><div class="stat-value" id="rbTotalMovimento">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Abertura</div><div class="stat-value" id="rbTotalAbertura">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Suprimentos</div><div class="stat-value" id="rbTotalSuprimento">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Sangrias</div><div class="stat-value" id="rbTotalSangria">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Valor apurado</div><div class="stat-value" id="rbTotalApurado">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Valor confirmado</div><div class="stat-value" id="rbTotalConfirmado">R$ 0,00</div></div>
+          <div class="stat-card"><div class="stat-label">Movimento</div><div class="stat-value" id="rbTotalMovimento">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Abertura</div><div class="stat-value" id="rbTotalAbertura">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Suprimentos</div><div class="stat-value" id="rbTotalSuprimento">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Sangrias</div><div class="stat-value" id="rbTotalSangria">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Valor apurado</div><div class="stat-value" id="rbTotalApurado">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Valor confirmado</div><div class="stat-value" id="rbTotalConfirmado">R$ 0,00</div></div><div class="stat-card rb-open-value"><div class="stat-label">Aguardando fechamento / em aberto</div><div class="stat-value" id="rbTotalOpen">R$ 0,00</div></div>
         </div>
         <div class="rb-analytics" id="rbAnalytics" hidden>
           <div class="card rb-chart-card"><div class="card-title">Faturamento por forma</div><div class="page-sub">Valor do movimento por forma de pagamento.</div><div id="rbChartFormas" class="rb-bars"></div></div><div class="card rb-chart-card"><div class="card-title">Participação no faturamento</div><div class="page-sub">Percentual sobre o movimento total.</div><div id="rbChartParticipacao" class="rb-bars"></div></div><div class="card rb-chart-card rb-wide"><div class="card-title">Evolução do faturamento</div><div class="page-sub">Total por dia no período e forma selecionados.</div><div id="rbChartEvolucao" class="rb-bars"></div></div><div class="card rb-chart-card"><div class="card-title">Formas mais utilizadas</div><div id="rbRanking" class="rb-ranking"></div></div><div class="card rb-chart-card"><div class="card-title">Movimento, apurado e confirmado</div><div id="rbComparison" class="rb-comparison"></div></div>
@@ -2425,7 +2425,7 @@
       <section id="relatorio_produtos_raffinato" class="pagina raffinato-sales-page">
         <div class="page-title">Produtos faturados — Raffinato</div>
         <div class="card rs-intro"><div><div class="card-title">Produtos vendidos no período</div><div class="page-sub">Faturamento, quantidade, participação e evolução dos produtos da filial.</div></div><div class="rs-cache-tools"><div class="rs-status" id="rpCacheStatus">Última sincronização: verificando...</div><button class="btn btn-ghost btn-sm" type="button" onclick="atualizarCacheRaffinato()">Atualizar dados</button></div></div>
-        <div class="card rs-filters"><div class="rs-filter-grid"><label>Data inicial<input id="rpStart" type="date"></label><label>Data final<input id="rpEnd" type="date"></label><label>Produto<input id="rpProductSearch" type="search" placeholder="Código ou nome" autocomplete="off"></label><label>Agrupamento<select id="rpGroup"><option value="">Todos os grupos</option></select></label><button class="btn rs-query" id="rpQuery" type="button" onclick="consultarProdutosRaffinato()">Executar consulta</button></div><div class="rs-shortcuts"><button onclick="definirPeriodoProdutosRaffinato(1)">Hoje</button><button onclick="definirPeriodoProdutosRaffinato(7)">7 dias</button><button onclick="definirPeriodoProdutosRaffinato(15)">15 dias</button><button onclick="definirPeriodoProdutosRaffinato(30)">30 dias</button><button onclick="definirMesProdutosRaffinato()">Este mês</button></div><div class="msg" id="rpMessage"></div></div>
+        <div class="card rs-filters"><div class="rs-filter-grid"><label>Data inicial<input id="rpStart" type="date"></label><label>Data final<input id="rpEnd" type="date"></label><label>Produto<input id="rpProductSearch" type="search" placeholder="Código ou nome" autocomplete="off"></label><label>Agrupamento<select id="rpGroup"><option value="">Todos os grupos</option></select></label><button class="btn rs-query" id="rpQuery" type="button" onclick="consultarProdutosRaffinato()">Executar consulta</button></div><div class="rs-shortcuts"><button onclick="definirPeriodoProdutosRaffinato(1)">Hoje</button><button onclick="definirPeriodoProdutosRaffinato(7)">7 dias</button><button onclick="definirPeriodoProdutosRaffinato(15)">15 dias</button><button onclick="definirPeriodoProdutosRaffinato(30)">30 dias</button><button onclick="definirMesProdutosRaffinato()">Este mês</button><button onclick="limparFiltrosProdutosRaffinato()">Limpar filtros</button></div><div class="msg" id="rpMessage"></div></div>
         <div class="rs-kpis" id="rpKpis" hidden><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="rpRevenue">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Quantidade vendida</div><div class="stat-value" id="rpQuantity">0</div></div><div class="stat-card"><div class="stat-label">Produtos diferentes</div><div class="stat-value" id="rpProducts">0</div></div><div class="stat-card"><div class="stat-label">Produto líder</div><div class="stat-value rs-text-kpi" id="rpLeader">—</div></div></div>
         <div class="rs-grid" id="rpCharts" hidden><div class="card rs-chart"><div class="card-title">Top 10 produtos por faturamento</div><div id="rpRevenueChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Top 10 produtos por quantidade</div><div id="rpQuantityChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Participação dos produtos</div><div id="rpParticipationChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Evolução do faturamento</div><div id="rpEvolutionChart" class="rb-bars"></div></div></div>
         <div class="card rs-table-card" id="rpTableCard" hidden><div class="rs-table-head"><div><div class="card-title">Produtos faturados</div><div class="page-sub" id="rpTableSummary"></div></div></div><div class="rs-table-wrap"><table><thead><tr id="rpTableHead"></tr></thead><tbody id="rpTableBody"></tbody></table></div><div class="rs-mobile-list" id="rpMobileList"></div></div>
@@ -3226,10 +3226,10 @@
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260809-cartoes-contas"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
-      <script src="./assets/js/34-raffinato-sangrias.js?v=20260810-password-v16"></script>
-      <script src="./assets/js/35-raffinato-billing.js?v=20260810-clear-v5"></script>
-      <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-operacao-aberta-v3"></script>
-      <script src="./assets/js/37-raffinato-products.js?v=20260810-raffinato-modulos-v1"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260810-password-v17"></script>
+      <script src="./assets/js/35-raffinato-billing.js?v=20260810-open-v6"></script>
+      <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-cache-v4"></script>
+      <script src="./assets/js/37-raffinato-products.js?v=20260810-clear-v2"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260809-rateio-manual"></script>
@@ -3253,7 +3253,7 @@
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div class="login-brand-title">CHECK DIARIO</div>
       <div class="login-brand-sub">ROTINA · CHECKLIST · OPERAÇÃO</div>
-      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.18</div>
+      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.19</div>
     </div>
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->
@@ -3325,7 +3325,7 @@
 
     <!-- FOOTER -->
     <div class="login-footer">
-      Desenvolvido por Patrick Dilhe · Versão 3.2.18<br>
+      Desenvolvido por Patrick Dilhe · Versão 3.2.19<br>
       <a href="mailto:ledilhe@gmail.com" style="color:var(--text-dim); text-decoration:none;">ledilhe@gmail.com</a>
     </div>
 
