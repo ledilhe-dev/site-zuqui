@@ -91,3 +91,10 @@ table,thead,tbody,tr,td,th{border-color:var(--border)!important} td{color:var(--
 /* Mantém os três nomes do seletor de tema legíveis, inclusive em 390 px. */
 .theme-switcher select{width:116px!important}
 @media(max-width:768px){.theme-switcher select{width:104px!important;color:var(--text)!important;padding:6px 20px 6px 27px!important}.theme-switcher::before{left:9px!important}}
+
+/* Novo recebível: contraste nativo do seletor de forma de pagamento. */
+#recebivelFormaPagamentoId{color:#f8fafc!important;background-color:#0b111a!important;color-scheme:dark}
+#recebivelFormaPagamentoId option{color:#111827!important;background-color:#fff!important;color-scheme:light}
+#recebivelFormaPagamentoId option:checked{color:#fff!important;background-color:#334155!important}
+#recebivelFormaPagamentoId option:hover{color:#fff!important;background-color:#475569!important}
+#recebivelFormaPagamentoId option:disabled{color:#64748b!important;background-color:#f1f5f9!important}
