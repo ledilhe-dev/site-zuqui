@@ -290,6 +290,17 @@ function formatarMoedaRaffinato(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 }
 
+function limparFiltrosSangriasRaffinato() {
+  definirPeriodoSangriasRaffinato(1);
+  raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
+  raffinatoBuscaDetalhe = '';
+  const busca = document.getElementById('raffinatoDetailSearch');
+  if (busca) busca.value = '';
+  const msg = document.getElementById('msgRaffinatoSangrias');
+  if (msg) { msg.className = 'msg'; msg.textContent = 'Filtros limpos. Período redefinido para hoje.'; }
+  if (raffinatoSangrias.length) atualizarPainelAnaliticoRaffinato();
+}
+
 function normalizarMovimentoRaffinato(item) {
   const tipo = Number(item?.tipo_comprovante_nao_fiscal ?? item?.TipoComprovanteNaoFiscal ?? (String(item?.tipo_movimento || '').toUpperCase() === 'RETIRADA' ? 4 : 1));
   return {
