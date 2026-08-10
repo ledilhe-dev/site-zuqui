@@ -2,7 +2,8 @@
 
 a = Analysis(
     ['raffinato_bridge.py'],
-    pathex=[], binaries=[], datas=[], hiddenimports=[], hookspath=[],
+    pathex=[], binaries=[], datas=[],
+    hiddenimports=['pystray', 'pystray._win32', 'PIL.Image', 'PIL.ImageDraw'], hookspath=[],
     hooksconfig={}, runtime_hooks=[], excludes=[], noarchive=False, optimize=0,
 )
 pyz = PYZ(a.pure)
