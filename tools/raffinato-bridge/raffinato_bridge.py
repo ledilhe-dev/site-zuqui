@@ -40,13 +40,15 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.6"
+CONNECTOR_VERSION = "1.6.7"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
 CACHE_PATH = BASE_DIR / "raffinato-relatorios-cache.sqlite3"
 CACHE_SYNC_LOCK = threading.Lock()
 CACHE_REFRESH_EVENT = threading.Event()
+CACHE_REQUEST_LOCK = threading.Lock()
+CACHE_REQUESTS: dict[str, set[date]] = {}
 DEFAULT_ALLOWED_ORIGINS = [
     "https://checkdiario.com.br",
     "https://www.checkdiario.com.br",
@@ -145,18 +147,30 @@ DROP TABLE IF EXISTS #IdsVendas;
 SQL_VENDAS_ANALISE = """
 SET NOCOUNT ON;
 DROP TABLE IF EXISTS #IdsVendas;
-SELECT D.Id,CONVERT(date,D.Data) AS Data INTO #IdsVendas
+SELECT D.Id,CONVERT(date,D.Data) AS Data,CAST('VENDA_RAPIDA' AS varchar(20)) modulo_venda INTO #IdsVendas
 FROM dbo.DocumentoFiscal D WITH (NOLOCK)
 WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0;
 CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
+WITH Modulos AS (
+ SELECT VCF.IdDocumentoFiscal,
+  MAX(CASE WHEN VTE.IdVenda IS NOT NULL THEN 2 WHEN VM.IdVenda IS NOT NULL OR VC.IdVenda IS NOT NULL THEN 1 ELSE 0 END) tipo
+ FROM #IdsVendas X
+ JOIN dbo.VendaCupomFiscal VCF WITH(NOLOCK) ON VCF.IdDocumentoFiscal=X.Id
+ LEFT JOIN dbo.VendaTeleEntrega VTE WITH(NOLOCK) ON VTE.IdVenda=VCF.IdVenda
+ LEFT JOIN dbo.VendaMesa VM WITH(NOLOCK) ON VM.IdVenda=VCF.IdVenda
+ LEFT JOIN dbo.VendaCartaoConsumo VC WITH(NOLOCK) ON VC.IdVenda=VCF.IdVenda
+ GROUP BY VCF.IdDocumentoFiscal
+)
+UPDATE X SET modulo_venda=CASE M.tipo WHEN 2 THEN 'DELIVERY' WHEN 1 THEN 'CARTAO_MESA' ELSE 'VENDA_RAPIDA' END
+FROM #IdsVendas X JOIN Modulos M ON M.IdDocumentoFiscal=X.Id;
 WITH Itens AS (
- SELECT D.Id id_documento_fiscal,D.Data data,P.Id codigo,P.Nome produto,
+ SELECT D.Id id_documento_fiscal,D.Data data,D.modulo_venda,P.Id codigo,P.Nome produto,
   A.Id id_agrupamento,A.Nome agrupamento,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
   SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento_produto
  FROM #IdsVendas D JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=D.Id
  JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
  WHERE (? IS NULL OR P.Id=? OR P.Nome LIKE ?) AND (? IS NULL OR A.Id=?)
- GROUP BY D.Id,D.Data,P.Id,P.Nome,A.Id,A.Nome
+ GROUP BY D.Id,D.Data,D.modulo_venda,P.Id,P.Nome,A.Id,A.Nome
 ), Pagamentos AS (
  SELECT F.IdDocumentoFiscal id_documento_fiscal,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
   SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
@@ -166,7 +180,7 @@ WITH Itens AS (
 ), PagamentosComTotal AS (
  SELECT *,SUM(valor_pagamento) OVER(PARTITION BY id_documento_fiscal) total_pagamentos FROM Pagamentos
 )
-SELECT I.data,I.id_documento_fiscal,I.codigo,I.produto,I.id_agrupamento,I.agrupamento,
+SELECT I.data,I.id_documento_fiscal,I.modulo_venda,I.codigo,I.produto,I.id_agrupamento,I.agrupamento,
  CAST(I.quantidade*P.valor_pagamento/NULLIF(P.total_pagamentos,0) AS decimal(19,6)) quantidade_atribuida,
  CAST(CASE WHEN I.quantidade<>0 THEN I.faturamento_produto/I.quantidade ELSE 0 END AS decimal(19,4)) preco_medio,
  I.faturamento_produto,P.id_forma_pagamento,P.forma_pagamento,
@@ -529,7 +543,7 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
     sql_started=time.perf_counter()
     try:
         with pyodbc.connect(connection_string(config), timeout=8) as connection:
-            connection.timeout=30; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start.date(),end.date(),filial,product_filter,product,product_like,group,group,payment,payment)
+            connection.timeout=60; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start.date(),end.date(),filial,product_filter,product,product_like,group,group,payment,payment)
             items=rows_as_dicts(cursor)
     except pyodbc.Error:
         logger.exception("Relação transacional de pagamentos indisponível; retornando produtos sem rateio")
@@ -563,6 +577,11 @@ def cache_connection() -> sqlite3.Connection:
       loja_id TEXT PRIMARY KEY, ultima_sincronizacao TEXT, ultima_data TEXT,
       ultimo_documento INTEGER DEFAULT 0, status TEXT, mensagem TEXT
     );
+    CREATE TABLE IF NOT EXISTS cache_dias_sincronizados (
+      loja_id TEXT NOT NULL, id_filial INTEGER NOT NULL, data TEXT NOT NULL,
+      sincronizado_em TEXT NOT NULL,
+      PRIMARY KEY(loja_id,id_filial,data)
+    );
     CREATE TABLE IF NOT EXISTS produtos_diario (
       loja_id TEXT NOT NULL, id_filial INTEGER NOT NULL, data TEXT NOT NULL,
       id_produto TEXT NOT NULL, produto TEXT NOT NULL, id_agrupamento TEXT,
@@ -583,8 +602,24 @@ def cache_connection() -> sqlite3.Connection:
       id_documento TEXT NOT NULL,
       PRIMARY KEY(loja_id,id_filial,data,id_documento)
     );
+    CREATE TABLE IF NOT EXISTS produto_pagamento_modulo_diario (
+      loja_id TEXT NOT NULL, id_filial INTEGER NOT NULL, data TEXT NOT NULL,
+      id_produto TEXT NOT NULL, produto TEXT NOT NULL, id_agrupamento TEXT,
+      agrupamento TEXT, id_forma_pagamento TEXT NOT NULL, forma_pagamento TEXT NOT NULL,
+      modulo_venda TEXT NOT NULL, quantidade_rateada REAL NOT NULL, valor_rateado REAL NOT NULL,
+      sincronizado_em TEXT NOT NULL,
+      PRIMARY KEY(loja_id,id_filial,data,id_produto,id_forma_pagamento,modulo_venda)
+    );
+    CREATE TABLE IF NOT EXISTS documento_dimensao_diario (
+      loja_id TEXT NOT NULL, id_filial INTEGER NOT NULL, data TEXT NOT NULL,
+      id_documento TEXT NOT NULL, id_produto TEXT NOT NULL,
+      id_agrupamento TEXT NOT NULL, id_forma_pagamento TEXT NOT NULL, modulo_venda TEXT NOT NULL,
+      PRIMARY KEY(loja_id,id_filial,data,id_documento,id_produto,id_agrupamento,id_forma_pagamento,modulo_venda)
+    );
     CREATE INDEX IF NOT EXISTS ix_produtos_periodo ON produtos_diario(loja_id,id_filial,data);
     CREATE INDEX IF NOT EXISTS ix_cruzamento_periodo ON produto_pagamento_diario(loja_id,id_filial,data);
+    CREATE INDEX IF NOT EXISTS ix_cruzamento_modulo_periodo ON produto_pagamento_modulo_diario(loja_id,id_filial,data);
+    CREATE INDEX IF NOT EXISTS ix_documento_dimensao_periodo ON documento_dimensao_diario(loja_id,id_filial,data);
     """)
     return connection
 
@@ -607,37 +642,106 @@ def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int
     products = query_produtos(config, body)
     cross = query_vendas_analise(config, body)
     now_iso = datetime.now().isoformat(timespec="seconds")
-    cross_grouped: dict[tuple[str,str], dict[str,Any]] = {}
+    cross_grouped: dict[tuple[str,str,str], dict[str,Any]] = {}
     document_ids:set[str]=set()
+    document_dimensions:set[tuple[str,str,str,str,str]]=set()
     if cross.get("success", True):
         for item in cross.get("items", []):
             if item.get("id_documento_fiscal") is not None:
                 document_ids.add(str(item["id_documento_fiscal"]))
-            key=(str(item.get("codigo") or ""),str(item.get("id_forma_pagamento") or ""))
+            module=str(item.get("modulo_venda") or "VENDA_RAPIDA")
+            key=(str(item.get("codigo") or ""),str(item.get("id_forma_pagamento") or ""),module)
             if not all(key): continue
+            if item.get("id_documento_fiscal") is not None:
+                document_dimensions.add((str(item["id_documento_fiscal"]),key[0],str(item.get("id_agrupamento") or ""),key[1],module))
             row=cross_grouped.setdefault(key,{**item,"quantidade_rateada":0.0,"valor_rateado":0.0})
             row["quantidade_rateada"]+=float(item.get("quantidade_atribuida") or 0)
             row["valor_rateado"]+=float(item.get("valor_atribuido") or 0)
     with closing(cache_connection()) as cache, cache:
         cache.execute("DELETE FROM produtos_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
-        cache.execute("DELETE FROM produto_pagamento_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
         cache.execute("DELETE FROM documentos_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
+        cache.execute("DELETE FROM produto_pagamento_modulo_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
+        cache.execute("DELETE FROM documento_dimensao_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
         cache.executemany("""INSERT INTO produtos_diario VALUES(?,?,?,?,?,?,?,?,?,?)""",[
           (store_id,filial,day.isoformat(),str(x.get("codigo") or ""),str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),float(x.get("quantidade") or 0),float(x.get("total_faturado") or 0),now_iso)
           for x in products.get("items",[]) if x.get("codigo") is not None
         ])
-        cache.executemany("""INSERT INTO produto_pagamento_diario VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",[
-          (store_id,filial,day.isoformat(),str(x.get("codigo") or ""),str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),str(x.get("id_forma_pagamento") or ""),str(x.get("forma_pagamento") or ""),x["quantidade_rateada"],x["valor_rateado"],now_iso)
-          for x in cross_grouped.values()
-        ])
         cache.executemany("INSERT INTO documentos_diario VALUES(?,?,?,?)",[
           (store_id,filial,day.isoformat(),document_id) for document_id in document_ids
         ])
+        cache.executemany("INSERT INTO produto_pagamento_modulo_diario VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",[
+          (store_id,filial,day.isoformat(),str(x.get("codigo") or ""),str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),str(x.get("id_forma_pagamento") or ""),str(x.get("forma_pagamento") or ""),str(x.get("modulo_venda") or "VENDA_RAPIDA"),x["quantidade_rateada"],x["valor_rateado"],now_iso)
+          for x in cross_grouped.values()
+        ])
+        cache.executemany("INSERT INTO documento_dimensao_diario VALUES(?,?,?,?,?,?,?,?)",[
+          (store_id,filial,day.isoformat(),document_id,product_id,group_id,payment_id,module)
+          for document_id,product_id,group_id,payment_id,module in document_dimensions
+        ])
+        cache.execute("""INSERT INTO cache_dias_sincronizados VALUES(?,?,?,?)
+          ON CONFLICT(loja_id,id_filial,data) DO UPDATE SET sincronizado_em=excluded.sincronizado_em""",
+          (store_id,filial,day.isoformat(),now_iso))
     set_cache_meta(store_id,ultima_sincronizacao=now_iso,ultima_data=day.isoformat(),status="sincronizado",mensagem="Sincronizado")
+
+
+def sync_cache_period(store_id:str,config:dict[str,Any],start_day:date,end_exclusive:date,filial:int=1) -> None:
+    """Sincroniza até sete dias em uma única consulta e mantém agregados separados por dia."""
+    if end_exclusive<=start_day or (end_exclusive-start_day).days>7:
+        raise ValueError("O bloco de cache deve conter entre 1 e 7 dias.")
+    set_cache_meta(store_id,status="sincronizando",mensagem=f"Sincronizando {start_day.isoformat()} a {(end_exclusive-timedelta(days=1)).isoformat()}")
+    body={"inicio":datetime.combine(start_day,datetime.min.time()).isoformat(),"fim_exclusivo":datetime.combine(end_exclusive,datetime.min.time()).isoformat(),"id_filial":filial}
+    cross=query_vendas_analise(config,body)
+    if not cross.get("success",True):
+        raise RuntimeError(cross.get("message") or "Não foi possível sincronizar o cruzamento.")
+    by_day:dict[str,list[dict[str,Any]]]={}
+    for item in cross.get("items",[]):
+        item_day=str(item.get("data") or "")[:10]
+        if item_day:by_day.setdefault(item_day,[]).append(item)
+    now_iso=datetime.now().isoformat(timespec="seconds");cursor=start_day
+    with closing(cache_connection()) as cache,cache:
+        while cursor<end_exclusive:
+            day_iso=cursor.isoformat();rows=by_day.get(day_iso,[])
+            products:dict[str,dict[str,Any]]={};cross_rows:dict[tuple[str,str,str],dict[str,Any]]={};documents:set[str]=set();dimensions:set[tuple[str,str,str,str,str]]=set()
+            for item in rows:
+                product_id=str(item.get("codigo") or "");payment_id=str(item.get("id_forma_pagamento") or "");module=str(item.get("modulo_venda") or "VENDA_RAPIDA");group_id=str(item.get("id_agrupamento") or "");document_id=str(item.get("id_documento_fiscal") or "")
+                if not product_id or not payment_id:continue
+                product=products.setdefault(product_id,{**item,"quantidade":0.0,"faturamento":0.0});product["quantidade"]+=float(item.get("quantidade_atribuida") or 0);product["faturamento"]+=float(item.get("valor_atribuido") or 0)
+                key=(product_id,payment_id,module);grouped=cross_rows.setdefault(key,{**item,"quantidade_rateada":0.0,"valor_rateado":0.0});grouped["quantidade_rateada"]+=float(item.get("quantidade_atribuida") or 0);grouped["valor_rateado"]+=float(item.get("valor_atribuido") or 0)
+                if document_id:documents.add(document_id);dimensions.add((document_id,product_id,group_id,payment_id,module))
+            for table in ("produtos_diario","produto_pagamento_modulo_diario","documentos_diario","documento_dimensao_diario"):
+                cache.execute(f"DELETE FROM {table} WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day_iso))
+            cache.executemany("INSERT INTO produtos_diario VALUES(?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,pid,str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),x["quantidade"],x["faturamento"],now_iso) for pid,x in products.items()])
+            cache.executemany("INSERT INTO produto_pagamento_modulo_diario VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,str(x.get("codigo") or ""),str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),str(x.get("id_forma_pagamento") or ""),str(x.get("forma_pagamento") or ""),str(x.get("modulo_venda") or "VENDA_RAPIDA"),x["quantidade_rateada"],x["valor_rateado"],now_iso) for x in cross_rows.values()])
+            cache.executemany("INSERT INTO documentos_diario VALUES(?,?,?,?)",[(store_id,filial,day_iso,x) for x in documents])
+            cache.executemany("INSERT INTO documento_dimensao_diario VALUES(?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,*x) for x in dimensions])
+            cache.execute("""INSERT INTO cache_dias_sincronizados VALUES(?,?,?,?) ON CONFLICT(loja_id,id_filial,data) DO UPDATE SET sincronizado_em=excluded.sincronizado_em""",(store_id,filial,day_iso,now_iso))
+            cursor+=timedelta(days=1)
+    set_cache_meta(store_id,ultima_sincronizacao=now_iso,ultima_data=(end_exclusive-timedelta(days=1)).isoformat(),status="sincronizado",mensagem="Sincronizado")
 
 
 def request_cache_refresh() -> None:
     CACHE_REFRESH_EVENT.set()
+
+
+def request_cache_range(store_id:str,start:date,end_exclusive:date) -> None:
+    first=max(start,end_exclusive-timedelta(days=MAX_INTERVAL_DAYS))
+    with CACHE_REQUEST_LOCK:
+        requested=CACHE_REQUESTS.setdefault(store_id,set())
+        cursor=first
+        while cursor<end_exclusive:
+            requested.add(cursor);cursor+=timedelta(days=1)
+    CACHE_REFRESH_EVENT.set()
+
+
+def cache_coverage(store_id:str,filial:int,start:str,end:str) -> dict[str,Any]:
+    start_date=date.fromisoformat(start);end_date=date.fromisoformat(end);expected=max(0,(end_date-start_date).days)
+    with closing(cache_connection()) as cache, cache:
+        rows=cache.execute("SELECT data FROM cache_dias_sincronizados WHERE loja_id=? AND id_filial=? AND data>=? AND data<? ORDER BY data",(store_id,filial,start,end)).fetchall()
+    synced={date.fromisoformat(row[0]) for row in rows};missing=[];cursor=start_date
+    while cursor<end_date:
+        if cursor not in synced:missing.append(cursor)
+        cursor+=timedelta(days=1)
+    if missing:request_cache_range(store_id,start_date,end_date)
+    return {"completa":not missing,"dias_sincronizados":len(synced),"dias_solicitados":expected,"dias_pendentes":len(missing),"percentual":round((len(synced)/expected*100) if expected else 100,1)}
 
 
 def cache_sync_loop(stop_event: threading.Event) -> None:
@@ -648,30 +752,41 @@ def cache_sync_loop(stop_event: threading.Event) -> None:
                 if not CACHE_SYNC_LOCK.acquire(blocking=False): continue
                 try:
                     today=date.today()
-                    days=[today-timedelta(days=n) for n in range(3)]
-                    if store_id in initialized:
-                        days=[today,today-timedelta(days=1)]
-                    for day in days:
-                        if stop_event.is_set(): break
-                        sync_cache_day(store_id,config,day,resolve_raffinato_filial(config,{}))
+                    with CACHE_REQUEST_LOCK:
+                        pending=CACHE_REQUESTS.get(store_id,set())
+                        anchor=max(pending) if pending else None
+                        requested=[anchor-timedelta(days=n) for n in range(7) if anchor and anchor-timedelta(days=n) in pending]
+                        pending.difference_update(requested)
+                    days=requested or [today-timedelta(days=n) for n in range(3)]
+                    if store_id in initialized and not requested:days=[today,today-timedelta(days=1)]
+                    filial=resolve_raffinato_filial(config,{})
+                    if len(days)>1 and not stop_event.is_set():
+                        sync_cache_period(store_id,config,min(days),max(days)+timedelta(days=1),filial)
+                    else:
+                        for day in days:
+                            if stop_event.is_set(): break
+                            sync_cache_day(store_id,config,day,filial)
                     initialized.add(store_id)
-                    with closing(cache_connection()) as cache, cache:
-                        earliest=cache.execute("SELECT MIN(data) FROM produtos_diario WHERE loja_id=?",(store_id,)).fetchone()[0]
-                    backfill=(date.fromisoformat(earliest)-timedelta(days=1)) if earliest else today-timedelta(days=3)
-                    if backfill>=today-timedelta(days=366) and not stop_event.is_set(): sync_cache_day(store_id,config,backfill,resolve_raffinato_filial(config,{}))
+                    if not requested:
+                        with closing(cache_connection()) as cache, cache:
+                            earliest=cache.execute("SELECT MIN(data) FROM cache_dias_sincronizados WHERE loja_id=?",(store_id,)).fetchone()[0]
+                        backfill=(date.fromisoformat(earliest)-timedelta(days=1)) if earliest else today-timedelta(days=3)
+                        if backfill>=today-timedelta(days=MAX_INTERVAL_DAYS) and not stop_event.is_set(): sync_cache_day(store_id,config,backfill,resolve_raffinato_filial(config,{}))
                 except Exception as exc:
                     logger.exception("Falha na sincronizacao do cache da loja %s",store_id)
                     set_cache_meta(store_id,status="erro",mensagem=str(exc)[:240])
                 finally: CACHE_SYNC_LOCK.release()
         except Exception: logger.exception("Falha no ciclo de cache Raffinato")
-        CACHE_REFRESH_EVENT.clear(); CACHE_REFRESH_EVENT.wait(60)
+        with CACHE_REQUEST_LOCK: has_pending=any(CACHE_REQUESTS.values())
+        if not has_pending:
+            CACHE_REFRESH_EVENT.clear(); CACHE_REFRESH_EVENT.wait(60)
 
 
 def cache_status(store_id:str) -> dict[str,Any]:
     with closing(cache_connection()) as cache, cache:
         row=cache.execute("SELECT * FROM cache_meta WHERE loja_id=?",(store_id,)).fetchone()
         groups=[dict(x) for x in cache.execute("SELECT DISTINCT id_agrupamento id,nome FROM (SELECT id_agrupamento,agrupamento nome FROM produtos_diario WHERE loja_id=?) WHERE id_agrupamento<>'' ORDER BY nome",(store_id,))]
-        payments=[dict(x) for x in cache.execute("SELECT DISTINCT id_forma_pagamento id,forma_pagamento nome FROM produto_pagamento_diario WHERE loja_id=? ORDER BY forma_pagamento",(store_id,))]
+        payments=[dict(x) for x in cache.execute("SELECT DISTINCT id_forma_pagamento id,forma_pagamento nome FROM produto_pagamento_modulo_diario WHERE loja_id=? ORDER BY forma_pagamento",(store_id,))]
     return {"cache":dict(row) if row else {"status":"pendente"},"agrupamentos":groups,"formas_pagamento":payments}
 
 
@@ -686,27 +801,37 @@ def query_cached_products(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
         items=[dict(x) for x in cache.execute(sql,params)]
         evolution=[dict(x) for x in cache.execute("SELECT data,SUM(faturamento) total_faturado,SUM(quantidade) quantidade FROM produtos_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? GROUP BY data ORDER BY data",(store_id,filial,start,end))]
     for x in items:x["preco_medio"]=x["total_faturado"]/x["quantidade"] if x["quantidade"] else 0
-    status=cache_status(store_id)["cache"]
-    return {"items":items,"evolucao":evolution,"totalizadores":{"faturamento":sum(x["total_faturado"] for x in items),"quantidade":sum(x["quantidade"] for x in items),"produtos":len(items)},"cache":status}
+    status=cache_status(store_id)["cache"];coverage=cache_coverage(store_id,filial,start,end)
+    return {"items":items,"evolucao":evolution,"totalizadores":{"faturamento":sum(x["total_faturado"] for x in items),"quantidade":sum(x["quantidade"] for x in items),"produtos":len(items)},"cache":status,"cobertura":coverage}
 
 
 def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
     start=parse_datetime(body.get("inicio"),"Início").date().isoformat(); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo").date().isoformat(); filial=int(body.get("id_filial") or 1)
-    product=str(body.get("produto") or "").strip(); group=str(body.get("id_agrupamento") or "").strip(); payment=str(body.get("id_forma_pagamento") or "").strip()
-    sql="""SELECT data,id_produto codigo,produto,id_agrupamento,agrupamento,id_forma_pagamento,forma_pagamento,SUM(quantidade_rateada) quantidade_atribuida,SUM(valor_rateado) valor_atribuido,SUM(valor_rateado) faturamento_produto FROM produto_pagamento_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?""";params:list[Any]=[store_id,filial,start,end]
+    product=str(body.get("produto") or "").strip(); group=str(body.get("id_agrupamento") or "").strip(); payment=str(body.get("id_forma_pagamento") or "").strip(); module=str(body.get("modulo_venda") or "").strip()
+    sql="""SELECT data,id_produto codigo,produto,id_agrupamento,agrupamento,id_forma_pagamento,forma_pagamento,modulo_venda,SUM(quantidade_rateada) quantidade_atribuida,SUM(valor_rateado) valor_atribuido,SUM(valor_rateado) faturamento_produto FROM produto_pagamento_modulo_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?""";params:list[Any]=[store_id,filial,start,end]
     if product:sql+=" AND (id_produto=? OR produto LIKE ?)";params.extend([product,f"%{product}%"])
     if group:sql+=" AND id_agrupamento=?";params.append(group)
     if payment:sql+=" AND id_forma_pagamento=?";params.append(payment)
-    sql+=" GROUP BY data,id_produto,produto,id_agrupamento,agrupamento,id_forma_pagamento,forma_pagamento ORDER BY data,produto,forma_pagamento"
+    if module:sql+=" AND modulo_venda=?";params.append(module)
+    sql+=" GROUP BY data,id_produto,produto,id_agrupamento,agrupamento,id_forma_pagamento,forma_pagamento,modulo_venda ORDER BY data,produto,forma_pagamento,modulo_venda"
     with closing(cache_connection()) as cache, cache:
         items=[dict(x) for x in cache.execute(sql,params)]
-        documentos=cache.execute("SELECT COUNT(*) FROM documentos_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?",(store_id,filial,start,end)).fetchone()[0]
+        dim_sql="SELECT data,id_documento,id_produto codigo,id_agrupamento,id_forma_pagamento,modulo_venda FROM documento_dimensao_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?";dim_params:list[Any]=[store_id,filial,start,end]
+        if product.isdigit():dim_sql+=" AND id_produto=?";dim_params.append(product)
+        if payment:dim_sql+=" AND id_forma_pagamento=?";dim_params.append(payment)
+        if group:dim_sql+=" AND id_agrupamento=?";dim_params.append(group)
+        if module:dim_sql+=" AND modulo_venda=?";dim_params.append(module)
+        dimensions=[dict(x) for x in cache.execute(dim_sql,dim_params)]
+        if product and not product.isdigit():
+            valid_products={str(x["codigo"]) for x in items}
+            dimensions=[x for x in dimensions if str(x["codigo"]) in valid_products]
+        documentos=len({x["id_documento"] for x in dimensions})
     for x in items:x["preco_medio"]=x["valor_atribuido"]/x["quantidade_atribuida"] if x["quantidade_atribuida"] else 0;x["id_documento_fiscal"]="agregado"
-    return {"items":items,"rateio":"cache_diario_decimal","totalizadores":{"documentos":documentos},"cache":cache_status(store_id)["cache"]}
+    return {"items":items,"documentos_dimensao":dimensions,"rateio":"cache_diario_modulo_decimal","totalizadores":{"documentos":documentos},"cache":cache_status(store_id)["cache"],"cobertura":cache_coverage(store_id,filial,start,end)}
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.6"
+    server_version = "CheckDiarioRaffinato/1.6.7"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -845,7 +970,10 @@ class Handler(BaseHTTPRequestHandler):
                 if route == "/api/raffinato/cache-status":
                     result = cache_status(store_id)
                 elif route == "/api/raffinato/cache-refresh":
-                    request_cache_refresh(); result={"ok":True,"message":"Sincronizacao incremental solicitada."}
+                    if body.get("inicio") and body.get("fim_exclusivo"):
+                        request_cache_range(store_id,parse_datetime(body["inicio"],"Inicio").date(),parse_datetime(body["fim_exclusivo"],"Fim").date())
+                    else: request_cache_refresh()
+                    result={"ok":True,"message":"Sincronizacao incremental solicitada."}
                 elif route == "/api/raffinato/formas-pagamento":
                     result = query_formas_pagamento(config)
                 elif route == "/api/raffinato/faturamento":
