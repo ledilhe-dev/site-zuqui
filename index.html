@@ -2325,7 +2325,7 @@
             <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
-            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.5.exe" download>Baixar conector 1.6.5 corrigido</a>
+            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.6.exe" download>Baixar conector 1.6.6 otimizado</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
@@ -2424,7 +2424,7 @@
 
       <section id="relatorio_produtos_raffinato" class="pagina raffinato-sales-page">
         <div class="page-title">Produtos faturados — Raffinato</div>
-        <div class="card rs-intro"><div><div class="card-title">Produtos vendidos no período</div><div class="page-sub">Faturamento, quantidade, participação e evolução dos produtos da filial.</div></div><div class="rs-status">Consulta direta</div></div>
+        <div class="card rs-intro"><div><div class="card-title">Produtos vendidos no período</div><div class="page-sub">Faturamento, quantidade, participação e evolução dos produtos da filial.</div></div><div class="rs-cache-tools"><div class="rs-status" id="rpCacheStatus">Última sincronização: verificando...</div><button class="btn btn-ghost btn-sm" type="button" onclick="atualizarCacheRaffinato()">Atualizar dados</button></div></div>
         <div class="card rs-filters"><div class="rs-filter-grid"><label>Data inicial<input id="rpStart" type="date"></label><label>Data final<input id="rpEnd" type="date"></label><label>Produto<input id="rpProductSearch" type="search" placeholder="Código ou nome" autocomplete="off"></label><label>Agrupamento<select id="rpGroup"><option value="">Todos os grupos</option></select></label><button class="btn rs-query" id="rpQuery" type="button" onclick="consultarProdutosRaffinato()">Executar consulta</button></div><div class="rs-shortcuts"><button onclick="definirPeriodoProdutosRaffinato(1)">Hoje</button><button onclick="definirPeriodoProdutosRaffinato(7)">7 dias</button><button onclick="definirPeriodoProdutosRaffinato(15)">15 dias</button><button onclick="definirPeriodoProdutosRaffinato(30)">30 dias</button><button onclick="definirMesProdutosRaffinato()">Este mês</button></div><div class="msg" id="rpMessage"></div></div>
         <div class="rs-kpis" id="rpKpis" hidden><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="rpRevenue">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Quantidade vendida</div><div class="stat-value" id="rpQuantity">0</div></div><div class="stat-card"><div class="stat-label">Produtos diferentes</div><div class="stat-value" id="rpProducts">0</div></div><div class="stat-card"><div class="stat-label">Produto líder</div><div class="stat-value rs-text-kpi" id="rpLeader">—</div></div></div>
         <div class="rs-grid" id="rpCharts" hidden><div class="card rs-chart"><div class="card-title">Top 10 produtos por faturamento</div><div id="rpRevenueChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Top 10 produtos por quantidade</div><div id="rpQuantityChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Participação dos produtos</div><div id="rpParticipationChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Evolução do faturamento</div><div id="rpEvolutionChart" class="rb-bars"></div></div></div>
@@ -2433,7 +2433,7 @@
 
       <section id="relatorio_vendas_raffinato" class="pagina raffinato-sales-page">
         <div class="page-title">Análise de Vendas Raffinato</div>
-        <div class="card rs-intro"><div><div class="card-title">Produtos × formas de pagamento</div><div class="page-sub">Cruze produtos, faturamento e formas de pagamento.</div></div><div class="rs-status" id="rsStatus">Aguardando consulta</div></div>
+        <div class="card rs-intro"><div><div class="card-title">Produtos × formas de pagamento</div><div class="page-sub">Cruze produtos, faturamento e formas de pagamento.</div></div><div class="rs-cache-tools"><div class="rs-status" id="rsStatus">Aguardando consulta</div><button class="btn btn-ghost btn-sm" type="button" onclick="atualizarCacheRaffinato()">Atualizar dados</button></div></div>
         <div class="card rs-filters"><div class="rs-filter-grid"><label>Data inicial<input id="rsStart" type="date"></label><label>Data final<input id="rsEnd" type="date"></label><label>Produto<input id="rsProductSearch" type="search" placeholder="Código ou nome" autocomplete="off"></label><label>Agrupamento<select id="rsGroup"><option value="">Todos os grupos</option></select></label><label>Forma de pagamento<select id="rsPayment"><option value="">Todas as formas</option></select></label><button class="btn rs-query" id="rsQuery" type="button" onclick="consultarAnaliseVendasRaffinato()">Executar consulta</button></div><div class="rs-shortcuts"><button onclick="definirPeriodoAnaliseVendas(1)">Hoje</button><button onclick="definirPeriodoAnaliseVendas(7)">7 dias</button><button onclick="definirPeriodoAnaliseVendas(15)">15 dias</button><button onclick="definirPeriodoAnaliseVendas(30)">30 dias</button><button onclick="definirMesAnaliseVendas()">Este mês</button></div><div class="msg" id="rsMessage"></div></div>
         <div class="rs-active" id="rsActive" hidden><strong>Filtros da análise</strong><div id="rsChips"></div><button class="btn btn-ghost btn-sm" onclick="limparFiltrosAnaliseVendas()">Limpar todos</button></div>
         <div class="rs-kpis" id="rsKpis" hidden><div class="stat-card"><div class="stat-label">Faturamento</div><div class="stat-value" id="rsRevenue">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Quantidade vendida</div><div class="stat-value" id="rsQuantity">0</div></div><div class="stat-card"><div class="stat-label">Produtos diferentes</div><div class="stat-value" id="rsProducts">0</div></div><div class="stat-card"><div class="stat-label">Vendas / documentos</div><div class="stat-value" id="rsDocuments">0</div></div><div class="stat-card"><div class="stat-label">Produto líder</div><div class="stat-value rs-text-kpi" id="rsTopProduct">—</div></div><div class="stat-card"><div class="stat-label">Pagamento líder</div><div class="stat-value rs-text-kpi" id="rsTopPayment">—</div></div></div>
@@ -2910,7 +2910,7 @@
 <link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
 <link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260810-clear-filters-v9">
 <link rel="stylesheet" href="./assets/css/111-raffinato-billing.css?v=20260810-v1">
-<link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-colored-charts-v2">
+<link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-raffinato-cache-v1">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260810-global-contrast-v2">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
@@ -3226,8 +3226,8 @@
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260810-clear-filters-v13"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-filial-log-v2"></script>
-      <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-payment-path-v1"></script>
-      <script src="./assets/js/37-raffinato-products.js?v=20260810-colored-charts-v3"></script>
+      <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-raffinato-cache-v1"></script>
+      <script src="./assets/js/37-raffinato-products.js?v=20260810-raffinato-cache-v1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260809-rateio-manual"></script>

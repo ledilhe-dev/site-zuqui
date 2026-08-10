@@ -1,4 +1,5 @@
 /* Produtos faturados: barras coloridas e preenchidas nos dois temas. */
+.rs-cache-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 #relatorio_produtos_raffinato .rs-chart{min-height:285px;overflow:hidden}
 #relatorio_produtos_raffinato .rb-bars{gap:10px}
 #relatorio_produtos_raffinato .rb-bar-row{padding:5px 6px;border-radius:8px;transition:background .16s ease,transform .16s ease}
