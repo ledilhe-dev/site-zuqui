@@ -98,12 +98,28 @@ function mensagemAmigavelErroRaffinato(error) {
   return message || 'Falha no conector Raffinato.';
 }
 
-function alternarSenhaRaffinato() {
-  const input=document.getElementById('raffinatoDbPassword'),button=document.getElementById('raffinatoPasswordToggle');
-  if(!input||!button)return;
-  const show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Ocultar':'Mostrar';
-  button.setAttribute('aria-label',show?'Ocultar senha':'Mostrar senha');button.setAttribute('aria-pressed',String(show));input.focus();
+function alternarSenhaRaffinato(event) {
+  event?.preventDefault();
+  const input = document.getElementById('raffinatoDbPassword');
+  const button = document.getElementById('raffinatoPasswordToggle');
+  if (!input || !button) return;
+  const mostrar = input.getAttribute('type') === 'password';
+  input.setAttribute('type', mostrar ? 'text' : 'password');
+  button.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+  button.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  button.setAttribute('aria-pressed', String(mostrar));
+  input.focus({ preventScroll:true });
 }
+
+function iniciarBotaoSenhaRaffinato() {
+  const button = document.getElementById('raffinatoPasswordToggle');
+  if (!button) return;
+  button.onclick = alternarSenhaRaffinato;
+}
+
+window.alternarSenhaRaffinato = alternarSenhaRaffinato;
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarBotaoSenhaRaffinato, { once:true });
+else iniciarBotaoSenhaRaffinato();
 
 function dadosFormularioRaffinato() {
   const { lojaId } = contextoRaffinato();
