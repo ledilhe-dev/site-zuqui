@@ -43,6 +43,7 @@
   "./assets/js/34-raffinato-sangrias.js",
   "./assets/js/35-raffinato-billing.js",
   "./assets/js/36-raffinato-sales-analysis.js",
+  "./assets/js/37-raffinato-products.js",
   "./assets/js/40-login-preferences.js",
   "./assets/js/41-finance-vault-calendar.js",
   "./assets/js/42-store-settings.js",
