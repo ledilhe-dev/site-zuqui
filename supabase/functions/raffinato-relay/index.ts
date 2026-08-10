@@ -64,6 +64,8 @@ Deno.serve(async (request) => {
           id_forma_pagamento: Number(item.id_forma_pagamento), forma_pagamento: String(item.forma_pagamento || "Sem forma").slice(0, 200),
           valor_movimento: Number(item.valor_movimento || 0), valor_abertura: Number(item.valor_abertura || 0),
           valor_suprimento: Number(item.valor_suprimento || 0), valor_sangria: Number(item.valor_sangria || 0),
+          valor_retirada: Number(item.valor_retirada || 0), caixa_aberto: Boolean(item.caixa_aberto),
+          valor_confirmado_disponivel: item.valor_confirmado_disponivel !== false,
           valor_apurado: Number(item.valor_apurado || 0), valor_confirmado: Number(item.valor_confirmado || 0),
           sincronizado_em: new Date().toISOString(),
         }));
@@ -82,16 +84,22 @@ Deno.serve(async (request) => {
         .eq("empresa_id", body.empresa_id).eq("loja_id", body.loja_id).gte("data", inicio).lt("data", fimExclusivo).order("data").limit(10000);
       if (payment) query = query.eq("id_forma_pagamento", payment);
       const { data, error } = await query; if (error) throw error;
-      const keys = ["valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_apurado","valor_confirmado"];
+      const keys = ["valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_retirada","valor_apurado","valor_confirmado"];
       const forms = new Map<string, any>(); const evolution:any[] = [];
+      let openCash=false, hasClosed=false;
       for (const row of data || []) {
         const id=String(row.id_forma_pagamento), item=forms.get(id)||{id_forma_pagamento:row.id_forma_pagamento,forma_pagamento:row.forma_pagamento};
         for (const key of keys) item[key]=Number(item[key]||0)+Number(row[key]||0);
+        item.caixa_aberto=Boolean(item.caixa_aberto)||Boolean(row.caixa_aberto);
+        item.valor_confirmado_disponivel=Boolean(item.valor_confirmado_disponivel)||Boolean(row.valor_confirmado_disponivel);
+        openCash=openCash||Boolean(row.caixa_aberto);hasClosed=hasClosed||Boolean(row.valor_confirmado_disponivel);
         forms.set(id,item); evolution.push({data:row.data,id_forma_pagamento:row.id_forma_pagamento,forma_pagamento:row.forma_pagamento,valor_movimento:Number(row.valor_movimento||0)});
       }
       const formas_pagamento=[...forms.values()]; const totalizadores:any={};
       for (const key of keys) totalizadores[key]=formas_pagamento.reduce((sum,item)=>sum+Number(item[key]||0),0);
-      return json({ formas_pagamento,totalizadores,evolucao:evolution,origem_consulta:"sincronizacao" });
+      if(openCash&&!hasClosed)totalizadores.valor_confirmado=null;
+      return json({ formas_pagamento,totalizadores,evolucao:evolution,caixa_aberto:openCash,
+        valor_confirmado_parcial:openCash&&hasClosed,origem_consulta:"sincronizacao" });
     }
 
     if (body.action === "billing_forms") {

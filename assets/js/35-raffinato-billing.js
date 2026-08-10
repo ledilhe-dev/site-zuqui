@@ -59,6 +59,7 @@ function rbRender(payload) {
   rbTotals = payload.totalizadores || {};
   const keys = [['rbTotalMovimento','valor_movimento'],['rbTotalAbertura','valor_abertura'],['rbTotalSuprimento','valor_suprimento'],['rbTotalSangria','valor_sangria'],['rbTotalApurado','valor_apurado'],['rbTotalConfirmado','valor_confirmado']];
   keys.forEach(([id,key]) => document.getElementById(id).textContent = rbMoney(rbNumber(rbTotals,key)));
+  if (rbTotals.valor_confirmado === null) document.getElementById('rbTotalConfirmado').textContent = 'Aguardando fechamento';
   ['rbKpis','rbAnalytics','rbTableCard'].forEach(id => document.getElementById(id).hidden = false);
   const ordered = [...rbRows].sort((a,b) => rbNumber(b,'valor_movimento') - rbNumber(a,'valor_movimento'));
   const totalMovement = rbNumber(rbTotals,'valor_movimento');
@@ -69,9 +70,9 @@ function rbRender(payload) {
   document.getElementById('rbChartEvolucao').innerHTML = rbBars([...days].map(([label,value])=>({label,value})));
   document.getElementById('rbRanking').innerHTML = ordered.map((item,index) => `<div class="rb-ranking-item"><span>${index+1}º ${rbEscape(item.forma_pagamento)}<small>${totalMovement ? (rbNumber(item,'valor_movimento')/totalMovement*100).toFixed(1).replace('.',',') : '0,0'}%</small></span><strong>${rbMoney(rbNumber(item,'valor_movimento'))}</strong></div>`).join('');
   document.getElementById('rbComparison').innerHTML = [['Movimento','valor_movimento'],['Apurado','valor_apurado'],['Confirmado','valor_confirmado']].map(([label,key]) => `<div class="rb-comparison-item"><span>${label}</span><strong>${rbMoney(rbNumber(rbTotals,key))}</strong></div>`).join('');
-  const cells = item => [item.forma_pagamento,'valor_movimento','valor_abertura','valor_suprimento','valor_sangria','valor_apurado','valor_confirmado'].map((value,index)=>index ? rbMoney(rbNumber(item,value)) : rbEscape(value));
+  const cells = item => [rbEscape(item.forma_pagamento),...['valor_movimento','valor_abertura','valor_suprimento','valor_sangria','valor_apurado'].map(key=>rbMoney(rbNumber(item,key))),item.valor_confirmado_disponivel===false?'—':rbMoney(rbNumber(item,'valor_confirmado'))];
   document.getElementById('rbTableBody').innerHTML = rbRows.map(item => `<tr>${cells(item).map(value=>`<td>${value}</td>`).join('')}</tr>`).join('');
-  document.getElementById('rbMobileList').innerHTML = rbRows.map(item => `<article class="rb-payment-card"><h4>${rbEscape(item.forma_pagamento)}</h4><div class="rb-payment-values">${[['Movimento','valor_movimento'],['Abertura','valor_abertura'],['Suprimento','valor_suprimento'],['Sangria','valor_sangria'],['Apurado','valor_apurado'],['Confirmado','valor_confirmado']].map(([label,key])=>`<div>${label}<strong>${rbMoney(rbNumber(item,key))}</strong></div>`).join('')}</div></article>`).join('');
+  document.getElementById('rbMobileList').innerHTML = rbRows.map(item => `<article class="rb-payment-card"><h4>${rbEscape(item.forma_pagamento)}</h4><div class="rb-payment-values">${[['Movimento','valor_movimento'],['Abertura','valor_abertura'],['Suprimento','valor_suprimento'],['Sangria','valor_sangria'],['Apurado','valor_apurado'],['Confirmado','valor_confirmado']].map(([label,key])=>`<div>${label}<strong>${key==='valor_confirmado'&&item.valor_confirmado_disponivel===false?'—':rbMoney(rbNumber(item,key))}</strong></div>`).join('')}</div></article>`).join('');
   document.getElementById('rbTableSummary').textContent = `${rbRows.length} forma(s) de pagamento · ${rbPeriodLabel}`;
 }
 
@@ -88,7 +89,7 @@ async function consultarFaturamentoRaffinato() {
       try { payload=await raffinatoRelay({action:'billing_dashboard',inicio:period.inicio,fim_exclusivo:period.fim_exclusivo,id_forma_pagamento:paymentId,empresa_id:context.empresaId,loja_id:context.lojaId,usuario_id:String(usuarioSistemaLogado?.id||'')}); }
       catch(relayError){console.error('[Raffinato faturamento] Falha de consulta',{endpoint:'raffinato-relay/billing_dashboard',method:'POST',localError:String(localError),relayError:String(relayError),elapsedMs:Math.round(performance.now()-started)});throw new Error('Não foi possível consultar o Raffinato.');}
     }
-    rbRender(payload); status.classList.add('is-ready'); status.querySelector('strong').textContent=payload.origem_consulta==='sincronizacao'?'Dados sincronizados':'Dados carregados'; message.className='msg ok'; message.textContent='Consulta concluída.';
+    rbRender(payload); status.classList.add('is-ready'); status.querySelector('strong').textContent=payload.caixa_aberto?(payload.valor_confirmado_parcial?'Dados parciais — caixa em operação':'Caixa aberto — dados parciais'):(payload.origem_consulta==='sincronizacao'?'Dados sincronizados':'Caixa fechado'); message.className='msg ok'; message.textContent=payload.caixa_aberto?'Movimento atual carregado. O valor confirmado estará disponível após o fechamento.':'Consulta concluída.';
   } catch (error) {
     status.classList.remove('is-ready');status.querySelector('strong').textContent='Consulta indisponível';message.className='msg err';message.textContent='Não foi possível consultar o Raffinato.';
   } finally { button.disabled=false; button.textContent='Executar consulta'; }

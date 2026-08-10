@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.14';
-const APP_VERSION_LABEL = '3.2.14-mobile-raffinato-cache';
+const APP_VERSION = '3.2.15';
+const APP_VERSION_LABEL = '3.2.15-raffinato-caixa-aberto';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

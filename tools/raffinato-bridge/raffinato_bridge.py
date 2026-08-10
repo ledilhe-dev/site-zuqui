@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.8"
+CONNECTOR_VERSION = "1.6.9"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -126,15 +126,54 @@ DROP TABLE IF EXISTS #FechamentosPeriodo;
 
 SQL_FATURAMENTO_DIARIO = """
 SET NOCOUNT ON;
+DROP TABLE IF EXISTS #IdsFaturamento;
+SELECT DF.Id,CONVERT(date,DF.Data) data INTO #IdsFaturamento
+FROM dbo.DocumentoFiscal DF WITH(NOLOCK)
+WHERE DF.Data>=? AND DF.Data<? AND DF.IdFilial=? AND ISNULL(DF.Cancelado,0)=0;
+CREATE UNIQUE CLUSTERED INDEX IX_IdsFaturamento ON #IdsFaturamento(Id);
+SELECT X.data,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
+ SUM(ISNULL(FPCF.Valor,0)-ISNULL(FPCF.ValorTroco,0)) valor_movimento
+FROM #IdsFaturamento X
+JOIN dbo.FormaPagamentoCupomFiscal FPCF WITH(NOLOCK) ON FPCF.IdDocumentoFiscal=X.Id
+JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=FPCF.IdFormaPagamento
+GROUP BY X.data,FP.Id,FP.Nome ORDER BY X.data,FP.Nome;
 SELECT CONVERT(date,FC.Data) data,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
- SUM(ISNULL(FCFP.ValorMovimento,0)) valor_movimento,SUM(ISNULL(FCFP.ValorAbertura,0)) valor_abertura,
- SUM(ISNULL(FCFP.ValorSuprimento,0)) valor_suprimento,SUM(ISNULL(FCFP.ValorSangria,0)) valor_sangria,
- SUM(ISNULL(FCFP.ValorApurado,0)) valor_apurado,SUM(ISNULL(FCFP.ValorConfirmado,0)) valor_confirmado
+ SUM(ISNULL(FCFP.ValorAbertura,0)) valor_abertura,SUM(ISNULL(FCFP.ValorSuprimento,0)) valor_suprimento,
+ SUM(ISNULL(FCFP.ValorSangria,0)) valor_sangria,SUM(ISNULL(FCFP.ValorApurado,0)) valor_apurado,
+ SUM(ISNULL(FCFP.ValorConfirmado,0)) valor_confirmado
 FROM dbo.FechamentoCaixa FC WITH(NOLOCK)
 JOIN dbo.FechamentoCaixaFormaPagamento FCFP WITH(NOLOCK) ON FCFP.IdFechamentoCaixa=FC.Id
 JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=FCFP.IdFormaPagamento
 WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=?
 GROUP BY CONVERT(date,FC.Data),FP.Id,FP.Nome ORDER BY data,FP.Nome;
+SELECT CONVERT(date,A.Data) data,SUM(ISNULL(A.ValorTroco,0)) valor_abertura,
+ CASE WHEN ISNULL((SELECT SUM(ISNULL(DS.ValorTotal,0)) FROM dbo.DocumentoFiscal DS WITH(NOLOCK)
+   WHERE DS.Data>=CONVERT(date,A.Data) AND DS.Data<DATEADD(day,1,CONVERT(date,A.Data)) AND DS.IdFilial=?
+   AND DS.Tipo='CN' AND DS.TipoComprovanteNaoFiscal=2 AND ISNULL(DS.Cancelado,0)=0),0)>SUM(ISNULL(A.ValorTroco,0))
+ THEN ISNULL((SELECT SUM(ISNULL(DS.ValorTotal,0)) FROM dbo.DocumentoFiscal DS WITH(NOLOCK)
+   WHERE DS.Data>=CONVERT(date,A.Data) AND DS.Data<DATEADD(day,1,CONVERT(date,A.Data)) AND DS.IdFilial=?
+   AND DS.Tipo='CN' AND DS.TipoComprovanteNaoFiscal=2 AND ISNULL(DS.Cancelado,0)=0),0)-SUM(ISNULL(A.ValorTroco,0)) ELSE 0 END valor_suprimento,
+ ISNULL((SELECT SUM(CASE WHEN DF.TipoComprovanteNaoFiscal=1 THEN ISNULL(DF.ValorTotal,0) ELSE 0 END)
+   FROM dbo.DocumentoFiscal DF WITH(NOLOCK) WHERE DF.Data>=CONVERT(date,A.Data) AND DF.Data<DATEADD(day,1,CONVERT(date,A.Data))
+   AND DF.IdFilial=? AND DF.Tipo='CN' AND DF.TipoComprovanteNaoFiscal IN(1,4) AND ISNULL(DF.Cancelado,0)=0
+   AND DF.IdUsuarioAutorizadorSangria IS NOT NULL),0) valor_sangria,
+ ISNULL((SELECT SUM(CASE WHEN DF.TipoComprovanteNaoFiscal=4 THEN ISNULL(DF.ValorTotal,0) ELSE 0 END)
+   FROM dbo.DocumentoFiscal DF WITH(NOLOCK) WHERE DF.Data>=CONVERT(date,A.Data) AND DF.Data<DATEADD(day,1,CONVERT(date,A.Data))
+   AND DF.IdFilial=? AND DF.Tipo='CN' AND DF.TipoComprovanteNaoFiscal IN(1,4) AND ISNULL(DF.Cancelado,0)=0
+   AND DF.IdUsuarioAutorizadorSangria IS NOT NULL),0) valor_retirada,
+ ISNULL((SELECT SUM(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0)) FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK)
+   JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=F.IdDocumentoFiscal
+   WHERE F.IdAberturaCaixa IN(SELECT AO.Id FROM dbo.AberturaCaixa AO WITH(NOLOCK) WHERE AO.Data=CONVERT(date,A.Data) AND AO.IdFilial=? AND AO.IdFechamentoCaixa IS NULL)
+   AND ISNULL(D.Cancelado,0)=0),0) movimento_aberto
+FROM dbo.AberturaCaixa A WITH(NOLOCK)
+WHERE A.Data>=? AND A.Data<? AND A.IdFilial=? AND A.IdFechamentoCaixa IS NULL
+GROUP BY CONVERT(date,A.Data);
+SELECT CONVERT(date,DF.Data) data,SUM(ISNULL(DF.ValorTotal,0)) valor_retirada
+FROM dbo.DocumentoFiscal DF WITH(NOLOCK)
+WHERE DF.Data>=? AND DF.Data<? AND DF.IdFilial=? AND DF.Tipo='CN' AND DF.TipoComprovanteNaoFiscal=4
+ AND ISNULL(DF.Cancelado,0)=0 AND DF.IdUsuarioAutorizadorSangria IS NOT NULL
+GROUP BY CONVERT(date,DF.Data);
+DROP TABLE IF EXISTS #IdsFaturamento;
 """
 
 SQL_PRODUTOS = """
@@ -313,8 +352,7 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         "inicio": start.strftime("%Y-%m-%d"), "fim": end.strftime("%Y-%m-%d"),
         "items": result["items"],
     }, timeout=45)
-    with pyodbc.connect(connection_string(config), timeout=8) as connection:
-        connection.timeout=45;cursor=connection.cursor();cursor.execute(SQL_FATURAMENTO_DIARIO,start.date(),end.date()+timedelta(days=1),resolve_raffinato_filial(config,{}));billing=rows_as_dicts(cursor)
+    billing=query_faturamento_diario(config,start.date(),end.date()+timedelta(days=1),resolve_raffinato_filial(config,{}))
     relay_post({
         "action":"billing_sync","token":config["relay_token"],
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":billing,
@@ -517,24 +555,93 @@ def query_formas_pagamento(config: dict[str, Any]) -> dict[str, Any]:
         return {"formas": rows_as_dicts(cursor)}
 
 
+def query_faturamento_diario(config: dict[str, Any], start_date: date, end_date: date, filial: int) -> list[dict[str, Any]]:
+    """Movimento transacional para todos os dias; fechamento apenas para valores finais."""
+    params = (start_date, end_date, filial, start_date, end_date, filial,
+              filial, filial, filial, filial, filial, start_date, end_date, filial,
+              start_date, end_date, filial)
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout = 45
+        cursor = connection.cursor(); cursor.execute(SQL_FATURAMENTO_DIARIO, *params)
+        result_sets: list[list[dict[str, Any]]] = []
+        while True:
+            if cursor.description:
+                result_sets.append(rows_as_dicts(cursor))
+            if not cursor.nextset():
+                break
+    movements = result_sets[0] if result_sets else []
+    closings = result_sets[1] if len(result_sets) > 1 else []
+    open_days = result_sets[2] if len(result_sets) > 2 else []
+    withdrawals = result_sets[3] if len(result_sets) > 3 else []
+    rows: dict[tuple[str, int], dict[str, Any]] = {}
+    for item in movements:
+        key = (str(item["data"]), int(item["id_forma_pagamento"]))
+        rows[key] = {**item, "valor_abertura":0, "valor_suprimento":0, "valor_sangria":0,
+                     "valor_retirada":0, "valor_apurado":0, "valor_confirmado":0,
+                     "caixa_aberto":False, "valor_confirmado_disponivel":False}
+    for item in closings:
+        key = (str(item["data"]), int(item["id_forma_pagamento"]))
+        row = rows.setdefault(key, {"data":item["data"], "id_forma_pagamento":item["id_forma_pagamento"],
+          "forma_pagamento":item["forma_pagamento"], "valor_movimento":0, "valor_retirada":0, "caixa_aberto":False})
+        for field in ("valor_abertura","valor_suprimento","valor_sangria","valor_apurado","valor_confirmado"):
+            row[field] = float(row.get(field) or 0) + float(item.get(field) or 0)
+        row["valor_confirmado_disponivel"] = True
+    for opened in open_days:
+        day = str(opened["data"])
+        candidates = [row for (row_day, _), row in rows.items() if row_day == day]
+        cash = next((row for row in candidates if "DINHEIRO" in str(row.get("forma_pagamento") or "").upper()), None)
+        if cash is None:
+            cash = {"data":day, "id_forma_pagamento":1, "forma_pagamento":"Dinheiro", "valor_movimento":0,
+                    "valor_abertura":0, "valor_suprimento":0, "valor_sangria":0, "valor_retirada":0,
+                    "valor_apurado":0, "valor_confirmado":0, "valor_confirmado_disponivel":False}
+            rows[(day, 1)] = cash
+        abertura=float(opened.get("valor_abertura") or 0); suprimento=float(opened.get("valor_suprimento") or 0); sangria=float(opened.get("valor_sangria") or 0)
+        retirada=float(opened.get("valor_retirada") or 0); movimento_aberto=float(opened.get("movimento_aberto") or 0)
+        cash["valor_abertura"] = float(cash.get("valor_abertura") or 0) + abertura
+        cash["valor_suprimento"] = float(cash.get("valor_suprimento") or 0) + suprimento
+        cash["valor_sangria"] = float(cash.get("valor_sangria") or 0) + sangria
+        cash["valor_retirada"] = float(cash.get("valor_retirada") or 0) + retirada
+        cash["valor_apurado"] = float(cash.get("valor_apurado") or 0) + movimento_aberto + abertura + suprimento - sangria - retirada
+        cash["caixa_aberto"] = True
+    open_dates={str(item["data"]) for item in open_days}
+    for withdrawal in withdrawals:
+        day=str(withdrawal["data"])
+        if day in open_dates:
+            continue
+        candidates=[row for (row_day,_),row in rows.items() if row_day==day]
+        cash=next((row for row in candidates if "DINHEIRO" in str(row.get("forma_pagamento") or "").upper()),None)
+        if cash is not None:
+            cash["valor_retirada"]=float(cash.get("valor_retirada") or 0)+float(withdrawal.get("valor_retirada") or 0)
+    return sorted(rows.values(), key=lambda item:(str(item["data"]), str(item["forma_pagamento"])))
+
+
 def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     start = parse_datetime(body.get("inicio"), "Início")
     end = parse_datetime(body.get("fim_exclusivo"), "Fim exclusivo")
     filial = resolve_raffinato_filial(config, body)
     payment = int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
     sql_started = time.perf_counter()
-    with pyodbc.connect(connection_string(config), timeout=8) as connection:
-        connection.timeout = 30
-        logger.info("SQL EXECUTADA: SQL_FATURAMENTO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
-        cursor = connection.cursor(); cursor.execute(SQL_FATURAMENTO, start.date(), end.date(), filial, payment, payment)
-        rows = rows_as_dicts(cursor)
-        logger.info("SQL EXECUTADA: SQL_FATURAMENTO_EVOLUCAO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
-        cursor.execute(SQL_FATURAMENTO_EVOLUCAO, start.date(), end.date(), filial, payment, payment)
-        evolution = rows_as_dicts(cursor)
+    logger.info("SQL EXECUTADA: FATURAMENTO_HIBRIDO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
+    daily = query_faturamento_diario(config, start.date(), end.date(), filial)
+    if payment is not None:
+        daily = [item for item in daily if int(item["id_forma_pagamento"]) == payment]
+    grouped: dict[int, dict[str, Any]] = {}
+    for item in daily:
+        target=grouped.setdefault(int(item["id_forma_pagamento"]), {"id_forma_pagamento":item["id_forma_pagamento"],"forma_pagamento":item["forma_pagamento"]})
+        for key in ("valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_retirada","valor_apurado","valor_confirmado"):
+            target[key]=float(target.get(key) or 0)+float(item.get(key) or 0)
+        target["caixa_aberto"]=bool(target.get("caixa_aberto")) or bool(item.get("caixa_aberto"))
+        target["valor_confirmado_disponivel"]=bool(target.get("valor_confirmado_disponivel")) or bool(item.get("valor_confirmado_disponivel"))
+    rows=list(grouped.values())
+    evolution=[{"data":item["data"],"id_forma_pagamento":item["id_forma_pagamento"],"forma_pagamento":item["forma_pagamento"],"valor_movimento":item["valor_movimento"]} for item in daily]
     keys = ("valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_apurado","valor_confirmado")
     totals = {key: sum(float(row.get(key) or 0) for row in rows) for key in keys}
     logger.info("TEMPO SQL: FATURAMENTO %.3fs | formas=%s | evolucao=%s", time.perf_counter() - sql_started, len(rows), len(evolution))
-    return {"formas_pagamento": rows, "totalizadores": totals, "evolucao": evolution}
+    open_cash=any(bool(item.get("caixa_aberto")) for item in daily); has_closed=any(bool(item.get("valor_confirmado_disponivel")) for item in daily)
+    if open_cash and not has_closed: totals["valor_confirmado"] = None
+    totals["valor_retirada"] = sum(float(row.get("valor_retirada") or 0) for row in rows)
+    return {"formas_pagamento": rows, "totalizadores": totals, "evolucao": evolution,
+            "caixa_aberto":open_cash, "valor_confirmado_parcial":open_cash and has_closed}
 
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -850,7 +957,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.8"
+    server_version = "CheckDiarioRaffinato/1.6.9"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
