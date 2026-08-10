@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.19';
-const APP_VERSION_LABEL = '3.2.19-raffinato-cache-senha-filtros';
+const APP_VERSION = '3.2.36';
+const APP_VERSION_LABEL = '3.2.36-raffinato-canonical-reports';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
