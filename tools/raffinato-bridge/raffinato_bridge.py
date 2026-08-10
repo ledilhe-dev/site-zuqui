@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.9"
+CONNECTOR_VERSION = "1.6.10"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -251,6 +251,23 @@ SELECT 'FormaPagamentoCupomFiscal' origem,COUNT(*) registros,SUM(ISNULL(F.Valor,
 FROM #IdsVendas X JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=X.Id
 HAVING COUNT(*)>0;
 DROP TABLE IF EXISTS #IdsVendas;
+"""
+
+SQL_VENDAS_STATUS = """
+SET NOCOUNT ON;
+SELECT CONVERT(date,V.Data) data,V.Id id_venda,ISNULL(CONVERT(varchar(30),VCF.IdDocumentoFiscal),'') id_documento_fiscal,
+ CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY'
+      WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id)
+        OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA'
+      ELSE 'VENDA_RAPIDA' END modulo_venda,
+ CAST(CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id AND T.Aberto=1)
+        OR EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id AND M.Aberto=1)
+        OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id AND C.Aberto=1) THEN 1 ELSE 0 END AS bit) aberto,
+ CAST(CASE WHEN VCF.IdDocumentoFiscal IS NOT NULL THEN 1 ELSE 0 END AS bit) faturado,
+ CAST(ISNULL(V.ValorTotal,0) AS decimal(19,4)) valor
+FROM dbo.Venda V WITH(NOLOCK)
+LEFT JOIN dbo.VendaCupomFiscal VCF WITH(NOLOCK) ON VCF.IdVenda=V.Id
+WHERE V.Data>=? AND V.Data<? AND V.IdFilial=?;
 """
 
 
@@ -536,6 +553,16 @@ def decimal_json(value: Any) -> Any:
     return value
 
 
+def friendly_sql_error(error: Exception) -> str:
+    message = str(error)
+    lowered = message.lower()
+    if "18456" in message or "falha de logon" in lowered or "login failed" in lowered:
+        return "Usuario ou senha do banco invalidos. Confira os dados e tente novamente."
+    if "08001" in message or "server not found" in lowered or "servidor nao encontrado" in lowered:
+        return "Nao foi possivel localizar o servidor Raffinato. Verifique a instancia SQL e a conexao de rede/VPN."
+    return "Nao foi possivel consultar o banco Raffinato. Consulte o log tecnico do conector."
+
+
 def rows_as_dicts(cursor: Any) -> list[dict[str, Any]]:
     columns = [str(column[0]).lower() for column in cursor.description]
     return [{key: decimal_json(value) for key, value in zip(columns, row)} for row in cursor.fetchall()]
@@ -693,6 +720,12 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
     return {"items":items,"fontes_pagamento":[{"origem":"FormaPagamentoCupomFiscal"}],"rateio":"proporcional_decimal","filial":filial}
 
 
+def query_vendas_status(config: dict[str, Any], start: date, end_exclusive: date, filial: int) -> list[dict[str, Any]]:
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout=45;cursor=connection.cursor();cursor.execute(SQL_VENDAS_STATUS,start,end_exclusive,filial)
+        return rows_as_dicts(cursor)
+
+
 def cache_connection() -> sqlite3.Connection:
     connection = sqlite3.connect(CACHE_PATH, timeout=10)
     connection.row_factory = sqlite3.Row
@@ -742,10 +775,18 @@ def cache_connection() -> sqlite3.Connection:
       id_agrupamento TEXT NOT NULL, id_forma_pagamento TEXT NOT NULL, modulo_venda TEXT NOT NULL,
       PRIMARY KEY(loja_id,id_filial,data,id_documento,id_produto,id_agrupamento,id_forma_pagamento,modulo_venda)
     );
+    CREATE TABLE IF NOT EXISTS vendas_status_diario (
+      loja_id TEXT NOT NULL, id_filial INTEGER NOT NULL, data TEXT NOT NULL,
+      id_venda TEXT NOT NULL, id_documento_fiscal TEXT NOT NULL,
+      modulo_venda TEXT NOT NULL, aberto INTEGER NOT NULL, faturado INTEGER NOT NULL,
+      valor REAL NOT NULL, sincronizado_em TEXT NOT NULL,
+      PRIMARY KEY(loja_id,id_filial,data,id_venda,id_documento_fiscal)
+    );
     CREATE INDEX IF NOT EXISTS ix_produtos_periodo ON produtos_diario(loja_id,id_filial,data);
     CREATE INDEX IF NOT EXISTS ix_cruzamento_periodo ON produto_pagamento_diario(loja_id,id_filial,data);
     CREATE INDEX IF NOT EXISTS ix_cruzamento_modulo_periodo ON produto_pagamento_modulo_diario(loja_id,id_filial,data);
     CREATE INDEX IF NOT EXISTS ix_documento_dimensao_periodo ON documento_dimensao_diario(loja_id,id_filial,data);
+    CREATE INDEX IF NOT EXISTS ix_vendas_status_periodo ON vendas_status_diario(loja_id,id_filial,data,aberto,faturado);
     """)
     return connection
 
@@ -767,6 +808,7 @@ def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int
     body = {"inicio":start.isoformat(),"fim_exclusivo":end.isoformat(),"id_filial":filial}
     products = query_produtos(config, body)
     cross = query_vendas_analise(config, body)
+    sale_status = query_vendas_status(config, day, day + timedelta(days=1), filial)
     now_iso = datetime.now().isoformat(timespec="seconds")
     cross_grouped: dict[tuple[str,str,str], dict[str,Any]] = {}
     document_ids:set[str]=set()
@@ -788,6 +830,7 @@ def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int
         cache.execute("DELETE FROM documentos_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
         cache.execute("DELETE FROM produto_pagamento_modulo_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
         cache.execute("DELETE FROM documento_dimensao_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
+        cache.execute("DELETE FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day.isoformat()))
         cache.executemany("""INSERT INTO produtos_diario VALUES(?,?,?,?,?,?,?,?,?,?)""",[
           (store_id,filial,day.isoformat(),str(x.get("codigo") or ""),str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),float(x.get("quantidade") or 0),float(x.get("total_faturado") or 0),now_iso)
           for x in products.get("items",[]) if x.get("codigo") is not None
@@ -803,6 +846,11 @@ def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int
           (store_id,filial,day.isoformat(),document_id,product_id,group_id,payment_id,module)
           for document_id,product_id,group_id,payment_id,module in document_dimensions
         ])
+        cache.executemany("INSERT INTO vendas_status_diario VALUES(?,?,?,?,?,?,?,?,?,?)",[
+          (store_id,filial,day.isoformat(),str(x.get("id_venda") or ""),str(x.get("id_documento_fiscal") or ""),
+           str(x.get("modulo_venda") or "VENDA_RAPIDA"),int(bool(x.get("aberto"))),int(bool(x.get("faturado"))),float(x.get("valor") or 0),now_iso)
+          for x in sale_status if x.get("id_venda") is not None
+        ])
         cache.execute("""INSERT INTO cache_dias_sincronizados VALUES(?,?,?,?)
           ON CONFLICT(loja_id,id_filial,data) DO UPDATE SET sincronizado_em=excluded.sincronizado_em""",
           (store_id,filial,day.isoformat(),now_iso))
@@ -816,12 +864,17 @@ def sync_cache_period(store_id:str,config:dict[str,Any],start_day:date,end_exclu
     set_cache_meta(store_id,status="sincronizando",mensagem=f"Sincronizando {start_day.isoformat()} a {(end_exclusive-timedelta(days=1)).isoformat()}")
     body={"inicio":datetime.combine(start_day,datetime.min.time()).isoformat(),"fim_exclusivo":datetime.combine(end_exclusive,datetime.min.time()).isoformat(),"id_filial":filial}
     cross=query_vendas_analise(config,body)
+    sale_status=query_vendas_status(config,start_day,end_exclusive,filial)
     if not cross.get("success",True):
         raise RuntimeError(cross.get("message") or "Não foi possível sincronizar o cruzamento.")
     by_day:dict[str,list[dict[str,Any]]]={}
     for item in cross.get("items",[]):
         item_day=str(item.get("data") or "")[:10]
         if item_day:by_day.setdefault(item_day,[]).append(item)
+    status_by_day:dict[str,list[dict[str,Any]]]={}
+    for item in sale_status:
+        item_day=str(item.get("data") or "")[:10]
+        if item_day:status_by_day.setdefault(item_day,[]).append(item)
     now_iso=datetime.now().isoformat(timespec="seconds");cursor=start_day
     with closing(cache_connection()) as cache,cache:
         while cursor<end_exclusive:
@@ -833,12 +886,13 @@ def sync_cache_period(store_id:str,config:dict[str,Any],start_day:date,end_exclu
                 product=products.setdefault(product_id,{**item,"quantidade":0.0,"faturamento":0.0});product["quantidade"]+=float(item.get("quantidade_atribuida") or 0);product["faturamento"]+=float(item.get("valor_atribuido") or 0)
                 key=(product_id,payment_id,module);grouped=cross_rows.setdefault(key,{**item,"quantidade_rateada":0.0,"valor_rateado":0.0});grouped["quantidade_rateada"]+=float(item.get("quantidade_atribuida") or 0);grouped["valor_rateado"]+=float(item.get("valor_atribuido") or 0)
                 if document_id:documents.add(document_id);dimensions.add((document_id,product_id,group_id,payment_id,module))
-            for table in ("produtos_diario","produto_pagamento_modulo_diario","documentos_diario","documento_dimensao_diario"):
+            for table in ("produtos_diario","produto_pagamento_modulo_diario","documentos_diario","documento_dimensao_diario","vendas_status_diario"):
                 cache.execute(f"DELETE FROM {table} WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day_iso))
             cache.executemany("INSERT INTO produtos_diario VALUES(?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,pid,str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),x["quantidade"],x["faturamento"],now_iso) for pid,x in products.items()])
             cache.executemany("INSERT INTO produto_pagamento_modulo_diario VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,str(x.get("codigo") or ""),str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),str(x.get("id_forma_pagamento") or ""),str(x.get("forma_pagamento") or ""),str(x.get("modulo_venda") or "VENDA_RAPIDA"),x["quantidade_rateada"],x["valor_rateado"],now_iso) for x in cross_rows.values()])
             cache.executemany("INSERT INTO documentos_diario VALUES(?,?,?,?)",[(store_id,filial,day_iso,x) for x in documents])
             cache.executemany("INSERT INTO documento_dimensao_diario VALUES(?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,*x) for x in dimensions])
+            cache.executemany("INSERT INTO vendas_status_diario VALUES(?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,str(x.get("id_venda") or ""),str(x.get("id_documento_fiscal") or ""),str(x.get("modulo_venda") or "VENDA_RAPIDA"),int(bool(x.get("aberto"))),int(bool(x.get("faturado"))),float(x.get("valor") or 0),now_iso) for x in status_by_day.get(day_iso,[]) if x.get("id_venda") is not None])
             cache.execute("""INSERT INTO cache_dias_sincronizados VALUES(?,?,?,?) ON CONFLICT(loja_id,id_filial,data) DO UPDATE SET sincronizado_em=excluded.sincronizado_em""",(store_id,filial,day_iso,now_iso))
             cursor+=timedelta(days=1)
     set_cache_meta(store_id,ultima_sincronizacao=now_iso,ultima_data=(end_exclusive-timedelta(days=1)).isoformat(),status="sincronizado",mensagem="Sincronizado")
@@ -952,12 +1006,20 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
             valid_products={str(x["codigo"]) for x in items}
             dimensions=[x for x in dimensions if str(x["codigo"]) in valid_products]
         documentos=len({x["id_documento"] for x in dimensions})
+        operacoes_abertas=[dict(x) for x in cache.execute("""SELECT modulo_venda,COUNT(DISTINCT id_venda) quantidade,SUM(valor) valor
+          FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND aberto=1 AND faturado=0
+          GROUP BY modulo_venda ORDER BY modulo_venda""",(store_id,filial,start,end))]
+        duplicidades=cache.execute("""SELECT COUNT(*) FROM (SELECT data,id_venda,id_documento_fiscal,COUNT(*) quantidade
+          FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?
+          GROUP BY data,id_venda,id_documento_fiscal HAVING COUNT(*)>1)""",(store_id,filial,start,end)).fetchone()[0]
     for x in items:x["preco_medio"]=x["valor_atribuido"]/x["quantidade_atribuida"] if x["quantidade_atribuida"] else 0;x["id_documento_fiscal"]="agregado"
-    return {"items":items,"documentos_dimensao":dimensions,"rateio":"cache_diario_modulo_decimal","totalizadores":{"documentos":documentos},"cache":cache_status(store_id)["cache"],"cobertura":cache_coverage(store_id,filial,start,end)}
+    return {"items":items,"documentos_dimensao":dimensions,"operacoes_abertas":operacoes_abertas,
+      "duplicidades":duplicidades,"rateio":"cache_diario_modulo_decimal","totalizadores":{"documentos":documentos},
+      "cache":cache_status(store_id)["cache"],"cobertura":cache_coverage(store_id,filial,start,end)}
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.9"
+    server_version = "CheckDiarioRaffinato/1.6.10"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -1125,7 +1187,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(400, {"error": str(exc)})
         except pyodbc.Error as exc:
             logger.exception("Falha de conexão/consulta ao Raffinato")
-            self.send_json(503, {"error": f"Erro SQL Raffinato: {exc}"})
+            self.send_json(503, {"error": friendly_sql_error(exc)})
         except Exception as exc:
             logger.exception("Falha inesperada")
             self.send_json(500, {"error": f"Falha interna no conector Raffinato: {type(exc).__name__}: {exc}"})

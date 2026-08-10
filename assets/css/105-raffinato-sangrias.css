@@ -26,6 +26,10 @@
 .raffinato-field { display:flex; flex-direction:column; gap:6px; }
 .raffinato-field label { font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
 .raffinato-field input { width:100%; min-height:38px; }
+.raffinato-password-control { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:stretch; min-width:0; }
+.raffinato-password-control input { min-width:0; }
+.raffinato-password-toggle { min-width:76px; padding:0 12px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
+.raffinato-password-toggle:hover,.raffinato-password-toggle:focus-visible { border-color:var(--raffinato-accent); color:var(--raffinato-accent); }
 .raffinato-actions { display:flex; gap:8px; align-items:center; }
 .raffinato-btn-query { background:linear-gradient(135deg,#fb923c,#ea580c) !important; border-color:#ea580c !important; color:#fff !important; }
 .raffinato-shortcuts { display:flex; gap:7px; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }

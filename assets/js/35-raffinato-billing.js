@@ -14,6 +14,12 @@ function definirPeriodoFaturamentoRaffinato(days) {
   document.getElementById('rbHoraInicio').value = '00:00'; document.getElementById('rbHoraFim').value = '23:59';
 }
 
+function limparFiltrosFaturamentoRaffinato() {
+  definirPeriodoFaturamentoRaffinato(1);
+  const payment=document.getElementById('rbFormaPagamento');if(payment)payment.value='';
+  const message=document.getElementById('rbMessage');if(message){message.className='msg';message.textContent='Filtros limpos. Período redefinido para hoje.';}
+}
+
 function rbPeriod() {
   const startDate = document.getElementById('rbDataInicio').value, endDate = document.getElementById('rbDataFim').value;
   const startTime = document.getElementById('rbHoraInicio').value || '00:00', endTime = document.getElementById('rbHoraFim').value || '23:59';

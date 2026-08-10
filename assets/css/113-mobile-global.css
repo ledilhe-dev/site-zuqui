@@ -39,3 +39,4 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
  .calendar-grid>*,.calendario-grid>*{min-width:0;overflow:hidden}
 }
 @media(max-width:380px){.rb-filter-grid{grid-template-columns:minmax(0,1fr) 96px!important}.rb-kpis,.rs-kpis,#financeiro_cofre #cardsCofreContas{grid-template-columns:1fr!important}}
+#rsOpenCard[hidden]{display:none!important}

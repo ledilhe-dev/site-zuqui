@@ -83,12 +83,26 @@ async function raffinatoBridgePost(path, body) {
       method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), signal:controller.signal,
     });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || 'Falha no conector Raffinato.');
+    if (!response.ok) throw new Error(mensagemAmigavelErroRaffinato(payload.error));
     return payload;
   } catch (error) {
     if (error?.name === 'AbortError') throw new Error('A consulta excedeu 30 segundos. Verifique o log do conector Raffinato.');
     throw error;
   } finally { clearTimeout(timer); }
+}
+
+function mensagemAmigavelErroRaffinato(error) {
+  const message=String(error?.message||error||'');
+  if (/18456|falha de logon|login failed/i.test(message)) return 'Usuário ou senha do banco inválidos. Confira os dados e tente novamente.';
+  if (/08001|servidor.*não.*encontr|server.*not.*found|timeout|tempo limite/i.test(message)) return 'Não foi possível localizar o servidor Raffinato. Verifique a instância SQL e a conexão de rede/VPN.';
+  return message || 'Falha no conector Raffinato.';
+}
+
+function alternarSenhaRaffinato() {
+  const input=document.getElementById('raffinatoDbPassword'),button=document.getElementById('raffinatoPasswordToggle');
+  if(!input||!button)return;
+  const show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Ocultar':'Mostrar';
+  button.setAttribute('aria-label',show?'Ocultar senha':'Mostrar senha');button.setAttribute('aria-pressed',String(show));input.focus();
 }
 
 function dadosFormularioRaffinato() {
@@ -108,6 +122,9 @@ function preencherFormularioIntegracaoRaffinato(item) {
   document.getElementById('raffinatoDbUser').value = item?.usuario_mascarado || '';
   document.getElementById('raffinatoDbPassword').value = '';
   document.getElementById('raffinatoDbPassword').placeholder = item ? 'Senha protegida; preencha apenas para alterar' : 'Senha do banco';
+  document.getElementById('raffinatoDbPassword').type = 'password';
+  const passwordToggle=document.getElementById('raffinatoPasswordToggle');
+  if(passwordToggle){passwordToggle.textContent='Mostrar';passwordToggle.setAttribute('aria-label','Mostrar senha');passwordToggle.setAttribute('aria-pressed','false');}
   document.getElementById('raffinatoDeleteIntegrationBtn').hidden = !item;
   const ocultarConsulta = !item || item.status !== 'ativa';
   document.getElementById('raffinatoSangriasPanel').hidden = ocultarConsulta;
