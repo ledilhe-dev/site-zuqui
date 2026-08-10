@@ -1,0 +1,37 @@
+.raffinato-billing-page { --rb-accent:#2563eb; }
+.rb-intro,.rb-table-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 20px; margin-bottom:16px; }
+.rb-status { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:10px; white-space:nowrap; }
+.rb-status span { width:8px; height:8px; border-radius:50%; background:#94a3b8; }
+.rb-status.is-ready span { background:#22c55e; }
+.rb-filters { padding:18px; margin-bottom:16px; }
+.rb-filter-grid { display:grid; grid-template-columns:minmax(145px,1fr) 105px minmax(145px,1fr) 105px minmax(185px,1.25fr) auto; gap:11px; align-items:end; }
+.rb-filter-grid label { display:flex; flex-direction:column; gap:6px; color:var(--text-muted); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+.rb-filter-grid input,.rb-filter-grid select { width:100%; min-height:38px; }
+.rb-query-btn { min-height:38px; color:#fff!important; background:var(--rb-accent)!important; border-color:var(--rb-accent)!important; }
+.rb-shortcuts { display:flex; align-items:center; gap:7px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); overflow:auto; }
+.rb-shortcuts span { color:var(--text-muted); font-size:10px; font-weight:700; white-space:nowrap; }
+.rb-shortcuts button { border:1px solid var(--border); border-radius:8px; padding:6px 9px; background:var(--surface); color:var(--text); font:inherit; font-size:10px; cursor:pointer; white-space:nowrap; }
+.rb-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin-bottom:16px; }
+.rb-kpis .stat-card { min-height:86px; border-left:3px solid var(--rb-accent); }
+.rb-analytics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:16px; }
+.rb-chart-card { min-height:260px; padding:18px; }
+.rb-wide { grid-column:1/-1; }
+.rb-bars { display:flex; flex-direction:column; gap:9px; margin-top:16px; }
+.rb-bar-row { display:grid; grid-template-columns:minmax(95px,145px) minmax(70px,1fr) minmax(80px,105px); gap:9px; align-items:center; font-size:10px; }
+.rb-bar-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); font-weight:650; }
+.rb-bar-track { height:11px; overflow:hidden; border-radius:999px; background:rgba(148,163,184,.15); }
+.rb-bar-fill { display:block; height:100%; min-width:2px; border-radius:inherit; background:var(--rb-accent); }
+.rb-bar-value { color:var(--text-muted); text-align:right; white-space:nowrap; }
+.rb-ranking,.rb-comparison { display:grid; gap:8px; margin-top:16px; }
+.rb-ranking-item,.rb-comparison-item { display:flex; justify-content:space-between; gap:12px; padding:9px 10px; border-bottom:1px solid var(--border); color:var(--text); font-size:11px; }
+.rb-ranking-item small,.rb-comparison-item small { color:var(--text-muted); }
+.rb-table-card { padding:0; overflow:hidden; }
+.rb-table-head { margin:0; border-bottom:1px solid var(--border); }
+.rb-table-wrap { overflow:auto; }
+.rb-table-wrap table { width:100%; border-collapse:collapse; font-size:11px; }
+.rb-table-wrap th,.rb-table-wrap td { padding:11px 13px; border-bottom:1px solid var(--border); color:var(--text); text-align:right; }
+.rb-table-wrap th { color:var(--text-muted); background:var(--surface-soft,#f8fafc); font-size:9px; text-transform:uppercase; }
+.rb-table-wrap th:first-child,.rb-table-wrap td:first-child { text-align:left; font-weight:700; }
+.rb-mobile-list { display:none; }
+@media (max-width:1050px) { .rb-filter-grid { grid-template-columns:1fr 105px 1fr 105px; } .rb-payment-filter { grid-column:1/4; } }
+@media (max-width:680px) { .rb-intro { align-items:flex-start; flex-direction:column; padding:16px; } .rb-filter-grid { grid-template-columns:1fr 1fr; } .rb-payment-filter { grid-column:1/-1; } .rb-query-btn { grid-column:1/-1; } .rb-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; } .rb-kpis .stat-card { min-height:74px; padding:10px 8px; } .rb-kpis .stat-value { font-size:14px; } .rb-analytics { grid-template-columns:1fr; } .rb-wide { grid-column:auto; } .rb-chart-card { min-height:0; padding:14px; } .rb-bar-row { grid-template-columns:minmax(75px,105px) 1fr minmax(68px,88px); gap:6px; } .rb-table-head { align-items:flex-start; flex-direction:column; } .rb-table-wrap { display:none; } .rb-mobile-list { display:grid; gap:9px; padding:12px; } .rb-payment-card { padding:13px; border:1px solid var(--border); border-radius:11px; background:var(--surface); } .rb-payment-card h4 { margin:0 0 10px; color:var(--text); font-size:12px; } .rb-payment-values { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } .rb-payment-values div { color:var(--text-muted); font-size:9px; } .rb-payment-values strong { display:block; margin-top:3px; color:var(--text); font-size:11px; } }

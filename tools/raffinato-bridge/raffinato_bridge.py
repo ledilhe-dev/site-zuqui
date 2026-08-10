@@ -90,6 +90,68 @@ WHERE DataHora >= ? AND DataHora < ?
 ORDER BY DataHora;
 """
 
+SQL_FORMAS_PAGAMENTO = "SELECT Id AS id, Nome AS nome FROM dbo.FormaPagamento ORDER BY Nome;"
+
+SQL_FATURAMENTO = """
+SELECT FP.Id AS id_forma_pagamento, FP.Nome AS forma_pagamento,
+ SUM(ISNULL(FCFP.ValorMovimento,0)) valor_movimento, SUM(ISNULL(FCFP.ValorAbertura,0)) valor_abertura,
+ SUM(ISNULL(FCFP.ValorSuprimento,0)) valor_suprimento, SUM(ISNULL(FCFP.ValorSangria,0)) valor_sangria,
+ SUM(ISNULL(FCFP.ValorApurado,0)) valor_apurado, SUM(ISNULL(FCFP.ValorConfirmado,0)) valor_confirmado
+FROM dbo.FechamentoCaixa FC
+JOIN dbo.FechamentoCaixaFormaPagamento FCFP ON FCFP.IdFechamentoCaixa=FC.Id
+JOIN dbo.FormaPagamento FP ON FP.Id=FCFP.IdFormaPagamento
+WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=? AND (? IS NULL OR FP.Id=?)
+GROUP BY FP.Id,FP.Nome ORDER BY FP.Nome;
+"""
+
+SQL_FATURAMENTO_EVOLUCAO = """
+SELECT CONVERT(date,FC.Data) data,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
+ SUM(ISNULL(FCFP.ValorMovimento,0)) valor_movimento
+FROM dbo.FechamentoCaixa FC JOIN dbo.FechamentoCaixaFormaPagamento FCFP ON FCFP.IdFechamentoCaixa=FC.Id
+JOIN dbo.FormaPagamento FP ON FP.Id=FCFP.IdFormaPagamento
+WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=? AND (? IS NULL OR FP.Id=?)
+GROUP BY CONVERT(date,FC.Data),FP.Id,FP.Nome ORDER BY data,FP.Nome;
+"""
+
+SQL_PRODUTOS = """
+SELECT P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
+ SUM(ISNULL(I.Quantidade,0)) quantidade,
+ CAST(CASE WHEN SUM(ISNULL(I.Quantidade,0))<>0 THEN SUM(ISNULL(I.ValorTotal,0))/SUM(ISNULL(I.Quantidade,0)) ELSE 0 END AS decimal(19,4)) preco_medio,
+ SUM(ISNULL(I.ValorTotal,0)) total_faturado
+FROM dbo.DocumentoFiscal D JOIN dbo.ItemDocumentoFiscal I ON I.IdDocumentoFiscal=D.Id
+JOIN dbo.Produto P ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A ON A.Id=P.IdAgrupamento
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND (? IS NULL OR P.Id=?) AND (? IS NULL OR A.Id=?)
+GROUP BY P.Id,P.Nome,A.Id,A.Nome ORDER BY total_faturado DESC;
+"""
+
+SQL_VENDAS_ANALISE = """
+WITH Itens AS (
+ SELECT D.Id id_documento_fiscal,CONVERT(date,D.Data) data,P.Id codigo,P.Nome produto,
+  A.Id id_agrupamento,A.Nome agrupamento,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
+  SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento_produto
+ FROM dbo.DocumentoFiscal D JOIN dbo.ItemDocumentoFiscal I ON I.IdDocumentoFiscal=D.Id
+ JOIN dbo.Produto P ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A ON A.Id=P.IdAgrupamento
+ WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+  AND (? IS NULL OR P.Id=? OR P.Nome LIKE ?) AND (? IS NULL OR A.Id=?)
+ GROUP BY D.Id,CONVERT(date,D.Data),P.Id,P.Nome,A.Id,A.Nome
+), Pagamentos AS (
+ SELECT F.IdDocumentoFiscal id_documento_fiscal,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
+  SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
+ FROM dbo.FormaPagamentoCupomFiscal F JOIN dbo.FormaPagamento FP ON FP.Id=F.IdFormaPagamento
+ WHERE (? IS NULL OR FP.Id=?) GROUP BY F.IdDocumentoFiscal,FP.Id,FP.Nome
+), PagamentosComTotal AS (
+ SELECT *,SUM(valor_pagamento) OVER(PARTITION BY id_documento_fiscal) total_pagamentos FROM Pagamentos
+)
+SELECT I.data,I.id_documento_fiscal,I.codigo,I.produto,I.id_agrupamento,I.agrupamento,
+ CAST(I.quantidade*P.valor_pagamento/NULLIF(P.total_pagamentos,0) AS decimal(19,6)) quantidade_atribuida,
+ CAST(CASE WHEN I.quantidade<>0 THEN I.faturamento_produto/I.quantidade ELSE 0 END AS decimal(19,4)) preco_medio,
+ I.faturamento_produto,P.id_forma_pagamento,P.forma_pagamento,
+ CAST(I.faturamento_produto*P.valor_pagamento/NULLIF(P.total_pagamentos,0) AS decimal(19,4)) valor_atribuido
+FROM Itens I JOIN PagamentosComTotal P ON P.id_documento_fiscal=I.id_documento_fiscal
+ORDER BY I.data,I.produto,P.forma_pagamento;
+"""
+
 
 class DataBlob(ctypes.Structure):
     _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
@@ -340,6 +402,61 @@ def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datet
     }
 
 
+def decimal_json(value: Any) -> Any:
+    return float(value) if isinstance(value, Decimal) else value
+
+
+def rows_as_dicts(cursor: Any) -> list[dict[str, Any]]:
+    columns = [str(column[0]).lower() for column in cursor.description]
+    return [{key: decimal_json(value) for key, value in zip(columns, row)} for row in cursor.fetchall()]
+
+
+def resolve_raffinato_filial(config: dict[str, Any], body: dict[str, Any]) -> int:
+    value = body.get("id_filial") or config.get("id_filial") or 1
+    filial = int(value)
+    if filial <= 0:
+        raise ValueError("Filial Raffinato inválida.")
+    return filial
+
+
+def query_formas_pagamento(config: dict[str, Any]) -> dict[str, Any]:
+    with pyodbc.connect(connection_string(config)) as connection:
+        cursor = connection.cursor(); cursor.execute(SQL_FORMAS_PAGAMENTO)
+        return {"formas": rows_as_dicts(cursor)}
+
+
+def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    start = parse_datetime(body.get("inicio"), "Início")
+    end = parse_datetime(body.get("fim_exclusivo"), "Fim exclusivo")
+    filial = resolve_raffinato_filial(config, body)
+    payment = int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
+    with pyodbc.connect(connection_string(config)) as connection:
+        cursor = connection.cursor(); cursor.execute(SQL_FATURAMENTO, start, end, filial, payment, payment)
+        rows = rows_as_dicts(cursor)
+        cursor.execute(SQL_FATURAMENTO_EVOLUCAO, start, end, filial, payment, payment)
+        evolution = rows_as_dicts(cursor)
+    keys = ("valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_apurado","valor_confirmado")
+    totals = {key: sum(float(row.get(key) or 0) for row in rows) for key in keys}
+    return {"formas_pagamento": rows, "totalizadores": totals, "evolucao": evolution}
+
+
+def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    start = parse_datetime(body.get("inicio"), "Início"); end = parse_datetime(body.get("fim_exclusivo"), "Fim exclusivo")
+    filial = resolve_raffinato_filial(config, body); product = int(body["id_produto"]) if body.get("id_produto") else None; group = int(body["id_agrupamento"]) if body.get("id_agrupamento") else None
+    with pyodbc.connect(connection_string(config)) as connection:
+        cursor=connection.cursor(); cursor.execute(SQL_PRODUTOS,start,end,filial,product,product,group,group)
+        return {"items":rows_as_dicts(cursor)}
+
+
+def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    start=parse_datetime(body.get("inicio"),"Início"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
+    filial=resolve_raffinato_filial(config,body); product_text=str(body.get("produto") or body.get("id_produto") or "").strip(); product=int(product_text) if product_text.isdigit() else None; product_filter=product_text or None; product_like=f"%{product_text}%" if product_text else None; group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; payment=int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
+    with pyodbc.connect(connection_string(config)) as connection:
+        cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start,end,filial,product_filter,product,product_like,group,group,payment,payment)
+        items=rows_as_dicts(cursor)
+    return {"items":items,"rateio":"proporcional_decimal","filial":filial}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "CheckDiarioRaffinato/1.6"
 
@@ -412,6 +529,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         allowed_paths = {
             "/api/sangrias",
+            "/api/raffinato/formas-pagamento",
+            "/api/raffinato/faturamento",
+            "/api/raffinato/produtos",
+            "/api/raffinato/vendas-analise",
             "/api/integracoes/raffinato/testar",
             "/api/integracoes/raffinato/salvar",
             "/api/integracoes/raffinato/excluir",
@@ -463,6 +584,19 @@ class Handler(BaseHTTPRequestHandler):
                 configs[store_id] = config
                 save_store_configs(configs)
                 self.send_json(200, {"ok": True})
+                return
+            if route.startswith("/api/raffinato/"):
+                store_id = validate_store_id(body.get("loja_id"))
+                config = get_store_config(store_id)
+                if route == "/api/raffinato/formas-pagamento":
+                    result = query_formas_pagamento(config)
+                elif route == "/api/raffinato/faturamento":
+                    result = query_faturamento(config, body)
+                elif route == "/api/raffinato/produtos":
+                    result = query_produtos(config, body)
+                else:
+                    result = query_vendas_analise(config, body)
+                self.send_json(200, result)
                 return
             start = parse_datetime(body.get("inicio"), "Início")
             raw_end_exclusive = body.get("fim_exclusivo")
