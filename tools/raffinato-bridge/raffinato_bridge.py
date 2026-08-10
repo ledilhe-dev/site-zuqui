@@ -38,7 +38,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.3"
+CONNECTOR_VERSION = "1.6.4"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -62,97 +62,98 @@ logger = logging.getLogger("raffinato_bridge")
 MUTEX_HANDLE = None
 
 SQL_SANGRIAS = """
-WITH MovimentosCaixa AS (
-    SELECT
-        DF.Id, DF.IdFilial, DF.IdUsuario, DF.IdUsuarioAutorizadorSangria,
-        DF.Motivo, DF.ValorTotal, DF.TipoComprovanteNaoFiscal,
-        CASE WHEN DF.TipoComprovanteNaoFiscal = 1 THEN 'SANGRIA'
-             WHEN DF.TipoComprovanteNaoFiscal = 4 THEN 'RETIRADA' END AS TipoMovimento,
-        CASE WHEN DF.TipoComprovanteNaoFiscal = 1 THEN 'Pagamento de despesa'
-             WHEN DF.TipoComprovanteNaoFiscal = 4 THEN 'Retirada para cofre' END AS Finalidade,
-        DATETIMEFROMPARTS(
-            YEAR(DF.Data), MONTH(DF.Data), DAY(DF.Data),
-            DATEPART(HOUR, DF.Hora), DATEPART(MINUTE, DF.Hora),
-            DATEPART(SECOND, DF.Hora), DATEPART(MILLISECOND, DF.Hora)
-        ) AS DataHora
-    FROM dbo.DocumentoFiscal DF
-    WHERE DF.Tipo = 'CN'
-      AND DF.TipoComprovanteNaoFiscal IN (1, 4)
-      AND ISNULL(DF.Cancelado, 0) = 0
-      AND DF.IdUsuarioAutorizadorSangria IS NOT NULL
-)
-SELECT
-    Id, IdFilial, IdUsuario, IdUsuarioAutorizadorSangria,
-    Motivo, ValorTotal, TipoComprovanteNaoFiscal, TipoMovimento, Finalidade, DataHora,
-    CONVERT(VARCHAR(8), DataHora, 108) AS hora_formatada,
-    CONVERT(VARCHAR(10), DataHora, 103) AS data_formatada
-FROM MovimentosCaixa
-WHERE DataHora >= ? AND DataHora < ? AND IdFilial = ?
-ORDER BY DataHora;
+SET NOCOUNT ON;
+DROP TABLE IF EXISTS #IdsDia;
+SELECT DF.Id INTO #IdsDia
+FROM dbo.DocumentoFiscal DF WITH (NOLOCK)
+WHERE DF.Data >= ? AND DF.Data < ?;
+CREATE UNIQUE CLUSTERED INDEX IX_IdsDia ON #IdsDia (Id);
+SELECT DF.Id,DF.IdFilial,DF.Data,CONVERT(TIME(0),DF.Hora) AS Hora,
+ CASE WHEN DF.TipoComprovanteNaoFiscal=1 THEN 'SANGRIA' WHEN DF.TipoComprovanteNaoFiscal=4 THEN 'RETIRADA' END AS TipoMovimento,
+ DF.TipoComprovanteNaoFiscal,DF.Motivo,DF.ValorTotal,DF.IdUsuario,DF.IdUsuarioAutorizadorSangria
+FROM #IdsDia X
+JOIN dbo.DocumentoFiscal DF WITH (NOLOCK) ON DF.Id=X.Id
+WHERE DF.IdFilial=? AND DF.Tipo='CN' AND DF.TipoComprovanteNaoFiscal IN (1,4)
+ AND ISNULL(DF.Cancelado,0)=0 AND DF.IdUsuarioAutorizadorSangria IS NOT NULL
+ORDER BY DF.Data,DF.Hora;
+DROP TABLE IF EXISTS #IdsDia;
 """
 
 SQL_FORMAS_PAGAMENTO = "SELECT Id AS id, Nome AS nome FROM dbo.FormaPagamento ORDER BY Nome;"
 
 SQL_FATURAMENTO = """
+SET NOCOUNT ON;
+DROP TABLE IF EXISTS #FechamentosPeriodo;
+SELECT FC.Id INTO #FechamentosPeriodo
+FROM dbo.FechamentoCaixa FC WITH (NOLOCK)
+WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=?;
+CREATE UNIQUE CLUSTERED INDEX IX_FechamentosPeriodo ON #FechamentosPeriodo(Id);
 SELECT FP.Id AS id_forma_pagamento, FP.Nome AS forma_pagamento,
  SUM(ISNULL(FCFP.ValorMovimento,0)) valor_movimento, SUM(ISNULL(FCFP.ValorAbertura,0)) valor_abertura,
  SUM(ISNULL(FCFP.ValorSuprimento,0)) valor_suprimento, SUM(ISNULL(FCFP.ValorSangria,0)) valor_sangria,
  SUM(ISNULL(FCFP.ValorApurado,0)) valor_apurado, SUM(ISNULL(FCFP.ValorConfirmado,0)) valor_confirmado
-FROM dbo.FechamentoCaixa FC
-JOIN dbo.FechamentoCaixaFormaPagamento FCFP ON FCFP.IdFechamentoCaixa=FC.Id
-JOIN dbo.FormaPagamento FP ON FP.Id=FCFP.IdFormaPagamento
-WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=? AND (? IS NULL OR FP.Id=?)
+FROM #FechamentosPeriodo X
+JOIN dbo.FechamentoCaixaFormaPagamento FCFP WITH (NOLOCK) ON FCFP.IdFechamentoCaixa=X.Id
+JOIN dbo.FormaPagamento FP WITH (NOLOCK) ON FP.Id=FCFP.IdFormaPagamento
+WHERE (? IS NULL OR FP.Id=?)
 GROUP BY FP.Id,FP.Nome ORDER BY FP.Nome;
+DROP TABLE IF EXISTS #FechamentosPeriodo;
 """
 
 SQL_FATURAMENTO_EVOLUCAO = """
+SET NOCOUNT ON;
+DROP TABLE IF EXISTS #FechamentosPeriodo;
+SELECT FC.Id,CONVERT(date,FC.Data) AS Data INTO #FechamentosPeriodo
+FROM dbo.FechamentoCaixa FC WITH (NOLOCK)
+WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=?;
+CREATE UNIQUE CLUSTERED INDEX IX_FechamentosPeriodo ON #FechamentosPeriodo(Id);
 SELECT CONVERT(date,FC.Data) data,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
  SUM(ISNULL(FCFP.ValorMovimento,0)) valor_movimento
-FROM dbo.FechamentoCaixa FC JOIN dbo.FechamentoCaixaFormaPagamento FCFP ON FCFP.IdFechamentoCaixa=FC.Id
-JOIN dbo.FormaPagamento FP ON FP.Id=FCFP.IdFormaPagamento
-WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=? AND (? IS NULL OR FP.Id=?)
-GROUP BY CONVERT(date,FC.Data),FP.Id,FP.Nome ORDER BY data,FP.Nome;
-"""
-
-SQL_FATURAMENTO_TOTALIZADOR = """
-SELECT
- SUM(ISNULL(FCFP.ValorMovimento,0)) AS total_valor_movimento,
- SUM(ISNULL(FCFP.ValorAbertura,0)) AS total_abertura,
- SUM(ISNULL(FCFP.ValorSuprimento,0)) AS total_suprimento,
- SUM(ISNULL(FCFP.ValorSangria,0)) AS total_sangria,
- SUM(ISNULL(FCFP.ValorApurado,0)) AS total_apurado,
- SUM(ISNULL(FCFP.ValorConfirmado,0)) AS total_confirmado
-FROM dbo.FechamentoCaixa FC
-JOIN dbo.FechamentoCaixaFormaPagamento FCFP ON FCFP.IdFechamentoCaixa=FC.Id
-WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=?;
+FROM #FechamentosPeriodo FC
+JOIN dbo.FechamentoCaixaFormaPagamento FCFP WITH (NOLOCK) ON FCFP.IdFechamentoCaixa=FC.Id
+JOIN dbo.FormaPagamento FP WITH (NOLOCK) ON FP.Id=FCFP.IdFormaPagamento
+WHERE (? IS NULL OR FP.Id=?)
+GROUP BY FC.Data,FP.Id,FP.Nome ORDER BY data,FP.Nome;
+DROP TABLE IF EXISTS #FechamentosPeriodo;
 """
 
 SQL_PRODUTOS = """
+SET NOCOUNT ON;
+DROP TABLE IF EXISTS #IdsVendas;
+SELECT D.Id INTO #IdsVendas FROM dbo.DocumentoFiscal D WITH (NOLOCK)
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0;
+CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
 SELECT P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
  SUM(ISNULL(I.Quantidade,0)) quantidade,
  CAST(CASE WHEN SUM(ISNULL(I.Quantidade,0))<>0 THEN SUM(ISNULL(I.ValorTotal,0))/SUM(ISNULL(I.Quantidade,0)) ELSE 0 END AS decimal(19,4)) preco_medio,
  SUM(ISNULL(I.ValorTotal,0)) total_faturado
-FROM dbo.DocumentoFiscal D JOIN dbo.ItemDocumentoFiscal I ON I.IdDocumentoFiscal=D.Id
-JOIN dbo.Produto P ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A ON A.Id=P.IdAgrupamento
-WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
- AND (? IS NULL OR P.Id=?) AND (? IS NULL OR A.Id=?)
+FROM #IdsVendas X JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=X.Id
+JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
+WHERE (? IS NULL OR P.Id=?) AND (? IS NULL OR A.Id=?)
 GROUP BY P.Id,P.Nome,A.Id,A.Nome ORDER BY total_faturado DESC;
+DROP TABLE IF EXISTS #IdsVendas;
 """
 
 SQL_VENDAS_ANALISE = """
+SET NOCOUNT ON;
+DROP TABLE IF EXISTS #IdsVendas;
+SELECT D.Id,CONVERT(date,D.Data) AS Data INTO #IdsVendas
+FROM dbo.DocumentoFiscal D WITH (NOLOCK)
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0;
+CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
 WITH Itens AS (
- SELECT D.Id id_documento_fiscal,CONVERT(date,D.Data) data,P.Id codigo,P.Nome produto,
+ SELECT D.Id id_documento_fiscal,D.Data data,P.Id codigo,P.Nome produto,
   A.Id id_agrupamento,A.Nome agrupamento,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
   SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento_produto
- FROM dbo.DocumentoFiscal D JOIN dbo.ItemDocumentoFiscal I ON I.IdDocumentoFiscal=D.Id
- JOIN dbo.Produto P ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A ON A.Id=P.IdAgrupamento
- WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
-  AND (? IS NULL OR P.Id=? OR P.Nome LIKE ?) AND (? IS NULL OR A.Id=?)
- GROUP BY D.Id,CONVERT(date,D.Data),P.Id,P.Nome,A.Id,A.Nome
+ FROM #IdsVendas D JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=D.Id
+ JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
+ WHERE (? IS NULL OR P.Id=? OR P.Nome LIKE ?) AND (? IS NULL OR A.Id=?)
+ GROUP BY D.Id,D.Data,P.Id,P.Nome,A.Id,A.Nome
 ), Pagamentos AS (
  SELECT F.IdDocumentoFiscal id_documento_fiscal,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
   SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
- FROM dbo.FormaPagamentoCupomFiscal F JOIN dbo.FormaPagamento FP ON FP.Id=F.IdFormaPagamento
+ FROM #IdsVendas X JOIN dbo.FormaPagamentoCupomFiscal F WITH (NOLOCK) ON F.IdDocumentoFiscal=X.Id
+ JOIN dbo.FormaPagamento FP WITH (NOLOCK) ON FP.Id=F.IdFormaPagamento
  WHERE (? IS NULL OR FP.Id=?) GROUP BY F.IdDocumentoFiscal,FP.Id,FP.Nome
 ), PagamentosComTotal AS (
  SELECT *,SUM(valor_pagamento) OVER(PARTITION BY id_documento_fiscal) total_pagamentos FROM Pagamentos
@@ -164,6 +165,7 @@ SELECT I.data,I.id_documento_fiscal,I.codigo,I.produto,I.id_agrupamento,I.agrupa
  CAST(I.faturamento_produto*P.valor_pagamento/NULLIF(P.total_pagamentos,0) AS decimal(19,4)) valor_atribuido
 FROM Itens I JOIN PagamentosComTotal P ON P.id_documento_fiscal=I.id_documento_fiscal
 ORDER BY I.data,I.produto,P.forma_pagamento;
+DROP TABLE IF EXISTS #IdsVendas;
 """
 
 
@@ -376,37 +378,49 @@ def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datet
     if (end_exclusive - start).days > MAX_INTERVAL_DAYS:
         raise ValueError(f"O período máximo é de {MAX_INTERVAL_DAYS} dias.")
 
-    with pyodbc.connect(connection_string(config)) as connection:
+    sql_started = time.perf_counter()
+    sql_start_date = start.date()
+    sql_end_date = end_exclusive.date() if end_exclusive.time() == datetime.min.time() else end_exclusive.date() + timedelta(days=1)
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout = 30
         cursor = connection.cursor()
         logger.info("SQL EXECUTADA: SQL_SANGRIAS | inicio=%s | fim_exclusivo=%s | id_filial=%s", start.isoformat(), end_exclusive.isoformat(), filial)
-        cursor.execute(SQL_SANGRIAS, start, end_exclusive, filial)
-        rows = cursor.fetchall()
+        cursor.execute(SQL_SANGRIAS, sql_start_date, sql_end_date, filial)
+        rows = rows_as_dicts(cursor)
+    logger.info("TEMPO SQL: SQL_SANGRIAS %.3fs | registros=%s", time.perf_counter() - sql_started, len(rows))
 
     items: list[dict[str, Any]] = []
     total = Decimal("0")
     total_sangrias = Decimal("0")
     total_retiradas = Decimal("0")
     for row in rows:
-        value = Decimal(str(row.valortotal or 0))
+        raw_date = row.get("data")
+        row_date = raw_date.date() if isinstance(raw_date, datetime) else (datetime.fromisoformat(raw_date).date() if isinstance(raw_date, str) else raw_date)
+        raw_time = row.get("hora")
+        row_time = raw_time if hasattr(raw_time, "hour") else datetime.strptime(str(raw_time).split(".")[0], "%H:%M:%S").time()
+        row_datetime = datetime.combine(row_date, row_time)
+        if row_datetime < start or row_datetime >= end_exclusive:
+            continue
+        value = Decimal(str(row.get("valortotal") or 0))
         total += value
-        tipo = int(row.TipoComprovanteNaoFiscal)
+        tipo = int(row.get("tipocomprovantenaofiscal") or 0)
         if tipo == 4:
             total_retiradas += value
         else:
             total_sangrias += value
         items.append({
-            "id": str(row.Id),
-            "id_filial": str(row.IdFilial or ""),
-            "id_usuario": str(row.IdUsuario or ""),
-            "id_usuario_autorizador": str(row.IdUsuarioAutorizadorSangria or ""),
-            "motivo": str(row.motivo or "Sem motivo"),
+            "id": str(row.get("id") or ""),
+            "id_filial": str(row.get("idfilial") or ""),
+            "id_usuario": str(row.get("idusuario") or ""),
+            "id_usuario_autorizador": str(row.get("idusuarioautorizadorsangria") or ""),
+            "motivo": str(row.get("motivo") or "Sem motivo"),
             "valor": float(value),
-            "hora": row.hora_formatada,
-            "data": row.data_formatada,
-            "data_hora": row.DataHora.isoformat(),
+            "hora": row_time.strftime("%H:%M:%S"),
+            "data": row_date.strftime("%d/%m/%Y"),
+            "data_hora": row_datetime.isoformat(),
             "tipo_comprovante_nao_fiscal": tipo,
-            "tipo_movimento": str(row.TipoMovimento),
-            "finalidade": str(row.Finalidade),
+            "tipo_movimento": str(row.get("tipomovimento") or ""),
+            "finalidade": "Retirada para cofre" if tipo == 4 else "Pagamento de despesa",
         })
     return {
         "items": items, "total": float(total), "quantidade": len(items),
@@ -449,46 +463,61 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
     end = parse_datetime(body.get("fim_exclusivo"), "Fim exclusivo")
     filial = resolve_raffinato_filial(config, body)
     payment = int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
-    with pyodbc.connect(connection_string(config)) as connection:
+    sql_started = time.perf_counter()
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout = 30
         logger.info("SQL EXECUTADA: SQL_FATURAMENTO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
-        cursor = connection.cursor(); cursor.execute(SQL_FATURAMENTO, start, end, filial, payment, payment)
+        cursor = connection.cursor(); cursor.execute(SQL_FATURAMENTO, start.date(), end.date(), filial, payment, payment)
         rows = rows_as_dicts(cursor)
-        logger.info("SQL EXECUTADA: SQL_FATURAMENTO_TOTALIZADOR | inicio=%s | fim_exclusivo=%s | id_filial=%s", start.isoformat(), end.isoformat(), filial)
-        cursor.execute(SQL_FATURAMENTO_TOTALIZADOR, start, end, filial)
-        total_row = rows_as_dicts(cursor)[0]
-        totals = {
-            "valor_movimento": float(total_row.get("total_valor_movimento") or 0),
-            "valor_abertura": float(total_row.get("total_abertura") or 0),
-            "valor_suprimento": float(total_row.get("total_suprimento") or 0),
-            "valor_sangria": float(total_row.get("total_sangria") or 0),
-            "valor_apurado": float(total_row.get("total_apurado") or 0),
-            "valor_confirmado": float(total_row.get("total_confirmado") or 0),
-        }
         logger.info("SQL EXECUTADA: SQL_FATURAMENTO_EVOLUCAO | inicio=%s | fim_exclusivo=%s | id_filial=%s | forma=%s", start.isoformat(), end.isoformat(), filial, payment)
-        cursor.execute(SQL_FATURAMENTO_EVOLUCAO, start, end, filial, payment, payment)
+        cursor.execute(SQL_FATURAMENTO_EVOLUCAO, start.date(), end.date(), filial, payment, payment)
         evolution = rows_as_dicts(cursor)
+    keys = ("valor_movimento","valor_abertura","valor_suprimento","valor_sangria","valor_apurado","valor_confirmado")
+    totals = {key: sum(float(row.get(key) or 0) for row in rows) for key in keys}
+    logger.info("TEMPO SQL: FATURAMENTO %.3fs | formas=%s | evolucao=%s", time.perf_counter() - sql_started, len(rows), len(evolution))
     return {"formas_pagamento": rows, "totalizadores": totals, "evolucao": evolution}
 
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     start = parse_datetime(body.get("inicio"), "Início"); end = parse_datetime(body.get("fim_exclusivo"), "Fim exclusivo")
     filial = resolve_raffinato_filial(config, body); product = int(body["id_produto"]) if body.get("id_produto") else None; group = int(body["id_agrupamento"]) if body.get("id_agrupamento") else None
-    with pyodbc.connect(connection_string(config)) as connection:
-        cursor=connection.cursor(); cursor.execute(SQL_PRODUTOS,start,end,filial,product,product,group,group)
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout=30; cursor=connection.cursor(); cursor.execute(SQL_PRODUTOS,start.date(),end.date(),filial,product,product,group,group)
         return {"items":rows_as_dicts(cursor)}
 
 
 def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     start=parse_datetime(body.get("inicio"),"Início"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
     filial=resolve_raffinato_filial(config,body); product_text=str(body.get("produto") or body.get("id_produto") or "").strip(); product=int(product_text) if product_text.isdigit() else None; product_filter=product_text or None; product_like=f"%{product_text}%" if product_text else None; group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; payment=int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
-    with pyodbc.connect(connection_string(config)) as connection:
-        cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start,end,filial,product_filter,product,product_like,group,group,payment,payment)
-        items=rows_as_dicts(cursor)
+    sql_started=time.perf_counter()
+    try:
+        with pyodbc.connect(connection_string(config), timeout=8) as connection:
+            connection.timeout=30; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start.date(),end.date(),filial,product_filter,product,product_like,group,group,payment,payment)
+            items=rows_as_dicts(cursor)
+    except pyodbc.Error:
+        logger.exception("Relação transacional de pagamentos indisponível; retornando produtos sem rateio")
+        base = query_produtos(config, {
+            "inicio": start.isoformat(), "fim_exclusivo": end.isoformat(), "id_filial": filial,
+            "id_produto": product, "id_agrupamento": group,
+        })["items"]
+        items = [{
+            **item, "data": start.date().isoformat(), "id_documento_fiscal": "",
+            "quantidade_atribuida": item.get("quantidade", 0),
+            "faturamento_produto": item.get("total_faturado", 0),
+            "id_forma_pagamento": "", "forma_pagamento": "Relação não configurada",
+            "valor_atribuido": item.get("total_faturado", 0),
+        } for item in base]
+        return {
+            "success": False, "code": "PAYMENT_RELATION_NOT_CONFIGURED",
+            "message": "Relação transacional de formas de pagamento ainda não identificada.",
+            "items": items, "rateio": None, "filial": filial,
+        }
+    logger.info("TEMPO SQL: VENDAS_ANALISE %.3fs | registros=%s",time.perf_counter()-sql_started,len(items))
     return {"items":items,"rateio":"proporcional_decimal","filial":filial}
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6"
+    server_version = "CheckDiarioRaffinato/1.6.4"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")

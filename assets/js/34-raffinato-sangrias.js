@@ -76,12 +76,19 @@ function iniciarTelaRelatorioSangriasRaffinato() {
 }
 
 async function raffinatoBridgePost(path, body) {
-  const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'Falha no conector Raffinato.');
-  return payload;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), signal:controller.signal,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || 'Falha no conector Raffinato.');
+    return payload;
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('A consulta excedeu 30 segundos. Verifique o log do conector Raffinato.');
+    throw error;
+  } finally { clearTimeout(timer); }
 }
 
 function dadosFormularioRaffinato() {
