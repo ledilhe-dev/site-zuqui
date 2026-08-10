@@ -1,5 +1,10 @@
 /* Temas acessiveis; esta camada altera somente apresentacao. */
 :root, :root[data-theme="light"] {
+  color-scheme:light;
+  --input-dark-bg:#0b111a; --input-dark-text:#f8fafc; --input-dark-muted:#94a3b8; --input-dark-border:#293548;
+  --input-light-bg:#fff; --input-light-text:#172033; --input-light-muted:#64748b; --input-light-border:#d8dee8;
+  --ui-control-focus-bg:#fff; --ui-control-focus-text:#172033;
+  --ui-control-disabled-bg:#f1f5f9; --ui-control-disabled-text:#64748b;
   --cd-bg:#f4f5f8; --cd-surface:#fcfcfd; --cd-surface-soft:#f0f2f7; --cd-surface-elevated:#fff;
   --cd-navy:#0f172a; --cd-slate:#475569; --cd-muted:#64748b; --cd-disabled:#94a3b8;
   --cd-border:#e3e6ed; --cd-border-strong:#ccd1dc;
@@ -13,6 +18,11 @@
   --ui-text:#0f172a; --ui-text-secondary:#475569; --ui-text-muted:#64748b;
 }
 :root[data-theme="dark"] {
+  color-scheme:dark;
+  --input-dark-bg:#0b111a; --input-dark-text:#f8fafc; --input-dark-muted:#94a3b8; --input-dark-border:#293548;
+  --input-light-bg:#fff; --input-light-text:#172033; --input-light-muted:#64748b; --input-light-border:#d8dee8;
+  --ui-control-focus-bg:#0d131b; --ui-control-focus-text:#f8fafc;
+  --ui-control-disabled-bg:#18202d; --ui-control-disabled-text:#cbd5e1;
   --cd-bg:#0b1120; --cd-surface:#111827; --cd-surface-soft:#172033; --cd-surface-elevated:#1d2940;
   --cd-navy:#f8fafc; --cd-slate:#cbd5e1; --cd-muted:#94a3b8; --cd-disabled:#64748b;
   --cd-border:#243047; --cd-border-strong:#35435c; --cd-primary-soft:rgba(99,102,241,.16); --cd-accent-soft:rgba(59,130,246,.14);
@@ -31,9 +41,18 @@ body,.shell,.main,main,.content{color:var(--text)!important;background:var(--bg)
 .topbar h1,.page-title,.card-title,h1,h2,h3,h4,strong,th{color:var(--text)!important}
 .sub,.page-sub,small,.help,.hint,label,.topbar-info-label,.topbar-user-label{color:var(--text-muted)!important}
 .card,.item,.painel,.panel,.widget,.modal,.modal-content,.dropdown-menu,.notification-panel,[class*="-card"]:not(.login-card){color:var(--text)!important;background:var(--surface)!important;border-color:var(--border)!important}
-input,select,textarea{color:var(--text)!important;background:var(--surface)!important;border-color:var(--border-mid)!important}
+input,select,textarea{color:var(--text)!important;background:var(--surface)!important;border-color:var(--border-mid)!important;-webkit-text-fill-color:currentColor}
 input::placeholder,textarea::placeholder{color:var(--text-dim)!important;opacity:1}
-input:disabled,select:disabled,textarea:disabled,button:disabled{color:var(--cd-disabled)!important;opacity:.72}
+input:focus,select:focus,textarea:focus{color:var(--ui-control-focus-text)!important;background:var(--ui-control-focus-bg)!important;-webkit-text-fill-color:currentColor}
+input:disabled,select:disabled,textarea:disabled,input[readonly],select[readonly],textarea[readonly]{color:var(--ui-control-disabled-text)!important;background:var(--ui-control-disabled-bg)!important;opacity:1!important;-webkit-text-fill-color:currentColor}
+button:disabled{color:var(--cd-disabled)!important;opacity:.72}
+select option{color:var(--input-light-text)!important;background:var(--input-light-bg)!important;color-scheme:light}
+select option:checked{color:#fff!important;background:#334155!important}
+select option:disabled{color:var(--input-light-muted)!important;background:#f1f5f9!important}
+.dropdown-menu,.select-menu,.combobox,.listbox,.options,.autocomplete,.search-results,[role="listbox"]{color:var(--text)!important;background:var(--surface)!important;border-color:var(--border)!important}
+.dropdown-menu :is(button,a,[role="option"]),.select-menu :is(button,a,[role="option"]),.listbox [role="option"],.options [role="option"],.autocomplete>*,.search-results>*{color:var(--text-soft)!important}
+.dropdown-menu :is(button,a,[role="option"]):hover,.select-menu :is(button,a,[role="option"]):hover,.listbox [role="option"]:hover,.options [role="option"]:hover,.autocomplete>*:hover,.search-results>*:hover{color:#fff!important;background:#1e293b!important}
+[role="option"][aria-selected="true"],.dropdown-menu .selected,.select-menu .selected,.listbox .selected,.options .selected{color:#fff!important;background:#334155!important}
 table,thead,tbody,tr,td,th{border-color:var(--border)!important} td{color:var(--text-soft)!important} tbody tr:hover td{background:var(--surface2)!important}
 .table-wrap,.table-responsive,.dash-gf-detail-wrap,table,.dropdown,.dropdown-menu,[class*="dropdown"]{color:var(--text-soft)!important;background:var(--surface)!important;border-color:var(--border)!important}
 .badge,.tag,.chip{color:var(--text)!important}
@@ -98,3 +117,20 @@ table,thead,tbody,tr,td,th{border-color:var(--border)!important} td{color:var(--
 #recebivelFormaPagamentoId option:checked{color:#fff!important;background-color:#334155!important}
 #recebivelFormaPagamentoId option:hover{color:#fff!important;background-color:#475569!important}
 #recebivelFormaPagamentoId option:disabled{color:#64748b!important;background-color:#f1f5f9!important}
+
+/* Controles que permanecem propositalmente escuros em qualquer tema. */
+#recebivelFormaPagamentoId,.ajuste-saldo-field,
+#ncSheet .nc-sheet-body input:not([type="checkbox"]):not([type="radio"]),
+#ncSheet .nc-sheet-body select{
+  color:var(--input-dark-text)!important;
+  background:var(--input-dark-bg)!important;
+  border-color:var(--input-dark-border)!important;
+  color-scheme:dark;
+  -webkit-text-fill-color:var(--input-dark-text)!important
+}
+#recebivelFormaPagamentoId::placeholder,.ajuste-saldo-field::placeholder,
+#ncSheet .nc-sheet-body input::placeholder{
+  color:var(--input-dark-muted)!important;
+  opacity:1!important;
+  -webkit-text-fill-color:var(--input-dark-muted)!important
+}

@@ -205,13 +205,15 @@ input:focus, select:focus, textarea:focus,
   outline: none !important;
   border-color: var(--ui-primary) !important;
   box-shadow: var(--ui-focus-ring) !important;
-  background: #0d131b !important;
+  background: var(--ui-control-focus-bg, var(--ui-bg-elevated)) !important;
+  color: var(--ui-control-focus-text, var(--ui-text)) !important;
 }
 input:disabled, select:disabled, textarea:disabled,
 input[readonly], textarea[readonly] {
   cursor: not-allowed;
-  opacity: .58;
-  background: #0b1016 !important;
+  opacity: 1;
+  background: var(--ui-control-disabled-bg, #0b1016) !important;
+  color: var(--ui-control-disabled-text, var(--ui-text-secondary)) !important;
 }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"], .field-error input {
   border-color: var(--ui-danger) !important;
