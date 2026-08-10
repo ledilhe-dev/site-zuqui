@@ -298,7 +298,11 @@ async function authorizeStore(admin: any, userId: string, empresaId: string, loj
   if (!loja || loja.ativo === false) throw new Error("Loja nao autorizada.");
   const [{ data: employee }, { data: adminUser }, { data: link }] = await Promise.all([
     admin.from("funcionarios").select("id,empresa_id,loja_id").eq("id", userId).eq("empresa_id", empresaId).maybeSingle(),
-    admin.from("usuarios_admin").select("id,empresa_id").eq("id", userId).eq("empresa_id", empresaId).maybeSingle(),
+    // O administrador pode trocar de loja/empresa pela própria interface. A
+    // autorização externa deve respeitar essa mesma sessão administrativa;
+    // exigir a empresa original do cadastro fazia todos os relatórios remotos
+    // falharem depois da troca de loja, embora o conector local funcionasse.
+    admin.from("usuarios_admin").select("id,empresa_id,ativo").eq("id", userId).eq("ativo", true).maybeSingle(),
     admin.from("funcionario_lojas").select("funcionario_id,loja_id,ativo").eq("funcionario_id", userId).eq("loja_id", lojaId).eq("ativo", true).maybeSingle(),
   ]);
   if (!adminUser && !link && String(employee?.loja_id || "") !== lojaId) throw new Error("Usuario sem acesso a esta loja.");
