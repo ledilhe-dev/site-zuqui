@@ -18,7 +18,8 @@
 .rb-chart-card { min-height:260px; padding:18px; }
 .rb-wide { grid-column:1/-1; }
 .rb-bars { display:flex; flex-direction:column; gap:9px; margin-top:16px; }
-.rb-bar-row { display:grid; grid-template-columns:minmax(95px,145px) minmax(70px,1fr) minmax(80px,105px); gap:9px; align-items:center; font-size:10px; }
+.rb-bar-row { display:grid; grid-template-columns:minmax(95px,145px) minmax(70px,1fr) minmax(80px,105px); gap:9px; align-items:center; width:100%; padding:2px; border:0; background:transparent; color:inherit; font:inherit; font-size:10px; text-align:left; }
+.rb-bar-row.muted{opacity:.3}.rb-bar-row.selected{opacity:1}
 .rb-bar-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); font-weight:650; }
 .rb-bar-track { height:11px; overflow:hidden; border-radius:999px; background:rgba(148,163,184,.15); }
 .rb-bar-fill { display:block; height:100%; min-width:2px; border-radius:inherit; background:var(--rb-accent); }

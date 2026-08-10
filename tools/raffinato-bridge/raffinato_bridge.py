@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.14"
+CONNECTOR_VERSION = "1.6.15"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -242,6 +242,18 @@ GROUP BY CONVERT(date,D.Data),FP.Id,FP.Nome
 ORDER BY data,FP.Nome;
 """
 
+SQL_CONTAGEM_DOCUMENTOS_PERIODO = """
+SELECT COUNT(DISTINCT D.Id) quantidade_documentos,
+ MIN(DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))) primeiro_documento,
+ MAX(DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))) ultimo_documento
+FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?
+ AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK)
+   WHERE F.IdDocumentoFiscal=D.Id AND (? IS NULL OR F.IdFormaPagamento=?));
+"""
+
 SQL_PRODUTOS_DIARIO = """
 SET NOCOUNT ON;
 SELECT CONVERT(date,D.Data) data,P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
@@ -259,6 +271,9 @@ SET NOCOUNT ON;
 SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
  CONVERT(varchar(8),CAST(D.Hora AS time),108) hora,D.Tipo tipo,
  CAST(CASE WHEN ISNULL(D.EhContingencia,0)=1 THEN 1 ELSE 0 END AS bit) eh_contingencia,
+ CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega VTE WITH(NOLOCK) ON VTE.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY'
+      WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa VM WITH(NOLOCK) ON VM.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo VC WITH(NOLOCK) ON VC.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (VM.IdVenda IS NOT NULL OR VC.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA'
+      ELSE 'VENDA_RAPIDA' END modulo_venda,
  FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
  SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
 FROM dbo.DocumentoFiscal D WITH(NOLOCK)
@@ -285,7 +300,9 @@ SET NOCOUNT ON;
 DROP TABLE IF EXISTS #IdsVendas;
 SELECT D.Id,CONVERT(date,D.Data) AS Data,CAST('VENDA_RAPIDA' AS varchar(20)) modulo_venda INTO #IdsVendas
 FROM dbo.DocumentoFiscal D WITH (NOLOCK)
-WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0;
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?;
 CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
 WITH Modulos AS (
  SELECT VCF.IdDocumentoFiscal,
@@ -784,6 +801,8 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
         connection.timeout=30; cursor=connection.cursor(); cursor.execute(
             SQL_MOVIMENTO_FATURAMENTO_PERIODO,start.date(),coarse_end,filial,start,end,payment,payment
         ); movement_rows=rows_as_dicts(cursor)
+        cursor.execute(SQL_CONTAGEM_DOCUMENTOS_PERIODO,start.date(),coarse_end,filial,start,end,payment,payment)
+        period_rows=rows_as_dicts(cursor);period_info=period_rows[0] if period_rows else {}
     movement_by_key={(str(item["data"]),int(item["id_forma_pagamento"])):item for item in movement_rows}
     for item in daily:
         exact=movement_by_key.get((str(item["data"]),int(item["id_forma_pagamento"])))
@@ -810,13 +829,12 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
     open_cash=any(bool(item.get("caixa_aberto")) for item in daily); has_closed=any(bool(item.get("valor_confirmado_disponivel")) for item in daily)
     if open_cash and not has_closed: totals["valor_confirmado"] = None
     totals["valor_retirada"] = sum(float(row.get("valor_retirada") or 0) for row in rows)
-    first=min((item.get("primeiro_documento") for item in movement_rows if item.get("primeiro_documento")),default=None)
-    last=max((item.get("ultimo_documento") for item in movement_rows if item.get("ultimo_documento")),default=None)
+    first=period_info.get("primeiro_documento");last=period_info.get("ultimo_documento")
     return {"formas_pagamento": rows, "totalizadores": totals, "evolucao": evolution,
             "caixa_aberto":open_cash, "valor_confirmado_parcial":open_cash and has_closed,
             "periodo":{"inicio":start.isoformat(),"fim_exclusivo":end.isoformat(),
                        "primeiro_documento":first,"ultimo_documento":last,
-                       "quantidade_documentos":sum(int(item.get("quantidade_documentos") or 0) for item in movement_rows)}}
+                       "quantidade_documentos":int(period_info.get("quantidade_documentos") or 0)}}
 
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -860,7 +878,7 @@ def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, An
         "diferenca_nao_explicada":float(conciliacao.get("diferenca_nao_explicada") or 0),
     }
     logger.info("TEMPO SQL: PRODUTOS %.3fs | produtos=%s",time.perf_counter()-sql_started,len(items))
-    return {"items":items,"evolucao":evolution,"contingencias":contingencias,"totalizadores":totals,
+    return {"schema_version":3,"items":items,"evolucao":evolution,"contingencias":contingencias,"totalizadores":totals,
             "periodo":{"inicio":start.isoformat(),"fim_exclusivo":end.isoformat()}}
 
 
@@ -868,9 +886,10 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
     start=parse_datetime(body.get("inicio"),"Início"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
     filial=resolve_raffinato_filial(config,body); product_text=str(body.get("produto") or body.get("id_produto") or "").strip(); product=int(product_text) if product_text.isdigit() else None; product_filter=product_text or None; product_like=f"%{product_text}%" if product_text else None; group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; payment=int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
     sql_started=time.perf_counter()
+    coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
     try:
         with pyodbc.connect(connection_string(config), timeout=8) as connection:
-            connection.timeout=60; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start.date(),end.date(),filial,product_filter,product,product_like,group,group,payment,payment)
+            connection.timeout=60; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start.date(),coarse_end,filial,start,end,product_filter,product,product_like,group,group,payment,payment)
             items=rows_as_dicts(cursor)
     except pyodbc.Error:
         logger.exception("Relação transacional de pagamentos indisponível; retornando produtos sem rateio")
@@ -891,7 +910,35 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
             "items": items, "rateio": None, "filial": filial,
         }
     logger.info("TEMPO SQL: VENDAS_ANALISE %.3fs | registros=%s",time.perf_counter()-sql_started,len(items))
-    return {"items":items,"fontes_pagamento":[{"origem":"FormaPagamentoCupomFiscal"}],"rateio":"proporcional_decimal","filial":filial}
+    return {"schema_version":3,"items":items,"fontes_pagamento":[{"origem":"FormaPagamentoCupomFiscal"}],"rateio":"proporcional_decimal","filial":filial,
+            "periodo":{"inicio":start.isoformat(),"fim_exclusivo":end.isoformat()}}
+
+
+def query_vendas_analise_completa(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    analysis=query_vendas_analise(config,body)
+    canonical=query_produtos(config,body)
+    items=analysis.get("items",[])
+    dimensions=[{"id_documento":str(x.get("id_documento_fiscal") or ""),"codigo":x.get("codigo"),
+                 "id_agrupamento":x.get("id_agrupamento"),"id_forma_pagamento":x.get("id_forma_pagamento"),
+                 "modulo_venda":x.get("modulo_venda")} for x in items]
+    modules:dict[str,dict[str,Any]]={}
+    for item in items:
+        module=str(item.get("modulo_venda") or "VENDA_RAPIDA")
+        row=modules.setdefault(module,{"modulo_venda":module,"valor":0.0,"documentos":set()})
+        row["valor"]+=float(item.get("valor_atribuido") or 0);row["documentos"].add(str(item.get("id_documento_fiscal") or ""))
+    billed=[{"modulo_venda":key,"valor":round(value["valor"],2),"quantidade":len(value["documentos"])} for key,value in modules.items()]
+    start=parse_datetime(body.get("inicio"),"Início");end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
+    statuses=query_vendas_status(config,start.date(),end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date(),resolve_raffinato_filial(config,body))
+    open_rows:dict[str,dict[str,Any]]={}
+    for item in statuses:
+        if bool(item.get("aberto")) and not bool(item.get("faturado")):
+            module=str(item.get("modulo_venda") or "VENDA_RAPIDA");row=open_rows.setdefault(module,{"modulo_venda":module,"quantidade":0,"valor":0.0})
+            row["quantidade"]+=1;row["valor"]+=float(item.get("valor") or 0)
+    totals=canonical["totalizadores"];open_total=round(sum(float(x["valor"]) for x in open_rows.values()),2)
+    return {**analysis,"documentos_dimensao":dimensions,"contingencias":canonical.get("contingencias",[]),
+            "totalizadores_canonicos":totals,"operacoes_abertas":list(open_rows.values()),"modulos_faturados":billed,
+            "totais_operacionais":{"recebido":totals["faturamento"],"em_aberto":open_total,"previsto":round(totals["faturamento"]+open_total,2)},
+            "cache_version":3,"duplicidades":0,"cobertura":{"completa":True},"origem_consulta":"sql_canonico_horario"}
 
 
 def query_vendas_status(config: dict[str, Any], start: date, end_exclusive: date, filial: int) -> list[dict[str, Any]]:
@@ -1227,7 +1274,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.14"
+    server_version = "CheckDiarioRaffinato/1.6.15"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -1396,7 +1443,7 @@ class Handler(BaseHTTPRequestHandler):
                     # diario legado nao possui granularidade suficiente para isso.
                     result = query_produtos(config, body)
                 else:
-                    result = query_cached_cross(store_id, body)
+                    result = query_vendas_analise_completa(config, body)
                 self.send_json(200, result)
                 return
             start = parse_datetime(body.get("inicio"), "Início")

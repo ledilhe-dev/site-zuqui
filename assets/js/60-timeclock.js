@@ -2775,8 +2775,10 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
       const nome = obterNomeFornecedorRelatorioFinanceiro(item);
       const pago = obterStatusContaRelatorioFinanceiro(item) === 'pago';
       const valor = Number(item.valor_compra || 0);
-      if (!grupos[nome]) grupos[nome] = { nome, qtd: 0, pago: 0, pendente: 0 };
+      if (!grupos[nome]) grupos[nome] = { nome, qtd: 0, pago: 0, pendente: 0, cadastros: [], vencimentos: [] };
       grupos[nome].qtd += 1;
+      if (item.created_at) grupos[nome].cadastros.push(item.created_at);
+      if (item.data_vencimento) grupos[nome].vencimentos.push(item.data_vencimento);
       if (pago) grupos[nome].pago += valor; else grupos[nome].pendente += valor;
     });
     const linhas = Object.values(grupos)
@@ -2784,6 +2786,8 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     lista.innerHTML = resumoExcluidos + `
       <div class="rf-grupo-cabecalho" aria-hidden="true">
         <span>Fornecedor</span>
+        <span>Cadastro</span>
+        <span>Vencimento</span>
         <span>Pago</span>
         <span>Em aberto</span>
         <span>Total</span>
@@ -2792,6 +2796,8 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
       <div class="lista rf-grupo-lista">` + linhas.map(g => `
       <div class="item rf-grupo-item">
         <strong class="rf-grupo-fornecedor">${escaparHtmlBasico(g.nome)}</strong>
+        <span class="rf-grupo-cadastro">${(() => { const datas = [...g.cadastros].sort(); if (!datas.length) return '-'; const primeira = fmtDate(datas[0]); const ultima = fmtDate(datas[datas.length - 1]); return primeira === ultima ? primeira : `${primeira} a ${ultima}`; })()}</span>
+        <span class="rf-grupo-vencimento">${(() => { const datas = [...g.vencimentos].sort(); if (!datas.length) return '-'; const primeira = formatarDataBRFinanceiro(datas[0]); const ultima = formatarDataBRFinanceiro(datas[datas.length - 1]); return primeira === ultima ? primeira : `${primeira} a ${ultima}`; })()}</span>
         <span class="rf-grupo-pago">${formatarMoedaBRFinanceiro(g.pago)}</span>
         <span class="rf-grupo-aberto">${formatarMoedaBRFinanceiro(g.pendente)}</span>
         <span class="rf-grupo-total">${formatarMoedaBRFinanceiro(g.pago + g.pendente)}</span>
@@ -2815,7 +2821,8 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
       <div class="${classeItem}">
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
-          <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+          <div class="item-detalhe">Data de cadastro: ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')} · Data de vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)}</div>
+          <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
           <div class="item-detalhe">Original: ${formatarMoedaBRFinanceiro(valorOriginal)} · Previsto/atual: ${formatarMoedaBRFinanceiro(valorCompra)} · ${status === 'pago' ? `Pago: ${formatarMoedaBRFinanceiro(valorRealizado)}` : `A pagar: ${formatarMoedaBRFinanceiro(valorRealizado)}`}</div>
           <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · ${escaparHtmlBasico(infoParcelas.resumoTexto)}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
