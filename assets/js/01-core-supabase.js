@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.36';
-const APP_VERSION_LABEL = '3.2.36-raffinato-canonical-reports';
+const APP_VERSION = '3.2.37';
+const APP_VERSION_LABEL = '3.2.37-raffinato-history-preserved';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

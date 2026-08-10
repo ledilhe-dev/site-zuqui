@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.15"
+CONNECTOR_VERSION = "1.6.16"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -1129,13 +1129,21 @@ def sync_cache_period(store_id:str,config:dict[str,Any],start_day:date,end_exclu
                 product=products.setdefault(product_id,{**item,"quantidade":0.0,"faturamento":0.0});product["quantidade"]+=float(item.get("quantidade_atribuida") or 0);product["faturamento"]+=float(item.get("valor_atribuido") or 0)
                 key=(product_id,payment_id,module);grouped=cross_rows.setdefault(key,{**item,"quantidade_rateada":0.0,"valor_rateado":0.0});grouped["quantidade_rateada"]+=float(item.get("quantidade_atribuida") or 0);grouped["valor_rateado"]+=float(item.get("valor_atribuido") or 0)
                 if document_id:documents.add(document_id);dimensions.add((document_id,product_id,group_id,payment_id,module))
+            # Uma leitura vazia durante o fechamento nao pode apagar um snapshot
+            # historico valido. Dias recebidos com dados continuam substituidos
+            # normalmente; cache miss agenda nova leitura pelo conector.
+            day_status=status_by_day.get(day_iso,[])
+            if not rows and not day_status:
+                logger.warning("CACHE PRESERVADO: fonte vazia para loja=%s filial=%s data=%s",store_id,filial,day_iso)
+                cursor+=timedelta(days=1)
+                continue
             for table in ("produtos_diario","produto_pagamento_modulo_diario","documentos_diario","documento_dimensao_diario","vendas_status_diario"):
                 cache.execute(f"DELETE FROM {table} WHERE loja_id=? AND id_filial=? AND data=?",(store_id,filial,day_iso))
             cache.executemany("INSERT INTO produtos_diario VALUES(?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,pid,str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),x["quantidade"],x["faturamento"],now_iso) for pid,x in products.items()])
             cache.executemany("INSERT INTO produto_pagamento_modulo_diario VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,str(x.get("codigo") or ""),str(x.get("produto") or ""),str(x.get("id_agrupamento") or ""),str(x.get("agrupamento") or ""),str(x.get("id_forma_pagamento") or ""),str(x.get("forma_pagamento") or ""),str(x.get("modulo_venda") or "VENDA_RAPIDA"),x["quantidade_rateada"],x["valor_rateado"],now_iso) for x in cross_rows.values()])
             cache.executemany("INSERT INTO documentos_diario VALUES(?,?,?,?)",[(store_id,filial,day_iso,x) for x in documents])
             cache.executemany("INSERT INTO documento_dimensao_diario VALUES(?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,*x) for x in dimensions])
-            cache.executemany("INSERT INTO vendas_status_diario VALUES(?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,str(x.get("id_venda") or ""),str(x.get("id_documento_fiscal") or ""),str(x.get("modulo_venda") or "VENDA_RAPIDA"),int(bool(x.get("aberto"))),int(bool(x.get("faturado"))),float(x.get("valor") or 0),now_iso) for x in status_by_day.get(day_iso,[]) if x.get("id_venda") is not None])
+            cache.executemany("INSERT INTO vendas_status_diario VALUES(?,?,?,?,?,?,?,?,?,?)",[(store_id,filial,day_iso,str(x.get("id_venda") or ""),str(x.get("id_documento_fiscal") or ""),str(x.get("modulo_venda") or "VENDA_RAPIDA"),int(bool(x.get("aberto"))),int(bool(x.get("faturado"))),float(x.get("valor") or 0),now_iso) for x in day_status if x.get("id_venda") is not None])
             cache.execute("""INSERT INTO cache_dias_sincronizados VALUES(?,?,?,?) ON CONFLICT(loja_id,id_filial,data) DO UPDATE SET sincronizado_em=excluded.sincronizado_em""",(store_id,filial,day_iso,now_iso))
             cursor+=timedelta(days=1)
     set_cache_meta(store_id,ultima_sincronizacao=now_iso,ultima_data=(end_exclusive-timedelta(days=1)).isoformat(),status="sincronizado",mensagem="Sincronizado")
@@ -1274,7 +1282,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.15"
+    server_version = "CheckDiarioRaffinato/1.6.16"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
