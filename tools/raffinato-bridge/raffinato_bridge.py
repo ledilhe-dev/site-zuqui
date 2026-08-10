@@ -61,16 +61,33 @@ logger = logging.getLogger("raffinato_bridge")
 MUTEX_HANDLE = None
 
 SQL_SANGRIAS = """
+WITH MovimentosCaixa AS (
+    SELECT
+        DF.Id, DF.IdFilial, DF.IdUsuario, DF.IdUsuarioAutorizadorSangria,
+        DF.Motivo, DF.ValorTotal, DF.TipoComprovanteNaoFiscal,
+        CASE WHEN DF.TipoComprovanteNaoFiscal = 1 THEN 'SANGRIA'
+             WHEN DF.TipoComprovanteNaoFiscal = 4 THEN 'RETIRADA' END AS TipoMovimento,
+        CASE WHEN DF.TipoComprovanteNaoFiscal = 1 THEN 'Pagamento de despesa'
+             WHEN DF.TipoComprovanteNaoFiscal = 4 THEN 'Retirada para cofre' END AS Finalidade,
+        DATETIMEFROMPARTS(
+            YEAR(DF.Data), MONTH(DF.Data), DAY(DF.Data),
+            DATEPART(HOUR, DF.Hora), DATEPART(MINUTE, DF.Hora),
+            DATEPART(SECOND, DF.Hora), DATEPART(MILLISECOND, DF.Hora)
+        ) AS DataHora
+    FROM dbo.DocumentoFiscal DF
+    WHERE DF.Tipo = 'CN'
+      AND DF.TipoComprovanteNaoFiscal IN (1, 4)
+      AND ISNULL(DF.Cancelado, 0) = 0
+      AND DF.IdUsuarioAutorizadorSangria IS NOT NULL
+)
 SELECT
-    motivo,
-    valortotal,
-    CONVERT(VARCHAR(8), hora, 108) AS hora_formatada,
-    CONVERT(VARCHAR(10), data, 103) AS data_formatada
-FROM DocumentoFiscal
-WHERE TipoComprovanteNaoFiscal = 1
-  AND CONVERT(datetime, CONVERT(varchar(10), data, 120) + ' ' + CONVERT(varchar(8), hora, 108), 120) >= ?
-  AND CONVERT(datetime, CONVERT(varchar(10), data, 120) + ' ' + CONVERT(varchar(8), hora, 108), 120) <= ?
-ORDER BY data, hora;
+    Id, IdFilial, IdUsuario, IdUsuarioAutorizadorSangria,
+    Motivo, ValorTotal, TipoComprovanteNaoFiscal, TipoMovimento, Finalidade, DataHora,
+    CONVERT(VARCHAR(8), DataHora, 108) AS hora_formatada,
+    CONVERT(VARCHAR(10), DataHora, 103) AS data_formatada
+FROM MovimentosCaixa
+WHERE DataHora >= ? AND DataHora < ?
+ORDER BY DataHora;
 """
 
 
@@ -166,7 +183,7 @@ def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
 
 
 def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
-    result = query_sangrias(config, start, end)
+    result = query_sangrias(config, start, end + timedelta(seconds=1))
     relay_post({
         "action": "sync", "token": config["relay_token"],
         "inicio": start.strftime("%Y-%m-%d"), "fim": end.strftime("%Y-%m-%d"),
@@ -277,33 +294,54 @@ def parse_datetime(value: Any, field: str) -> datetime:
         raise ValueError(f"{field} inválido.") from exc
 
 
-def query_sangrias(config: dict[str, Any], start: datetime, end: datetime) -> dict[str, Any]:
-    if end < start:
+def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datetime) -> dict[str, Any]:
+    if end_exclusive <= start:
         raise ValueError("O fim do período deve ser posterior ao início.")
-    if (end - start).days > MAX_INTERVAL_DAYS:
+    if (end_exclusive - start).days > MAX_INTERVAL_DAYS:
         raise ValueError(f"O período máximo é de {MAX_INTERVAL_DAYS} dias.")
 
     with pyodbc.connect(connection_string(config)) as connection:
         cursor = connection.cursor()
-        cursor.execute(SQL_SANGRIAS, start, end)
+        cursor.execute(SQL_SANGRIAS, start, end_exclusive)
         rows = cursor.fetchall()
 
     items: list[dict[str, Any]] = []
     total = Decimal("0")
+    total_sangrias = Decimal("0")
+    total_retiradas = Decimal("0")
     for row in rows:
         value = Decimal(str(row.valortotal or 0))
         total += value
+        tipo = int(row.TipoComprovanteNaoFiscal)
+        if tipo == 4:
+            total_retiradas += value
+        else:
+            total_sangrias += value
         items.append({
+            "id": str(row.Id),
+            "id_filial": str(row.IdFilial or ""),
+            "id_usuario": str(row.IdUsuario or ""),
+            "id_usuario_autorizador": str(row.IdUsuarioAutorizadorSangria or ""),
             "motivo": str(row.motivo or "Sem motivo"),
             "valor": float(value),
             "hora": row.hora_formatada,
             "data": row.data_formatada,
+            "data_hora": row.DataHora.isoformat(),
+            "tipo_comprovante_nao_fiscal": tipo,
+            "tipo_movimento": str(row.TipoMovimento),
+            "finalidade": str(row.Finalidade),
         })
-    return {"items": items, "total": float(total), "quantidade": len(items)}
+    return {
+        "items": items, "total": float(total), "quantidade": len(items),
+        "total_sangrias": float(total_sangrias),
+        "quantidade_sangrias": sum(1 for item in items if item["tipo_comprovante_nao_fiscal"] == 1),
+        "total_retiradas": float(total_retiradas),
+        "quantidade_retiradas": sum(1 for item in items if item["tipo_comprovante_nao_fiscal"] == 4),
+    }
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.5"
+    server_version = "CheckDiarioRaffinato/1.6"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -365,7 +403,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.reject_origin():
             return
         if self.route_path() == "/health":
-            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": "1.5", "port": 8766, "tray": True, "external_sync": True})
+            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": "1.6", "port": 8766, "tray": True, "external_sync": True})
             return
         self.send_json(404, {"error": "Rota não encontrada."})
 
@@ -427,7 +465,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, {"ok": True})
                 return
             start = parse_datetime(body.get("inicio"), "Início")
-            end = parse_datetime(body.get("fim"), "Fim")
+            raw_end_exclusive = body.get("fim_exclusivo")
+            end = parse_datetime(raw_end_exclusive or body.get("fim"), "Fim")
+            if not raw_end_exclusive:
+                end += timedelta(seconds=1)
             store_id = validate_store_id(body.get("loja_id"))
             result = query_sangrias(get_store_config(store_id), start, end)
             self.send_json(200, result)
@@ -474,7 +515,7 @@ def run_tray(server: ThreadingHTTPServer) -> None:
     import pystray
 
     def show_status(icon, _item):
-        icon.notify(f"Ativo em 127.0.0.1:{PORT} · versão 1.4", "Conector Raffinato")
+        icon.notify(f"Ativo em 127.0.0.1:{PORT} · versão 1.6", "Conector Raffinato")
 
     def open_checkdiario(_icon, _item):
         webbrowser.open("https://checkdiario.com.br")
