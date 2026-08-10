@@ -2317,9 +2317,9 @@
       </section>
 
       <section id="relatorio_sangrias_raffinato" class="pagina raffinato-page raffinato-report-page">
-        <div class="page-title">Relatório de Sangrias</div>
+        <div class="page-title">Saídas de caixa do Raffinato</div>
         <div class="card raffinato-report-intro">
-          <div><div class="card-title">Análise de sangrias do Raffinato</div><div class="page-sub">Acompanhe valores, frequência, motivos e horários da loja selecionada.</div></div>
+          <div><div class="card-title">Sangrias e retiradas para cofre</div><div class="page-sub">Acompanhe pagamentos de despesas e retiradas para cofre, sempre separados por finalidade.</div></div>
           <div class="raffinato-connection" id="raffinatoReportConnectionStatus"><span class="raffinato-connection-dot"></span><span id="raffinatoReportConnectionLabel">Verificando integração...</span></div>
         </div>
 
@@ -2345,9 +2345,12 @@
         </div>
 
         <div class="raffinato-summary" id="raffinatoSummary" hidden>
-          <div class="stat-card"><div class="stat-label">Total das sangrias</div><div class="stat-value" id="raffinatoTotal">R$ 0,00</div></div>
-          <div class="stat-card"><div class="stat-label">Quantidade</div><div class="stat-value" id="raffinatoQuantidade">0</div></div>
-          <div class="stat-card"><div class="stat-label">Valor médio</div><div class="stat-value" id="raffinatoTicketMedio">R$ 0,00</div></div>
+          <div class="stat-card raffinato-stat-expense"><div class="stat-label">Sangrias / despesas</div><div class="stat-value" id="raffinatoTotalSangrias">R$ 0,00</div></div>
+          <div class="stat-card raffinato-stat-vault"><div class="stat-label">Retiradas para cofre</div><div class="stat-value" id="raffinatoTotalRetiradas">R$ 0,00</div></div>
+          <div class="stat-card raffinato-stat-total"><div class="stat-label">Total retirado dos caixas</div><div class="stat-value" id="raffinatoTotalGeral">R$ 0,00</div></div>
+          <div class="stat-card"><div class="stat-label">Quantidade de sangrias</div><div class="stat-value" id="raffinatoQuantidadeSangrias">0</div></div>
+          <div class="stat-card"><div class="stat-label">Quantidade de retiradas</div><div class="stat-value" id="raffinatoQuantidadeRetiradas">0</div></div>
+          <div class="stat-card"><div class="stat-label">Valor médio geral</div><div class="stat-value" id="raffinatoTicketMedio">R$ 0,00</div></div>
         </div>
 
         <div class="card raffinato-active-filters" id="raffinatoActiveFilters" hidden>
@@ -2357,11 +2360,11 @@
         </div>
 
         <div class="raffinato-charts" id="raffinatoCharts" hidden>
-          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Evolução por dia</div><div class="page-sub">Clique em um dia para cruzar com motivo, dia da semana e horário.</div><div id="raffinatoChartDias" class="raffinato-chart"></div></div>
-          <div class="card raffinato-chart-card raffinato-top-card"><div class="card-title">Top 10 retiradas mais frequentes</div><div class="page-sub">Motivos semelhantes são unificados somente nesta análise.</div><div id="raffinatoChartMotivos" class="raffinato-chart raffinato-top-list"></div></div>
-          <div class="card raffinato-chart-card raffinato-donut-card"><div class="card-title">Participação dos principais motivos</div><div class="page-sub">Valor movimentado por motivo agrupado.</div><div id="raffinatoPizzaMotivos" class="raffinato-donut-layout"></div></div>
-          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Dia da semana com mais gastos</div><div class="page-sub">Todos os dias permanecem visíveis no período.</div><div id="raffinatoPizzaSemana" class="raffinato-donut-layout"></div></div>
-          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Horário com mais sangrias</div><div class="page-sub">Quantidade por faixa horária.</div><div id="raffinatoPizzaHoras" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card"><div class="card-title">Evolução de sangrias por dia</div><div class="page-sub">Somente pagamentos de despesas (tipo 1).</div><div id="raffinatoChartSangriasDias" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card"><div class="card-title">Evolução de retiradas para cofre</div><div class="page-sub">Somente retiradas para guardar no cofre (tipo 4).</div><div id="raffinatoChartRetiradasDias" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card raffinato-donut-card"><div class="card-title">Composição das saídas do caixa</div><div class="page-sub">Pagamento de despesas versus retirada para cofre.</div><div id="raffinatoPizzaComposicao" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card raffinato-top-card"><div class="card-title">Motivos mais frequentes das sangrias</div><div class="page-sub">Somente tipo 1; motivos semelhantes são agrupados.</div><div id="raffinatoChartMotivos" class="raffinato-chart raffinato-top-list"></div></div>
+          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Retiradas para cofre</div><div class="page-sub">Histórico real de movimentos tipo 4.</div><div id="raffinatoHistoricoRetiradas" class="raffinato-vault-history"></div></div>
         </div>
 
         <div class="card raffinato-table-card" id="raffinatoTableCard" hidden>
@@ -2371,7 +2374,7 @@
           </div>
           <div class="raffinato-table-wrap">
             <table class="raffinato-table" id="raffinatoTable" hidden>
-              <thead><tr><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('data')">Data <span id="raffinatoSortData">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('hora')">Hora <span id="raffinatoSortHora">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('motivo')">Motivo <span id="raffinatoSortMotivo">↕</span></button></th><th><button class="raffinato-sort is-right" type="button" onclick="ordenarDetalhamentoRaffinato('valor')">Valor <span id="raffinatoSortValor">↕</span></button></th></tr></thead>
+              <thead><tr><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('data')">Data <span id="raffinatoSortData">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('hora')">Hora <span id="raffinatoSortHora">↕</span></button></th><th>Tipo / finalidade</th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('motivo')">Motivo <span id="raffinatoSortMotivo">↕</span></button></th><th>Usuário / autorizador</th><th><button class="raffinato-sort is-right" type="button" onclick="ordenarDetalhamentoRaffinato('valor')">Valor <span id="raffinatoSortValor">↕</span></button></th></tr></thead>
               <tbody id="raffinatoTableBody"></tbody>
             </table>
             <div class="raffinato-empty" id="raffinatoEmpty"><div><strong>Pronto para consultar</strong>Escolha o período e clique em Executar consulta.</div></div>

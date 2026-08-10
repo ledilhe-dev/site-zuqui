@@ -6,7 +6,7 @@ let raffinatoTelaInicializada = false;
 let raffinatoIntegracaoAtual = null;
 let raffinatoTesteValido = false;
 let raffinatoLoadSequence = 0;
-let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' };
+let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
 let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
 let raffinatoBuscaDetalhe = '';
 let raffinatoItensVisiveis = [];
@@ -267,9 +267,12 @@ function obterPeriodoSangriasRaffinato() {
   const horaFim = document.getElementById('raffinatoHoraFim')?.value || '23:59';
   if (!dataInicio || !dataFim) throw new Error('Informe as datas inicial e final.');
   const inicio = `${dataInicio}T${horaInicio}:00`;
-  const fim = `${dataFim}T${horaFim}:59`;
-  if (new Date(fim) < new Date(inicio)) throw new Error('A data final deve ser posterior à data inicial.');
-  return { inicio, fim, dataInicio, dataFim };
+  const fimSelecionado = new Date(`${dataFim}T${horaFim}:00`);
+  const fimExclusivoDate = new Date(fimSelecionado);
+  fimExclusivoDate.setMinutes(fimExclusivoDate.getMinutes() + 1);
+  const fimExclusivo = `${dataLocalIso(fimExclusivoDate)}T${String(fimExclusivoDate.getHours()).padStart(2,'0')}:${String(fimExclusivoDate.getMinutes()).padStart(2,'0')}:00`;
+  if (fimExclusivoDate <= new Date(inicio)) throw new Error('A data final deve ser posterior à data inicial.');
+  return { inicio, fim:fimExclusivo, fimExclusivo, dataInicio, dataFim };
 }
 
 function escapeRaffinatoHtml(value) {
@@ -279,6 +282,24 @@ function escapeRaffinatoHtml(value) {
 function formatarMoedaRaffinato(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 }
+
+function normalizarMovimentoRaffinato(item) {
+  const tipo = Number(item?.tipo_comprovante_nao_fiscal ?? item?.TipoComprovanteNaoFiscal ?? (String(item?.tipo_movimento || '').toUpperCase() === 'RETIRADA' ? 4 : 1));
+  return {
+    ...item,
+    valor:Number(item?.valor ?? item?.ValorTotal ?? 0),
+    motivo:String(item?.motivo ?? item?.Motivo ?? 'Sem motivo'),
+    data:String(item?.data ?? item?.data_formatada ?? ''),
+    hora:String(item?.hora ?? item?.hora_formatada ?? ''),
+    tipo_comprovante_nao_fiscal:tipo,
+    tipo_movimento:tipo === 4 ? 'RETIRADA' : 'SANGRIA',
+    finalidade:tipo === 4 ? 'Retirada para cofre' : 'Pagamento de despesa',
+    id_usuario:String(item?.id_usuario ?? item?.IdUsuario ?? ''),
+    id_usuario_autorizador:String(item?.id_usuario_autorizador ?? item?.IdUsuarioAutorizadorSangria ?? ''),
+  };
+}
+
+function ehRetiradaCofreRaffinato(item) { return Number(item?.tipo_comprovante_nao_fiscal) === 4; }
 
 function chaveTextoRaffinato(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -354,20 +375,21 @@ function itensFiltradosRaffinato() {
     const f = raffinatoFiltrosAnaliticos;
     const motivo = chaveTextoRaffinato(item.motivo) || 'sem motivo';
     return (!f.data || item.data === f.data) && (!f.motivo || motivosSemelhantesRaffinato(f.motivo, motivo))
-      && (!f.semana || diaSemanaRaffinato(item) === f.semana) && (!f.faixa || faixaHoraRaffinato(item) === f.faixa);
+      && (!f.semana || diaSemanaRaffinato(item) === f.semana) && (!f.faixa || faixaHoraRaffinato(item) === f.faixa)
+      && (!f.tipo || item.tipo_movimento === f.tipo);
   });
 }
 
 function alternarFiltroAnaliticoRaffinato(tipo, valor) { raffinatoFiltrosAnaliticos[tipo] = raffinatoFiltrosAnaliticos[tipo] === valor ? '' : valor; atualizarPainelAnaliticoRaffinato(); }
 function removerFiltroAnaliticoRaffinato(tipo) { raffinatoFiltrosAnaliticos[tipo] = ''; atualizarPainelAnaliticoRaffinato(); }
-function limparFiltrosAnaliticosRaffinato() { raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' }; raffinatoBuscaDetalhe = ''; const busca = document.getElementById('raffinatoDetailSearch'); if (busca) busca.value = ''; atualizarPainelAnaliticoRaffinato(); }
+function limparFiltrosAnaliticosRaffinato() { raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' }; raffinatoBuscaDetalhe = ''; const busca = document.getElementById('raffinatoDetailSearch'); if (busca) busca.value = ''; atualizarPainelAnaliticoRaffinato(); }
 function definirBuscaDetalheRaffinato(valor) { raffinatoBuscaDetalhe = chaveTextoRaffinato(valor); renderizarDetalhamentoRaffinato(itensFiltradosRaffinato()); }
 
 function renderizarFiltrosAtivosRaffinato() {
   const box = document.getElementById('raffinatoActiveFilters');
   const chips = document.getElementById('raffinatoFilterChips');
   if (!box || !chips) return;
-  const nomes = { data:'Data', motivo:'Motivo', semana:'Dia', faixa:'Horário' };
+  const nomes = { data:'Data', motivo:'Motivo', semana:'Dia', faixa:'Horário', tipo:'Tipo' };
   const ativos = Object.entries(raffinatoFiltrosAnaliticos).filter(([,valor]) => valor);
   box.hidden = !ativos.length;
   chips.innerHTML = ativos.map(([tipo,valor]) => `<button type="button" class="raffinato-filter-chip" onclick="removerFiltroAnaliticoRaffinato('${tipo}')"><span>${nomes[tipo]}:</span> ${escapeRaffinatoHtml(tipo === 'motivo' ? valor.charAt(0).toUpperCase() + valor.slice(1) : valor)} ×</button>`).join('');
@@ -391,7 +413,7 @@ function renderizarDetalhamentoRaffinato(items) {
   const table = document.getElementById('raffinatoTable');
   if (!body || !empty || !table) return;
   const busca = raffinatoBuscaDetalhe;
-  const filtrados = items.filter(item => !busca || chaveTextoRaffinato(`${item.data} ${item.hora} ${item.motivo} ${item.valor}`).includes(busca));
+  const filtrados = items.filter(item => !busca || chaveTextoRaffinato(`${item.data} ${item.hora} ${item.tipo_movimento} ${item.finalidade} ${item.motivo} ${item.id_usuario} ${item.id_usuario_autorizador} ${item.valor}`).includes(busca));
   const fator = raffinatoOrdenacao.direcao === 'asc' ? 1 : -1;
   raffinatoItensVisiveis = [...filtrados].sort((a,b) => {
     const va = valorOrdenacaoRaffinato(a, raffinatoOrdenacao.coluna), vb = valorOrdenacaoRaffinato(b, raffinatoOrdenacao.coluna);
@@ -400,9 +422,9 @@ function renderizarDetalhamentoRaffinato(items) {
   if (!raffinatoItensVisiveis.length) {
     table.hidden = true;
     empty.hidden = false;
-    empty.innerHTML = '<div><strong>Nenhuma sangria encontrada</strong>Remova algum filtro ou altere o período.</div>';
+    empty.innerHTML = '<div><strong>Nenhum movimento encontrado</strong>Remova algum filtro ou altere o período.</div>';
   } else {
-    body.innerHTML = raffinatoItensVisiveis.map(item => `<tr><td class="is-time"><button class="raffinato-cell-filter" onclick="alternarFiltroAnaliticoRaffinato('data','${escapeRaffinatoHtml(item.data)}')">${escapeRaffinatoHtml(item.data)}</button></td><td class="is-time">${escapeRaffinatoHtml(item.hora)}</td><td>${escapeRaffinatoHtml(item.motivo)}</td><td class="is-value">${formatarMoedaRaffinato(item.valor)}</td></tr>`).join('');
+    body.innerHTML = raffinatoItensVisiveis.map(item => { const retirada = ehRetiradaCofreRaffinato(item); return `<tr class="${retirada ? 'is-vault' : 'is-expense'}"><td class="is-time"><button class="raffinato-cell-filter" onclick="alternarFiltroAnaliticoRaffinato('data','${escapeRaffinatoHtml(item.data)}')">${escapeRaffinatoHtml(item.data)}</button></td><td class="is-time">${escapeRaffinatoHtml(item.hora)}</td><td><button class="raffinato-type-badge ${retirada ? 'is-vault' : 'is-expense'}" onclick="alternarFiltroAnaliticoRaffinato('tipo','${item.tipo_movimento}')">${retirada ? 'RETIRADA PARA COFRE' : 'SANGRIA / DESPESA'}</button><small>${escapeRaffinatoHtml(item.finalidade)}</small></td><td>${escapeRaffinatoHtml(item.motivo)}</td><td class="raffinato-user-cell"><span>${escapeRaffinatoHtml(item.id_usuario || '—')}</span><small>Autoriza: ${escapeRaffinatoHtml(item.id_usuario_autorizador || '—')}</small></td><td class="is-value">${formatarMoedaRaffinato(item.valor)}</td></tr>`; }).join('');
     table.hidden = false;
     empty.hidden = true;
   }
@@ -441,29 +463,41 @@ function renderizarGraficosSangriasRaffinato(items) {
   if (!charts) return;
   charts.hidden = !items.length;
   if (!items.length) return;
-  const porDia = agruparSangriasRaffinato(items, item => item.data).sort((a, b) => {
+  const ordenarDias = entries => entries.sort((a, b) => {
     const br = value => String(value).split('/').reverse().join('-');
     return br(a[0]).localeCompare(br(b[0]));
   });
-  const motivos = prepararMotivosAgrupadosRaffinato(items).sort((a,b) => b.quantidade - a.quantidade);
+  const sangrias = items.filter(item => !ehRetiradaCofreRaffinato(item));
+  const retiradas = items.filter(ehRetiradaCofreRaffinato);
+  const porDiaSangrias = ordenarDias(agruparSangriasRaffinato(sangrias, item => item.data));
+  const porDiaRetiradas = ordenarDias(agruparSangriasRaffinato(retiradas, item => item.data));
+  const motivos = prepararMotivosAgrupadosRaffinato(sangrias).sort((a,b) => b.quantidade - a.quantidade);
   const top10 = motivos.slice(0,10).map(g => [g.rotulo, g.quantidade, { filtro:g.chave, texto:`${g.quantidade}× · ${formatarMoedaRaffinato(g.valor)}` }]);
-  const pizzaMotivos = [...motivos].sort((a,b) => b.valor - a.valor).slice(0,9).map(g => [g.rotulo, g.valor, { filtro:g.chave, texto:formatarMoedaRaffinato(g.valor) }]);
-  const semanaMap = new Map(RAFFINATO_DIAS_SEMANA.map(dia => [dia,{ quantidade:0, valor:0 }]));
-  items.forEach(item => { const atual = semanaMap.get(diaSemanaRaffinato(item)); atual.quantidade += 1; atual.valor += Number(item.valor || 0); });
-  const semana = [...semanaMap.entries()].map(([label,v]) => [label,v.valor,{ texto:`${formatarMoedaRaffinato(v.valor)} · ${v.quantidade}×` }]);
-  const faixas = RAFFINATO_FAIXAS.map(([label]) => { const encontrados = items.filter(item => faixaHoraRaffinato(item) === label); return [label,encontrados.length,{ texto:`${encontrados.length}×` }]; });
-  document.getElementById('raffinatoChartDias').innerHTML = barrasSangriasRaffinato(porDia, formatarMoedaRaffinato, 'data');
+  const totalSangrias = sangrias.reduce((sum,item) => sum + item.valor, 0);
+  const totalRetiradas = retiradas.reduce((sum,item) => sum + item.valor, 0);
+  const composicao = [
+    ['Pagamentos de despesas', totalSangrias, { filtro:'SANGRIA', texto:formatarMoedaRaffinato(totalSangrias) }],
+    ['Retiradas para cofre', totalRetiradas, { filtro:'RETIRADA', texto:formatarMoedaRaffinato(totalRetiradas) }],
+  ];
+  document.getElementById('raffinatoChartSangriasDias').innerHTML = porDiaSangrias.length ? barrasSangriasRaffinato(porDiaSangrias, formatarMoedaRaffinato, 'data') : '<div class="raffinato-chart-empty">Sem sangrias no período.</div>';
+  document.getElementById('raffinatoChartRetiradasDias').innerHTML = porDiaRetiradas.length ? barrasSangriasRaffinato(porDiaRetiradas, formatarMoedaRaffinato, 'data') : '<div class="raffinato-chart-empty">Sem retiradas para cofre no período.</div>';
   document.getElementById('raffinatoChartMotivos').innerHTML = barrasSangriasRaffinato(top10, (value,meta) => meta.texto, 'motivo');
-  renderizarPizzaRaffinato('raffinatoPizzaMotivos', pizzaMotivos, 'motivo');
-  renderizarPizzaRaffinato('raffinatoPizzaSemana', semana, 'semana');
-  renderizarPizzaRaffinato('raffinatoPizzaHoras', faixas, 'faixa');
+  renderizarPizzaRaffinato('raffinatoPizzaComposicao', composicao, 'tipo');
+  document.getElementById('raffinatoHistoricoRetiradas').innerHTML = retiradas.length ? [...retiradas].sort((a,b) => `${b.data_hora || b.data} ${b.hora}`.localeCompare(`${a.data_hora || a.data} ${a.hora}`)).map(item => `<div class="raffinato-vault-item"><div><strong>${escapeRaffinatoHtml(item.data)} · ${escapeRaffinatoHtml(item.hora)}</strong><span>${escapeRaffinatoHtml(item.motivo)}</span></div><div><strong>${formatarMoedaRaffinato(item.valor)}</strong><small>Usuário ${escapeRaffinatoHtml(item.id_usuario || '—')} · autoriza ${escapeRaffinatoHtml(item.id_usuario_autorizador || '—')}</small></div></div>`).join('') : '<div class="raffinato-chart-empty">Nenhuma retirada para cofre neste período.</div>';
 }
 
 function atualizarPainelAnaliticoRaffinato() {
   const items = itensFiltradosRaffinato();
-  const total = items.reduce((sum,item) => sum + Number(item.valor || 0), 0);
-  document.getElementById('raffinatoTotal').textContent = formatarMoedaRaffinato(total);
-  document.getElementById('raffinatoQuantidade').textContent = String(items.length);
+  const sangrias = items.filter(item => !ehRetiradaCofreRaffinato(item));
+  const retiradas = items.filter(ehRetiradaCofreRaffinato);
+  const totalSangrias = sangrias.reduce((sum,item) => sum + Number(item.valor || 0), 0);
+  const totalRetiradas = retiradas.reduce((sum,item) => sum + Number(item.valor || 0), 0);
+  const total = totalSangrias + totalRetiradas;
+  document.getElementById('raffinatoTotalSangrias').textContent = formatarMoedaRaffinato(totalSangrias);
+  document.getElementById('raffinatoTotalRetiradas').textContent = formatarMoedaRaffinato(totalRetiradas);
+  document.getElementById('raffinatoTotalGeral').textContent = formatarMoedaRaffinato(total);
+  document.getElementById('raffinatoQuantidadeSangrias').textContent = String(sangrias.length);
+  document.getElementById('raffinatoQuantidadeRetiradas').textContent = String(retiradas.length);
   document.getElementById('raffinatoTicketMedio').textContent = formatarMoedaRaffinato(items.length ? total / items.length : 0);
   renderizarFiltrosAtivosRaffinato();
   renderizarGraficosSangriasRaffinato(items);
@@ -496,18 +530,18 @@ async function consultarSangriasRaffinato() {
 
     const contexto = contextoRaffinato();
     const payload = await raffinatoRelay({
-      action:'dashboard', inicio:periodo.inicio, fim:periodo.fim,
+      action:'dashboard', inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
       empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
       usuario_id:String(usuarioSistemaLogado?.id || ''),
     });
-    raffinatoSangrias = Array.isArray(payload.items) ? payload.items : [];
-    raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'' };
+    raffinatoSangrias = Array.isArray(payload.items) ? payload.items.map(normalizarMovimentoRaffinato) : [];
+    raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
     raffinatoBuscaDetalhe = '';
     const buscaDetalhe = document.getElementById('raffinatoDetailSearch');
     if (buscaDetalhe) buscaDetalhe.value = '';
     renderizarSangriasRaffinato(raffinatoSangrias, Number(payload.total || 0));
     atualizarStatusConectorRaffinato('online', 'Raffinato conectado');
-    if (msg) { msg.className = 'msg ok'; msg.textContent = `${raffinatoSangrias.length} sangria(s) encontrada(s).`; }
+    if (msg) { const retiradas = raffinatoSangrias.filter(ehRetiradaCofreRaffinato).length; msg.className = 'msg ok'; msg.textContent = `${raffinatoSangrias.length - retiradas} sangria(s) e ${retiradas} retirada(s) para cofre encontradas.`; }
   } catch (error) {
     if (error?.name === 'AbortError') {
       if (msg) { msg.className = 'msg'; msg.textContent = 'Consulta cancelada.'; }
@@ -530,12 +564,12 @@ function cancelarConsultaSangriasRaffinato() {
 
 function exportarSangriasRaffinatoExcel() {
   if (!raffinatoItensVisiveis.length) return;
-  const rows = [['Data', 'Hora', 'Motivo', 'Valor'], ...raffinatoItensVisiveis.map(item => [item.data, item.hora, item.motivo, Number(item.valor || 0).toFixed(2).replace('.', ',')])];
-  rows.push(['', '', 'TOTAL', raffinatoItensVisiveis.reduce((sum, item) => sum + Number(item.valor || 0), 0).toFixed(2).replace('.', ',')]);
+  const rows = [['Data', 'Hora', 'Tipo', 'Finalidade', 'Motivo', 'Usuário', 'Autorizador', 'Valor'], ...raffinatoItensVisiveis.map(item => [item.data, item.hora, item.tipo_movimento, item.finalidade, item.motivo, item.id_usuario, item.id_usuario_autorizador, Number(item.valor || 0).toFixed(2).replace('.', ',')])];
+  rows.push(['', '', '', '', '', '', 'TOTAL', raffinatoItensVisiveis.reduce((sum, item) => sum + Number(item.valor || 0), 0).toFixed(2).replace('.', ',')]);
   const csv = '\ufeff' + rows.map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
-  link.download = `sangrias-raffinato-${dataLocalIso()}.csv`;
+  link.download = `saidas-caixa-raffinato-${dataLocalIso()}.csv`;
   document.body.appendChild(link);
   link.click();
   URL.revokeObjectURL(link.href);
