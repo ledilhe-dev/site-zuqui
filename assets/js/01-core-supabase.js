@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.17';
-const APP_VERSION_LABEL = '3.2.17-raffinato-exibir-senha';
+const APP_VERSION = '3.2.18';
+const APP_VERSION_LABEL = '3.2.18-raffinato-modulos-status';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

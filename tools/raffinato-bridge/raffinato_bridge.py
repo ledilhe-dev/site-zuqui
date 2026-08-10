@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.10"
+CONNECTOR_VERSION = "1.6.11"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -255,19 +255,39 @@ DROP TABLE IF EXISTS #IdsVendas;
 
 SQL_VENDAS_STATUS = """
 SET NOCOUNT ON;
-SELECT CONVERT(date,V.Data) data,V.Id id_venda,ISNULL(CONVERT(varchar(30),VCF.IdDocumentoFiscal),'') id_documento_fiscal,
- CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY'
-      WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id)
-        OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA'
-      ELSE 'VENDA_RAPIDA' END modulo_venda,
- CAST(CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id AND T.Aberto=1)
-        OR EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id AND M.Aberto=1)
-        OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id AND C.Aberto=1) THEN 1 ELSE 0 END AS bit) aberto,
- CAST(CASE WHEN VCF.IdDocumentoFiscal IS NOT NULL THEN 1 ELSE 0 END AS bit) faturado,
- CAST(ISNULL(V.ValorTotal,0) AS decimal(19,4)) valor
-FROM dbo.Venda V WITH(NOLOCK)
-LEFT JOIN dbo.VendaCupomFiscal VCF WITH(NOLOCK) ON VCF.IdVenda=V.Id
-WHERE V.Data>=? AND V.Data<? AND V.IdFilial=?;
+WITH VendasBase AS (
+ SELECT V.Id,V.Data,V.IdFilial,V.ValorTotal,
+  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY'
+       WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id)
+         OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA'
+       ELSE 'VENDA_RAPIDA' END modulo_venda,
+  CAST(CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id AND T.Aberto=1)
+         OR EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id AND M.Aberto=1)
+         OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id AND C.Aberto=1) THEN 1 ELSE 0 END AS bit) aberto
+ FROM dbo.Venda V WITH(NOLOCK) WHERE V.IdFilial=?
+), Documentos AS (
+ SELECT DISTINCT VCF.IdVenda,D.Id id_documento_fiscal,D.Data
+ FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
+ JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal
+ WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+), Pagamentos AS (
+ SELECT F.IdDocumentoFiscal,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor
+ FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK)
+ JOIN Documentos D ON D.id_documento_fiscal=F.IdDocumentoFiscal
+ GROUP BY F.IdDocumentoFiscal
+)
+SELECT CONVERT(date,D.Data) data,V.Id id_venda,CONVERT(varchar(30),D.id_documento_fiscal) id_documento_fiscal,
+ V.modulo_venda,V.aberto,CAST(1 AS bit) faturado,CAST(ISNULL(P.valor,0) AS decimal(19,4)) valor
+FROM Documentos D JOIN VendasBase V ON V.Id=D.IdVenda
+LEFT JOIN Pagamentos P ON P.IdDocumentoFiscal=D.id_documento_fiscal
+UNION ALL
+SELECT CONVERT(date,V.Data),V.Id,'',V.modulo_venda,V.aberto,CAST(0 AS bit),CAST(ISNULL(V.ValorTotal,0) AS decimal(19,4))
+FROM VendasBase V
+WHERE V.Data>=? AND V.Data<? AND NOT EXISTS(
+ SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
+ JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal
+ WHERE VCF.IdVenda=V.Id AND ISNULL(D.Cancelado,0)=0
+);
 """
 
 
@@ -722,7 +742,9 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
 
 def query_vendas_status(config: dict[str, Any], start: date, end_exclusive: date, filial: int) -> list[dict[str, Any]]:
     with pyodbc.connect(connection_string(config), timeout=8) as connection:
-        connection.timeout=45;cursor=connection.cursor();cursor.execute(SQL_VENDAS_STATUS,start,end_exclusive,filial)
+        connection.timeout=45;cursor=connection.cursor();cursor.execute(
+            SQL_VENDAS_STATUS,filial,start,end_exclusive,filial,start,end_exclusive
+        )
         return rows_as_dicts(cursor)
 
 
@@ -1009,17 +1031,28 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
         operacoes_abertas=[dict(x) for x in cache.execute("""SELECT modulo_venda,COUNT(DISTINCT id_venda) quantidade,SUM(valor) valor
           FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND aberto=1 AND faturado=0
           GROUP BY modulo_venda ORDER BY modulo_venda""",(store_id,filial,start,end))]
+        faturado_sql="""SELECT modulo_venda,COUNT(DISTINCT id_documento_fiscal) quantidade,SUM(valor) valor
+          FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND faturado=1"""
+        faturado_params:list[Any]=[store_id,filial,start,end]
+        if module:
+            faturado_sql+=" AND modulo_venda=?";faturado_params.append(module)
+        faturado_sql+=" GROUP BY modulo_venda ORDER BY modulo_venda"
+        modulos_faturados=[dict(x) for x in cache.execute(faturado_sql,faturado_params)]
         duplicidades=cache.execute("""SELECT COUNT(*) FROM (SELECT data,id_venda,id_documento_fiscal,COUNT(*) quantidade
           FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?
           GROUP BY data,id_venda,id_documento_fiscal HAVING COUNT(*)>1)""",(store_id,filial,start,end)).fetchone()[0]
+        total_recebido=round(sum(float(x.get("valor") or 0) for x in modulos_faturados),2)
+        total_em_aberto=round(sum(float(x.get("valor") or 0) for x in operacoes_abertas),2)
     for x in items:x["preco_medio"]=x["valor_atribuido"]/x["quantidade_atribuida"] if x["quantidade_atribuida"] else 0;x["id_documento_fiscal"]="agregado"
     return {"items":items,"documentos_dimensao":dimensions,"operacoes_abertas":operacoes_abertas,
+      "modulos_faturados":modulos_faturados,"totais_operacionais":{"recebido":total_recebido,
+      "em_aberto":total_em_aberto,"previsto":round(total_recebido+total_em_aberto,2)},
       "duplicidades":duplicidades,"rateio":"cache_diario_modulo_decimal","totalizadores":{"documentos":documentos},
       "cache":cache_status(store_id)["cache"],"cobertura":cache_coverage(store_id,filial,start,end)}
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.10"
+    server_version = "CheckDiarioRaffinato/1.6.11"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
