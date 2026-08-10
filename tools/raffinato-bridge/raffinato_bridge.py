@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.7"
+CONNECTOR_VERSION = "1.6.8"
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -122,6 +122,19 @@ JOIN dbo.FormaPagamento FP WITH (NOLOCK) ON FP.Id=FCFP.IdFormaPagamento
 WHERE (? IS NULL OR FP.Id=?)
 GROUP BY FC.Data,FP.Id,FP.Nome ORDER BY data,FP.Nome;
 DROP TABLE IF EXISTS #FechamentosPeriodo;
+"""
+
+SQL_FATURAMENTO_DIARIO = """
+SET NOCOUNT ON;
+SELECT CONVERT(date,FC.Data) data,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
+ SUM(ISNULL(FCFP.ValorMovimento,0)) valor_movimento,SUM(ISNULL(FCFP.ValorAbertura,0)) valor_abertura,
+ SUM(ISNULL(FCFP.ValorSuprimento,0)) valor_suprimento,SUM(ISNULL(FCFP.ValorSangria,0)) valor_sangria,
+ SUM(ISNULL(FCFP.ValorApurado,0)) valor_apurado,SUM(ISNULL(FCFP.ValorConfirmado,0)) valor_confirmado
+FROM dbo.FechamentoCaixa FC WITH(NOLOCK)
+JOIN dbo.FechamentoCaixaFormaPagamento FCFP WITH(NOLOCK) ON FCFP.IdFechamentoCaixa=FC.Id
+JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=FCFP.IdFormaPagamento
+WHERE FC.Data>=? AND FC.Data<? AND FC.IdFilial=?
+GROUP BY CONVERT(date,FC.Data),FP.Id,FP.Nome ORDER BY data,FP.Nome;
 """
 
 SQL_PRODUTOS = """
@@ -300,6 +313,12 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         "inicio": start.strftime("%Y-%m-%d"), "fim": end.strftime("%Y-%m-%d"),
         "items": result["items"],
     }, timeout=45)
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout=45;cursor=connection.cursor();cursor.execute(SQL_FATURAMENTO_DIARIO,start.date(),end.date()+timedelta(days=1),resolve_raffinato_filial(config,{}));billing=rows_as_dicts(cursor)
+    relay_post({
+        "action":"billing_sync","token":config["relay_token"],
+        "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":billing,
+    },timeout=45)
 
 
 def relay_sync_loop(stop_event: threading.Event) -> None:
@@ -831,7 +850,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.7"
+    server_version = "CheckDiarioRaffinato/1.6.8"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -962,6 +981,7 @@ class Handler(BaseHTTPRequestHandler):
                 config["empresa_id"] = empresa_id
                 configs[store_id] = config
                 save_store_configs(configs)
+                request_cache_refresh()
                 self.send_json(200, {"ok": True})
                 return
             if route.startswith("/api/raffinato/"):

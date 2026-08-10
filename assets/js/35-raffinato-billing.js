@@ -31,8 +31,15 @@ async function rbLoadPaymentMethods() {
     const payload = await raffinatoBridgePost('/api/raffinato/formas-pagamento', { loja_id:context.lojaId });
     const forms = Array.isArray(payload.formas) ? payload.formas : [];
     select.innerHTML = '<option value="">Todas as formas</option>' + forms.map(item => `<option value="${rbEscape(item.id)}">${rbEscape(item.nome)}</option>`).join('');
-  } catch (_) {
-    select.innerHTML = '<option value="">Todas as formas</option>';
+  } catch (localError) {
+    try {
+      const context=contextoRaffinato(),payload=await raffinatoRelay({action:'billing_forms',empresa_id:context.empresaId,loja_id:context.lojaId,usuario_id:String(usuarioSistemaLogado?.id||'')});
+      const forms=Array.isArray(payload.formas)?payload.formas:[];
+      select.innerHTML='<option value="">Todas as formas</option>'+forms.map(item=>`<option value="${rbEscape(item.id)}">${rbEscape(item.nome)}</option>`).join('');
+    } catch (relayError) {
+      console.error('[Raffinato faturamento] Falha ao carregar formas',{endpoint:'/api/raffinato/formas-pagamento',localError:String(localError),relayError:String(relayError)});
+      select.innerHTML='<option value="">Todas as formas</option>';
+    }
   }
 }
 
@@ -72,11 +79,18 @@ async function consultarFaturamentoRaffinato() {
   const button = document.getElementById('rbQueryBtn'), message = document.getElementById('rbMessage'), status = document.getElementById('rbStatus');
   try {
     const period = rbPeriod(), context = contextoRaffinato(), paymentId = document.getElementById('rbFormaPagamento').value || null;
-    rbPeriodLabel = `${period.data_inicial} a ${period.data_final_exclusiva}`; button.disabled = true; button.textContent = 'Consultando...'; message.className='msg'; message.textContent='';
-    const payload = await raffinatoBridgePost('/api/raffinato/faturamento', { ...period, id_forma_pagamento:paymentId, loja_id:context.lojaId, id_filial:1 });
-    rbRender(payload); status.classList.add('is-ready'); status.querySelector('strong').textContent='Dados carregados'; message.className='msg ok'; message.textContent='Consulta concluída.';
+    rbPeriodLabel = `${period.data_inicial} a ${period.data_final_exclusiva}`; button.disabled = true; button.textContent = 'Consultando Raffinato...'; message.className='msg'; message.textContent='Consultando Raffinato...';
+    let payload;
+    try {
+      payload=await raffinatoBridgePost('/api/raffinato/faturamento',{...period,id_forma_pagamento:paymentId,loja_id:context.lojaId,id_filial:1});
+    } catch(localError) {
+      const started=performance.now();
+      try { payload=await raffinatoRelay({action:'billing_dashboard',inicio:period.inicio,fim_exclusivo:period.fim_exclusivo,id_forma_pagamento:paymentId,empresa_id:context.empresaId,loja_id:context.lojaId,usuario_id:String(usuarioSistemaLogado?.id||'')}); }
+      catch(relayError){console.error('[Raffinato faturamento] Falha de consulta',{endpoint:'raffinato-relay/billing_dashboard',method:'POST',localError:String(localError),relayError:String(relayError),elapsedMs:Math.round(performance.now()-started)});throw new Error('Não foi possível consultar o Raffinato.');}
+    }
+    rbRender(payload); status.classList.add('is-ready'); status.querySelector('strong').textContent=payload.origem_consulta==='sincronizacao'?'Dados sincronizados':'Dados carregados'; message.className='msg ok'; message.textContent='Consulta concluída.';
   } catch (error) {
-    message.className='msg err'; message.textContent = error?.message || 'Não foi possível consultar o faturamento.';
+    status.classList.remove('is-ready');status.querySelector('strong').textContent='Consulta indisponível';message.className='msg err';message.textContent='Não foi possível consultar o Raffinato.';
   } finally { button.disabled=false; button.textContent='Executar consulta'; }
 }
 

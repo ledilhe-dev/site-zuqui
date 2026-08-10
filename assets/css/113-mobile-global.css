@@ -1,0 +1,41 @@
+/* Camada final responsiva e de contraste: preserva desktop e corrige controles nativos no iOS. */
+:where(.pagina,.card,.modal,.modal-content,.form-row,.form-grid,.filter-grid,.toolbar)>*{min-width:0}
+input,textarea,select{max-width:100%;box-sizing:border-box}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid color-mix(in srgb,var(--cd-primary,#6366f1) 65%,transparent)!important;outline-offset:1px}
+#recebivelFormaPagamentoId:is(:hover,:focus,:focus-visible,:active),.ajuste-saldo-field:is(:hover,:focus,:focus-visible,:active),#ncSheet .nc-sheet-body :is(input:not([type="checkbox"]):not([type="radio"]),select):is(:hover,:focus,:focus-visible,:active){color:var(--input-dark-text)!important;background:var(--input-dark-bg)!important;-webkit-text-fill-color:var(--input-dark-text)!important}
+#recebivelFormaPagamentoId:-webkit-autofill,.ajuste-saldo-field:-webkit-autofill,#ncSheet .nc-sheet-body input:-webkit-autofill{-webkit-text-fill-color:var(--input-dark-text)!important;caret-color:var(--input-dark-text)!important;-webkit-box-shadow:0 0 0 1000px var(--input-dark-bg) inset!important}
+#financeiro_cofre #cardsCofreContas .stat-card{color:#fff!important;border-color:rgba(255,255,255,.2)!important;box-shadow:0 8px 20px rgba(15,23,42,.16)!important}
+#financeiro_cofre #cardsCofreContas .stat-card *{color:#fff!important;-webkit-text-fill-color:#fff!important}
+#financeiro_cofre .conta-financeira-inter{background:linear-gradient(135deg,#f97316,#c2410c)!important}
+#financeiro_cofre .conta-financeira-bradesco{background:linear-gradient(135deg,#ef4444,#be123c)!important}
+#financeiro_cofre .conta-financeira-nubank{background:linear-gradient(135deg,#7c3aed,#581c87)!important}
+#financeiro_cofre .conta-financeira-mercado-pago{background:linear-gradient(135deg,#0891b2,#0369a1)!important}
+#financeiro_cofre .conta-financeira-itau{background:linear-gradient(135deg,#1e3a8a 0 72%,#f97316 72%)!important}
+#financeiro_cofre [class*="conta-financeira-cor-"]{background:linear-gradient(135deg,#2563eb,#4338ca)!important}
+
+@media(max-width:700px){
+ html,body,.shell,.main,.content,.pagina{max-width:100%;min-width:0}
+ .pagina :is(.card,.item,.panel,.modal-content),.pagina :is(.grid,.form-grid,.filter-grid,.toolbar){min-width:0;max-width:100%}
+ :is(input[type="date"],input[type="time"]){display:block;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box;padding-inline:8px!important}
+ :is(.rb-filter-grid,.raffinato-query-grid,.report-filter-grid) label{position:static!important;min-width:0!important;max-width:100%;overflow:hidden}
+ .rb-filter-grid{grid-template-columns:minmax(0,1fr) minmax(96px,.42fr)!important;gap:9px!important}
+ .rb-filter-grid>label:nth-child(1),.rb-filter-grid>label:nth-child(3){min-width:0!important}
+ .rb-filter-grid>label:nth-child(2),.rb-filter-grid>label:nth-child(4){min-width:0!important}
+ .rb-payment-filter,.rb-query-btn{grid-column:1/-1!important;width:100%!important}
+ .rb-query-btn{min-height:44px!important}
+ .rb-shortcuts,.rs-shortcuts,.raffinato-shortcuts{display:flex!important;flex-wrap:wrap!important;overflow:visible!important;gap:7px!important}
+ .rb-shortcuts span{flex-basis:100%}
+ .rs-filter-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+ .rs-filter-grid>label{min-width:0!important;grid-column:1/-1}
+ .rs-filter-grid>label:nth-child(-n+2){grid-column:auto}
+ .rs-query{grid-column:1/-1!important;width:100%!important;min-height:44px!important}
+ .msg{white-space:normal;overflow-wrap:anywhere;padding:9px 10px!important;border-radius:8px}
+ select{width:100%!important;min-width:0!important;max-width:100%!important;text-overflow:ellipsis}
+ #financeiro_cofre #calendarioCofre{overflow:visible!important;grid-template-columns:repeat(7,minmax(0,1fr))!important}
+ #financeiro_cofre .cofre-cal-day{min-width:0!important;min-height:52px!important;overflow:hidden}
+ #financeiro_cofre .cofre-cal-value{display:none!important}
+ #financeiro_cofre .cofre-cal-weekday{overflow:hidden;font-size:8px!important}
+ .calendar-grid,.calendario-grid,[class*="calendar-grid"]{grid-template-columns:repeat(7,minmax(0,1fr))!important;max-width:100%;min-width:0}
+ .calendar-grid>*,.calendario-grid>*{min-width:0;overflow:hidden}
+}
+@media(max-width:380px){.rb-filter-grid{grid-template-columns:minmax(0,1fr) 96px!important}.rb-kpis,.rs-kpis,#financeiro_cofre #cardsCofreContas{grid-template-columns:1fr!important}}

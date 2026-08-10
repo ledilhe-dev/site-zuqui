@@ -136,7 +136,9 @@ async function carregarIntegracaoRaffinato() {
     if (sequence !== raffinatoLoadSequence || contextoAtual.lojaId !== contexto.lojaId || contextoAtual.empresaId !== contexto.empresaId) return;
     raffinatoIntegracaoAtual = data || null;
     preencherFormularioIntegracaoRaffinato(raffinatoIntegracaoAtual);
-    if (data && !data.conector_token_hash) {
+    // Renova o pareamento sempre que o conector local estiver acessível. Isso
+    // recupera automaticamente tokens locais antigos sem alterar a integração SQL.
+    if (data && data.status === 'ativa') {
       try {
         await parearConectorExternoRaffinato();
         raffinatoIntegracaoAtual.conector_token_hash = 'pareado';
