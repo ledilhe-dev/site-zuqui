@@ -75,6 +75,65 @@ Deno.serve(async (request) => {
       return json({ ok:true, quantidade:items.length });
     }
 
+    if (body.action === "products_sync") {
+      const integration = await integrationForToken(admin, validateToken(body.token));
+      const inicio = validateDate(body.inicio, "inicio"); const fim = validateDate(body.fim, "fim");
+      if (fim < inicio) throw new Error("Periodo invalido.");
+      const items = Array.isArray(body.items) ? body.items.slice(0, 50000) : [];
+      const { error: deleteError } = await admin.from("raffinato_produtos_cache").delete()
+        .eq("empresa_id", integration.empresa_id).eq("loja_id", integration.loja_id).gte("data", inicio).lte("data", fim);
+      if (deleteError) throw deleteError;
+      for (let offset=0; offset<items.length; offset+=1000) {
+        const rows=items.slice(offset,offset+1000).map((item:any)=>({
+          empresa_id:integration.empresa_id,loja_id:integration.loja_id,data:validateDate(item.data,"data"),
+          codigo:Number(item.codigo),produto:String(item.produto||"").slice(0,300),
+          id_agrupamento:item.id_agrupamento==null?null:Number(item.id_agrupamento),
+          agrupamento:item.agrupamento==null?null:String(item.agrupamento).slice(0,300),
+          quantidade:Number(item.quantidade||0),total_faturado:Number(item.total_faturado||0),
+          sincronizado_em:new Date().toISOString(),
+        }));
+        const { error }=await admin.from("raffinato_produtos_cache").upsert(rows,{onConflict:"empresa_id,loja_id,data,codigo"});
+        if(error)throw error;
+      }
+      return json({ok:true,quantidade:items.length});
+    }
+
+    if (body.action === "products_dashboard") {
+      validateUuid(body.empresa_id,"empresa"); validateUuid(body.loja_id,"loja");
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      const inicio=validateDate(body.inicio,"inicio"),fimExclusivo=validateDate(body.fim_exclusivo,"fim");
+      const product=String(body.produto||"").trim().slice(0,120);
+      const group=body.id_agrupamento?Number(body.id_agrupamento):null;
+      const data:any[]=[];
+      for(let offset=0;offset<50000;offset+=1000){
+        let query=admin.from("raffinato_produtos_cache").select("data,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado")
+          .eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",inicio).lt("data",fimExclusivo)
+          .order("data").order("codigo").range(offset,offset+999);
+        if(group)query=query.eq("id_agrupamento",group);
+        if(product)query=/^\d+$/.test(product)?query.eq("codigo",Number(product)):query.ilike("produto",`%${product.replace(/[%_,]/g,"")}%`);
+        const {data:page,error}=await query;if(error)throw error;
+        data.push(...(page||[]));if(!page||page.length<1000)break;
+      }
+      const products=new Map<string,any>(),days=new Map<string,any>();
+      for(const row of data||[]){
+        const key=String(row.codigo),item=products.get(key)||{codigo:row.codigo,produto:row.produto,id_agrupamento:row.id_agrupamento,agrupamento:row.agrupamento,quantidade:0,total_faturado:0};
+        item.quantidade+=Number(row.quantidade||0);item.total_faturado+=Number(row.total_faturado||0);products.set(key,item);
+        const day=days.get(row.data)||{data:row.data,total_faturado:0,quantidade:0};day.total_faturado+=Number(row.total_faturado||0);day.quantidade+=Number(row.quantidade||0);days.set(row.data,day);
+      }
+      const items=[...products.values()].map(item=>({...item,preco_medio:item.quantidade?item.total_faturado/item.quantidade:0})).sort((a,b)=>b.total_faturado-a.total_faturado);
+      return json({items,evolucao:[...days.values()].sort((a,b)=>String(a.data).localeCompare(String(b.data))),totalizadores:{faturamento:items.reduce((s,x)=>s+x.total_faturado,0),quantidade:items.reduce((s,x)=>s+x.quantidade,0),produtos:items.length},origem_consulta:"sincronizacao"});
+    }
+
+    if (body.action === "products_metadata") {
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      const {data,error}=await admin.from("raffinato_produtos_cache").select("id_agrupamento,agrupamento")
+        .eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).not("id_agrupamento","is",null).limit(5000);
+      if(error)throw error;const groups=new Map<string,any>();
+      for(const item of data||[])groups.set(String(item.id_agrupamento),{id:item.id_agrupamento,nome:item.agrupamento});
+      return json({agrupamentos:[...groups.values()].sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR"))});
+    }
+
     if (body.action === "billing_dashboard") {
       validateUuid(body.empresa_id, "empresa"); validateUuid(body.loja_id, "loja");
       await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id);

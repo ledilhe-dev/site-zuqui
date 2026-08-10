@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.12"
+CONNECTOR_VERSION = "1.6.13"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -195,6 +195,18 @@ SELECT X.Data data,SUM(ISNULL(I.ValorTotal,0)) total_faturado,SUM(ISNULL(I.Quant
 FROM #IdsVendas X JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=X.Id
 GROUP BY X.Data ORDER BY data;
 DROP TABLE IF EXISTS #IdsVendas;
+"""
+
+SQL_PRODUTOS_DIARIO = """
+SET NOCOUNT ON;
+SELECT CONVERT(date,D.Data) data,P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
+ SUM(ISNULL(I.Quantidade,0)) quantidade,SUM(ISNULL(I.ValorTotal,0)) total_faturado
+FROM dbo.DocumentoFiscal D WITH (NOLOCK)
+JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=D.Id
+JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto
+LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+GROUP BY CONVERT(date,D.Data),P.Id,P.Nome,A.Id,A.Nome;
 """
 
 SQL_VENDAS_ANALISE = """
@@ -395,6 +407,16 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         "action":"billing_sync","token":config["relay_token"],
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":billing,
     },timeout=45)
+    filial=resolve_raffinato_filial(config,{})
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=60
+        cursor=connection.cursor()
+        cursor.execute(SQL_PRODUTOS_DIARIO,start.date(),end.date()+timedelta(days=1),filial)
+        products=rows_as_dicts(cursor)
+    relay_post({
+        "action":"products_sync","token":config["relay_token"],
+        "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":products,
+    },timeout=90)
 
 
 def relay_sync_loop(stop_event: threading.Event) -> None:
@@ -1074,7 +1096,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.12"
+    server_version = "CheckDiarioRaffinato/1.6.13"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
