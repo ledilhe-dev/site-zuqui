@@ -104,11 +104,29 @@ Deno.serve(async (request) => {
       if(fim<inicio)throw new Error("Periodo invalido.");
       const documents=Array.isArray(body.documents)?body.documents.slice(0,100000):[];
       const items=Array.isArray(body.items)?body.items.slice(0,100000):[];
+      const openDeliveries=Array.isArray(body.open_deliveries)?body.open_deliveries.slice(0,10000):[];
+      // O snapshot operacional deve ser substituido inclusive quando vazio: isso
+      // representa o ultimo delivery tendo migrado corretamente para faturado.
+      const {error:openDeleteError}=await admin.from("raffinato_delivery_aberto_cache").delete()
+        .eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id)
+        .gte("data",inicio).lte("data",fim);
+      if(openDeleteError)throw openDeleteError;
+      for(let offset=0;offset<openDeliveries.length;offset+=1000){
+        const rows=openDeliveries.slice(offset,offset+1000).map((x:any)=>({
+          empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:Number(x.id_filial||1),
+          id_tele_entrega:Number(x.id_tele_entrega),id_venda:Number(x.id_venda),pedido:Number(x.pedido),
+          data:validateDate(x.data,"data"),hora:String(x.hora||"00:00:00").slice(0,8),
+          id_status:Number(x.id_status),status:String(x.status||"").slice(0,100),valor:Number(x.valor||0),
+          cancelado:Boolean(x.cancelado),finalizado:Boolean(x.finalizado),
+          id_documento_fiscal:x.id_documento_fiscal==null?null:Number(x.id_documento_fiscal),sincronizado_em:new Date().toISOString(),
+        }));
+        const {error}=await admin.from("raffinato_delivery_aberto_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_tele_entrega"});if(error)throw error;
+      }
       // Nunca destrua o snapshot historico quando uma leitura transitoria do SQL
       // chegar vazia (por exemplo, durante o fechamento do caixa). Um periodo
       // realmente sem movimento nao precisa substituir dados previamente validos.
       if(!documents.length){
-        return json({ok:true,documentos:0,itens:0,preservado:true,motivo:"fonte_vazia"});
+        return json({ok:true,documentos:0,itens:0,deliveries_abertos:openDeliveries.length,preservado:true,motivo:"fonte_faturada_vazia"});
       }
       const documentDates=[...new Set(documents.map((x:any)=>validateDate(x.data,"data")))];
       const itemDates=[...new Set(items.map((x:any)=>validateDate(x.data,"data")))];
@@ -140,21 +158,22 @@ Deno.serve(async (request) => {
         }));
         const {error}=await admin.from("raffinato_itens_faturados_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_documento_fiscal,codigo"});if(error)throw error;
       }
-      return json({ok:true,documentos:documents.length,itens:items.length});
+      return json({ok:true,documentos:documents.length,itens:items.length,deliveries_abertos:openDeliveries.length});
     }
 
     if (body.action === "sales_canonical_dashboard") {
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
       const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=start&&dt<end;});};
-      const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),items=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado"),paymentsByDoc=new Map<string,any[]>(),totalByDoc=new Map<string,number>();
+      const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),items=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado"),openDeliveries=await load("raffinato_delivery_aberto_cache","id_tele_entrega,id_venda,pedido,data,hora,id_status,status,valor,cancelado,finalizado,id_documento_fiscal"),paymentsByDoc=new Map<string,any[]>(),totalByDoc=new Map<string,number>();
       if(!docs.length)throw new Error("CACHE_MISS: periodo ainda nao sincronizado pelo conector.");
       for(const d of docs){const id=String(d.id_documento_fiscal),list=paymentsByDoc.get(id)||[];list.push(d);paymentsByDoc.set(id,list);totalByDoc.set(id,(totalByDoc.get(id)||0)+Number(d.valor_pagamento||0));}
       const rows:any[]=[],dimensions:any[]=[];for(const item of items){const id=String(item.id_documento_fiscal),payments=paymentsByDoc.get(id)||[];for(const payment of payments){const factor=Number(payment.valor_pagamento||0)/(totalByDoc.get(id)||1),row={data:item.data,hora:item.hora,id_documento_fiscal:item.id_documento_fiscal,modulo_venda:payment.modulo_venda||"VENDA_RAPIDA",codigo:item.codigo,produto:item.produto,id_agrupamento:item.id_agrupamento,agrupamento:item.agrupamento,quantidade_atribuida:Number(item.quantidade||0)*factor,preco_medio:Number(item.quantidade||0)?Number(item.total_faturado||0)/Number(item.quantidade):0,faturamento_produto:Number(item.total_faturado||0),id_forma_pagamento:payment.id_forma_pagamento,forma_pagamento:payment.forma_pagamento,valor_atribuido:Number(item.total_faturado||0)*factor};rows.push(row);dimensions.push({id_documento:id,codigo:item.codigo,id_agrupamento:item.id_agrupamento,id_forma_pagamento:payment.id_forma_pagamento,modulo_venda:row.modulo_venda});}}
       const financial=[...totalByDoc.values()].reduce((s,x)=>s+x,0),contingencyDocs=new Set(docs.filter(x=>x.eh_contingencia).map(x=>String(x.id_documento_fiscal))),contingency=[...contingencyDocs].reduce((s,id)=>s+(totalByDoc.get(id)||0),0),identified=items.reduce((s,x)=>s+Number(x.total_faturado||0),0),adjustments=Math.round((financial-identified-contingency)*100)/100,moduleMap=new Map<string,any>();
       for(const [id,total] of totalByDoc){const module=String((paymentsByDoc.get(id)||[])[0]?.modulo_venda||"VENDA_RAPIDA"),x=moduleMap.get(module)||{modulo_venda:module,valor:0,ids:new Set<string>()};x.valor+=total;x.ids.add(id);moduleMap.set(module,x);}
       const canonicalTotals={faturamento:financial,produtos_identificados:identified,contingencia:contingency,ajustes_pedido:adjustments,total_reconciliado:identified+contingency+adjustments,diferenca_conciliacao:Math.round((financial-identified-contingency-adjustments)*100)/100,documentos_financeiro:totalByDoc.size,documentos_produtos:new Set(items.map(x=>String(x.id_documento_fiscal))).size,documentos_contingencia:contingencyDocs.size};
-      return json({schema_version:3,items:rows,documentos_dimensao:dimensions,contingencias:docs.filter(x=>x.eh_contingencia),operacoes_abertas:[],modulos_faturados:[...moduleMap.values()].map(x=>({modulo_venda:x.modulo_venda,valor:x.valor,quantidade:x.ids.size})),totalizadores_canonicos:canonicalTotals,totais_operacionais:{recebido:financial,em_aberto:0,previsto:financial},cache_version:3,duplicidades:0,cobertura:{completa:true},origem_consulta:"base_canonica_remota"});
+      const validOpenDeliveries=openDeliveries.filter(x=>!x.cancelado&&!x.finalizado&&!x.id_documento_fiscal),openDeliveryTotal=validOpenDeliveries.reduce((s,x)=>s+Number(x.valor||0),0);
+      return json({schema_version:3,items:rows,documentos_dimensao:dimensions,contingencias:docs.filter(x=>x.eh_contingencia),operacoes_abertas:validOpenDeliveries.length?[{modulo_venda:"DELIVERY",quantidade:validOpenDeliveries.length,valor:openDeliveryTotal}]:[],modulos_faturados:[...moduleMap.values()].map(x=>({modulo_venda:x.modulo_venda,valor:x.valor,quantidade:x.ids.size})),totalizadores_canonicos:canonicalTotals,totais_operacionais:{recebido:financial,em_aberto:openDeliveryTotal,previsto:financial+openDeliveryTotal},cache_version:3,duplicidades:0,cobertura:{completa:true},origem_consulta:"base_canonica_remota"});
     }
 
     if (body.action === "products_canonical_dashboard") {

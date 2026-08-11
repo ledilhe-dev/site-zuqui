@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.16"
+CONNECTOR_VERSION = "1.6.17"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -391,6 +391,29 @@ WHERE V.Data>=? AND V.Data<? AND NOT EXISTS(
 );
 """
 
+# Delivery em aberto nasce em TeleEntrega. Nao pode depender de DocumentoFiscal,
+# pois o documento so existe depois da finalizacao no frente de caixa.
+SQL_DELIVERIES_ABERTOS = """
+SET NOCOUNT ON;
+SELECT CONVERT(date,T.Data) data,CONVERT(varchar(8),CAST(T.Hora AS time),108) hora,
+ T.NumeroComanda pedido,T.Id id_tele_entrega,T.IdFilial id_filial,VT.IdVenda id_venda,
+ T.IdStatus id_status,S.NomeStatus status,CAST(ISNULL(V.ValorTotal,0) AS decimal(19,4)) valor,
+ CAST(CASE WHEN T.IdStatus=4 THEN 1 ELSE 0 END AS bit) cancelado,
+ CAST(CASE WHEN VT.Aberto=0 OR D.Id IS NOT NULL THEN 1 ELSE 0 END AS bit) finalizado,
+ D.Id id_documento_fiscal
+FROM dbo.TeleEntrega T WITH(NOLOCK)
+JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdTeleEntrega=T.Id
+JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VT.IdVenda AND V.IdFilial=T.IdFilial
+JOIN dbo.StatusDelivery S WITH(NOLOCK) ON S.Id=T.IdStatus
+LEFT JOIN dbo.VendaCupomFiscal VCF WITH(NOLOCK) ON VCF.IdVenda=V.Id
+LEFT JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal AND ISNULL(D.Cancelado,0)=0
+WHERE T.IdFilial=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(T.Hora AS time)),CAST(CONVERT(date,T.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(T.Hora AS time)),CAST(CONVERT(date,T.Data) AS datetime2))<?
+ AND VT.Aberto=1 AND T.IdStatus<>4 AND D.Id IS NULL
+ORDER BY T.Data,T.Hora,T.NumeroComanda;
+"""
+
 
 class DataBlob(ctypes.Structure):
     _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
@@ -513,10 +536,11 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         while cursor.nextset():
             if cursor.description:
                 canonical_items=rows_as_dicts(cursor); break
+    open_deliveries=query_deliveries_abertos(config,start,end+timedelta(seconds=1),filial)
     relay_post({
         "action":"canonical_sync","token":config["relay_token"],
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),
-        "documents":documents,"items":canonical_items,
+        "documents":documents,"items":canonical_items,"open_deliveries":open_deliveries,
     },timeout=120)
 
 
@@ -928,12 +952,17 @@ def query_vendas_analise_completa(config: dict[str, Any], body: dict[str, Any]) 
         row["valor"]+=float(item.get("valor_atribuido") or 0);row["documentos"].add(str(item.get("id_documento_fiscal") or ""))
     billed=[{"modulo_venda":key,"valor":round(value["valor"],2),"quantidade":len(value["documentos"])} for key,value in modules.items()]
     start=parse_datetime(body.get("inicio"),"Início");end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
-    statuses=query_vendas_status(config,start.date(),end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date(),resolve_raffinato_filial(config,body))
+    filial=resolve_raffinato_filial(config,body)
+    statuses=query_vendas_status(config,start.date(),end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date(),filial)
+    deliveries=query_deliveries_abertos(config,start,end,filial)
     open_rows:dict[str,dict[str,Any]]={}
     for item in statuses:
-        if bool(item.get("aberto")) and not bool(item.get("faturado")):
+        if str(item.get("modulo_venda")) != "DELIVERY" and bool(item.get("aberto")) and not bool(item.get("faturado")):
             module=str(item.get("modulo_venda") or "VENDA_RAPIDA");row=open_rows.setdefault(module,{"modulo_venda":module,"quantidade":0,"valor":0.0})
             row["quantidade"]+=1;row["valor"]+=float(item.get("valor") or 0)
+    if deliveries:
+        open_rows["DELIVERY"]={"modulo_venda":"DELIVERY","quantidade":len(deliveries),
+                               "valor":round(sum(float(x.get("valor") or 0) for x in deliveries),2)}
     totals=canonical["totalizadores"];open_total=round(sum(float(x["valor"]) for x in open_rows.values()),2)
     return {**analysis,"documentos_dimensao":dimensions,"contingencias":canonical.get("contingencias",[]),
             "totalizadores_canonicos":totals,"operacoes_abertas":list(open_rows.values()),"modulos_faturados":billed,
@@ -946,6 +975,13 @@ def query_vendas_status(config: dict[str, Any], start: date, end_exclusive: date
         connection.timeout=45;cursor=connection.cursor();cursor.execute(
             SQL_VENDAS_STATUS,filial,start,end_exclusive,filial,start,end_exclusive
         )
+        return rows_as_dicts(cursor)
+
+
+def query_deliveries_abertos(config: dict[str, Any], start: datetime, end_exclusive: datetime, filial: int) -> list[dict[str, Any]]:
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout=45;cursor=connection.cursor()
+        cursor.execute(SQL_DELIVERIES_ABERTOS,filial,start,end_exclusive)
         return rows_as_dicts(cursor)
 
 
@@ -1282,7 +1318,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.16"
+    server_version = "CheckDiarioRaffinato/1.6.17"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
