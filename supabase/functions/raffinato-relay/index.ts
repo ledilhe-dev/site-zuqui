@@ -114,7 +114,7 @@ Deno.serve(async (request) => {
       for(let offset=0;offset<openDeliveries.length;offset+=1000){
         const rows=openDeliveries.slice(offset,offset+1000).map((x:any)=>({
           empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:Number(x.id_filial||1),
-          id_tele_entrega:Number(x.id_tele_entrega),id_venda:Number(x.id_venda),pedido:Number(x.pedido),
+          id_tele_entrega:Number(x.id_tele_entrega),id_venda:x.id_venda==null?null:Number(x.id_venda),pedido:Number(x.pedido),
           data:validateDate(x.data,"data"),hora:String(x.hora||"00:00:00").slice(0,8),
           id_status:Number(x.id_status),status:String(x.status||"").slice(0,100),valor:Number(x.valor||0),
           cancelado:Boolean(x.cancelado),finalizado:Boolean(x.finalizado),

@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.17"
+CONNECTOR_VERSION = "1.6.18"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -396,22 +396,20 @@ WHERE V.Data>=? AND V.Data<? AND NOT EXISTS(
 SQL_DELIVERIES_ABERTOS = """
 SET NOCOUNT ON;
 SELECT CONVERT(date,T.Data) data,CONVERT(varchar(8),CAST(T.Hora AS time),108) hora,
- T.NumeroComanda pedido,T.Id id_tele_entrega,T.IdFilial id_filial,VT.IdVenda id_venda,
- T.IdStatus id_status,S.NomeStatus status,CAST(ISNULL(V.ValorTotal,0) AS decimal(19,4)) valor,
- CAST(CASE WHEN T.IdStatus=4 THEN 1 ELSE 0 END AS bit) cancelado,
- CAST(CASE WHEN VT.Aberto=0 OR D.Id IS NOT NULL THEN 1 ELSE 0 END AS bit) finalizado,
- D.Id id_documento_fiscal
+ T.NumeroComanda pedido,T.Id id_tele_entrega,T.IdFilial id_filial,
+ T.IdStatus id_status,S.NomeStatus status,
+ CAST(SUM(ISNULL(PD.Valor,0)) AS decimal(19,4)) valor,
+ CAST(0 AS bit) cancelado,CAST(0 AS bit) finalizado,
+ CAST(NULL AS bigint) id_documento_fiscal
 FROM dbo.TeleEntrega T WITH(NOLOCK)
-JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdTeleEntrega=T.Id
-JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VT.IdVenda AND V.IdFilial=T.IdFilial
+JOIN dbo.PagamentoDelivery PD WITH(NOLOCK) ON PD.IdTeleEntrega=T.Id AND ISNULL(PD.Cancelado,0)=0
 JOIN dbo.StatusDelivery S WITH(NOLOCK) ON S.Id=T.IdStatus
-LEFT JOIN dbo.VendaCupomFiscal VCF WITH(NOLOCK) ON VCF.IdVenda=V.Id
-LEFT JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal AND ISNULL(D.Cancelado,0)=0
 WHERE T.IdFilial=?
  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(T.Hora AS time)),CAST(CONVERT(date,T.Data) AS datetime2))>=?
  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(T.Hora AS time)),CAST(CONVERT(date,T.Data) AS datetime2))<?
- AND VT.Aberto=1 AND T.IdStatus<>4 AND D.Id IS NULL
-ORDER BY T.Data,T.Hora,T.NumeroComanda;
+ AND T.IdStatus=1
+GROUP BY CONVERT(date,T.Data),T.Hora,T.NumeroComanda,T.Id,T.IdFilial,T.IdStatus,S.NomeStatus
+ORDER BY data,hora,pedido;
 """
 
 
@@ -1318,7 +1316,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.17"
+    server_version = "CheckDiarioRaffinato/1.6.18"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
