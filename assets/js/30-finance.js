@@ -2551,6 +2551,29 @@ async function abrirModalBaixaMultiplaRecebiveis() {
   atualizarEstadoModalBaixaMultiplaRecebiveis();
 }
 
+function configurarBotaoBaixaMultiplaRecebiveis() {
+  const botao = document.getElementById('btnConfirmarRecFuturosSelecionados');
+  const overlay = document.getElementById('baixaMultiplaRecebiveisOverlay');
+  if (overlay) posicionarModalRecebiveisNaViewport(overlay);
+  if (!botao || botao.dataset.cliqueConfigurado === 'true') return;
+  botao.dataset.cliqueConfigurado = 'true';
+  botao.removeAttribute('onclick');
+  botao.addEventListener('click', evento => {
+    evento.preventDefault();
+    evento.stopPropagation();
+    Promise.resolve(abrirModalBaixaMultiplaRecebiveis()).catch(erro => {
+      const mensagem = `Não foi possível abrir a confirmação múltipla: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`;
+      setMsg('msgRecFuturosLista', mensagem, 'err');
+      const modal = posicionarModalRecebiveisNaViewport(document.getElementById('baixaMultiplaRecebiveisOverlay'));
+      modal?.classList.add('show');
+      setMsg('msgBaixaMultiplaRecebiveis', mensagem, 'err');
+    });
+  });
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', configurarBotaoBaixaMultiplaRecebiveis);
+else configurarBotaoBaixaMultiplaRecebiveis();
+
 function fecharModalBaixaMultiplaRecebiveis() { if (baixaMultiplaRecebiveisProcessando) return; document.getElementById('baixaMultiplaRecebiveisOverlay')?.classList.remove('show'); }
 
 async function confirmarRecFuturoEmLote(item, conta, movimentarSaldo, confirmadoPorNome) {
