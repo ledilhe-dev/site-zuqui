@@ -2467,6 +2467,7 @@ function atualizarResumoSelecaoRecFuturos() {
   const qtdSelecionados = selecionadosVisiveis.length;
   const btnSelecionar = document.getElementById('btnSelecionarTodosRecFuturos');
   const btnExcluir = document.getElementById('btnExcluirRecFuturosSelecionados');
+  const btnConfirmar = document.getElementById('btnConfirmarRecFuturosSelecionados');
   const resumo = document.getElementById('resumoSelecaoRecFuturos');
   const acoes = document.getElementById('acoesSelecaoRecFuturos');
   const valorSelecionado = (recFuturosCache || [])
@@ -2483,11 +2484,100 @@ function atualizarResumoSelecaoRecFuturos() {
     btnExcluir.disabled = !qtdSelecionados;
     btnExcluir.style.display = qtdSelecionados ? '' : 'none';
   }
+  if (btnConfirmar) btnConfirmar.disabled = !qtdSelecionados || baixaMultiplaRecebiveisProcessando;
   if (resumo) {
     resumo.textContent = qtdSelecionados
       ? `${qtdSelecionados} selecionada(s): ${formatarMoedaBRFinanceiro(valorSelecionado)}`
       : (totalVisiveis ? `${totalVisiveis} recebimento(s) no filtro.` : 'Nenhum recebimento selecionado.');
   }
+}
+
+function obterRecFuturosSelecionadosPendentes() {
+  return (recFuturosCache || []).filter(item => recFuturosSelecionadosIds.has(String(item.id)) && !item.confirmado_em);
+}
+
+function atualizarEstadoModalBaixaMultiplaRecebiveis() {
+  const sim = document.getElementById('btnBaixaMultiplaMovimentarSim');
+  const nao = document.getElementById('btnBaixaMultiplaMovimentarNao');
+  [sim, nao].forEach((btn, indice) => {
+    const ativo = indice === 0 ? baixaMultiplaRecebiveisMovimentarSaldo : !baixaMultiplaRecebiveisMovimentarSaldo;
+    btn?.classList.toggle('ativo', ativo); btn?.setAttribute('aria-pressed', String(ativo));
+  });
+  document.querySelectorAll('#baixaMultiplaRecebiveisContas .conta-financeira-opcao').forEach(btn => {
+    const ativo = String(btn.dataset.contaId) === String(baixaMultiplaRecebiveisContaId);
+    btn.classList.toggle('selecionada', ativo); btn.setAttribute('aria-pressed', String(ativo));
+    const hint = btn.querySelector('.hint'); if (hint) hint.textContent = ativo ? '✓ Conta selecionada' : 'Toque para selecionar';
+  });
+  const confirmar = document.getElementById('btnExecutarBaixaMultiplaRecebiveis');
+  if (confirmar) confirmar.disabled = !baixaMultiplaRecebiveisContaId || baixaMultiplaRecebiveisProcessando;
+}
+
+function definirMovimentacaoBaixaMultiplaRecebiveis(valor) { baixaMultiplaRecebiveisMovimentarSaldo = valor === true; atualizarEstadoModalBaixaMultiplaRecebiveis(); }
+function selecionarContaBaixaMultiplaRecebiveis(id) { baixaMultiplaRecebiveisContaId = String(id || ''); atualizarEstadoModalBaixaMultiplaRecebiveis(); }
+
+async function abrirModalBaixaMultiplaRecebiveis() {
+  const itens = obterRecFuturosSelecionadosPendentes();
+  if (!itens.length) { setMsg('msgRecFuturosLista', 'Selecione ao menos um recebimento pendente.', 'err'); return; }
+  await carregarContasFinanceiras({ render:false, silencioso:true });
+  const contas = (contasFinanceirasCache || []).filter(c => c?.ativo !== false);
+  if (!contas.length) { setMsg('msgRecFuturosLista', 'Cadastre e ative uma conta financeira antes de confirmar.', 'err'); return; }
+  baixaMultiplaRecebiveisContaId = '';
+  baixaMultiplaRecebiveisMovimentarSaldo = true;
+  const total = itens.reduce((s, item) => s + Number(item.valor || 0), 0);
+  document.getElementById('baixaMultiplaRecebiveisQtd').textContent = String(itens.length);
+  document.getElementById('baixaMultiplaRecebiveisTotal').textContent = formatarMoedaBRFinanceiro(total);
+  document.getElementById('baixaMultiplaRecebiveisSubtitle').textContent = `${itens.length} recebível(is) selecionado(s)`;
+  document.getElementById('baixaMultiplaRecebiveisItens').innerHTML = itens.map(item => `<div class="baixa-multipla-item"><span><strong>${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador')}</strong><small>${formatarDataBRFinanceiro(item.data_prevista)}</small></span><strong>${formatarMoedaBRFinanceiro(item.valor || 0)}</strong></div>`).join('');
+  document.getElementById('baixaMultiplaRecebiveisContas').innerHTML = contas.map((conta, i) => `<button class="conta-financeira-opcao conta-financeira-cor-${i % 6}" data-conta-id="${conta.id}" aria-pressed="false" type="button" onclick="selecionarContaBaixaMultiplaRecebiveis('${conta.id}')"><span class="nome">${escaparHtmlBasico(conta.nome || '-')}</span><span class="saldo">${formatarMoedaBRFinanceiro(conta.saldo_atual || 0)}</span><span class="hint">Toque para selecionar</span></button>`).join('');
+  document.getElementById('btnExecutarBaixaMultiplaRecebiveis').textContent = `Confirmar ${itens.length} recebimento(s)`;
+  setMsg('msgBaixaMultiplaRecebiveis', '', '');
+  document.getElementById('baixaMultiplaRecebiveisOverlay').classList.add('show');
+  atualizarEstadoModalBaixaMultiplaRecebiveis();
+}
+
+function fecharModalBaixaMultiplaRecebiveis() { if (baixaMultiplaRecebiveisProcessando) return; document.getElementById('baixaMultiplaRecebiveisOverlay')?.classList.remove('show'); }
+
+async function confirmarRecFuturoEmLote(item, conta, movimentarSaldo, confirmadoPorNome) {
+  const valor = Number(Number(item.valor || 0).toFixed(2));
+  if (!Number.isFinite(valor) || valor <= 0) throw new Error('Valor pendente inválido.');
+  const confirmadoEm = new Date().toISOString();
+  const { data: travado, error: erroTrava } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({ confirmado_em:confirmadoEm, confirmado_por_nome:confirmadoPorNome, valor_confirmado:valor, conta_financeira_confirmada_id:conta.id }).eq('id', item.id).is('confirmado_em', null).select('id').maybeSingle());
+  if (erroTrava) throw erroTrava;
+  if (!travado?.id) throw new Error('O recebimento já foi confirmado por outro usuário.');
+  const payload = { pagador_id:item.pagador_id, forma_pagamento_id:item.forma_pagamento_id, conta_financeira_id:conta.id, valor, empresa_id:conta.empresa_id || item.empresa_id || null, loja_id:conta.loja_id || item.loja_id || null, criado_por_id:obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null, criado_por_nome:confirmadoPorNome, movimentar_saldo:movimentarSaldo };
+  const { error: erroRecebivel } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').insert([payload]));
+  if (erroRecebivel) {
+    await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({ confirmado_em:null, confirmado_por_nome:null, valor_confirmado:null, conta_financeira_confirmada_id:null }).eq('id', item.id).eq('confirmado_em', confirmadoEm));
+    throw erroRecebivel;
+  }
+  return valor;
+}
+
+async function confirmarBaixaMultiplaRecebiveis() {
+  if (baixaMultiplaRecebiveisProcessando) return;
+  const itens = obterRecFuturosSelecionadosPendentes();
+  const conta = (contasFinanceirasCache || []).find(c => String(c.id) === String(baixaMultiplaRecebiveisContaId));
+  if (!itens.length || !conta) { setMsg('msgBaixaMultiplaRecebiveis', 'Selecione os recebíveis e uma conta financeira.', 'err'); return; }
+  const total = itens.reduce((s, item) => s + Number(item.valor || 0), 0);
+  const pin = await confirmarAcaoComPin({ funcionario:obterFuncionarioOperadorAtual(), titulo:'Baixa múltipla de recebíveis', subtitulo:`Confirme ${itens.length} recebimento(s), total ${formatarMoedaBRFinanceiro(total)}${baixaMultiplaRecebiveisMovimentarSaldo ? `, movimentando a conta ${conta.nome}.` : ', sem movimentar o saldo.'}`, textoAcao:'Confirmar recebimentos', escopo:'empresa' });
+  if (!pin) return;
+  baixaMultiplaRecebiveisProcessando = true;
+  const btn = document.getElementById('btnExecutarBaixaMultiplaRecebiveis');
+  if (btn) { btn.disabled = true; btn.textContent = 'Processando recebimentos...'; }
+  let confirmados = 0, totalConfirmado = 0; const falhas = [];
+  for (const item of itens) {
+    try { totalConfirmado += await confirmarRecFuturoEmLote(item, conta, baixaMultiplaRecebiveisMovimentarSaldo, pin.nomeFuncionario || usuarioSistemaLogado?.nome || 'Usuário'); confirmados++; recFuturosSelecionadosIds.delete(String(item.id)); }
+    catch (erro) { falhas.push(`${item.fornecedores?.nome || 'Recebível'}: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`); }
+  }
+  baixaMultiplaRecebiveisProcessando = false;
+  document.getElementById('baixaMultiplaRecebiveisOverlay')?.classList.remove('show');
+  await carregarContasFinanceiras({ render:false, silencioso:true });
+  await carregarRecFuturos();
+  recebiveisFinanceiroListaVisivel = true; await carregarRecebiveisFinanceiro();
+  if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+  const mensagem = falhas.length ? `${confirmados} recebimento(s) confirmado(s). ${falhas.length} não pôde/puderam ser confirmado(s): ${falhas.join(' | ')}` : `${confirmados} recebimento(s) confirmado(s) com sucesso — ${formatarMoedaBRFinanceiro(totalConfirmado)}`;
+  setMsg('msgRecFuturosLista', mensagem, falhas.length ? 'err' : 'ok');
+  atualizarResumoSelecaoRecFuturos();
 }
 
 async function excluirRecFuturosSelecionados() {

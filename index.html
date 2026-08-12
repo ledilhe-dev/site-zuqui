@@ -2069,6 +2069,7 @@
           <div class="form-row financeiro-filtros-row financeiro-selecao-rec-futuros-row" id="acoesSelecaoRecFuturos" style="margin-bottom:8px;gap:8px;align-items:center;display:none;">
             <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecFuturos" type="button" onclick="toggleSelecionarTodosRecFuturos()">Selecionar todas</button>
             <div class="item-detalhe" id="resumoSelecaoRecFuturos" style="align-self:center">Nenhum recebimento selecionado.</div>
+            <button class="btn btn-green btn-sm" id="btnConfirmarRecFuturosSelecionados" type="button" onclick="abrirModalBaixaMultiplaRecebiveis()" disabled>Confirmar recebimentos</button>
             <button class="btn btn-red btn-sm" id="btnExcluirRecFuturosSelecionados" type="button" onclick="excluirRecFuturosSelecionados()" style="display:none;" disabled>Excluir selecionadas</button>
           </div>
           <div class="msg" id="msgRecFuturosLista"></div>
@@ -2916,7 +2917,7 @@
 <link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260810-password-v11">
 <link rel="stylesheet" href="./assets/css/111-raffinato-billing.css?v=20260810-clear-v2">
 <link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-crossfilter-v2">
-<link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260811-baixa-contas-v2">
+<link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260811-baixa-multipla-recebiveis-v1">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260810-global-contrast-v2">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
@@ -3190,6 +3191,20 @@
           <button type="button" data-account-theme="dark" onclick="definirTemaInterface('dark')">🌙 <strong>Escuro</strong></button>
           <button type="button" data-account-theme="system" onclick="definirTemaInterface('system')">◐ <strong>Sistema</strong></button>
         </div>
+
+        <div class="overlay" id="baixaMultiplaRecebiveisOverlay">
+          <div class="modal baixa-multipla-recebiveis-modal">
+            <div class="modal-header"><div><h3>Confirmar recebimentos</h3><div id="baixaMultiplaRecebiveisSubtitle" class="item-detalhe"></div></div><button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalBaixaMultiplaRecebiveis()">× Fechar</button></div>
+            <div class="modal-body">
+              <div class="baixa-multipla-resumo"><div><span>Recebíveis</span><strong id="baixaMultiplaRecebiveisQtd">0</strong></div><div><span>Total</span><strong id="baixaMultiplaRecebiveisTotal">R$ 0,00</strong></div></div>
+              <div class="baixa-multipla-toggle"><span>Movimentar saldo da conta financeira?</span><button class="btn btn-ghost" id="btnBaixaMultiplaMovimentarSim" type="button" onclick="definirMovimentacaoBaixaMultiplaRecebiveis(true)">SIM</button><button class="btn btn-ghost" id="btnBaixaMultiplaMovimentarNao" type="button" onclick="definirMovimentacaoBaixaMultiplaRecebiveis(false)">NÃO</button></div>
+              <div><div class="campo-label">Conta financeira</div><div class="conta-financeira-opcoes" id="baixaMultiplaRecebiveisContas"></div></div>
+              <details class="baixa-multipla-detalhes"><summary>Ver recebíveis</summary><div id="baixaMultiplaRecebiveisItens"></div></details>
+              <div class="msg" id="msgBaixaMultiplaRecebiveis"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-ghost" type="button" onclick="fecharModalBaixaMultiplaRecebiveis()">Cancelar</button><button class="btn btn-green" id="btnExecutarBaixaMultiplaRecebiveis" type="button" onclick="confirmarBaixaMultiplaRecebiveis()" disabled>Confirmar recebimentos</button></div>
+          </div>
+        </div>
       </section>
     </div>
     <div class="modal-footer"><button class="btn btn-primary" type="button" onclick="fecharMinhaConta()">Concluir</button></div>
@@ -3220,7 +3235,7 @@
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
 <script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
 <script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js?v=20260811-baixa-contas-v2"></script>
+<script src="./assets/js/03-core-state.js?v=20260811-baixa-multipla-recebiveis-v1"></script>
 <script src="./assets/js/04-navigation.js?v=20260810-produtos-raffinato"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
@@ -3229,7 +3244,7 @@
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260809-cartoes-contas"></script>
+<script src="./assets/js/30-finance.js?v=20260811-baixa-multipla-recebiveis-v1"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260810-password-v18"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-crossfilter-v2"></script>
