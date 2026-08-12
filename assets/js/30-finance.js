@@ -2160,10 +2160,16 @@ async function excluirRecFuturo(id) {
   } catch(e) { alert('Erro ao excluir: ' + (e?.message || '')); }
 }
 
+function posicionarModalRecebiveisNaViewport(modal) {
+  if (!modal) return null;
+  if (modal.parentElement !== document.body) document.body.appendChild(modal);
+  return modal;
+}
+
 async function abrirModalConfirmarRecFuturo(id) {
   const item = recFuturosCache.find(i => String(i.id) === String(id));
   if (!item) return;
-  const modal = document.getElementById('modalConfirmarRecFuturo');
+  const modal = posicionarModalRecebiveisNaViewport(document.getElementById('modalConfirmarRecFuturo'));
   if (!modal) return;
   modal.style.display = 'flex';
   setMsg('msgModalConfirmarRecFuturo', 'Carregando contas financeiras...', '');
@@ -2524,7 +2530,7 @@ function selecionarContaBaixaMultiplaRecebiveis(id) { baixaMultiplaRecebiveisCon
 async function abrirModalBaixaMultiplaRecebiveis() {
   const itens = obterRecFuturosSelecionadosPendentes();
   if (!itens.length) { setMsg('msgRecFuturosLista', 'Selecione ao menos um recebimento pendente.', 'err'); return; }
-  const overlay = document.getElementById('baixaMultiplaRecebiveisOverlay');
+  const overlay = posicionarModalRecebiveisNaViewport(document.getElementById('baixaMultiplaRecebiveisOverlay'));
   if (!overlay) { setMsg('msgRecFuturosLista', 'O modal de confirmação não foi carregado. Atualize a página com Ctrl+F5.', 'err'); return; }
   overlay.classList.add('show');
   setMsg('msgBaixaMultiplaRecebiveis', 'Carregando contas financeiras...', '');

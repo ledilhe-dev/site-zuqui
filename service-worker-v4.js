@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v160-baixa-multipla-recebiveis-fix';
+const CACHE_NAME = 'check-diario-pwa-v161-modal-recebiveis-viewport';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

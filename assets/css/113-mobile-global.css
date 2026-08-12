@@ -89,6 +89,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 
 .financeiro-selecao-rec-futuros-row{flex-wrap:wrap}
 .baixa-multipla-recebiveis-modal{width:min(720px,calc(100vw - 24px));max-width:720px;max-height:min(88dvh,820px)}
+#modalConfirmarRecFuturo,#baixaMultiplaRecebiveisOverlay{position:fixed!important;inset:0!important;margin:0!important;z-index:12000!important;align-items:center!important;justify-content:center!important}
+#modalConfirmarRecFuturo>div{max-height:calc(100dvh - 24px);overflow:auto}
 .baixa-multipla-recebiveis-modal .modal-body{display:grid;gap:14px;overflow:auto;overscroll-behavior:contain}
 .baixa-multipla-resumo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .baixa-multipla-resumo>div{display:grid;gap:5px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface2)}
