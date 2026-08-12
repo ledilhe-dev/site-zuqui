@@ -2160,11 +2160,15 @@ async function excluirRecFuturo(id) {
   } catch(e) { alert('Erro ao excluir: ' + (e?.message || '')); }
 }
 
-function abrirModalConfirmarRecFuturo(id) {
+async function abrirModalConfirmarRecFuturo(id) {
   const item = recFuturosCache.find(i => String(i.id) === String(id));
   if (!item) return;
   const modal = document.getElementById('modalConfirmarRecFuturo');
   if (!modal) return;
+  modal.style.display = 'flex';
+  setMsg('msgModalConfirmarRecFuturo', 'Carregando contas financeiras...', '');
+  try { await carregarContasFinanceiras({ render:false, silencioso:true }); }
+  catch (erro) { setMsg('msgModalConfirmarRecFuturo', `Não foi possível carregar as contas: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`, 'err'); return; }
   document.getElementById('modalConfirmarRecFuturoId').value = id;
   // Pr?-preencher com valores previstos
   const hoje = new Date().toISOString().slice(0, 10);
@@ -2181,7 +2185,6 @@ function abrirModalConfirmarRecFuturo(id) {
   }
   document.getElementById('modalConfirmarObs').value = '';
   setMsg('msgModalConfirmarRecFuturo', '', '');
-  modal.style.display = 'flex';
 }
 
 function fecharModalConfirmarRecFuturo() {
@@ -2264,17 +2267,19 @@ async function confirmarRecebimentoFuturo() {
       valor_confirmado: valorConfirmado,
       conta_financeira_confirmada_id: contaId,
     };
-    let { error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id)
+    let { data: futuroTravado, error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
+      sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id).is('confirmado_em', null).select('id').maybeSingle()
     );
     // Fallback para bancos sem as colunas de auditoria da confirma·o
     if (erroUpdate && isMissingColumnError(erroUpdate)) {
       const tentativaMinima = await executarSemFiltroLojaTemporario(() =>
-        sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id)
+        sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id).is('confirmado_em', null).select('id').maybeSingle()
       );
+      futuroTravado = tentativaMinima.data;
       erroUpdate = tentativaMinima.error;
     }
     if (erroUpdate) throw erroUpdate;
+    if (!futuroTravado?.id) throw new Error('Este recebimento já foi confirmado. Atualize a lista.');
 
     // 2. Criar o receb?vel real para aparecer na tela de Recebíveis
     const pagadorNome = item?.fornecedores?.nome || 'pagador';
@@ -2284,6 +2289,7 @@ async function confirmarRecebimentoFuturo() {
       forma_pagamento_id: item.forma_pagamento_id,
       conta_financeira_id: contaId,
       valor: valorConfirmado,
+      recebivel_futuro_id: item.id,
       empresa_id: empresaId,
       loja_id: lojaId,
     };
@@ -2518,9 +2524,14 @@ function selecionarContaBaixaMultiplaRecebiveis(id) { baixaMultiplaRecebiveisCon
 async function abrirModalBaixaMultiplaRecebiveis() {
   const itens = obterRecFuturosSelecionadosPendentes();
   if (!itens.length) { setMsg('msgRecFuturosLista', 'Selecione ao menos um recebimento pendente.', 'err'); return; }
-  await carregarContasFinanceiras({ render:false, silencioso:true });
+  const overlay = document.getElementById('baixaMultiplaRecebiveisOverlay');
+  if (!overlay) { setMsg('msgRecFuturosLista', 'O modal de confirmação não foi carregado. Atualize a página com Ctrl+F5.', 'err'); return; }
+  overlay.classList.add('show');
+  setMsg('msgBaixaMultiplaRecebiveis', 'Carregando contas financeiras...', '');
+  try { await carregarContasFinanceiras({ render:false, silencioso:true }); }
+  catch (erro) { setMsg('msgBaixaMultiplaRecebiveis', `Não foi possível carregar as contas: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`, 'err'); return; }
   const contas = (contasFinanceirasCache || []).filter(c => c?.ativo !== false);
-  if (!contas.length) { setMsg('msgRecFuturosLista', 'Cadastre e ative uma conta financeira antes de confirmar.', 'err'); return; }
+  if (!contas.length) { setMsg('msgBaixaMultiplaRecebiveis', 'Cadastre e ative uma conta financeira antes de confirmar.', 'err'); return; }
   baixaMultiplaRecebiveisContaId = '';
   baixaMultiplaRecebiveisMovimentarSaldo = true;
   const total = itens.reduce((s, item) => s + Number(item.valor || 0), 0);
@@ -2531,7 +2542,6 @@ async function abrirModalBaixaMultiplaRecebiveis() {
   document.getElementById('baixaMultiplaRecebiveisContas').innerHTML = contas.map((conta, i) => `<button class="conta-financeira-opcao conta-financeira-cor-${i % 6}" data-conta-id="${conta.id}" aria-pressed="false" type="button" onclick="selecionarContaBaixaMultiplaRecebiveis('${conta.id}')"><span class="nome">${escaparHtmlBasico(conta.nome || '-')}</span><span class="saldo">${formatarMoedaBRFinanceiro(conta.saldo_atual || 0)}</span><span class="hint">Toque para selecionar</span></button>`).join('');
   document.getElementById('btnExecutarBaixaMultiplaRecebiveis').textContent = `Confirmar ${itens.length} recebimento(s)`;
   setMsg('msgBaixaMultiplaRecebiveis', '', '');
-  document.getElementById('baixaMultiplaRecebiveisOverlay').classList.add('show');
   atualizarEstadoModalBaixaMultiplaRecebiveis();
 }
 
@@ -2544,7 +2554,7 @@ async function confirmarRecFuturoEmLote(item, conta, movimentarSaldo, confirmado
   const { data: travado, error: erroTrava } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({ confirmado_em:confirmadoEm, confirmado_por_nome:confirmadoPorNome, valor_confirmado:valor, conta_financeira_confirmada_id:conta.id }).eq('id', item.id).is('confirmado_em', null).select('id').maybeSingle());
   if (erroTrava) throw erroTrava;
   if (!travado?.id) throw new Error('O recebimento já foi confirmado por outro usuário.');
-  const payload = { pagador_id:item.pagador_id, forma_pagamento_id:item.forma_pagamento_id, conta_financeira_id:conta.id, valor, empresa_id:conta.empresa_id || item.empresa_id || null, loja_id:conta.loja_id || item.loja_id || null, criado_por_id:obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null, criado_por_nome:confirmadoPorNome, movimentar_saldo:movimentarSaldo };
+  const payload = { pagador_id:item.pagador_id, forma_pagamento_id:item.forma_pagamento_id, conta_financeira_id:conta.id, valor, empresa_id:conta.empresa_id || item.empresa_id || null, loja_id:conta.loja_id || item.loja_id || null, criado_por_id:obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null, criado_por_nome:confirmadoPorNome, recebivel_futuro_id:item.id, data_prevista_original:item.data_prevista || null, movimentar_saldo:movimentarSaldo };
   const { error: erroRecebivel } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').insert([payload]));
   if (erroRecebivel) {
     await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({ confirmado_em:null, confirmado_por_nome:null, valor_confirmado:null, conta_financeira_confirmada_id:null }).eq('id', item.id).eq('confirmado_em', confirmadoEm));
