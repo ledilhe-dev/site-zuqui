@@ -2174,6 +2174,8 @@ function definirMovimentacaoRecebimentoIndividual(valor = true) {
   nao?.classList.toggle('ativo', !modalConfirmarRecFuturoMovimentarSaldo);
   sim?.setAttribute('aria-pressed', String(modalConfirmarRecFuturoMovimentarSaldo));
   nao?.setAttribute('aria-pressed', String(!modalConfirmarRecFuturoMovimentarSaldo));
+  if (sim) sim.textContent = modalConfirmarRecFuturoMovimentarSaldo ? '✓ SIM' : 'SIM';
+  if (nao) nao.textContent = modalConfirmarRecFuturoMovimentarSaldo ? 'NÃO' : '✓ NÃO';
   const resumo = document.getElementById('modalConfirmarMovimentacaoResumo');
   if (resumo) resumo.textContent = modalConfirmarRecFuturoMovimentarSaldo ? 'SIM — adicionar o valor ao saldo' : 'NÃO — salvar sem alterar o saldo';
 }
@@ -2529,6 +2531,7 @@ function atualizarEstadoModalBaixaMultiplaRecebiveis() {
   [sim, nao].forEach((btn, indice) => {
     const ativo = indice === 0 ? baixaMultiplaRecebiveisMovimentarSaldo : !baixaMultiplaRecebiveisMovimentarSaldo;
     btn?.classList.toggle('ativo', ativo); btn?.setAttribute('aria-pressed', String(ativo));
+    if (btn) btn.textContent = ativo ? `✓ ${indice === 0 ? 'SIM' : 'NÃO'}` : (indice === 0 ? 'SIM' : 'NÃO');
   });
   document.querySelectorAll('#baixaMultiplaRecebiveisContas .conta-financeira-opcao').forEach(btn => {
     const ativo = String(btn.dataset.contaId) === String(baixaMultiplaRecebiveisContaId);

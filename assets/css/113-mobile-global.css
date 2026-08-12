@@ -42,9 +42,12 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 #rsOpenCard[hidden]{display:none!important}
 
 /* Baixa de contas: filtros nativos únicos, seleção touch e modal com ações acessíveis. */
-#financeiro_baixar_contas .financeiro-filtros-baixar{display:grid!important;grid-template-columns:minmax(260px,1fr) repeat(2,minmax(130px,160px)) minmax(170px,210px) minmax(120px,150px) auto auto auto;align-items:end!important;gap:8px!important}
+#financeiro_baixar_contas .financeiro-filtros-baixar{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end!important;gap:10px!important}
+#financeiro_baixar_contas .baixar-contas-busca{grid-column:span 2}
 #financeiro_baixar_contas .financeiro-filtros-baixar>.filter-field-standard{width:100%;min-width:0}
+#financeiro_baixar_contas .financeiro-filtros-baixar>.filter-field-standard>span{display:block;min-height:14px;margin-bottom:5px;line-height:1.25;white-space:normal}
 #financeiro_baixar_contas .financeiro-filtros-baixar :is(input,select,button){width:100%!important;min-width:0!important;min-height:38px}
+#financeiro_baixar_contas .financeiro-filtros-baixar>.btn{grid-column:span 2}
 #financeiro_baixar_contas .baixar-contas-resumo-card .valor{overflow-wrap:normal;word-break:normal;white-space:nowrap;font-variant-numeric:tabular-nums}
 .conta-financeira-baixa-modal{width:min(720px,calc(100vw - 24px));max-width:720px;max-height:min(88dvh,820px)}
 .conta-financeira-baixa-modal .modal-body{overscroll-behavior:contain}
@@ -53,6 +56,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 .conta-financeira-opcao{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .conta-financeira-opcao.selecionada{border-color:#fff;box-shadow:0 0 0 3px rgba(34,197,94,.78),0 10px 24px rgba(0,0,0,.28);filter:brightness(1.12);transform:translateY(-1px)}
 .conta-financeira-movimentacao-toggle .btn-sm{touch-action:manipulation;min-height:42px}
+.baixa-multipla-toggle .btn.ativo,.conta-financeira-movimentacao-toggle .btn-sm.ativo{background:#15803d;color:#fff;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.28),0 6px 14px rgba(21,128,61,.22);font-weight:900}
+.baixa-multipla-toggle .btn[aria-pressed="false"],.conta-financeira-movimentacao-toggle .btn-sm[aria-pressed="false"]{opacity:.76}
 :root[data-theme="dark"] #financeiro_baixar_contas :is(input,select,textarea),
 :root[data-theme="dark"] .conta-financeira-baixa-modal :is(input,select,textarea){background:#080f18;color:#f8fafc;-webkit-text-fill-color:#f8fafc;caret-color:#f8fafc;border-color:#334155;color-scheme:dark}
 :root[data-theme="dark"] #financeiro_baixar_contas :is(input,textarea)::placeholder,
@@ -60,15 +65,17 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 :root[data-theme="dark"] #financeiro_baixar_contas input:-webkit-autofill,
 :root[data-theme="dark"] .conta-financeira-baixa-modal input:-webkit-autofill{-webkit-text-fill-color:#f8fafc;caret-color:#f8fafc;-webkit-box-shadow:0 0 0 1000px #080f18 inset}
 
-@media(max-width:1100px) and (min-width:701px){
- #financeiro_baixar_contas .financeiro-filtros-baixar{grid-template-columns:2fr repeat(2,1fr) 1.4fr 1fr}
- #financeiro_baixar_contas .financeiro-filtros-baixar>.btn{width:auto!important}
+@media(max-width:1200px) and (min-width:701px){
+ #financeiro_baixar_contas .financeiro-filtros-baixar{grid-template-columns:repeat(4,minmax(0,1fr))}
+ #financeiro_baixar_contas .baixar-contas-busca{grid-column:span 2}
+ #financeiro_baixar_contas .financeiro-filtros-baixar>.btn{grid-column:auto}
 }
 @media(max-width:700px){
  #financeiro_baixar_contas .financeiro-filtros-baixar{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
  #financeiro_baixar_contas .baixar-contas-busca{grid-column:1/-1}
  #financeiro_baixar_contas .baixar-contas-criterio,#financeiro_baixar_contas .baixar-contas-status{grid-column:auto}
  #financeiro_baixar_contas #btnAgruparFornecedorBaixa{grid-column:1/-1}
+ #financeiro_baixar_contas .financeiro-filtros-baixar>.btn{grid-column:auto}
  #financeiro_baixar_contas .baixar-contas-atalhos{grid-template-columns:1fr}
  #financeiro_baixar_contas .baixar-contas-resumo{grid-template-columns:repeat(2,minmax(0,1fr))}
  #financeiro_baixar_contas .baixar-contas-resumo-card:first-child{grid-column:1/-1}

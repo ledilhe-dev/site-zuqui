@@ -1937,6 +1937,8 @@ function atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa() {
   if (btnNao) btnNao.classList.toggle('ativo', modalContaFinanceiraMovimentarSaldo === false);
   if (btnSim) btnSim.setAttribute('aria-pressed', String(modalContaFinanceiraMovimentarSaldo === true));
   if (btnNao) btnNao.setAttribute('aria-pressed', String(modalContaFinanceiraMovimentarSaldo === false));
+  if (btnSim) btnSim.textContent = modalContaFinanceiraMovimentarSaldo === true ? '✓ SIM' : 'SIM';
+  if (btnNao) btnNao.textContent = modalContaFinanceiraMovimentarSaldo === false ? '✓ NÃO' : 'NÃO';
 }
 
 function definirMovimentacaoSaldoContaFinanceiraBaixa(movimentar = true) {
