@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v157-raffinato-history-preserved';
+const CACHE_NAME = 'check-diario-pwa-v158-baixa-contas-mobile';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

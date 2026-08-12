@@ -1935,6 +1935,8 @@ function atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa() {
   const btnNao = document.getElementById('btnContaFinanceiraMovimentarNao');
   if (btnSim) btnSim.classList.toggle('ativo', modalContaFinanceiraMovimentarSaldo === true);
   if (btnNao) btnNao.classList.toggle('ativo', modalContaFinanceiraMovimentarSaldo === false);
+  if (btnSim) btnSim.setAttribute('aria-pressed', String(modalContaFinanceiraMovimentarSaldo === true));
+  if (btnNao) btnNao.setAttribute('aria-pressed', String(modalContaFinanceiraMovimentarSaldo === false));
 }
 
 function definirMovimentacaoSaldoContaFinanceiraBaixa(movimentar = true) {
@@ -1960,6 +1962,7 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   if (!opcoes.length) return Promise.resolve(null);
   contasModalContaFinanceiraBaixa = opcoes;
   modalContaFinanceiraMovimentarSaldo = movimentarSaldo !== false;
+  modalContaFinanceiraSelecionadaId = opcoes.some(item => String(item.id) === String(contaAtualId)) ? String(contaAtualId) : '';
   atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
   overlay.dataset.modo = modo;
   if (valorWrap) valorWrap.style.display = modo === 'baixa' ? 'grid' : 'none';
@@ -1978,10 +1981,10 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   opcoesEl.innerHTML = opcoes.map((item, idx) => {
     const selecionada = String(item.id) === String(contaAtualId || '');
     return `
-      <button class="conta-financeira-opcao conta-financeira-cor-${idx % 6}" type="button" onclick="selecionarContaFinanceiraBaixa('${item.id}')">
+      <button class="conta-financeira-opcao conta-financeira-cor-${idx % 6}${selecionada ? ' selecionada' : ''}" data-conta-id="${item.id}" type="button" aria-pressed="${selecionada}" onclick="selecionarContaFinanceiraBaixa('${item.id}')">
         <span class="nome">${escaparHtmlBasico(item.nome || '-')}</span>
         <span class="saldo">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_atual || 0))}</span>
-        <span class="hint">${selecionada ? (modo === 'estorno' ? 'Conta de onde saiu o pagamento' : 'Conta vinculada atualmente') : (modo === 'estorno' ? 'Devolver nesta conta' : 'Clique para usar esta conta')}</span>
+        <span class="hint">${selecionada ? '✓ Conta selecionada' : (modo === 'estorno' ? 'Devolver nesta conta' : 'Toque para selecionar')}</span>
       </button>
     `;
   }).join('');
@@ -1989,6 +1992,11 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   msg.textContent = '';
   msg.className = 'msg';
   overlay.classList.add('show');
+  const btnConfirmar = document.getElementById('btnConfirmarContaFinanceiraBaixa');
+  if (btnConfirmar) {
+    btnConfirmar.disabled = !modalContaFinanceiraSelecionadaId;
+    btnConfirmar.textContent = modo === 'estorno' ? 'Confirmar devolução' : 'Confirmar baixa';
+  }
 
   return new Promise(resolve => {
     resolverModalContaFinanceiraBaixaPendente = resolve;
@@ -2003,6 +2011,27 @@ function selecionarContaFinanceiraBaixa(id) {
       msg.textContent = 'Conta selecionada inválida. Tente novamente.';
       msg.className = 'msg err';
     }
+    return;
+  }
+  modalContaFinanceiraSelecionadaId = String(conta.id);
+  document.querySelectorAll('#contaFinanceiraBaixaOpcoes .conta-financeira-opcao').forEach(botao => {
+    const selecionada = String(botao.dataset.contaId) === modalContaFinanceiraSelecionadaId;
+    botao.classList.toggle('selecionada', selecionada);
+    botao.setAttribute('aria-pressed', String(selecionada));
+    const hint = botao.querySelector('.hint');
+    if (hint) hint.textContent = selecionada ? '✓ Conta selecionada' : 'Toque para selecionar';
+  });
+  const btnConfirmar = document.getElementById('btnConfirmarContaFinanceiraBaixa');
+  if (btnConfirmar) btnConfirmar.disabled = false;
+  const msg = document.getElementById('contaFinanceiraBaixaMsg');
+  if (msg) { msg.textContent = ''; msg.className = 'msg'; }
+}
+
+function confirmarContaFinanceiraBaixaSelecionada() {
+  const conta = contasModalContaFinanceiraBaixa.find(item => String(item.id) === String(modalContaFinanceiraSelecionadaId)) || null;
+  if (!conta) {
+    const msg = document.getElementById('contaFinanceiraBaixaMsg');
+    if (msg) { msg.textContent = 'Selecione uma conta financeira para continuar.'; msg.className = 'msg err'; }
     return;
   }
   const overlay = document.getElementById('contaFinanceiraBaixaOverlay');
@@ -2038,6 +2067,7 @@ function fecharModalContaFinanceiraBaixa(resultado = null) {
 
   contasModalContaFinanceiraBaixa = [];
   modalContaFinanceiraMovimentarSaldo = true;
+  modalContaFinanceiraSelecionadaId = '';
   const resolver = resolverModalContaFinanceiraBaixaPendente;
   resolverModalContaFinanceiraBaixaPendente = null;
   if (resolver) resolver(resultado);

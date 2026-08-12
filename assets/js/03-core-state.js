@@ -93,6 +93,7 @@ let formasModalPagamentoFinanceiro = [];
 let resolverModalContaFinanceiraBaixaPendente = null;
 let contasModalContaFinanceiraBaixa = [];
 let modalContaFinanceiraMovimentarSaldo = true;
+let modalContaFinanceiraSelecionadaId = '';
 let resolverModalConfirmacaoFinanceiraPendente = null;
 let editarTituloFinanceiroId = null;
 let resolverModalPontoPendente = null;

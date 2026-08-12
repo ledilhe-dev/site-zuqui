@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.18"
+CONNECTOR_VERSION = "1.6.19"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -87,7 +87,16 @@ ORDER BY DF.Data,DF.Hora;
 DROP TABLE IF EXISTS #IdsDia;
 """
 
-SQL_FORMAS_PAGAMENTO = "SELECT Id AS id, Nome AS nome FROM dbo.FormaPagamento ORDER BY Nome;"
+SQL_FORMAS_PAGAMENTO = "SELECT Id AS id,LTRIM(RTRIM(Nome)) AS nome FROM dbo.FormaPagamento WITH(NOLOCK) WHERE ISNULL(LTRIM(RTRIM(Nome)),'')<>'' ORDER BY Nome;"
+SQL_AGRUPAMENTOS = "SELECT Id AS id,LTRIM(RTRIM(Nome)) AS nome FROM dbo.Agrupamento WITH(NOLOCK) WHERE ISNULL(LTRIM(RTRIM(Nome)),'')<>'' ORDER BY Nome;"
+SQL_PRODUTOS_CATALOGO = """
+SELECT P.Id AS id,LTRIM(RTRIM(P.Nome)) AS nome,P.IdAgrupamento AS id_agrupamento,
+ LTRIM(RTRIM(A.Nome)) AS agrupamento
+FROM dbo.Produto P WITH(NOLOCK)
+LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento
+WHERE ISNULL(LTRIM(RTRIM(P.Nome)),'')<>''
+ORDER BY P.Nome;
+"""
 
 SQL_FATURAMENTO = """
 SET NOCOUNT ON;
@@ -560,6 +569,7 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
                 if not acquired:
                     continue
                 now = datetime.now()
+                sync_metadados_remotos(store_id,config,resolve_raffinato_filial(config,{}))
                 if store_id not in full_synced:
                     cursor = (now - timedelta(days=366)).replace(hour=0, minute=0, second=0, microsecond=0)
                     while cursor.date() <= now.date() and not stop_event.is_set():
@@ -746,6 +756,23 @@ def query_formas_pagamento(config: dict[str, Any]) -> dict[str, Any]:
     with pyodbc.connect(connection_string(config)) as connection:
         cursor = connection.cursor(); cursor.execute(SQL_FORMAS_PAGAMENTO)
         return {"formas": rows_as_dicts(cursor)}
+
+
+def query_metadados_catalogo(config: dict[str, Any], filial: int) -> dict[str, Any]:
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout=45;cursor=connection.cursor()
+        cursor.execute(SQL_AGRUPAMENTOS);agrupamentos=rows_as_dicts(cursor)
+        cursor.execute(SQL_PRODUTOS_CATALOGO);produtos=rows_as_dicts(cursor)
+        cursor.execute(SQL_FORMAS_PAGAMENTO);formas=rows_as_dicts(cursor)
+    return {"id_filial":filial,"agrupamentos":agrupamentos,"produtos":produtos,"formas_pagamento":formas,
+            "sincronizado_em":datetime.now().isoformat(timespec="seconds")}
+
+
+def sync_metadados_remotos(store_id: str, config: dict[str, Any], filial: int) -> dict[str, Any]:
+    metadata=query_metadados_catalogo(config,filial)
+    if config.get("relay_token") and config.get("empresa_id"):
+        relay_post({"action":"metadata_sync","token":config["relay_token"],**metadata},timeout=90)
+    return metadata
 
 
 def query_faturamento_diario(config: dict[str, Any], start_date: date, end_date: date, filial: int) -> list[dict[str, Any]]:
@@ -1316,7 +1343,7 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.18"
+    server_version = "CheckDiarioRaffinato/1.6.19"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -1471,7 +1498,10 @@ class Handler(BaseHTTPRequestHandler):
                         filial=resolve_raffinato_filial(config,body)
                         with CACHE_SYNC_LOCK:
                             sync_cache_day(store_id,config,date.today(),filial)
+                            sync_metadados_remotos(store_id,config,filial)
                         result={"ok":True,"message":"Dados de hoje atualizados.","cache_version":CACHE_SCHEMA_VERSION}
+                elif route == "/api/raffinato/metadados":
+                    result = query_metadados_catalogo(config,resolve_raffinato_filial(config,body))
                 elif route == "/api/raffinato/formas-pagamento":
                     result = query_formas_pagamento(config)
                 elif route == "/api/raffinato/faturamento":

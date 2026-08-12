@@ -1833,6 +1833,18 @@ function diferencaDiasDataFinanceiro(dataIso = '', referenciaIso = hoje()) {
   return Math.round((dataMs - refMs) / 86400000);
 }
 
+function obterDataLocalFiltroFinanceiro(valor = '') {
+  const texto = String(valor || '').trim();
+  if (!texto) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
+  const data = new Date(texto);
+  if (!Number.isFinite(data.getTime())) return texto.slice(0, 10);
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 function obterAlertaVencimentoBaixarConta(item = {}) {
   if (obterStatusContaBaixaFinanceiro(item) === 'pago') {
     return { classe: 'tag-green', texto: 'Pago', prioridade: 0 };
@@ -1885,7 +1897,7 @@ function obterTituloFiltroBaixarContas() {
   if (baixarContasFiltroRapidoAtivo === 'amanha') return 'Total vence amanhã';
   const inicio = String(document.getElementById('filtroBaixarContaVencimentoInicio')?.value || '').trim();
   const fim = String(document.getElementById('filtroBaixarContaVencimentoFim')?.value || '').trim();
-  const criterio = String(document.querySelector('#financeiro_baixar_contas .date-filter-criterion')?.value || 'especial:vencimento').replace('especial:', '');
+  const criterio = String(document.getElementById('filtroBaixarContaDataTipo')?.value || 'vencimento');
   const titulos = { vencimento:'vencimento', cadastro:'cadastro', atualizacao:'atualização', pagamento:'pagamento' };
   if (inicio || fim) return `Total por ${titulos[criterio] || 'data'}`;
   return 'Total do filtro';
@@ -1903,15 +1915,11 @@ function aplicarAtalhoBaixarContasFinanceiro(tipo = '') {
   const campoInicio = document.getElementById('filtroBaixarContaVencimentoInicio');
   const campoFim = document.getElementById('filtroBaixarContaVencimentoFim');
   const campoStatus = document.getElementById('filtroBaixarContaStatus');
-  const campoCriterio = document.querySelector('#financeiro_baixar_contas .date-filter-criterion');
-  const campoDataInicio = document.querySelector('#financeiro_baixar_contas .date-filter-start');
-  const campoDataFim = document.querySelector('#financeiro_baixar_contas .date-filter-end');
+  const campoCriterio = document.getElementById('filtroBaixarContaDataTipo');
   if (campoInicio) campoInicio.value = '';
   if (campoFim) campoFim.value = '';
   if (campoStatus) campoStatus.value = 'pendente';
-  if (campoCriterio) campoCriterio.value = 'especial:vencimento';
-  if (campoDataInicio) campoDataInicio.value = '';
-  if (campoDataFim) campoDataFim.value = '';
+  if (campoCriterio) campoCriterio.value = 'vencimento';
   atualizarAtalhosBaixarContasFinanceiro();
   carregarBaixarContasFinanceiro();
 }
@@ -1921,16 +1929,12 @@ function limparFiltrosBaixarContasFinanceiro() {
   const campoInicio = document.getElementById('filtroBaixarContaVencimentoInicio');
   const campoFim = document.getElementById('filtroBaixarContaVencimentoFim');
   const campoStatus = document.getElementById('filtroBaixarContaStatus');
-  const campoCriterio = document.querySelector('#financeiro_baixar_contas .date-filter-criterion');
-  const campoDataInicio = document.querySelector('#financeiro_baixar_contas .date-filter-start');
-  const campoDataFim = document.querySelector('#financeiro_baixar_contas .date-filter-end');
+  const campoCriterio = document.getElementById('filtroBaixarContaDataTipo');
   if (campoBusca) campoBusca.value = '';
   if (campoInicio) campoInicio.value = '';
   if (campoFim) campoFim.value = '';
   if (campoStatus) campoStatus.value = 'pendente';
-  if (campoCriterio) campoCriterio.value = 'especial:vencimento';
-  if (campoDataInicio) campoDataInicio.value = '';
-  if (campoDataFim) campoDataFim.value = '';
+  if (campoCriterio) campoCriterio.value = 'vencimento';
   baixarContasFiltroRapidoAtivo = '';
   atualizarAtalhosBaixarContasFinanceiro();
   carregarBaixarContasFinanceiro();
@@ -1949,12 +1953,12 @@ async function carregarBaixarContasFinanceiro() {
   const filtroStatus = String(document.getElementById('filtroBaixarContaStatus')?.value || '').trim();
   const filtroVencimentoInicio = String(document.getElementById('filtroBaixarContaVencimentoInicio')?.value || '').trim();
   const filtroVencimentoFim = String(document.getElementById('filtroBaixarContaVencimentoFim')?.value || '').trim();
-  const filtroDataTipo = String(document.querySelector('#financeiro_baixar_contas .date-filter-criterion')?.value || 'especial:vencimento').replace('especial:', '');
+  const filtroDataTipo = String(document.getElementById('filtroBaixarContaDataTipo')?.value || 'vencimento');
   atualizarAtalhosBaixarContasFinanceiro();
 
   const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
     .from('contasapagar')
-    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, valor_original, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
+    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, valor_original, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome, cnpj), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
     .is('excluido_em', null)
     .order('data_vencimento', { ascending: true }));
 
@@ -2006,6 +2010,8 @@ async function carregarBaixarContasFinanceiro() {
     const nomeFornecedor = String(item.fornecedores?.nome || '').trim();
     const observacaoConta = String(item.observacao || '').trim();
     const formaConta = String(item.formas_pagamento?.nome || item.forma_pagamento || '').trim();
+    const documentoFornecedor = String(item.fornecedores?.cnpj || '').trim();
+    const categoriaConta = String((categoriasCompraCache || []).find(c => String(c.id) === String(item.categoria_id))?.nome || '').trim();
     const status = obterStatusContaBaixaFinanceiro(item);
     const datasFiltro = {
       vencimento: item.data_vencimento,
@@ -2013,8 +2019,8 @@ async function carregarBaixarContasFinanceiro() {
       atualizacao: item.updated_at,
       pagamento: item.data_pagamento || item.pago_confirmado_em
     };
-    const dataReferencia = String(datasFiltro[filtroDataTipo] || '').slice(0, 10);
-    const bateBusca = !filtroBusca || textoFinanceiroNormalizado(`${nomeFornecedor} ${observacaoConta} ${formaConta}`).includes(filtroBusca);
+    const dataReferencia = obterDataLocalFiltroFinanceiro(datasFiltro[filtroDataTipo]);
+    const bateBusca = !filtroBusca || textoFinanceiroNormalizado(`${nomeFornecedor} ${documentoFornecedor} ${observacaoConta} ${categoriaConta} ${formaConta}`).includes(filtroBusca);
     const bateStatus = !filtroStatus || filtroStatus === status;
 
     // Quando um atalho rápido está ativo, usa o MESMO critério do selo de
@@ -2552,7 +2558,18 @@ async function confirmarPagamentoContaFinanceiro(id) {
       descricao: `Pagamento de título para ${item.fornecedores?.nome || 'fornecedor'}`,
     });
     if (erroMovimentacao) {
-      setMsg('msgBaixarContasFinanceiro', `Pagamento confirmado, mas não foi possível atualizar o saldo da conta: ${mensagemErroSupabase(erroMovimentacao, 'erro desconhecido')}`, 'err');
+      const rollback = await sb.from('contasapagar').update({
+        data_pagamento: item.data_pagamento || null,
+        valor_pago: item.valor_pago || null,
+        forma_pagamento_id: item.forma_pagamento_id || null,
+        forma_pagamento: item.forma_pagamento || null,
+        conta_financeira_id: item.conta_financeira_id || null,
+        observacao: item.observacao || null,
+        pago_confirmado_em: item.pago_confirmado_em || null,
+      }).eq('id', id);
+      const detalheRollback = rollback.error ? ` A reversão automática também falhou: ${mensagemErroSupabase(rollback.error, 'erro desconhecido')}` : ' A baixa foi revertida para evitar inconsistência.';
+      setMsg('msgBaixarContasFinanceiro', `Não foi possível movimentar o saldo: ${mensagemErroSupabase(erroMovimentacao, 'erro desconhecido')}.${detalheRollback}`, 'err');
+      carregarBaixarContasFinanceiro();
       return;
     }
   }

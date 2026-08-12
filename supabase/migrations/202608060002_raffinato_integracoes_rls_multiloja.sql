@@ -6,7 +6,6 @@ drop policy if exists raffinato_integracoes_select on public.raffinato_integraco
 drop policy if exists raffinato_integracoes_insert on public.raffinato_integracoes;
 drop policy if exists raffinato_integracoes_update on public.raffinato_integracoes;
 drop policy if exists raffinato_integracoes_delete on public.raffinato_integracoes;
-
 create policy raffinato_integracoes_select
   on public.raffinato_integracoes
   for select
@@ -15,7 +14,6 @@ create policy raffinato_integracoes_select
     public.current_empresa_id() is null
     or empresa_id = public.current_empresa_id()
   );
-
 create policy raffinato_integracoes_insert
   on public.raffinato_integracoes
   for insert
@@ -29,7 +27,6 @@ create policy raffinato_integracoes_insert
         and loja.empresa_id = empresa_id
     )
   );
-
 create policy raffinato_integracoes_update
   on public.raffinato_integracoes
   for update
@@ -47,7 +44,6 @@ create policy raffinato_integracoes_update
         and loja.empresa_id = empresa_id
     )
   );
-
 create policy raffinato_integracoes_delete
   on public.raffinato_integracoes
   for delete

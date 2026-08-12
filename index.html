@@ -1936,14 +1936,15 @@
         <div class="card">
           <div class="card-title">Filtros</div>
           <div class="form-row financeiro-filtros-row financeiro-filtros-baixar">
-            <input id="filtroBaixarContaBusca" type="text" placeholder="Buscar por fornecedor" oninput="debounceConsumo('filtro_baixar_contas', () => carregarBaixarContasFinanceiro(), 700)">
-            <input id="filtroBaixarContaVencimentoInicio" class="campo-curto" type="date" title="Vencimento início" aria-label="Vencimento início" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()">
-            <input id="filtroBaixarContaVencimentoFim" class="campo-curto" type="date" title="Vencimento fim" aria-label="Vencimento fim" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()">
-            <select id="filtroBaixarContaStatus" class="campo-curto" onchange="carregarBaixarContasFinanceiro()">
+            <label class="filter-field-standard baixar-contas-busca"><span>Buscar</span><input id="filtroBaixarContaBusca" type="search" placeholder="Buscar por fornecedor, descrição, documento..." autocomplete="off" oninput="debounceConsumo('filtro_baixar_contas', () => carregarBaixarContasFinanceiro(), 350)"></label>
+            <label class="filter-field-standard baixar-contas-data"><span>Data inicial</span><input id="filtroBaixarContaVencimentoInicio" class="campo-curto" type="date" data-filter-native="true" aria-label="Data inicial" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()"></label>
+            <label class="filter-field-standard baixar-contas-data"><span>Data final</span><input id="filtroBaixarContaVencimentoFim" class="campo-curto" type="date" data-filter-native="true" aria-label="Data final" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()"></label>
+            <label class="filter-field-standard baixar-contas-criterio"><span>Consultar por</span><select id="filtroBaixarContaDataTipo" aria-label="Consultar por" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()"><option value="vencimento">Data de vencimento</option><option value="cadastro">Data de cadastro</option><option value="atualizacao">Data de atualização</option><option value="pagamento">Data de pagamento</option></select></label>
+            <label class="filter-field-standard baixar-contas-status"><span>Status</span><select id="filtroBaixarContaStatus" class="campo-curto" onchange="carregarBaixarContasFinanceiro()">
               <option value="pendente">Pendentes</option>
               <option value="pago">Pagas</option>
               <option value="">Todas</option>
-            </select>
+            </select></label>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosBaixarContasFinanceiro()">Limpar</button>
             <button class="btn btn-ghost" type="button" onclick="carregarBaixarContasFinanceiro()">Atualizar</button>
             <button class="btn btn-ghost" id="btnAgruparFornecedorBaixa" type="button" onclick="alternarAgrupamentoFornecedorBaixa()">Agrupar por fornecedor</button>
@@ -2915,7 +2916,7 @@
 <link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260810-password-v11">
 <link rel="stylesheet" href="./assets/css/111-raffinato-billing.css?v=20260810-clear-v2">
 <link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-crossfilter-v2">
-<link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260810-mobile-global-v1">
+<link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260811-baixa-contas-v2">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260810-global-contrast-v2">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
@@ -2944,7 +2945,7 @@
 </div>
 
 <div class="overlay" id="contaFinanceiraBaixaOverlay">
-  <div class="modal" style="max-width:720px">
+  <div class="modal conta-financeira-baixa-modal">
     <div class="modal-header">
       <div>
         <h3 id="contaFinanceiraBaixaTitle">Selecionar conta financeira</h3>
@@ -2971,6 +2972,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" type="button" onclick="fecharModalContaFinanceiraBaixa()">Cancelar</button>
+      <button class="btn btn-green" id="btnConfirmarContaFinanceiraBaixa" type="button" onclick="confirmarContaFinanceiraBaixaSelecionada()" disabled>Confirmar baixa</button>
     </div>
   </div>
 </div>
@@ -3218,9 +3220,9 @@
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
 <script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
 <script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js?v=20260810-produtos-raffinato"></script>
+<script src="./assets/js/03-core-state.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/04-navigation.js?v=20260810-produtos-raffinato"></script>
-<script src="./assets/js/05-shared-helpers.js?v=20260807-credencial-vinculo-v3"></script>
+<script src="./assets/js/05-shared-helpers.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=20260808-sem-execucoes-recentes-v4"></script>
 <script src="./assets/js/20-checklists.js"></script>
@@ -3235,7 +3237,7 @@
       <script src="./assets/js/37-raffinato-products.js?v=20260810-crossfilter-v2"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260809-rateio-manual"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js"></script>
 <script src="./assets/js/44-profiles.js"></script>

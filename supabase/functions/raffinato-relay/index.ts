@@ -98,6 +98,19 @@ Deno.serve(async (request) => {
       return json({ok:true,quantidade:items.length});
     }
 
+    if (body.action === "metadata_sync") {
+      const integration=await integrationForToken(admin,validateToken(body.token));
+      const filial=Number(body.id_filial||1),syncedAt=new Date().toISOString();
+      const groups=Array.isArray(body.agrupamentos)?body.agrupamentos.slice(0,10000):[],products=Array.isArray(body.produtos)?body.produtos.slice(0,100000):[],payments=Array.isArray(body.formas_pagamento)?body.formas_pagamento.slice(0,10000):[];
+      for(const table of ["raffinato_agrupamentos_cache","raffinato_produtos_catalogo_cache","raffinato_formas_pagamento_catalogo_cache"]){const {error}=await admin.from(table).delete().eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id).eq("id_filial",filial);if(error)throw error;}
+      const batches=async(table:string,rows:any[],onConflict:string)=>{for(let offset=0;offset<rows.length;offset+=1000){const {error}=await admin.from(table).upsert(rows.slice(offset,offset+1000),{onConflict});if(error)throw error;}};
+      await batches("raffinato_agrupamentos_cache",groups.map((x:any)=>({empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:filial,id_agrupamento:Number(x.id),nome:String(x.nome||"").trim().slice(0,300),sincronizado_em:syncedAt})).filter((x:any)=>x.nome),"empresa_id,loja_id,id_filial,id_agrupamento");
+      await batches("raffinato_produtos_catalogo_cache",products.map((x:any)=>({empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:filial,id_produto:Number(x.id),nome:String(x.nome||"").trim().slice(0,300),id_agrupamento:x.id_agrupamento==null?null:Number(x.id_agrupamento),agrupamento:x.agrupamento==null?null:String(x.agrupamento).trim().slice(0,300),sincronizado_em:syncedAt})).filter((x:any)=>x.nome),"empresa_id,loja_id,id_filial,id_produto");
+      await batches("raffinato_formas_pagamento_catalogo_cache",payments.map((x:any)=>({empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:filial,id_forma_pagamento:Number(x.id),nome:String(x.nome||"").trim().slice(0,300),sincronizado_em:syncedAt})).filter((x:any)=>x.nome),"empresa_id,loja_id,id_filial,id_forma_pagamento");
+      await admin.from("raffinato_integracoes").update({ultima_sincronizacao_em:syncedAt,ultimo_erro:null}).eq("id",integration.id);
+      return json({ok:true,agrupamentos:groups.length,produtos:products.length,formas_pagamento:payments.length,sincronizado_em:syncedAt});
+    }
+
     if (body.action === "canonical_sync") {
       const integration = await integrationForToken(admin, validateToken(body.token));
       const inicio=validateDate(body.inicio,"inicio"),fim=validateDate(body.fim,"fim");
@@ -225,14 +238,13 @@ Deno.serve(async (request) => {
       return json({items,evolucao:[...days.values()].sort((a,b)=>String(a.data).localeCompare(String(b.data))),totalizadores:{faturamento:items.reduce((s,x)=>s+x.total_faturado,0),quantidade:items.reduce((s,x)=>s+x.quantidade,0),produtos:items.length},origem_consulta:"sincronizacao"});
     }
 
-    if (body.action === "products_metadata") {
+    if (body.action === "products_metadata" || body.action === "metadata_dashboard") {
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
       await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
-      const {data,error}=await admin.from("raffinato_produtos_cache").select("id_agrupamento,agrupamento")
-        .eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).not("id_agrupamento","is",null).limit(5000);
-      if(error)throw error;const groups=new Map<string,any>();
-      for(const item of data||[])groups.set(String(item.id_agrupamento),{id:item.id_agrupamento,nome:item.agrupamento});
-      return json({agrupamentos:[...groups.values()].sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR"))});
+      const filial=Number(body.id_filial||1),load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",filial).range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows;};
+      const groups=await load("raffinato_agrupamentos_cache","id_agrupamento,nome,sincronizado_em"),products=await load("raffinato_produtos_catalogo_cache","id_produto,nome,id_agrupamento,agrupamento,sincronizado_em"),payments=await load("raffinato_formas_pagamento_catalogo_cache","id_forma_pagamento,nome,sincronizado_em");
+      const stamp=[...groups,...products,...payments].map(x=>x.sincronizado_em).sort().pop()||null;
+      return json({agrupamentos:groups.map(x=>({id:x.id_agrupamento,nome:x.nome})).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")),produtos:products.map(x=>({id:x.id_produto,nome:x.nome,id_agrupamento:x.id_agrupamento,agrupamento:x.agrupamento})).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")),formas_pagamento:payments.map(x=>({id:x.id_forma_pagamento,nome:x.nome})).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"pt-BR")),sincronizado_em:stamp});
     }
 
     if (body.action === "billing_dashboard") {
