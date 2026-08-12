@@ -2166,6 +2166,18 @@ function posicionarModalRecebiveisNaViewport(modal) {
   return modal;
 }
 
+function definirMovimentacaoRecebimentoIndividual(valor = true) {
+  modalConfirmarRecFuturoMovimentarSaldo = valor === true;
+  const sim = document.getElementById('btnModalConfirmarMovimentarSim');
+  const nao = document.getElementById('btnModalConfirmarMovimentarNao');
+  sim?.classList.toggle('ativo', modalConfirmarRecFuturoMovimentarSaldo);
+  nao?.classList.toggle('ativo', !modalConfirmarRecFuturoMovimentarSaldo);
+  sim?.setAttribute('aria-pressed', String(modalConfirmarRecFuturoMovimentarSaldo));
+  nao?.setAttribute('aria-pressed', String(!modalConfirmarRecFuturoMovimentarSaldo));
+  const resumo = document.getElementById('modalConfirmarMovimentacaoResumo');
+  if (resumo) resumo.textContent = modalConfirmarRecFuturoMovimentarSaldo ? 'SIM — adicionar o valor ao saldo' : 'NÃO — salvar sem alterar o saldo';
+}
+
 async function abrirModalConfirmarRecFuturo(id) {
   const item = recFuturosCache.find(i => String(i.id) === String(id));
   if (!item) return;
@@ -2176,6 +2188,7 @@ async function abrirModalConfirmarRecFuturo(id) {
   try { await carregarContasFinanceiras({ render:false, silencioso:true }); }
   catch (erro) { setMsg('msgModalConfirmarRecFuturo', `Não foi possível carregar as contas: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`, 'err'); return; }
   document.getElementById('modalConfirmarRecFuturoId').value = id;
+  definirMovimentacaoRecebimentoIndividual(true);
   // Pr?-preencher com valores previstos
   const hoje = new Date().toISOString().slice(0, 10);
   document.getElementById('modalConfirmarData').value = item.confirmado_em ? String(item.confirmado_em).slice(0, 10) : hoje;
@@ -2218,7 +2231,7 @@ async function confirmarRecebimentoFuturo() {
   const confirmacaoPin = await confirmarAcaoComPin({
     funcionario: obterFuncionarioOperadorAtual(),
     titulo: item.confirmado_em ? 'Confirmar alteração do recebimento' : 'Confirmar baixa do recebimento',
-    subtitulo: `Confirme sua senha para lançar ${formatarMoedaBRFinanceiro(valorConfirmado)} na conta selecionada.`,
+    subtitulo: modalConfirmarRecFuturoMovimentarSaldo ? `Confirme sua senha para lançar ${formatarMoedaBRFinanceiro(valorConfirmado)} na conta selecionada.` : `Confirme sua senha para registrar ${formatarMoedaBRFinanceiro(valorConfirmado)} sem alterar o saldo da conta.`,
     textoAcao: item.confirmado_em ? 'Salvar alteração' : 'Confirmar recebimento',
     escopo: 'empresa',
   });
@@ -2242,9 +2255,10 @@ async function confirmarRecebimentoFuturo() {
       const { error: erroEditar } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').update({
         conta_financeira_id: contaId,
         valor: valorConfirmado,
+        movimentar_saldo: modalConfirmarRecFuturoMovimentarSaldo,
       }).eq('id', recebivelAnterior.id));
       if (erroEditar) throw erroEditar;
-      if (!saldoGerenciadoNoBanco) {
+      if (!saldoGerenciadoNoBanco && modalConfirmarRecFuturoMovimentarSaldo) {
         const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: recebivelAnterior.conta_financeira_id, recebivelId: recebivelAnterior.id, tipo: 'estorno', valor: recebivelAnterior.valor, descricao: 'Estorno por edição de recebimento' });
         if (erroEstorno) throw erroEstorno;
         const { error: erroEntrada } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: contaId, recebivelId: recebivelAnterior.id, tipo: 'entrada', valor: valorConfirmado, descricao: 'Entrada atualizada de recebimento' });
@@ -2296,6 +2310,7 @@ async function confirmarRecebimentoFuturo() {
       conta_financeira_id: contaId,
       valor: valorConfirmado,
       recebivel_futuro_id: item.id,
+      movimentar_saldo: modalConfirmarRecFuturoMovimentarSaldo,
       empresa_id: empresaId,
       loja_id: lojaId,
     };
@@ -2332,7 +2347,7 @@ async function confirmarRecebimentoFuturo() {
     // 3. Somar no saldo da conta (apenas se o banco n?o gerencia o saldo via trigger,
     //    para n?o somar em duplicidade ? mesma regra do cadastro manual de receb?veis)
     const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
-    if (!saldoGerenciadoNoBanco) {
+    if (!saldoGerenciadoNoBanco && modalConfirmarRecFuturoMovimentarSaldo) {
       const descricao = `Recebível futuro confirmado: ${pagadorNome} via ${formaNome}${obs ? ' - ' + obs : ''}`;
       const { error: erroMov } = await registrarMovimentacaoContaFinanceira({
         contaFinanceiraId: contaId,

@@ -2102,6 +2102,10 @@
                   <label class="campo-label">Observação</label>
                   <input id="modalConfirmarObs" type="text" placeholder="Opcional">
                 </div>
+                <div class="campo-com-label" style="grid-column:1/-1;">
+                  <label class="campo-label">Movimentar saldo da conta financeira?</label>
+                  <div class="baixa-multipla-toggle modal-confirmar-rec-toggle"><span id="modalConfirmarMovimentacaoResumo">SIM — adicionar o valor ao saldo</span><button class="btn btn-ghost ativo" id="btnModalConfirmarMovimentarSim" type="button" onclick="definirMovimentacaoRecebimentoIndividual(true)">SIM</button><button class="btn btn-ghost" id="btnModalConfirmarMovimentarNao" type="button" onclick="definirMovimentacaoRecebimentoIndividual(false)">NÃO</button></div>
+                </div>
               </div>
               <div class="msg" id="msgModalConfirmarRecFuturo"></div>
             </div>
@@ -3235,7 +3239,7 @@
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
 <script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
 <script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js?v=20260811-baixa-multipla-recebiveis-v1"></script>
+<script src="./assets/js/03-core-state.js?v=20260811-movimentacao-recebivel-individual-v1"></script>
 <script src="./assets/js/04-navigation.js?v=20260810-produtos-raffinato"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
@@ -3244,7 +3248,7 @@
 <script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
 <script src="./assets/js/22-access-requests.js"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260811-modal-recebiveis-clique-v2"></script>
+<script src="./assets/js/30-finance.js?v=20260811-movimentacao-recebivel-individual-v1"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260810-password-v18"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-crossfilter-v2"></script>

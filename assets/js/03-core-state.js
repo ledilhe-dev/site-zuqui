@@ -64,6 +64,7 @@ let recFuturosSelecionadosIds = new Set();
 let baixaMultiplaRecebiveisContaId = '';
 let baixaMultiplaRecebiveisMovimentarSaldo = true;
 let baixaMultiplaRecebiveisProcessando = false;
+let modalConfirmarRecFuturoMovimentarSaldo = true;
 let recFuturosVisiveisIds = [];
 let recebiveisFinanceiroCache = [];
 let recebiveisFinanceiroListaVisivel = false;
