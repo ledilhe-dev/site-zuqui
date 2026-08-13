@@ -2332,7 +2332,7 @@
             <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
-            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.20.exe" download>Baixar conector 1.6.20</a>
+            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.21.exe" download>Baixar conector 1.6.21</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
@@ -2456,17 +2456,18 @@
         <div class="page-title">Comparativo Anual</div>
         <div class="card ar-hero"><div><div class="card-title">Desempenho histórico Raffinato</div><div class="page-sub">Compare faturamento, vendas, produtos e origem entre anos. Os detalhes são carregados somente quando necessários.</div></div><div class="ar-status" id="arStatus">Pronto para consultar</div></div>
         <div class="card ar-filters"><label>Ano inicial<select id="arStartYear"></select></label><label>Ano final<select id="arEndYear"></select></label><label>Módulo<select id="arModule"><option value="">Todos os módulos</option><option value="VENDA_RAPIDA">Venda Rápida</option><option value="DELIVERY">Delivery</option><option value="CARTAO_MESA">Cartão / Mesa</option></select></label><label>Agrupamento<select id="arGroup"><option value="">Todos os agrupamentos</option></select></label><label>Produto<input id="arProduct" type="search" placeholder="Código ou nome"></label><button class="btn btn-green" id="arQuery" onclick="consultarComparativoAnual()">Comparar</button><button class="btn btn-ghost" onclick="limparComparativoAnual()">Limpar filtros</button></div>
-        <div class="ar-selection" id="arSelection" hidden><strong id="arSelectionLabel"></strong><button onclick="selecionarMesComparativoAnual(null,null)">Remover seleção</button></div>
-        <div class="ar-kpis" id="arKpis" hidden><article><span>Faturamento ano selecionado</span><strong id="arRevenueCurrent">R$ 0,00</strong></article><article><span>Faturamento ano anterior</span><strong id="arRevenuePrevious">R$ 0,00</strong></article><article><span>Variação</span><strong id="arVariation">0,00%</strong></article><article><span>Quantidade de vendas</span><strong id="arSales">0</strong></article><article><span>Ticket médio</span><strong id="arTicket">R$ 0,00</strong></article><article><span>Produtos vendidos</span><strong id="arQuantity">0</strong></article></div>
+        <div class="ar-selection" id="arSelection" hidden><strong>Analisando:</strong><div id="arFilterChips"></div><button onclick="limparSelecoesComparativoAnual()">Limpar tudo</button></div>
+        <div class="ar-kpis" id="arKpis" hidden><article><span>Faturamento</span><strong id="arRevenueCurrent">R$ 0,00</strong><small id="arEquivalent"></small></article><article><span>Variação</span><strong id="arVariation">0,00%</strong></article><article><span>Quantidade de vendas</span><strong id="arSales">0</strong></article><article><span>Ticket médio</span><strong id="arTicket">R$ 0,00</strong></article><article><span>Produtos vendidos</span><strong id="arQuantity">0</strong></article><article><span>Melhor período</span><strong id="arBestPeriod">—</strong></article><strong id="arRevenuePrevious" hidden>R$ 0,00</strong></div>
         <div class="ar-grid" id="arCharts" hidden>
+          <article class="card ar-chart"><div class="card-title">Faturamento por ano</div><div id="arYearColumns"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento mês a mês</div><div id="arMonthlyBars"></div></article>
           <article class="card ar-chart ar-wide"><header><div><div class="card-title">Comparativo anual</div><div class="page-sub">Clique em um ponto para selecionar o mês.</div></div></header><div id="arAnnualChart"></div></article>
-          <article class="card ar-chart ar-wide"><div class="card-title">Faturamento mês a mês</div><div id="arMonthlyBars"></div></article>
           <article class="card ar-chart"><div class="card-title">Faturamento acumulado</div><div id="arAccumulated"></div></article>
           <article class="card ar-chart"><div class="card-title">Participação dos módulos</div><div id="arModuleShare"></div></article>
           <article class="card ar-chart ar-wide"><div class="card-title">Evolução mensal por módulo</div><div id="arModuleEvolution"></div></article>
-          <article class="card ar-chart"><header><div class="card-title">Top produtos por faturamento</div><select id="arTopLimit" onchange="carregarDetalhesComparativoAnual()"><option value="10">Top 10</option><option value="20">Top 20</option></select></header><div id="arTopRevenue" class="ar-async"></div></article>
-          <article class="card ar-chart"><div class="card-title">Top produtos por quantidade</div><div id="arTopQuantity" class="ar-async"></div></article>
-          <article class="card ar-chart"><div class="card-title">Quantidade × faturamento</div><div id="arProductMatrix" class="ar-async"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento por dia da semana</div><div id="arWeekdays" class="ar-async"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento por horário</div><div id="arHours" class="ar-async"><div class="empty">Selecione um dia da semana.</div></div></article>
+          <article class="card ar-chart ar-wide"><header><div class="card-title">Desempenho de produtos</div><div class="ar-product-tabs"><button class="active" onclick="alternarVisaoProdutosComparativo('faturamento',this)">Faturamento</button><button onclick="alternarVisaoProdutosComparativo('quantidade',this)">Quantidade</button><button onclick="alternarVisaoProdutosComparativo('matriz',this)">Quantidade × faturamento</button></div><select id="arTopLimit" onchange="carregarDetalhesComparativoAnual()"><option value="10">Top 10</option><option value="20">Top 20</option></select></header><div id="arProductsPerformance" class="ar-async"></div><div id="arTopRevenue" hidden></div><div id="arTopQuantity" hidden></div><div id="arProductMatrix" hidden></div></article>
           <article class="card ar-chart"><div class="card-title">Faturamento por agrupamento</div><div id="arGroups" class="ar-async"></div></article>
           <article class="card ar-chart ar-wide" id="arDailyCard" hidden><div class="card-title">Evolução diária</div><div id="arDaily" class="ar-async"></div></article>
           <article class="card ar-chart ar-wide" id="arProductCard" hidden><div class="card-title" id="arProductTitle">Evolução do produto</div><div id="arProductEvolution" class="ar-async"></div></article>
@@ -2944,7 +2945,7 @@
 <link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260810-password-v11">
 <link rel="stylesheet" href="./assets/css/111-raffinato-billing.css?v=20260810-clear-v2">
 <link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-crossfilter-v2">
-<link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260813-v1">
+<link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260813-v2">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260810-global-contrast-v2">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
@@ -3278,7 +3279,7 @@
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/37-raffinato-products.js?v=20260810-crossfilter-v2"></script>
-      <script src="./assets/js/38-annual-comparison.js?v=20260813-v1"></script>
+      <script src="./assets/js/38-annual-comparison.js?v=20260813-v2"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
