@@ -192,6 +192,7 @@
             </button>
             <button class="nav-btn nav-sub-btn" data-page="relatorio_produtos_raffinato" onclick="abrirPagina('relatorio_produtos_raffinato', this)"><span class="nav-copy"><span class="nav-title">Produtos faturados Raffinato</span></span></button>
             <button class="nav-btn nav-sub-btn" data-page="relatorio_vendas_raffinato" onclick="abrirPagina('relatorio_vendas_raffinato', this)"><span class="nav-copy"><span class="nav-title">Análise de vendas Raffinato</span></span></button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_comparativo_anual" onclick="abrirPagina('relatorio_comparativo_anual', this)"><span class="nav-copy"><span class="nav-title">Comparativo Anual</span></span></button>
           </div>
         </div>
       </div>
@@ -2331,7 +2332,7 @@
             <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
-            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.19.exe" download>Baixar conector 1.6.19</a>
+            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.20.exe" download>Baixar conector 1.6.20</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
@@ -2449,6 +2450,28 @@
         <div class="rs-grid" id="rsCharts" hidden><div class="card rs-chart"><div class="card-title">Top 10 produtos por faturamento</div><div id="rsRevenueProducts" class="rs-bars"></div></div><div class="card rs-chart"><div class="card-title">Top 10 produtos por quantidade</div><div id="rsQuantityProducts" class="rs-bars"></div></div><div class="card rs-chart"><div class="card-title">Formas de pagamento</div><div id="rsPayments" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Faturamento por módulo</div><div id="rsModules" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Faturamento por agrupamento</div><div id="rsGroups" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Participação dos produtos</div><div id="rsParticipation" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Evolução do faturamento</div><div id="rsEvolution" class="rs-bars"></div></div><div class="card rs-chart rs-wide" id="rsDrilldown" hidden></div></div>
         <div class="card rs-table-card" id="rsTableCard" hidden><div class="rs-table-head"><div><div class="card-title">Detalhamento</div><div class="page-sub" id="rsTableSummary"></div></div><div class="rs-table-tools"><input id="rsTableSearch" type="search" placeholder="Pesquisar na tabela..." oninput="pesquisarTabelaAnaliseVendas(this.value)"><select id="rsPageSize" onchange="alterarPaginaAnaliseVendas(1)"><option>25</option><option>50</option><option>100</option></select><button class="btn btn-ghost btn-sm" onclick="exportarAnaliseVendasCsv()">Exportar CSV</button></div></div><div class="rs-table-wrap"><table><thead><tr id="rsTableHead"></tr></thead><tbody id="rsTableBody"></tbody></table></div><div class="rs-mobile-list" id="rsMobileList"></div><div class="rs-pagination"><button onclick="alterarPaginaAnaliseVendas(-1)">Anterior</button><span id="rsPageInfo"></span><button onclick="alterarPaginaAnaliseVendas(1)">Próxima</button></div></div>
         <div class="card rs-chart rs-open-operations" id="rsOpenCard" hidden><div class="card-title">Operação em aberto</div><div class="page-sub">Pedidos ainda não faturados; não participam do faturamento por módulo.</div><div id="rsOpenOperations"></div><div class="card-title rs-open-chart-title">Operação em aberto por módulo</div><div id="rsOpenChart" class="rs-bars"></div></div>
+      </section>
+
+      <section id="relatorio_comparativo_anual" class="pagina annual-report-page">
+        <div class="page-title">Comparativo Anual</div>
+        <div class="card ar-hero"><div><div class="card-title">Desempenho histórico Raffinato</div><div class="page-sub">Compare faturamento, vendas, produtos e origem entre anos. Os detalhes são carregados somente quando necessários.</div></div><div class="ar-status" id="arStatus">Pronto para consultar</div></div>
+        <div class="card ar-filters"><label>Ano inicial<select id="arStartYear"></select></label><label>Ano final<select id="arEndYear"></select></label><label>Módulo<select id="arModule"><option value="">Todos os módulos</option><option value="VENDA_RAPIDA">Venda Rápida</option><option value="DELIVERY">Delivery</option><option value="CARTAO_MESA">Cartão / Mesa</option></select></label><label>Agrupamento<select id="arGroup"><option value="">Todos os agrupamentos</option></select></label><label>Produto<input id="arProduct" type="search" placeholder="Código ou nome"></label><button class="btn btn-green" id="arQuery" onclick="consultarComparativoAnual()">Comparar</button><button class="btn btn-ghost" onclick="limparComparativoAnual()">Limpar filtros</button></div>
+        <div class="ar-selection" id="arSelection" hidden><strong id="arSelectionLabel"></strong><button onclick="selecionarMesComparativoAnual(null,null)">Remover seleção</button></div>
+        <div class="ar-kpis" id="arKpis" hidden><article><span>Faturamento ano selecionado</span><strong id="arRevenueCurrent">R$ 0,00</strong></article><article><span>Faturamento ano anterior</span><strong id="arRevenuePrevious">R$ 0,00</strong></article><article><span>Variação</span><strong id="arVariation">0,00%</strong></article><article><span>Quantidade de vendas</span><strong id="arSales">0</strong></article><article><span>Ticket médio</span><strong id="arTicket">R$ 0,00</strong></article><article><span>Produtos vendidos</span><strong id="arQuantity">0</strong></article></div>
+        <div class="ar-grid" id="arCharts" hidden>
+          <article class="card ar-chart ar-wide"><header><div><div class="card-title">Comparativo anual</div><div class="page-sub">Clique em um ponto para selecionar o mês.</div></div></header><div id="arAnnualChart"></div></article>
+          <article class="card ar-chart ar-wide"><div class="card-title">Faturamento mês a mês</div><div id="arMonthlyBars"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento acumulado</div><div id="arAccumulated"></div></article>
+          <article class="card ar-chart"><div class="card-title">Participação dos módulos</div><div id="arModuleShare"></div></article>
+          <article class="card ar-chart ar-wide"><div class="card-title">Evolução mensal por módulo</div><div id="arModuleEvolution"></div></article>
+          <article class="card ar-chart"><header><div class="card-title">Top produtos por faturamento</div><select id="arTopLimit" onchange="carregarDetalhesComparativoAnual()"><option value="10">Top 10</option><option value="20">Top 20</option></select></header><div id="arTopRevenue" class="ar-async"></div></article>
+          <article class="card ar-chart"><div class="card-title">Top produtos por quantidade</div><div id="arTopQuantity" class="ar-async"></div></article>
+          <article class="card ar-chart"><div class="card-title">Quantidade × faturamento</div><div id="arProductMatrix" class="ar-async"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento por agrupamento</div><div id="arGroups" class="ar-async"></div></article>
+          <article class="card ar-chart ar-wide" id="arDailyCard" hidden><div class="card-title">Evolução diária</div><div id="arDaily" class="ar-async"></div></article>
+          <article class="card ar-chart ar-wide" id="arProductCard" hidden><div class="card-title" id="arProductTitle">Evolução do produto</div><div id="arProductEvolution" class="ar-async"></div></article>
+        </div>
+        <div class="card ar-table-card" id="arTableCard" hidden><div class="card-title">Resumo mensal</div><div class="ar-table-wrap"><table><thead><tr><th data-key="mes">Mês</th><th data-key="faturamento">Faturamento</th><th data-key="vendas">Vendas</th><th data-key="quantidade">Produtos</th><th data-key="ticket_medio">Ticket médio</th><th data-key="anterior">Ano anterior</th><th data-key="variacao">Variação</th></tr></thead><tbody id="arTableBody"></tbody></table></div></div>
       </section>
 
       <!-- Paginas declarativas do modulo. O conteudo e montado por 33-financial-integrations.js para evitar duplicacao. -->
@@ -2921,6 +2944,7 @@
 <link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260810-password-v11">
 <link rel="stylesheet" href="./assets/css/111-raffinato-billing.css?v=20260810-clear-v2">
 <link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-crossfilter-v2">
+<link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260813-v1">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260810-global-contrast-v2">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
@@ -3254,6 +3278,7 @@
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/37-raffinato-products.js?v=20260810-crossfilter-v2"></script>
+      <script src="./assets/js/38-annual-comparison.js?v=20260813-v1"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>

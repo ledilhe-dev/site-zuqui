@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.19"
+CONNECTOR_VERSION = "1.6.20"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -1342,8 +1342,58 @@ def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
       "cache":cache_status(store_id)["cache"],"cobertura":cache_coverage(store_id,filial,start,end)}
 
 
+def query_annual_comparison(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
+    """Retorna somente agregados; nenhum documento/item individual sai do conector."""
+    first=max(2000,int(body.get("ano_inicial") or date.today().year-1));last=min(2100,int(body.get("ano_final") or date.today().year))
+    if last<first or last-first>7: raise ValueError("Intervalo de anos invalido.")
+    start=f"{first:04d}-01-01";end=f"{last+1:04d}-01-01";filial=int(body.get("id_filial") or 1);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();mode=str(body.get("mode") or "summary")
+    product_where="";product_params:list[Any]=[]
+    if module: product_where+=" AND modulo_venda=?";product_params.append(module)
+    if group: product_where+=" AND id_agrupamento=?";product_params.append(group)
+    if product: product_where+=" AND (id_produto=? OR produto LIKE ?)";product_params.extend([product,f"%{product}%"])
+    with closing(cache_connection()) as cache,cache:
+        if group or product:
+            monthly=[dict(x) for x in cache.execute(f"""SELECT CAST(substr(data,1,4) AS INTEGER) ano,CAST(substr(data,6,2) AS INTEGER) mes,
+              SUM(valor_rateado) faturamento,COUNT(DISTINCT data||':'||id_produto) vendas,SUM(quantidade_rateada) quantidade
+              FROM produto_pagamento_modulo_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?{product_where}
+              GROUP BY substr(data,1,4),substr(data,6,2) ORDER BY ano,mes""",[store_id,filial,start,end,*product_params])]
+        else:
+            status_where=" AND modulo_venda=?" if module else "";status_params=[module] if module else []
+            monthly=[dict(x) for x in cache.execute(f"""SELECT CAST(substr(data,1,4) AS INTEGER) ano,CAST(substr(data,6,2) AS INTEGER) mes,
+              SUM(valor) faturamento,COUNT(DISTINCT id_venda||':'||id_documento_fiscal) vendas,0 quantidade
+              FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND (faturado=1 OR (modulo_venda='DELIVERY' AND aberto=1)){status_where}
+              GROUP BY substr(data,1,4),substr(data,6,2) ORDER BY ano,mes""",[store_id,filial,start,end,*status_params])]
+            qty={(int(x["ano"]),int(x["mes"])):float(x["quantidade"] or 0) for x in map(dict,cache.execute(f"""SELECT CAST(substr(data,1,4) AS INTEGER) ano,CAST(substr(data,6,2) AS INTEGER) mes,SUM(quantidade_rateada) quantidade
+              FROM produto_pagamento_modulo_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?{product_where} GROUP BY substr(data,1,4),substr(data,6,2)""",[store_id,filial,start,end,*product_params]))}
+            for row in monthly:row["quantidade"]=qty.get((int(row["ano"]),int(row["mes"])),0)
+        for row in monthly:row["ticket_medio"]=float(row["faturamento"] or 0)/int(row["vendas"] or 1)
+        modules=[dict(x) for x in cache.execute("""SELECT modulo_venda,CAST(substr(data,1,4) AS INTEGER) ano,CAST(substr(data,6,2) AS INTEGER) mes,SUM(valor) faturamento
+          FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND (faturado=1 OR (modulo_venda='DELIVERY' AND aberto=1))
+          GROUP BY modulo_venda,substr(data,1,4),substr(data,6,2) ORDER BY ano,mes,modulo_venda""",(store_id,filial,start,end))]
+        module_totals=[{"modulo_venda":name,"faturamento":sum(float(x["faturamento"] or 0) for x in modules if x["modulo_venda"]==name)} for name in ("VENDA_RAPIDA","DELIVERY","CARTAO_MESA")]
+        if mode=="summary":
+            groups=[dict(x) for x in cache.execute("SELECT DISTINCT id_agrupamento id,agrupamento nome FROM produtos_diario WHERE loja_id=? AND id_agrupamento<>'' ORDER BY agrupamento",(store_id,))]
+            return {"schema_version":1,"meses":monthly,"modulos":modules,"modulos_totais":module_totals,"agrupamentos":groups}
+        if mode=="product":
+            pid=str(body.get("id_produto") or "");
+            if not pid: raise ValueError("Selecione um produto.")
+            rows=[dict(x) for x in cache.execute("""SELECT CAST(substr(data,1,4) AS INTEGER) ano,CAST(substr(data,6,2) AS INTEGER) mes,SUM(faturamento) faturamento,SUM(quantidade) quantidade
+              FROM produtos_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND id_produto=? GROUP BY substr(data,1,4),substr(data,6,2) ORDER BY ano,mes""",(store_id,filial,start,end,pid))]
+            return {"schema_version":1,"meses":rows}
+        year=int(body.get("ano") or last);month=int(body.get("mes") or 0);period_start=f"{year:04d}-{month:02d}-01" if month else f"{year:04d}-01-01";period_end=(date(year+1,1,1) if not month else (date(year+1,1,1) if month==12 else date(year,month+1,1))).isoformat();limit=min(20,max(10,int(body.get("limite") or 10)))
+        products=[dict(x) for x in cache.execute(f"""SELECT id_produto id,produto nome,SUM(valor_rateado) faturamento,SUM(quantidade_rateada) quantidade FROM produto_pagamento_modulo_diario
+          WHERE loja_id=? AND id_filial=? AND data>=? AND data<?{product_where} GROUP BY id_produto,produto ORDER BY faturamento DESC LIMIT ?""",[store_id,filial,period_start,period_end,*product_params,limit])]
+        products_quantity=[dict(x) for x in cache.execute(f"""SELECT id_produto id,produto nome,SUM(valor_rateado) faturamento,SUM(quantidade_rateada) quantidade FROM produto_pagamento_modulo_diario
+          WHERE loja_id=? AND id_filial=? AND data>=? AND data<?{product_where} GROUP BY id_produto,produto ORDER BY quantidade DESC LIMIT ?""",[store_id,filial,period_start,period_end,*product_params,limit])]
+        groups=[dict(x) for x in cache.execute(f"""SELECT id_agrupamento id,COALESCE(NULLIF(agrupamento,''),'Sem agrupamento') nome,SUM(valor_rateado) faturamento FROM produto_pagamento_modulo_diario
+          WHERE loja_id=? AND id_filial=? AND data>=? AND data<?{product_where} GROUP BY id_agrupamento,agrupamento ORDER BY faturamento DESC LIMIT 15""",[store_id,filial,period_start,period_end,*product_params])]
+        days=[dict(x) for x in cache.execute("""SELECT data,SUM(valor) faturamento,COUNT(DISTINCT id_venda||':'||id_documento_fiscal) vendas FROM vendas_status_diario
+          WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND (faturado=1 OR (modulo_venda='DELIVERY' AND aberto=1)) GROUP BY data ORDER BY data""",(store_id,filial,period_start,period_end))]
+        return {"schema_version":1,"produtos":products,"produtos_quantidade":products_quantity,"agrupamentos":groups,"dias":days}
+
+
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.19"
+    server_version = "CheckDiarioRaffinato/1.6.20"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
@@ -1418,6 +1468,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/raffinato/faturamento",
             "/api/raffinato/produtos",
             "/api/raffinato/vendas-analise",
+            "/api/raffinato/comparativo-anual",
             "/api/raffinato/cache-status",
             "/api/raffinato/cache-refresh",
             "/api/integracoes/raffinato/testar",
@@ -1514,6 +1565,8 @@ class Handler(BaseHTTPRequestHandler):
                     # Produtos e contingencia precisam respeitar Data + Hora. O cache
                     # diario legado nao possui granularidade suficiente para isso.
                     result = query_produtos(config, body)
+                elif route == "/api/raffinato/comparativo-anual":
+                    result = query_annual_comparison(store_id, body)
                 else:
                     result = query_vendas_analise_completa(config, body)
                 self.send_json(200, result)
