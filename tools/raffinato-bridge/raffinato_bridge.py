@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.21"
+CONNECTOR_VERSION = "1.6.22"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -1391,51 +1391,73 @@ def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,l
 
 
 def query_annual_detail_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:
-    filial=resolve_raffinato_filial(config,body);year=int(body.get("ano") or last);month=int(body.get("mes") or 0);start=date(year,month or 1,1);end=date(year+1,1,1) if not month or month==12 else date(year,month+1,1);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();weekday=body.get("dia_semana");hour=body.get("hora");limit=min(20,max(10,int(body.get("limite") or 10)));started=time.perf_counter()
-    doc_filters=[];doc_params:list[Any]=[]
-    if module:doc_filters.append("modulo_venda=?");doc_params.append(module)
-    if weekday is not None:doc_filters.append("((DATEDIFF(day,'19000107',data)%7)+7)%7=?");doc_params.append(int(weekday))
-    if hour is not None:doc_filters.append("DATEPART(hour,hora)=?");doc_params.append(int(hour))
+    filial=resolve_raffinato_filial(config,body);year=int(body.get("ano") or last);month=int(body.get("mes") or 0);start=date(year,month or 1,1);end=date(year+1,1,1) if not month or month==12 else date(year,month+1,1);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or body.get("id_produto") or "").strip();weekday=body.get("dia_semana");hour=body.get("hora");limit=min(20,max(10,int(body.get("limite") or 10)));started=time.perf_counter()
+    sale_filters=[];sale_params:list[Any]=[]
+    if module:sale_filters.append("modulo_venda=?");sale_params.append(module)
+    if weekday is not None:sale_filters.append("((DATEDIFF(day,'19000101',data)%7)+7)%7=?");sale_params.append((int(weekday)+6)%7)
+    if hour is not None:sale_filters.append("DATEPART(hour,hora)=?");sale_params.append(int(hour))
     item_filter="";item_values:list[Any]=[]
     if group:item_filter+=" AND CONVERT(varchar(40),P.IdAgrupamento)=?";item_values.append(group)
     if product:item_filter+=" AND (CONVERT(varchar(40),P.Id)=? OR P.Nome LIKE ?)";item_values.extend([product,f"%{product}%"])
-    sql="""SET NOCOUNT ON;DROP TABLE IF EXISTS #ARDocs;SELECT D.Id,CONVERT(date,D.Data) data,CAST(D.Hora AS time) hora,CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega VTE WITH(NOLOCK) ON VTE.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY' WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa VM WITH(NOLOCK) ON VM.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo VC WITH(NOLOCK) ON VC.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (VM.IdVenda IS NOT NULL OR VC.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA' ELSE 'VENDA_RAPIDA' END modulo_venda,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) faturamento INTO #ARDocs FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 GROUP BY D.Id,D.Data,D.Hora;CREATE UNIQUE CLUSTERED INDEX IX_ARDocs ON #ARDocs(Id);"""
+    sql="""SET NOCOUNT ON;DROP TABLE IF EXISTS #ARVendas;
+      WITH Financeiro AS (SELECT D.Id id_documento,D.Data data_documento,D.Hora hora_documento,D.IdFilial,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) faturamento FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 GROUP BY D.Id,D.Data,D.Hora,D.IdFilial)
+      SELECT F.id_documento,V.Id id_venda,CONVERT(date,COALESCE(V.Data,F.data_documento)) data,CAST(COALESCE(V.Hora,F.hora_documento) AS time) hora,V.Origem,F.IdFilial,F.faturamento,
+       CASE WHEN V.Id IS NULL THEN 'ORIGEM_NAO_IDENTIFICADA' WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY' WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA' WHEN V.Origem=1 THEN 'VENDA_RAPIDA' WHEN V.Origem=2 THEN 'DELIVERY' WHEN V.Origem=4 THEN 'CARTAO_MESA' ELSE 'ORIGEM_NAO_IDENTIFICADA' END modulo_venda
+      INTO #ARVendas FROM Financeiro F OUTER APPLY(SELECT TOP 1 V0.* FROM dbo.VendaCupomFiscal VC WITH(NOLOCK) JOIN dbo.Venda V0 WITH(NOLOCK) ON V0.Id=VC.IdVenda WHERE VC.IdDocumentoFiscal=F.id_documento ORDER BY V0.Id) V;
+      CREATE UNIQUE CLUSTERED INDEX IX_ARVendasDocumento ON #ARVendas(id_documento);"""
     params:list[Any]=[start,end,filial]
-    if doc_filters:sql+=" DELETE FROM #ARDocs WHERE NOT ("+" AND ".join(doc_filters)+");";params.extend(doc_params)
-    if item_filter:sql+=f"DELETE X FROM #ARDocs X WHERE NOT EXISTS(SELECT 1 FROM dbo.ItemDocumentoFiscal I WITH(NOLOCK) JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto WHERE I.IdDocumentoFiscal=X.Id{item_filter});";params.extend(item_values)
-    item_base=f" FROM #ARDocs X JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=X.Id JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento WHERE 1=1{item_filter}"
+    if sale_filters:sql+=" DELETE FROM #ARVendas WHERE NOT ("+" AND ".join(sale_filters)+");";params.extend(sale_params)
+    if item_filter:sql+=f"DELETE X FROM #ARVendas X WHERE NOT EXISTS(SELECT 1 FROM dbo.VendaItem I WITH(NOLOCK) JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto WHERE I.IdVenda=X.id_venda AND ISNULL(I.IdStatusItem,1)<>2{item_filter});";params.extend(item_values)
+    item_base=f" FROM #ARVendas X JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=X.id_venda AND ISNULL(I.IdStatusItem,1)<>2 JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento WHERE 1=1{item_filter}"
     sql+=f"SELECT TOP {limit} P.Id id,P.Nome nome,SUM(I.ValorTotal) faturamento,SUM(I.Quantidade) quantidade{item_base} GROUP BY P.Id,P.Nome ORDER BY faturamento DESC;"
     sql+=f"SELECT TOP {limit} P.Id id,P.Nome nome,SUM(I.ValorTotal) faturamento,SUM(I.Quantidade) quantidade{item_base} GROUP BY P.Id,P.Nome ORDER BY quantidade DESC;"
     sql+=f"SELECT TOP 15 COALESCE(CONVERT(varchar(40),A.Id),'SEM_GRUPO') id,COALESCE(A.Nome,'Sem agrupamento') nome,SUM(I.ValorTotal) faturamento{item_base} GROUP BY A.Id,A.Nome ORDER BY faturamento DESC;"
     params.extend(item_values*3)
-    sql+="SELECT data,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARDocs GROUP BY data ORDER BY data;SELECT ((DATEDIFF(day,'19000107',data)%7)+7)%7 dia_semana,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARDocs GROUP BY ((DATEDIFF(day,'19000107',data)%7)+7)%7 ORDER BY dia_semana;SELECT DATEPART(hour,hora) hora,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARDocs GROUP BY DATEPART(hour,hora) ORDER BY hora;DROP TABLE IF EXISTS #ARDocs;"
+    sql+="SELECT data,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARVendas GROUP BY data ORDER BY data;SELECT ((DATEDIFF(day,'19000101',data)%7)+7)%7+1 ordem_dia,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARVendas GROUP BY ((DATEDIFF(day,'19000101',data)%7)+7)%7 ORDER BY ordem_dia;SELECT DATEPART(hour,hora) hora,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARVendas GROUP BY DATEPART(hour,hora) ORDER BY hora;SELECT modulo_venda,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARVendas GROUP BY modulo_venda;SELECT SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARVendas;"
+    sql+=f"SELECT SUM(I.Quantidade) quantidade,SUM(I.ValorTotal) faturamento_produtos{item_base};DROP TABLE IF EXISTS #ARVendas;";params.extend(item_values)
     sets=[]
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=90;cursor=connection.cursor();cursor.execute(sql,*params)
         while True:
             if cursor.description:sets.append(rows_as_dicts(cursor))
             if not cursor.nextset():break
-    while len(sets)<6:sets.append([])
-    products,products_qty,groups,days,weekdays,hours=sets[:6]
+    while len(sets)<9:sets.append([])
+    products,products_qty,groups,days,weekdays,hours,modules,totals,item_totals=sets[:9]
+    for x in weekdays:x["dia_semana"]=int(x.pop("ordem_dia"))%7
     for rows in (weekdays,hours):
         for x in rows:x["ticket_medio"]=float(x.get("faturamento") or 0)/int(x.get("vendas") or 1)
     logger.info("TEMPO SQL: COMPARATIVO DETALHE %.3fs | ano=%s mes=%s",time.perf_counter()-started,year,month)
-    return {"schema_version":2,"produtos":products,"produtos_quantidade":products_qty,"agrupamentos":groups,"dias":days,"dias_semana":weekdays,"horarios":hours,"tempo_ms":round((time.perf_counter()-started)*1000)}
+    total=totals[0] if totals else {"faturamento":0,"vendas":0};total.update(item_totals[0] if item_totals else {"quantidade":0,"faturamento_produtos":0})
+    return {"schema_version":3,"produtos":products,"produtos_quantidade":products_qty,"agrupamentos":groups,"dias":days,"dias_semana":weekdays,"horarios":hours,"modulos":modules,"totais":total,"origem_nao_identificada":next((x for x in modules if x.get("modulo_venda")=="ORIGEM_NAO_IDENTIFICADA"),{"faturamento":0,"vendas":0}),"tempo_ms":round((time.perf_counter()-started)*1000)}
 
 
 def query_annual_product_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:
     filial=resolve_raffinato_filial(config,body);product=str(body.get("id_produto") or "");
     if not product:raise ValueError("Selecione um produto.")
-    started=time.perf_counter();sql="""SELECT YEAR(D.Data) ano,MONTH(D.Data) mes,SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,COUNT(DISTINCT D.Id) vendas
-      FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=D.Id
-      WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 AND CONVERT(varchar(40),I.IdProduto)=?
-      AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id)
-      GROUP BY YEAR(D.Data),MONTH(D.Data) ORDER BY ano,mes;"""
+    started=time.perf_counter();sql="""SELECT YEAR(V.Data) ano,MONTH(V.Data) mes,SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,COUNT(DISTINCT V.Id) vendas
+      FROM dbo.Venda V WITH(NOLOCK) JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=V.Id AND ISNULL(I.IdStatusItem,1)<>2
+      WHERE V.Data>=? AND V.Data<? AND V.IdFilial=? AND CONVERT(varchar(40),I.IdProduto)=?
+      AND EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VC WITH(NOLOCK) JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VC.IdDocumentoFiscal WHERE VC.IdVenda=V.Id AND ISNULL(D.Cancelado,0)=0 AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id))
+      GROUP BY YEAR(V.Data),MONTH(V.Data) ORDER BY ano,mes;"""
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=60;cursor=connection.cursor();cursor.execute(sql,date(first,1,1),date(last+1,1,1),filial,product);rows=rows_as_dicts(cursor)
     for x in rows:x["ticket_medio"]=float(x.get("faturamento") or 0)/int(x.get("vendas") or 1)
     logger.info("TEMPO SQL: COMPARATIVO PRODUTO %.3fs | produto=%s",time.perf_counter()-started,product)
     return {"schema_version":2,"meses":rows,"tempo_ms":round((time.perf_counter()-started)*1000)}
+
+
+def query_annual_unknown_origins(config:dict[str,Any],body:dict[str,Any],last:int) -> dict[str,Any]:
+    filial=resolve_raffinato_filial(config,body);year=int(body.get("ano") or last);month=int(body.get("mes") or 0);start=date(year,month or 1,1);end=date(year+1,1,1) if not month or month==12 else date(year,month+1,1)
+    sql="""WITH Financeiro AS (SELECT D.Id,D.Data,D.Hora,D.IdFilial,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 GROUP BY D.Id,D.Data,D.Hora,D.IdFilial)
+      SELECT TOP 200 V.Id id_venda,CONVERT(date,COALESCE(V.Data,F.Data)) data,CONVERT(varchar(8),CAST(COALESCE(V.Hora,F.Hora) AS time),108) hora,V.Origem origem,F.valor,V.IdDocumentoFiscal id_documento_fiscal,F.IdFilial id_filial,
+      CAST(CASE WHEN V.Id IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 1 ELSE 0 END AS bit) vinculo_delivery,
+      CAST(CASE WHEN V.Id IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) THEN 1 ELSE 0 END AS bit) vinculo_mesa,
+      CAST(CASE WHEN V.Id IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 1 ELSE 0 END AS bit) vinculo_cartao
+      FROM Financeiro F OUTER APPLY(SELECT TOP 1 V0.* FROM dbo.VendaCupomFiscal VC WITH(NOLOCK) JOIN dbo.Venda V0 WITH(NOLOCK) ON V0.Id=VC.IdVenda WHERE VC.IdDocumentoFiscal=F.Id ORDER BY V0.Id) V
+      WHERE V.Id IS NULL OR (NOT EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WHERE T.IdVenda=V.Id) AND NOT EXISTS(SELECT 1 FROM dbo.VendaMesa M WHERE M.IdVenda=V.Id) AND NOT EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WHERE C.IdVenda=V.Id) AND ISNULL(V.Origem,0) NOT IN(1,2,4)) ORDER BY data,hora;"""
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=30;cursor=connection.cursor();cursor.execute(sql,start,end,filial);rows=rows_as_dicts(cursor)
+    return {"schema_version":3,"items":rows,"quantidade":len(rows),"valor":round(sum(float(x.get("valor") or 0) for x in rows),2)}
 
 
 def query_annual_comparison(store_id:str,body:dict[str,Any],config:dict[str,Any]|None=None) -> dict[str,Any]:
@@ -1451,6 +1473,8 @@ def query_annual_comparison(store_id:str,body:dict[str,Any],config:dict[str,Any]
         return query_annual_detail_sql(config,body,first,last)
     if str(body.get("mode") or "") == "product" and config:
         return query_annual_product_sql(config,body,first,last)
+    if str(body.get("mode") or "") == "unknown_origins" and config:
+        return query_annual_unknown_origins(config,body,last)
     start=f"{first:04d}-01-01";end=f"{last+1:04d}-01-01";filial=int(body.get("id_filial") or 1);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();mode=str(body.get("mode") or "summary")
     product_where="";product_params:list[Any]=[]
     if module: product_where+=" AND modulo_venda=?";product_params.append(module)
@@ -1498,7 +1522,7 @@ def query_annual_comparison(store_id:str,body:dict[str,Any],config:dict[str,Any]
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CheckDiarioRaffinato/1.6.21"
+    server_version = "CheckDiarioRaffinato/1.6.22"
 
     def route_path(self) -> str:
         path = urlparse(self.path).path.rstrip("/")
