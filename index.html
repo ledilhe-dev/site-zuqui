@@ -2315,22 +2315,32 @@
           </div>
         </div>
 
-        <div class="card raffinato-integration-card">
+        <div class="card raffinato-integration-card" id="raffinatoAdminLockCard">
+          <div class="raffinato-integration-head"><div><div class="card-title">Configurações do conector</div><div class="page-sub">A operação normal continua automática. A senha master é exigida somente para administrar conexões.</div></div></div>
+          <div class="raffinato-config-grid"><div class="raffinato-field"><label for="raffinatoMasterPassword">Senha master</label><input id="raffinatoMasterPassword" type="password" autocomplete="current-password" placeholder="Senha master"></div></div>
+          <div class="raffinato-config-actions"><button class="btn btn-green" type="button" onclick="desbloquearConfiguracaoRaffinato()">Entrar nas configurações</button></div>
+          <div class="msg" id="msgRaffinatoMaster"></div>
+        </div>
+
+        <div class="card raffinato-integration-card" id="raffinatoAdminPanel" hidden>
           <div class="raffinato-integration-head">
             <div><div class="card-title">Conexão desta loja</div><div class="page-sub" id="raffinatoLojaContexto">Carregando loja...</div></div>
             <button class="btn btn-red btn-sm" id="raffinatoDeleteIntegrationBtn" type="button" onclick="excluirIntegracaoRaffinato()" hidden>Excluir integração</button>
           </div>
           <div class="raffinato-config-grid">
+            <div class="raffinato-field"><label for="raffinatoProfileName">Nome da conexão</label><input id="raffinatoProfileName" type="text" placeholder="Ex.: Zuqui" autocomplete="off"></div>
             <div class="raffinato-field"><label for="raffinatoSqlServer">Instância SQL</label><input id="raffinatoSqlServer" type="text" placeholder="26.x.x.x\\sql2019" autocomplete="off"></div>
             <div class="raffinato-field"><label for="raffinatoDatabase">Banco de dados</label><input id="raffinatoDatabase" type="text" placeholder="Nome do banco" autocomplete="off"></div>
             <div class="raffinato-field"><label for="raffinatoDbUser">Usuário do banco</label><input id="raffinatoDbUser" type="text" placeholder="Usuário SQL" autocomplete="off"></div>
             <div class="raffinato-field"><label for="raffinatoDbPassword">Senha do banco</label><div class="raffinato-password-control"><input id="raffinatoDbPassword" type="password" placeholder="Informe para testar ou alterar" autocomplete="off"><button type="button" id="raffinatoPasswordToggle" class="raffinato-password-toggle" aria-label="Mostrar senha" title="Mostrar senha" aria-pressed="false">Mostrar</button></div></div>
+            <div class="raffinato-field"><label for="raffinatoFilialSelect">Filial Raffinato vinculada</label><select id="raffinatoFilialSelect"><option value="1">1 - Filial 1</option></select></div>
           </div>
           <div class="raffinato-config-actions">
             <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
-            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.6.29.exe" download>Baixar conector 1.6.29</a>
+            <button class="btn btn-ghost" type="button" onclick="alterarSenhaMasterRaffinato()">Alterar senha master</button>
+            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.7.0.exe" download>Baixar conector 1.7.0</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
@@ -3277,7 +3287,7 @@
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260811-layout-global-v1"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
-      <script src="./assets/js/34-raffinato-sangrias.js?v=20260815-relay-errors-v20"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260815-multiempresa-v1"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/37-raffinato-products.js?v=20260810-crossfilter-v2"></script>

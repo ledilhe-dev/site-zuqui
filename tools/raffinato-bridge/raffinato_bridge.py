@@ -13,6 +13,10 @@ import os
 import sys
 import base64
 import ctypes
+import hashlib
+import hmac
+import secrets
+import shutil
 import sqlite3
 import threading
 import time
@@ -27,6 +31,7 @@ from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import pyodbc
 
@@ -40,11 +45,13 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.29"
+CONNECTOR_VERSION = "1.7.0"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
+PROFILE_CONFIG_PATH = BASE_DIR / "perfis-raffinato.dat"
+BACKUP_DIR = BASE_DIR / "backup-configuracao"
 CACHE_PATH = BASE_DIR / "raffinato-relatorios-cache.sqlite3"
 CACHE_SYNC_LOCK = threading.Lock()
 CACHE_REFRESH_EVENT = threading.Event()
@@ -68,6 +75,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("raffinato_bridge")
 MUTEX_HANDLE = None
+ADMIN_SESSIONS: dict[str, float] = {}
+ADMIN_SESSION_SECONDS = 15 * 60
+# PBKDF2 da senha inicial fornecida para a primeira instalacao. A senha em si
+# nunca e armazenada nem incorporada ao executavel.
+INITIAL_MASTER_SALT = "7f2d9c4e18a6b035d1c85693fa2b470d"
+INITIAL_MASTER_HASH = "1427a8d77b9355823915709a5a708bb97f5974eb420c576503a6f6c102115978"
+MASTER_ITERATIONS = 310_000
 
 SQL_SANGRIAS = """
 SET NOCOUNT ON;
@@ -588,6 +602,124 @@ def unprotect_bytes(value: bytes) -> bytes:
         ctypes.windll.kernel32.LocalFree(output_blob.pbData)
 
 
+def load_profile_state() -> dict[str, Any]:
+    if not PROFILE_CONFIG_PATH.exists():
+        return {
+            "schema_version": 1, "connector_instance_id": str(uuid4()),
+            "profiles": {}, "mappings": {},
+            "master": {"salt": INITIAL_MASTER_SALT, "hash": INITIAL_MASTER_HASH, "iterations": MASTER_ITERATIONS},
+        }
+    encrypted = base64.b64decode(PROFILE_CONFIG_PATH.read_bytes())
+    state = json.loads(unprotect_bytes(encrypted).decode("utf-8"))
+    state.setdefault("schema_version", 1)
+    state.setdefault("connector_instance_id", str(uuid4()))
+    state.setdefault("profiles", {})
+    state.setdefault("mappings", {})
+    state.setdefault("master", {"salt": INITIAL_MASTER_SALT, "hash": INITIAL_MASTER_HASH, "iterations": MASTER_ITERATIONS})
+    return state
+
+
+def save_profile_state(state: dict[str, Any]) -> None:
+    raw = json.dumps(state, ensure_ascii=False).encode("utf-8")
+    temporary = PROFILE_CONFIG_PATH.with_suffix(".tmp")
+    temporary.write_bytes(base64.b64encode(protect_bytes(raw)))
+    os.replace(temporary, PROFILE_CONFIG_PATH)
+
+
+def backup_file_once(path: Path) -> None:
+    if not path.exists():
+        return
+    BACKUP_DIR.mkdir(exist_ok=True)
+    destination = BACKUP_DIR / f"{path.name}.pre-1.7.0.bak"
+    if not destination.exists():
+        shutil.copy2(path, destination)
+
+
+def migrate_legacy_configuration() -> None:
+    """Cria perfis a partir da configuracao atual, sem remover o formato antigo."""
+    if PROFILE_CONFIG_PATH.exists():
+        return
+    backup_file_once(STORE_CONFIG_PATH)
+    backup_file_once(CONFIG_PATH)
+    state = load_profile_state()
+    legacy: dict[str, dict[str, Any]] = {}
+    try:
+        legacy.update(load_store_configs())
+    except Exception:
+        logger.exception("Falha ao ler configuracoes multi-loja antigas durante migracao")
+    if not legacy and CONFIG_PATH.exists():
+        try:
+            legacy["legacy"] = load_config()
+        except Exception:
+            logger.exception("Falha ao ler configuracao unica antiga durante migracao")
+    for store_id, config in legacy.items():
+        profile_id = str(uuid4())
+        profile = dict(config)
+        profile.update({
+            "id": profile_id, "name": "Zuqui" if len(legacy) == 1 else f"Raffinato {store_id}",
+            "active": True, "last_test_at": None, "last_status": "migrated",
+        })
+        state["profiles"][profile_id] = profile
+        state["mappings"][store_id] = {
+            "checkdiario_empresa_id": str(config.get("empresa_id") or ""),
+            "checkdiario_filial_id": store_id, "connection_profile_id": profile_id,
+            "raffinato_filial_id": int(config.get("id_filial") or 1), "active": True,
+        }
+    save_profile_state(state)
+    logger.info("Migracao de configuracao concluida | perfis=%s | backup=%s", len(state["profiles"]), BACKUP_DIR)
+
+
+def password_digest(password: str, salt_hex: str, iterations: int) -> str:
+    return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt_hex), iterations).hex()
+
+
+def verify_master_password(password: str, state: dict[str, Any] | None = None) -> bool:
+    state = state or load_profile_state()
+    master = state["master"]
+    candidate = password_digest(password, master["salt"], int(master["iterations"]))
+    return hmac.compare_digest(candidate, master["hash"])
+
+
+def create_admin_session(password: str) -> str:
+    if not verify_master_password(password):
+        raise ValueError("Senha master invalida.")
+    token = secrets.token_urlsafe(32)
+    ADMIN_SESSIONS[token] = time.time() + ADMIN_SESSION_SECONDS
+    return token
+
+
+def require_admin_session(token: Any) -> None:
+    value = str(token or "")
+    expires = ADMIN_SESSIONS.get(value, 0)
+    if not value or expires < time.time():
+        ADMIN_SESSIONS.pop(value, None)
+        raise PermissionError("Sessao administrativa ausente ou expirada.")
+    ADMIN_SESSIONS[value] = time.time() + ADMIN_SESSION_SECONDS
+
+
+def profile_public(profile: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in profile.items() if key not in {"pwd", "relay_token"}}
+
+
+def mapped_config(store_id: str) -> dict[str, Any] | None:
+    state = load_profile_state()
+    mapping = state["mappings"].get(store_id)
+    if not mapping and len(state["profiles"]) == 1 and set(state["mappings"]) in ({"legacy"}, set()):
+        legacy_mapping = state["mappings"].get("legacy") or {}
+        profile_id = legacy_mapping.get("connection_profile_id") or next(iter(state["profiles"]))
+        mapping = {**legacy_mapping, "checkdiario_filial_id": store_id,
+            "connection_profile_id": profile_id, "raffinato_filial_id": int(legacy_mapping.get("raffinato_filial_id") or 1), "active": True}
+        state["mappings"][store_id] = mapping
+        save_profile_state(state)
+        logger.info("Perfil legado associado automaticamente a filial CheckDiario %s", store_id)
+    if not mapping or not mapping.get("active", True):
+        return None
+    profile = state["profiles"].get(mapping.get("connection_profile_id"))
+    if not profile or not profile.get("active", True):
+        return None
+    return {**profile, "id_filial": int(mapping.get("raffinato_filial_id") or 1)}
+
+
 def load_store_configs() -> dict[str, dict[str, Any]]:
     if not STORE_CONFIG_PATH.exists():
         return {}
@@ -617,6 +749,7 @@ def config_from_body(body: dict[str, Any], base: dict[str, Any] | None = None) -
         "driver": str(body.get("driver") or base.get("driver") or "{ODBC Driver 17 for SQL Server}").strip(),
         "empresa_id": str(body.get("empresa_id") or base.get("empresa_id") or "").strip(),
         "relay_token": str(body.get("relay_token") or base.get("relay_token") or "").strip(),
+        "id_filial": int(body.get("raffinato_filial_id") or body.get("id_filial") or base.get("id_filial") or 1),
     }
     missing = [key for key in ("server", "database", "uid", "pwd") if not config[key]]
     if missing:
@@ -738,6 +871,9 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
 
 
 def get_store_config(store_id: str) -> dict[str, Any]:
+    mapped = mapped_config(store_id)
+    if mapped:
+        return mapped
     config = load_store_configs().get(store_id)
     if config:
         return config
@@ -766,6 +902,38 @@ def test_connection(config: dict[str, Any]) -> dict[str, Any]:
         steps.append({"key": "read", "ok": True, "label": "Leitura de sangrias autorizada"})
     elapsed = max(1, round((datetime.now() - started).total_seconds() * 1000))
     return {"ok": True, "steps": steps, "latencia_ms": elapsed, "servidor": str(identity.servidor or config["server"]), "banco": str(identity.banco)}
+
+
+def discover_filiais(config: dict[str, Any]) -> list[dict[str, Any]]:
+    """Descobre a estrutura real antes de consultar; nao presume uma tabela Raffinato."""
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        cursor = connection.cursor()
+        cursor.execute("""
+          SELECT s.name schema_name,t.name table_name,
+                 MAX(CASE WHEN LOWER(c.name) IN ('idfilial','id_filial') THEN c.name END) id_column,
+                 MAX(CASE WHEN LOWER(c.name) IN ('nome','nomefilial','razaosocial','fantasia','nomefantasia') THEN c.name END) name_column
+          FROM sys.tables t JOIN sys.schemas s ON s.schema_id=t.schema_id
+          JOIN sys.columns c ON c.object_id=t.object_id
+          GROUP BY s.name,t.name
+          HAVING MAX(CASE WHEN LOWER(c.name) IN ('idfilial','id_filial') THEN 1 ELSE 0 END)=1
+             AND MAX(CASE WHEN LOWER(c.name) IN ('nome','nomefilial','razaosocial','fantasia','nomefantasia') THEN 1 ELSE 0 END)=1
+          ORDER BY CASE WHEN LOWER(t.name) IN ('filial','filiais') THEN 0 ELSE 1 END,t.name
+        """)
+        candidate = cursor.fetchone()
+        if candidate:
+            quote = lambda value: "[" + str(value).replace("]", "]]" ) + "]"
+            sql = (f"SELECT DISTINCT {quote(candidate.id_column)} id_filial, "
+                   f"CAST({quote(candidate.name_column)} AS nvarchar(200)) nome "
+                   f"FROM {quote(candidate.schema_name)}.{quote(candidate.table_name)} WITH(NOLOCK) "
+                   f"WHERE {quote(candidate.id_column)} IS NOT NULL ORDER BY 1")
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            if rows:
+                return [{"id_filial": int(row.id_filial), "nome": str(row.nome or "").strip(),
+                         "fonte": f"{candidate.schema_name}.{candidate.table_name}"} for row in rows]
+        cursor.execute("SELECT DISTINCT IdFilial FROM dbo.DocumentoFiscal WITH(NOLOCK) WHERE IdFilial IS NOT NULL ORDER BY IdFilial")
+        return [{"id_filial": int(row.IdFilial), "nome": f"Filial {int(row.IdFilial)}",
+                 "fonte": "dbo.DocumentoFiscal"} for row in cursor.fetchall()]
 
 
 def load_config() -> dict[str, Any]:
@@ -1857,6 +2025,9 @@ class Handler(BaseHTTPRequestHandler):
             "/api/integracoes/raffinato/salvar",
             "/api/integracoes/raffinato/excluir",
             "/api/integracoes/raffinato/parear",
+            "/api/integracoes/raffinato/desbloquear",
+            "/api/integracoes/raffinato/perfis",
+            "/api/integracoes/raffinato/alterar-senha-master",
         }
         route = self.route_path()
         if route not in allowed_paths:
@@ -1871,10 +2042,35 @@ class Handler(BaseHTTPRequestHandler):
                 "ROTA RECEBIDA: %s | VERSAO DO CONECTOR: %s | IDFILIAL RECEBIDO: %s | DATA INICIAL RECEBIDA: %s | DATA FINAL RECEBIDA: %s",
                 route, CONNECTOR_VERSION, body.get("id_filial"), body.get("inicio"), body.get("fim_exclusivo") or body.get("fim"),
             )
+            if route == "/api/integracoes/raffinato/desbloquear":
+                token = create_admin_session(str(body.get("password") or ""))
+                state = load_profile_state()
+                self.send_json(200, {"ok": True, "admin_token": token,
+                    "connector_instance_id": state["connector_instance_id"], "expires_in": ADMIN_SESSION_SECONDS})
+                return
+            if route.startswith("/api/integracoes/raffinato/"):
+                require_admin_session(body.get("admin_token"))
+            if route == "/api/integracoes/raffinato/perfis":
+                state = load_profile_state()
+                self.send_json(200, {"profiles": [profile_public(item) for item in state["profiles"].values()],
+                    "mappings": list(state["mappings"].values()), "connector_instance_id": state["connector_instance_id"]})
+                return
+            if route == "/api/integracoes/raffinato/alterar-senha-master":
+                current = str(body.get("current_password") or "")
+                new = str(body.get("new_password") or "")
+                if not verify_master_password(current) or len(new) < 12:
+                    raise ValueError("Senha atual invalida ou nova senha com menos de 12 caracteres.")
+                state = load_profile_state(); salt = secrets.token_bytes(16).hex()
+                state["master"] = {"salt": salt, "hash": password_digest(new, salt, MASTER_ITERATIONS), "iterations": MASTER_ITERATIONS}
+                save_profile_state(state); ADMIN_SESSIONS.clear()
+                self.send_json(200, {"ok": True})
+                return
             if route == "/api/integracoes/raffinato/testar":
                 store_id = validate_store_id(body.get("loja_id"))
-                saved = load_store_configs().get(store_id, {})
-                result = test_connection(config_from_body(body, saved))
+                saved = get_store_config(store_id) if (mapped_config(store_id) or load_store_configs().get(store_id)) else {}
+                config = config_from_body(body, saved)
+                result = test_connection(config)
+                result["filiais"] = discover_filiais(config)
                 self.send_json(200, result)
                 return
             if route == "/api/integracoes/raffinato/senha":
@@ -1886,20 +2082,31 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if route == "/api/integracoes/raffinato/salvar":
                 store_id = validate_store_id(body.get("loja_id"))
-                saved = load_store_configs().get(store_id, {})
+                saved = mapped_config(store_id) or load_store_configs().get(store_id, {})
                 config = config_from_body(body, saved)
                 result = test_connection(config)
-                configs = load_store_configs()
-                configs[store_id] = config
-                save_store_configs(configs)
-                result["referencia_segredo"] = f"dpapi:{store_id}"
+                state = load_profile_state()
+                profile_id = str(body.get("connection_profile_id") or "").strip()
+                if profile_id not in state["profiles"]:
+                    profile_id = str(uuid4())
+                previous = state["profiles"].get(profile_id, {})
+                profile = {**previous, **config, "id": profile_id,
+                    "name": str(body.get("profile_name") or previous.get("name") or "Conexao Raffinato").strip()[:80],
+                    "active": True, "last_test_at": datetime.now().isoformat(), "last_status": "connected"}
+                state["profiles"][profile_id] = profile
+                state["mappings"][store_id] = {
+                    "checkdiario_empresa_id": str(body.get("empresa_id") or config.get("empresa_id") or ""),
+                    "checkdiario_filial_id": store_id, "connection_profile_id": profile_id,
+                    "raffinato_filial_id": int(body.get("raffinato_filial_id") or config.get("id_filial") or 1), "active": True,
+                }
+                save_profile_state(state)
+                result.update({"referencia_segredo": f"dpapi-profile:{profile_id}", "connection_profile_id": profile_id,
+                    "connector_instance_id": state["connector_instance_id"]})
                 self.send_json(200, result)
                 return
             if route == "/api/integracoes/raffinato/excluir":
                 store_id = validate_store_id(body.get("loja_id"))
-                configs = load_store_configs()
-                configs.pop(store_id, None)
-                save_store_configs(configs)
+                state = load_profile_state(); state["mappings"].pop(store_id, None); save_profile_state(state)
                 self.send_json(200, {"ok": True})
                 return
             if route == "/api/integracoes/raffinato/parear":
@@ -1970,6 +2177,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(200, result)
         except (ValueError, json.JSONDecodeError) as exc:
             self.send_json(400, {"error": str(exc)})
+        except PermissionError as exc:
+            self.send_json(403, {"error": str(exc)})
         except pyodbc.Error as exc:
             logger.exception("Falha de conexão/consulta ao Raffinato")
             self.send_json(503, {"error": friendly_sql_error(exc)})
@@ -2037,6 +2246,12 @@ def run_tray(server: ThreadingHTTPServer) -> None:
 def main() -> int:
     if not acquire_single_instance():
         return 0
+    try:
+        migrate_legacy_configuration()
+    except Exception as exc:
+        logger.exception("Migracao segura da configuracao falhou")
+        show_windows_message("Conector Raffinato", f"Nao foi possivel migrar a configuracao. O backup anterior foi preservado.\n\n{exc}", True)
+        return 1
     config = {"allowed_origins": DEFAULT_ALLOWED_ORIGINS}
     try:
         server = ThreadingHTTPServer((HOST, PORT), Handler)

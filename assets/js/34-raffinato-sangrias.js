@@ -6,6 +6,8 @@ let raffinatoTelaInicializada = false;
 let raffinatoIntegracaoAtual = null;
 let raffinatoTesteValido = false;
 let raffinatoLoadSequence = 0;
+let raffinatoAdminToken = '';
+let raffinatoConnectionProfileId = '';
 let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
 let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
 let raffinatoBuscaDetalhe = '';
@@ -86,8 +88,10 @@ async function raffinatoBridgePost(path, body) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
+    const protectedRoute = path.startsWith('/api/integracoes/raffinato/') && !path.endsWith('/desbloquear');
+    const payloadBody = protectedRoute ? { ...body, admin_token:raffinatoAdminToken } : body;
     const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), signal:controller.signal,
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payloadBody), signal:controller.signal,
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(mensagemAmigavelErroRaffinato(payload.error));
@@ -96,6 +100,27 @@ async function raffinatoBridgePost(path, body) {
     if (error?.name === 'AbortError') throw new Error('A consulta excedeu 30 segundos. Verifique o log do conector Raffinato.');
     throw error;
   } finally { clearTimeout(timer); }
+}
+
+async function desbloquearConfiguracaoRaffinato() {
+  const input=document.getElementById('raffinatoMasterPassword'),msg=document.getElementById('msgRaffinatoMaster');
+  try {
+    const result=await raffinatoBridgePost('/api/integracoes/raffinato/desbloquear',{password:input?.value||''});
+    raffinatoAdminToken=String(result.admin_token||''); if(input)input.value='';
+    document.getElementById('raffinatoAdminLockCard').hidden=true;
+    document.getElementById('raffinatoAdminPanel').hidden=false;
+    await carregarIntegracaoRaffinato();
+  } catch(error) { if(msg){msg.className='msg err';msg.textContent=error?.message||'Acesso negado.';} }
+}
+
+async function alterarSenhaMasterRaffinato() {
+  const atual=window.prompt('Senha master atual:'); if(atual===null)return;
+  const nova=window.prompt('Nova senha master (mínimo 12 caracteres):'); if(nova===null)return;
+  const confirmar=window.prompt('Confirme a nova senha master:');
+  if(nova!==confirmar){window.alert('A confirmação não corresponde.');return;}
+  await raffinatoBridgePost('/api/integracoes/raffinato/alterar-senha-master',{current_password:atual,new_password:nova});
+  raffinatoAdminToken=''; document.getElementById('raffinatoAdminPanel').hidden=true;document.getElementById('raffinatoAdminLockCard').hidden=false;
+  window.alert('Senha master alterada. Entre novamente.');
 }
 
 function mensagemAmigavelErroRaffinato(error) {
@@ -189,9 +214,11 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else iniciarBotaoSenhaRaffinato();
 
 function dadosFormularioRaffinato() {
-  const { lojaId } = contextoRaffinato();
+  const { lojaId, empresaId } = contextoRaffinato();
   return {
-    loja_id: lojaId,
+    loja_id: lojaId, empresa_id:empresaId, connection_profile_id:raffinatoConnectionProfileId,
+    profile_name:document.getElementById('raffinatoProfileName')?.value.trim() || 'Conexão Raffinato',
+    raffinato_filial_id:Number(document.getElementById('raffinatoFilialSelect')?.value||1),
     server: document.getElementById('raffinatoSqlServer')?.value.trim(),
     database: document.getElementById('raffinatoDatabase')?.value.trim(),
     uid: document.getElementById('raffinatoDbUser')?.value.trim(),
@@ -200,6 +227,8 @@ function dadosFormularioRaffinato() {
 }
 
 function preencherFormularioIntegracaoRaffinato(item) {
+  const profileName=document.getElementById('raffinatoProfileName'); if(profileName)profileName.value=item?.nome_conexao||'Zuqui';
+  raffinatoConnectionProfileId=String(item?.connection_profile_id||'');
   document.getElementById('raffinatoSqlServer').value = item?.instancia_sql || '';
   document.getElementById('raffinatoDatabase').value = item?.banco_dados || '';
   document.getElementById('raffinatoDbUser').value = item?.usuario_mascarado || '';
@@ -262,6 +291,8 @@ function renderizarTesteIntegracaoRaffinato(result) {
   const box = document.getElementById('raffinatoTestResult');
   box.hidden = false;
   box.innerHTML = `<div class="raffinato-test-title"><span>Conexão estabelecida com sucesso</span><span>${escapeRaffinatoHtml(result.latencia_ms)} ms</span></div><div class="raffinato-test-steps">${(result.steps || []).map(step => `<div class="raffinato-test-step"><span class="raffinato-test-check">✓</span>${escapeRaffinatoHtml(step.label)}</div>`).join('')}</div>`;
+  const select=document.getElementById('raffinatoFilialSelect'),current=String(select?.value||raffinatoIntegracaoAtual?.raffinato_filial_id||1);
+  if(select&&Array.isArray(result.filiais)){select.innerHTML=result.filiais.map(item=>`<option value="${Number(item.id_filial)}">${Number(item.id_filial)} - ${escapeRaffinatoHtml(item.nome||'Filial')}</option>`).join('');if([...select.options].some(o=>o.value===current))select.value=current;}
 }
 
 async function testarIntegracaoRaffinato() {
@@ -293,7 +324,8 @@ async function salvarIntegracaoRaffinato() {
     const form = dadosFormularioRaffinato();
     const result = await raffinatoBridgePost('/api/integracoes/raffinato/salvar', form);
     const atorId = /^[0-9a-f-]{36}$/i.test(String(usuarioSistemaLogado?.id || '')) ? usuarioSistemaLogado.id : null;
-    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId };
+    raffinatoConnectionProfileId=result.connection_profile_id;
+    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId, connection_profile_id:result.connection_profile_id, raffinato_filial_id:form.raffinato_filial_id, nome_conexao:form.profile_name };
     const { error } = await sb.from('raffinato_integracoes').upsert(payload, { onConflict:'loja_id' });
     if (error) throw error;
     await parearConectorExternoRaffinato();
