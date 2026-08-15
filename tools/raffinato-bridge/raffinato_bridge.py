@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.22"
+CONNECTOR_VERSION = "1.6.23"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -166,11 +166,17 @@ SELECT CONVERT(date,A.Data) data,SUM(ISNULL(A.ValorTroco,0)) valor_abertura,
  ISNULL((SELECT SUM(CASE WHEN DF.TipoComprovanteNaoFiscal=1 THEN ISNULL(DF.ValorTotal,0) ELSE 0 END)
    FROM dbo.DocumentoFiscal DF WITH(NOLOCK) WHERE DF.Data>=CONVERT(date,A.Data) AND DF.Data<DATEADD(day,1,CONVERT(date,A.Data))
    AND DF.IdFilial=? AND DF.Tipo='CN' AND DF.TipoComprovanteNaoFiscal IN(1,4) AND ISNULL(DF.Cancelado,0)=0
-   AND DF.IdUsuarioAutorizadorSangria IS NOT NULL),0) valor_sangria,
+   AND DF.IdUsuarioAutorizadorSangria IS NOT NULL
+   AND EXISTS (SELECT 1 FROM dbo.FormaPagamentoComprovanteNaoFiscal FPCNF WITH(NOLOCK)
+     JOIN dbo.AberturaCaixa AO WITH(NOLOCK) ON AO.Id=FPCNF.IdAberturaCaixa
+     WHERE FPCNF.IdDocumentoFiscal=DF.Id AND AO.IdFilial=DF.IdFilial AND AO.IdFechamentoCaixa IS NULL)),0) valor_sangria,
  ISNULL((SELECT SUM(CASE WHEN DF.TipoComprovanteNaoFiscal=4 THEN ISNULL(DF.ValorTotal,0) ELSE 0 END)
    FROM dbo.DocumentoFiscal DF WITH(NOLOCK) WHERE DF.Data>=CONVERT(date,A.Data) AND DF.Data<DATEADD(day,1,CONVERT(date,A.Data))
    AND DF.IdFilial=? AND DF.Tipo='CN' AND DF.TipoComprovanteNaoFiscal IN(1,4) AND ISNULL(DF.Cancelado,0)=0
-   AND DF.IdUsuarioAutorizadorSangria IS NOT NULL),0) valor_retirada,
+   AND DF.IdUsuarioAutorizadorSangria IS NOT NULL
+   AND EXISTS (SELECT 1 FROM dbo.FormaPagamentoComprovanteNaoFiscal FPCNF WITH(NOLOCK)
+     JOIN dbo.AberturaCaixa AO WITH(NOLOCK) ON AO.Id=FPCNF.IdAberturaCaixa
+     WHERE FPCNF.IdDocumentoFiscal=DF.Id AND AO.IdFilial=DF.IdFilial AND AO.IdFechamentoCaixa IS NULL)),0) valor_retirada,
  ISNULL((SELECT SUM(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0)) FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK)
    JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=F.IdDocumentoFiscal
    WHERE F.IdAberturaCaixa IN(SELECT AO.Id FROM dbo.AberturaCaixa AO WITH(NOLOCK) WHERE AO.Data=CONVERT(date,A.Data) AND AO.IdFilial=? AND AO.IdFechamentoCaixa IS NULL)

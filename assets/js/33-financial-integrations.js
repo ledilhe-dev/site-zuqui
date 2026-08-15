@@ -27,6 +27,7 @@ const FinanceAI = Object.freeze({
 const IFConciliacao = {
   arquivo: null, fornecedorId: '', fornecedorNome: '', itensArquivo: [], contas: [],
   pares: new Map(), processando: false, filtro: 'todos', leitura: null, importacaoId: null,
+  contaEmCadastro: null,
 };
 
 function ifEsc(texto) {
@@ -441,20 +442,56 @@ async function ifConcConciliar(extId) {
   ext.status = 'localizado';
   ifConcRenderResultado(); ifConcMsg('Conta conciliada. Somente o valor foi atualizado; os demais dados foram preservados.', 'ok');
 }
-function ifConcCadastrar(extId) {
+async function ifConcCadastrar(extId) {
   const ext = IFConciliacao.itensArquivo.find(i => i.id === extId);
   if (!ext) return;
-  if (typeof ncAbrir !== 'function') { abrirPagina('financeiro_contasapagar', document.querySelector('[data-page="financeiro_contasapagar"]')); return; }
+  const resposta = typeof abrirConfirmacaoSistema === 'function'
+    ? await abrirConfirmacaoSistema({
+        title:'Conta a pagar não encontrada',
+        subtitle:'Não encontramos uma conta a pagar correspondente a este lançamento. Deseja cadastrá-la agora?',
+        body:`<div class="if-conc-cadastro-resumo"><strong>${ifEsc(ext.descricao || 'Lançamento')}</strong><span>${ifData(ext.data)} · ${ifMoeda(ext.valor)}</span></div>`,
+        cancelText:'Continuar sem cadastrar', cancelClass:'btn-ghost',
+        confirmText:'Cadastrar conta a pagar', confirmClass:'btn-green',
+      })
+    : { confirmado: window.confirm('Conta a pagar não encontrada. Deseja cadastrá-la agora?') };
+  if (!resposta?.confirmado) return;
+  IFConciliacao.contaEmCadastro = { extId:ext.id };
+  if (typeof abrirPagina === 'function') abrirPagina('financeiro_contasapagar', document.querySelector('[data-page="financeiro_contasapagar"]'));
+  if (typeof ncAbrir !== 'function') return;
   ncAbrir();
   setTimeout(() => {
     if (typeof ncSelForn === 'function') ncSelForn(IFConciliacao.fornecedorId, IFConciliacao.fornecedorNome);
-    NC.dataCompra = ext.data || new Date().toISOString().slice(0,10);
-    NC.dataVenc = ext.data || NC.dataCompra; NC.valor = Number(ext.valor); NC.obs = ext.descricao;
-    const campos = { ncDataCompra:NC.dataCompra, ncVencCustom:NC.dataVenc, ncValor:ifMoeda(NC.valor), ncObs:NC.obs };
+    const dataConfiavel = /^\d{4}-\d{2}-\d{2}$/.test(String(ext.data || '').slice(0,10)) ? String(ext.data).slice(0,10) : '';
+    if (dataConfiavel) { NC.dataCompra = dataConfiavel; NC.dataVenc = dataConfiavel; }
+    if (Number(ext.valor) > 0) NC.valor = Number(ext.valor);
+    if (String(ext.descricao || '').trim()) NC.obs = String(ext.descricao).trim();
+    const campos = { ncDataCompra:NC.dataCompra, ncVencCustom:NC.dataVenc, ncValor:NC.valor == null ? '' : ifMoeda(NC.valor), ncObs:NC.obs };
     Object.entries(campos).forEach(([id,v]) => { const el=document.getElementById(id); if(el) el.value=v; });
     if (typeof ncVencCust === 'function') ncVencCust();
     if (typeof ncObsInput === 'function') ncObsInput(document.getElementById('ncObs'));
   }, 80);
+}
+async function ifConcContaCadastrada(resultado = {}) {
+  const retorno = IFConciliacao.contaEmCadastro;
+  if (!retorno) return false;
+  IFConciliacao.contaEmCadastro = null;
+  if (typeof abrirPagina === 'function') abrirPagina('integracoes_financeiras_conciliacao', document.querySelector('[data-page="integracoes_financeiras_conciliacao"]'));
+  try {
+    await ifConcComparar();
+    const novaId = (resultado.ids || [])[0];
+    const ext = IFConciliacao.itensArquivo.find(item => String(item.id) === String(retorno.extId));
+    const novaConta = novaId ? IFConciliacao.contas.find(conta => String(conta.id) === String(novaId)) : null;
+    if (ext && novaConta) {
+      IFConciliacao.pares.set(ext.id, String(novaConta.id));
+      ext.status = ifCentavos(ext.valor) === ifCentavos(novaConta.valor_compra) ? 'localizado' : 'divergente';
+      ifConcRenderResultado();
+    }
+    ifConcMsg('Conta cadastrada. A conciliação foi atualizada sem refazer a importação.', 'ok');
+  } catch (error) {
+    console.error('Conta salva, mas a conciliação não pôde ser atualizada:', error);
+    ifConcMsg('Conta cadastrada. Atualize a comparação para carregá-la na conciliação.', 'err');
+  }
+  return true;
 }
 async function ifConcExcluirConta(id) {
   const conta = IFConciliacao.contas.find(c => String(c.id) === String(id));
@@ -487,4 +524,5 @@ window.ifConcReceberArquivo = ifConcReceberArquivo;
 window.ifConcTrocarPar = ifConcTrocarPar;
 window.ifConcConciliar = ifConcConciliar;
 window.ifConcCadastrar = ifConcCadastrar;
+window.ifConcContaCadastrada = ifConcContaCadastrada;
 window.ifConcExcluirConta = ifConcExcluirConta;

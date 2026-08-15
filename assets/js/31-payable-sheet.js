@@ -795,6 +795,16 @@ async function ncSalvar(salvarENovo = false) {
       return;
     }
     const estavaEditando = NC.modoEdicao;
+    if (!estavaEditando && resultadoSalvar?.ok && typeof window.ifConcContaCadastrada === 'function') {
+      const retornouParaConciliacao = await window.ifConcContaCadastrada(resultadoSalvar);
+      if (retornouParaConciliacao) {
+        NC.salvando = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+        if (btnNovo) { btnNovo.disabled = false; btnNovo.textContent = 'Salvar e novo'; }
+        ncFechar();
+        return;
+      }
+    }
     if (salvarENovo && !estavaEditando) {
       NC.salvando = false;
       if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
