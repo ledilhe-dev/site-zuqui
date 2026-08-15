@@ -14,7 +14,13 @@ const RAFFINATO_RELAY_FUNCTION = 'raffinato-relay';
 
 async function raffinatoRelay(body) {
   const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body });
-  if (error) throw new Error(error.message || 'Falha na comunicacao externa com o Raffinato.');
+  if (error) {
+    let detail = '';
+    try { detail = await error.context?.clone?.().text?.() || ''; } catch (_) {}
+    try { detail = JSON.parse(detail)?.error || detail; } catch (_) {}
+    console.error('[Raffinato relay]', { action: body?.action, status: error.context?.status, detail, error });
+    throw new Error(detail || error.message || 'Falha na comunicacao externa com o Raffinato.');
+  }
   if (data?.error) throw new Error(data.error);
   return data || {};
 }

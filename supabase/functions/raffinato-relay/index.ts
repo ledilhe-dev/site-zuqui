@@ -7,6 +7,7 @@ const cors = {
 };
 
 Deno.serve(async (request) => {
+  const requestId = crypto.randomUUID();
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "POST") return json({ error: "Metodo nao permitido." }, 405);
   try {
@@ -387,8 +388,9 @@ Deno.serve(async (request) => {
     }
     throw new Error("Acao desconhecida.");
   } catch (error) {
-    console.error(error);
-    return json({ error: error instanceof Error ? error.message : "Falha inesperada." }, 400);
+    const message = error instanceof Error ? error.message : "Falha inesperada.";
+    console.error(JSON.stringify({ request_id: requestId, message, stack: error instanceof Error ? error.stack : null }));
+    return json({ error: message, request_id: requestId }, 400);
   }
 });
 
