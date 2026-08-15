@@ -825,6 +825,7 @@
 
       <section id="conectores_saas" class="pagina">
         <div class="page-title">Conectores</div>
+        <div class="card"><div class="card-title">Adicionar conector</div><div class="page-sub">Gere um código temporário para vincular uma instalação física à empresa.</div><div class="form-grid"><label>Empresa<select id="connectorPairEmpresa"></select></label><div style="align-self:end"><button class="btn btn-green" type="button" onclick="gerarCodigoPareamentoConector()">Gerar código de vinculação</button></div></div><div id="connectorPairCode" class="msg"></div></div>
         <div class="card"><div class="card-title">Instalações e vínculos Raffinato</div><div class="page-sub">Somente metadados operacionais. Credenciais SQL permanecem protegidas no computador do conector.</div><div id="listaConectoresSaas"><div class="empty">Carregando...</div></div></div>
       </section>
 
@@ -2373,7 +2374,7 @@
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
             <button class="btn btn-ghost" type="button" onclick="alterarSenhaMasterRaffinato()">Alterar senha master</button>
-            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.7.0.exe" download>Baixar conector 1.7.0</a>
+            <a class="btn btn-ghost" href="./downloads/Conector-Raffinato-v1.7.1.exe" download>Baixar conector 1.7.1</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
@@ -3320,7 +3321,7 @@
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260811-layout-global-v1"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
-      <script src="./assets/js/34-raffinato-sangrias.js?v=20260815-multiempresa-v1"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260815-connector-171"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/37-raffinato-products.js?v=20260810-crossfilter-v2"></script>
@@ -3331,7 +3332,7 @@
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
-<script src="./assets/js/43-saas-admin.js?v=20260815-global-admin-v1"></script>
+<script src="./assets/js/43-saas-admin.js?v=20260815-connector-171"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>

@@ -57,6 +57,26 @@ class MultiempresaTests(unittest.TestCase):
         self.assertEqual(profile["pwd"], legacy["pwd"])
         self.assertTrue((bridge.BACKUP_DIR / "credentials.json.pre-1.7.0.bak").exists())
 
+    def test_clean_install_has_stable_identity_and_no_zuqui_fallback(self):
+        bridge.migrate_legacy_configuration()
+        first = bridge.load_profile_state()["connector_instance_id"]
+        second = bridge.load_profile_state()["connector_instance_id"]
+        self.assertEqual(first, second)
+        self.assertFalse(bridge.connector_is_paired())
+        with self.assertRaisesRegex(RuntimeError, "Nenhum perfil Raffinato configurado"):
+            bridge.get_store_config("gustare-store")
+
+    def test_instance_credential_is_dpapi_state_not_sql_profile(self):
+        bridge.migrate_legacy_configuration()
+        state = bridge.load_profile_state()
+        state["paired_empresa_id"] = "gustare-company"
+        state["connector_credential"] = "installation-secret"
+        bridge.save_profile_state(state)
+        loaded = bridge.load_profile_state()
+        self.assertTrue(bridge.connector_is_paired())
+        self.assertEqual(loaded["connector_credential"], "installation-secret")
+        self.assertNotIn("connector_credential", loaded["profiles"])
+
 
 if __name__ == "__main__":
     unittest.main()

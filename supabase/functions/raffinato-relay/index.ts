@@ -16,6 +16,37 @@ Deno.serve(async (request) => {
       auth: { persistSession: false },
     });
 
+    if (body.action === "connector_pair") {
+      validateUuid(body.connector_instance_id, "instalacao");
+      const credential = validateToken(body.credential);
+      const { data, error } = await admin.rpc("consumir_codigo_pareamento_raffinato", {
+        p_codigo:String(body.code || ""), p_connector_instance_id:body.connector_instance_id,
+        p_credencial_hash:await sha256(credential), p_nome:String(body.name || "Conector Raffinato"),
+        p_versao:String(body.version || ""),
+      });
+      if (error) throw error;
+      return json({ ok:true, ...data });
+    }
+
+    if (body.action === "connector_heartbeat") {
+      const instance = await connectorForCredential(admin, body.connector_instance_id, validateToken(body.credential));
+      const { error } = await admin.from("raffinato_connector_instances").update({
+        status:"online", ultimo_contato_em:new Date().toISOString(), versao:String(body.version || "").slice(0,30),
+        perfis_cadastrados:Math.max(0,Number(body.profiles || 0)), filiais_vinculadas:Math.max(0,Number(body.mappings || 0)),
+      }).eq("id",instance.id);
+      if (error) throw error;
+      return json({ok:true,empresa_id:instance.empresa_id});
+    }
+
+    if (body.action === "connector_link_store") {
+      validateUuid(body.empresa_id,"empresa"); validateUuid(body.loja_id,"loja"); validateUuid(body.connector_instance_id,"instalacao");
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      const {data:instance,error:instanceError}=await admin.from("raffinato_connector_instances").select("id").eq("id",body.connector_instance_id).eq("empresa_id",body.empresa_id).neq("status","revogado").maybeSingle();
+      if(instanceError||!instance)throw instanceError||new Error("Instalacao nao pertence a empresa selecionada.");
+      const {error}=await admin.from("raffinato_integracoes").update({connector_instance_id:instance.id}).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id);
+      if(error)throw error; return json({ok:true});
+    }
+
     if (body.action === "pair") {
       validateUuid(body.empresa_id, "empresa"); validateUuid(body.loja_id, "loja");
       await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id);
@@ -28,7 +59,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "sync") {
-      const integration = await integrationForToken(admin, validateToken(body.token));
+      const integration = await integrationForToken(admin, validateToken(body.token), body);
       const inicio = validateDate(body.inicio, "inicio");
       const fim = validateDate(body.fim, "fim");
       if (fim < inicio) throw new Error("Periodo invalido.");
@@ -52,7 +83,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "billing_sync") {
-      const integration = await integrationForToken(admin, validateToken(body.token));
+      const integration = await integrationForToken(admin, validateToken(body.token), body);
       const inicio = validateDate(body.inicio, "inicio"); const fim = validateDate(body.fim, "fim");
       if (fim < inicio) throw new Error("Periodo invalido.");
       const items = Array.isArray(body.items) ? body.items.slice(0, 10000) : [];
@@ -77,7 +108,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "products_sync") {
-      const integration = await integrationForToken(admin, validateToken(body.token));
+      const integration = await integrationForToken(admin, validateToken(body.token), body);
       const inicio = validateDate(body.inicio, "inicio"); const fim = validateDate(body.fim, "fim");
       if (fim < inicio) throw new Error("Periodo invalido.");
       const items = Array.isArray(body.items) ? body.items.slice(0, 50000) : [];
@@ -100,7 +131,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "metadata_sync") {
-      const integration=await integrationForToken(admin,validateToken(body.token));
+      const integration=await integrationForToken(admin,validateToken(body.token),body);
       const filial=Number(body.id_filial||1),syncedAt=new Date().toISOString();
       const groups=Array.isArray(body.agrupamentos)?body.agrupamentos.slice(0,10000):[],products=Array.isArray(body.produtos)?body.produtos.slice(0,100000):[],payments=Array.isArray(body.formas_pagamento)?body.formas_pagamento.slice(0,10000):[];
       for(const table of ["raffinato_agrupamentos_cache","raffinato_produtos_catalogo_cache","raffinato_formas_pagamento_catalogo_cache"]){const {error}=await admin.from(table).delete().eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id).eq("id_filial",filial);if(error)throw error;}
@@ -113,7 +144,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "canonical_sync") {
-      const integration = await integrationForToken(admin, validateToken(body.token));
+      const integration = await integrationForToken(admin, validateToken(body.token), body);
       const inicio=validateDate(body.inicio,"inicio"),fim=validateDate(body.fim,"fim");
       if(fim<inicio)throw new Error("Periodo invalido.");
       const documents=Array.isArray(body.documents)?body.documents.slice(0,100000):[];
@@ -176,7 +207,7 @@ Deno.serve(async (request) => {
     }
 
     if(body.action==="managerial_sync"){
-      const integration=await integrationForToken(admin,validateToken(body.token)),inicio=validateDate(body.inicio,"inicio"),fim=validateDate(body.fim,"fim"),abc=Array.isArray(body.abc_items)?body.abc_items.slice(0,100000):[],mandatory=Array.isArray(body.mandatory_items)?body.mandatory_items.slice(0,100000):[];
+      const integration=await integrationForToken(admin,validateToken(body.token),body),inicio=validateDate(body.inicio,"inicio"),fim=validateDate(body.fim,"fim"),abc=Array.isArray(body.abc_items)?body.abc_items.slice(0,100000):[],mandatory=Array.isArray(body.mandatory_items)?body.mandatory_items.slice(0,100000):[];
       for(const table of ["raffinato_abc_cache","raffinato_itens_obrigatorios_cache"]){const {error}=await admin.from(table).delete().eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id).gte("data",inicio).lte("data",fim);if(error)throw error;}
       for(let offset=0;offset<abc.length;offset+=1000){const rows=abc.slice(offset,offset+1000).map((x:any)=>({empresa_id:integration.empresa_id,loja_id:integration.loja_id,data:validateDate(x.data,"data"),id_filial:Number(x.id_filial||1),codigo:Number(x.codigo),produto:String(x.produto||"").slice(0,300),id_agrupamento:x.id_agrupamento==null?null:Number(x.id_agrupamento),agrupamento:x.agrupamento==null?null:String(x.agrupamento).slice(0,300),quantidade:Number(x.quantidade||0),faturamento:Number(x.faturamento||0),custo_conhecido:Number(x.custo_conhecido||0),faturamento_com_custo:Number(x.faturamento_com_custo||0),itens_com_custo:Number(x.itens_com_custo||0),itens_sem_custo:Number(x.itens_sem_custo||0),sincronizado_em:new Date().toISOString()}));const {error}=await admin.from("raffinato_abc_cache").upsert(rows,{onConflict:"empresa_id,loja_id,data,id_filial,codigo"});if(error)throw error;}
       for(let offset=0;offset<mandatory.length;offset+=1000){const rows=mandatory.slice(offset,offset+1000).map((x:any)=>({empresa_id:integration.empresa_id,loja_id:integration.loja_id,data:validateDate(x.Data||x.data,"data"),hora:String(x.Hora||x.hora||"00:00:00").slice(0,8),id_filial:Number(x.id_filial||1),id_venda:Number(x.id_venda),id_pai:Number(x.id_pai),id_produto_pai:Number(x.id_produto_pai),produto_pai:String(x.produto_pai||"").slice(0,300),id_agrupamento_pai:x.id_agrupamento_pai==null?null:Number(x.id_agrupamento_pai),agrupamento_pai:x.agrupamento_pai==null?null:String(x.agrupamento_pai).slice(0,300),origem:String(x.origem||"VENDA_RAPIDA"),valor_item:Number(x.valor_item||0),id_item_obrigatorio:x.id_item_obrigatorio==null?null:Number(x.id_item_obrigatorio),item_obrigatorio:x.item_obrigatorio==null?null:String(x.item_obrigatorio).slice(0,300),id_componente:Number(x.id_componente),componente:String(x.componente||"").slice(0,300),quantidade_componente:Number(x.quantidade_componente||0),sincronizado_em:new Date().toISOString()}));const {error}=await admin.from("raffinato_itens_obrigatorios_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_pai,id_componente"});if(error)throw error;}
@@ -184,7 +215,7 @@ Deno.serve(async (request) => {
     }
 
     if(body.action==="annual_sync"){
-      const integration=await integrationForToken(admin,validateToken(body.token)),filial=Number(body.id_filial||1),items=Array.isArray(body.items)?body.items.slice(0,10000):[];const {error:del}=await admin.from("raffinato_anual_cache").delete().eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id).eq("id_filial",filial);if(del)throw del;
+      const integration=await integrationForToken(admin,validateToken(body.token),body),filial=Number(body.id_filial||1),items=Array.isArray(body.items)?body.items.slice(0,10000):[];const {error:del}=await admin.from("raffinato_anual_cache").delete().eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id).eq("id_filial",filial);if(del)throw del;
       if(items.length){const rows=items.map((x:any)=>({empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:filial,ano:Number(x.ano),mes:Number(x.mes),modulo_venda:String(x.modulo_venda||"TODOS"),faturamento:Number(x.faturamento||0),vendas:Number(x.vendas||0),quantidade:Number(x.quantidade||0),primeira_data:x.primeira_data,ultima_data:x.ultima_data,sincronizado_em:new Date().toISOString()}));const {error}=await admin.from("raffinato_anual_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_filial,ano,mes,modulo_venda"});if(error)throw error;}return json({ok:true,quantidade:items.length});
     }
 
@@ -413,7 +444,20 @@ async function authorizeStore(admin: any, userId: string, empresaId: string, loj
   ]);
   if (!adminUser && !link && String(employee?.loja_id || "") !== lojaId) throw new Error("Usuario sem acesso a esta loja.");
 }
-async function integrationForToken(admin: any, token: string) {
+async function connectorForCredential(admin:any,instanceId:any,credential:string){
+  validateUuid(instanceId,"instalacao");
+  const {data,error}=await admin.from("raffinato_connector_instances").select("id,empresa_id,status").eq("id",instanceId).eq("credencial_hash",await sha256(credential)).maybeSingle();
+  if(error||!data||data.status==="revogado")throw error||new Error("Credencial da instalacao invalida.");
+  return data;
+}
+async function integrationForToken(admin: any, token: string, body:any={}) {
+  if(body.connector_instance_id){
+    const instance=await connectorForCredential(admin,body.connector_instance_id,token);
+    validateUuid(body.loja_id,"loja");
+    const {data,error}=await admin.from("raffinato_integracoes").select("id,empresa_id,loja_id").eq("connector_instance_id",instance.id).eq("empresa_id",instance.empresa_id).eq("loja_id",body.loja_id).maybeSingle();
+    if(error||!data)throw error||new Error("Loja nao vinculada a esta instalacao.");
+    return data;
+  }
   const { data, error } = await admin.from("raffinato_integracoes").select("id,empresa_id,loja_id")
     .eq("conector_token_hash", await sha256(token)).maybeSingle();
   if (error || !data) throw error || new Error("Conector nao pareado.");

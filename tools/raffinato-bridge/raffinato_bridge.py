@@ -45,7 +45,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.0"
+CONNECTOR_VERSION = "1.7.1"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -626,6 +626,16 @@ def save_profile_state(state: dict[str, Any]) -> None:
     os.replace(temporary, PROFILE_CONFIG_PATH)
 
 
+def connector_identity() -> tuple[str, str]:
+    state = load_profile_state()
+    return str(state["connector_instance_id"]), str(state.get("connector_credential") or "")
+
+
+def connector_is_paired() -> bool:
+    state = load_profile_state()
+    return bool(state.get("paired_empresa_id") and state.get("connector_credential"))
+
+
 def backup_file_once(path: Path) -> None:
     if not path.exists():
         return
@@ -760,6 +770,9 @@ def config_from_body(body: dict[str, Any], base: dict[str, Any] | None = None) -
 
 
 def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
+    instance_id, credential = connector_identity()
+    if credential and payload.get("token"):
+        payload = {**payload, "token":credential, "connector_instance_id":instance_id}
     request = urllib.request.Request(
         RELAY_URL,
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -779,15 +792,16 @@ def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
 
 
 def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
+    store_id = str(config.get("_store_id") or "")
     result = query_sangrias(config, start, end + timedelta(seconds=1), resolve_raffinato_filial(config, {}))
     relay_post({
-        "action": "sync", "token": config["relay_token"],
+        "action": "sync", "token": config["relay_token"], "loja_id":store_id,
         "inicio": start.strftime("%Y-%m-%d"), "fim": end.strftime("%Y-%m-%d"),
         "items": result["items"],
     }, timeout=45)
     billing=query_faturamento_diario(config,start.date(),end.date()+timedelta(days=1),resolve_raffinato_filial(config,{}))
     relay_post({
-        "action":"billing_sync","token":config["relay_token"],
+        "action":"billing_sync","token":config["relay_token"],"loja_id":store_id,
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":billing,
     },timeout=45)
     filial=resolve_raffinato_filial(config,{})
@@ -797,7 +811,7 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         cursor.execute(SQL_PRODUTOS_DIARIO,start.date(),end.date()+timedelta(days=1),filial)
         products=rows_as_dicts(cursor)
     relay_post({
-        "action":"products_sync","token":config["relay_token"],
+        "action":"products_sync","token":config["relay_token"],"loja_id":store_id,
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":products,
     },timeout=90)
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
@@ -810,13 +824,13 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
                 canonical_items=rows_as_dicts(cursor); break
     open_deliveries=query_deliveries_abertos(config,start,end+timedelta(seconds=1),filial)
     relay_post({
-        "action":"canonical_sync","token":config["relay_token"],
+        "action":"canonical_sync","token":config["relay_token"],"loja_id":store_id,
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),
         "documents":documents,"items":canonical_items,"open_deliveries":open_deliveries,
     },timeout=120)
     abc_rows=query_curva_abc_sync(config,start,end+timedelta(seconds=1),filial)
     io_rows=query_itens_obrigatorios_rows(config,{"inicio":start.isoformat(),"fim_exclusivo":(end+timedelta(seconds=1)).isoformat(),"id_filial":filial})
-    relay_post({"action":"managerial_sync","token":config["relay_token"],"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"abc_items":abc_rows,"mandatory_items":io_rows},timeout=180)
+    relay_post({"action":"managerial_sync","token":config["relay_token"],"loja_id":store_id,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"abc_items":abc_rows,"mandatory_items":io_rows},timeout=180)
 
 
 def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
@@ -826,7 +840,7 @@ def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
     first=int(first_date[:4]);last=int(last_date[:4]);summary=query_annual_summary_sql(config,{"id_filial":filial,"loja_id":store_id},first,last)
     rows=[{**x,"modulo_venda":"TODOS","id_filial":filial,"primeira_data":first_date,"ultima_data":last_date} for x in summary.get("meses",[])]
     rows.extend({**x,"vendas":0,"quantidade":0,"id_filial":filial,"primeira_data":first_date,"ultima_data":last_date} for x in summary.get("modulos",[]))
-    relay_post({"action":"annual_sync","token":config["relay_token"],"id_filial":filial,"items":rows},timeout=180)
+    relay_post({"action":"annual_sync","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"items":rows},timeout=180)
 
 
 def relay_sync_loop(stop_event: threading.Event) -> None:
@@ -843,6 +857,7 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
                 continue
             acquired = False
             try:
+                config = {**config, "_store_id":store_id}
                 acquired = CACHE_SYNC_LOCK.acquire(timeout=1)
                 if not acquired:
                     continue
@@ -870,6 +885,22 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
         stop_event.wait(60)
 
 
+def heartbeat_loop(stop_event: threading.Event) -> None:
+    while not stop_event.is_set():
+        try:
+            state = load_profile_state()
+            credential = str(state.get("connector_credential") or "")
+            if credential:
+                relay_post({
+                    "action":"connector_heartbeat", "credential":credential,
+                    "connector_instance_id":state["connector_instance_id"], "version":CONNECTOR_VERSION,
+                    "profiles":len(state.get("profiles", {})), "mappings":len(state.get("mappings", {})),
+                })
+        except Exception:
+            logger.exception("Heartbeat da instalacao falhou")
+        stop_event.wait(60)
+
+
 def get_store_config(store_id: str) -> dict[str, Any]:
     mapped = mapped_config(store_id)
     if mapped:
@@ -877,8 +908,7 @@ def get_store_config(store_id: str) -> dict[str, Any]:
     config = load_store_configs().get(store_id)
     if config:
         return config
-    # Compatibilidade inicial com a ferramenta antiga para a primeira loja.
-    return load_config()
+    raise RuntimeError("Nenhum perfil Raffinato configurado.")
 
 
 def test_connection(config: dict[str, Any]) -> dict[str, Any]:
@@ -1088,7 +1118,7 @@ def query_metadados_catalogo(config: dict[str, Any], filial: int) -> dict[str, A
 def sync_metadados_remotos(store_id: str, config: dict[str, Any], filial: int) -> dict[str, Any]:
     metadata=query_metadados_catalogo(config,filial)
     if config.get("relay_token") and config.get("empresa_id"):
-        relay_post({"action":"metadata_sync","token":config["relay_token"],**metadata},timeout=90)
+        relay_post({"action":"metadata_sync","token":config["relay_token"],"loja_id":store_id,**metadata},timeout=90)
     return metadata
 
 
@@ -1981,6 +2011,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def send_html(self, status: int, html: str) -> None:
+        body = html.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers(); self.wfile.write(body)
+
     def reject_origin(self) -> bool:
         if self.headers.get("Origin") and not self.allowed_origin():
             self.send_json(403, {"error": "Origem não autorizada."})
@@ -2001,7 +2040,14 @@ class Handler(BaseHTTPRequestHandler):
         if self.reject_origin():
             return
         if self.route_path() == "/health":
-            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True})
+            state=load_profile_state()
+            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True, "paired":connector_is_paired(), "connector_instance_id":state["connector_instance_id"]})
+            return
+        if self.route_path() == "/":
+            state=load_profile_state(); paired=connector_is_paired()
+            status="VINCULADO" if paired else "NÃO VINCULADO"
+            company=str(state.get("paired_empresa_id") or "")
+            self.send_html(200, f'''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>CheckDiário Conector</title><style>body{{margin:0;background:#0f172a;color:#e2e8f0;font:16px Arial;display:grid;min-height:100vh;place-items:center}}main{{width:min(520px,calc(100% - 40px));background:#111c31;border:1px solid #334155;border-radius:18px;padding:30px;box-shadow:0 24px 70px #0008}}h1{{font-size:22px}}b{{color:{'#34d399' if paired else '#fbbf24'}}}input,button{{box-sizing:border-box;width:100%;padding:14px;margin-top:14px;border-radius:10px;border:1px solid #475569}}input{{background:#0b1220;color:white;text-transform:uppercase}}button{{background:#6366f1;color:white;font-weight:bold;cursor:pointer}}small{{color:#94a3b8}}#msg{{margin-top:14px}}</style><main><h1>CHECKDIÁRIO CONECTOR</h1><p>Status: <b id="status">{status}</b></p><small>Versão {CONNECTOR_VERSION}<br>Instalação: {state['connector_instance_id']}<br>{('Empresa: '+company) if company else ''}</small>{'' if paired else '<label><br>Código de vinculação<input id="code" maxlength="13" placeholder="GUS-7K42-P9XM"></label><button onclick="pair()">VINCULAR AO CHECKDIÁRIO</button>'}<div id="msg"></div></main><script>async function pair(){{let b=document.querySelector('button'),m=document.getElementById('msg');b.disabled=true;try{{let r=await fetch('/api/connector/pair',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{code:document.getElementById('code').value}})}}),j=await r.json();if(!r.ok)throw Error(j.error||'Falha');m.textContent='Conector vinculado com sucesso.';setTimeout(()=>location.reload(),800)}}catch(e){{m.textContent=e.message;b.disabled=false}}}}</script></html>''')
             return
         self.send_json(404, {"error": "Rota não encontrada."})
 
@@ -2028,6 +2074,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/integracoes/raffinato/desbloquear",
             "/api/integracoes/raffinato/perfis",
             "/api/integracoes/raffinato/alterar-senha-master",
+            "/api/connector/pair",
         }
         route = self.route_path()
         if route not in allowed_paths:
@@ -2042,6 +2089,16 @@ class Handler(BaseHTTPRequestHandler):
                 "ROTA RECEBIDA: %s | VERSAO DO CONECTOR: %s | IDFILIAL RECEBIDO: %s | DATA INICIAL RECEBIDA: %s | DATA FINAL RECEBIDA: %s",
                 route, CONNECTOR_VERSION, body.get("id_filial"), body.get("inicio"), body.get("fim_exclusivo") or body.get("fim"),
             )
+            if route == "/api/connector/pair":
+                state=load_profile_state()
+                if connector_is_paired(): raise ValueError("Esta instalacao ja esta vinculada.")
+                credential=secrets.token_urlsafe(48)
+                result=relay_post({"action":"connector_pair","code":str(body.get("code") or "").upper().strip(),
+                    "connector_instance_id":state["connector_instance_id"],"credential":credential,
+                    "name":os.environ.get("COMPUTERNAME") or "Conector Raffinato","version":CONNECTOR_VERSION})
+                state["connector_credential"]=credential;state["paired_empresa_id"]=result["empresa_id"]
+                save_profile_state(state)
+                self.send_json(200,{"ok":True,"empresa_id":result["empresa_id"],"connector_instance_id":state["connector_instance_id"]});return
             if route == "/api/integracoes/raffinato/desbloquear":
                 token = create_admin_session(str(body.get("password") or ""))
                 state = load_profile_state()
@@ -2113,16 +2170,19 @@ class Handler(BaseHTTPRequestHandler):
                 store_id = validate_store_id(body.get("loja_id"))
                 configs = load_store_configs()
                 config = configs.get(store_id) or get_store_config(store_id)
-                token = str(body.get("relay_token") or "").strip()
+                state = load_profile_state()
+                token = str(state.get("connector_credential") or body.get("relay_token") or "").strip()
                 empresa_id = str(body.get("empresa_id") or "").strip()
                 if len(token) < 40 or not empresa_id:
                     raise ValueError("Pareamento remoto invalido.")
+                if state.get("paired_empresa_id") and str(state["paired_empresa_id"]) != empresa_id:
+                    raise ValueError("A instalacao pertence a outra empresa.")
                 config["relay_token"] = token
                 config["empresa_id"] = empresa_id
                 configs[store_id] = config
                 save_store_configs(configs)
                 request_cache_refresh()
-                self.send_json(200, {"ok": True})
+                self.send_json(200, {"ok": True, "connector_instance_id":state["connector_instance_id"], "paired":connector_is_paired()})
                 return
             if route.startswith("/api/raffinato/"):
                 store_id = validate_store_id(body.get("loja_id"))
@@ -2267,6 +2327,10 @@ def main() -> int:
     cache_thread.start()
     sync_thread = threading.Thread(target=relay_sync_loop, args=(sync_stop_event,), name="raffinato-relay", daemon=True)
     sync_thread.start()
+    heartbeat_thread = threading.Thread(target=heartbeat_loop, args=(sync_stop_event,), name="raffinato-heartbeat", daemon=True)
+    heartbeat_thread.start()
+    if not connector_is_paired():
+        webbrowser.open(f"http://127.0.0.1:{PORT}/")
     try:
         run_tray(server)
     except KeyboardInterrupt:

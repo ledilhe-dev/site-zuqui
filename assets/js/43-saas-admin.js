@@ -41,9 +41,17 @@ async function carregarUsuariosSaas() {
 
 async function carregarConectoresSaas() {
   const alvo=document.getElementById('listaConectoresSaas');if(!alvo)return;
-  try { const dados=await obterDadosPainelAdminGlobal(); const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
-    alvo.innerHTML=(dados.conectores||[]).length?'<div class="lista">'+dados.conectores.map(x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome_conexao||'Conector Raffinato')}</div><div class="item-detalhe">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'-')} · ${escaparHtmlBasico(lojas.get(String(x.loja_id))||'-')} · Instalação: ${escaparHtmlBasico(x.connector_instance_id||'não informada')} · Perfil: ${escaparHtmlBasico(x.connection_profile_id||'-')} · IdFilial Raffinato: ${Number(x.raffinato_filial_id||1)} · ${escaparHtmlBasico(x.status||'sem status')}</div></div></div>`).join('')+'</div>':'<div class="empty">Nenhum conector cadastrado.</div>';
+  try { const dados=await obterDadosPainelAdminGlobal({renovar:true}); const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
+    const select=document.getElementById('connectorPairEmpresa');if(select){const atual=select.value;select.innerHTML='<option value="">- Selecione -</option>'+(dados.empresas||[]).filter(x=>x.ativo!==false).map(x=>`<option value="${escaparHtmlBasico(x.id)}">${escaparHtmlBasico(nomeEmpresaSaas(x))}</option>`).join('');if([...select.options].some(o=>o.value===atual))select.value=atual;}
+    const vinculos=dados.conectores||[],instancias=dados.connector_instances||[];
+    alvo.innerHTML=instancias.length?'<div class="lista">'+instancias.map(x=>{const relacionados=vinculos.filter(v=>String(v.connector_instance_id||'')===String(x.id));const nomesLojas=relacionados.map(v=>`${lojas.get(String(v.loja_id))||'Loja'} (Filial ${Number(v.raffinato_filial_id||1)})`).join(', ')||'Nenhuma filial vinculada';const contato=x.ultimo_contato_em?new Date(x.ultimo_contato_em).toLocaleString('pt-BR'):'Nunca';return `<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||'Conector Raffinato')} · ${String(x.status||'offline').toUpperCase()}</div><div class="item-detalhe">Empresa: ${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'-')} · Versão: ${escaparHtmlBasico(x.versao||'-')} · Último contato: ${escaparHtmlBasico(contato)}<br>Instalação: ${escaparHtmlBasico(x.id)} · Perfis: ${Number(x.perfis_cadastrados||0)} · Filiais: ${Number(x.filiais_vinculadas||0)}<br>${escaparHtmlBasico(nomesLojas)}</div></div></div>`}).join('')+'</div>':'<div class="empty">Nenhuma instalação física pareada.</div>';
   } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
+}
+
+async function gerarCodigoPareamentoConector(){
+  const empresaId=String(document.getElementById('connectorPairEmpresa')?.value||'').trim(),msg=document.getElementById('connectorPairCode');
+  if(!empresaId){if(msg){msg.className='msg err';msg.textContent='Selecione uma empresa.';}return;}
+  try{const {data,error}=await sb.rpc('gerar_codigo_pareamento_raffinato',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_empresa_id:empresaId});if(error)throw error;const expira=new Date(data.expira_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});msg.className='msg ok';msg.innerHTML=`Código: <strong style="font-size:20px;letter-spacing:2px">${escaparHtmlBasico(data.codigo)}</strong> · válido até ${escaparHtmlBasico(expira)} · uso único.`;}catch(error){msg.className='msg err';msg.textContent=mensagemErroSupabase(error,'Não foi possível gerar o código.');}
 }
 
 function usuarioPodeGerenciarEmpresasSaas() {

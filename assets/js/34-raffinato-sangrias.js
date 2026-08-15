@@ -8,6 +8,7 @@ let raffinatoTesteValido = false;
 let raffinatoLoadSequence = 0;
 let raffinatoAdminToken = '';
 let raffinatoConnectionProfileId = '';
+let raffinatoConnectorInstanceId = '';
 let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
 let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
 let raffinatoBuscaDetalhe = '';
@@ -36,9 +37,15 @@ function gerarTokenRaffinato() {
 async function parearConectorExternoRaffinato() {
   const contexto = contextoRaffinato();
   const token = gerarTokenRaffinato();
-  await raffinatoBridgePost('/api/integracoes/raffinato/parear', {
+  const local = await raffinatoBridgePost('/api/integracoes/raffinato/parear', {
     loja_id: contexto.lojaId, empresa_id: contexto.empresaId, relay_token: token,
   });
+  raffinatoConnectorInstanceId=String(local.connector_instance_id||raffinatoConnectorInstanceId||'');
+  if(local.paired&&raffinatoConnectorInstanceId){
+    await raffinatoRelay({action:'connector_link_store',connector_instance_id:raffinatoConnectorInstanceId,
+      empresa_id:contexto.empresaId,loja_id:contexto.lojaId,usuario_id:String(usuarioSistemaLogado?.id||'')});
+    return;
+  }
   await raffinatoRelay({
     action:'pair', token, empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
     usuario_id:String(usuarioSistemaLogado?.id || ''),
@@ -107,6 +114,7 @@ async function desbloquearConfiguracaoRaffinato() {
   try {
     const result=await raffinatoBridgePost('/api/integracoes/raffinato/desbloquear',{password:input?.value||''});
     raffinatoAdminToken=String(result.admin_token||''); if(input)input.value='';
+    raffinatoConnectorInstanceId=String(result.connector_instance_id||'');
     document.getElementById('raffinatoAdminLockCard').hidden=true;
     document.getElementById('raffinatoAdminPanel').hidden=false;
     await carregarIntegracaoRaffinato();
@@ -325,7 +333,8 @@ async function salvarIntegracaoRaffinato() {
     const result = await raffinatoBridgePost('/api/integracoes/raffinato/salvar', form);
     const atorId = /^[0-9a-f-]{36}$/i.test(String(usuarioSistemaLogado?.id || '')) ? usuarioSistemaLogado.id : null;
     raffinatoConnectionProfileId=result.connection_profile_id;
-    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId, connection_profile_id:result.connection_profile_id, raffinato_filial_id:form.raffinato_filial_id, nome_conexao:form.profile_name };
+    raffinatoConnectorInstanceId=String(result.connector_instance_id||raffinatoConnectorInstanceId||'');
+    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId, connection_profile_id:result.connection_profile_id, connector_instance_id:raffinatoConnectorInstanceId||null, raffinato_filial_id:form.raffinato_filial_id, nome_conexao:form.profile_name };
     const { error } = await sb.from('raffinato_integracoes').upsert(payload, { onConflict:'loja_id' });
     if (error) throw error;
     await parearConectorExternoRaffinato();
