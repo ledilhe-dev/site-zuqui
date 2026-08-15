@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.26"
+CONNECTOR_VERSION = "1.6.27"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -296,18 +296,24 @@ JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id
 JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=F.IdFormaPagamento
 WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
 GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,D.Tipo,D.EhContingencia,FP.Id,FP.Nome;
+;WITH DocumentoVenda AS (
+ SELECT VCF.IdVenda,MIN(D.Id) id_documento_fiscal
+ FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
+ JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal
+ WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+  AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id)
+ GROUP BY VCF.IdVenda
+)
 SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
- CONVERT(varchar(8),CAST(D.Hora AS time),108) hora,COALESCE(P.Id,I.IdProduto) codigo,
- COALESCE(P.Nome,CONCAT('Produto ',I.IdProduto)) produto,A.Id id_agrupamento,A.Nome agrupamento,
+ CONVERT(varchar(8),CAST(D.Hora AS time),108) hora,P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
  SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
  SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) total_faturado
-FROM dbo.DocumentoFiscal D WITH(NOLOCK)
-JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=D.Id
-LEFT JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto
+FROM DocumentoVenda DV
+JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=DV.id_documento_fiscal
+JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=DV.IdVenda AND I.IdStatusItem=1
+JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto
 LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento
-WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
- AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id)
-GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,P.Id,P.Nome,I.IdProduto,A.Id,A.Nome;
+GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,P.Id,P.Nome,A.Id,A.Nome;
 """
 
 SQL_VENDAS_ANALISE = """
@@ -675,6 +681,19 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),
         "documents":documents,"items":canonical_items,"open_deliveries":open_deliveries,
     },timeout=120)
+    abc_rows=query_curva_abc_sync(config,start,end+timedelta(seconds=1),filial)
+    io_rows=query_itens_obrigatorios_rows(config,{"inicio":start.isoformat(),"fim_exclusivo":(end+timedelta(seconds=1)).isoformat(),"id_filial":filial})
+    relay_post({"action":"managerial_sync","token":config["relay_token"],"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"abc_items":abc_rows,"mandatory_items":io_rows},timeout=180)
+
+
+def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
+    filial=resolve_raffinato_filial(config,{});history=query_annual_history(config,{"id_filial":filial})
+    first_date=str(history.get("primeira_data") or "")[:10];last_date=str(history.get("ultima_data") or "")[:10]
+    if not first_date or not last_date:return
+    first=int(first_date[:4]);last=int(last_date[:4]);summary=query_annual_summary_sql(config,{"id_filial":filial,"loja_id":store_id},first,last)
+    rows=[{**x,"modulo_venda":"TODOS","id_filial":filial,"primeira_data":first_date,"ultima_data":last_date} for x in summary.get("meses",[])]
+    rows.extend({**x,"vendas":0,"quantidade":0,"id_filial":filial,"primeira_data":first_date,"ultima_data":last_date} for x in summary.get("modulos",[]))
+    relay_post({"action":"annual_sync","token":config["relay_token"],"id_filial":filial,"items":rows},timeout=180)
 
 
 def relay_sync_loop(stop_event: threading.Event) -> None:
@@ -697,6 +716,7 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
                 now = datetime.now()
                 sync_metadados_remotos(store_id,config,resolve_raffinato_filial(config,{}))
                 if store_id not in full_synced:
+                    sync_annual_history(store_id,config)
                     cursor = (now - timedelta(days=366)).replace(hour=0, minute=0, second=0, microsecond=0)
                     while cursor.date() <= now.date() and not stop_event.is_set():
                         chunk_end = min(cursor + timedelta(days=30), now.replace(hour=23, minute=59, second=59, microsecond=0))
@@ -1063,7 +1083,15 @@ def query_curva_abc(config: dict[str, Any], body: dict[str, Any]) -> dict[str, A
     return {"modo":mode,"items":ordered,"resumo":{"faturamento":total_revenue,"faturamento_com_custo":covered_revenue,"faturamento_sem_custo":total_revenue-covered_revenue,"cobertura_custo":covered_revenue/total_revenue*100 if total_revenue else 0}}
 
 
-def query_itens_obrigatorios(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+def query_curva_abc_sync(config:dict[str,Any],start:datetime,end:datetime,filial:int) -> list[dict[str,Any]]:
+    sql=SQL_CURVA_ABC.replace("SELECT V.Id,", "SELECT V.Id,V.Data,",1).replace("SELECT P.Id codigo", "SELECT CONVERT(date,V.Data) data,P.Id codigo").replace("GROUP BY P.Id,P.Nome,A.Id,A.Nome", "GROUP BY CONVERT(date,V.Data),P.Id,P.Nome,A.Id,A.Nome")
+    coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=120;cursor=connection.cursor();cursor.execute(sql,start.date(),coarse_end,filial,start,end,None,None,None,None,None,None,None);rows=rows_as_dicts(cursor)
+    return [{**row,"id_filial":filial} for row in rows]
+
+
+def query_itens_obrigatorios_rows(config:dict[str,Any],body:dict[str,Any]) -> list[dict[str,Any]]:
     start=parse_datetime(body.get("inicio"),"Inicio"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
     filial=resolve_raffinato_filial(config,body); coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
     group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; mandatory=int(body["id_item_obrigatorio"]) if body.get("id_item_obrigatorio") else None
@@ -1071,6 +1099,11 @@ def query_itens_obrigatorios(config: dict[str, Any], body: dict[str, Any]) -> di
     filters=(group,group,mandatory,mandatory,parent,parent,origem,origem,component,component); params=(start.date(),coarse_end,filial,start,end)+filters
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=90; cursor=connection.cursor(); cursor.execute(SQL_ITENS_OBRIGATORIOS,*params); joined=rows_as_dicts(cursor)
+    return joined
+
+
+def query_itens_obrigatorios(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    joined=query_itens_obrigatorios_rows(config,body)
     pizzas=[]; components=[]; seen=set()
     for row in joined:
         parent_key=str(row["id_pai"])
