@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.23"
+CONNECTOR_VERSION = "1.6.24"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -367,6 +367,126 @@ SELECT 'FormaPagamentoCupomFiscal' origem,COUNT(*) registros,SUM(ISNULL(F.Valor,
 FROM #IdsVendas X JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=X.Id
 HAVING COUNT(*)>0;
 DROP TABLE IF EXISTS #IdsVendas;
+"""
+
+# Base gerencial comum: vendas/documentos válidos, origem canônica e agregação no SQL Server.
+SQL_VENDAS_GERENCIAL = """
+SET NOCOUNT ON;
+WITH Base AS (
+ SELECT D.Id,CONVERT(date,D.Data) data,DATEPART(WEEKDAY,D.Data) dia_semana,
+  DATEPART(HOUR,CAST(D.Hora AS time)) hora,
+  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega T WITH(NOLOCK) ON T.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY'
+       WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa M WITH(NOLOCK) ON M.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo C WITH(NOLOCK) ON C.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (M.IdVenda IS NOT NULL OR C.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA'
+       ELSE 'VENDA_RAPIDA' END origem
+ FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+ WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?
+), Totais AS (
+ SELECT B.*,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor
+ FROM Base B JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=B.Id
+ GROUP BY B.Id,B.data,B.dia_semana,B.hora,B.origem
+)
+SELECT origem,COUNT(*) quantidade,SUM(valor) faturamento,CAST(SUM(valor)/NULLIF(COUNT(*),0) AS decimal(19,4)) ticket_medio
+FROM Totais WHERE (? IS NULL OR origem=?) GROUP BY origem ORDER BY faturamento DESC;
+WITH Base AS (
+ SELECT D.Id,CONVERT(date,D.Data) data,DATEPART(WEEKDAY,D.Data) dia_semana,DATEPART(HOUR,CAST(D.Hora AS time)) hora,
+  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega T WITH(NOLOCK) ON T.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY'
+       WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa M WITH(NOLOCK) ON M.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo C WITH(NOLOCK) ON C.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (M.IdVenda IS NOT NULL OR C.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA'
+       ELSE 'VENDA_RAPIDA' END origem
+ FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+ WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?
+), Totais AS (
+ SELECT B.*,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor
+ FROM Base B JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=B.Id
+ GROUP BY B.Id,B.data,B.dia_semana,B.hora,B.origem
+)
+SELECT dia_semana,COUNT(*) quantidade,SUM(valor) faturamento,CAST(SUM(valor)/NULLIF(COUNT(*),0) AS decimal(19,4)) ticket_medio
+FROM Totais WHERE (? IS NULL OR origem=?) GROUP BY dia_semana ORDER BY dia_semana;
+WITH Base AS (
+ SELECT D.Id,DATEPART(HOUR,CAST(D.Hora AS time)) hora,
+  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega T WITH(NOLOCK) ON T.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY'
+       WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa M WITH(NOLOCK) ON M.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo C WITH(NOLOCK) ON C.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (M.IdVenda IS NOT NULL OR C.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA'
+       ELSE 'VENDA_RAPIDA' END origem
+ FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+ WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(D.Hora AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?
+), Totais AS (
+ SELECT B.*,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor
+ FROM Base B JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=B.Id GROUP BY B.Id,B.hora,B.origem
+)
+SELECT hora,COUNT(*) quantidade,SUM(valor) faturamento FROM Totais WHERE (? IS NULL OR origem=?) GROUP BY hora ORDER BY hora;
+"""
+
+SQL_CURVA_ABC = """
+SET NOCOUNT ON;
+WITH VendasValidas AS (
+ SELECT V.Id,
+  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY'
+       WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA'
+       ELSE 'VENDA_RAPIDA' END origem
+ FROM dbo.Venda V WITH(NOLOCK)
+ WHERE V.Data>=? AND V.Data<? AND V.IdFilial=?
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(V.Hora AS time)),CAST(CONVERT(date,V.Data) AS datetime2))>=?
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(V.Hora AS time)),CAST(CONVERT(date,V.Data) AS datetime2))<?
+  AND EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal WHERE VCF.IdVenda=V.Id AND ISNULL(D.Cancelado,0)=0)
+)
+SELECT P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
+ SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
+ SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento,
+ SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)>0 THEN I.ValorCustoFinal WHEN ISNULL(I.ValorCusto,0)>0 THEN I.ValorCusto*ABS(I.Quantidade) ELSE 0 END) custo_conhecido,
+ SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)>0 OR ISNULL(I.ValorCusto,0)>0 THEN ISNULL(I.ValorTotal,0) ELSE 0 END) faturamento_com_custo,
+ SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)<=0 AND ISNULL(I.ValorCusto,0)<=0 THEN ISNULL(I.ValorTotal,0) ELSE 0 END) faturamento_sem_custo,
+ SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)>0 OR ISNULL(I.ValorCusto,0)>0 THEN 1 ELSE 0 END) itens_com_custo,
+ SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)<=0 AND ISNULL(I.ValorCusto,0)<=0 THEN 1 ELSE 0 END) itens_sem_custo
+FROM VendasValidas V JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=V.Id
+JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento
+WHERE I.IdStatusItem=1
+ AND (? IS NULL OR A.Id=?) AND (? IS NULL OR V.origem=?) AND (? IS NULL OR P.Id=? OR P.Nome LIKE ?)
+GROUP BY P.Id,P.Nome,A.Id,A.Nome;
+"""
+
+SQL_ITENS_OBRIGATORIOS = """
+SET NOCOUNT ON;
+WITH Base AS (
+ SELECT V.Id id_venda,V.Data,V.Hora,V.NumeroComanda,
+  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY'
+       WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA'
+       ELSE 'VENDA_RAPIDA' END origem
+ FROM dbo.Venda V WITH(NOLOCK) WHERE V.Data>=? AND V.Data<? AND V.IdFilial=?
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(V.Hora AS time)),CAST(CONVERT(date,V.Data) AS datetime2))>=?
+  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(V.Hora AS time)),CAST(CONVERT(date,V.Data) AS datetime2))<?
+), Pais AS (
+ SELECT B.*,I.Id id_pai,I.IdProduto id_produto_pai,P.Nome produto_pai,A.Id id_agrupamento_pai,A.Nome agrupamento_pai,
+  CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4)) valor_pai
+ FROM Base B JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=B.id_venda
+ JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento
+ WHERE I.IdTipoRegistro=1 AND I.IdItemPai IS NULL AND I.IdStatusItem=1
+  AND EXISTS(SELECT 1 FROM dbo.VendaItem F WITH(NOLOCK) JOIN dbo.ComposicaoAgrupamento CA WITH(NOLOCK)
+   ON CA.IdAgrupamento=A.Id AND CA.IdAgrupamentoItemObrigatorio=F.IdAgrupamentoItemObrigatorio AND CA.IdProdutoComposicao=F.IdProduto
+   WHERE F.IdItemPai=I.Id AND F.IdStatusItem=1 AND F.IdTipoRegistro=3 AND F.IdAgrupamentoItemObrigatorio IS NOT NULL)
+), Filhos AS (
+ SELECT P.*,F.Id id_filho,F.IdProduto id_componente,PC.Nome componente,F.IdAgrupamentoItemObrigatorio,IO.Descricao item_obrigatorio,
+  CAST(ISNULL(F.Quantidade,0) AS decimal(19,6)) quantidade_componente,CAST(ISNULL(F.ValorTotal,0) AS decimal(19,4)) valor_componente
+ FROM Pais P JOIN dbo.VendaItem F WITH(NOLOCK) ON F.IdItemPai=P.id_pai AND F.IdStatusItem=1 AND F.IdTipoRegistro=3
+ JOIN dbo.Produto PC WITH(NOLOCK) ON PC.Id=F.IdProduto JOIN dbo.AgrupamentoItemObrigatorio IO WITH(NOLOCK) ON IO.Id=F.IdAgrupamentoItemObrigatorio
+ JOIN dbo.ComposicaoAgrupamento CA WITH(NOLOCK) ON CA.IdAgrupamento=P.id_agrupamento_pai AND CA.IdAgrupamentoItemObrigatorio=F.IdAgrupamentoItemObrigatorio AND CA.IdProdutoComposicao=F.IdProduto
+), Componentes AS (
+ SELECT id_pai,id_componente,MAX(componente) componente,MAX(IdAgrupamentoItemObrigatorio) id_item_obrigatorio,MAX(item_obrigatorio) item_obrigatorio,
+  SUM(quantidade_componente) quantidade_componente,SUM(valor_componente) valor_componente
+ FROM Filhos GROUP BY id_pai,id_componente
+), Pizza AS (
+ SELECT P.*,COUNT(C.id_componente) sabores_distintos,SUM(C.valor_componente)+P.valor_pai valor_item,
+  MIN(C.id_item_obrigatorio) id_item_obrigatorio,MIN(C.item_obrigatorio) item_obrigatorio
+ FROM Pais P JOIN Componentes C ON C.id_pai=P.id_pai GROUP BY P.id_venda,P.Data,P.Hora,P.NumeroComanda,P.origem,P.id_pai,P.id_produto_pai,P.produto_pai,P.id_agrupamento_pai,P.agrupamento_pai,P.valor_pai
+)
+SELECT P.*,C.id_componente,C.componente,C.quantidade_componente,C.valor_componente
+FROM Pizza P JOIN Componentes C ON C.id_pai=P.id_pai
+WHERE (? IS NULL OR P.id_agrupamento_pai=?) AND (? IS NULL OR P.id_item_obrigatorio=?) AND (? IS NULL OR P.id_produto_pai=?) AND (? IS NULL OR P.origem=?)
+ AND (? IS NULL OR EXISTS(SELECT 1 FROM Componentes CX WHERE CX.id_pai=P.id_pai AND CX.id_componente=?)) ORDER BY P.Data,P.Hora,P.id_pai,C.id_componente;
 """
 
 SQL_VENDAS_STATUS = """
@@ -890,6 +1010,84 @@ def query_faturamento(config: dict[str, Any], body: dict[str, Any]) -> dict[str,
             "periodo":{"inicio":start.isoformat(),"fim_exclusivo":end.isoformat(),
                        "primeiro_documento":first,"ultimo_documento":last,
                        "quantidade_documentos":int(period_info.get("quantidade_documentos") or 0)}}
+
+
+def query_vendas_gerencial(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    start=parse_datetime(body.get("inicio"),"Inicio"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
+    filial=resolve_raffinato_filial(config,body); origem=str(body.get("origem") or "").strip() or None
+    block=(start.date(),end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date(),filial,start,end,origem,origem)
+    params=block+block+block
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=60; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_GERENCIAL,*params)
+        sets=[]
+        while True:
+            if cursor.description: sets.append(rows_as_dicts(cursor))
+            if not cursor.nextset(): break
+    return {"canais":sets[0] if sets else [],"dias_semana":sets[1] if len(sets)>1 else [],"horarios":sets[2] if len(sets)>2 else []}
+
+
+def query_curva_abc(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    start=parse_datetime(body.get("inicio"),"Inicio"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
+    filial=resolve_raffinato_filial(config,body); group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None
+    origem=str(body.get("origem") or "").strip() or None; product_raw=str(body.get("produto") or "").strip()
+    product=int(product_raw) if product_raw.isdigit() else None; product_filter=product_raw or None; product_like=f"%{product_raw}%" if product_raw else None
+    coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=90; cursor=connection.cursor(); cursor.execute(SQL_CURVA_ABC,start.date(),coarse_end,filial,start,end,group,group,origem,origem,product_filter,product,product_like); rows=rows_as_dicts(cursor)
+    mode=str(body.get("modo") or "faturamento").lower()
+    for row in rows:
+        revenue=float(row.get("faturamento") or 0); covered=float(row.get("faturamento_com_custo") or 0); cost=float(row.get("custo_conhecido") or 0)
+        row["lucro"]=covered-cost if covered>0 else None; row["margem"]=((covered-cost)/covered*100) if covered>0 else None
+        row["cobertura_custo"]=(covered/revenue*100) if revenue else 0
+        row["status_custo"]="sem_custo" if int(row.get("itens_com_custo") or 0)==0 else ("parcial" if int(row.get("itens_sem_custo") or 0)>0 else "completo")
+        row["valor_principal"]=float(row.get("quantidade") or 0) if mode=="quantidade" else (float(row["lucro"]) if mode=="lucro" and row["lucro"] is not None else (None if mode=="lucro" else revenue))
+    classificaveis=[r for r in rows if r["valor_principal"] is not None and (mode!="lucro" or r["valor_principal"]>0)]
+    classificaveis.sort(key=lambda r:r["valor_principal"],reverse=True); total=sum(r["valor_principal"] for r in classificaveis); accumulated=0.0
+    for row in classificaveis:
+        participation=(row["valor_principal"]/total*100) if total else 0; before=accumulated; accumulated+=participation
+        row["participacao"]=participation; row["acumulado"]=accumulated; row["classe"]="A" if before<80 else ("B" if before<95 else "C")
+    for row in rows:
+        if "classe" not in row:
+            row["participacao"]=0; row["acumulado"]=None; row["classe"]="SEM_CUSTO" if row["valor_principal"] is None else "NAO_POSITIVO"
+    ordered=classificaveis+[r for r in rows if r not in classificaveis]
+    total_revenue=sum(float(r.get("faturamento") or 0) for r in rows); covered_revenue=sum(float(r.get("faturamento_com_custo") or 0) for r in rows)
+    return {"modo":mode,"items":ordered,"resumo":{"faturamento":total_revenue,"faturamento_com_custo":covered_revenue,"faturamento_sem_custo":total_revenue-covered_revenue,"cobertura_custo":covered_revenue/total_revenue*100 if total_revenue else 0}}
+
+
+def query_itens_obrigatorios(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    start=parse_datetime(body.get("inicio"),"Inicio"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
+    filial=resolve_raffinato_filial(config,body); coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
+    group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; mandatory=int(body["id_item_obrigatorio"]) if body.get("id_item_obrigatorio") else None
+    parent=int(body["id_produto_pai"]) if body.get("id_produto_pai") else None; component=int(body["id_componente"]) if body.get("id_componente") else None; origem=str(body.get("origem") or "").strip() or None
+    filters=(group,group,mandatory,mandatory,parent,parent,origem,origem,component,component); params=(start.date(),coarse_end,filial,start,end)+filters
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=90; cursor=connection.cursor(); cursor.execute(SQL_ITENS_OBRIGATORIOS,*params); joined=rows_as_dicts(cursor)
+    pizzas=[]; components=[]; seen=set()
+    for row in joined:
+        parent_key=str(row["id_pai"])
+        if parent_key not in seen:
+            seen.add(parent_key); pizzas.append({key:value for key,value in row.items() if key not in ("id_componente","componente","quantidade_componente","valor_componente")})
+        components.append({"id_pai":row["id_pai"],"id_componente":row["id_componente"],"componente":row["componente"],"id_item_obrigatorio":row["id_item_obrigatorio"],"item_obrigatorio":row["item_obrigatorio"],"quantidade_componente":row["quantidade_componente"],"valor_componente":row["valor_componente"]})
+    by_parent={str(p["id_pai"]):p for p in pizzas}; children={}
+    for c in components: children.setdefault(str(c["id_pai"]),[]).append(c)
+    flavors={}; combinations={}; parents={}; channels={}; details=[]
+    for pizza in pizzas:
+        comps=children.get(str(pizza["id_pai"]),[]); distinct=len(comps); kind="inteira" if distinct==1 else ("meia" if distinct==2 else "multipla")
+        value=float(pizza.get("valor_item") or 0); fraction=1/distinct if distinct else 0
+        combo_ids=tuple(sorted(str(c["id_componente"]) for c in comps)); combo_label=" + ".join(c["componente"] for c in sorted(comps,key=lambda x:str(x["id_componente"])))
+        if distinct>=2:
+            combo=combinations.setdefault("|".join(combo_ids),{"ids":combo_ids,"combinacao":combo_label,"quantidade":0}); combo["quantidade"]+=1
+        for c in comps:
+            f=flavors.setdefault(str(c["id_componente"]),{"id":c["id_componente"],"sabor":c["componente"],"inteiras":0,"participacoes_meia":0,"participacoes_multiplas":0,"faturamento_atribuido":0.0,"equivalente":0.0})
+            if kind=="inteira": f["inteiras"]+=1
+            elif kind=="meia": f["participacoes_meia"]+=1
+            else: f["participacoes_multiplas"]+=1
+            f["equivalente"]+=fraction; f["faturamento_atribuido"]+=value*fraction
+        parent_key=str(pizza["id_produto_pai"]); ps=parents.setdefault(parent_key,{"id":pizza["id_produto_pai"],"produto":pizza["produto_pai"],"agrupamento":pizza["agrupamento_pai"],"total":0,"inteiras":0,"meias":0,"multiplas":0,"faturamento":0.0}); ps["total"]+=1; ps[kind+"s" if kind!="meia" else "meias"]+=1; ps["faturamento"]+=value
+        ch=channels.setdefault(str(pizza["origem"]),{"canal":pizza["origem"],"total":0,"inteiras":0,"meias":0,"multiplas":0,"faturamento":0.0}); ch["total"]+=1; ch[kind+"s" if kind!="meia" else "meias"]+=1; ch["faturamento"]+=value
+        details.append({**pizza,"tipo":kind,"sabores":combo_label,"valor_item":value})
+    total=len(pizzas); revenue=sum(float(p.get("valor_item") or 0) for p in pizzas); whole=sum(1 for d in details if d["tipo"]=="inteira"); half=sum(1 for d in details if d["tipo"]=="meia")
+    return {"resumo":{"total":total,"inteiras":whole,"meias":half,"multiplas":total-whole-half,"percentual_inteiras":whole/total*100 if total else 0,"percentual_meias":half/total*100 if total else 0,"faturamento":revenue,"ticket_medio":revenue/total if total else 0,"sabores":len(flavors)},"sabores":sorted(flavors.values(),key=lambda x:x["equivalente"],reverse=True),"combinacoes":sorted(combinations.values(),key=lambda x:x["quantidade"],reverse=True),"pais":sorted(parents.values(),key=lambda x:x["total"],reverse=True),"canais":sorted(channels.values(),key=lambda x:x["total"],reverse=True),"detalhes":details if body.get("detalhes") else []}
 
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -1603,6 +1801,9 @@ class Handler(BaseHTTPRequestHandler):
             "/api/raffinato/faturamento",
             "/api/raffinato/produtos",
             "/api/raffinato/vendas-analise",
+            "/api/raffinato/vendas-gerencial",
+            "/api/raffinato/curva-abc",
+            "/api/raffinato/itens-obrigatorios",
             "/api/raffinato/comparativo-anual",
             "/api/raffinato/cache-status",
             "/api/raffinato/cache-refresh",
@@ -1702,6 +1903,12 @@ class Handler(BaseHTTPRequestHandler):
                     result = query_produtos(config, body)
                 elif route == "/api/raffinato/comparativo-anual":
                     result = query_annual_comparison(store_id, body, config)
+                elif route == "/api/raffinato/vendas-gerencial":
+                    result = query_vendas_gerencial(config, body)
+                elif route == "/api/raffinato/curva-abc":
+                    result = query_curva_abc(config, body)
+                elif route == "/api/raffinato/itens-obrigatorios":
+                    result = query_itens_obrigatorios(config, body)
                 else:
                     result = query_vendas_analise_completa(config, body)
                 self.send_json(200, result)
