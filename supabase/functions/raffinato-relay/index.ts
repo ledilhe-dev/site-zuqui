@@ -176,6 +176,13 @@ Deno.serve(async (request) => {
 
     if (body.action === "annual_comparison") {
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      if(String(body.mode||"")==="history"){
+        const base=()=>admin.from("raffinato_documentos_faturados_cache").select("data").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id);
+        const [{data:firstRows,error:firstError},{data:lastRows,error:lastError}]=await Promise.all([base().order("data").limit(1),base().order("data",{ascending:false}).limit(1)]);
+        if(firstError)throw firstError;if(lastError)throw lastError;
+        const firstDate=firstRows?.[0]?.data||null,lastDate=lastRows?.[0]?.data||null;if(!firstDate||!lastDate)throw new Error("CACHE_MISS: historico ainda nao sincronizado pelo conector.");
+        const firstYear=Number(String(firstDate).slice(0,4)),lastYear=Number(String(lastDate).slice(0,4));return json({schema_version:2,primeira_data:firstDate,ultima_data:lastDate,anos:Array.from({length:lastYear-firstYear+1},(_,i)=>firstYear+i)});
+      }
       const first=Math.max(1900,Number(body.ano_inicial||new Date().getFullYear()-1)),last=Math.min(2100,Number(body.ano_final||new Date().getFullYear()));if(last<first)throw new Error("Intervalo de anos invalido.");
       const start=`${first}-01-01`,end=`${last+1}-01-01`,loadAnnual=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<200000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start).lt("data",end).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows;};
       const docs=await loadAnnual("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,modulo_venda,valor_pagamento"),items=await loadAnnual("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado"),open=await loadAnnual("raffinato_delivery_aberto_cache","id_tele_entrega,data,hora,valor,cancelado,finalizado,id_documento_fiscal");
