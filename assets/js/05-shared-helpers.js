@@ -1256,6 +1256,10 @@ async function atualizarSessaoAdminLojaComPerfilCorreto(manterConectado = false)
 function aplicarPermissoesSistema() {
   if (!usuarioSistemaLogado) return;
 
+  // A sessão pode ser retomada diretamente do storage após um F5. Nesse fluxo,
+  // garante que o menu corresponda ao contexto antes de filtrar seus itens.
+  renderizarMenuContextual();
+
   document.querySelectorAll('.nav-btn[data-page]').forEach(btn => {
     const page = btn.dataset.page;
     btn.style.display = usuarioPodeAcessar(page) ? '' : 'none';

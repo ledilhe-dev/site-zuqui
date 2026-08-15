@@ -777,8 +777,16 @@ function renderizarMenuContextual() {
   const global = contextoEhAdminGlobal();
   const operacional = document.getElementById('navContainer');
   const admin = document.getElementById('navGlobalAdmin');
-  if (operacional) { operacional.hidden = global; operacional.setAttribute('aria-hidden', String(global)); }
-  if (admin) { admin.hidden = !global; admin.setAttribute('aria-hidden', String(!global)); }
+  if (operacional) {
+    operacional.hidden = global;
+    operacional.style.display = global ? 'none' : '';
+    operacional.setAttribute('aria-hidden', String(global));
+  }
+  if (admin) {
+    admin.hidden = !global;
+    admin.style.display = global ? '' : 'none';
+    admin.setAttribute('aria-hidden', String(!global));
+  }
   document.body.classList.toggle('contexto-admin-global', global);
   document.body.classList.toggle('contexto-loja', !global);
 }
