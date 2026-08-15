@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.27"
+CONNECTOR_VERSION = "1.6.28"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -717,9 +717,12 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
                 sync_metadados_remotos(store_id,config,resolve_raffinato_filial(config,{}))
                 if store_id not in full_synced:
                     sync_annual_history(store_id,config)
+                    # Prioriza o período usado pelos relatórios antes do backfill anual.
+                    recent_start = (now - timedelta(days=45)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    sync_period(config, recent_start, now.replace(hour=23, minute=59, second=59, microsecond=0))
                     cursor = (now - timedelta(days=366)).replace(hour=0, minute=0, second=0, microsecond=0)
-                    while cursor.date() <= now.date() and not stop_event.is_set():
-                        chunk_end = min(cursor + timedelta(days=30), now.replace(hour=23, minute=59, second=59, microsecond=0))
+                    while cursor < recent_start and not stop_event.is_set():
+                        chunk_end = min(cursor + timedelta(days=30), recent_start - timedelta(seconds=1))
                         sync_period(config, cursor, chunk_end)
                         cursor = (chunk_end + timedelta(seconds=1)).replace(hour=0, minute=0, second=0, microsecond=0)
                     full_synced.add(store_id)
