@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.25"
+CONNECTOR_VERSION = "1.6.26"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -1028,13 +1028,22 @@ def query_vendas_gerencial(config: dict[str, Any], body: dict[str, Any]) -> dict
 
 def query_curva_abc(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     start=parse_datetime(body.get("inicio"),"Inicio"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
+    mode=str(body.get("modo") or "faturamento").lower()
     filial=resolve_raffinato_filial(config,body); group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None
     origem=str(body.get("origem") or "").strip() or None; product_raw=str(body.get("produto") or "").strip()
     product=int(product_raw) if product_raw.isdigit() else None; product_filter=product_raw or None; product_like=f"%{product_raw}%" if product_raw else None
     coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
+    sql=SQL_CURVA_ABC
+    # Custo/lucro só pertence ao modo lucro. Nos demais modos, o SQL evita ler e
+    # agregar as colunas de custo, reduzindo CPU e deixando explícita a separação.
+    if mode!="lucro":
+        sql=sql.replace("SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)>0 THEN I.ValorCustoFinal WHEN ISNULL(I.ValorCusto,0)>0 THEN I.ValorCusto*ABS(I.Quantidade) ELSE 0 END) custo_conhecido", "CAST(0 AS decimal(19,4)) custo_conhecido")
+        sql=sql.replace("SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)>0 OR ISNULL(I.ValorCusto,0)>0 THEN ISNULL(I.ValorTotal,0) ELSE 0 END) faturamento_com_custo", "CAST(0 AS decimal(19,4)) faturamento_com_custo")
+        sql=sql.replace("SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)<=0 AND ISNULL(I.ValorCusto,0)<=0 THEN ISNULL(I.ValorTotal,0) ELSE 0 END) faturamento_sem_custo", "SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento_sem_custo")
+        sql=sql.replace("SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)>0 OR ISNULL(I.ValorCusto,0)>0 THEN 1 ELSE 0 END) itens_com_custo", "CAST(0 AS bigint) itens_com_custo")
+        sql=sql.replace("SUM(CASE WHEN ISNULL(I.ValorCustoFinal,0)<=0 AND ISNULL(I.ValorCusto,0)<=0 THEN 1 ELSE 0 END) itens_sem_custo", "COUNT_BIG(*) itens_sem_custo")
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
-        connection.timeout=90; cursor=connection.cursor(); cursor.execute(SQL_CURVA_ABC,start.date(),coarse_end,filial,start,end,group,group,origem,origem,product_filter,product,product_like); rows=rows_as_dicts(cursor)
-    mode=str(body.get("modo") or "faturamento").lower()
+        connection.timeout=90; cursor=connection.cursor(); cursor.execute(sql,start.date(),coarse_end,filial,start,end,group,group,origem,origem,product_filter,product,product_like); rows=rows_as_dicts(cursor)
     for row in rows:
         revenue=float(row.get("faturamento") or 0); covered=float(row.get("faturamento_com_custo") or 0); cost=float(row.get("custo_conhecido") or 0)
         row["lucro"]=covered-cost if covered>0 else None; row["margem"]=((covered-cost)/covered*100) if covered>0 else None
