@@ -15,11 +15,12 @@ const RAFFINATO_RELAY_FUNCTION = 'raffinato-relay';
 async function raffinatoRelay(body) {
   const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body });
   if (error) {
-    let detail = '';
-    try { detail = await error.context?.clone?.().text?.() || ''; } catch (_) {}
-    try { detail = JSON.parse(detail)?.error || detail; } catch (_) {}
-    console.error('[Raffinato relay]', { action: body?.action, status: error.context?.status, detail, error });
-    throw new Error(detail || error.message || 'Falha na comunicacao externa com o Raffinato.');
+    let raw = '', payload = {};
+    try { raw = await error.context?.clone?.().text?.() || ''; } catch (_) {}
+    try { payload = JSON.parse(raw) || {}; } catch (_) {}
+    const status = error.context?.status || 'sem status', message = payload.error || error.message || 'Falha na comunicação externa com o Raffinato.', requestId = payload.request_id || 'não informado';
+    console.error('[Raffinato relay]', { operation: body?.action, status, payload: raw || payload, error });
+    throw new Error(`${body?.action || 'consulta'} · HTTP ${status} · ${message} · request_id: ${requestId}`);
   }
   if (data?.error) throw new Error(data.error);
   return data || {};
