@@ -71,3 +71,8 @@ window.iniciarTelaItensObrigatoriosRaffinato=ioInitNames;
 // Valida o intervalo antes de consultar e mantém os filtros do usuário como fonte da consulta.
 const ioLoadPeriodBase=ioLoad;
 ioLoad=async function(force=false,details=false){const out=document.getElementById('ioContent'),invalid=rmValidatePeriod('io');if(invalid){if(out)out.innerHTML=`<div class="rm-error"><strong>Período inválido.</strong><span>${rmEsc(invalid)}</span></div>`;return}return ioLoadPeriodBase(force,details)};
+
+// A tela antiga consultava o total geral durante a montagem e essa resposta podia
+// chegar depois do clique filtrado. Inicializa sem consulta e vincula o botão explicitamente.
+const ioInitWithoutAutoQueryBase=window.iniciarTelaItensObrigatoriosRaffinato;
+window.iniciarTelaItensObrigatoriosRaffinato=function(){const query=ioLoad;ioLoad=async()=>{};try{ioInitWithoutAutoQueryBase()}finally{ioLoad=query}const root=document.getElementById('relatorio_itens_obrigatorios_raffinato'),button=root?.querySelector('.rm-actions .btn-green'),out=document.getElementById('ioContent');if(out)out.innerHTML='<div class="empty">Selecione o período e os agrupamentos e clique em Consultar.</div>';if(button){button.removeAttribute('onclick');button.onclick=async event=>{event.preventDefault();if(button.disabled)return;button.disabled=true;const label=button.textContent;button.textContent='Consultando...';try{await ioLoad(true)}finally{button.disabled=false;button.textContent=label}}}};
