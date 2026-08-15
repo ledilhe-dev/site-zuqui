@@ -6,6 +6,8 @@ let empresaSaasEmEdicaoId = null;
 let lojaSaasEmEdicaoId = null;
 let copiaDadosEntreLojasEmAndamento = false;
 let painelAdminGlobalCache = null;
+let connectorPairCountdownTimer = null;
+let connectorPairCurrentCode = '';
 
 async function obterDadosPainelAdminGlobal({ renovar = false } = {}) {
   if (!contextoEhAdminGlobal() || usuarioSistemaLogado?.global_admin_authorized !== true) throw new Error('Contexto administrativo global não autorizado.');
@@ -51,7 +53,19 @@ async function carregarConectoresSaas() {
 async function gerarCodigoPareamentoConector(){
   const empresaId=String(document.getElementById('connectorPairEmpresa')?.value||'').trim(),msg=document.getElementById('connectorPairCode');
   if(!empresaId){if(msg){msg.className='msg err';msg.textContent='Selecione uma empresa.';}return;}
-  try{const {data,error}=await sb.rpc('gerar_codigo_pareamento_raffinato',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_empresa_id:empresaId});if(error)throw error;const expira=new Date(data.expira_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});msg.className='msg ok';msg.innerHTML=`Código: <strong style="font-size:20px;letter-spacing:2px">${escaparHtmlBasico(data.codigo)}</strong> · válido até ${escaparHtmlBasico(expira)} · uso único.`;}catch(error){msg.className='msg err';msg.textContent=mensagemErroSupabase(error,'Não foi possível gerar o código.');}
+  try{const {data,error}=await sb.rpc('gerar_codigo_pareamento_raffinato',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_empresa_id:empresaId});if(error)throw error;connectorPairCurrentCode=String(data.codigo||'').trim();renderizarCodigoPareamentoConector(data.expira_em);if(connectorPairCountdownTimer)clearInterval(connectorPairCountdownTimer);connectorPairCountdownTimer=setInterval(()=>renderizarCodigoPareamentoConector(data.expira_em),1000);}catch(error){msg.className='msg err';msg.textContent=mensagemErroSupabase(error,'Não foi possível gerar o código.');}
+}
+
+function renderizarCodigoPareamentoConector(expiraEm){
+  const msg=document.getElementById('connectorPairCode');if(!msg||!connectorPairCurrentCode)return;
+  const restante=Math.max(0,new Date(expiraEm).getTime()-Date.now()),segundos=Math.ceil(restante/1000),expirado=segundos<=0,min=String(Math.floor(segundos/60)).padStart(2,'0'),seg=String(segundos%60).padStart(2,'0');
+  msg.className=`connector-pair-result ${expirado?'is-expired':'is-waiting'}`;
+  msg.innerHTML=`<div class="connector-pair-state">${expirado?'EXPIRADO':'AGUARDANDO VINCULAÇÃO'}</div><div class="connector-pair-title">Código de vinculação</div><div class="connector-pair-code-row"><code>${escaparHtmlBasico(connectorPairCurrentCode)}</code><button class="btn btn-ghost" type="button" onclick="copiarCodigoPareamentoConector(this)" ${expirado?'disabled':''}>COPIAR</button></div><div class="connector-pair-meta"><span>${expirado?'Código expirado':`Expira em ${min}:${seg}`}</span><span>Uso único</span></div>${expirado?'<button class="btn btn-green" type="button" onclick="gerarCodigoPareamentoConector()">GERAR NOVO CÓDIGO</button>':''}`;
+  if(expirado&&connectorPairCountdownTimer){clearInterval(connectorPairCountdownTimer);connectorPairCountdownTimer=null;}
+}
+
+async function copiarCodigoPareamentoConector(botao){
+  if(!connectorPairCurrentCode)return;try{await navigator.clipboard.writeText(connectorPairCurrentCode);const anterior=botao.textContent;botao.textContent='✓ Copiado';setTimeout(()=>{if(botao.isConnected)botao.textContent=anterior;},1600);}catch(_){window.prompt('Copie o código:',connectorPairCurrentCode);}
 }
 
 function usuarioPodeGerenciarEmpresasSaas() {

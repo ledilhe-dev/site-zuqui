@@ -45,7 +45,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.1"
+CONNECTOR_VERSION = "1.7.2"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -62,6 +62,8 @@ DEFAULT_ALLOWED_ORIGINS = [
     "https://www.checkdiario.com.br",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://127.0.0.1:8766",
+    "http://localhost:8766",
 ]
 SUPABASE_URL = "https://tqfoxqbmslxoynrasltl.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88"
@@ -2022,6 +2024,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def reject_origin(self) -> bool:
         if self.headers.get("Origin") and not self.allowed_origin():
+            logger.warning("Origem local rejeitada | origin=%r | route=%s | remote=%s",
+                           self.headers.get("Origin"), self.route_path(), self.client_address[0])
             self.send_json(403, {"error": "Origem não autorizada."})
             return True
         return False
@@ -2046,8 +2050,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.route_path() == "/":
             state=load_profile_state(); paired=connector_is_paired()
             status="VINCULADO" if paired else "NÃO VINCULADO"
-            company=str(state.get("paired_empresa_id") or "")
-            self.send_html(200, f'''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>CheckDiário Conector</title><style>body{{margin:0;background:#0f172a;color:#e2e8f0;font:16px Arial;display:grid;min-height:100vh;place-items:center}}main{{width:min(520px,calc(100% - 40px));background:#111c31;border:1px solid #334155;border-radius:18px;padding:30px;box-shadow:0 24px 70px #0008}}h1{{font-size:22px}}b{{color:{'#34d399' if paired else '#fbbf24'}}}input,button{{box-sizing:border-box;width:100%;padding:14px;margin-top:14px;border-radius:10px;border:1px solid #475569}}input{{background:#0b1220;color:white;text-transform:uppercase}}button{{background:#6366f1;color:white;font-weight:bold;cursor:pointer}}small{{color:#94a3b8}}#msg{{margin-top:14px}}</style><main><h1>CHECKDIÁRIO CONECTOR</h1><p>Status: <b id="status">{status}</b></p><small>Versão {CONNECTOR_VERSION}<br>Instalação: {state['connector_instance_id']}<br>{('Empresa: '+company) if company else ''}</small>{'' if paired else '<label><br>Código de vinculação<input id="code" maxlength="13" placeholder="GUS-7K42-P9XM"></label><button onclick="pair()">VINCULAR AO CHECKDIÁRIO</button>'}<div id="msg"></div></main><script>async function pair(){{let b=document.querySelector('button'),m=document.getElementById('msg');b.disabled=true;try{{let r=await fetch('/api/connector/pair',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{code:document.getElementById('code').value}})}}),j=await r.json();if(!r.ok)throw Error(j.error||'Falha');m.textContent='Conector vinculado com sucesso.';setTimeout(()=>location.reload(),800)}}catch(e){{m.textContent=e.message;b.disabled=false}}}}</script></html>''')
+            company=str(state.get("paired_empresa_nome") or state.get("paired_empresa_id") or "")
+            self.send_html(200, f'''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>CheckDiário Conector</title><style>body{{margin:0;background:#0f172a;color:#e2e8f0;font:16px Arial;display:grid;min-height:100vh;place-items:center}}main{{width:min(520px,calc(100% - 40px));background:#111c31;border:1px solid #334155;border-radius:18px;padding:30px;box-shadow:0 24px 70px #0008}}h1{{font-size:22px}}b{{color:{'#34d399' if paired else '#fbbf24'}}}input,button{{box-sizing:border-box;width:100%;padding:14px;margin-top:14px;border-radius:10px;border:1px solid #475569}}input{{background:#0b1220;color:white;text-transform:uppercase}}button{{background:#6366f1;color:white;font-weight:bold;cursor:pointer}}button:disabled{{opacity:.65;cursor:wait}}small{{color:#94a3b8}}#msg{{margin-top:14px;line-height:1.45}}</style><main><h1>CHECKDIÁRIO CONECTOR</h1><p>Status: <b id="status">{status}</b></p><small>Versão {CONNECTOR_VERSION}<br>Instalação: {state['connector_instance_id']}<br>{('Empresa: '+company) if company else ''}<br>{'Status do serviço: ONLINE · Última comunicação: agora' if paired else ''}</small>{'' if paired else '<label><br>Código de vinculação<input id="code" maxlength="13" placeholder="GUS-7K42-P9XM"></label><button onclick="pair()">VINCULAR AO CHECKDIÁRIO</button>'}<div id="msg"></div></main><script>async function pair(){{let b=document.querySelector('button'),m=document.getElementById('msg'),label=b.textContent;b.disabled=true;b.textContent='Vinculando...';m.textContent='';try{{let r=await fetch('/api/connector/pair',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{code:document.getElementById('code').value.trim().toUpperCase()}})}}),j=await r.json();if(!r.ok)throw Error(j.error||'Não foi possível comunicar com o CheckDiário.');m.textContent='✓ Conector vinculado com sucesso.';setTimeout(()=>location.reload(),900)}}catch(e){{m.textContent=e.message||'Não foi possível comunicar com o CheckDiário.';b.disabled=false;b.textContent=label}}}}</script></html>''')
             return
         self.send_json(404, {"error": "Rota não encontrada."})
 
@@ -2093,10 +2097,19 @@ class Handler(BaseHTTPRequestHandler):
                 state=load_profile_state()
                 if connector_is_paired(): raise ValueError("Esta instalacao ja esta vinculada.")
                 credential=secrets.token_urlsafe(48)
-                result=relay_post({"action":"connector_pair","code":str(body.get("code") or "").upper().strip(),
-                    "connector_instance_id":state["connector_instance_id"],"credential":credential,
-                    "name":os.environ.get("COMPUTERNAME") or "Conector Raffinato","version":CONNECTOR_VERSION})
+                try:
+                    result=relay_post({"action":"connector_pair","code":str(body.get("code") or "").upper().strip(),
+                        "connector_instance_id":state["connector_instance_id"],"credential":credential,
+                        "name":os.environ.get("COMPUTERNAME") or "Conector Raffinato","version":CONNECTOR_VERSION})
+                except RuntimeError as exc:
+                    technical=str(exc);logger.warning("Pareamento recusado pelo backend | instance=%s | detail=%s",state["connector_instance_id"],technical[:500])
+                    if "inválido, expirado ou já utilizado" in technical or "invalido, expirado ou ja utilizado" in technical.lower():
+                        raise ValueError("Código inválido, expirado ou já utilizado. Gere um novo código no Painel Administrativo.") from exc
+                    if "já está vinculada" in technical or "ja esta vinculada" in technical.lower():
+                        raise ValueError("Esta instalação já está vinculada.") from exc
+                    raise ValueError("Não foi possível comunicar com o CheckDiário. Tente novamente.") from exc
                 state["connector_credential"]=credential;state["paired_empresa_id"]=result["empresa_id"]
+                state["paired_empresa_nome"]=str(result.get("empresa_nome") or result["empresa_id"])
                 save_profile_state(state)
                 self.send_json(200,{"ok":True,"empresa_id":result["empresa_id"],"connector_instance_id":state["connector_instance_id"]});return
             if route == "/api/integracoes/raffinato/desbloquear":

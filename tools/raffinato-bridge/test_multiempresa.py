@@ -1,6 +1,8 @@
 import importlib.util
+import http.client
 import json
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -76,6 +78,51 @@ class MultiempresaTests(unittest.TestCase):
         self.assertTrue(bridge.connector_is_paired())
         self.assertEqual(loaded["connector_credential"], "installation-secret")
         self.assertNotIn("connector_credential", loaded["profiles"])
+
+    def test_local_pairing_origins_are_explicitly_allowed(self):
+        self.assertEqual(bridge.HOST, "127.0.0.1")
+        self.assertIn("http://127.0.0.1:8766", bridge.DEFAULT_ALLOWED_ORIGINS)
+        self.assertIn("http://localhost:8766", bridge.DEFAULT_ALLOWED_ORIGINS)
+        self.assertNotIn("*", bridge.DEFAULT_ALLOWED_ORIGINS)
+
+    def test_local_ui_origin_reaches_router_instead_of_cors_rejection(self):
+        server = bridge.ThreadingHTTPServer(("127.0.0.1", 0), bridge.Handler)
+        server.config = {"allowed_origins": bridge.DEFAULT_ALLOWED_ORIGINS}
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        try:
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+            connection.request("POST", "/rota-inexistente", "{}", {
+                "Content-Type":"application/json", "Origin":"http://127.0.0.1:8766",
+            })
+            response = connection.getresponse()
+            self.assertEqual(response.status, 404)
+            self.assertEqual(response.getheader("Access-Control-Allow-Origin"), "http://127.0.0.1:8766")
+            connection.close()
+        finally:
+            server.shutdown(); server.server_close(); worker.join(timeout=3)
+
+    def test_local_pairing_request_persists_identity_and_starts_paired(self):
+        bridge.migrate_legacy_configuration()
+        server = bridge.ThreadingHTTPServer(("127.0.0.1", 0), bridge.Handler)
+        server.config = {"allowed_origins": bridge.DEFAULT_ALLOWED_ORIGINS}
+        worker = threading.Thread(target=server.serve_forever, daemon=True); worker.start()
+        try:
+            with patch.object(bridge, "relay_post", return_value={"empresa_id":"zuqui-id", "empresa_nome":"ZUQUI LTDA"}):
+                connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=3)
+                payload = json.dumps({"code":"ZUQ-TEST-0001"})
+                connection.request("POST", "/api/connector/pair", payload, {
+                    "Content-Type":"application/json", "Origin":"http://127.0.0.1:8766",
+                })
+                response = connection.getresponse(); body = json.loads(response.read())
+                self.assertEqual(response.status, 200); self.assertTrue(body["ok"])
+                state = bridge.load_profile_state()
+                self.assertEqual(state["paired_empresa_nome"], "ZUQUI LTDA")
+                self.assertGreaterEqual(len(state["connector_credential"]), 40)
+                self.assertTrue(bridge.connector_is_paired())
+                connection.close()
+        finally:
+            server.shutdown(); server.server_close(); worker.join(timeout=3)
 
 
 if __name__ == "__main__":
