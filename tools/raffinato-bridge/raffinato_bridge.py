@@ -22,7 +22,7 @@ import urllib.request
 import urllib.error
 from urllib.parse import urlparse
 from ctypes import wintypes
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time as datetime_time, timedelta
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -40,7 +40,7 @@ CONFIG_PATH = Path(os.environ.get(
 ))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.6.28"
+CONNECTOR_VERSION = "1.6.29"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -458,7 +458,7 @@ GROUP BY P.Id,P.Nome,A.Id,A.Nome;
 SQL_ITENS_OBRIGATORIOS = """
 SET NOCOUNT ON;
 WITH Base AS (
- SELECT V.Id id_venda,V.Data,V.Hora,V.NumeroComanda,
+ SELECT V.Id id_venda,V.Data,CONVERT(varchar(8),CAST(V.Hora AS time),108) Hora,V.NumeroComanda,
   CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY'
        WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA'
        ELSE 'VENDA_RAPIDA' END origem
@@ -873,7 +873,7 @@ def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datet
 def decimal_json(value: Any) -> Any:
     if isinstance(value, Decimal):
         return float(value)
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, (datetime, date, datetime_time)):
         return value.isoformat()
     return value
 
