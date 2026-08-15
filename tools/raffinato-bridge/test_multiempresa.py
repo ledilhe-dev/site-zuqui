@@ -69,8 +69,24 @@ class MultiempresaTests(unittest.TestCase):
         second = bridge.load_profile_state()["connector_instance_id"]
         self.assertEqual(first, second)
         self.assertFalse(bridge.connector_is_paired())
-        with self.assertRaisesRegex(RuntimeError, "Nenhum perfil Raffinato configurado"):
+        with self.assertRaisesRegex(PermissionError, "nao esta vinculada"):
             bridge.get_store_config("gustare-store")
+
+    def test_tenant_mismatch_is_blocked_before_sql(self):
+        state = bridge.load_profile_state()
+        state["paired_empresa_id"] = "gustare-company"
+        state["profiles"]["profile"] = {"id":"profile", "active":True, "server":"sql", "database":"db", "uid":"u", "pwd":"p"}
+        state["mappings"]["gustare-store"] = {"connection_profile_id":"profile", "raffinato_filial_id":2, "active":True}
+        bridge.save_profile_state(state)
+        with self.assertRaisesRegex(PermissionError, "nao esta vinculada"):
+            bridge.validate_request_tenant({"empresa_id":"patrick-company"}, "gustare-store")
+        with self.assertRaisesRegex(PermissionError, "nao esta vinculada"):
+            bridge.validate_request_tenant({"empresa_id":"gustare-company"}, "patrick-store")
+        bridge.validate_request_tenant({"empresa_id":"gustare-company"}, "gustare-store")
+
+    def test_request_cannot_override_mapped_filial(self):
+        config = {"id_filial":2}
+        self.assertEqual(bridge.resolve_raffinato_filial(config, {"id_filial":1}), 2)
 
     def test_instance_credential_is_dpapi_state_not_sql_profile(self):
         bridge.migrate_legacy_configuration()

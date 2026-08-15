@@ -219,6 +219,19 @@ Deno.serve(async (request) => {
       if(items.length){const rows=items.map((x:any)=>({empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:filial,ano:Number(x.ano),mes:Number(x.mes),modulo_venda:String(x.modulo_venda||"TODOS"),faturamento:Number(x.faturamento||0),vendas:Number(x.vendas||0),quantidade:Number(x.quantidade||0),primeira_data:x.primeira_data,ultima_data:x.ultima_data,sincronizado_em:new Date().toISOString()}));const {error}=await admin.from("raffinato_anual_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_filial,ano,mes,modulo_venda"});if(error)throw error;}return json({ok:true,quantidade:items.length});
     }
 
+    const mappedReportActions=new Set(["abc_dashboard","mandatory_dashboard","annual_comparison","sales_bi_dashboard","sales_canonical_dashboard","products_canonical_dashboard","products_dashboard","products_metadata","metadata_dashboard","billing_dashboard","billing_forms"]);
+    if(mappedReportActions.has(String(body.action||""))){
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
+      const {data:mapping,error:mappingError}=await admin.from("raffinato_integracoes")
+        .select("connection_profile_id,raffinato_filial_id,instancia_sql,banco_dados")
+        .eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("status","ativa").maybeSingle();
+      if(mappingError)throw mappingError;
+      if(!mapping||mapping.raffinato_filial_id==null||!mapping.connection_profile_id)throw new Error("Esta loja ainda nao possui uma filial Raffinato vinculada.");
+      body.id_filial=Number(mapping.raffinato_filial_id);
+      body.connection_profile_id=mapping.connection_profile_id;
+      console.info(JSON.stringify({event:"RAFFINATO_STORE_MAPPING_RESOLVED",request_id:requestId,action:body.action,empresa_id:body.empresa_id,loja_id:body.loja_id,connection_profile_id:mapping.connection_profile_id,raffinato_filial_id:body.id_filial,sql_filial_id:body.id_filial,server:mapping.instancia_sql,database:mapping.banco_dados}));
+    }
+
     if(body.action==="abc_dashboard"){
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);const start=String(body.inicio||"").slice(0,10),end=String(body.fim_exclusivo||"").slice(0,10),mode=String(body.modo||"faturamento"),all:any[]=[];
       for(let offset=0;offset<100000;offset+=1000){let q=admin.from("raffinato_abc_cache").select("codigo,produto,id_agrupamento,agrupamento,quantidade,faturamento,custo_conhecido,faturamento_com_custo,itens_com_custo,itens_sem_custo").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",Number(body.id_filial||1)).gte("data",start).lt("data",end).range(offset,offset+999);if(body.id_agrupamento)q=q.eq("id_agrupamento",Number(body.id_agrupamento));const {data,error}=await q;if(error)throw error;all.push(...(data||[]));if(!data||data.length<1000)break;}

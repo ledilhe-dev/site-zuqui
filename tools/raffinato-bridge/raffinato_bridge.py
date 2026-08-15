@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.3"
+CONNECTOR_VERSION = "1.7.4"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -704,20 +704,15 @@ def profile_public(profile: dict[str, Any]) -> dict[str, Any]:
 def mapped_config(store_id: str) -> dict[str, Any] | None:
     state = load_profile_state()
     mapping = state["mappings"].get(store_id)
-    if not mapping and len(state["profiles"]) == 1 and set(state["mappings"]) in ({"legacy"}, set()):
-        legacy_mapping = state["mappings"].get("legacy") or {}
-        profile_id = legacy_mapping.get("connection_profile_id") or next(iter(state["profiles"]))
-        mapping = {**legacy_mapping, "checkdiario_filial_id": store_id,
-            "connection_profile_id": profile_id, "raffinato_filial_id": int(legacy_mapping.get("raffinato_filial_id") or 1), "active": True}
-        state["mappings"][store_id] = mapping
-        save_profile_state(state)
-        logger.info("Perfil legado associado automaticamente a filial CheckDiario %s", store_id)
     if not mapping or not mapping.get("active", True):
         return None
     profile = state["profiles"].get(mapping.get("connection_profile_id"))
     if not profile or not profile.get("active", True):
         return None
-    return {**profile, "id_filial": int(mapping.get("raffinato_filial_id") or 1)}
+    filial = mapping.get("raffinato_filial_id")
+    if filial is None or int(filial) <= 0:
+        return None
+    return {**profile, "id_filial": int(filial)}
 
 
 def load_store_configs() -> dict[str, dict[str, Any]]:
@@ -895,10 +890,20 @@ def get_store_config(store_id: str) -> dict[str, Any]:
     mapped = mapped_config(store_id)
     if mapped:
         return mapped
-    config = load_store_configs().get(store_id)
-    if config:
-        return config
-    raise RuntimeError("Nenhum perfil Raffinato configurado.")
+    raise PermissionError("Esta loja nao esta vinculada a esta instalacao.")
+
+
+def validate_request_tenant(body: dict[str, Any], store_id: str) -> None:
+    state = load_profile_state()
+    request_company = str(body.get("empresa_id") or "").strip()
+    paired_company = str(state.get("paired_empresa_id") or "").strip()
+    if not request_company or not paired_company or request_company != paired_company:
+        logger.warning("TENANT_MISMATCH_BLOCKED | empresa=%s | loja=%s | instance=%s", request_company, store_id, state.get("connector_instance_id"))
+        raise PermissionError("Esta loja nao esta vinculada a esta instalacao.")
+    mapping = state.get("mappings", {}).get(store_id)
+    if not mapping or not mapping.get("active", True) or not mapping.get("connection_profile_id") or mapping.get("raffinato_filial_id") is None:
+        logger.warning("STORE_MAPPING_NOT_FOUND | empresa=%s | loja=%s | instance=%s", request_company, store_id, state.get("connector_instance_id"))
+        raise PermissionError("Esta loja nao esta vinculada a esta instalacao.")
 
 
 def test_connection(config: dict[str, Any]) -> dict[str, Any]:
@@ -1066,7 +1071,9 @@ def rows_as_dicts(cursor: Any) -> list[dict[str, Any]]:
 
 
 def resolve_raffinato_filial(config: dict[str, Any], body: dict[str, Any]) -> int:
-    value = body.get("id_filial") or config.get("id_filial") or 1
+    value = config.get("id_filial")
+    if value is None:
+        raise ValueError("Esta loja ainda nao possui uma filial Raffinato vinculada.")
     filial = int(value)
     if filial <= 0:
         raise ValueError("Filial Raffinato inválida.")
@@ -2017,7 +2024,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.route_path() == "/health":
             state=load_profile_state()
-            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True, "paired":connector_is_paired(), "connector_instance_id":state["connector_instance_id"]})
+            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True, "paired":connector_is_paired(), "connector_instance_id":state["connector_instance_id"], "empresa_id":state.get("paired_empresa_id"), "lojas_vinculadas":list(state.get("mappings", {}).keys())})
             return
         if self.route_path() == "/":
             state=load_profile_state(); paired=connector_is_paired()
@@ -2171,7 +2178,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if route.startswith("/api/raffinato/"):
                 store_id = validate_store_id(body.get("loja_id"))
+                validate_request_tenant(body, store_id)
                 config = get_store_config(store_id)
+                body["id_filial"] = resolve_raffinato_filial(config, {})
                 if route == "/api/raffinato/cache-status":
                     result = cache_status(store_id)
                 elif route == "/api/raffinato/cache-refresh":
@@ -2216,6 +2225,7 @@ class Handler(BaseHTTPRequestHandler):
             if not raw_end_exclusive:
                 end += timedelta(seconds=1)
             store_id = validate_store_id(body.get("loja_id"))
+            validate_request_tenant(body, store_id)
             config = get_store_config(store_id)
             filial = resolve_raffinato_filial(config, body)
             result = query_sangrias(config, start, end, filial)

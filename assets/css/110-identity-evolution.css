@@ -381,3 +381,9 @@ body.avatar-crop-open{overflow:hidden!important}
 .connector-pair-meta{display:flex;justify-content:space-between;gap:12px;color:var(--text-muted);font-size:13px}
 .connector-pair-result>.btn-green{margin-top:16px}
 @media(max-width:600px){.connector-pair-code-row{align-items:stretch;flex-direction:column}.connector-pair-code-row .btn{width:100%}.connector-pair-meta{flex-direction:column;gap:4px}}
+.connector-download-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.connector-download-release{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 18px;padding:18px;border:1px solid var(--border);border-radius:14px;background:var(--surface2)}
+.connector-download-release.is-current{border-color:color-mix(in srgb,var(--accent) 48%,var(--border));background:color-mix(in srgb,var(--accent) 8%,var(--surface2))}
+.connector-download-release span{grid-column:1;color:var(--text-muted);font-size:10px;font-weight:800;letter-spacing:.12em}.connector-download-release strong{grid-column:1;font-size:16px}.connector-download-release small{grid-column:1;color:var(--text-muted)}
+.connector-download-release .btn{grid-column:2;grid-row:1/4;min-width:138px;text-align:center}
+@media(max-width:760px){.connector-download-grid{grid-template-columns:1fr}.connector-download-release{grid-template-columns:1fr}.connector-download-release .btn{grid-column:1;grid-row:auto;margin-top:8px;width:100%}}

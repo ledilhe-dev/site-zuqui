@@ -101,7 +101,7 @@ async function consultarFaturamentoRaffinato() {
     rbPeriodLabel = `${period.data_inicial} a ${period.data_final_exclusiva}`; button.disabled = true; button.textContent = 'Consultando Raffinato...'; message.className='msg'; message.textContent='Consultando Raffinato...';
     let payload;
     try {
-      payload=await raffinatoBridgePost('/api/raffinato/faturamento',{...period,id_forma_pagamento:paymentId,loja_id:context.lojaId,id_filial:1});
+      payload=await raffinatoBridgePost('/api/raffinato/faturamento',{...period,id_forma_pagamento:paymentId,loja_id:context.lojaId});
     } catch(localError) {
       const started=performance.now();
       try { payload=await raffinatoRelay({action:'billing_dashboard',inicio:period.inicio,fim_exclusivo:period.fim_exclusivo,id_forma_pagamento:paymentId,empresa_id:context.empresaId,loja_id:context.lojaId,usuario_id:String(usuarioSistemaLogado?.id||'')}); }

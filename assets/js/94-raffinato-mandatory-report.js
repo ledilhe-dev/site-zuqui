@@ -16,3 +16,12 @@
   function clear(){requestSequence++;const today=localDate();document.getElementById('ioReportStart').value=today;document.getElementById('ioReportEnd').value=today;document.getElementById('ioReportStartTime').value='00:00';document.getElementById('ioReportEndTime').value='23:59';document.getElementById('ioReportOrigin').value='';document.getElementById('ioReportProduct').value='';document.querySelectorAll('#ioReportGroups input:checked').forEach(input=>input.checked=false);document.getElementById('ioReportApplied').hidden=true;document.getElementById('ioReportContent').innerHTML='<div class="empty">Selecione o período e os agrupamentos e clique em Consultar.</div>'}
   window.iniciarTelaItensObrigatoriosRaffinato=function(){const root=document.getElementById('relatorio_itens_obrigatorios_raffinato');if(!root)return;if(!initialized){initialized=true;root.innerHTML=markup();const today=localDate();document.getElementById('ioReportStart').value=today;document.getElementById('ioReportEnd').value=today;document.getElementById('ioReportForm').addEventListener('submit',submit);document.getElementById('ioReportClear').addEventListener('click',clear);document.getElementById('ioReportBranch').addEventListener('change',loadGroups);loadGroups()}}
 })();
+
+const iniciarTelaItensObrigatoriosRaffinatoComBusca=window.iniciarTelaItensObrigatoriosRaffinato;
+window.iniciarTelaItensObrigatoriosRaffinato=function(){
+  iniciarTelaItensObrigatoriosRaffinatoComBusca();
+  const branch=document.getElementById('ioReportBranch');if(branch?.closest('label'))branch.closest('label').hidden=true;
+  const groups=document.getElementById('ioReportGroups');if(!groups||document.getElementById('ioReportGroupSearch'))return;
+  const search=document.createElement('input');search.id='ioReportGroupSearch';search.type='search';search.placeholder='Buscar agrupamento pelo nome';search.autocomplete='off';groups.before(search);
+  search.addEventListener('input',()=>{const term=search.value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');groups.querySelectorAll('label').forEach(label=>{const name=label.textContent.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR');label.hidden=!!term&&!name.includes(term);});});
+};

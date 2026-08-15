@@ -10,6 +10,7 @@ let raffinatoAdminToken = '';
 let raffinatoConnectionProfileId = '';
 let raffinatoConnectorInstanceId = '';
 let raffinatoAdminSessionExpired = false;
+let raffinatoTenantContextKey = '';
 let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
 let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
 let raffinatoBuscaDetalhe = '';
@@ -17,7 +18,9 @@ let raffinatoItensVisiveis = [];
 const RAFFINATO_RELAY_FUNCTION = 'raffinato-relay';
 
 async function raffinatoRelay(body) {
+  const contextAtRequest=contextoRaffinato();
   const payload={...body,...(usuarioSistemaLogado?.global_admin_authorized===true&&usuarioSistemaLogado?.global_admin_token?{global_admin_token:usuarioSistemaLogado.global_admin_token}:{} )};
+  if(/dashboard$/.test(String(payload.action||''))||payload.action==='annual_comparison')delete payload.id_filial;
   const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body:payload });
   if (error) {
     let raw = '', payload = {};
@@ -28,6 +31,8 @@ async function raffinatoRelay(body) {
     throw new Error(`${body?.action || 'consulta'} · HTTP ${status} · ${message} · request_id: ${requestId}`);
   }
   if (data?.error) throw new Error(data.error);
+  const contextAtResponse=contextoRaffinato();
+  if(String(contextAtResponse.empresaId)!==String(contextAtRequest.empresaId)||String(contextAtResponse.lojaId)!==String(contextAtRequest.lojaId))throw new Error('Contexto de loja alterado; resposta anterior descartada.');
   return data || {};
 }
 
@@ -94,11 +99,21 @@ function iniciarTelaRelatorioSangriasRaffinato() {
 }
 
 async function raffinatoBridgePost(path, body) {
+  const contextAtRequest=contextoRaffinato();
+  const currentTenantKey=`${contextAtRequest.empresaId||''}:${contextAtRequest.lojaId||''}`;
+  if(raffinatoTenantContextKey&&raffinatoTenantContextKey!==currentTenantKey){
+    if(typeof RM!=='undefined')RM.cache.clear();
+    ['ioReportGroups','ioGroupChecklist'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<span>Carregando dados da loja atual...</span>';});
+    ['rmContent','abcContent','ioContent','ioReportContent'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">Contexto alterado. Consulte os dados da loja atual.</div>';});
+  }
+  raffinatoTenantContextKey=currentTenantKey;
+  const tenantBody={...body,empresa_id:String(body?.empresa_id||contextAtRequest.empresaId||''),loja_id:String(body?.loja_id||contextAtRequest.lojaId||'')};
+  if(path.startsWith('/api/raffinato/')||path==='/api/sangrias')delete tenantBody.id_filial;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
     const protectedRoute = path.startsWith('/api/integracoes/raffinato/') && !path.endsWith('/desbloquear');
-    const payloadBody = protectedRoute ? { ...body, admin_token:raffinatoAdminToken } : body;
+    const payloadBody = protectedRoute ? { ...tenantBody, admin_token:raffinatoAdminToken } : tenantBody;
     const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
       method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payloadBody), signal:controller.signal,
     });
@@ -112,6 +127,8 @@ async function raffinatoBridgePost(path, body) {
       }
       throw new Error(mensagemAmigavelErroRaffinato(payload.error));
     }
+    const contextAtResponse=contextoRaffinato();
+    if(String(contextAtResponse.empresaId)!==String(contextAtRequest.empresaId)||String(contextAtResponse.lojaId)!==String(contextAtRequest.lojaId))throw new Error('Contexto de loja alterado; resposta anterior descartada.');
     return payload;
   } catch (error) {
     if (error?.name === 'AbortError') throw new Error('A consulta excedeu 30 segundos. Verifique o log do conector Raffinato.');
@@ -712,7 +729,7 @@ async function consultarSangriasRaffinato() {
       // Fonte de verdade: consulta o DocumentoFiscal diretamente no Raffinato.
       payload = await raffinatoBridgePost('/api/sangrias', {
         inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
-        loja_id:contexto.lojaId, id_filial:1,
+        loja_id:contexto.lojaId,
       });
     } catch (localError) {
       // Permite consultar em celular ou computador no qual o conector não esteja aberto.
