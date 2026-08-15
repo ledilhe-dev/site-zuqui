@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.4"
+CONNECTOR_VERSION = "1.7.5"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -933,6 +933,20 @@ def discover_filiais(config: dict[str, Any]) -> list[dict[str, Any]]:
     """Descobre a estrutura real antes de consultar; nao presume uma tabela Raffinato."""
     with pyodbc.connect(connection_string(config), timeout=8) as connection:
         cursor = connection.cursor()
+        try:
+            cursor.execute("""
+              SELECT Id id_filial, CAST(NomeFantasia AS nvarchar(200)) nome
+              FROM dbo.filial WITH(NOLOCK)
+              WHERE Id IS NOT NULL
+              ORDER BY Id
+            """)
+            rows = cursor.fetchall()
+            if rows:
+                return [{"id_filial": int(row.id_filial), "nome": str(row.nome or "").strip(),
+                         "fonte": "dbo.filial"} for row in rows]
+        except pyodbc.Error:
+            # Mantem compatibilidade com bases Raffinato que usam outro esquema.
+            pass
         cursor.execute("""
           SELECT s.name schema_name,t.name table_name,
                  MAX(CASE WHEN LOWER(c.name) IN ('idfilial','id_filial') THEN c.name END) id_column,
