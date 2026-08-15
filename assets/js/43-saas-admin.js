@@ -8,6 +8,28 @@ let copiaDadosEntreLojasEmAndamento = false;
 let painelAdminGlobalCache = null;
 let connectorPairCountdownTimer = null;
 let connectorPairCurrentCode = '';
+let connectorVersionManifest = null;
+
+async function obterManifestoConector() {
+  if (connectorVersionManifest) return connectorVersionManifest;
+  const response = await fetch('./assets/connector-version.json', { cache:'no-store' });
+  if (!response.ok) throw new Error(`Manifesto do conector indisponível (HTTP ${response.status}).`);
+  connectorVersionManifest = await response.json();
+  return connectorVersionManifest;
+}
+
+function compararVersaoConector(instalada, disponivel) {
+  const parts=value=>String(value||'0').split('.').map(x=>Number(x)||0);
+  const a=parts(instalada),b=parts(disponivel);
+  for(let i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)!==(b[i]||0))return(a[i]||0)>(b[i]||0)?1:-1;}
+  return 0;
+}
+
+function renderizarCentralDownloadsConector(manifesto) {
+  const alvo=document.getElementById('connectorDownloadCenter');
+  if(alvo)alvo.innerHTML=`<div class="item-detalhe">Versão mais recente: <strong>${escaparHtmlBasico(manifesto.latest_version)}</strong> · Publicada em ${escaparHtmlBasico(new Date(`${manifesto.published_at}T12:00:00`).toLocaleDateString('pt-BR'))}</div><div class="form-actions"><a class="btn btn-green" href="${escaparHtmlBasico(manifesto.download_url)}" download>Baixar versão mais recente</a><a class="btn btn-ghost" href="${escaparHtmlBasico(manifesto.rollback_url)}" download>Rollback ${escaparHtmlBasico(manifesto.rollback_version)}</a><a class="btn btn-ghost" href="${escaparHtmlBasico(manifesto.legacy_url)}" download>Legado ${escaparHtmlBasico(manifesto.legacy_version)}</a></div>`;
+  const atalho=document.getElementById('raffinatoConnectorDownload');if(atalho){atalho.href=manifesto.download_url;atalho.textContent=`Baixar conector ${manifesto.latest_version}`;}
+}
 
 async function obterDadosPainelAdminGlobal({ renovar = false } = {}) {
   if (!contextoEhAdminGlobal() || usuarioSistemaLogado?.global_admin_authorized !== true) throw new Error('Contexto administrativo global não autorizado.');
@@ -43,10 +65,10 @@ async function carregarUsuariosSaas() {
 
 async function carregarConectoresSaas() {
   const alvo=document.getElementById('listaConectoresSaas');if(!alvo)return;
-  try { const dados=await obterDadosPainelAdminGlobal({renovar:true}); const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
+  try { const [dados,manifesto]=await Promise.all([obterDadosPainelAdminGlobal({renovar:true}),obterManifestoConector()]);renderizarCentralDownloadsConector(manifesto);const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
     const select=document.getElementById('connectorPairEmpresa');if(select){const atual=select.value;select.innerHTML='<option value="">- Selecione -</option>'+(dados.empresas||[]).filter(x=>x.ativo!==false).map(x=>`<option value="${escaparHtmlBasico(x.id)}">${escaparHtmlBasico(nomeEmpresaSaas(x))}</option>`).join('');if([...select.options].some(o=>o.value===atual))select.value=atual;}
     const vinculos=dados.conectores||[],instancias=dados.connector_instances||[];
-    alvo.innerHTML=instancias.length?'<div class="lista">'+instancias.map(x=>{const relacionados=vinculos.filter(v=>String(v.connector_instance_id||'')===String(x.id));const nomesLojas=relacionados.map(v=>`${lojas.get(String(v.loja_id))||'Loja'} (Filial ${Number(v.raffinato_filial_id||1)})`).join(', ')||'Nenhuma filial vinculada';const contato=x.ultimo_contato_em?new Date(x.ultimo_contato_em).toLocaleString('pt-BR'):'Nunca';return `<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||'Conector Raffinato')} · ${String(x.status||'offline').toUpperCase()}</div><div class="item-detalhe">Empresa: ${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'-')} · Versão: ${escaparHtmlBasico(x.versao||'-')} · Último contato: ${escaparHtmlBasico(contato)}<br>Instalação: ${escaparHtmlBasico(x.id)} · Perfis: ${Number(x.perfis_cadastrados||0)} · Filiais: ${Number(x.filiais_vinculadas||0)}<br>${escaparHtmlBasico(nomesLojas)}</div></div></div>`}).join('')+'</div>':'<div class="empty">Nenhuma instalação física pareada.</div>';
+    alvo.innerHTML=instancias.length?'<div class="lista">'+instancias.map(x=>{const relacionados=vinculos.filter(v=>String(v.connector_instance_id||'')===String(x.id));const nomesLojas=relacionados.map(v=>`${lojas.get(String(v.loja_id))||'Loja'} (Filial ${Number(v.raffinato_filial_id)})`).join(', ')||'Nenhuma filial vinculada';const contato=x.ultimo_contato_em?new Date(x.ultimo_contato_em).toLocaleString('pt-BR'):'Nunca',online=x.status!=='revogado'&&x.ultimo_contato_em&&(Date.now()-new Date(x.ultimo_contato_em).getTime()<150000),atualizado=compararVersaoConector(x.versao,manifesto.latest_version)>=0;return `<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'-')} · ${online?'ONLINE':'OFFLINE'}</div><div class="item-detalhe">${escaparHtmlBasico(x.nome||'Conector Raffinato')}<br>Instalada: ${escaparHtmlBasico(x.versao||'-')} · Disponível: ${escaparHtmlBasico(manifesto.latest_version)} · <strong>${atualizado?'ATUALIZADO':'ATUALIZAÇÃO DISPONÍVEL'}</strong> · Último contato: ${escaparHtmlBasico(contato)}<br>connector_instance_id: ${escaparHtmlBasico(x.id)} · Perfis: ${Number(x.perfis_cadastrados||0)} · Filiais: ${Number(x.filiais_vinculadas||0)}<br>${escaparHtmlBasico(nomesLojas)}</div></div><a class="btn btn-ghost" href="${escaparHtmlBasico(manifesto.download_url)}" download>Baixar ${escaparHtmlBasico(manifesto.latest_version)}</a></div>`}).join('')+'</div>':'<div class="empty">Nenhuma instalação física pareada. A versão mais recente continua disponível acima.</div>';
   } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
 }
 

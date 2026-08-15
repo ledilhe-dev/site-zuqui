@@ -40,7 +40,7 @@ Deno.serve(async (request) => {
 
     if (body.action === "connector_link_store") {
       validateUuid(body.empresa_id,"empresa"); validateUuid(body.loja_id,"loja"); validateUuid(body.connector_instance_id,"instalacao");
-      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const {data:instance,error:instanceError}=await admin.from("raffinato_connector_instances").select("id").eq("id",body.connector_instance_id).eq("empresa_id",body.empresa_id).neq("status","revogado").maybeSingle();
       if(instanceError||!instance)throw instanceError||new Error("Instalacao nao pertence a empresa selecionada.");
       const {error}=await admin.from("raffinato_integracoes").update({connector_instance_id:instance.id}).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id);
@@ -49,7 +49,7 @@ Deno.serve(async (request) => {
 
     if (body.action === "pair") {
       validateUuid(body.empresa_id, "empresa"); validateUuid(body.loja_id, "loja");
-      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id);
+      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id, body.global_admin_token);
       const token = validateToken(body.token);
       const { error } = await admin.from("raffinato_integracoes").update({
         conector_token_hash: await sha256(token), status: "ativa", ultimo_erro: null,
@@ -220,13 +220,13 @@ Deno.serve(async (request) => {
     }
 
     if(body.action==="abc_dashboard"){
-      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);const start=String(body.inicio||"").slice(0,10),end=String(body.fim_exclusivo||"").slice(0,10),mode=String(body.modo||"faturamento"),all:any[]=[];
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);const start=String(body.inicio||"").slice(0,10),end=String(body.fim_exclusivo||"").slice(0,10),mode=String(body.modo||"faturamento"),all:any[]=[];
       for(let offset=0;offset<100000;offset+=1000){let q=admin.from("raffinato_abc_cache").select("codigo,produto,id_agrupamento,agrupamento,quantidade,faturamento,custo_conhecido,faturamento_com_custo,itens_com_custo,itens_sem_custo").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",Number(body.id_filial||1)).gte("data",start).lt("data",end).range(offset,offset+999);if(body.id_agrupamento)q=q.eq("id_agrupamento",Number(body.id_agrupamento));const {data,error}=await q;if(error)throw error;all.push(...(data||[]));if(!data||data.length<1000)break;}
       const product=String(body.produto||"").trim().toLocaleLowerCase("pt-BR"),map=new Map<string,any>();for(const x of all.filter(x=>!product||String(x.codigo)===product||String(x.produto||"").toLocaleLowerCase("pt-BR").includes(product))){const k=String(x.codigo),r=map.get(k)||{codigo:x.codigo,produto:x.produto,id_agrupamento:x.id_agrupamento,agrupamento:x.agrupamento,quantidade:0,faturamento:0,custo_conhecido:0,faturamento_com_custo:0,itens_com_custo:0,itens_sem_custo:0};for(const f of ["quantidade","faturamento","custo_conhecido","faturamento_com_custo","itens_com_custo","itens_sem_custo"])r[f]+=Number(x[f]||0);map.set(k,r);}const rows=[...map.values()];for(const r of rows){const covered=r.faturamento_com_custo,cost=r.custo_conhecido;r.lucro=covered>0?covered-cost:null;r.margem=covered>0?(covered-cost)/covered*100:null;r.cobertura_custo=r.faturamento?r.faturamento_com_custo/r.faturamento*100:0;r.valor_principal=mode==="quantidade"?r.quantidade:(mode==="lucro"?r.lucro:r.faturamento);}const eligible=rows.filter(r=>r.valor_principal!=null&&(mode!=="lucro"||r.valor_principal>0)).sort((a,b)=>b.valor_principal-a.valor_principal),total=eligible.reduce((s,r)=>s+r.valor_principal,0);let acc=0;for(const r of eligible){const before=acc;r.participacao=total?r.valor_principal/total*100:0;acc+=r.participacao;r.acumulado=acc;r.classe=before<80?"A":before<95?"B":"C";}for(const r of rows.filter(r=>!r.classe)){r.participacao=0;r.acumulado=null;r.classe="SEM_CUSTO";}const revenue=rows.reduce((s,r)=>s+r.faturamento,0),covered=rows.reduce((s,r)=>s+r.faturamento_com_custo,0);return json({modo:mode,items:[...eligible,...rows.filter(r=>!eligible.includes(r))],resumo:{faturamento:revenue,faturamento_com_custo:covered,faturamento_sem_custo:revenue-covered,cobertura_custo:revenue?covered/revenue*100:0},origem_consulta:"cache_gerencial_remoto"});
     }
 
     if(body.action==="mandatory_dashboard"){
-      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19),rows:any[]=[];
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19),rows:any[]=[];
       for(let offset=0;offset<100000;offset+=1000){let q=admin.from("raffinato_itens_obrigatorios_cache").select("data,hora,id_venda,id_pai,id_produto_pai,produto_pai,id_agrupamento_pai,agrupamento_pai,origem,valor_item,id_item_obrigatorio,item_obrigatorio,id_componente,componente,quantidade_componente").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",Number(body.id_filial||1)).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).range(offset,offset+999);if(body.id_agrupamento)q=q.eq("id_agrupamento_pai",Number(body.id_agrupamento));if(body.id_item_obrigatorio)q=q.eq("id_item_obrigatorio",Number(body.id_item_obrigatorio));if(body.id_produto_pai)q=q.eq("id_produto_pai",Number(body.id_produto_pai));if(body.id_componente)q=q.eq("id_componente",Number(body.id_componente));if(body.origem)q=q.eq("origem",body.origem);const {data,error}=await q;if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}
       const groupTerms=(Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map((x:any)=>String(x).trim().toLocaleLowerCase("pt-BR")).filter(Boolean),parentText=String(body.produto_pai||"").trim().toLocaleLowerCase("pt-BR");let productGroups=new Map<string,{id:string,nome:string}>();
       if(groupTerms.length){const componentIds=[...new Set(rows.map((x:any)=>Number(x.id_componente)).filter(Number.isFinite))];const {data:catalog,error:catalogError}=await admin.from("raffinato_produtos_catalogo_cache").select("id_produto,id_agrupamento,agrupamento").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",Number(body.id_filial||1)).in("id_produto",componentIds);if(catalogError)throw catalogError;productGroups=new Map((catalog||[]).map((x:any)=>[String(x.id_produto),{id:String(x.id_agrupamento??""),nome:String(x.agrupamento||"").toLocaleLowerCase("pt-BR")}]))}
@@ -235,7 +235,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "annual_comparison") {
-      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const loadAnnualCache=async()=>{const rows:any[]=[];for(let offset=0;offset<10000;offset+=1000){const {data,error}=await admin.from("raffinato_anual_cache").select("ano,mes,modulo_venda,faturamento,vendas,quantidade,primeira_data,ultima_data").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",Number(body.id_filial||1)).order("ano").order("mes").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows;};
       if(String(body.mode||"")==="history"){
         const annual=await loadAnnualCache();if(annual.length){const firstDate=annual.map(x=>x.primeira_data).filter(Boolean).sort()[0],lastDate=annual.map(x=>x.ultima_data).filter(Boolean).sort().at(-1),firstYear=Number(String(firstDate).slice(0,4)),lastYear=Number(String(lastDate).slice(0,4));return json({schema_version:3,primeira_data:firstDate,ultima_data:lastDate,anos:Array.from({length:lastYear-firstYear+1},(_,i)=>firstYear+i)});}
@@ -262,7 +262,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "sales_bi_dashboard") {
-      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
       const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=start&&dt<end;});};
       const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),allItems=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado");if(!docs.length)throw new Error("CACHE_MISS: periodo ainda nao sincronizado pelo conector.");
@@ -280,7 +280,7 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === "sales_canonical_dashboard") {
-      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
       const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=start&&dt<end;});};
       const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),items=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado"),openDeliveries=await load("raffinato_delivery_aberto_cache","id_tele_entrega,id_venda,pedido,data,hora,id_status,status,valor,cancelado,finalizado,id_documento_fiscal"),paymentsByDoc=new Map<string,any[]>(),totalByDoc=new Map<string,number>();
@@ -296,7 +296,7 @@ Deno.serve(async (request) => {
 
     if (body.action === "products_canonical_dashboard") {
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
-      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);
       if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
       const startDate=start.slice(0,10),endDate=end.slice(0,10),payment=body.id_forma_pagamento?Number(body.id_forma_pagamento):null;
@@ -319,7 +319,7 @@ Deno.serve(async (request) => {
 
     if (body.action === "products_dashboard") {
       validateUuid(body.empresa_id,"empresa"); validateUuid(body.loja_id,"loja");
-      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const inicio=validateDate(body.inicio,"inicio"),fimExclusivo=validateDate(body.fim_exclusivo,"fim");
       const product=String(body.produto||"").trim().slice(0,120);
       const group=body.id_agrupamento?Number(body.id_agrupamento):null;
@@ -345,7 +345,7 @@ Deno.serve(async (request) => {
 
     if (body.action === "products_metadata" || body.action === "metadata_dashboard") {
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
-      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id);
+      await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const filial=Number(body.id_filial||1),load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",filial).range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows;};
       const groups=await load("raffinato_agrupamentos_cache","id_agrupamento,nome,sincronizado_em"),products=await load("raffinato_produtos_catalogo_cache","id_produto,nome,id_agrupamento,agrupamento,sincronizado_em"),payments=await load("raffinato_formas_pagamento_catalogo_cache","id_forma_pagamento,nome,sincronizado_em");
       const stamp=[...groups,...products,...payments].map(x=>x.sincronizado_em).sort().pop()||null;
@@ -354,7 +354,7 @@ Deno.serve(async (request) => {
 
     if (body.action === "billing_dashboard") {
       validateUuid(body.empresa_id, "empresa"); validateUuid(body.loja_id, "loja");
-      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id);
+      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id, body.global_admin_token);
       const inicio = validateDate(body.inicio, "inicio"); const fimExclusivo = validateDate(body.fim_exclusivo, "fim");
       const payment = body.id_forma_pagamento ? Number(body.id_forma_pagamento) : null;
       let query = admin.from("raffinato_faturamento_cache").select("*")
@@ -387,7 +387,7 @@ Deno.serve(async (request) => {
 
     if (body.action === "billing_forms") {
       validateUuid(body.empresa_id, "empresa"); validateUuid(body.loja_id, "loja");
-      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id);
+      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id, body.global_admin_token);
       const { data,error }=await admin.from("raffinato_faturamento_cache").select("id_forma_pagamento,forma_pagamento")
         .eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).limit(1000);
       if(error)throw error;const unique=new Map<string,any>();
@@ -397,16 +397,19 @@ Deno.serve(async (request) => {
 
     if (body.action === "dashboard" || body.action === "status") {
       validateUuid(body.empresa_id, "empresa"); validateUuid(body.loja_id, "loja");
-      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id);
+      await authorizeStore(admin, body.usuario_id, body.empresa_id, body.loja_id, body.global_admin_token);
       const { data: integration, error: integrationError } = await admin.from("raffinato_integracoes")
-        .select("status,ultima_sincronizacao_em,ultimo_erro,conector_token_hash")
+        .select("status,ultima_sincronizacao_em,ultimo_erro,conector_token_hash,connector_instance_id")
         .eq("empresa_id", body.empresa_id).eq("loja_id", body.loja_id).maybeSingle();
       if (integrationError) throw integrationError;
-      if (body.action === "status") return json({
-        configurado: !!integration, pareado: !!integration?.conector_token_hash,
-        ultima_sincronizacao_em: integration?.ultima_sincronizacao_em || null,
-        online: isRecent(integration?.ultima_sincronizacao_em), ultimo_erro: integration?.ultimo_erro || null,
-      });
+      if (body.action === "status") {
+        let instance:any=null;
+        if(integration?.connector_instance_id){const response=await admin.from("raffinato_connector_instances").select("id,status,ultimo_contato_em,versao").eq("id",integration.connector_instance_id).maybeSingle();if(response.error)throw response.error;instance=response.data;}
+        return json({configurado:!!integration,pareado:!!integration?.conector_token_hash||!!instance,
+          ultima_sincronizacao_em:integration?.ultima_sincronizacao_em||null,ultimo_erro:integration?.ultimo_erro||null,
+          connector_instance_id:instance?.id||integration?.connector_instance_id||null,versao:instance?.versao||null,
+          ultimo_contato_em:instance?.ultimo_contato_em||null,online:instance?instance.status!=="revogado"&&isRecent(instance.ultimo_contato_em):isRecent(integration?.ultima_sincronizacao_em)});
+      }
       const inicioCompleto = validateDateTime(body.inicio, "inicio");
       const fimCompleto = validateDateTime(body.fim, "fim");
       const inicio = inicioCompleto.slice(0, 10); const fim = fimCompleto.slice(0, 10);
@@ -429,10 +432,17 @@ Deno.serve(async (request) => {
   }
 });
 
-async function authorizeStore(admin: any, userId: string, empresaId: string, lojaId: string) {
+async function authorizeStore(admin: any, userId: string, empresaId: string, lojaId: string, globalAdminToken = "") {
   validateUuid(userId, "usuario");
   const { data: loja } = await admin.from("lojas").select("id,empresa_id,ativo").eq("id", lojaId).eq("empresa_id", empresaId).maybeSingle();
   if (!loja || loja.ativo === false) throw new Error("Loja nao autorizada.");
+  if (globalAdminToken) {
+    const { data: globalAuthorized, error: globalError } = await admin.rpc("validar_sessao_admin_global", {
+      p_funcionario_id:userId, p_token:String(globalAdminToken),
+    });
+    if (globalError) throw globalError;
+    if (globalAuthorized === true) return;
+  }
   const [{ data: employee }, { data: adminUser }, { data: link }] = await Promise.all([
     admin.from("funcionarios").select("id,empresa_id,loja_id").eq("id", userId).eq("empresa_id", empresaId).maybeSingle(),
     // O administrador pode trocar de loja/empresa pela própria interface. A
@@ -442,7 +452,10 @@ async function authorizeStore(admin: any, userId: string, empresaId: string, loj
     admin.from("usuarios_admin").select("id,empresa_id,ativo").eq("id", userId).eq("ativo", true).maybeSingle(),
     admin.from("funcionario_lojas").select("funcionario_id,loja_id,ativo").eq("funcionario_id", userId).eq("loja_id", lojaId).eq("ativo", true).maybeSingle(),
   ]);
-  if (!adminUser && !link && String(employee?.loja_id || "") !== lojaId) throw new Error("Usuario sem acesso a esta loja.");
+  if (!adminUser && !link && String(employee?.loja_id || "") !== lojaId) {
+    console.warn(JSON.stringify({event:"CONNECTOR_LINK_FORBIDDEN",user_id:userId,empresa_id:empresaId,loja_id:lojaId}));
+    throw new Error("Usuario sem acesso a esta loja.");
+  }
 }
 async function connectorForCredential(admin:any,instanceId:any,credential:string){
   validateUuid(instanceId,"instalacao");

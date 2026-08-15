@@ -21,7 +21,6 @@ class MultiempresaTests(unittest.TestCase):
         self.patchers = [
             patch.object(bridge, "PROFILE_CONFIG_PATH", root / "perfis.dat"),
             patch.object(bridge, "STORE_CONFIG_PATH", root / "integracoes.dat"),
-            patch.object(bridge, "CONFIG_PATH", root / "credentials.json"),
             patch.object(bridge, "BACKUP_DIR", root / "backup"),
             patch.object(bridge, "protect_bytes", lambda value: value),
             patch.object(bridge, "unprotect_bytes", lambda value: value),
@@ -51,13 +50,18 @@ class MultiempresaTests(unittest.TestCase):
 
     def test_legacy_migration_backs_up_and_preserves_values(self):
         legacy = {"server": "srv\\sql", "database": "Raffinato", "uid": "user", "pwd": "secret", "id_filial": 1}
-        bridge.CONFIG_PATH.write_text(json.dumps(legacy), encoding="utf-8")
+        bridge.save_store_configs({"zuqui-store":legacy})
         bridge.migrate_legacy_configuration()
         state = bridge.load_profile_state()
         profile = next(iter(state["profiles"].values()))
         self.assertEqual(profile["server"], legacy["server"])
         self.assertEqual(profile["pwd"], legacy["pwd"])
-        self.assertTrue((bridge.BACKUP_DIR / "credentials.json.pre-1.7.0.bak").exists())
+        self.assertTrue((bridge.BACKUP_DIR / "integracoes.dat.pre-1.7.0.bak").exists())
+
+    def test_source_has_no_credentials_json_or_fixed_parent_lookup(self):
+        source = SOURCE.read_text(encoding="utf-8")
+        self.assertNotIn("credentials.json", source)
+        self.assertNotIn("parents[", source)
 
     def test_clean_install_has_stable_identity_and_no_zuqui_fallback(self):
         bridge.migrate_legacy_configuration()

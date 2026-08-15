@@ -31,21 +31,15 @@ from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pyodbc
 
 
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
-LOCAL_CONFIG_PATH = BASE_DIR / "credentials.local.json"
-LEGACY_CONFIG_PATH = BASE_DIR.parents[2] / "FACULDADE" / "PROJETOS TESTES" / "credentials.json"
-CONFIG_PATH = Path(os.environ.get(
-    "CHECKDIARIO_RAFFINATO_CONFIG",
-    LOCAL_CONFIG_PATH if LOCAL_CONFIG_PATH.exists() else LEGACY_CONFIG_PATH,
-))
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.2"
+CONNECTOR_VERSION = "1.7.3"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -652,18 +646,12 @@ def migrate_legacy_configuration() -> None:
     if PROFILE_CONFIG_PATH.exists():
         return
     backup_file_once(STORE_CONFIG_PATH)
-    backup_file_once(CONFIG_PATH)
     state = load_profile_state()
     legacy: dict[str, dict[str, Any]] = {}
     try:
         legacy.update(load_store_configs())
     except Exception:
         logger.exception("Falha ao ler configuracoes multi-loja antigas durante migracao")
-    if not legacy and CONFIG_PATH.exists():
-        try:
-            legacy["legacy"] = load_config()
-        except Exception:
-            logger.exception("Falha ao ler configuracao unica antiga durante migracao")
     for store_id, config in legacy.items():
         profile_id = str(uuid4())
         profile = dict(config)
@@ -966,22 +954,6 @@ def discover_filiais(config: dict[str, Any]) -> list[dict[str, Any]]:
         cursor.execute("SELECT DISTINCT IdFilial FROM dbo.DocumentoFiscal WITH(NOLOCK) WHERE IdFilial IS NOT NULL ORDER BY IdFilial")
         return [{"id_filial": int(row.IdFilial), "nome": f"Filial {int(row.IdFilial)}",
                  "fonte": "dbo.DocumentoFiscal"} for row in cursor.fetchall()]
-
-
-def load_config() -> dict[str, Any]:
-    if not CONFIG_PATH.exists():
-        raise RuntimeError(
-            f"Configuração não encontrada: {CONFIG_PATH}. "
-            "Copie credentials.example.json para credentials.local.json e preencha os dados."
-        )
-    config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-    required = ("server", "database", "uid", "pwd")
-    missing = [key for key in required if not str(config.get(key, "")).strip()]
-    if missing:
-        raise RuntimeError(f"Campos obrigatórios ausentes: {', '.join(missing)}")
-    if not config.get("allowed_origins"):
-        config["allowed_origins"] = DEFAULT_ALLOWED_ORIGINS
-    return config
 
 
 def connection_string(config: dict[str, Any]) -> str:
@@ -2317,6 +2289,12 @@ def run_tray(server: ThreadingHTTPServer) -> None:
 
 
 def main() -> int:
+    if "--self-test" in sys.argv:
+        migrate_legacy_configuration()
+        state = load_profile_state()
+        instance_id = str(state.get("connector_instance_id") or "")
+        UUID(instance_id)
+        return 0 if not state.get("profiles") and not state.get("store_links") else 2
     if not acquire_single_instance():
         return 0
     try:
