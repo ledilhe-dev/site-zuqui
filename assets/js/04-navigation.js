@@ -673,6 +673,9 @@ function abrirPagina(id, botao) {
   atualizarEstadoMenuIntegracoesFinanceiras(paginaPertenceMenuIntegracoesFinanceiras(id));
   if (paginaPertenceMenuIntegracoesFinanceiras(id) && typeof carregarPaginaIntegracoesFinanceiras === 'function') carregarPaginaIntegracoesFinanceiras(id);
   if (id === 'dashboard') carregarDashboard();
+  if (id === 'dashboard_saas' && typeof carregarDashboardSaas === 'function') carregarDashboardSaas();
+  if (id === 'usuarios_saas' && typeof carregarUsuariosSaas === 'function') carregarUsuariosSaas();
+  if (id === 'conectores_saas' && typeof carregarConectoresSaas === 'function') carregarConectoresSaas();
   if (id === 'estatisticas_atendimento' && typeof carregarEstatisticasAtendimento === 'function') carregarEstatisticasAtendimento();
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
@@ -768,6 +771,16 @@ function abrirPagina(id, botao) {
   if (id === 'tarefas_atraso') { carregarTarefasAtrasoMaster(); }
   carregarNotificacoes();
   iniciarAtualizacaoAutomatica();
+}
+
+function renderizarMenuContextual() {
+  const global = contextoEhAdminGlobal();
+  const operacional = document.getElementById('navContainer');
+  const admin = document.getElementById('navGlobalAdmin');
+  if (operacional) { operacional.hidden = global; operacional.setAttribute('aria-hidden', String(global)); }
+  if (admin) { admin.hidden = !global; admin.setAttribute('aria-hidden', String(!global)); }
+  document.body.classList.toggle('contexto-admin-global', global);
+  document.body.classList.toggle('contexto-loja', !global);
 }
 
 function obterPaginaAtivaAtual() {

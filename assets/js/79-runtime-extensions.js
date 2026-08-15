@@ -141,11 +141,14 @@
     
     // Admin global sem loja está no painel SaaS. Ao escolher uma loja, mantém
     // acesso global, mas a topbar deve mostrar a loja selecionada.
-    if (usuarioSistemaLogado.tipo === 'admin' && !usuarioSistemaLogado?.loja_id) {
-      lojaNameEl.textContent = 'PAINEL ADMINISTRATIVO';
+    if (contextoEhAdminGlobal()) {
+      lojaNameEl.textContent = 'ADMINISTRAÇÃO GLOBAL';
+      const lojaLabel = lojaContainer.querySelector('.topbar-user-label');
+      if (lojaLabel) lojaLabel.textContent = 'CHECKDIÁRIO';
       const topbarStoreEl = document.getElementById('topbarStoreInfo');
       if (topbarStoreEl) topbarStoreEl.setAttribute('data-admin-mode', 'true');
-      document.getElementById('topbarStoreSwitchBtn').style.display = 'none';
+      document.getElementById('topbarStoreSwitchBtn').style.display = obterLojasPermitidasSessao().length ? 'block' : 'none';
+      document.getElementById('topbarStoreSwitchBtn').textContent = 'Entrar em loja';
       container.hidden = false;
       lojaContainer.hidden = false;
       container.style.display = 'flex';
@@ -158,6 +161,9 @@
     const topbarStoreEl = document.getElementById('topbarStoreInfo');
     if (topbarStoreEl) topbarStoreEl.removeAttribute('data-admin-mode');
     document.getElementById('topbarStoreSwitchBtn').style.display = 'block';
+    document.getElementById('topbarStoreSwitchBtn').textContent = 'Trocar';
+    const lojaLabel = lojaContainer.querySelector('.topbar-user-label');
+    if (lojaLabel) lojaLabel.textContent = 'Loja logada';
     container.hidden = false;
     lojaContainer.hidden = false;
     container.style.display = 'flex';
@@ -350,8 +356,11 @@ function configurarPreferenciasLoginTela() {
 }
 
 function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
+  const modo = usuario?.context_mode === 'global_admin' ? 'global_admin' : 'store';
   const usuarioNormalizado = {
     ...usuario,
+    context_mode: modo,
+    ...(modo === 'global_admin' ? { empresa_id:null, loja_id:null, empresa_nome:null, loja_nome:null } : {}),
     perfil: normalizarPerfilUsuario(usuario?.perfil),
   };
   usuarioSistemaLogado = usuarioNormalizado;
@@ -382,13 +391,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function validarAutoridadeAdminSistemaNoBanco(usuario = null) {
     if (usuario?.tipo !== 'admin') return true;
     const funcionarioId = String(usuario?.id || '').trim();
-    if (!funcionarioId) return false;
+    const token = String(usuario?.global_admin_token || '').trim();
+    if (!funcionarioId || !token) return false;
     try {
-      const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
-        .from('funcionarios')
-        .select('id, ativo, é_administrador')
-        .eq('id', funcionarioId)
-        .maybeSingle());
+      const { data, error } = await sb.rpc('validar_sessao_admin_global', { p_funcionario_id:funcionarioId, p_token:token });
       if (error) {
         console.warn('Não foi possível revalidar o administrador do sistema:', error);
         return null;
@@ -396,8 +402,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       // Ausência temporária por RLS, renovação de sessão ou retomada da aba
       // não significa revogação. Só retorna false quando o banco devolve o
       // cadastro explicitamente inativo ou sem a permissão administrativa.
-      if (!data?.id) return null;
-      return data.ativo !== false && data.é_administrador === true;
+      return data === true;
     } catch (erro) {
       console.warn('Não foi possível revalidar o administrador do sistema:', erro);
       return null;
@@ -488,6 +493,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       usuario = await revalidarSessaoFuncionarioNoBanco(usuario);
       usuarioSistemaLogado = {
         ...usuario,
+        context_mode: usuario.context_mode === 'global_admin' ? 'global_admin' : 'store',
+        global_admin_authorized: usuario.tipo === 'admin' ? autoridadeAdmin === true : false,
+        ...(usuario.context_mode === 'global_admin' ? { empresa_id:null, loja_id:null, empresa_nome:null, loja_nome:null } : {}),
         perfil: normalizarPerfilUsuario(usuario?.perfil),
       };
       window.usuarioSistemaLogado = usuarioSistemaLogado;
@@ -1025,6 +1033,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const ehAdminSistema = funcionario.é_administrador === true;
     return {
       tipo: ehAdminSistema ? 'admin' : 'funcionario',
+      context_mode: 'store',
+      global_admin_authorized: ehAdminSistema && !!funcionario.global_admin_token,
+      global_admin_token: funcionario.global_admin_token || null,
       id: funcionario.id,
       nome: funcionario.nome,
       username: funcionario.nome || funcionario.email || '',
@@ -1151,7 +1162,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       const alvo = normalizarTextoComparacao(`${loja.nome || ''} ${loja.codigo || ''} ${loja.id || ''}`);
       return !termo || alvo.includes(termo);
     });
-    if (!lojas.length) {
+    if (!lojas.length && window.__loginContextoPendente?.funcionario?.é_administrador !== true) {
       lista.innerHTML = '<div class="login-store-empty">Nenhuma loja vinculada encontrada para este usuário.</div>';
       return;
     }
@@ -1203,11 +1214,11 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     }
   }
 
-  function abrirPainelAdministrativoLogin() {
+  async function abrirPainelAdministrativoLogin() {
     const contexto = window.__loginContextoPendente || null;
     if (!contexto) return setMsg('msgLogin', 'Sessão não identificada.', 'err');
     // Acesso ao painel restrito exclusivamente a funcionários com é_administrador=true
-    if (contexto.funcionario?.é_administrador !== true) {
+    if (contexto.funcionario?.é_administrador !== true || !(await validarAutoridadeAdminSistemaNoBanco({ ...contexto.funcionario, tipo:'admin' }))) {
       setMsg('msgLogin', 'Acesso ao painel administrativo restrito a administradores.', 'err');
       return;
     }
@@ -1217,19 +1228,24 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     salvarPreferenciasLogin({ username: contexto.username || '', password: contexto.password || '', salvarSenha: contexto.salvarSenha, manterConectado: contexto.manterConectado });
     salvarSessaoSistema({
       tipo: 'admin',
+      context_mode: 'global_admin',
+      global_admin_authorized: true,
+      global_admin_token: contexto.funcionario.global_admin_token,
       id: contexto.funcionario.id,
       nome: contexto.funcionario.nome,
       username: nomeUsuario,
       email: contexto.funcionario.email || null,
       é_administrador: true,
-      perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador do Sistema', permissoes: obterPermissoesBase('ADM') })
+      perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador do Sistema', permissoes: obterPermissoesBase('ADM') }),
+      lojas_permitidas: Array.isArray(window.__loginLojasPermitidasAtual) ? window.__loginLojasPermitidasAtual : []
     }, { manterConectado: !!contexto.manterConectado });
     setSistemaLogado(true);
     aplicarPermissoesSistema();
     carregarNotificacoes();
     limparSelecaoLojaLogin();
     // Abrir a página de administração de empresas por padrão
-    abrirPagina('empresas_saas');
+    salvarPaginaAtiva('dashboard_saas');
+    abrirPagina('dashboard_saas', document.querySelector('#navGlobalAdmin [data-page="dashboard_saas"]'));
   }
 
   function obterLojasPermitidasSessao() {
@@ -1249,7 +1265,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     if (!lojaContainer || !usuarioSistemaLogado) return;
 
     const lojas = obterLojasPermitidasSessao();
-    const podeTrocar = lojas.length > 1;
+    const podeTrocar = contextoEhAdminGlobal() ? lojas.length > 0 : (lojas.length > 1 || usuarioSistemaLogado?.global_admin_authorized === true);
     lojaContainer.classList.toggle('is-switchable', podeTrocar);
     lojaContainer.title = podeTrocar ? 'Trocar loja' : 'Loja logada';
     lojaContainer.onclick = podeTrocar ? abrirTrocaLojaTopbar : null;
@@ -1257,7 +1273,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
   function abrirTrocaLojaTopbar() {
     const lojas = obterLojasPermitidasSessao();
-    if (lojas.length <= 1) return;
+    if (contextoEhAdminGlobal() ? lojas.length < 1 : (lojas.length <= 1 && usuarioSistemaLogado?.global_admin_authorized !== true)) return;
     const contexto = {
       funcionario: usuarioSistemaLogado,
       perfilFuncionario: usuarioSistemaLogado.perfil,
@@ -1305,7 +1321,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     // predefinedUsers está vazio (credenciais removidas por segurança). Login exclusivo via Supabase.
 
-    const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('autenticar_funcionario', {
+    const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('autenticar_funcionario_contexto', {
       p_identificador: username,
       p_senha: password,
     }));

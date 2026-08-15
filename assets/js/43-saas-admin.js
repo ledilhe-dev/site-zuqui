@@ -5,13 +5,53 @@ let lojasSaasCache = [];
 let empresaSaasEmEdicaoId = null;
 let lojaSaasEmEdicaoId = null;
 let copiaDadosEntreLojasEmAndamento = false;
+let painelAdminGlobalCache = null;
+
+async function obterDadosPainelAdminGlobal({ renovar = false } = {}) {
+  if (!contextoEhAdminGlobal() || usuarioSistemaLogado?.global_admin_authorized !== true) throw new Error('Contexto administrativo global não autorizado.');
+  if (painelAdminGlobalCache && !renovar) return painelAdminGlobalCache;
+  const { data, error } = await sb.rpc('obter_painel_admin_global', {
+    p_funcionario_id:usuarioSistemaLogado.id,
+    p_token:usuarioSistemaLogado.global_admin_token,
+  });
+  if (error) throw error;
+  painelAdminGlobalCache = data || { empresas:[], lojas:[], usuarios:[], conectores:[] };
+  return painelAdminGlobalCache;
+}
+
+async function carregarDashboardSaas() {
+  const alvo=document.getElementById('dashboardSaasMetricas'),msg=document.getElementById('msgDashboardSaas');
+  if(!alvo)return;
+  try {
+    const dados=await obterDadosPainelAdminGlobal({renovar:true});
+    const empresas=dados.empresas||[],lojas=dados.lojas||[],usuarios=dados.usuarios||[],conectores=dados.conectores||[];
+    const online=conectores.filter(item=>item.status==='ativa'&&item.ultima_sincronizacao_em&&(Date.now()-new Date(item.ultima_sincronizacao_em).getTime()<150000)).length;
+    const cards=[['Empresas',empresas.length],['Lojas / filiais',lojas.length],['Usuários ativos',usuarios.filter(x=>x.ativo!==false).length],['Conectores',conectores.length],['Conectores online',online],['Conectores offline',Math.max(0,conectores.length-online)]];
+    alvo.innerHTML=cards.map(([label,value])=>`<div class="card"><div class="card-title">${escaparHtmlBasico(label)}</div><div style="font-size:32px;font-weight:800">${Number(value)}</div></div>`).join('');
+    if(msg){msg.className='msg ok';msg.textContent='Métricas carregadas diretamente da administração SaaS.';}
+  } catch(error){alvo.innerHTML='<div class="card"><div class="empty">Acesso administrativo não autorizado.</div></div>';if(msg){msg.className='msg err';msg.textContent=mensagemErroSupabase(error,'Falha ao carregar o painel SaaS.');}}
+}
+
+async function carregarUsuariosSaas() {
+  const alvo=document.getElementById('listaUsuariosSaas');if(!alvo)return;
+  try { const dados=await obterDadosPainelAdminGlobal(); const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
+    alvo.innerHTML=(dados.usuarios||[]).length?'<div class="lista">'+dados.usuarios.map(x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||x.email||'Usuário')}</div><div class="item-detalhe">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'Sem empresa')} · ${escaparHtmlBasico(lojas.get(String(x.loja_id))||'Sem loja')} · ${x.ativo===false?'Inativo':'Ativo'}</div></div></div>`).join('')+'</div>':'<div class="empty">Nenhum usuário encontrado.</div>';
+  } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
+}
+
+async function carregarConectoresSaas() {
+  const alvo=document.getElementById('listaConectoresSaas');if(!alvo)return;
+  try { const dados=await obterDadosPainelAdminGlobal(); const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
+    alvo.innerHTML=(dados.conectores||[]).length?'<div class="lista">'+dados.conectores.map(x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome_conexao||'Conector Raffinato')}</div><div class="item-detalhe">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'-')} · ${escaparHtmlBasico(lojas.get(String(x.loja_id))||'-')} · Instalação: ${escaparHtmlBasico(x.connector_instance_id||'não informada')} · Perfil: ${escaparHtmlBasico(x.connection_profile_id||'-')} · IdFilial Raffinato: ${Number(x.raffinato_filial_id||1)} · ${escaparHtmlBasico(x.status||'sem status')}</div></div></div>`).join('')+'</div>':'<div class="empty">Nenhum conector cadastrado.</div>';
+  } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
+}
 
 function usuarioPodeGerenciarEmpresasSaas() {
-  return usuarioEhAdministrador();
+  return contextoEhAdminGlobal() && usuarioSistemaLogado?.global_admin_authorized === true;
 }
 
 function usuarioPodeGerenciarLojasSaas() {
-  return usuarioEhAdministrador();
+  return contextoEhAdminGlobal() && usuarioSistemaLogado?.global_admin_authorized === true;
 }
 
 function nomeEmpresaSaas(item = {}) {
@@ -97,7 +137,9 @@ async function carregarEmpresasSaas({ render = true, silencioso = false } = {}) 
     return [];
   }
 
-  const { data, error } = await sb.from('empresas').select('*').order('nome', { ascending: true });
+  let data, error;
+  try { data = (await obterDadosPainelAdminGlobal({ renovar:true })).empresas || []; }
+  catch (erro) { error = erro; }
   if (error) {
     empresasSaasCache = [];
     if (render && lista) lista.innerHTML = '<div class="empty">Erro ao carregar empresas.</div>';
@@ -243,7 +285,9 @@ async function carregarLojasSaas() {
     return [];
   }
 
-  const { data, error } = await sb.from('lojas').select('*').order('nome', { ascending: true });
+  let data, error;
+  try { data = (await obterDadosPainelAdminGlobal({ renovar:true })).lojas || []; }
+  catch (erro) { error = erro; }
   if (error) {
     lojasSaasCache = [];
     inicializarCopiarDadosEntreLojasSaas();

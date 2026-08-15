@@ -306,7 +306,8 @@ function limparAvisosNotificacaoMaster() {
 }
 
 function obterStoragePaginaAtiva() {
-  return `zuqui_pagina_ativa:${obterChaveUsuarioNotificacoes()}`;
+  const modo = typeof obterModoContexto === 'function' ? obterModoContexto() : 'store';
+  return `zuqui_pagina_ativa:${obterChaveUsuarioNotificacoes()}:${modo}`;
 }
 
 function salvarPaginaAtiva(id) {
@@ -340,9 +341,10 @@ function restaurarPaginaAtivaSalvaOuPadrao() {
 
   // Sem pagina salva valida, usa a tela preferida ou a primeira disponivel.
   const telaPreferida = typeof obterTelaPreferidaAoLogin === 'function' ? obterTelaPreferidaAoLogin() : null;
-  const primeiroBtnVisivel = Array.from(document.querySelectorAll('#navContainer .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)'))
+  const seletorMenu = contextoEhAdminGlobal() ? '#navGlobalAdmin' : '#navContainer';
+  const primeiroBtnVisivel = Array.from(document.querySelectorAll(`${seletorMenu} .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)`))
     .find(btn => btn.style.display !== 'none' && (!usuarioSistemaLogado || usuarioPodeAcessar(btn.dataset.page)));
-  const paginaPrimeira = telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists';
+  const paginaPrimeira = contextoEhAdminGlobal() ? (primeiroBtnVisivel?.dataset?.page || 'dashboard_saas') : (telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists');
   if (document.getElementById(paginaPrimeira) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaPrimeira))) {
     const botaoPrincipal = document.querySelector(`.nav-btn[data-page="${paginaPrimeira}"]`);
     abrirPagina(paginaPrimeira, botaoPrincipal);

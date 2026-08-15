@@ -862,11 +862,20 @@ function obterPermissoesUsuario() {
 
 function usuarioPodeAcessar(pageId) {
   if (!usuarioSistemaLogado) return false;
+  const paginasAdminGlobal = new Set([
+    'dashboard_saas','empresas_saas','lojas_saas','usuarios_saas','conectores_saas',
+    'perfis','solicitacoes','emails','forcar_atualizacao_geral'
+  ]);
+  if (contextoEhAdminGlobal()) {
+    return usuarioSistemaLogado?.tipo === 'admin'
+      && usuarioSistemaLogado?.global_admin_authorized === true
+      && paginasAdminGlobal.has(pageId);
+  }
   // Autoridade global e contexto SaaS são coisas diferentes. Mesmo um usuário
   // administrador, quando está dentro de uma loja, não vê páginas do painel SaaS.
   const apenasAdminGlobal = ['solicitacoes', 'emails', 'forcar_atualizacao_geral', 'tela_preferida_login', 'empresas_saas', 'lojas_saas', 'configuracoes'];
   if (apenasAdminGlobal.includes(pageId)) {
-    return usuarioSistemaLogado?.tipo === 'admin' && !String(usuarioSistemaLogado?.loja_id || '').trim();
+    return false;
   }
   if (usuarioEhAdministrador()) return true;
   const permissoes = obterPermissoesUsuario();
@@ -2023,6 +2032,7 @@ function selecionarContaFinanceiraBaixa(id) {
     const hint = botao.querySelector('.hint');
     if (hint) hint.textContent = selecionada ? '✓ Conta selecionada' : 'Toque para selecionar';
   });
+  renderizarMenuContextual();
   const btnConfirmar = document.getElementById('btnConfirmarContaFinanceiraBaixa');
   if (btnConfirmar) btnConfirmar.disabled = false;
   const msg = document.getElementById('contaFinanceiraBaixaMsg');

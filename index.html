@@ -374,6 +374,22 @@
       </div>
     </div>
     </div><!-- /navContainer -->
+    <div id="navGlobalAdmin" hidden aria-label="Navegação da administração global">
+      <div class="nav-label">Administração SaaS</div>
+      <button class="nav-btn" data-page="dashboard_saas" onclick="abrirPagina('dashboard_saas', this)"><span class="nav-copy"><span class="nav-title">Dashboard SaaS</span><span class="nav-hint">Visão geral da plataforma</span></span></button>
+      <div class="nav-label">Cadastros globais</div>
+      <button class="nav-btn" data-page="empresas_saas" onclick="abrirPagina('empresas_saas', this)"><span class="nav-copy"><span class="nav-title">Empresas</span></span></button>
+      <button class="nav-btn" data-page="lojas_saas" onclick="abrirPagina('lojas_saas', this)"><span class="nav-copy"><span class="nav-title">Lojas / Filiais</span></span></button>
+      <button class="nav-btn" data-page="usuarios_saas" onclick="abrirPagina('usuarios_saas', this)"><span class="nav-copy"><span class="nav-title">Usuários</span></span></button>
+      <button class="nav-btn" data-page="perfis" onclick="abrirPagina('perfis', this)"><span class="nav-copy"><span class="nav-title">Perfis e permissões</span></span></button>
+      <div class="nav-label">Operação da plataforma</div>
+      <button class="nav-btn" data-page="conectores_saas" onclick="abrirPagina('conectores_saas', this)"><span class="nav-copy"><span class="nav-title">Conectores</span></span></button>
+      <button class="nav-btn" data-page="solicitacoes" onclick="abrirPagina('solicitacoes', this)"><span class="nav-copy"><span class="nav-title">Solicitações</span></span></button>
+      <button class="nav-btn" data-page="emails" onclick="abrirPagina('emails', this)"><span class="nav-copy"><span class="nav-title">Configuração de e-mail</span></span></button>
+      <button class="nav-btn" data-page="forcar_atualizacao_geral" onclick="forcarAtualizacaoGeralUsuarios()"><span class="nav-copy"><span class="nav-title">Atualização geral</span></span></button>
+      <div class="nav-label">Contexto operacional</div>
+      <button class="nav-btn" type="button" onclick="abrirTrocaLojaTopbar()"><span class="nav-copy"><span class="nav-title">Entrar em uma loja</span><span class="nav-hint">Sair da administração global</span></span></button>
+    </div>
   </aside>
 
   <!-- MAIN -->
@@ -793,6 +809,23 @@
           <div class="card-title">Destinatários cadastrados</div>
           <div id="listaDestinatariosEmail"><div class="empty">Carregando⬦</div></div>
         </div>
+      </section>
+
+      <section id="dashboard_saas" class="pagina">
+        <div class="page-title">Dashboard SaaS</div>
+        <div class="card"><div class="page-sub">Visão administrativa global do CheckDiário. Nenhuma loja operacional está selecionada neste modo.</div></div>
+        <div class="dash-grid" id="dashboardSaasMetricas"><div class="card"><div class="empty">Carregando métricas reais...</div></div></div>
+        <div class="msg" id="msgDashboardSaas"></div>
+      </section>
+
+      <section id="usuarios_saas" class="pagina">
+        <div class="page-title">Usuários do sistema</div>
+        <div class="card"><div class="card-title">Usuários por empresa e loja</div><div id="listaUsuariosSaas"><div class="empty">Carregando...</div></div></div>
+      </section>
+
+      <section id="conectores_saas" class="pagina">
+        <div class="page-title">Conectores</div>
+        <div class="card"><div class="card-title">Instalações e vínculos Raffinato</div><div class="page-sub">Somente metadados operacionais. Credenciais SQL permanecem protegidas no computador do conector.</div><div id="listaConectoresSaas"><div class="empty">Carregando...</div></div></div>
       </section>
 
       <section id="empresas_saas" class="pagina">
@@ -3274,11 +3307,11 @@
 </div>
 
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
-<script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
+<script src="./assets/js/01-core-supabase.js?v=20260815-global-admin-v1"></script>
 <script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js?v=20260811-movimentacao-recebivel-individual-v1"></script>
-<script src="./assets/js/04-navigation.js?v=20260810-produtos-raffinato"></script>
-<script src="./assets/js/05-shared-helpers.js?v=20260811-layout-global-v1"></script>
+<script src="./assets/js/03-core-state.js?v=20260815-global-admin-v1"></script>
+<script src="./assets/js/04-navigation.js?v=20260815-global-admin-v1"></script>
+<script src="./assets/js/05-shared-helpers.js?v=20260815-global-admin-v1"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=20260808-sem-execucoes-recentes-v4"></script>
 <script src="./assets/js/20-checklists.js"></script>
@@ -3298,7 +3331,7 @@
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
-<script src="./assets/js/43-saas-admin.js"></script>
+<script src="./assets/js/43-saas-admin.js?v=20260815-global-admin-v1"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
@@ -3396,7 +3429,7 @@
   </div>
 </div>
 
-<script src="./assets/js/79-runtime-extensions.js?v=3.2.37"></script>
+<script src="./assets/js/79-runtime-extensions.js?v=3.2.38"></script>
   <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
     <div class="escala-modal-card">
       <div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>

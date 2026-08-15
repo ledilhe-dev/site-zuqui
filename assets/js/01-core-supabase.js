@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.37';
-const APP_VERSION_LABEL = '3.2.37-raffinato-history-preserved';
+const APP_VERSION = '3.2.38';
+const APP_VERSION_LABEL = '3.2.38-global-admin-context';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -81,8 +81,20 @@ const TABELAS_COM_LOJA_ID = new Set([
 let filtroLojaSuspensoTemporariamente = false;
 let filtroEmpresaSuspensoTemporariamente = false;
 
+function obterModoContexto() {
+  const modo = String(usuarioSistemaLogado?.context_mode || '').trim();
+  if (modo === 'global_admin' || modo === 'store') return modo;
+  return usuarioSistemaLogado?.tipo === 'admin' && !String(usuarioSistemaLogado?.loja_id || '').trim()
+    ? 'global_admin' : 'store';
+}
+
+function contextoEhAdminGlobal() {
+  return obterModoContexto() === 'global_admin';
+}
+
 function obterEmpresaIdSessao() {
   if (filtroEmpresaSuspensoTemporariamente) return null;
+  if (contextoEhAdminGlobal()) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s) return null;
   return s.empresa_id || null;
@@ -90,6 +102,7 @@ function obterEmpresaIdSessao() {
 
 function obterLojaIdSessao() {
   if (filtroLojaSuspensoTemporariamente) return null;
+  if (contextoEhAdminGlobal()) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s) return null;
   return s.loja_id || null;
@@ -113,6 +126,7 @@ function aplicarFiltroLojaFuncionariosQuery(query) {
 function obterLojaAtualParaIsolamento() {
   try {
     if (filtroLojaSuspensoTemporariamente) return '';
+    if (contextoEhAdminGlobal()) return '';
     const direta = String(
       (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '')
       || usuarioSistemaLogado?.loja_id
