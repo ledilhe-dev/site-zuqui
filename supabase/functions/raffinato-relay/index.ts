@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { aggregateMandatoryV2 } from "./mandatory-v2.mjs";
 import { aggregatePizzaMandatoryV1 } from "./pizza-mandatory-v1.mjs";
 
 const cors = {
@@ -240,7 +239,7 @@ Deno.serve(async (request) => {
       for(let o=0;o<items.length;o+=1000){const rows=items.slice(o,o+1000).map((x:any)=>({...base,data:validateDate(x.data,"data"),hora:String(x.hora||"00:00:00").slice(0,8),id_venda:Number(x.id_venda),id_item:Number(x.id_item),id_pai:Number(x.id_pai),id_produto_pai:x.id_produto_pai==null?null:Number(x.id_produto_pai),produto_pai:String(x.produto_pai||"").slice(0,300),id_agrupamento_pai:x.id_agrupamento_pai==null?null:Number(x.id_agrupamento_pai),agrupamento_pai:String(x.agrupamento_pai||"").slice(0,300),quantidade_produto_principal:Number(x.quantidade_produto_principal||0),origem:String(x.origem||"VENDA_RAPIDA"),valor_item:Number(x.valor_item||0),id_grupo_obrigatorio:Number(x.id_grupo_obrigatorio),grupo_obrigatorio:String(x.grupo_obrigatorio||"").slice(0,300),quantidade_maxima:x.quantidade_maxima==null?null:Number(x.quantidade_maxima),quantidade_minima:x.quantidade_minima==null?null:Number(x.quantidade_minima),id_componente:x.id_componente==null?null:Number(x.id_componente),componente:String(x.componente||"").slice(0,300),quantidade_componente:Number(x.quantidade_componente||0),valor_componente:Number(x.valor_componente||0)})),result=await admin.from("raffinato_pizza_mandatory_data_v1").upsert(rows,{onConflict:"empresa_id,loja_id,id_filial,dataset_version,id_venda,id_pai,id_grupo_obrigatorio,id_item"});if(result.error)throw result.error;}return json({ok:true,quantidade:items.length,resolved_raffinato_filial_id:filial});
     }
 
-    const mappedReportActions=new Set(["abc_dashboard","mandatory_v2_dashboard","mandatory_v2_metadata","pizza_mandatory_metadata_v1","pizza_mandatory_report_v1","annual_comparison","sales_bi_dashboard","sales_canonical_dashboard","products_canonical_dashboard","products_dashboard","products_metadata","metadata_dashboard","billing_dashboard","billing_forms"]);
+    const mappedReportActions=new Set(["abc_dashboard","pizza_mandatory_metadata_v1","pizza_mandatory_report_v1","annual_comparison","sales_bi_dashboard","sales_canonical_dashboard","products_canonical_dashboard","products_dashboard","products_metadata","metadata_dashboard","billing_dashboard","billing_forms"]);
     if(mappedReportActions.has(String(body.action||""))){
       if(String(body.action||"").startsWith("pizza_mandatory_")&&body.id_filial!==undefined)throw new Error("O cliente nao pode definir a filial Raffinato.");
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
@@ -254,12 +253,6 @@ Deno.serve(async (request) => {
       console.info(JSON.stringify({event:"RAFFINATO_STORE_MAPPING_RESOLVED",request_id:requestId,action:body.action,empresa_id:body.empresa_id,loja_id:body.loja_id,connection_profile_id:mapping.connection_profile_id,raffinato_filial_id:body.id_filial,sql_filial_id:body.id_filial,server:mapping.instancia_sql,database:mapping.banco_dados}));
     }
 
-    if(body.action==="mandatory_v2_metadata"){
-      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);const filial=Number(body.id_filial);
-      const {data,error}=await admin.from("raffinato_agrupamentos_cache").select("id_agrupamento,nome,sincronizado_em").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",filial).order("nome");if(error)throw error;
-      return json({raffinato_filial_id:filial,connection_profile_id:body.connection_profile_id,agrupamentos:(data||[]).map((x:any)=>({id:x.id_agrupamento,nome:x.nome})),quantidade_agrupamentos:(data||[]).length,sincronizado_em:(data||[]).map((x:any)=>x.sincronizado_em).sort().pop()||null});
-    }
-
     if(body.action==="pizza_mandatory_metadata_v1"){
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);const filial=Number(body.id_filial),rows:any[]=[];
       for(let offset=0;offset<10000;offset+=1000){const {data,error}=await admin.from("raffinato_pizza_mandatory_metadata_v1").select("id_agrupamento,arvore,nome,sincronizado_em").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",filial).eq("dataset_version","pizza-v1").order("arvore").order("nome").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}
@@ -271,14 +264,6 @@ Deno.serve(async (request) => {
       for(let offset=0;offset<100000;offset+=1000){let q=admin.from("raffinato_pizza_mandatory_data_v1").select("*").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",filial).eq("dataset_version","pizza-v1").gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).range(offset,offset+999);if(body.origem)q=q.eq("origem",body.origem);const {data,error}=await q;if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}
       const groups=new Set((Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map(Number)),product=String(body.produto||"").trim().toLocaleLowerCase("pt-BR"),filtered=rows.filter(x=>{const stamp=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return stamp>=start&&stamp<end&&(!groups.size||groups.has(Number(x.id_agrupamento_pai)))&&(!product||String(x.id_produto_pai)===product||String(x.produto_pai||"").toLocaleLowerCase("pt-BR").includes(product));});
       return json({...aggregatePizzaMandatoryV1(filtered),resolved_raffinato_filial_id:filial,connection_profile_id:body.connection_profile_id,metadata_count:null,source_count:rows.length,filtered_count:filtered.length});
-    }
-
-    if(body.action==="mandatory_v2_dashboard"){
-      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);const filial=Number(body.id_filial),start=validateDateTime(body.inicio,"inicio"),end=validateDateTime(body.fim_exclusivo,"fim"),rows:any[]=[];
-      for(let offset=0;offset<100000;offset+=1000){let query=admin.from("raffinato_mandatory_v2_cache").select("*").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("id_filial",filial).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).range(offset,offset+999);if(body.origem)query=query.eq("origem",body.origem);const {data,error}=await query;if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}
-      const groupIds=new Set((Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map((x:any)=>Number(x)).filter(Number.isFinite)),product=String(body.produto||"").trim().toLocaleLowerCase("pt-BR");
-      const filtered=rows.filter((row:any)=>{const stamp=`${row.data}T${String(row.hora||"00:00:00").slice(0,8)}`;return stamp>=start&&stamp<end&&(!groupIds.size||groupIds.has(Number(row.id_agrupamento_pai)))&&(!product||String(row.id_produto_pai)===product||String(row.produto_pai||"").toLocaleLowerCase("pt-BR").includes(product));});
-      return json({...aggregateMandatoryV2(filtered),raffinato_filial_id:filial,connection_profile_id:body.connection_profile_id,rastreamento:{cache:rows.length,filtrado:filtered.length},origem_consulta:"mandatory_v2_cache"});
     }
 
     if(body.action==="abc_dashboard"){

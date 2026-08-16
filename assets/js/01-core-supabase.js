@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.38';
-const APP_VERSION_LABEL = '3.2.38-global-admin-context';
+const APP_VERSION = '3.2.39';
+const APP_VERSION_LABEL = '3.2.39-pizza-slots-bi';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

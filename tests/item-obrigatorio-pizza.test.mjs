@@ -32,13 +32,29 @@ test('SQL usa configuração ativa, pai real e quantidade do pai',()=>{
   assert.match(connector,/INNER JOIN dbo\.VendaItem PAI/);
   assert.match(connector,/VI\.IdTipoRegistro=3 AND VI\.IdAgrupamentoItemObrigatorio IS NOT NULL/);
 });
-test('agregação usa unidade venda+pai e fração 1/N',()=>{
-  const base={id_venda:1,id_pai:10,id_produto_pai:2,produto_pai:'Pizza',id_grupo_obrigatorio:7,grupo_obrigatorio:'Sabores',quantidade_produto_principal:1,valor_item:50,quantidade_componente:1,valor_componente:0};
-  const data=aggregatePizzaMandatoryV1([{...base,id_item:1,id_componente:101,componente:'A'},{...base,id_item:2,id_componente:102,componente:'B'}]);
-  assert.equal(data.resumo.total_pais,1);assert.equal(data.resumo.duas,1);assert.equal(data.itens[0].equivalente,.5);assert.equal(data.itens[1].equivalente,.5);
-});
+const base={id_venda:1,id_pai:10,id_produto_pai:2,produto_pai:'Pizza',id_grupo_obrigatorio:7,grupo_obrigatorio:'PIZZA GRAND',quantidade_produto_principal:1,quantidade_maxima:2,valor_item:50,valor_componente:0};
+const flavors=(max,parent,values)=>values.map(([id,name,qty],index)=>({...base,quantidade_maxima:max,quantidade_produto_principal:parent,id_item:index+1,id_componente:id,componente:name,quantidade_componente:qty}));
+const byFlavor=(data,name)=>data.itens.find(x=>x.sabor===name);
+test('max 2: sabor com dois slots é inteira',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,1,[[1,'Calabresa',2]]));assert.equal(d.resumo.inteiras,1);assert.equal(byFlavor(d,'Calabresa').inteiras,1);assert.equal(byFlavor(d,'Calabresa').equivalente,1)});
+test('max 2: 1+1 é meio a meio',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,1,[[1,'Calabresa',1],[2,'Portuguesa',1]]));assert.equal(d.resumo.duas,1);assert.equal(byFlavor(d,'Calabresa').meias,1);assert.equal(byFlavor(d,'Calabresa').equivalente,.5)});
+test('max 3: três slots do mesmo sabor é inteira',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',3]]));assert.equal(d.resumo.inteiras,1);assert.equal(byFlavor(d,'Calabresa').inteiras,1)});
+test('max 3: 2/3 + 1/3 é outra composição',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',2],[2,'Portuguesa',1]]));assert.equal(d.resumo.outras,1);assert.equal(byFlavor(d,'Calabresa').dois_tercos,1);assert.ok(Math.abs(byFlavor(d,'Calabresa').equivalente-2/3)<1e-8);assert.equal(byFlavor(d,'Portuguesa').tercos,1)});
+test('max 3: 1+1+1 são três sabores',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',1],[2,'Portuguesa',1],[3,'Mignon',1]]));assert.equal(d.resumo.tres,1);assert.ok(d.itens.every(x=>x.tercos===1))});
+test('pai 2: quatro slots iguais são duas inteiras',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,2,[[1,'Calabresa',4]]));assert.equal(d.resumo.inteiras,2);assert.equal(byFlavor(d,'Calabresa').inteiras,2)});
+test('pai 2: 2+2 são duas pizzas meio a meio',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,2,[[1,'Calabresa',2],[2,'Portuguesa',2]]));assert.equal(d.resumo.duas,2);assert.equal(byFlavor(d,'Calabresa').meias,2);assert.equal(byFlavor(d,'Calabresa').equivalente,1)});
+test('slots divergentes são marcados para revisão',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',2]]));assert.equal(d.resumo.revisar,1);assert.equal(d.records[0].composition,'REVISAR')});
 test('lifecycle SPA invalida e aborta ao desmontar',()=>{
   assert.match(frontend,/state\.generation\+\+/);assert.match(frontend,/state\.controller\?\.abort\(\)/);assert.match(frontend,/key\(context\(\)\)===key\(ctx\)/);
+});
+test('BI cruza filtros em memória e não consulta novamente a cada clique',()=>{
+  assert.match(frontend,/biFilters/);assert.match(frontend,/state\.records\.filter/);assert.match(frontend,/data-pair-flavor/);assert.match(frontend,/data-sort-table/);
+  assert.equal((frontend.match(/pizza_mandatory_report_v1/g)||[]).length,1);
+});
+test('relatório antigo foi removido da aplicação',()=>{
+  const index=fs.readFileSync('index.html','utf8'),navigation=fs.readFileSync('assets/js/04-navigation.js','utf8'),manifest=fs.readFileSync('assets/manifest.json','utf8');
+  assert.doesNotMatch(index,/raffinato_itens_obrigatorios_v2|95-raffinato-mandatory|116-raffinato-mandatory/);
+  assert.doesNotMatch(navigation,/raffinato_itens_obrigatorios_v2|RaffinatoMandatoryItems/);
+  assert.doesNotMatch(manifest,/95-raffinato-mandatory|116-raffinato-mandatory/);
 });
 test('exclusão da conexão exige token temporário de uso único',()=>{
   const settings=fs.readFileSync('assets/js/34-raffinato-sangrias.js','utf8');

@@ -104,7 +104,6 @@ async function raffinatoBridgePost(path, body) {
   const currentTenantKey=`${contextAtRequest.empresaId||''}:${contextAtRequest.lojaId||''}`;
   if(raffinatoTenantContextKey&&raffinatoTenantContextKey!==currentTenantKey){
     if(typeof RM!=='undefined')RM.cache.clear();
-    window.RaffinatoMandatoryItems?.reset?.();
     ['rmContent','abcContent'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">Contexto alterado. Consulte os dados da loja atual.</div>';});
   }
   raffinatoTenantContextKey=currentTenantKey;
