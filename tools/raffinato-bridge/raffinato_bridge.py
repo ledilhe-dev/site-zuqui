@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.5"
+CONNECTOR_VERSION = "1.7.6"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -98,7 +98,14 @@ DROP TABLE IF EXISTS #IdsDia;
 """
 
 SQL_FORMAS_PAGAMENTO = "SELECT Id AS id,LTRIM(RTRIM(Nome)) AS nome FROM dbo.FormaPagamento WITH(NOLOCK) WHERE ISNULL(LTRIM(RTRIM(Nome)),'')<>'' ORDER BY Nome;"
-SQL_AGRUPAMENTOS = "SELECT Id AS id,LTRIM(RTRIM(Nome)) AS nome FROM dbo.Agrupamento WITH(NOLOCK) WHERE ISNULL(LTRIM(RTRIM(Nome)),'')<>'' ORDER BY Nome;"
+SQL_AGRUPAMENTOS = """
+SELECT DISTINCT A.Id AS id,LTRIM(RTRIM(A.Nome)) AS nome,A.Arvore AS arvore
+FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
+JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=CA.IdAgrupamento
+WHERE CA.IdFilial=? AND ISNULL(CA.BloqueiaVenda,0)=0
+  AND ISNULL(LTRIM(RTRIM(A.Nome)),'')<>''
+ORDER BY A.Arvore,A.Nome;
+"""
 SQL_PRODUTOS_CATALOGO = """
 SELECT P.Id AS id,LTRIM(RTRIM(P.Nome)) AS nome,P.IdAgrupamento AS id_agrupamento,
  LTRIM(RTRIM(A.Nome)) AS agrupamento
@@ -467,42 +474,28 @@ GROUP BY P.Id,P.Nome,A.Id,A.Nome;
 
 SQL_ITENS_OBRIGATORIOS = """
 SET NOCOUNT ON;
-WITH Base AS (
- SELECT V.Id id_venda,V.Data,CONVERT(varchar(8),CAST(V.Hora AS time),108) Hora,V.NumeroComanda,
-  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY'
-       WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA'
-       ELSE 'VENDA_RAPIDA' END origem
- FROM dbo.Venda V WITH(NOLOCK) WHERE V.Data>=? AND V.Data<? AND V.IdFilial=?
-  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(V.Hora AS time)),CAST(CONVERT(date,V.Data) AS datetime2))>=?
-  AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(V.Hora AS time)),CAST(CONVERT(date,V.Data) AS datetime2))<?
-), Pais AS (
- SELECT B.*,I.Id id_pai,I.IdProduto id_produto_pai,P.Nome produto_pai,A.Id id_agrupamento_pai,A.Nome agrupamento_pai,
-  CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4)) valor_pai
- FROM Base B JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=B.id_venda
- JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento
- WHERE I.IdTipoRegistro=1 AND I.IdItemPai IS NULL AND I.IdStatusItem=1
-  AND EXISTS(SELECT 1 FROM dbo.VendaItem F WITH(NOLOCK) JOIN dbo.ComposicaoAgrupamento CA WITH(NOLOCK)
-   ON CA.IdAgrupamento=A.Id AND CA.IdAgrupamentoItemObrigatorio=F.IdAgrupamentoItemObrigatorio AND CA.IdProdutoComposicao=F.IdProduto
-   WHERE F.IdItemPai=I.Id AND F.IdStatusItem=1 AND F.IdTipoRegistro=3 AND F.IdAgrupamentoItemObrigatorio IS NOT NULL)
-), Filhos AS (
- SELECT P.*,F.Id id_filho,F.IdProduto id_componente,PC.Nome componente,F.IdAgrupamentoItemObrigatorio,IO.Descricao item_obrigatorio,
-  CAST(ISNULL(F.Quantidade,0) AS decimal(19,6)) quantidade_componente,CAST(ISNULL(F.ValorTotal,0) AS decimal(19,4)) valor_componente
- FROM Pais P JOIN dbo.VendaItem F WITH(NOLOCK) ON F.IdItemPai=P.id_pai AND F.IdStatusItem=1 AND F.IdTipoRegistro=3
- JOIN dbo.Produto PC WITH(NOLOCK) ON PC.Id=F.IdProduto JOIN dbo.AgrupamentoItemObrigatorio IO WITH(NOLOCK) ON IO.Id=F.IdAgrupamentoItemObrigatorio
- JOIN dbo.ComposicaoAgrupamento CA WITH(NOLOCK) ON CA.IdAgrupamento=P.id_agrupamento_pai AND CA.IdAgrupamentoItemObrigatorio=F.IdAgrupamentoItemObrigatorio AND CA.IdProdutoComposicao=F.IdProduto
-), Componentes AS (
- SELECT id_pai,id_componente,MAX(componente) componente,MAX(IdAgrupamentoItemObrigatorio) id_item_obrigatorio,MAX(item_obrigatorio) item_obrigatorio,
-  SUM(quantidade_componente) quantidade_componente,SUM(valor_componente) valor_componente
- FROM Filhos GROUP BY id_pai,id_componente
-), Pizza AS (
- SELECT P.*,COUNT(C.id_componente) sabores_distintos,SUM(C.valor_componente)+P.valor_pai valor_item,
-  MIN(C.id_item_obrigatorio) id_item_obrigatorio,MIN(C.item_obrigatorio) item_obrigatorio
- FROM Pais P JOIN Componentes C ON C.id_pai=P.id_pai GROUP BY P.id_venda,P.Data,P.Hora,P.NumeroComanda,P.origem,P.id_pai,P.id_produto_pai,P.produto_pai,P.id_agrupamento_pai,P.agrupamento_pai,P.valor_pai
-)
-SELECT P.*,C.id_componente,C.componente,C.quantidade_componente,C.valor_componente
-FROM Pizza P JOIN Componentes C ON C.id_pai=P.id_pai
-WHERE (? IS NULL OR P.id_agrupamento_pai=?) AND (? IS NULL OR P.id_item_obrigatorio=?) AND (? IS NULL OR P.id_produto_pai=?) AND (? IS NULL OR P.origem=?)
- AND (? IS NULL OR EXISTS(SELECT 1 FROM Componentes CX WHERE CX.id_pai=P.id_pai AND CX.id_componente=?)) ORDER BY P.Data,P.Hora,P.id_pai,C.id_componente;
+SELECT VI.IdVenda id_venda,CONVERT(date,VI.Data) Data,CONVERT(varchar(8),CAST(VI.Hora AS time),108) Hora,
+ CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=VI.IdVenda) THEN 'DELIVERY'
+      WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=VI.IdVenda)
+        OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=VI.IdVenda) THEN 'CARTAO_MESA'
+      ELSE 'VENDA_RAPIDA' END origem,
+ PAI.Id id_pai,PAI.IdProduto id_produto_pai,PP.Nome produto_pai,PP.IdAgrupamento id_agrupamento_pai,A.Nome agrupamento_pai,
+ CAST(ISNULL(PAI.ValorTotal,0) AS decimal(19,4)) valor_item,
+ VI.IdProduto id_componente,PI.Nome componente,VI.IdAgrupamentoItemObrigatorio id_item_obrigatorio,AIO.Descricao item_obrigatorio,
+ CAST(ISNULL(VI.Quantidade,0) AS decimal(19,6)) quantidade_componente,
+ CAST(ISNULL(VI.ValorTotal,0) AS decimal(19,4)) valor_componente
+FROM dbo.VendaItem VI WITH(NOLOCK)
+JOIN dbo.AgrupamentoItemObrigatorio AIO WITH(NOLOCK) ON AIO.Id=VI.IdAgrupamentoItemObrigatorio
+LEFT JOIN dbo.Produto PI WITH(NOLOCK) ON PI.Id=VI.IdProduto
+LEFT JOIN dbo.VendaItem PAI WITH(NOLOCK) ON PAI.Id=VI.IdItemPai
+LEFT JOIN dbo.Produto PP WITH(NOLOCK) ON PP.Id=PAI.IdProduto
+LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=PP.IdAgrupamento
+WHERE VI.IdFilial=? AND VI.Data>=? AND VI.Data<?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(VI.Hora AS time)),CAST(CONVERT(date,VI.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(VI.Hora AS time)),CAST(CONVERT(date,VI.Data) AS datetime2))<?
+ AND VI.IdTipoRegistro=3 AND VI.IdAgrupamentoItemObrigatorio IS NOT NULL
+ {dynamic_filters}
+ORDER BY VI.Data,VI.Hora,PAI.Id,VI.Id;
 """
 
 SQL_VENDAS_STATUS = """
@@ -660,10 +653,14 @@ def migrate_legacy_configuration() -> None:
             "active": True, "last_test_at": None, "last_status": "migrated",
         })
         state["profiles"][profile_id] = profile
+        legacy_filial = config.get("id_filial")
+        if legacy_filial is None or int(legacy_filial) <= 0:
+            logger.warning("Configuracao legada da loja %s sem filial; vinculo nao foi criado", store_id)
+            continue
         state["mappings"][store_id] = {
             "checkdiario_empresa_id": str(config.get("empresa_id") or ""),
             "checkdiario_filial_id": store_id, "connection_profile_id": profile_id,
-            "raffinato_filial_id": int(config.get("id_filial") or 1), "active": True,
+            "raffinato_filial_id": int(legacy_filial), "active": True,
         }
     save_profile_state(state)
     logger.info("Migracao de configuracao concluida | perfis=%s | backup=%s", len(state["profiles"]), BACKUP_DIR)
@@ -744,7 +741,8 @@ def config_from_body(body: dict[str, Any], base: dict[str, Any] | None = None) -
         "driver": str(body.get("driver") or base.get("driver") or "{ODBC Driver 17 for SQL Server}").strip(),
         "empresa_id": str(body.get("empresa_id") or base.get("empresa_id") or "").strip(),
         "relay_token": str(body.get("relay_token") or base.get("relay_token") or "").strip(),
-        "id_filial": int(body.get("raffinato_filial_id") or body.get("id_filial") or base.get("id_filial") or 1),
+        "id_filial": int(body.get("raffinato_filial_id") or body.get("id_filial") or base.get("id_filial"))
+            if (body.get("raffinato_filial_id") or body.get("id_filial") or base.get("id_filial")) is not None else None,
     }
     missing = [key for key in ("server", "database", "uid", "pwd") if not config[key]]
     if missing:
@@ -1103,7 +1101,7 @@ def query_formas_pagamento(config: dict[str, Any]) -> dict[str, Any]:
 def query_metadados_catalogo(config: dict[str, Any], filial: int) -> dict[str, Any]:
     with pyodbc.connect(connection_string(config), timeout=8) as connection:
         connection.timeout=45;cursor=connection.cursor()
-        cursor.execute(SQL_AGRUPAMENTOS);agrupamentos=rows_as_dicts(cursor)
+        cursor.execute(SQL_AGRUPAMENTOS,filial);agrupamentos=rows_as_dicts(cursor)
         cursor.execute(SQL_PRODUTOS_CATALOGO);produtos=rows_as_dicts(cursor)
         cursor.execute(SQL_FORMAS_PAGAMENTO);formas=rows_as_dicts(cursor)
     return {"id_filial":filial,"agrupamentos":agrupamentos,"produtos":produtos,"formas_pagamento":formas,
@@ -1289,12 +1287,23 @@ def query_curva_abc_sync(config:dict[str,Any],start:datetime,end:datetime,filial
 
 def query_itens_obrigatorios_rows(config:dict[str,Any],body:dict[str,Any]) -> list[dict[str,Any]]:
     start=parse_datetime(body.get("inicio"),"Inicio"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
-    filial=resolve_raffinato_filial(config,body); coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
-    group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; mandatory=int(body["id_item_obrigatorio"]) if body.get("id_item_obrigatorio") else None
-    parent=int(body["id_produto_pai"]) if body.get("id_produto_pai") else None; component=int(body["id_componente"]) if body.get("id_componente") else None; origem=str(body.get("origem") or "").strip() or None
-    filters=(group,group,mandatory,mandatory,parent,parent,origem,origem,component,component); params=(start.date(),coarse_end,filial,start,end)+filters
+    filial=resolve_raffinato_filial(config,body)
+    group_ids=[]
+    for value in body.get("agrupamentos") or ([body.get("id_agrupamento")] if body.get("id_agrupamento") else []):
+        try: group_ids.append(int(value))
+        except (TypeError,ValueError): continue
+    clauses=[];filters=[]
+    if group_ids:
+        clauses.append(f"AND PP.IdAgrupamento IN ({','.join('?' for _ in group_ids)})");filters.extend(group_ids)
+    for key,column in (("id_item_obrigatorio","VI.IdAgrupamentoItemObrigatorio"),("id_produto_pai","PAI.IdProduto"),("id_componente","VI.IdProduto")):
+        if body.get(key):clauses.append(f"AND {column}=?");filters.append(int(body[key]))
+    origem=str(body.get("origem") or "").strip()
+    if origem:clauses.append("AND (CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=VI.IdVenda) THEN 'DELIVERY' WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=VI.IdVenda) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=VI.IdVenda) THEN 'CARTAO_MESA' ELSE 'VENDA_RAPIDA' END)=?");filters.append(origem)
+    product=str(body.get("produto_pai") or body.get("produto") or "").strip()
+    if product:clauses.append("AND (CONVERT(varchar(40),PAI.IdProduto)=? OR PP.Nome LIKE ?)");filters.extend((product,f"%{product}%"))
+    sql=SQL_ITENS_OBRIGATORIOS.format(dynamic_filters="\n ".join(clauses));params=(filial,start.date(),end.date()+timedelta(days=1),start,end,*filters)
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
-        connection.timeout=90; cursor=connection.cursor(); cursor.execute(SQL_ITENS_OBRIGATORIOS,*params); joined=rows_as_dicts(cursor)
+        connection.timeout=90; cursor=connection.cursor(); cursor.execute(sql,*params); joined=rows_as_dicts(cursor)
     return joined
 
 
@@ -1548,7 +1557,7 @@ def set_cache_meta(store_id: str, **values: Any) -> None:
           ultima_data=excluded.ultima_data,ultimo_documento=excluded.ultimo_documento,status=excluded.status,mensagem=excluded.mensagem""", data)
 
 
-def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int = 1) -> None:
+def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int) -> None:
     start = datetime.combine(day, datetime.min.time()); end = start + timedelta(days=1)
     set_cache_meta(store_id, status="sincronizando", mensagem=f"Sincronizando {day.isoformat()}")
     body = {"inicio":start.isoformat(),"fim_exclusivo":end.isoformat(),"id_filial":filial}
@@ -1603,7 +1612,7 @@ def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int
     set_cache_meta(store_id,ultima_sincronizacao=now_iso,ultima_data=day.isoformat(),status="sincronizado",mensagem="Sincronizado")
 
 
-def sync_cache_period(store_id:str,config:dict[str,Any],start_day:date,end_exclusive:date,filial:int=1) -> None:
+def sync_cache_period(store_id:str,config:dict[str,Any],start_day:date,end_exclusive:date,filial:int) -> None:
     """Sincroniza até sete dias em uma única consulta e mantém agregados separados por dia."""
     if end_exclusive<=start_day or (end_exclusive-start_day).days>7:
         raise ValueError("O bloco de cache deve conter entre 1 e 7 dias.")
@@ -1725,7 +1734,7 @@ def cache_status(store_id:str) -> dict[str,Any]:
 
 
 def query_cached_products(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
-    start=parse_datetime(body.get("inicio"),"Início").date().isoformat(); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo").date().isoformat(); filial=int(body.get("id_filial") or 1)
+    start=parse_datetime(body.get("inicio"),"Início").date().isoformat(); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo").date().isoformat(); filial=int(body["id_filial"])
     product=str(body.get("produto") or "").strip(); group=str(body.get("id_agrupamento") or "").strip()
     sql="""SELECT id_produto codigo,produto,id_agrupamento,agrupamento,SUM(quantidade) quantidade,SUM(faturamento) total_faturado FROM produtos_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?"""; params:list[Any]=[store_id,filial,start,end]
     if product: sql+=" AND (id_produto=? OR produto LIKE ?)";params.extend([product,f"%{product}%"])
@@ -1740,7 +1749,7 @@ def query_cached_products(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
 
 
 def query_cached_cross(store_id:str,body:dict[str,Any]) -> dict[str,Any]:
-    start=parse_datetime(body.get("inicio"),"Início").date().isoformat(); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo").date().isoformat(); filial=int(body.get("id_filial") or 1)
+    start=parse_datetime(body.get("inicio"),"Início").date().isoformat(); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo").date().isoformat(); filial=int(body["id_filial"])
     product=str(body.get("produto") or "").strip(); group=str(body.get("id_agrupamento") or "").strip(); payment=str(body.get("id_forma_pagamento") or "").strip(); module=str(body.get("modulo_venda") or "").strip()
     sql="""SELECT data,id_produto codigo,produto,id_agrupamento,agrupamento,id_forma_pagamento,forma_pagamento,modulo_venda,SUM(quantidade_rateada) quantidade_atribuida,SUM(valor_rateado) valor_atribuido,SUM(valor_rateado) faturamento_produto FROM produto_pagamento_modulo_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?""";params:list[Any]=[store_id,filial,start,end]
     if product:sql+=" AND (id_produto=? OR produto LIKE ?)";params.extend([product,f"%{product}%"])
@@ -1917,7 +1926,7 @@ def query_annual_comparison(store_id:str,body:dict[str,Any],config:dict[str,Any]
         return query_annual_product_sql(config,body,first,last)
     if str(body.get("mode") or "") == "unknown_origins" and config:
         return query_annual_unknown_origins(config,body,last)
-    start=f"{first:04d}-01-01";end=f"{last+1:04d}-01-01";filial=int(body.get("id_filial") or 1);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();mode=str(body.get("mode") or "summary")
+    start=f"{first:04d}-01-01";end=f"{last+1:04d}-01-01";filial=int(body["id_filial"]);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();mode=str(body.get("mode") or "summary")
     product_where="";product_params:list[Any]=[]
     if module: product_where+=" AND modulo_venda=?";product_params.append(module)
     if group: product_where+=" AND id_agrupamento=?";product_params.append(group)
@@ -2160,7 +2169,7 @@ class Handler(BaseHTTPRequestHandler):
                 state["mappings"][store_id] = {
                     "checkdiario_empresa_id": str(body.get("empresa_id") or config.get("empresa_id") or ""),
                     "checkdiario_filial_id": store_id, "connection_profile_id": profile_id,
-                    "raffinato_filial_id": int(body.get("raffinato_filial_id") or config.get("id_filial") or 1), "active": True,
+                    "raffinato_filial_id": int(body.get("raffinato_filial_id") or config.get("id_filial")), "active": True,
                 }
                 save_profile_state(state)
                 result.update({"referencia_segredo": f"dpapi-profile:{profile_id}", "connection_profile_id": profile_id,
