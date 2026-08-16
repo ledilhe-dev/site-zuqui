@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.6"
+CONNECTOR_VERSION = "1.7.7-candidate"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -712,6 +712,49 @@ def mapped_config(store_id: str) -> dict[str, Any] | None:
     return {**profile, "id_filial": int(filial)}
 
 
+def load_mapped_store_configs() -> dict[str, dict[str, Any]]:
+    """Resolve as lojas pela fonte multiempresa; o arquivo legado fornece apenas compatibilidade."""
+    state = load_profile_state()
+    try:
+        legacy = load_store_configs()
+    except Exception:
+        logger.exception("Falha ao ler configuracoes legadas durante resolucao dos vinculos")
+        legacy = {}
+    resolved: dict[str, dict[str, Any]] = {}
+    for raw_store_id, mapping in state.get("mappings", {}).items():
+        store_id = str(raw_store_id)
+        if not mapping or not mapping.get("active", True):
+            continue
+        profile = state.get("profiles", {}).get(mapping.get("connection_profile_id"))
+        if not profile or not profile.get("active", True):
+            continue
+        filial = mapping.get("raffinato_filial_id")
+        if filial is None or int(filial) <= 0:
+            continue
+        compatibility = legacy.get(store_id, {})
+        empresa_id = str(
+            mapping.get("checkdiario_empresa_id")
+            or state.get("paired_empresa_id")
+            or profile.get("empresa_id")
+            or compatibility.get("empresa_id")
+            or ""
+        ).strip()
+        relay_token = str(
+            state.get("connector_credential")
+            or profile.get("relay_token")
+            or compatibility.get("relay_token")
+            or ""
+        ).strip()
+        resolved[store_id] = {
+            **compatibility,
+            **profile,
+            "empresa_id": empresa_id,
+            "relay_token": relay_token,
+            "id_filial": int(filial),
+        }
+    return resolved
+
+
 def load_store_configs() -> dict[str, dict[str, Any]]:
     if not STORE_CONFIG_PATH.exists():
         return {}
@@ -830,7 +873,7 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
     full_synced: set[str] = set()
     while not stop_event.is_set():
         try:
-            configs = load_store_configs()
+            configs = load_mapped_store_configs()
         except Exception:
             logger.exception("Nao foi possivel carregar configuracoes para sincronizacao")
             stop_event.wait(30)
@@ -1691,7 +1734,7 @@ def cache_sync_loop(stop_event: threading.Event) -> None:
     initialized:set[str]=set()
     while not stop_event.is_set():
         try:
-            for store_id,config in load_store_configs().items():
+            for store_id,config in load_mapped_store_configs().items():
                 if not CACHE_SYNC_LOCK.acquire(blocking=False): continue
                 try:
                     today=date.today()

@@ -48,6 +48,39 @@ class MultiempresaTests(unittest.TestCase):
         self.assertEqual(resolved["id_filial"], 5)
         self.assertNotEqual(store_id, str(resolved["id_filial"]))
 
+    def test_background_sync_uses_mapping_instead_of_stale_legacy_filial(self):
+        store_id = "gustare-delivery"
+        profile_id = "gustare-sql"
+        bridge.save_store_configs({store_id: {
+            "server":"old-server", "database":"old-db", "uid":"old", "pwd":"old",
+            "id_filial":1, "empresa_id":"gustare-company", "relay_token":"legacy-token",
+        }})
+        state = bridge.load_profile_state()
+        state["paired_empresa_id"] = "gustare-company"
+        state["connector_credential"] = "installation-token"
+        state["profiles"][profile_id] = {
+            "id":profile_id, "active":True, "server":"current-server", "database":"current-db",
+            "uid":"current", "pwd":"current-secret",
+        }
+        state["mappings"][store_id] = {
+            "checkdiario_empresa_id":"gustare-company", "checkdiario_filial_id":store_id,
+            "connection_profile_id":profile_id, "raffinato_filial_id":2, "active":True,
+        }
+        bridge.save_profile_state(state)
+
+        config = bridge.load_mapped_store_configs()[store_id]
+
+        self.assertEqual(config["id_filial"], 2)
+        self.assertEqual(config["server"], "current-server")
+        self.assertEqual(config["relay_token"], "installation-token")
+        self.assertEqual(config["empresa_id"], "gustare-company")
+
+    def test_background_sync_does_not_fallback_to_unmapped_legacy_store(self):
+        bridge.save_store_configs({"legacy-only": {
+            "server":"sql", "database":"db", "uid":"u", "pwd":"p", "id_filial":1,
+        }})
+        self.assertEqual(bridge.load_mapped_store_configs(), {})
+
     def test_legacy_migration_backs_up_and_preserves_values(self):
         legacy = {"server": "srv\\sql", "database": "Raffinato", "uid": "user", "pwd": "secret", "id_filial": 1}
         bridge.save_store_configs({"zuqui-store":legacy})
