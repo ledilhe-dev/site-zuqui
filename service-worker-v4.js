@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v177-raffinato-mandatory-restored';
+const CACHE_NAME = 'check-diario-pwa-v178-raffinato-mandatory-v2';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

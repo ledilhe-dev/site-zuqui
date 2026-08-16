@@ -19,7 +19,7 @@ const topTitles = {
   relatorio_vendas_raffinato: ['Análise de Vendas Raffinato', 'Produtos × formas de pagamento'],
   relatorio_comparativo_anual: ['Comparativo Anual', 'Comparação histórica de faturamento, vendas e produtos'],
   relatorio_curva_abc_raffinato: ['Curva ABC Raffinato', 'Classificação por faturamento, giro e lucro'],
-  relatorio_itens_obrigatorios_raffinato: ['Itens Obrigatórios Raffinato', 'Itens principais e componentes vinculados'],
+  raffinato_itens_obrigatorios_v2: ['Itens Obrigatórios Raffinato', 'Itens principais e componentes vinculados'],
   financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
   financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
   financeiro_contasapagar: ['Cadastro de contas a pagar', 'Lançamentos financeiros por fornecedor'],
@@ -58,7 +58,7 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato', 'relatorio_vendas_raffinato', 'relatorio_comparativo_anual', 'relatorio_curva_abc_raffinato', 'relatorio_itens_obrigatorios_raffinato'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato', 'relatorio_vendas_raffinato', 'relatorio_comparativo_anual', 'relatorio_curva_abc_raffinato', 'raffinato_itens_obrigatorios_v2'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
@@ -696,7 +696,7 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_produtos_raffinato' && typeof iniciarTelaProdutosRaffinato === 'function') { iniciarTelaProdutosRaffinato(); }
   if (id === 'relatorio_vendas_raffinato' && typeof iniciarTelaAnaliseVendasRaffinato === 'function') { iniciarTelaAnaliseVendasRaffinato(); }
   if (id === 'relatorio_curva_abc_raffinato' && typeof iniciarTelaCurvaAbcRaffinato === 'function') { iniciarTelaCurvaAbcRaffinato(); }
-  if (id === 'relatorio_itens_obrigatorios_raffinato' && typeof iniciarTelaItensObrigatoriosRaffinato === 'function') { iniciarTelaItensObrigatoriosRaffinato(); }
+  if (id === 'raffinato_itens_obrigatorios_v2' && window.RaffinatoMandatoryItems) { window.RaffinatoMandatoryItems.mount(); }
   if (id === 'relatorio_comparativo_anual' && typeof iniciarComparativoAnual === 'function') { iniciarComparativoAnual(); }
   if (id === 'financeiro_fornecedores') {
     limparFormularioFornecedorFinanceiro();

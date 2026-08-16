@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.7"
+CONNECTOR_VERSION = "1.7.8"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -472,16 +472,17 @@ WHERE I.IdStatusItem=1
 GROUP BY P.Id,P.Nome,A.Id,A.Nome;
 """
 
-SQL_ITENS_OBRIGATORIOS = """
+SQL_MANDATORY_V2 = """
 SET NOCOUNT ON;
-SELECT VI.IdVenda id_venda,CONVERT(date,VI.Data) Data,CONVERT(varchar(8),CAST(VI.Hora AS time),108) Hora,
+SELECT VI.Id id_item,VI.IdVenda id_venda,CONVERT(date,VI.Data) data,CONVERT(varchar(8),CAST(VI.Hora AS time),108) hora,
  CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=VI.IdVenda) THEN 'DELIVERY'
       WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=VI.IdVenda)
         OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=VI.IdVenda) THEN 'CARTAO_MESA'
       ELSE 'VENDA_RAPIDA' END origem,
  PAI.Id id_pai,PAI.IdProduto id_produto_pai,PP.Nome produto_pai,PP.IdAgrupamento id_agrupamento_pai,A.Nome agrupamento_pai,
  CAST(ISNULL(PAI.ValorTotal,0) AS decimal(19,4)) valor_item,
- VI.IdProduto id_componente,PI.Nome componente,VI.IdAgrupamentoItemObrigatorio id_item_obrigatorio,AIO.Descricao item_obrigatorio,
+ VI.IdProduto id_componente,PI.Nome componente,VI.IdAgrupamentoItemObrigatorio id_grupo_obrigatorio,AIO.Descricao grupo_obrigatorio,
+ AIO.QuantidadeMaxima quantidade_maxima,AIO.QuantidadeMinima quantidade_minima,
  CAST(ISNULL(VI.Quantidade,0) AS decimal(19,6)) quantidade_componente,
  CAST(ISNULL(VI.ValorTotal,0) AS decimal(19,4)) valor_componente
 FROM dbo.VendaItem VI WITH(NOLOCK)
@@ -855,8 +856,9 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         "documents":documents,"items":canonical_items,"open_deliveries":open_deliveries,
     },timeout=120)
     abc_rows=query_curva_abc_sync(config,start,end+timedelta(seconds=1),filial)
-    io_rows=query_itens_obrigatorios_rows(config,{"inicio":start.isoformat(),"fim_exclusivo":(end+timedelta(seconds=1)).isoformat(),"id_filial":filial})
-    relay_post({"action":"managerial_sync","token":config["relay_token"],"loja_id":store_id,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"abc_items":abc_rows,"mandatory_items":io_rows},timeout=180)
+    relay_post({"action":"managerial_sync","token":config["relay_token"],"loja_id":store_id,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"abc_items":abc_rows},timeout=180)
+    mandatory_rows=query_mandatory_v2_rows(config,start,end+timedelta(seconds=1),filial)
+    relay_post({"action":"mandatory_v2_sync","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":mandatory_rows},timeout=180)
 
 
 def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
@@ -1328,56 +1330,12 @@ def query_curva_abc_sync(config:dict[str,Any],start:datetime,end:datetime,filial
     return [{**row,"id_filial":filial} for row in rows]
 
 
-def query_itens_obrigatorios_rows(config:dict[str,Any],body:dict[str,Any]) -> list[dict[str,Any]]:
-    start=parse_datetime(body.get("inicio"),"Inicio"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
-    filial=resolve_raffinato_filial(config,body)
-    group_ids=[]
-    for value in body.get("agrupamentos") or ([body.get("id_agrupamento")] if body.get("id_agrupamento") else []):
-        try: group_ids.append(int(value))
-        except (TypeError,ValueError): continue
-    clauses=[];filters=[]
-    if group_ids:
-        clauses.append(f"AND PP.IdAgrupamento IN ({','.join('?' for _ in group_ids)})");filters.extend(group_ids)
-    for key,column in (("id_item_obrigatorio","VI.IdAgrupamentoItemObrigatorio"),("id_produto_pai","PAI.IdProduto"),("id_componente","VI.IdProduto")):
-        if body.get(key):clauses.append(f"AND {column}=?");filters.append(int(body[key]))
-    origem=str(body.get("origem") or "").strip()
-    if origem:clauses.append("AND (CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=VI.IdVenda) THEN 'DELIVERY' WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=VI.IdVenda) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=VI.IdVenda) THEN 'CARTAO_MESA' ELSE 'VENDA_RAPIDA' END)=?");filters.append(origem)
-    product=str(body.get("produto_pai") or body.get("produto") or "").strip()
-    if product:clauses.append("AND (CONVERT(varchar(40),PAI.IdProduto)=? OR PP.Nome LIKE ?)");filters.extend((product,f"%{product}%"))
-    sql=SQL_ITENS_OBRIGATORIOS.format(dynamic_filters="\n ".join(clauses));params=(filial,start.date(),end.date()+timedelta(days=1),start,end,*filters)
+def query_mandatory_v2_rows(config:dict[str,Any],start:datetime,end:datetime,filial:int) -> list[dict[str,Any]]:
+    sql=SQL_MANDATORY_V2.format(dynamic_filters="")
+    params=(filial,start.date(),end.date()+timedelta(days=1),start,end)
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=90; cursor=connection.cursor(); cursor.execute(sql,*params); joined=rows_as_dicts(cursor)
     return joined
-
-
-def query_itens_obrigatorios(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
-    joined=query_itens_obrigatorios_rows(config,body)
-    pizzas=[]; components=[]; seen=set()
-    for row in joined:
-        parent_key=str(row["id_pai"])
-        if parent_key not in seen:
-            seen.add(parent_key); pizzas.append({key:value for key,value in row.items() if key not in ("id_componente","componente","quantidade_componente","valor_componente")})
-        components.append({"id_pai":row["id_pai"],"id_componente":row["id_componente"],"componente":row["componente"],"id_item_obrigatorio":row["id_item_obrigatorio"],"item_obrigatorio":row["item_obrigatorio"],"quantidade_componente":row["quantidade_componente"],"valor_componente":row["valor_componente"]})
-    by_parent={str(p["id_pai"]):p for p in pizzas}; children={}
-    for c in components: children.setdefault(str(c["id_pai"]),[]).append(c)
-    flavors={}; combinations={}; parents={}; channels={}; details=[]
-    for pizza in pizzas:
-        comps=children.get(str(pizza["id_pai"]),[]); distinct=len(comps); kind="inteira" if distinct==1 else ("meia" if distinct==2 else "multipla")
-        value=float(pizza.get("valor_item") or 0); fraction=1/distinct if distinct else 0
-        combo_ids=tuple(sorted(str(c["id_componente"]) for c in comps)); combo_label=" + ".join(c["componente"] for c in sorted(comps,key=lambda x:str(x["id_componente"])))
-        if distinct>=2:
-            combo=combinations.setdefault("|".join(combo_ids),{"ids":combo_ids,"combinacao":combo_label,"quantidade":0}); combo["quantidade"]+=1
-        for c in comps:
-            f=flavors.setdefault(str(c["id_componente"]),{"id":c["id_componente"],"sabor":c["componente"],"inteiras":0,"participacoes_meia":0,"participacoes_multiplas":0,"faturamento_atribuido":0.0,"equivalente":0.0})
-            if kind=="inteira": f["inteiras"]+=1
-            elif kind=="meia": f["participacoes_meia"]+=1
-            else: f["participacoes_multiplas"]+=1
-            f["equivalente"]+=fraction; f["faturamento_atribuido"]+=value*fraction
-        parent_key=str(pizza["id_produto_pai"]); ps=parents.setdefault(parent_key,{"id":pizza["id_produto_pai"],"produto":pizza["produto_pai"],"agrupamento":pizza["agrupamento_pai"],"total":0,"inteiras":0,"meias":0,"multiplas":0,"faturamento":0.0}); ps["total"]+=1; ps[kind+"s" if kind!="meia" else "meias"]+=1; ps["faturamento"]+=value
-        ch=channels.setdefault(str(pizza["origem"]),{"canal":pizza["origem"],"total":0,"inteiras":0,"meias":0,"multiplas":0,"faturamento":0.0}); ch["total"]+=1; ch[kind+"s" if kind!="meia" else "meias"]+=1; ch["faturamento"]+=value
-        details.append({**pizza,"tipo":kind,"sabores":combo_label,"valor_item":value})
-    total=len(pizzas); revenue=sum(float(p.get("valor_item") or 0) for p in pizzas); whole=sum(1 for d in details if d["tipo"]=="inteira"); half=sum(1 for d in details if d["tipo"]=="meia")
-    return {"resumo":{"total":total,"inteiras":whole,"meias":half,"multiplas":total-whole-half,"percentual_inteiras":whole/total*100 if total else 0,"percentual_meias":half/total*100 if total else 0,"faturamento":revenue,"ticket_medio":revenue/total if total else 0,"sabores":len(flavors)},"sabores":sorted(flavors.values(),key=lambda x:x["equivalente"],reverse=True),"combinacoes":sorted(combinations.values(),key=lambda x:x["quantidade"],reverse=True),"pais":sorted(parents.values(),key=lambda x:x["total"],reverse=True),"canais":sorted(channels.values(),key=lambda x:x["total"],reverse=True),"detalhes":details if body.get("detalhes") else []}
 
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -2111,7 +2069,6 @@ class Handler(BaseHTTPRequestHandler):
             "/api/raffinato/vendas-analise",
             "/api/raffinato/vendas-gerencial",
             "/api/raffinato/curva-abc",
-            "/api/raffinato/itens-obrigatorios",
             "/api/raffinato/comparativo-anual",
             "/api/raffinato/cache-status",
             "/api/raffinato/cache-refresh",
@@ -2279,8 +2236,6 @@ class Handler(BaseHTTPRequestHandler):
                     result = query_vendas_gerencial(config, body)
                 elif route == "/api/raffinato/curva-abc":
                     result = query_curva_abc(config, body)
-                elif route == "/api/raffinato/itens-obrigatorios":
-                    result = query_itens_obrigatorios(config, body)
                 else:
                     result = query_vendas_analise_completa(config, body)
                 self.send_json(200, result)

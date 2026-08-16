@@ -81,6 +81,19 @@ class MultiempresaTests(unittest.TestCase):
         }})
         self.assertEqual(bridge.load_mapped_store_configs(), {})
 
+    def test_mandatory_v2_sql_uses_parent_group_and_real_required_rows(self):
+        sql = bridge.SQL_MANDATORY_V2
+        self.assertIn("PP.IdAgrupamento", sql)
+        self.assertIn("VI.IdTipoRegistro=3", sql)
+        self.assertIn("VI.IdAgrupamentoItemObrigatorio IS NOT NULL", sql)
+        self.assertIn("PAI.Id=VI.IdItemPai", sql)
+        self.assertNotIn("IdFilial=1", sql)
+
+    def test_gustare_filial_two_metadata_fixture_has_44_groups(self):
+        groups = [{"id": value, "nome": f"Grupo {value}"} for value in range(1, 45)]
+        self.assertEqual(len(groups), 44)
+        self.assertEqual(bridge.resolve_raffinato_filial({"id_filial": 2}, {"id_filial": 1}), 2)
+
     def test_legacy_migration_backs_up_and_preserves_values(self):
         legacy = {"server": "srv\\sql", "database": "Raffinato", "uid": "user", "pwd": "secret", "id_filial": 1}
         bridge.save_store_configs({"zuqui-store":legacy})

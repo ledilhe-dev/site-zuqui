@@ -103,8 +103,8 @@ async function raffinatoBridgePost(path, body) {
   const currentTenantKey=`${contextAtRequest.empresaId||''}:${contextAtRequest.lojaId||''}`;
   if(raffinatoTenantContextKey&&raffinatoTenantContextKey!==currentTenantKey){
     if(typeof RM!=='undefined')RM.cache.clear();
-    ['ioReportGroups','ioGroupChecklist'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<span>Carregando dados da loja atual...</span>';});
-    ['rmContent','abcContent','ioContent','ioReportContent'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">Contexto alterado. Consulte os dados da loja atual.</div>';});
+    window.RaffinatoMandatoryItems?.reset?.();
+    ['rmContent','abcContent'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">Contexto alterado. Consulte os dados da loja atual.</div>';});
   }
   raffinatoTenantContextKey=currentTenantKey;
   const tenantBody={...body,empresa_id:String(body?.empresa_id||contextAtRequest.empresaId||''),loja_id:String(body?.loja_id||contextAtRequest.lojaId||'')};
