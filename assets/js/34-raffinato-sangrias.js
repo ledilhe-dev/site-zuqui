@@ -10,6 +10,7 @@ let raffinatoAdminToken = '';
 let raffinatoConnectionProfileId = '';
 let raffinatoConnectorInstanceId = '';
 let raffinatoAdminSessionExpired = false;
+let raffinatoDeleteToken = '';
 let raffinatoTenantContextKey = '';
 let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
 let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
@@ -278,7 +279,10 @@ function preencherFormularioIntegracaoRaffinato(item) {
   document.getElementById('raffinatoDbPassword').classList.remove('raffinato-password-revealed','pin-secure-input');
   const passwordToggle=document.getElementById('raffinatoPasswordToggle');
   if(passwordToggle){passwordToggle.textContent='Mostrar';passwordToggle.setAttribute('aria-label','Mostrar senha');passwordToggle.setAttribute('title','Mostrar senha');passwordToggle.setAttribute('aria-pressed','false');}
-  document.getElementById('raffinatoDeleteIntegrationBtn').hidden = !item;
+  raffinatoDeleteToken='';
+  const deleteActions=document.getElementById('raffinatoDeleteActions'),deleteButton=document.getElementById('raffinatoDeleteIntegrationBtn'),tokenBox=document.getElementById('raffinatoDeleteTokenBox');
+  if(deleteActions)deleteActions.hidden=!item;if(deleteButton)deleteButton.disabled=true;if(tokenBox)tokenBox.hidden=true;
+  renderizarIdadeSincronizacaoRaffinato(item?.ultima_sincronizacao_em);
   const ocultarConsulta = !item || item.status !== 'ativa';
   document.getElementById('raffinatoSangriasPanel').hidden = ocultarConsulta;
   document.getElementById('raffinatoSummary').hidden = ocultarConsulta;
@@ -286,6 +290,21 @@ function preencherFormularioIntegracaoRaffinato(item) {
   document.getElementById('raffinatoCharts').hidden = ocultarConsulta || !raffinatoSangrias.length;
   raffinatoTesteValido = false;
   document.getElementById('raffinatoSaveBtn').disabled = true;
+}
+
+function renderizarIdadeSincronizacaoRaffinato(value) {
+  const node=document.getElementById('raffinatoSyncAge');if(!node)return;
+  if(!value){node.textContent='Esta conexão ainda não recebeu nenhuma atualização.';node.classList.add('is-stale');return;}
+  const date=new Date(value),seconds=Math.max(0,Math.floor((Date.now()-date.getTime())/1000));
+  const age=seconds<60?'há menos de 1 minuto':seconds<3600?`há ${Math.floor(seconds/60)} min`:seconds<86400?`há ${Math.floor(seconds/3600)} h`:`há ${Math.floor(seconds/86400)} dia(s)`;
+  node.textContent=`Última atualização: ${date.toLocaleString('pt-BR')} · ${age}`;node.classList.toggle('is-stale',seconds>900);
+}
+
+async function gerarTokenExclusaoRaffinato(){
+  const button=document.getElementById('raffinatoGenerateDeleteTokenBtn'),msg=document.getElementById('msgRaffinatoIntegracao');
+  try{button.disabled=true;button.textContent='Gerando...';const {lojaId}=contextoRaffinato(),result=await raffinatoBridgePost('/api/integracoes/raffinato/token-exclusao',{loja_id:lojaId});raffinatoDeleteToken=String(result.delete_token||'');document.getElementById('raffinatoDeleteToken').value=raffinatoDeleteToken;document.getElementById('raffinatoDeleteTokenBox').hidden=false;document.getElementById('raffinatoDeleteIntegrationBtn').disabled=!raffinatoDeleteToken;if(msg){msg.className='msg';msg.textContent='Token temporário gerado. Confirme-o ao excluir esta conexão.';}}
+  catch(error){if(msg){msg.className='msg err';msg.textContent=error?.message||'Não foi possível gerar o token.';}}
+  finally{button.disabled=false;button.textContent='Gerar token para excluir';}
 }
 
 async function carregarIntegracaoRaffinato() {
@@ -385,6 +404,10 @@ function cancelarEdicaoIntegracaoRaffinato() {
 }
 
 async function excluirIntegracaoRaffinato() {
+  if(!raffinatoDeleteToken){window.alert('Gere primeiro um token temporário de exclusão.');return;}
+  const tokenInformado=window.prompt('Digite o token temporário exibido na tela para confirmar a exclusão:','');
+  if(tokenInformado===null)return;
+  if(String(tokenInformado).trim().toUpperCase()!==raffinatoDeleteToken){window.alert('Token de exclusão não confere.');return;}
   const resposta = typeof abrirConfirmacaoSistema === 'function'
     ? await abrirConfirmacaoSistema({ title:'Excluir integração Raffinato?', subtitle:'A configuração será removida somente desta loja.', confirmText:'Excluir' })
     : { confirmado:window.confirm('Excluir a integração Raffinato desta loja?') };
@@ -392,7 +415,7 @@ async function excluirIntegracaoRaffinato() {
   const msg = document.getElementById('msgRaffinatoIntegracao');
   try {
     const { lojaId } = contextoRaffinato();
-    await raffinatoBridgePost('/api/integracoes/raffinato/excluir', { loja_id:lojaId });
+    await raffinatoBridgePost('/api/integracoes/raffinato/excluir', { loja_id:lojaId, delete_token:raffinatoDeleteToken });
     const { error } = await sb.from('raffinato_integracoes').delete().eq('loja_id', lojaId);
     if (error) throw error;
     raffinatoIntegracaoAtual = null;
@@ -433,6 +456,8 @@ async function verificarConectorRaffinato() {
   atualizarStatusConectorRaffinato(cloudOnline?'online':'offline',`${cloudText} · ${localText}`);
   return localOk||cloudOnline;
 }
+
+window.gerarTokenExclusaoRaffinato=gerarTokenExclusaoRaffinato;
 
 function definirPeriodoSangriasRaffinato(dias) {
   const fim = new Date();

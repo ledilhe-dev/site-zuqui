@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.8"
+CONNECTOR_VERSION = "1.7.9"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -73,6 +73,8 @@ logger = logging.getLogger("raffinato_bridge")
 MUTEX_HANDLE = None
 ADMIN_SESSIONS: dict[str, float] = {}
 ADMIN_SESSION_SECONDS = 15 * 60
+DELETE_TOKENS: dict[str, tuple[str, float]] = {}
+DELETE_TOKEN_SECONDS = 5 * 60
 # PBKDF2 da senha inicial fornecida para a primeira instalacao. A senha em si
 # nunca e armazenada nem incorporada ao executavel.
 INITIAL_MASTER_SALT = "7f2d9c4e18a6b035d1c85693fa2b470d"
@@ -499,6 +501,24 @@ WHERE VI.IdFilial=? AND VI.Data>=? AND VI.Data<?
 ORDER BY VI.Data,VI.Hora,PAI.Id,VI.Id;
 """
 
+SQL_PIZZA_MANDATORY_METADATA_V1 = """
+SELECT DISTINCT A.Id id,A.Arvore arvore,A.Nome nome
+FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
+INNER JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=CA.IdAgrupamento
+WHERE CA.IdFilial=? AND ISNULL(CA.BloqueiaVenda,0)=0
+ORDER BY A.Arvore,A.Nome;
+"""
+
+SQL_PIZZA_MANDATORY_DATA_V1 = SQL_MANDATORY_V2.replace(
+    "A.Nome agrupamento_pai,", "A.Nome agrupamento_pai,PAI.Quantidade quantidade_produto_principal,"
+).replace(
+    "LEFT JOIN dbo.VendaItem PAI WITH(NOLOCK) ON PAI.Id=VI.IdItemPai",
+    "INNER JOIN dbo.VendaItem PAI WITH(NOLOCK) ON PAI.Id=VI.IdItemPai"
+).replace(
+    "LEFT JOIN dbo.Produto PP WITH(NOLOCK) ON PP.Id=PAI.IdProduto",
+    "INNER JOIN dbo.Produto PP WITH(NOLOCK) ON PP.Id=PAI.IdProduto"
+)
+
 SQL_VENDAS_STATUS = """
 SET NOCOUNT ON;
 WITH VendasBase AS (
@@ -820,7 +840,10 @@ def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
 
 def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
     store_id = str(config.get("_store_id") or "")
-    result = query_sangrias(config, start, end + timedelta(seconds=1), resolve_raffinato_filial(config, {}))
+    filial=resolve_raffinato_filial(config,{})
+    # O relatório paralelo recebe primeiro os metadados da filial e depois seus movimentos.
+    sync_pizza_mandatory_v1(store_id,config,start,end,filial)
+    result = query_sangrias(config, start, end + timedelta(seconds=1), filial)
     relay_post({
         "action": "sync", "token": config["relay_token"], "loja_id":store_id,
         "inicio": start.strftime("%Y-%m-%d"), "fim": end.strftime("%Y-%m-%d"),
@@ -831,7 +854,6 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         "action":"billing_sync","token":config["relay_token"],"loja_id":store_id,
         "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":billing,
     },timeout=45)
-    filial=resolve_raffinato_filial(config,{})
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=60
         cursor=connection.cursor()
@@ -1336,6 +1358,28 @@ def query_mandatory_v2_rows(config:dict[str,Any],start:datetime,end:datetime,fil
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=90; cursor=connection.cursor(); cursor.execute(sql,*params); joined=rows_as_dicts(cursor)
     return joined
+
+
+def query_pizza_mandatory_metadata_v1(config:dict[str,Any],filial:int) -> list[dict[str,Any]]:
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=30;cursor=connection.cursor();cursor.execute(SQL_PIZZA_MANDATORY_METADATA_V1,filial);return rows_as_dicts(cursor)
+
+
+def query_pizza_mandatory_rows_v1(config:dict[str,Any],start:datetime,end:datetime,filial:int) -> list[dict[str,Any]]:
+    with pyodbc.connect(connection_string(config),timeout=8) as connection:
+        connection.timeout=90;cursor=connection.cursor();cursor.execute(SQL_PIZZA_MANDATORY_DATA_V1.format(dynamic_filters=""),filial,start.date(),end.date()+timedelta(days=1),start,end);return rows_as_dicts(cursor)
+
+
+def sync_pizza_mandatory_v1(store_id:str,config:dict[str,Any],start:datetime,end:datetime,filial:int) -> None:
+    groups=query_pizza_mandatory_metadata_v1(config,filial)
+    relay_post({"action":"pizza_mandatory_sync_v1","kind":"metadata","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"agrupamentos":groups},timeout=60)
+    # Períodos curtos limitam memória e tornam o primeiro resultado recente disponível rapidamente.
+    cursor_day=start
+    while cursor_day.date()<=end.date():
+        batch_end=min(end,cursor_day+timedelta(days=6,hours=23,minutes=59,seconds=59))
+        rows=query_pizza_mandatory_rows_v1(config,cursor_day,batch_end+timedelta(seconds=1),filial)
+        relay_post({"action":"pizza_mandatory_sync_v1","kind":"data","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"inicio":cursor_day.strftime("%Y-%m-%d"),"fim":batch_end.strftime("%Y-%m-%d"),"items":rows},timeout=180)
+        cursor_day=datetime.combine(batch_end.date()+timedelta(days=1),datetime.min.time())
 
 
 def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -2076,6 +2120,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/integracoes/raffinato/senha",
             "/api/integracoes/raffinato/salvar",
             "/api/integracoes/raffinato/excluir",
+            "/api/integracoes/raffinato/token-exclusao",
             "/api/integracoes/raffinato/parear",
             "/api/integracoes/raffinato/desbloquear",
             "/api/integracoes/raffinato/perfis",
@@ -2178,8 +2223,20 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if route == "/api/integracoes/raffinato/excluir":
                 store_id = validate_store_id(body.get("loja_id"))
+                supplied=str(body.get("delete_token") or "").strip().upper()
+                expected=DELETE_TOKENS.pop(supplied,None)
+                if not expected or expected[0]!=store_id or expected[1]<time.time():
+                    raise PermissionError("Token de exclusao invalido ou expirado. Gere um novo token.")
                 state = load_profile_state(); state["mappings"].pop(store_id, None); save_profile_state(state)
                 self.send_json(200, {"ok": True})
+                return
+            if route == "/api/integracoes/raffinato/token-exclusao":
+                store_id=validate_store_id(body.get("loja_id"))
+                for token,value in list(DELETE_TOKENS.items()):
+                    if value[0]==store_id or value[1]<time.time():DELETE_TOKENS.pop(token,None)
+                token="-".join(secrets.token_hex(3).upper()[i:i+3] for i in range(0,6,3))
+                DELETE_TOKENS[token]=(store_id,time.time()+DELETE_TOKEN_SECONDS)
+                self.send_json(200,{"ok":True,"delete_token":token,"expires_in":DELETE_TOKEN_SECONDS})
                 return
             if route == "/api/integracoes/raffinato/parear":
                 store_id = validate_store_id(body.get("loja_id"))

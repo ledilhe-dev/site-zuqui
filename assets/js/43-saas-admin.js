@@ -72,6 +72,22 @@ async function carregarConectoresSaas() {
   } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
 }
 
+const carregarConectoresSaasBase=carregarConectoresSaas;
+carregarConectoresSaas=async function(){
+  await carregarConectoresSaasBase();
+  const dados=painelAdminGlobalCache||{},alvo=document.getElementById('listaConectoresSaas');if(!alvo)return;
+  const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));
+  for(const [index,node] of [...alvo.querySelectorAll(':scope > .lista > .item')].entries()){
+    const instance=(dados.connector_instances||[])[index];if(!instance)continue;
+    const filiais=(dados.lojas||[]).filter(x=>String(x.empresa_id)===String(instance.empresa_id)),links=(dados.conectores||[]).filter(x=>String(x.connector_instance_id||'')===String(instance.id)),byStore=new Map(links.map(x=>[String(x.loja_id),x]));
+    const rows=filiais.map(store=>{const link=byStore.get(String(store.id));return `<li><strong>${escaparHtmlBasico(nomeLojaSaas(store)||'Filial')}</strong><span>${link?`Raffinato ${Number(link.raffinato_filial_id)} · ${escaparHtmlBasico(link.status||'ativa')} · atualização ${escaparHtmlBasico(link.ultima_sincronizacao_em?new Date(link.ultima_sincronizacao_em).toLocaleString('pt-BR'):'nunca')}`:'Não vinculada nesta instalação'}</span></li>`}).join('');
+    const detail=document.createElement('div');detail.className='connector-company-detail';detail.hidden=true;detail.innerHTML=`<div><strong>${escaparHtmlBasico(empresas.get(String(instance.empresa_id))||'Empresa')}</strong><small>Esta é uma empresa com ${filiais.length} filial(is).<br>connector_instance_id: ${escaparHtmlBasico(instance.id)}</small></div><ul>${rows||'<li>Nenhuma filial cadastrada.</li>'}</ul>`;
+    const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm connector-detail-button';button.textContent='Detalhar empresa';button.onclick=()=>{detail.hidden=!detail.hidden;button.textContent=detail.hidden?'Detalhar empresa':'Ocultar detalhes'};
+    node.classList.add('connector-company');node.querySelector('.item-info')?.append(button);node.append(detail);
+    if(instance.status==='offline'){detail.hidden=false;button.textContent='Ocultar detalhes';}
+  }
+};
+
 async function gerarCodigoPareamentoConector(){
   const empresaId=String(document.getElementById('connectorPairEmpresa')?.value||'').trim(),msg=document.getElementById('connectorPairCode');
   if(!empresaId){if(msg){msg.className='msg err';msg.textContent='Selecione uma empresa.';}return;}

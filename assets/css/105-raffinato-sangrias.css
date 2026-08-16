@@ -15,6 +15,7 @@
 .raffinato-report-intro { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 20px; margin-bottom:16px; }
 .raffinato-integration-card { padding:20px; margin-bottom:16px; }
 .raffinato-integration-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
+.raffinato-sync-age{margin-top:7px;color:var(--text-muted);font-size:11px}.raffinato-sync-age.is-stale{color:#b45309}.raffinato-delete-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.raffinato-delete-token{margin-top:14px;padding:13px;border:1px solid rgba(239,68,68,.25);border-radius:12px;background:rgba(239,68,68,.05)}.raffinato-delete-token label,.raffinato-delete-token small{display:block;color:var(--text-muted);font-size:10px}.raffinato-delete-token>div{display:flex;gap:8px;margin:7px 0}.raffinato-delete-token input{flex:1;min-width:0;font-family:monospace;letter-spacing:.08em}
 .raffinato-config-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
 .raffinato-config-actions { display:flex; gap:9px; align-items:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
 .raffinato-test-result { margin-top:16px; padding:15px; border-radius:12px; border:1px solid rgba(34,197,94,.25); background:rgba(34,197,94,.06); }

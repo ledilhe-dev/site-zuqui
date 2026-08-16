@@ -191,6 +191,7 @@
             <button class="nav-btn nav-sub-btn" data-page="relatorio_comparativo_anual" onclick="abrirPagina('relatorio_comparativo_anual', this)"><span class="nav-copy"><span class="nav-title">Comparativo Anual</span></span></button>
             <button class="nav-btn nav-sub-btn" data-page="relatorio_curva_abc_raffinato" onclick="abrirPagina('relatorio_curva_abc_raffinato', this)"><span class="nav-copy"><span class="nav-title">Curva ABC Raffinato</span></span></button>
             <button class="nav-btn nav-sub-btn" data-page="raffinato_itens_obrigatorios_v2" onclick="abrirPagina('raffinato_itens_obrigatorios_v2', this)"><span class="nav-copy"><span class="nav-title">Itens obrigatórios Raffinato</span></span></button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_item_obrigatorio_pizza" onclick="abrirPagina('relatorio_item_obrigatorio_pizza', this)"><span class="nav-copy"><span class="nav-title">ItemObrigatorioPizza</span></span></button>
           </div>
         </div>
       </div>
@@ -2359,8 +2360,8 @@
 
         <div class="card raffinato-integration-card" id="raffinatoAdminPanel" hidden>
           <div class="raffinato-integration-head">
-            <div><div class="card-title">Conexão desta loja</div><div class="page-sub" id="raffinatoLojaContexto">Carregando loja...</div></div>
-            <button class="btn btn-red btn-sm" id="raffinatoDeleteIntegrationBtn" type="button" onclick="excluirIntegracaoRaffinato()" hidden>Excluir integração</button>
+            <div><div class="card-title">Conexão desta loja</div><div class="page-sub" id="raffinatoLojaContexto">Carregando loja...</div><div class="raffinato-sync-age" id="raffinatoSyncAge">Última atualização: verificando...</div></div>
+            <div class="raffinato-delete-actions" id="raffinatoDeleteActions" hidden><button class="btn btn-ghost btn-sm" id="raffinatoGenerateDeleteTokenBtn" type="button" onclick="gerarTokenExclusaoRaffinato()">Gerar token para excluir</button><button class="btn btn-red btn-sm" id="raffinatoDeleteIntegrationBtn" type="button" onclick="excluirIntegracaoRaffinato()" disabled>Excluir integração</button></div>
           </div>
           <div class="raffinato-config-grid">
             <div class="raffinato-field"><label for="raffinatoProfileName">Nome da conexão</label><input id="raffinatoProfileName" type="text" placeholder="Nome da conexão" autocomplete="off"></div>
@@ -2378,6 +2379,7 @@
             <a class="btn btn-ghost" id="raffinatoConnectorDownload" href="./downloads/Conector-Raffinato-v1.7.3.exe" download>Baixar conector</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
+          <div class="raffinato-delete-token" id="raffinatoDeleteTokenBox" hidden><label for="raffinatoDeleteToken">Token temporário de exclusão</label><div><input id="raffinatoDeleteToken" type="text" readonly><button class="btn btn-ghost btn-sm" type="button" onclick="navigator.clipboard?.writeText(document.getElementById('raffinatoDeleteToken').value)">Copiar</button></div><small>Válido por 5 minutos e utilizado uma única vez.</small></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
         </div>
 
@@ -2520,6 +2522,7 @@
 
       <section id="relatorio_curva_abc_raffinato" class="pagina"></section>
       <section id="raffinato_itens_obrigatorios_v2" class="pagina"></section>
+      <section id="relatorio_item_obrigatorio_pizza" class="pagina"></section>
 
       <!-- Paginas declarativas do modulo. O conteudo e montado por 33-financial-integrations.js para evitar duplicacao. -->
       <section id="integracoes_financeiras_dashboard" class="pagina"><div class="page-title">Dashboard Financeiro</div><div class="page-sub">Estrutura para indicadores e movimentações consolidadas.</div><div class="if-page-content"></div></section>
@@ -2993,11 +2996,12 @@
 <link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-crossfilter-v2">
 <link rel="stylesheet" href="./assets/css/115-raffinato-managerial.css?v=20260815-filial-layout-fix">
 <link rel="stylesheet" href="./assets/css/116-raffinato-mandatory-v2.css?v=20260816-v2-release">
+<link rel="stylesheet" href="./assets/css/117-raffinato-item-obrigatorio-pizza.css?v=20260816-candidate-1">
 <link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260815-v7">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260810-global-contrast-v2">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
-<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260815-download-174">
+<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260816-empresa-detail-179">
 <link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=20260810-global-contrast-v3">
 <link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260811-layout-global-v1">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
@@ -3323,18 +3327,19 @@
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260811-layout-global-v1"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
-      <script src="./assets/js/34-raffinato-sangrias.js?v=20260815-connector-174"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260816-delete-token-179"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=20260815-filial-v1"></script>
       <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/37-raffinato-products.js?v=20260810-crossfilter-v2"></script>
       <script src="./assets/js/93-raffinato-managerial.js?v=20260815-mandatory-restored-177"></script>
       <script src="./assets/js/95-raffinato-mandatory-items.js?v=20260816-v2-release"></script>
+      <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260816-candidate-1"></script>
       <script src="./assets/js/38-annual-comparison.js?v=20260815-v11"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=20260725-importador-unico-dedup"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
-<script src="./assets/js/43-saas-admin.js?v=20260815-connector-174"></script>
+<script src="./assets/js/43-saas-admin.js?v=20260816-empresa-detail-179"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
