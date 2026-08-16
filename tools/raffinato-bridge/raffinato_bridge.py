@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.10"
+CONNECTOR_VERSION = "1.7.11"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -730,7 +730,7 @@ def mapped_config(store_id: str) -> dict[str, Any] | None:
     filial = mapping.get("raffinato_filial_id")
     if filial is None or int(filial) <= 0:
         return None
-    return {**profile, "id_filial": int(filial)}
+    return {**profile, "connection_profile_id": str(mapping.get("connection_profile_id") or ""), "id_filial": int(filial)}
 
 
 def load_mapped_store_configs() -> dict[str, dict[str, Any]]:
@@ -771,6 +771,7 @@ def load_mapped_store_configs() -> dict[str, dict[str, Any]]:
             **profile,
             "empresa_id": empresa_id,
             "relay_token": relay_token,
+            "connection_profile_id": str(mapping.get("connection_profile_id") or ""),
             "id_filial": int(filial),
         }
     return resolved
@@ -841,49 +842,70 @@ def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
 def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
     store_id = str(config.get("_store_id") or "")
     filial=resolve_raffinato_filial(config,{})
-    # O relatório paralelo recebe primeiro os metadados da filial e depois seus movimentos.
-    result = query_sangrias(config, start, end + timedelta(seconds=1), filial)
-    relay_post({
-        "action": "sync", "token": config["relay_token"], "loja_id":store_id,
-        "inicio": start.strftime("%Y-%m-%d"), "fim": end.strftime("%Y-%m-%d"),
-        "items": result["items"],
-    }, timeout=45)
-    billing=query_faturamento_diario(config,start.date(),end.date()+timedelta(days=1),resolve_raffinato_filial(config,{}))
-    relay_post({
-        "action":"billing_sync","token":config["relay_token"],"loja_id":store_id,
-        "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":billing,
-    },timeout=45)
-    with pyodbc.connect(connection_string(config),timeout=8) as connection:
-        connection.timeout=60
-        cursor=connection.cursor()
-        cursor.execute(SQL_PRODUTOS_DIARIO,start.date(),end.date()+timedelta(days=1),filial)
-        products=rows_as_dicts(cursor)
-    relay_post({
-        "action":"products_sync","token":config["relay_token"],"loja_id":store_id,
-        "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":products,
-    },timeout=90)
-    with pyodbc.connect(connection_string(config),timeout=8) as connection:
-        connection.timeout=90; cursor=connection.cursor()
-        cursor.execute(SQL_BASE_CANONICA_SYNC,start.date(),end.date()+timedelta(days=1),filial,
-                       start.date(),end.date()+timedelta(days=1),filial)
-        documents=rows_as_dicts(cursor); canonical_items=[]
-        while cursor.nextset():
-            if cursor.description:
-                canonical_items=rows_as_dicts(cursor); break
-    open_deliveries=query_deliveries_abertos(config,start,end+timedelta(seconds=1),filial)
-    relay_post({
-        "action":"canonical_sync","token":config["relay_token"],"loja_id":store_id,
-        "inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),
-        "documents":documents,"items":canonical_items,"open_deliveries":open_deliveries,
-    },timeout=120)
-    abc_rows=query_curva_abc_sync(config,start,end+timedelta(seconds=1),filial)
-    relay_post({"action":"managerial_sync","token":config["relay_token"],"loja_id":store_id,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"abc_items":abc_rows},timeout=180)
-    mandatory_rows=query_mandatory_v2_rows(config,start,end+timedelta(seconds=1),filial)
-    relay_post({"action":"mandatory_v2_sync","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":mandatory_rows},timeout=180)
-    try:
+    inicio=start.strftime("%Y-%m-%d"); fim=end.strftime("%Y-%m-%d")
+
+    def isolated(label: str, operation: Any) -> bool:
+        try:
+            operation()
+            logger.info("SYNC_DATASET_OK loja=%s perfil=%s filial=%s dataset=%s periodo=%s..%s",
+                        store_id,config.get("connection_profile_id"),filial,label,inicio,fim)
+            return True
+        except Exception:
+            logger.exception("SYNC_DATASET_ERROR loja=%s perfil=%s filial=%s dataset=%s periodo=%s..%s",
+                             store_id,config.get("connection_profile_id"),filial,label,inicio,fim)
+            return False
+
+    def pizza() -> None:
         sync_pizza_mandatory_v1(store_id,config,start,end,filial)
-    except Exception:
-        logger.exception("Falha isolada no ItemObrigatorioPizza da loja %s",store_id)
+
+    def sangrias() -> None:
+        result=query_sangrias(config,start,end+timedelta(seconds=1),filial)
+        relay_post({"action":"sync","token":config["relay_token"],"loja_id":store_id,
+                    "inicio":inicio,"fim":fim,"items":result["items"]},timeout=45)
+
+    def billing_step() -> None:
+        rows=query_faturamento_diario(config,start.date(),end.date()+timedelta(days=1),filial)
+        relay_post({"action":"billing_sync","token":config["relay_token"],"loja_id":store_id,
+                    "inicio":inicio,"fim":fim,"items":rows},timeout=45)
+
+    def products_step() -> None:
+        with pyodbc.connect(connection_string(config),timeout=8) as connection:
+            connection.timeout=60; cursor=connection.cursor()
+            cursor.execute(SQL_PRODUTOS_DIARIO,start.date(),end.date()+timedelta(days=1),filial)
+            rows=rows_as_dicts(cursor)
+        relay_post({"action":"products_sync","token":config["relay_token"],"loja_id":store_id,
+                    "inicio":inicio,"fim":fim,"items":rows},timeout=90)
+
+    def canonical_step() -> None:
+        with pyodbc.connect(connection_string(config),timeout=8) as connection:
+            connection.timeout=90; cursor=connection.cursor()
+            cursor.execute(SQL_BASE_CANONICA_SYNC,start.date(),end.date()+timedelta(days=1),filial,
+                           start.date(),end.date()+timedelta(days=1),filial)
+            documents=rows_as_dicts(cursor); items=[]
+            while cursor.nextset():
+                if cursor.description:
+                    items=rows_as_dicts(cursor); break
+        deliveries=query_deliveries_abertos(config,start,end+timedelta(seconds=1),filial)
+        relay_post({"action":"canonical_sync","token":config["relay_token"],"loja_id":store_id,
+                    "inicio":inicio,"fim":fim,"documents":documents,"items":items,
+                    "open_deliveries":deliveries},timeout=120)
+
+    def abc_step() -> None:
+        rows=query_curva_abc_sync(config,start,end+timedelta(seconds=1),filial)
+        relay_post({"action":"managerial_sync","token":config["relay_token"],"loja_id":store_id,
+                    "inicio":inicio,"fim":fim,"abc_items":rows},timeout=180)
+
+    def mandatory_step() -> None:
+        rows=query_mandatory_v2_rows(config,start,end+timedelta(seconds=1),filial)
+        relay_post({"action":"mandatory_v2_sync","token":config["relay_token"],"loja_id":store_id,
+                    "id_filial":filial,"inicio":inicio,"fim":fim,"items":rows},timeout=180)
+
+    outcomes=[isolated("pizza_mandatory_v1",pizza),isolated("sangrias",sangrias),
+              isolated("billing",billing_step),isolated("products",products_step),
+              isolated("canonical",canonical_step),isolated("abc",abc_step),
+              isolated("mandatory_v2",mandatory_step)]
+    if not any(outcomes):
+        raise RuntimeError(f"Todos os datasets falharam para loja={store_id}, filial={filial}.")
 
 
 def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
@@ -911,6 +933,9 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
             acquired = False
             try:
                 config = {**config, "_store_id":store_id}
+                logger.info("SYNC_STORE_BEGIN loja=%s perfil=%s filial=%s servidor=%s banco=%s",
+                            store_id,config.get("connection_profile_id"),config.get("id_filial"),
+                            config.get("server"),config.get("database"))
                 acquired = CACHE_SYNC_LOCK.acquire(timeout=1)
                 if not acquired:
                     continue

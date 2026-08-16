@@ -4,6 +4,7 @@ import json
 import tempfile
 import threading
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -74,6 +75,52 @@ class MultiempresaTests(unittest.TestCase):
         self.assertEqual(config["server"], "current-server")
         self.assertEqual(config["relay_token"], "installation-token")
         self.assertEqual(config["empresa_id"], "gustare-company")
+        self.assertEqual(config["connection_profile_id"], profile_id)
+
+    def test_two_stores_keep_distinct_profiles_and_filiais(self):
+        state = bridge.load_profile_state()
+        state["paired_empresa_id"] = "gustare-company"
+        state["connector_credential"] = "installation-token"
+        for suffix, filial in (("salao", 1), ("delivery", 2)):
+            profile_id = f"profile-{suffix}"
+            store_id = f"store-{suffix}"
+            state["profiles"][profile_id] = {"id":profile_id,"active":True,"server":"sql","database":"gustare","uid":"u","pwd":"p"}
+            state["mappings"][store_id] = {"checkdiario_empresa_id":"gustare-company","connection_profile_id":profile_id,"raffinato_filial_id":filial,"active":True}
+        bridge.save_profile_state(state)
+        configs = bridge.load_mapped_store_configs()
+        self.assertEqual((configs["store-salao"]["connection_profile_id"], configs["store-salao"]["id_filial"]), ("profile-salao", 1))
+        self.assertEqual((configs["store-delivery"]["connection_profile_id"], configs["store-delivery"]["id_filial"]), ("profile-delivery", 2))
+
+    def test_sync_failure_in_one_dataset_does_not_block_other_datasets(self):
+        sent = []
+        config = {"_store_id":"store-salao","id_filial":1,"connection_profile_id":"profile-salao","relay_token":"token",
+                  "server":"sql","database":"gustare","uid":"u","pwd":"p","driver":"{ODBC Driver 17 for SQL Server}"}
+        def relay(payload, timeout=30):
+            sent.append(payload["action"]); return {"ok":True}
+        class Cursor:
+            description = True
+            def execute(self, *args): return None
+            def fetchall(self): return []
+            def nextset(self): return False
+        class Connection:
+            timeout = 0
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def cursor(self): return Cursor()
+        with patch.object(bridge,"query_sangrias",side_effect=RuntimeError("falha isolada")), \
+             patch.object(bridge,"query_faturamento_diario",return_value=[]), \
+             patch.object(bridge,"query_deliveries_abertos",return_value=[]), \
+             patch.object(bridge,"query_curva_abc_sync",return_value=[]), \
+             patch.object(bridge,"query_mandatory_v2_rows",return_value=[]), \
+             patch.object(bridge,"sync_pizza_mandatory_v1",side_effect=lambda *args: sent.append("pizza_mandatory_sync_v1")), \
+             patch.object(bridge,"rows_as_dicts",return_value=[]), \
+             patch.object(bridge.pyodbc,"connect",return_value=Connection()), \
+             patch.object(bridge,"relay_post",side_effect=relay):
+            bridge.sync_period(config,datetime(2026,8,1),datetime(2026,8,2,23,59,59))
+        self.assertIn("pizza_mandatory_sync_v1",sent)
+        self.assertIn("products_sync",sent)
+        self.assertIn("canonical_sync",sent)
+        self.assertNotIn("sync",sent)
 
     def test_background_sync_does_not_fallback_to_unmapped_legacy_store(self):
         bridge.save_store_configs({"legacy-only": {
