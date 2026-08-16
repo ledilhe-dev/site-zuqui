@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v167-comparativo-anual-v3';
+const CACHE_NAME = 'check-diario-pwa-v177-raffinato-mandatory-restored';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
