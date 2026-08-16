@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.9"
+CONNECTOR_VERSION = "1.7.10"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -842,7 +842,6 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
     store_id = str(config.get("_store_id") or "")
     filial=resolve_raffinato_filial(config,{})
     # O relatório paralelo recebe primeiro os metadados da filial e depois seus movimentos.
-    sync_pizza_mandatory_v1(store_id,config,start,end,filial)
     result = query_sangrias(config, start, end + timedelta(seconds=1), filial)
     relay_post({
         "action": "sync", "token": config["relay_token"], "loja_id":store_id,
@@ -881,6 +880,10 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
     relay_post({"action":"managerial_sync","token":config["relay_token"],"loja_id":store_id,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"abc_items":abc_rows},timeout=180)
     mandatory_rows=query_mandatory_v2_rows(config,start,end+timedelta(seconds=1),filial)
     relay_post({"action":"mandatory_v2_sync","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"inicio":start.strftime("%Y-%m-%d"),"fim":end.strftime("%Y-%m-%d"),"items":mandatory_rows},timeout=180)
+    try:
+        sync_pizza_mandatory_v1(store_id,config,start,end,filial)
+    except Exception:
+        logger.exception("Falha isolada no ItemObrigatorioPizza da loja %s",store_id)
 
 
 def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
@@ -912,12 +915,18 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
                 if not acquired:
                     continue
                 now = datetime.now()
-                sync_metadados_remotos(store_id,config,resolve_raffinato_filial(config,{}))
+                try:
+                    sync_metadados_remotos(store_id,config,resolve_raffinato_filial(config,{}))
+                except Exception:
+                    logger.exception("Falha isolada nos metadados da loja %s",store_id)
                 if store_id not in full_synced:
-                    sync_annual_history(store_id,config)
                     # Prioriza o período usado pelos relatórios antes do backfill anual.
                     recent_start = (now - timedelta(days=45)).replace(hour=0, minute=0, second=0, microsecond=0)
                     sync_period(config, recent_start, now.replace(hour=23, minute=59, second=59, microsecond=0))
+                    try:
+                        sync_annual_history(store_id,config)
+                    except Exception:
+                        logger.exception("Falha isolada no historico anual da loja %s",store_id)
                     cursor = (now - timedelta(days=366)).replace(hour=0, minute=0, second=0, microsecond=0)
                     while cursor < recent_start and not stop_event.is_set():
                         chunk_end = min(cursor + timedelta(days=30), recent_start - timedelta(seconds=1))

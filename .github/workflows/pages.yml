@@ -50,8 +50,8 @@ jobs:
           cp -R media _site/
           cp -R zuqui _site/
           mkdir -p _site/downloads
-          cp tools/raffinato-bridge/download-v178-final2/Conector-Raffinato-v1.7.8.exe _site/downloads/
           cp tools/raffinato-bridge/download-v179-final/Conector-Raffinato-v1.7.9.exe _site/downloads/
+          cp tools/raffinato-bridge/download-v1710-final/Conector-Raffinato-v1.7.10.exe _site/downloads/
 
           touch _site/.nojekyll
 
