@@ -879,6 +879,7 @@ function usuarioPodeAcessar(pageId) {
   }
   if (usuarioEhAdministrador()) return true;
   const permissoes = obterPermissoesUsuario();
+  if (pageId === 'relatorio_item_obrigatorio_pizza') return permissoes.raffinato_itens_obrigatorios_v2 === true || permissoes.relatorio_produtos_raffinato === true || usuarioEhAdminOuPerfilAdmin();
   if (String(pageId || '').startsWith('integracoes_financeiras_')) return permissoes.integracoes_financeiras === true;
   if (pageId === 'tarefas_rapidas') {
     return usuarioPodeAcessarAlertasRapidos();
