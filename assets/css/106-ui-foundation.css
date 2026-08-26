@@ -333,7 +333,7 @@ input[type="checkbox"], input[type="radio"] {
 .modal,
 .modal-card,
 [class*="-modal-card"],
-[class*="-sheet"] {
+[class*="-sheet"]:not([class*="-sheet-"]) {
   width: min(680px, calc(100vw - 24px));
   max-width: calc(100vw - 24px) !important;
   max-height: calc(100dvh - 24px) !important;
@@ -440,7 +440,7 @@ tbody tr:hover { background: rgba(240, 165, 0, .045) !important; }
   .topbar-actions { gap: 6px !important; }
   .topbar-clock-time, .topbar-business-day-date { font-size: 16px !important; }
   .topbar-store-name, .topbar-user-name { font-size: 12px !important; }
-  .modal, .modal-card, [class*="-modal-card"], [class*="-sheet"] {
+  .modal, .modal-card, [class*="-modal-card"], [class*="-sheet"]:not([class*="-sheet-"]) {
     width: calc(100vw - 12px) !important;
     max-width: calc(100vw - 12px) !important;
     max-height: calc(100dvh - 12px) !important;

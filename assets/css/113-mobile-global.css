@@ -2,8 +2,26 @@
 :where(.pagina,.card,.modal,.modal-content,.form-row,.form-grid,.filter-grid,.toolbar)>*{min-width:0}
 input,textarea,select{max-width:100%;box-sizing:border-box}
 input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid color-mix(in srgb,var(--cd-primary,#6366f1) 65%,transparent)!important;outline-offset:1px}
-#recebivelFormaPagamentoId:is(:hover,:focus,:focus-visible,:active),.ajuste-saldo-field:is(:hover,:focus,:focus-visible,:active),#ncSheet .nc-sheet-body :is(input:not([type="checkbox"]):not([type="radio"]),select):is(:hover,:focus,:focus-visible,:active){color:var(--input-dark-text)!important;background:var(--input-dark-bg)!important;-webkit-text-fill-color:var(--input-dark-text)!important}
-#recebivelFormaPagamentoId:-webkit-autofill,.ajuste-saldo-field:-webkit-autofill,#ncSheet .nc-sheet-body input:-webkit-autofill{-webkit-text-fill-color:var(--input-dark-text)!important;caret-color:var(--input-dark-text)!important;-webkit-box-shadow:0 0 0 1000px var(--input-dark-bg) inset!important}
+#recebivelFormaPagamentoId:is(:hover,:focus,:focus-visible,:active),#ncSheet .nc-sheet-body :is(input:not([type="checkbox"]):not([type="radio"]),select):is(:hover,:focus,:focus-visible,:active){color:var(--input-dark-text)!important;background:var(--input-dark-bg)!important;-webkit-text-fill-color:var(--input-dark-text)!important}
+#recebivelFormaPagamentoId:-webkit-autofill,#ncSheet .nc-sheet-body input:-webkit-autofill{-webkit-text-fill-color:var(--input-dark-text)!important;caret-color:var(--input-dark-text)!important;-webkit-box-shadow:0 0 0 1000px var(--input-dark-bg) inset!important}
+
+/* Contas a pagar: filtro de categorias compacto e opcoes legiveis. */
+#financeiro_contasapagar #filtroContaAPagarCategoriasWrap,
+#financeiro_contasapagar #btnFiltroContaAPagarCategorias{min-width:0!important;max-width:100%!important;width:100%!important}
+#financeiro_contasapagar #dropdownCategoriasContaAPagar{padding:8px!important;overflow-x:hidden!important;overflow-y:auto!important}
+#financeiro_contasapagar #dropdownCategoriasContaAPagar label{display:flex!important;width:100%!important;min-width:0!important;min-height:30px!important;align-items:center!important;gap:8px!important;padding:5px 6px!important;color:var(--text)!important}
+#financeiro_contasapagar #dropdownCategoriasContaAPagar input[type="checkbox"]{display:block!important;flex:0 0 16px!important;width:16px!important;min-width:16px!important;max-width:16px!important;height:16px!important;min-height:16px!important;max-height:16px!important;margin:0!important;padding:0!important;border-radius:4px!important}
+#financeiro_contasapagar #dropdownCategoriasContaAPagar label>span{display:block!important;flex:1 1 auto!important;min-width:0!important;overflow:hidden!important;color:var(--text)!important;-webkit-text-fill-color:var(--text)!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+@media (min-width:1025px){
+  #financeiro_contasapagar .contas-pagar-filtros-unificados{grid-template-columns:minmax(220px,1.6fr) minmax(125px,.8fr) minmax(125px,.8fr) minmax(170px,1fr) minmax(130px,.8fr) 104px minmax(90px,.55fr) minmax(100px,.6fr) minmax(160px,1fr)!important}
+}
+
+/* O cabecalho e o rodape sao partes do sheet, nao sheets independentes. */
+#ncSheet>.nc-sheet-head,
+#ncSheet>.nc-sheet-footer,
+#ncSheet .nc-sheet-title-row{width:100%!important;min-width:0!important;max-width:none!important;max-height:none!important;margin-inline:0!important;overflow:visible!important}
+#ncSheet .nc-sheet-title-row>div{min-width:0!important}
+#ncSheet .nc-sheet-close{display:grid!important;place-items:center!important;position:relative!important;inset:auto!important;visibility:visible!important;opacity:1!important;flex:0 0 40px!important;width:40px!important;min-width:40px!important;max-width:40px!important;height:40px!important;min-height:40px!important;max-height:40px!important;margin:0!important;overflow:visible!important;z-index:2!important;touch-action:manipulation}
 #financeiro_cofre #cardsCofreContas .stat-card{color:#fff!important;border-color:rgba(255,255,255,.2)!important;box-shadow:0 8px 20px rgba(15,23,42,.16)!important}
 #financeiro_cofre #cardsCofreContas .stat-card *{color:#fff!important;-webkit-text-fill-color:#fff!important}
 #financeiro_cofre .conta-financeira-inter{background:linear-gradient(135deg,#f97316,#c2410c)!important}

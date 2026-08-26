@@ -13,7 +13,7 @@
   --surface3:#e2e8f0; --surface4:#cbd5e1; --surface-raised:var(--cd-surface-elevated); --bg-card:var(--cd-surface);
   --border:var(--cd-border); --border-mid:var(--cd-border-strong); --border-bright:#94a3b8;
   --text:#0f172a; --text-soft:#475569; --text-muted:#64748b; --text-dim:#94a3b8;
-  --ui-bg:var(--cd-bg); --ui-surface:var(--cd-surface); --ui-surface-2:var(--cd-surface-soft);
+  --ui-bg:var(--cd-bg); --ui-bg-elevated:var(--cd-surface); --ui-surface:var(--cd-surface); --ui-surface-2:var(--cd-surface-soft);
   --ui-surface-raised:var(--cd-surface-elevated); --ui-border:var(--cd-border); --ui-border-strong:var(--cd-border-strong);
   --ui-text:#0f172a; --ui-text-secondary:#475569; --ui-text-muted:#64748b;
 }
@@ -32,7 +32,7 @@
   --surface3:var(--cd-surface-elevated); --surface4:#26354b; --surface-raised:var(--cd-surface-elevated); --bg-card:var(--cd-surface);
   --border:var(--cd-border); --border-mid:var(--cd-border-strong); --border-bright:#53637a;
   --text:#f8fafc; --text-soft:#cbd5e1; --text-muted:#94a3b8; --text-dim:#64748b;
-  --ui-bg:var(--cd-bg); --ui-surface:var(--cd-surface); --ui-surface-2:var(--cd-surface-soft);
+  --ui-bg:var(--cd-bg); --ui-bg-elevated:var(--cd-surface); --ui-surface:var(--cd-surface); --ui-surface-2:var(--cd-surface-soft);
   --ui-surface-raised:var(--cd-surface-elevated); --ui-border:var(--cd-border); --ui-border-strong:var(--cd-border-strong);
   --ui-text:#f8fafc; --ui-text-secondary:#cbd5e1; --ui-text-muted:#94a3b8;
 }
@@ -41,10 +41,16 @@ body,.shell,.main,main,.content{color:var(--text)!important;background:var(--bg)
 .topbar h1,.page-title,.card-title,h1,h2,h3,h4,strong,th{color:var(--text)!important}
 .sub,.page-sub,small,.help,.hint,label,.topbar-info-label,.topbar-user-label{color:var(--text-muted)!important}
 .card,.item,.painel,.panel,.widget,.modal,.modal-content,.dropdown-menu,.notification-panel,[class*="-card"]:not(.login-card){color:var(--text)!important;background:var(--surface)!important;border-color:var(--border)!important}
-input,select,textarea{color:var(--text)!important;background:var(--surface)!important;border-color:var(--border-mid)!important;-webkit-text-fill-color:currentColor}
-input::placeholder,textarea::placeholder{color:var(--text-dim)!important;opacity:1}
-input:focus,select:focus,textarea:focus{color:var(--ui-control-focus-text)!important;background:var(--ui-control-focus-bg)!important;-webkit-text-fill-color:currentColor}
+input,select,textarea{color:var(--text)!important;background:var(--surface)!important;border-color:var(--border-mid)!important;-webkit-text-fill-color:var(--text)!important;caret-color:var(--text)}
+input::placeholder,textarea::placeholder{color:var(--text-dim)!important;opacity:1;-webkit-text-fill-color:var(--text-dim)!important}
+input:focus,select:focus,textarea:focus{color:var(--ui-control-focus-text)!important;background:var(--ui-control-focus-bg)!important;-webkit-text-fill-color:var(--ui-control-focus-text)!important;caret-color:var(--ui-control-focus-text)}
 input:disabled,select:disabled,textarea:disabled,input[readonly],select[readonly],textarea[readonly]{color:var(--ui-control-disabled-text)!important;background:var(--ui-control-disabled-bg)!important;opacity:1!important;-webkit-text-fill-color:currentColor}
+/* Password, PIN e autofill usam os mesmos tokens dos demais controles. */
+input[type="password"],input.pin-secure-input,input[data-no-password-manager="true"]{color:var(--text)!important;background-color:var(--surface)!important;border-color:var(--border-mid)!important;-webkit-text-fill-color:var(--text)!important;caret-color:var(--text)!important;color-scheme:inherit}
+input[type="password"]::placeholder,input.pin-secure-input::placeholder,input[data-no-password-manager="true"]::placeholder{color:var(--text-dim)!important;opacity:1!important;-webkit-text-fill-color:var(--text-dim)!important}
+input[type="password"]:focus,input.pin-secure-input:focus,input[data-no-password-manager="true"]:focus{color:var(--ui-control-focus-text)!important;background-color:var(--ui-control-focus-bg)!important;-webkit-text-fill-color:var(--ui-control-focus-text)!important;caret-color:var(--ui-control-focus-text)!important}
+input[type="password"]:disabled,input[type="password"][readonly],input.pin-secure-input:disabled,input.pin-secure-input[readonly],input[data-no-password-manager="true"]:disabled,input[data-no-password-manager="true"][readonly]{color:var(--ui-control-disabled-text)!important;background-color:var(--ui-control-disabled-bg)!important;-webkit-text-fill-color:var(--ui-control-disabled-text)!important;caret-color:var(--ui-control-disabled-text)!important}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus,input:-webkit-autofill:active{color:var(--text)!important;background-color:var(--surface)!important;-webkit-text-fill-color:var(--text)!important;caret-color:var(--text)!important;-webkit-box-shadow:0 0 0 1000px var(--surface) inset!important;box-shadow:0 0 0 1000px var(--surface) inset!important}
 button:disabled{color:var(--cd-disabled)!important;opacity:.72}
 select option{color:var(--input-light-text)!important;background:var(--input-light-bg)!important;color-scheme:light}
 select option:checked{color:#fff!important;background:#334155!important}
@@ -119,7 +125,7 @@ table,thead,tbody,tr,td,th{border-color:var(--border)!important} td{color:var(--
 #recebivelFormaPagamentoId option:disabled{color:#64748b!important;background-color:#f1f5f9!important}
 
 /* Controles que permanecem propositalmente escuros em qualquer tema. */
-#recebivelFormaPagamentoId,.ajuste-saldo-field,
+#recebivelFormaPagamentoId,
 #ncSheet .nc-sheet-body input:not([type="checkbox"]):not([type="radio"]),
 #ncSheet .nc-sheet-body select{
   color:var(--input-dark-text)!important;
@@ -128,7 +134,7 @@ table,thead,tbody,tr,td,th{border-color:var(--border)!important} td{color:var(--
   color-scheme:dark;
   -webkit-text-fill-color:var(--input-dark-text)!important
 }
-#recebivelFormaPagamentoId::placeholder,.ajuste-saldo-field::placeholder,
+#recebivelFormaPagamentoId::placeholder,
 #ncSheet .nc-sheet-body input::placeholder{
   color:var(--input-dark-muted)!important;
   opacity:1!important;

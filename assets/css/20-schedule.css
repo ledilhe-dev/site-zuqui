@@ -87,27 +87,7 @@
   -webkit-text-security: disc;
   text-security: disc;
   }
-  /* Correção: campos de senha (pin-secure-input) apareciam como caixa branca crua
-  porque a regra global de inputs os exclui. Reaplicamos o tema escuro
-  apenas para os campos que NÃO são da tela de login. */
-  input.pin-secure-input:not(.login-input) {
-  background: rgba(5,10,7,0.85) !important;
-  border: 1px solid rgba(28,48,34,0.9) !important;
-  border-radius: 8px !important;
-  color: #e8f5eb !important;
-  padding: 0 10px !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  transition: border-color .18s, box-shadow .18s;
-  }
-  input.pin-secure-input:not(.login-input):focus {
-  border-color: rgba(16,217,122,0.5) !important;
-  box-shadow: 0 0 0 3px rgba(16,217,122,0.1) !important;
-  outline: none !important;
-  }
-  input.pin-secure-input:not(.login-input)::placeholder {
-  color: rgba(180,200,186,0.45) !important;
-  }
+  /* A aparencia de PIN/senha vem da base global de formularios. */
   /* Campo de senha do cadastro de funcionário: alinhar altura/box com os demais */
   #pinFuncionario.pin-secure-input,
   #senhaAcessoFuncionario.pin-secure-input {
