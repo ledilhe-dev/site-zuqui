@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.11"
+CONNECTOR_VERSION = "1.7.12"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -509,15 +509,50 @@ WHERE CA.IdFilial=? AND ISNULL(CA.BloqueiaVenda,0)=0
 ORDER BY A.Arvore,A.Nome;
 """
 
-SQL_PIZZA_MANDATORY_DATA_V1 = SQL_MANDATORY_V2.replace(
-    "A.Nome agrupamento_pai,", "A.Nome agrupamento_pai,PAI.Quantidade quantidade_produto_principal,"
-).replace(
-    "LEFT JOIN dbo.VendaItem PAI WITH(NOLOCK) ON PAI.Id=VI.IdItemPai",
-    "INNER JOIN dbo.VendaItem PAI WITH(NOLOCK) ON PAI.Id=VI.IdItemPai"
-).replace(
-    "LEFT JOIN dbo.Produto PP WITH(NOLOCK) ON PP.Id=PAI.IdProduto",
-    "INNER JOIN dbo.Produto PP WITH(NOLOCK) ON PP.Id=PAI.IdProduto"
-)
+SQL_PIZZA_STOCK_RETURN = """CAST(CASE WHEN EXISTS(
+   SELECT 1 FROM dbo.OperacaoEstoque OE WITH(NOLOCK)
+   WHERE OE.IdVendaItem=PAI.Id AND ISNULL(OE.AnulaOposto,0)=1
+ ) THEN 1 ELSE 0 END AS bit) retornou_estoque,
+ CASE WHEN EXISTS(
+   SELECT 1 FROM dbo.OperacaoEstoque OE WITH(NOLOCK)
+   WHERE OE.IdVendaItem=PAI.Id AND ISNULL(OE.AnulaOposto,0)=1
+ ) THEN 'S' ELSE 'N' END retorno_estoque_original"""
+SQL_PIZZA_STOCK_RETURN_UNKNOWN = """CAST(NULL AS bit) retornou_estoque,
+ CAST(NULL AS char(1)) retorno_estoque_original"""
+
+SQL_PIZZA_MANDATORY_DATA_V1 = """
+SET NOCOUNT ON;
+SELECT COALESCE(VI.Id,PAI.Id) id_item,PAI.IdVenda id_venda,CONVERT(date,PAI.Data) data,
+ CONVERT(varchar(8),CAST(PAI.Hora AS time),108) hora,
+ CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=PAI.IdVenda) THEN 'DELIVERY'
+      WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=PAI.IdVenda)
+        OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=PAI.IdVenda) THEN 'CARTAO_MESA'
+      ELSE 'VENDA_RAPIDA' END origem,
+ PAI.Id id_pai,PAI.IdProduto id_produto_pai,PP.Nome produto_pai,PP.IdAgrupamento id_agrupamento_pai,A.Nome agrupamento_pai,
+ PAI.Quantidade quantidade_produto_principal,CAST(ISNULL(PAI.ValorTotal,0) AS decimal(19,4)) valor_item,
+ COALESCE(VI.IdAgrupamentoItemObrigatorio,0) id_grupo_obrigatorio,
+ COALESCE(AIO.Descricao,'Sem composicao obrigatoria') grupo_obrigatorio,
+ AIO.QuantidadeMaxima quantidade_maxima,AIO.QuantidadeMinima quantidade_minima,
+ VI.IdProduto id_componente,PI.Nome componente,
+ CAST(ISNULL(VI.Quantidade,0) AS decimal(19,6)) quantidade_componente,
+ CAST(ISNULL(VI.ValorTotal,0) AS decimal(19,4)) valor_componente,
+ CAST(1 AS bit) cancelado,
+ {stock_return_select}
+FROM dbo.VendaItem PAI WITH(NOLOCK)
+INNER JOIN dbo.Produto PP WITH(NOLOCK) ON PP.Id=PAI.IdProduto
+LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=PP.IdAgrupamento
+LEFT JOIN dbo.VendaItem VI WITH(NOLOCK) ON VI.IdItemPai=PAI.Id
+ AND VI.IdTipoRegistro=3 AND VI.IdAgrupamentoItemObrigatorio IS NOT NULL
+LEFT JOIN dbo.AgrupamentoItemObrigatorio AIO WITH(NOLOCK) ON AIO.Id=VI.IdAgrupamentoItemObrigatorio
+LEFT JOIN dbo.Produto PI WITH(NOLOCK) ON PI.Id=VI.IdProduto
+WHERE PAI.IdFilial=? AND PAI.Data>=? AND PAI.Data<?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(PAI.Hora AS time)),CAST(CONVERT(date,PAI.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(PAI.Hora AS time)),CAST(CONVERT(date,PAI.Data) AS datetime2))<?
+ AND PAI.IdStatusItem=2
+ AND NOT (PAI.IdTipoRegistro=3 AND PAI.IdAgrupamentoItemObrigatorio IS NOT NULL)
+ {dynamic_filters}
+ORDER BY PAI.Data,PAI.Hora,PAI.Id,VI.Id;
+"""
 
 SQL_VENDAS_STATUS = """
 SET NOCOUNT ON;
@@ -1401,7 +1436,11 @@ def query_pizza_mandatory_metadata_v1(config:dict[str,Any],filial:int) -> list[d
 
 def query_pizza_mandatory_rows_v1(config:dict[str,Any],start:datetime,end:datetime,filial:int) -> list[dict[str,Any]]:
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
-        connection.timeout=90;cursor=connection.cursor();cursor.execute(SQL_PIZZA_MANDATORY_DATA_V1.format(dynamic_filters=""),filial,start.date(),end.date()+timedelta(days=1),start,end);return rows_as_dicts(cursor)
+        connection.timeout=90;cursor=connection.cursor()
+        cursor.execute("SELECT CASE WHEN OBJECT_ID('dbo.OperacaoEstoque','U') IS NOT NULL AND COL_LENGTH('dbo.OperacaoEstoque','IdVendaItem') IS NOT NULL AND COL_LENGTH('dbo.OperacaoEstoque','AnulaOposto') IS NOT NULL THEN 1 ELSE 0 END")
+        stock_return_sql=SQL_PIZZA_STOCK_RETURN if bool(cursor.fetchone()[0]) else SQL_PIZZA_STOCK_RETURN_UNKNOWN
+        cursor.execute(SQL_PIZZA_MANDATORY_DATA_V1.format(dynamic_filters="",stock_return_select=stock_return_sql),filial,start.date(),end.date()+timedelta(days=1),start,end)
+        return rows_as_dicts(cursor)
 
 
 def sync_pizza_mandatory_v1(store_id:str,config:dict[str,Any],start:datetime,end:datetime,filial:int) -> None:

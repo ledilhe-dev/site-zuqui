@@ -136,6 +136,16 @@ class MultiempresaTests(unittest.TestCase):
         self.assertIn("PAI.Id=VI.IdItemPai", sql)
         self.assertNotIn("IdFilial=1", sql)
 
+    def test_pizza_cancellations_use_stock_operation_and_keep_parent_without_components(self):
+        sql = bridge.SQL_PIZZA_MANDATORY_DATA_V1
+        self.assertIn("PAI.IdStatusItem=2", sql)
+        self.assertIn("LEFT JOIN dbo.VendaItem VI", sql)
+        self.assertIn("dbo.OperacaoEstoque OE", bridge.SQL_PIZZA_STOCK_RETURN)
+        self.assertIn("OE.IdVendaItem=PAI.Id", bridge.SQL_PIZZA_STOCK_RETURN)
+        self.assertIn("OE.AnulaOposto,0)=1", bridge.SQL_PIZZA_STOCK_RETURN)
+        self.assertIn("CAST(NULL AS bit) retornou_estoque", bridge.SQL_PIZZA_STOCK_RETURN_UNKNOWN)
+        self.assertNotIn("IdFilial=1", sql)
+
     def test_gustare_filial_two_metadata_fixture_has_44_groups(self):
         groups = [{"id": value, "nome": f"Grupo {value}"} for value in range(1, 45)]
         self.assertEqual(len(groups), 44)

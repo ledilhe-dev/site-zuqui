@@ -29,8 +29,11 @@ test('SQL usa configuração ativa, pai real e quantidade do pai',()=>{
   assert.match(connector,/CA\.IdFilial=\?/);
   assert.match(connector,/ISNULL\(CA\.BloqueiaVenda,0\)=0/);
   assert.match(connector,/SQL_PIZZA_MANDATORY_DATA_V1[\s\S]*PAI\.Quantidade quantidade_produto_principal/);
-  assert.match(connector,/INNER JOIN dbo\.VendaItem PAI/);
-  assert.match(connector,/VI\.IdTipoRegistro=3 AND VI\.IdAgrupamentoItemObrigatorio IS NOT NULL/);
+  assert.match(connector,/FROM dbo\.VendaItem PAI/);
+  assert.match(connector,/LEFT JOIN dbo\.VendaItem VI[\s\S]*VI\.IdTipoRegistro=3 AND VI\.IdAgrupamentoItemObrigatorio IS NOT NULL/);
+  assert.match(connector,/PAI\.IdStatusItem=2/);
+  assert.match(connector,/SQL_PIZZA_STOCK_RETURN[\s\S]*dbo\.OperacaoEstoque OE[\s\S]*OE\.IdVendaItem=PAI\.Id[\s\S]*OE\.AnulaOposto,0\)=1/);
+  assert.match(connector,/SQL_PIZZA_STOCK_RETURN_UNKNOWN[\s\S]*CAST\(NULL AS bit\) retornou_estoque/);
 });
 const base={id_venda:1,id_pai:10,id_produto_pai:2,produto_pai:'Pizza',id_grupo_obrigatorio:7,grupo_obrigatorio:'PIZZA GRAND',quantidade_produto_principal:1,quantidade_maxima:2,valor_item:50,valor_componente:0};
 const flavors=(max,parent,values)=>values.map(([id,name,qty],index)=>({...base,quantidade_maxima:max,quantidade_produto_principal:parent,id_item:index+1,id_componente:id,componente:name,quantidade_componente:qty}));
@@ -43,12 +46,34 @@ test('max 3: 1+1+1 são três sabores',()=>{const d=aggregatePizzaMandatoryV1(fl
 test('pai 2: quatro slots iguais são duas inteiras',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,2,[[1,'Calabresa',4]]));assert.equal(d.resumo.inteiras,2);assert.equal(byFlavor(d,'Calabresa').inteiras,2)});
 test('pai 2: 2+2 são duas pizzas meio a meio',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,2,[[1,'Calabresa',2],[2,'Portuguesa',2]]));assert.equal(d.resumo.duas,2);assert.equal(byFlavor(d,'Calabresa').meias,2);assert.equal(byFlavor(d,'Calabresa').equivalente,1)});
 test('slots divergentes são marcados para revisão',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',2]]));assert.equal(d.resumo.revisar,1);assert.equal(d.records[0].composition,'REVISAR')});
+test('caso oficial 27/08 inclui pai sem componentes e totaliza todos os cancelados',()=>{
+  const stock={cancelado:true,retornou_estoque:true,retorno_estoque_original:'S',data:'2026-08-27',origem:'DELIVERY'};
+  const rows=[
+    {...base,...stock,id_venda:31,id_pai:310,id_item:310,id_produto_pai:31,produto_pai:'PIZZA BROTO',id_agrupamento_pai:31,agrupamento_pai:'3.1 PDV - PIZZA',id_grupo_obrigatorio:0,grupo_obrigatorio:'Sem composicao obrigatoria',quantidade_produto_principal:3,quantidade_maxima:null,id_componente:null,componente:null,quantidade_componente:0,valor_item:220},
+    {...base,...stock,id_venda:32,id_pai:320,id_item:321,id_produto_pai:32,produto_pai:'PIZZA GRANDE',id_agrupamento_pai:32,agrupamento_pai:'3.2 PDV - PIZZA',quantidade_produto_principal:1,quantidade_maxima:1,id_componente:1,componente:'CALABRESA',quantidade_componente:1,valor_item:109.99},
+    {...base,...stock,id_venda:34,id_pai:340,id_item:341,id_produto_pai:34,produto_pai:'PIZZA ALL METRO',id_agrupamento_pai:34,agrupamento_pai:'3.4 PDV - PIZZA',quantidade_produto_principal:2,quantidade_maxima:1,id_componente:2,componente:'MIGNON',quantidade_componente:2,valor_item:394},
+  ];
+  const d=aggregatePizzaMandatoryV1(rows);
+  assert.equal(d.resumo.quantidade,6);
+  assert.equal(d.resumo.valor,723.99);
+  assert.equal(d.resumo.revisar,3);
+  assert.equal(d.records.find(x=>x.produto_pai==='PIZZA BROTO').placeholder,true);
+  assert.ok(d.records.every(x=>x.retornou_estoque===true));
+});
 test('lifecycle SPA invalida e aborta ao desmontar',()=>{
   assert.match(frontend,/state\.generation\+\+/);assert.match(frontend,/state\.controller\?\.abort\(\)/);assert.match(frontend,/key\(context\(\)\)===key\(ctx\)/);
 });
 test('BI cruza filtros em memória e não consulta novamente a cada clique',()=>{
   assert.match(frontend,/biFilters/);assert.match(frontend,/state\.records\.filter/);assert.match(frontend,/data-pair-flavor/);assert.match(frontend,/data-sort-table/);
   assert.equal((frontend.match(/pizza_mandatory_report_v1/g)||[]).length,1);
+});
+test('filtro de retorno atua em memória e preserva desconhecidos apenas em Todos',()=>{
+  assert.match(frontend,/data-stock-filter="todos"/);
+  assert.match(frontend,/data-stock-filter="sim"/);
+  assert.match(frontend,/data-stock-filter="nao"/);
+  assert.match(frontend,/r\.retornou_estoque===true:r\.retornou_estoque===false/);
+  assert.match(frontend,/Retornou ao estoque: Sim/);
+  assert.match(frontend,/Retornou ao estoque: Não/);
 });
 test('relatório antigo foi removido da aplicação',()=>{
   const index=fs.readFileSync('index.html','utf8'),navigation=fs.readFileSync('assets/js/04-navigation.js','utf8'),manifest=fs.readFileSync('assets/manifest.json','utf8');
