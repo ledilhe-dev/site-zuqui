@@ -403,6 +403,22 @@ function escaparValorLike(valor) {
   return String(valor || '').replace(/[%,]/g, ' ').trim();
 }
 
+async function gerenciarSolicitacoesAcesso(acao, { id = null, email = null } = {}) {
+  const funcionarioId = String(usuarioSistemaLogado?.id || '').trim();
+  const token = String(usuarioSistemaLogado?.global_admin_token || '').trim();
+  if (!funcionarioId || !token) {
+    return { data: null, error: new Error('Sessão administrativa inválida.') };
+  }
+  const { data: resultado, error } = await sb.rpc('gerenciar_solicitacoes_acesso', {
+    p_funcionario_id: funcionarioId,
+    p_token: token,
+    p_acao: acao,
+    p_id: id,
+    p_email: email,
+  });
+  return { data: resultado?.data ?? resultado, error: error || (resultado?.ok ? null : new Error('Operação não autorizada.')) };
+}
+
 async function validarDuplicidadeCadastro({
   nome,
   email,
@@ -510,7 +526,7 @@ async function excluirCadastroCompletoPorEmail(email, opcoes = {}) {
 
   const resultados = await executarSemFiltrosTenantTemporario(() => Promise.allSettled([
     sb.from('email_tokens_auth').delete().eq('email', emailNormalizado),
-    sb.from('solicitacoes_acesso').delete().eq('email', emailNormalizado),
+    gerenciarSolicitacoesAcesso('excluir_email', { email: emailNormalizado }),
     sb.from('funcionarios').delete().eq('email', emailNormalizado),
   ]));
   const falha = resultados.find(resultado => resultado.status === 'fulfilled' && resultado.value?.error && !isMissingAccessRequestsTableError(resultado.value.error) && !isMissingTableError(resultado.value.error));
@@ -3819,11 +3835,8 @@ async function carregarNotificacoes() {
   const alertasEmail = [];
 
   try {
-    const { data: solicitacoes, error: errSolicitacoes } = await sb
-      .from('solicitacoes_acesso')
-      .select('id, nome, email, created_at, status')
-      .eq('status', 'pendente')
-      .order('created_at', { ascending: false });
+    const { data: todasSolicitacoes, error: errSolicitacoes } = await gerenciarSolicitacoesAcesso('listar');
+    const solicitacoes = (todasSolicitacoes || []).filter(item => item.status === 'pendente');
 
     if (usuarioPodeVerNotificacaoSolicitacao() && !errSolicitacoes && solicitacoes?.length) {
       const solicitacoesVisiveis = [];

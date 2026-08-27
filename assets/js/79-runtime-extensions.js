@@ -788,46 +788,12 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       setMsg('msgSolicitacaoAcesso', 'Informe o CNPJ da loja com 14 números.', 'err');
       return;
     }
-    const mensagemDuplicidade = await validarDuplicidadeCadastro({
-      nome,
-      email,
-      verificarSolicitacoesPendentes: true,
+    const { data: resultado, error } = await sb.rpc('solicitar_acesso_por_cnpj', {
+      p_nome: nome,
+      p_cnpj: cnpj,
+      p_email: email,
+      p_mensagem: observacao,
     });
-    if (mensagemDuplicidade) {
-      setMsg('msgSolicitacaoAcesso', mensagemDuplicidade, 'err');
-      return;
-    }
-
-    await sb.from('solicitacoes_acesso').delete().eq('email', email);
-
-    // Algumas instalações exigem loja_id/empresa_id (NOT NULL) na tabela de solicitações
-    // por causa do isolamento multi-loja. Tentamos resolver um tenant padrão e, se as
-    // colunas não existirem, repetimos o insert sem elas.
-    let tenantSolicitacao = { loja_id: null, empresa_id: null };
-    try {
-      tenantSolicitacao = await resolverTenantPublicoParaSolicitacao();
-    } catch (e) {
-      console.warn('Não foi possível resolver loja/empresa padrão para a solicitação:', e);
-    }
-
-    const baseSolicitacao = { nome, email, cnpj, observacao: observacao || null, status: 'pendente' };
-    const payloadComTenant = {
-      ...baseSolicitacao,
-      ...(tenantSolicitacao.loja_id ? { loja_id: tenantSolicitacao.loja_id } : {}),
-      ...(tenantSolicitacao.empresa_id ? { empresa_id: tenantSolicitacao.empresa_id } : {}),
-    };
-
-    let { error } = await sb.from('solicitacoes_acesso').insert([payloadComTenant]);
-
-    // Se o erro for por coluna inexistente (loja_id/empresa_id), refaz sem o tenant.
-    if (error) {
-      const txtErro = String(error.message || '').toLowerCase();
-      const colunaInexistente = (txtErro.includes('column') && (txtErro.includes('loja_id') || txtErro.includes('empresa_id')))
-        || String(error.code || '') === 'PGRST204';
-      if (colunaInexistente && (tenantSolicitacao.loja_id || tenantSolicitacao.empresa_id)) {
-        ({ error } = await sb.from('solicitacoes_acesso').insert([baseSolicitacao]));
-      }
-    }
 
     if (error) {
       if (isMissingAccessRequestsTableError(error)) {
@@ -842,15 +808,18 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         setMsg('msgSolicitacaoAcesso', 'O banco está bloqueando o envio (política de segurança/RLS na tabela solicitacoes_acesso). Habilite a policy de INSERT público para esta tabela no Supabase.', 'err');
         return;
       }
-      if (detalheLower.includes('null value') || (detalheLower.includes('violates') && detalheLower.includes('not-null')) || String(error.code || '') === '23502') {
-        if (!tenantSolicitacao.empresa_id && !tenantSolicitacao.loja_id) {
-          setMsg('msgSolicitacaoAcesso', 'Não foi possível identificar a empresa/loja para registrar a solicitação. Provavelmente o acesso público de leitura às tabelas lojas/empresas está bloqueado (RLS) ou ainda não há loja cadastrada. Verifique no Supabase.', 'err');
-          return;
-        }
-        setMsg('msgSolicitacaoAcesso', `Falta um campo obrigatório no banco para registrar a solicitação${detalhe ? ` (${detalhe})` : ''}. Verifique se loja/empresa são exigidas na tabela solicitacoes_acesso.`, 'err');
-        return;
-      }
       setMsg('msgSolicitacaoAcesso', `Não foi possível enviar sua solicitação${detalhe ? `: ${detalhe}` : '.'}`, 'err');
+      return;
+    }
+
+    if (!resultado?.ok) {
+      const mensagens = {
+        empresa_nao_encontrada: 'Não encontramos uma empresa cadastrada com este CNPJ. Confira os dados informados ou entre em contato com o administrador.',
+        solicitacao_pendente: 'Já existe uma solicitação pendente com este e-mail para esta empresa.',
+        loja_nao_encontrada: 'A empresa foi localizada, mas ainda não possui uma loja ativa para receber a solicitação. Entre em contato com o administrador.',
+        dados_invalidos: 'Confira os dados informados e tente novamente.',
+      };
+      setMsg('msgSolicitacaoAcesso', mensagens[resultado?.codigo] || 'Não foi possível enviar sua solicitação.', 'err');
       return;
     }
 

@@ -9,10 +9,7 @@ async function carregarSolicitacoesAcesso() {
   }
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
-  const { data, error } = await sb
-    .from('solicitacoes_acesso')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await gerenciarSolicitacoesAcesso('listar');
 
   if (error) {
     if (isMissingAccessRequestsTableError(error)) {
@@ -75,11 +72,7 @@ async function carregarSolicitacoesAcesso() {
 }
 
 async function aprovarSolicitacaoAcesso(id) {
-  const { data: solicitacao, error: errSolicitacao } = await sb
-    .from('solicitacoes_acesso')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data: solicitacao, error: errSolicitacao } = await gerenciarSolicitacoesAcesso('obter', { id });
 
   if (errSolicitacao || !solicitacao) {
     setMsg('msgSolicitacoes', 'Não foi possível carregar a solicitação.', 'err');
@@ -162,8 +155,9 @@ async function recarregarLojasAprovacao() {
       executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome, ativo').order('nome')),
       executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome, codigo, loja_id').eq('ativo', true).order('nome')),
     ]);
-    _aprovacaoLojasCache = (resLojas.data || []).filter(l => l.ativo !== false);
-    _aprovacaoEmpresasCache = resEmpresas.data || [];
+    const empresaSolicitacao = String(_aprovacaoSolicitacaoAtual?.empresa_id || '');
+    _aprovacaoLojasCache = (resLojas.data || []).filter(l => l.ativo !== false && String(l.empresa_id || '') === empresaSolicitacao);
+    _aprovacaoEmpresasCache = (resEmpresas.data || []).filter(e => String(e.id || '') === empresaSolicitacao);
     _aprovacaoPerfisCache = resPerfis.data || [];
   } catch (e) {
     console.error('Erro ao carregar lojas/empresas/perfis para aprovação:', e);
@@ -341,20 +335,12 @@ async function confirmarAprovacaoSolicitacao() {
     }
 
     // 3) Marca a solicitação como aprovada e limpa duplicadas.
-    const { error: errUpdate } = await sb
-      .from('solicitacoes_acesso')
-      .update({ status: 'aprovada', aprovado_em: new Date().toISOString() })
-      .eq('id', solicitacao.id);
+    const { error: errUpdate } = await gerenciarSolicitacoesAcesso('aprovar', { id: solicitacao.id });
     if (errUpdate) {
       setMsg('msgAprovacaoSolicitacao', 'Funcionário criado, mas houve erro ao marcar a solicitação como aprovada.', 'err');
     }
 
-    await sb
-      .from('solicitacoes_acesso')
-      .delete()
-      .eq('email', solicitacao.email.toLowerCase())
-      .neq('id', solicitacao.id)
-      .neq('status', 'aprovada');
+    await gerenciarSolicitacoesAcesso('excluir_duplicadas', { id: solicitacao.id, email: solicitacao.email });
 
     const nomesLojas = lojasSelecionadas
       .map(lojaId => _aprovacaoLojasCache.find(l => String(l.id) === String(lojaId))?.nome)
@@ -384,10 +370,7 @@ async function confirmarAprovacaoSolicitacao() {
 
 
 async function rejeitarSolicitacaoAcesso(id) {
-  const { error } = await sb
-    .from('solicitacoes_acesso')
-    .update({ status: 'rejeitada', rejeitado_em: new Date().toISOString() })
-    .eq('id', id);
+  const { error } = await gerenciarSolicitacoesAcesso('rejeitar', { id });
 
   if (error) {
     setMsg('msgSolicitacoes', 'Não foi possível rejeitar a solicitação.', 'err');
@@ -402,7 +385,7 @@ async function rejeitarSolicitacaoAcesso(id) {
 async function excluirSolicitacaoAcesso(id, email = '') {
   if (!confirm('Excluir esta solicitação de acesso?')) return;
 
-  const { error } = await sb.from('solicitacoes_acesso').delete().eq('id', id);
+  const { error } = await gerenciarSolicitacoesAcesso('excluir', { id });
   if (error) {
     setMsg('msgSolicitacoes', 'Não foi possível excluir a solicitação.', 'err');
     return;
@@ -410,11 +393,7 @@ async function excluirSolicitacaoAcesso(id, email = '') {
 
   const emailNormalizado = String(email || '').trim().toLowerCase();
   if (emailNormalizado) {
-    await sb
-      .from('solicitacoes_acesso')
-      .delete()
-      .eq('email', emailNormalizado)
-      .neq('id', id);
+    await gerenciarSolicitacoesAcesso('excluir_email', { email: emailNormalizado });
   }
 
   setMsg('msgSolicitacoes', 'Solicitação excluída com sucesso.', 'ok');
