@@ -2,6 +2,13 @@
 :where(.pagina,.card,.modal,.modal-content,.form-row,.form-grid,.filter-grid,.toolbar)>*{min-width:0}
 input,textarea,select{max-width:100%;box-sizing:border-box}
 input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid color-mix(in srgb,var(--cd-primary,#6366f1) 65%,transparent)!important;outline-offset:1px}
+/* Camada final dos campos seguros: impede fundo branco em PIN/senha dentro de modais. */
+:root[data-theme] input:is([type="password"],.pin-secure-input,[data-no-password-manager="true"]){color:var(--secure-input-text)!important;background:var(--secure-input-bg)!important;border-color:var(--secure-input-border)!important;-webkit-text-fill-color:var(--secure-input-text)!important;caret-color:var(--secure-input-text)!important}
+:root[data-theme] input:is([type="password"],.pin-secure-input,[data-no-password-manager="true"])::placeholder{color:var(--secure-input-placeholder)!important;opacity:1!important;-webkit-text-fill-color:var(--secure-input-placeholder)!important}
+:root[data-theme] input:is([type="password"],.pin-secure-input,[data-no-password-manager="true"]):is(:hover,:focus,:focus-visible,:active){color:var(--secure-input-text)!important;background:var(--secure-input-bg)!important;-webkit-text-fill-color:var(--secure-input-text)!important;caret-color:var(--secure-input-text)!important}
+:root[data-theme] input:is([type="password"],.pin-secure-input,[data-no-password-manager="true"]):-webkit-autofill,
+:root[data-theme] input:is([type="password"],.pin-secure-input,[data-no-password-manager="true"]):-webkit-autofill:hover,
+:root[data-theme] input:is([type="password"],.pin-secure-input,[data-no-password-manager="true"]):-webkit-autofill:focus{color:var(--secure-input-text)!important;-webkit-text-fill-color:var(--secure-input-text)!important;caret-color:var(--secure-input-text)!important;-webkit-box-shadow:0 0 0 1000px var(--secure-input-bg) inset!important;box-shadow:0 0 0 1000px var(--secure-input-bg) inset!important}
 #recebivelFormaPagamentoId:is(:hover,:focus,:focus-visible,:active),#ncSheet .nc-sheet-body :is(input:not([type="checkbox"]):not([type="radio"]),select):is(:hover,:focus,:focus-visible,:active){color:var(--input-dark-text)!important;background:var(--input-dark-bg)!important;-webkit-text-fill-color:var(--input-dark-text)!important}
 #recebivelFormaPagamentoId:-webkit-autofill,#ncSheet .nc-sheet-body input:-webkit-autofill{-webkit-text-fill-color:var(--input-dark-text)!important;caret-color:var(--input-dark-text)!important;-webkit-box-shadow:0 0 0 1000px var(--input-dark-bg) inset!important}
 

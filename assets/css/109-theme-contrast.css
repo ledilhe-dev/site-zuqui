@@ -3,6 +3,7 @@
   color-scheme:light;
   --input-dark-bg:#0b111a; --input-dark-text:#f8fafc; --input-dark-muted:#94a3b8; --input-dark-border:#293548;
   --input-light-bg:#fff; --input-light-text:#172033; --input-light-muted:#64748b; --input-light-border:#d8dee8;
+  --secure-input-bg:#eef2f7; --secure-input-text:#172033; --secure-input-placeholder:#64748b; --secure-input-border:#cbd5e1;
   --ui-control-focus-bg:#fff; --ui-control-focus-text:#172033;
   --ui-control-disabled-bg:#f1f5f9; --ui-control-disabled-text:#64748b;
   --cd-bg:#f4f5f8; --cd-surface:#fcfcfd; --cd-surface-soft:#f0f2f7; --cd-surface-elevated:#fff;
@@ -21,6 +22,7 @@
   color-scheme:dark;
   --input-dark-bg:#0b111a; --input-dark-text:#f8fafc; --input-dark-muted:#94a3b8; --input-dark-border:#293548;
   --input-light-bg:#fff; --input-light-text:#172033; --input-light-muted:#64748b; --input-light-border:#d8dee8;
+  --secure-input-bg:#1e293b; --secure-input-text:#f8fafc; --secure-input-placeholder:#94a3b8; --secure-input-border:#475569;
   --ui-control-focus-bg:#0d131b; --ui-control-focus-text:#f8fafc;
   --ui-control-disabled-bg:#18202d; --ui-control-disabled-text:#cbd5e1;
   --cd-bg:#0b1120; --cd-surface:#111827; --cd-surface-soft:#172033; --cd-surface-elevated:#1d2940;
@@ -46,9 +48,9 @@ input::placeholder,textarea::placeholder{color:var(--text-dim)!important;opacity
 input:focus,select:focus,textarea:focus{color:var(--ui-control-focus-text)!important;background:var(--ui-control-focus-bg)!important;-webkit-text-fill-color:var(--ui-control-focus-text)!important;caret-color:var(--ui-control-focus-text)}
 input:disabled,select:disabled,textarea:disabled,input[readonly],select[readonly],textarea[readonly]{color:var(--ui-control-disabled-text)!important;background:var(--ui-control-disabled-bg)!important;opacity:1!important;-webkit-text-fill-color:currentColor}
 /* Password, PIN e autofill usam os mesmos tokens dos demais controles. */
-input[type="password"],input.pin-secure-input,input[data-no-password-manager="true"]{color:var(--text)!important;background-color:var(--surface)!important;border-color:var(--border-mid)!important;-webkit-text-fill-color:var(--text)!important;caret-color:var(--text)!important;color-scheme:inherit}
-input[type="password"]::placeholder,input.pin-secure-input::placeholder,input[data-no-password-manager="true"]::placeholder{color:var(--text-dim)!important;opacity:1!important;-webkit-text-fill-color:var(--text-dim)!important}
-input[type="password"]:focus,input.pin-secure-input:focus,input[data-no-password-manager="true"]:focus{color:var(--ui-control-focus-text)!important;background-color:var(--ui-control-focus-bg)!important;-webkit-text-fill-color:var(--ui-control-focus-text)!important;caret-color:var(--ui-control-focus-text)!important}
+input[type="password"],input.pin-secure-input,input[data-no-password-manager="true"]{color:var(--secure-input-text)!important;background-color:var(--secure-input-bg)!important;border-color:var(--secure-input-border)!important;-webkit-text-fill-color:var(--secure-input-text)!important;caret-color:var(--secure-input-text)!important;color-scheme:inherit}
+input[type="password"]::placeholder,input.pin-secure-input::placeholder,input[data-no-password-manager="true"]::placeholder{color:var(--secure-input-placeholder)!important;opacity:1!important;-webkit-text-fill-color:var(--secure-input-placeholder)!important}
+input[type="password"]:focus,input.pin-secure-input:focus,input[data-no-password-manager="true"]:focus{color:var(--secure-input-text)!important;background-color:var(--secure-input-bg)!important;-webkit-text-fill-color:var(--secure-input-text)!important;caret-color:var(--secure-input-text)!important}
 input[type="password"]:disabled,input[type="password"][readonly],input.pin-secure-input:disabled,input.pin-secure-input[readonly],input[data-no-password-manager="true"]:disabled,input[data-no-password-manager="true"][readonly]{color:var(--ui-control-disabled-text)!important;background-color:var(--ui-control-disabled-bg)!important;-webkit-text-fill-color:var(--ui-control-disabled-text)!important;caret-color:var(--ui-control-disabled-text)!important}
 input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus,input:-webkit-autofill:active{color:var(--text)!important;background-color:var(--surface)!important;-webkit-text-fill-color:var(--text)!important;caret-color:var(--text)!important;-webkit-box-shadow:0 0 0 1000px var(--surface) inset!important;box-shadow:0 0 0 1000px var(--surface) inset!important}
 button:disabled{color:var(--cd-disabled)!important;opacity:.72}
