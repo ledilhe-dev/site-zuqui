@@ -1019,11 +1019,12 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       context_mode: 'store',
       global_admin_authorized: ehAdminSistema && !!funcionario.global_admin_token,
       global_admin_token: funcionario.global_admin_token || null,
+      operational_access_token: funcionario.operational_access_token || null,
       id: funcionario.id,
       nome: funcionario.nome,
       username: funcionario.nome || funcionario.email || '',
       é_administrador: ehAdminSistema,
-      perfil_id: funcionario.perfil_id,
+      perfil_id: perfilFuncionario?.id || null,
       loja_id: loja?.id || funcionario.loja_id || null,
       empresa_id: loja?.empresa_id || funcionario.empresa_id || null,
       empresa_nome: loja?.empresa_nome || loja?.nome_empresa || loja?.empresas?.nome || loja?.empresa?.nome || funcionario.empresa_nome || funcionario.nome_empresa || null,
@@ -1047,7 +1048,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function obterPerfilFuncionarioParaLoja(funcionario, lojaEscolhida, perfilFallback) {
     const funcionarioId = String(funcionario?.id || '').trim();
     const lojaId = String(lojaEscolhida?.id || lojaEscolhida?.loja_id || '').trim();
-    if (!funcionarioId || !lojaId) return perfilFallback;
+    if (!funcionarioId || !lojaId) return null;
     try {
       const vinculoRes = await executarSemFiltrosTenantTemporario(() => sb.from('funcionario_lojas')
         .select('perfil_id, ativo')
@@ -1055,16 +1056,17 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         .eq('loja_id', lojaId)
         .eq('ativo', true)
         .maybeSingle());
-      const perfilId = vinculoRes.data?.perfil_id || funcionario?.perfil_id || null;
-      if (!perfilId) return perfilFallback;
+      const perfilId = vinculoRes.data?.perfil_id || null;
+      if (!perfilId) return null;
       const perfilRes = await executarSemFiltrosTenantTemporario(() => sb.from('perfis')
         .select('id, nome, codigo, permissoes, loja_id, empresa_id')
         .eq('id', perfilId)
         .maybeSingle());
-      return perfilRes.data ? normalizarPerfilUsuario(perfilRes.data) : perfilFallback;
+      if (!perfilRes.data || String(perfilRes.data.loja_id || '') !== lojaId) return null;
+      return normalizarPerfilUsuario(perfilRes.data);
     } catch (erro) {
       console.warn('Não foi possível carregar o perfil específico da loja:', erro);
-      return perfilFallback;
+      return null;
     }
   }
 
@@ -1075,6 +1077,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
     }
     const perfilDaLoja = await obterPerfilFuncionarioParaLoja(funcionario, lojaEscolhida, perfilFuncionario);
+    if (!perfilDaLoja?.id) {
+      setMsg('msgLogin', 'Acesso bloqueado: esta loja ainda não possui um perfil explícito vinculado ao usuário.', 'err');
+      return;
+    }
     salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionario, perfilDaLoja, lojaEscolhida), { manterConectado });
     limparSelecaoLojaLogin();
     setSistemaLogado(true);
@@ -1214,6 +1220,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       context_mode: 'global_admin',
       global_admin_authorized: true,
       global_admin_token: contexto.funcionario.global_admin_token,
+      operational_access_token: contexto.funcionario.operational_access_token || null,
       id: contexto.funcionario.id,
       nome: contexto.funcionario.nome,
       username: nomeUsuario,
@@ -1332,6 +1339,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         }));
         if (erroAdminLogin) console.warn('Falha ao autenticar admin de loja:', erroAdminLogin);
         if (adminLoja) {
+          window.__authPrincipalId = adminLoja.id;
+          window.__authOperationalToken = adminLoja.operational_access_token || '';
           let nomeLojaAdmin = '';
           const lojaIdAdmin = String(adminLoja.loja_id || '').trim();
           let empresaIdAdmin = String(adminLoja.empresa_id || '').trim();
@@ -1374,6 +1383,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
             usuario: adminLoja.usuario,
             loja_id: adminLoja.loja_id,
             empresa_id: empresaIdAdmin || null,
+            operational_access_token: adminLoja.operational_access_token || null,
             loja_nome: nomeLojaAdmin || 'Loja vinculada',
             perfil: perfilAdminLoja
           }, { manterConectado });
@@ -1415,15 +1425,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return;
     }
 
-    let perfilFuncionario = normalizarPerfilUsuario(funcionario.perfis);
-    if (!perfilFuncionario || !perfilFuncionario.codigo) {
-      perfilFuncionario = {
-        nome: 'Funcionário',
-        codigo: 'FUNCIONARIO',
-        permissoes: obterPermissoesBase('FUNCIONARIO'),
-      };
-      setMsg('msgLogin', 'Seu perfil não pôde ser carregado agora. Acesso liberado com permissões básicas.', 'ok');
-    }
+    window.__authPrincipalId = funcionario.id;
+    window.__authOperationalToken = funcionario.operational_access_token || '';
+    window.__authGlobalToken = funcionario.global_admin_token || '';
+    const perfilFuncionario = normalizarPerfilUsuario(funcionario.perfis);
 
     const lojasPermitidas = await carregarLojasPermitidasFuncionarioLogin(funcionario);
     window.__loginLojasPermitidasAtual = lojasPermitidas;

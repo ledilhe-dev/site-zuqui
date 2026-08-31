@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.39';
-const APP_VERSION_LABEL = '3.2.39-pizza-slots-bi';
+const APP_VERSION = '3.2.41';
+const APP_VERSION_LABEL = '3.2.41-tenant-token-perfil-obrigatorio';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -21,7 +21,20 @@ const EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).emailFunctionName || 'noti
 const AUTH_EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).authEmailFunctionName || 'autenticacao-email';
 const AUTH_REDIRECT_URL = (window.APP_CONFIG || {}).authRedirectUrl || 'https://checkdiario.com.br/';
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const fetchComContextoSeguro = async (input, init = {}) => {
+  const sessao = (typeof usuarioSistemaLogado !== 'undefined' && usuarioSistemaLogado) || window.usuarioSistemaLogado || {};
+  const headers = new Headers(init.headers || {});
+  const funcionarioId = String(sessao.id || window.__authPrincipalId || '').trim();
+  const lojaId = String(sessao.loja_id || window.__authLojaId || '').trim();
+  const tokenOperacional = String(sessao.operational_access_token || window.__authOperationalToken || '').trim();
+  const tokenGlobal = String(sessao.global_admin_token || window.__authGlobalToken || '').trim();
+  if (funcionarioId) headers.set('x-funcionario-id', funcionarioId);
+  if (lojaId) headers.set('x-loja-id', lojaId);
+  if (tokenOperacional) headers.set('x-operational-token', tokenOperacional);
+  if (tokenGlobal) headers.set('x-global-admin-token', tokenGlobal);
+  return fetch(input, { ...init, headers });
+};
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { fetch: fetchComContextoSeguro } });
 window.sb = sb; // compatibilidade para módulos seguros de agenda
 const AGENDA_TABLE = 'agenda';
 window.AGENDA_TABLE = AGENDA_TABLE;

@@ -179,7 +179,7 @@ function renderizarLojasAprovacao() {
       <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">🏢 ${escaparHtmlBasico(emp.nome)}</div>
       ${emp.lojas.map(loja => {
         const marcada = Object.prototype.hasOwnProperty.call(_aprovacaoSelecao, loja.id);
-        const perfisOpts = '<option value="">Perfil padrão</option>' + _aprovacaoPerfisCache
+        const perfisOpts = '<option value="">Selecione um perfil (obrigatório)</option>' + _aprovacaoPerfisCache
           .filter(p => String(p.loja_id || '') === String(loja.id))
           .map(p => `<option value="${escaparHtmlBasico(p.id)}">${escaparHtmlBasico(p.nome)}</option>`).join('');
         return `
@@ -245,6 +245,12 @@ async function confirmarAprovacaoSolicitacao() {
     setMsg('msgAprovacaoSolicitacao', 'Selecione pelo menos uma loja para conceder acesso.', 'err');
     return;
   }
+  const lojaSemPerfil = lojasSelecionadas.find(lojaId => !String(_aprovacaoSelecao[lojaId] || '').trim());
+  if (lojaSemPerfil) {
+    const nomeLoja = _aprovacaoLojasCache.find(l => String(l.id) === String(lojaSemPerfil))?.nome || 'selecionada';
+    setMsg('msgAprovacaoSolicitacao', `Escolha um perfil explícito para a loja ${nomeLoja}. Sem perfil, nenhum acesso será liberado.`, 'err');
+    return;
+  }
 
   // Empresa/loja representativas para o registro do funcionário (a tabela exige).
   const primeiraLoja = _aprovacaoLojasCache.find(l => String(l.id) === String(lojasSelecionadas[0]));
@@ -271,7 +277,7 @@ async function confirmarAprovacaoSolicitacao() {
       email: solicitacao.email.toLowerCase(),
       loja_id: primeiraLoja.id,
       empresa_id: primeiraLoja.empresa_id,
-      perfil_id: _aprovacaoSelecao[primeiraLoja.id] || null,
+      perfil_id: _aprovacaoSelecao[primeiraLoja.id],
       ativo: true,
       email_verificado: false,
       senha_troca_obrigatoria: true,
@@ -292,7 +298,7 @@ async function confirmarAprovacaoSolicitacao() {
     const vinculos = lojasSelecionadas.map(lojaId => ({
       funcionario_id: funcionarioId,
       loja_id: lojaId,
-      perfil_id: _aprovacaoSelecao[lojaId] || null,
+      perfil_id: _aprovacaoSelecao[lojaId],
       ativo: true,
     }));
 
