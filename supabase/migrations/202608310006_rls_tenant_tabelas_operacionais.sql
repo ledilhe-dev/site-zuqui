@@ -30,6 +30,7 @@ begin
     'google_avaliacoes_metricas_diarias','google_sincronizacoes_logs'
   ] loop
     if to_regclass('public.'||t) is null
+      or not exists(select 1 from information_schema.tables where table_schema='public' and table_name=t and table_type='BASE TABLE')
       or not exists(select 1 from information_schema.columns where table_schema='public' and table_name=t and column_name='empresa_id')
       or not exists(select 1 from information_schema.columns where table_schema='public' and table_name=t and column_name='loja_id')
     then continue; end if;
