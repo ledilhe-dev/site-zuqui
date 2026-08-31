@@ -14,7 +14,6 @@
     try { if (typeof window.obterLojaIdSessao === 'function') { var a=window.obterLojaIdSessao(); if(a) return String(a); } } catch(e) {}
     try { if (window.usuarioSistemaLogado && window.usuarioSistemaLogado.loja_id) return String(window.usuarioSistemaLogado.loja_id); } catch(e) {}
     try { if (window.lojaAtualId) return String(window.lojaAtualId); } catch(e) {}
-    try { var s=JSON.parse(localStorage.getItem('zuqui_usuario_logado')||'null'); if(s && s.loja_id) return String(s.loja_id); } catch(e) {}
     return '';
   }
   function empresaIdAtual(){

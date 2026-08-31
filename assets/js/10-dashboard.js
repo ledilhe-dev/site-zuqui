@@ -164,6 +164,28 @@ let _dashGfOpcoesCategorias = [];
 let _dashGfConsultaDropdown = { forn: '', cat: '' };
 let _dashGfOrdenacaoDetalhe = 'valor';
 let _dashGfDirecaoDetalhe = 'desc';
+let _dashGfRequestSeq = 0;
+function _dashGfContextoAtual() {
+  return {
+    empresaId: String(usuarioSistemaLogado?.empresa_id || '').trim(),
+    lojaId: String((typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || usuarioSistemaLogado?.loja_id || '').trim(),
+  };
+}
+function limparDashboardFinanceiroTenant(mensagem = 'Carregando dados da loja...') {
+  _dashGfRequestSeq += 1;
+  _dashGfDados = [];
+  _dashGfCarregadoAno = null;
+  _dashGfCategoriasMapa = {};
+  _dashGfOpcoesFornecedores = [];
+  _dashGfOpcoesCategorias = [];
+  _dashGfFiltro = { mes: null, status: 'todos', fornecedorIds: new Set(), categoriaIds: new Set() };
+  const titulo = document.getElementById('dashGfCurvaTitulo');
+  if (titulo) titulo.textContent = 'Curva mensal da categoria líder';
+  ['dashGfBarras','dashGfRosca','dashGfRoscaCategoria','dashGfTopCategorias','dashGfCurvaCategoria','dashGfDetalhe'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `<div class="empty" style="padding:20px;">${escaparHtmlBasico(mensagem)}</div>`;
+  });
+}
 // Modo de data dos gráficos: 'vencimento' (padrão — espelha a fatura) ou 'compra'.
 let _dashGfModoData = (() => {
   try { return localStorage.getItem('dashGfModoData') === 'compra' ? 'compra' : 'vencimento'; }
@@ -193,6 +215,16 @@ const _dashGfNomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','
 function _dashGfSanitizarChave(v) { return String(v ?? '').replace(/[^a-zA-Z0-9_-]/g, ''); }
 
 async function carregarGraficosFinanceirosDashboard() {
+  const contextoInicial = _dashGfContextoAtual();
+  const requestSeq = ++_dashGfRequestSeq;
+  const contextoAindaValido = () => {
+    const atual = _dashGfContextoAtual();
+    return requestSeq === _dashGfRequestSeq && contextoInicial.empresaId === atual.empresaId && contextoInicial.lojaId === atual.lojaId;
+  };
+  if (!contextoInicial.empresaId || !contextoInicial.lojaId) {
+    limparDashboardFinanceiroTenant('Selecione uma loja para carregar o dashboard.');
+    return;
+  }
   const ano = _dashGfAno;
   const inicio = `${ano}-01-01`;
   const fim = `${ano}-12-31`;
@@ -219,6 +251,7 @@ async function carregarGraficosFinanceirosDashboard() {
       console.warn('fornecedores.cor ausente no banco — carregando dashboard sem cores personalizadas. Rode: ALTER TABLE fornecedores ADD COLUMN cor text;');
       resContas = await consultarContasDash(false);
     }
+    if (!contextoAindaValido()) return;
     if (resContas.error) throw resContas.error;
     _dashGfDados = resContas.data || [];
     _dashGfCarregadoAno = ano;
@@ -252,6 +285,7 @@ async function carregarGraficosFinanceirosDashboard() {
       }
     }
 
+    if (!contextoAindaValido()) return;
     _dashGfCategoriasMapa = {};
     categoriasDash.forEach(c => {
       _dashGfCategoriasMapa[String(c.id)] = { nome: c.nome || 'Categoria', cor: c.cor || null, icone: c.icone || null };
@@ -273,9 +307,11 @@ async function carregarGraficosFinanceirosDashboard() {
       .map(id => [id, _dashGfCategoriasMapa[id]?.nome || 'Categoria'])
       .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
     if (categoriasAno.has('sem')) _dashGfOpcoesCategorias.push(['sem', '— Sem categoria —']);
+    if (!contextoAindaValido()) return;
     dashGfRenderDropdowns();
     renderizarGraficosFinanceirosDashboard();
   } catch (e) {
+    if (!contextoAindaValido()) return;
     console.warn('Falha ao carregar gráficos financeiros:', e?.message || e);
     if (msg) { msg.textContent = 'Não foi possível carregar os dados financeiros.'; msg.className = 'msg err'; }
   }
@@ -739,6 +775,7 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
   const elCurvaTitulo = document.getElementById('dashGfCurvaTitulo');
   if (elCurva) {
     if (!topCategorias.length) {
+      if (elCurvaTitulo) elCurvaTitulo.textContent = 'Curva mensal da categoria líder';
       elCurva.innerHTML = '<div class="empty" style="padding:20px;">Sem dados para desenhar a curva.</div>';
     } else {
       const [categoriaLiderId, categoriaLider] = topCategorias[0];

@@ -256,6 +256,7 @@ function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
   relatorioPontoFuncionarioCache = {};
   window.__relatorioPontoUltimosRows = [];
   window.__relatorioPontoUltimoPeriodo = '';
+  if (typeof limparDashboardFinanceiroTenant === 'function') limparDashboardFinanceiroTenant(mensagem);
 
   const placeholders = {
     listaChecklists: mensagem,

@@ -21,7 +21,6 @@
     try{if(u.loja)add(u.loja.id||u.loja.loja_id);}catch(e){}
     try{if(typeof lojaAtualId!=='undefined')add(lojaAtualId);}catch(e){}
     try{if(window.lojaAtual) add(window.lojaAtual.id||window.lojaAtual.loja_id);}catch(e){}
-    try{var ls=JSON.parse(localStorage.getItem('zuqui_usuario_logado')||localStorage.getItem('usuarioSistemaLogado')||'null'); if(ls){add(ls.loja_id); add(ls.lojaId); if(ls.loja)add(ls.loja.id||ls.loja.loja_id);}}catch(e){}
     return ids;
   }
   function tabelaAgenda(){return window.AGENDA_TABLE || 'agenda';}

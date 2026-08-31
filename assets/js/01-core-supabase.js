@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.41';
-const APP_VERSION_LABEL = '3.2.41-tenant-token-perfil-obrigatorio';
+const APP_VERSION = '3.2.42';
+const APP_VERSION_LABEL = '3.2.42-isolamento-tenant-cache-seguro';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

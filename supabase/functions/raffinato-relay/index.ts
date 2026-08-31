@@ -487,7 +487,8 @@ async function authorizeStore(admin: any, userId: string, empresaId: string, loj
     // autorização externa deve respeitar essa mesma sessão administrativa;
     // exigir a empresa original do cadastro fazia todos os relatórios remotos
     // falharem depois da troca de loja, embora o conector local funcionasse.
-    admin.from("usuarios_admin").select("id,empresa_id,ativo").eq("id", userId).eq("ativo", true).maybeSingle(),
+    admin.from("usuarios_admin").select("id,empresa_id,loja_id,ativo")
+      .eq("id", userId).eq("empresa_id", empresaId).eq("loja_id", lojaId).eq("ativo", true).maybeSingle(),
     admin.from("funcionario_lojas").select("funcionario_id,loja_id,ativo").eq("funcionario_id", userId).eq("loja_id", lojaId).eq("ativo", true).maybeSingle(),
   ]);
   if (!adminUser && !link && String(employee?.loja_id || "") !== lojaId) {
