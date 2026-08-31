@@ -20,18 +20,10 @@ async function carregarSolicitacoesAcesso() {
     return;
   }
 
-  if (!data?.length) {
+  const solicitacoesVisiveis = (data || []).filter(item => item.status === 'pendente');
+  if (!solicitacoesVisiveis.length) {
     lista.innerHTML = '<div class="empty">Nenhuma solicitação de acesso encontrada.</div>';
     return;
-  }
-
-  const solicitacoesVisiveis = [];
-  const emailsVistos = new Set();
-  for (const item of data || []) {
-    const chave = String(item.email || '').trim().toLowerCase() || `id:${item.id}`;
-    if (emailsVistos.has(chave)) continue;
-    emailsVistos.add(chave);
-    solicitacoesVisiveis.push(item);
   }
 
   const emails = [...new Set((solicitacoesVisiveis || []).map(item => (item.email || '').toLowerCase()).filter(Boolean))];
@@ -47,16 +39,18 @@ async function carregarSolicitacoesAcesso() {
   lista.innerHTML = '<div class="lista">' + solicitacoesVisiveis.map(s => `
     <div class="item">
       <div class="item-info">
-        <div class="item-nome">${s.nome}</div>
-        <div class="item-detalhe">${s.email} · CNPJ: ${s.cnpj || '-'} · Pedido em ${fmtDate(s.created_at)}</div>
+        <div class="item-nome">${escaparHtmlBasico(s.nome)}</div>
+        <div class="item-detalhe">${escaparHtmlBasico(s.email)}${s.telefone ? ` · Telefone: ${escaparHtmlBasico(s.telefone)}` : ''}</div>
+        <div class="item-detalhe">Empresa informada: ${escaparHtmlBasico(s.empresa_informada || '-')} · Loja/unidade: ${escaparHtmlBasico(s.loja_informada || '-')}</div>
+        <div class="item-detalhe">CNPJ: ${escaparHtmlBasico(s.cnpj || '-')} · Pedido em ${fmtDate(s.created_at)}</div>
         ${s.observacao ? `<div class="item-detalhe">Informações: ${escaparHtmlBasico(s.observacao)}</div>` : ''}
         ${s.funcionario_localizado_id ? '<div class="item-detalhe"><span class="tag tag-green">Cadastro localizado para revinculação</span></div>' : ''}
         <div class="item-detalhe">Status: ${s.status === 'pendente' ? 'Pendente' : s.status === 'aprovada' ? 'Aprovada' : 'Rejeitada'}</div>
       </div>
       <div class="item-actions">
         ${s.status === 'pendente' ? '<span class="tag tag-amber">Pendente</span>' : s.status === 'aprovada' ? '<span class="tag tag-green">Aprovada</span>' : '<span class="tag tag-red">Rejeitada</span>'}
-        ${s.status === 'pendente' ? `<button class="btn btn-green btn-sm" onclick="aprovarSolicitacaoAcesso('${s.id}')">Aprovar</button>` : ''}
-        ${s.status === 'pendente' ? `<button class="btn btn-red" onclick="rejeitarSolicitacaoAcesso('${s.id}')">Rejeitar</button>` : ''}
+        ${s.status === 'pendente' ? `<button class="btn btn-green btn-sm" onclick="aprovarSolicitacaoAcesso('${s.id}')">Analisar / Vincular acesso</button>` : ''}
+        ${s.status === 'pendente' ? `<button class="btn btn-red" onclick="rejeitarSolicitacaoAcesso('${s.id}')">Recusar solicitação</button>` : ''}
         <button class="btn btn-red" onclick="excluirSolicitacaoAcesso('${s.id}', '${String(s.email || '').toLowerCase()}')">Excluir</button>
         ${s.status === 'aprovada' && funcionariosPorEmail[String(s.email || '').toLowerCase()] ? `
           <button class="btn btn-amber btn-sm" onclick="toggleFuncionarioPorEmail('${String(s.email || '').toLowerCase()}', ${funcionariosPorEmail[String(s.email || '').toLowerCase()].ativo})">
@@ -89,27 +83,13 @@ async function aprovarSolicitacaoAcesso(id) {
     return;
   }
 
-  const mensagemDuplicidade = solicitacao.funcionario_localizado_id ? '' : await validarDuplicidadeCadastro({
-    nome: solicitacao.nome,
-    email: solicitacao.email.toLowerCase(),
-    solicitacaoIdIgnorar: id,
-    verificarSolicitacoesPendentes: true,
-  });
-  if (mensagemDuplicidade && !mensagemDuplicidade.includes('solicitação pendente')) {
-    setMsg('msgSolicitacoes', mensagemDuplicidade, 'err');
-    return;
-  }
-
   const { data: existente } = await sb
     .from('funcionarios')
     .select('id')
     .eq('email', solicitacao.email.toLowerCase())
     .maybeSingle();
 
-  if (existente && String(existente.id) !== String(solicitacao.funcionario_localizado_id || '')) {
-    setMsg('msgSolicitacoes', 'Já existe um funcionário com este e-mail.', 'err');
-    return;
-  }
+  if (existente) solicitacao.funcionario_localizado_id = existente.id;
 
   // Abre o modal onde o admin escolhe lojas (uma ou mais) + perfil por loja.
   await abrirModalAprovacaoSolicitacao(solicitacao);
@@ -155,9 +135,8 @@ async function recarregarLojasAprovacao() {
       executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome, ativo').order('nome')),
       executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome, codigo, loja_id').eq('ativo', true).order('nome')),
     ]);
-    const empresaSolicitacao = String(_aprovacaoSolicitacaoAtual?.empresa_id || '');
-    _aprovacaoLojasCache = (resLojas.data || []).filter(l => l.ativo !== false && String(l.empresa_id || '') === empresaSolicitacao);
-    _aprovacaoEmpresasCache = (resEmpresas.data || []).filter(e => String(e.id || '') === empresaSolicitacao);
+    _aprovacaoLojasCache = (resLojas.data || []).filter(l => l.ativo !== false);
+    _aprovacaoEmpresasCache = resEmpresas.data || [];
     _aprovacaoPerfisCache = resPerfis.data || [];
   } catch (e) {
     console.error('Erro ao carregar lojas/empresas/perfis para aprovação:', e);
@@ -284,10 +263,7 @@ async function confirmarAprovacaoSolicitacao() {
       .select('id')
       .eq('email', solicitacao.email.toLowerCase())
       .maybeSingle();
-    if (existente && String(existente.id) !== String(solicitacao.funcionario_localizado_id || '')) {
-      setMsg('msgAprovacaoSolicitacao', 'Já existe um funcionário com este e-mail.', 'err');
-      return;
-    }
+    if (existente) solicitacao.funcionario_localizado_id = existente.id;
 
     // 1) Revincula um cadastro localizado pelo CNPJ+nome ou cria um novo funcionário.
     const dadosFuncionario = {
@@ -323,7 +299,7 @@ async function confirmarAprovacaoSolicitacao() {
     let avisoVinculos = '';
     try {
       const { error: errVinculos } = await executarSemFiltroLojaTemporario(() =>
-        sb.from('funcionario_lojas').insert(vinculos)
+        sb.from('funcionario_lojas').upsert(vinculos, { onConflict: 'funcionario_id,loja_id' })
       );
       if (errVinculos) {
         console.warn('Erro ao criar vínculos de loja:', errVinculos);
@@ -334,13 +310,20 @@ async function confirmarAprovacaoSolicitacao() {
       avisoVinculos = ' (atenção: não foi possível registrar os acessos por loja — verifique na edição do funcionário)';
     }
 
-    // 3) Marca a solicitação como aprovada e limpa duplicadas.
-    const { error: errUpdate } = await gerenciarSolicitacoesAcesso('aprovar', { id: solicitacao.id });
-    if (errUpdate) {
+    // 3) Registra na solicitação exatamente o vínculo escolhido pelo administrador global.
+    const funcionarioAdminId = String(usuarioSistemaLogado?.id || '').trim();
+    const tokenAdmin = String(usuarioSistemaLogado?.global_admin_token || '').trim();
+    const { data: resultadoVinculo, error: errUpdate } = await sb.rpc('vincular_solicitacao_acesso', {
+      p_funcionario_id: funcionarioAdminId,
+      p_token: tokenAdmin,
+      p_solicitacao_id: solicitacao.id,
+      p_empresa_id: primeiraLoja.empresa_id,
+      p_loja_id: primeiraLoja.id,
+    });
+    if (errUpdate || !resultadoVinculo?.ok) {
       setMsg('msgAprovacaoSolicitacao', 'Funcionário criado, mas houve erro ao marcar a solicitação como aprovada.', 'err');
+      return;
     }
-
-    await gerenciarSolicitacoesAcesso('excluir_duplicadas', { id: solicitacao.id, email: solicitacao.email });
 
     const nomesLojas = lojasSelecionadas
       .map(lojaId => _aprovacaoLojasCache.find(l => String(l.id) === String(lojaId))?.nome)
@@ -389,11 +372,6 @@ async function excluirSolicitacaoAcesso(id, email = '') {
   if (error) {
     setMsg('msgSolicitacoes', 'Não foi possível excluir a solicitação.', 'err');
     return;
-  }
-
-  const emailNormalizado = String(email || '').trim().toLowerCase();
-  if (emailNormalizado) {
-    await gerenciarSolicitacoesAcesso('excluir_email', { email: emailNormalizado });
   }
 
   setMsg('msgSolicitacoes', 'Solicitação excluída com sucesso.', 'ok');

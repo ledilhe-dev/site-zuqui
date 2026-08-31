@@ -765,6 +765,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function solicitarAcesso() {
     const nome = document.getElementById('solicitacaoNome')?.value.trim();
     const email = document.getElementById('solicitacaoEmail')?.value.trim().toLowerCase();
+    const telefone = document.getElementById('solicitacaoTelefone')?.value.trim() || '';
+    const empresaInformada = document.getElementById('solicitacaoEmpresa')?.value.trim() || '';
+    const lojaInformada = document.getElementById('solicitacaoLoja')?.value.trim() || '';
     const cnpj = String(document.getElementById('solicitacaoCnpj')?.value || '').replace(/\D/g, '');
     const observacao = document.getElementById('solicitacaoObservacao')?.value.trim() || '';
 
@@ -784,15 +787,26 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       setMsg('msgSolicitacaoAcesso', 'Informe um e-mail valido e real para solicitar acesso.', 'err');
       return;
     }
-    if (cnpj.length !== 14) {
-      setMsg('msgSolicitacaoAcesso', 'Informe o CNPJ da loja com 14 números.', 'err');
+    if (!empresaInformada) {
+      setMsg('msgSolicitacaoAcesso', 'Informe a empresa.', 'err');
       return;
     }
-    const { data: resultado, error } = await sb.rpc('solicitar_acesso_por_cnpj', {
+    if (!lojaInformada) {
+      setMsg('msgSolicitacaoAcesso', 'Informe a loja ou unidade.', 'err');
+      return;
+    }
+    if (cnpj && cnpj.length !== 14) {
+      setMsg('msgSolicitacaoAcesso', 'O CNPJ deve ter 14 números.', 'err');
+      return;
+    }
+    const { data: resultado, error } = await sb.rpc('solicitar_acesso_pendente', {
       p_nome: nome,
-      p_cnpj: cnpj,
       p_email: email,
-      p_mensagem: observacao,
+      p_telefone: telefone || null,
+      p_empresa_informada: empresaInformada,
+      p_loja_informada: lojaInformada,
+      p_cnpj: cnpj || null,
+      p_observacao: observacao || null,
     });
 
     if (error) {
@@ -814,17 +828,17 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     if (!resultado?.ok) {
       const mensagens = {
-        empresa_nao_encontrada: 'Não encontramos uma empresa cadastrada com este CNPJ. Confira os dados informados ou entre em contato com o administrador.',
-        solicitacao_pendente: 'Já existe uma solicitação pendente com este e-mail para esta empresa.',
-        loja_nao_encontrada: 'A empresa foi localizada, mas ainda não possui uma loja ativa para receber a solicitação. Entre em contato com o administrador.',
-        dados_invalidos: 'Confira os dados informados e tente novamente.',
+          dados_invalidos: 'Confira os dados informados e tente novamente.',
       };
       setMsg('msgSolicitacaoAcesso', mensagens[resultado?.codigo] || 'Não foi possível enviar sua solicitação.', 'err');
       return;
     }
 
-    document.getElementById('solicitacaoNome').value = '';
-    document.getElementById('solicitacaoEmail').value = '';
+      document.getElementById('solicitacaoNome').value = '';
+      document.getElementById('solicitacaoEmail').value = '';
+      document.getElementById('solicitacaoTelefone').value = '';
+      document.getElementById('solicitacaoEmpresa').value = '';
+      document.getElementById('solicitacaoLoja').value = '';
     document.getElementById('solicitacaoCnpj').value = '';
     document.getElementById('solicitacaoObservacao').value = '';
     setMsg('msgSolicitacaoAcesso', 'Solicitação enviada. Aguarde a aprovação de um administrador.', 'ok');

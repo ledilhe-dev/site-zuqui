@@ -3390,8 +3390,11 @@
       <div id="solicitacaoAcessoBox" class="login-request-box">
         <div style="font-size:14px; font-weight:600; margin-bottom:4px; color:var(--text);">Solicitar acesso</div>
         <input type="text" id="solicitacaoNome" class="login-input" placeholder="Nome e sobrenome">
-        <input type="text" id="solicitacaoCnpj" class="login-input" placeholder="CNPJ da loja" maxlength="18" inputmode="numeric">
         <input type="email" id="solicitacaoEmail" class="login-input" placeholder="E-mail que receberá o acesso">
+        <input type="tel" id="solicitacaoTelefone" class="login-input" placeholder="Telefone (opcional)" maxlength="30">
+        <input type="text" id="solicitacaoEmpresa" class="login-input" placeholder="Empresa">
+        <input type="text" id="solicitacaoLoja" class="login-input" placeholder="Loja / unidade">
+        <input type="text" id="solicitacaoCnpj" class="login-input" placeholder="CNPJ (opcional)" maxlength="18" inputmode="numeric">
         <textarea id="solicitacaoObservacao" class="login-input" placeholder="Mais informações para o administrador localizar seu cadastro" rows="2" maxlength="500"></textarea>
         <button type="button" class="login-btn-primary" onclick="solicitarAcesso()">Enviar solicitação</button>
         <div id="msgSolicitacaoAcesso" class="msg" style="margin-top:0; text-align:center;"></div>
