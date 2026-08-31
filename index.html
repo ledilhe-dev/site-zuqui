@@ -693,12 +693,6 @@
               </div>
             </div>
             <div class="funcionario-cadastro-footer">
-              <div class="funcionario-admin-global-box" id="containerFuncionarioAdmin" style="display:none;">
-                <label class="funcionario-admin-toggle" for="funcionarioAdmin">
-                  <input id="funcionarioAdmin" type="checkbox" onchange="atualizarFuncionarioAdminToggle()">
-                  <span><strong>Acesso global</strong><small>Usuário administrador com acesso ao painel SaaS</small></span>
-                </label>
-              </div>
               <div class="funcionario-cadastro-actions">
                 <button class="btn btn-ghost btn-sm" id="btnCancelarEdicaoFuncionario" style="display:none;" onclick="cancelarEdicaoFuncionario()">Cancelar</button>
                 <button class="btn btn-green btn-sm" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
@@ -707,7 +701,7 @@
             <!-- Gerenciador de vínculos empresa → lojas -->
             <div id="containerVinculosFuncionario" style="margin-top:12px;">
               <div class="funcionario-vinculos-header">
-                <div><div class="campo-label">Acesso por empresa e lojas</div><div class="item-detalhe">O perfil limita-se às lojas vinculadas. O acesso global libera todas as lojas e o painel SaaS.</div></div>
+                <div><div class="campo-label">Acesso por empresa e lojas</div><div class="item-detalhe">Cada vínculo usa exclusivamente um perfil ativo da própria loja.</div></div>
                 <button id="btnAbrirSeletorLojas" class="btn btn-ghost btn-sm" type="button" onclick="abrirSeletorLojas()" style="display:none;font-size:11px;padding:3px 10px;height:24px;">+ Gerenciar lojas</button>
               </div>
               <div id="listaVinculosEmpresas" style="display:flex;flex-direction:column;gap:4px;">
@@ -2999,7 +2993,7 @@
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
 <link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260826-password-theme-v1">
-<link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=20260826-secure-input-v2">
+<link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=3.2.43">
 <link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260826-secure-input-v2">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
@@ -3311,7 +3305,7 @@
 </div>
 
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
-<script src="./assets/js/01-core-supabase.js?v=3.2.42"></script>
+<script src="./assets/js/01-core-supabase.js?v=3.2.43"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260815-global-admin-v1"></script>
 <script src="./assets/js/04-navigation.js?v=20260815-global-admin-menu-v2"></script>
@@ -3319,8 +3313,8 @@
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.42"></script>
 <script src="./assets/js/20-checklists.js"></script>
-<script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
-<script src="./assets/js/22-access-requests.js?v=3.2.41"></script>
+<script src="./assets/js/21-employees.js?v=3.2.43"></script>
+<script src="./assets/js/22-access-requests.js?v=3.2.43"></script>
 <script src="./assets/js/23-email.js"></script>
 <script src="./assets/js/30-finance.js?v=20260811-layout-global-v1"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
@@ -3335,7 +3329,7 @@
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
-<script src="./assets/js/43-saas-admin.js?v=20260816-delete-instance-179"></script>
+<script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js"></script>
 <script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
 <script src="./assets/js/51-quick-alerts.js"></script>
@@ -3436,7 +3430,7 @@
   </div>
 </div>
 
-<script src="./assets/js/79-runtime-extensions.js?v=3.2.42"></script>
+<script src="./assets/js/79-runtime-extensions.js?v=3.2.43"></script>
   <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
     <div class="escala-modal-card">
       <div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>

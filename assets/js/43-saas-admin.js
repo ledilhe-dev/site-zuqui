@@ -34,12 +34,15 @@ function renderizarCentralDownloadsConector(manifesto) {
 async function obterDadosPainelAdminGlobal({ renovar = false } = {}) {
   if (!contextoEhAdminGlobal() || usuarioSistemaLogado?.global_admin_authorized !== true) throw new Error('Contexto administrativo global não autorizado.');
   if (painelAdminGlobalCache && !renovar) return painelAdminGlobalCache;
-  const { data, error } = await sb.rpc('obter_painel_admin_global', {
-    p_funcionario_id:usuarioSistemaLogado.id,
-    p_token:usuarioSistemaLogado.global_admin_token,
-  });
+  const parametros={p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token};
+  const [{data,error},{data:usuariosClassificados,error:erroClassificacao}]=await Promise.all([
+    sb.rpc('obter_painel_admin_global',parametros),
+    sb.rpc('obter_usuarios_classificados_admin_global',parametros),
+  ]);
   if (error) throw error;
+  if (erroClassificacao) throw erroClassificacao;
   painelAdminGlobalCache = data || { empresas:[], lojas:[], usuarios:[], conectores:[] };
+  painelAdminGlobalCache.usuarios_classificados=usuariosClassificados||{administradores_sistema:[],masters:[]};
   return painelAdminGlobalCache;
 }
 
@@ -59,8 +62,26 @@ async function carregarDashboardSaas() {
 async function carregarUsuariosSaas() {
   const alvo=document.getElementById('listaUsuariosSaas');if(!alvo)return;
   try { const dados=await obterDadosPainelAdminGlobal(); const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
-    alvo.innerHTML=(dados.usuarios||[]).length?'<div class="lista">'+dados.usuarios.map(x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||x.email||'Usuário')}</div><div class="item-detalhe">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'Sem empresa')} · ${escaparHtmlBasico(lojas.get(String(x.loja_id))||'Sem loja')} · ${x.ativo===false?'Inativo':'Ativo'}</div></div></div>`).join('')+'</div>':'<div class="empty">Nenhum usuário encontrado.</div>';
+    const grupos=dados.usuarios_classificados||{},globais=grupos.administradores_sistema||[],masters=grupos.masters||[];
+    const itemGlobal=x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||x.email||'Administrador')}</div><div class="item-detalhe">${escaparHtmlBasico(x.email||'Sem e-mail')} · Administrador do Sistema · ${x.ativo===false?'Inativo':'Ativo'}${x.ultimo_acesso?' · Último acesso: '+escaparHtmlBasico(new Date(x.ultimo_acesso).toLocaleString('pt-BR')):''}</div></div><div class="item-actions"><span class="tag ${x.ativo===false?'tag-gray':'tag-green'}">${x.ativo===false?'Desativado':'Ativo'}</span><button class="btn btn-ghost btn-sm" onclick="editarAdministradorSistema('${escaparHtmlBasico(x.id)}')">Editar</button><button class="btn btn-amber btn-sm" onclick="alternarAdministradorSistema('${escaparHtmlBasico(x.id)}',${x.ativo!==false})">${x.ativo===false?'Ativar':'Desativar'}</button></div></div>`;
+    const itemMaster=x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||x.email||'Master')}</div><div class="item-detalhe">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'Empresa')} · ${escaparHtmlBasico(lojas.get(String(x.loja_id))||'Loja')} · ${escaparHtmlBasico(x.perfil_nome||x.perfil_codigo||'Master')} · ${x.ativo===false?'Inativo':'Ativo'}</div></div></div>`;
+    alvo.innerHTML=`<div class="saas-user-section"><div class="card-title">Administradores do Sistema</div>${globais.length?'<div class="lista">'+globais.map(itemGlobal).join('')+'</div>':'<div class="empty">Nenhum administrador global.</div>'}</div><div class="saas-user-section" style="margin-top:18px"><div class="card-title">Masters das lojas</div>${masters.length?'<div class="lista">'+masters.map(itemMaster).join('')+'</div>':'<div class="empty">Nenhum Master de loja.</div>'}</div>`;
   } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
+}
+
+async function atualizarAdministradorSistemaRpc(alvoId,campos={}){
+  const {error}=await sb.rpc('atualizar_administrador_sistema',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_alvo_id:alvoId,p_nome:campos.nome??null,p_email:campos.email??null,p_ativo:campos.ativo??null});
+  if(error)throw error;painelAdminGlobalCache=null;await carregarUsuariosSaas();
+}
+async function editarAdministradorSistema(id){
+  const atual=(painelAdminGlobalCache?.usuarios_classificados?.administradores_sistema||[]).find(x=>String(x.id)===String(id));if(!atual)return;
+  const nome=window.prompt('Nome do Administrador do Sistema:',atual.nome||'');if(nome===null)return;
+  const email=window.prompt('E-mail:',atual.email||'');if(email===null)return;
+  try{await atualizarAdministradorSistemaRpc(id,{nome,email});}catch(error){window.alert(mensagemErroSupabase(error,'Não foi possível atualizar o administrador.'));}
+}
+async function alternarAdministradorSistema(id,ativoAtual){
+  if(!window.confirm(`${ativoAtual?'Desativar':'Ativar'} este Administrador do Sistema?`))return;
+  try{await atualizarAdministradorSistemaRpc(id,{ativo:!ativoAtual});}catch(error){window.alert(mensagemErroSupabase(error,'Não foi possível alterar o status.'));}
 }
 
 async function carregarConectoresSaas() {

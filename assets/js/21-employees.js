@@ -34,7 +34,8 @@ async function carregarFuncionarios() {
       return;
     }
 
-    let funcionariosVisiveis = data || [];
+    // Identidades globais são geridas somente no Painel Administrativo.
+    let funcionariosVisiveis = (data || []).filter(f => f?.é_administrador !== true);
     const ehAdminSistema = usuarioEhAdministrador();
     const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     const exibindoPainelAdminGlobal = ehAdminSistema && !lojaSessaoId;
@@ -91,7 +92,6 @@ async function carregarFuncionarios() {
         if ([...lojas].some(lojaId => idsLojasFiltro.includes(lojaId))) idsVinculadosFiltro.add(funcionarioId);
       });
       funcionariosVisiveis = funcionariosVisiveis.filter(f => {
-        if (f?.é_administrador === true) return true;
         const funcionarioId = String(f?.id || '');
         const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
         const possuiVinculoAtivo = (vinculosPorFuncionario.get(funcionarioId)?.size || 0) > 0;
@@ -131,14 +131,10 @@ async function carregarFuncionarios() {
       const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
       const nomesLojasAtivas = lojasAtivas.map(id => nomesLojasVinculos.get(id) || 'Loja').filter(Boolean);
       const semAcessoAtivo = f?.é_administrador !== true && !lojasAtivas.length && (teveVinculos || !f?.loja_id);
-      const nomeLoja = f?.é_administrador === true
-        ? 'Todas as lojas (Administrador do Sistema)'
-        : (nomesLojasAtivas.join(', ')
+      const nomeLoja = (nomesLojasAtivas.join(', ')
           || (!teveVinculos && obterNomeLojaFiltroMultiLoja(f.loja_id))
           || 'Sem loja vinculada');
-      const tipoAcesso = f?.é_administrador === true
-        ? 'Administrador global'
-        : (f?.email ? 'Gerencial (e-mail e senha)' : 'Operacional (PIN)');
+      const tipoAcesso = f?.email ? 'Gerencial (e-mail e senha)' : 'Operacional (PIN)';
       // Admin global pode editar qualquer funcionário (não tem loja_id vinculada).
       const dentroDoEscopoDaLoja = ehAdminGlobal || (
         f?.é_administrador !== true
@@ -980,22 +976,14 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       senhaAtualGestor = confirmacao.pin;
     }
 
-    const chkAdmin = document.getElementById('funcionarioAdmin');
-    // Se a checkbox está desabilitada (usuário sem permissão), preservar o valor atual do banco
-    // para não sobrescrever acidentalmente com false
-    const funcionarioAdmin = chkAdmin?.disabled
-      ? chkAdmin?.checked === true  // mantém o valor que foi carregado do banco
-      : !!chkAdmin?.checked;
-    if (funcionarioAdmin && !usuarioEhAdministrador()) {
-      setMsg('msgFuncionarios', 'Somente um Administrador do Sistema pode conceder acesso global.', 'err');
-      return;
-    }
+    // A tela operacional nunca cria nem altera Administrador do Sistema.
+    const funcionarioAdmin = false;
     if (!editandoAgora && !usuarioPodeAtribuirPerfilFuncionario(perfilId)) {
       setMsg('msgFuncionarios', 'Você não pode atribuir um perfil com permissões superiores às suas.', 'err');
       return;
     }
     // lojaId agora é gerenciado via vínculos — não bloqueia mais o cadastro
-    if (!perfilId && !funcionarioAdmin) { setMsg('msgFuncionarios', 'Selecione o perfil ou marque Funcionário admin para usar o perfil ADM padrão.', 'err'); return; }
+    if (!perfilId) { setMsg('msgFuncionarios', 'Selecione um perfil ativo desta loja.', 'err'); return; }
     const mensagemDuplicidade = await validarDuplicidadeCadastro({
       nome,
       email: emailInformado ? email : null,
@@ -1027,24 +1015,14 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       return;
     }
     const perfilIdParaSalvar = await (async () => {
-      if (funcionarioAdmin) {
-        const perfilAdmin = await buscarPerfilAdminPadraoParaFuncionario();
-        return perfilAdmin?.id || perfilId;
-      }
       if (editandoAgora && !usuarioEhAdministrador()) return funcionarioPerfilOriginalEdicao || perfilId;
       return perfilId;
     })();
-
-    if (funcionarioAdmin && !perfilIdParaSalvar) {
-      setMsg('msgFuncionarios', 'Nenhum perfil ADM encontrado para salvar o funcionário como admin. Cadastre um perfil ADM primeiro.', 'err');
-      return;
-    }
 
     const payload = editandoAgora
       ? {
           nome,
           email: emailInformado ? email : null,
-          é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,
@@ -1057,7 +1035,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
           email: emailInformado ? email : null,
           loja_id: lojaLogadaParaVinculo || null,
           empresa_id: lojaParaSalvar.empresa_id,
-          é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,

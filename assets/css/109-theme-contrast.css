@@ -142,3 +142,23 @@ table,thead,tbody,tr,td,th{border-color:var(--border)!important} td{color:var(--
   opacity:1!important;
   -webkit-text-fill-color:var(--input-dark-muted)!important
 }
+
+/* Estados semânticos: contraste AA consistente no tema escuro. */
+:root:not([data-theme="light"]) .msg.err,:root:not([data-theme="light"]) .msg.error{
+  color:#fecaca!important;background:rgba(127,29,29,.42)!important;border:1px solid rgba(248,113,113,.55)!important
+}
+:root:not([data-theme="light"]) .msg.ok,:root:not([data-theme="light"]) .msg.success{
+  color:#bbf7d0!important;background:rgba(20,83,45,.42)!important;border:1px solid rgba(74,222,128,.45)!important
+}
+:root:not([data-theme="light"]) .msg.info{
+  color:#bae6fd!important;background:rgba(12,74,110,.42)!important;border:1px solid rgba(56,189,248,.45)!important
+}
+:root:not([data-theme="light"]) .tag-green,:root:not([data-theme="light"]) .badge-success,:root:not([data-theme="light"]) .status-ok{
+  color:#bbf7d0!important;background:#14532d!important;border-color:#22c55e!important
+}
+:root:not([data-theme="light"]) .tag-amber,:root:not([data-theme="light"]) .status-warning{
+  color:#fef3c7!important;background:#78350f!important;border-color:#f59e0b!important
+}
+:root:not([data-theme="light"]) .tag-red,:root:not([data-theme="light"]) .status-error{
+  color:#fecaca!important;background:#7f1d1d!important;border-color:#ef4444!important
+}

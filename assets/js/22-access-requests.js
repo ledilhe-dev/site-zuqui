@@ -236,6 +236,12 @@ function abrirCadastroLojaDaAprovacao() {
   try { abrirPagina('lojas_saas'); } catch (e) { console.warn('Não foi possível abrir lojas_saas:', e); }
 }
 
+function abrirCadastroPerfilDaAprovacao() {
+  fecharModalAprovacaoSolicitacao();
+  setMsg('msgSolicitacoes', 'Cadastre um perfil ativo na loja e depois reabra a solicitação para concluir a vinculação.', 'ok');
+  try { abrirPagina('perfis'); } catch (e) { console.warn('Não foi possível abrir perfis:', e); }
+}
+
 async function confirmarAprovacaoSolicitacao() {
   const solicitacao = _aprovacaoSolicitacaoAtual;
   if (!solicitacao) { fecharModalAprovacaoSolicitacao(); return; }
@@ -248,7 +254,14 @@ async function confirmarAprovacaoSolicitacao() {
   const lojaSemPerfil = lojasSelecionadas.find(lojaId => !String(_aprovacaoSelecao[lojaId] || '').trim());
   if (lojaSemPerfil) {
     const nomeLoja = _aprovacaoLojasCache.find(l => String(l.id) === String(lojaSemPerfil))?.nome || 'selecionada';
-    setMsg('msgAprovacaoSolicitacao', `Escolha um perfil explícito para a loja ${nomeLoja}. Sem perfil, nenhum acesso será liberado.`, 'err');
+    const possuiPerfilAtivo = _aprovacaoPerfisCache.some(p => String(p.loja_id || '') === String(lojaSemPerfil));
+    const msg = document.getElementById('msgAprovacaoSolicitacao');
+    if (msg && !possuiPerfilAtivo) {
+      msg.className = 'msg err';
+      msg.innerHTML = `Esta loja não possui perfil ativo disponível para vinculação. Cadastre um perfil antes de aprovar este usuário. <button type="button" class="btn btn-ghost btn-sm" onclick="abrirCadastroPerfilDaAprovacao()">Cadastrar perfil</button>`;
+    } else {
+      setMsg('msgAprovacaoSolicitacao', `Escolha explicitamente um perfil ativo da loja ${nomeLoja}.`, 'err');
+    }
     return;
   }
 

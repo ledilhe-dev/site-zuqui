@@ -962,8 +962,12 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     // Administrador do Sistema não depende de vínculos individuais: possui
     // acesso a todas as lojas ativas, inclusive de empresas diferentes.
     if (funcionario?.é_administrador === true) {
-      const lojasAdminRes = await consultarTabelaSeguroLogin('lojas', q => q.select('*').eq('ativo', true));
-      if (!lojasAdminRes.error && Array.isArray(lojasAdminRes.data)) lojasAdminRes.data.forEach(adicionarLoja);
+      const { data: painelGlobal, error: erroPainelGlobal } = await sb.rpc('obter_painel_admin_global', {
+        p_funcionario_id: funcionarioId,
+        p_token: funcionario.global_admin_token,
+      });
+      if (erroPainelGlobal) throw erroPainelGlobal;
+      (painelGlobal?.lojas || []).filter(loja => loja?.ativo !== false).forEach(adicionarLoja);
       return Array.from(lojasMap.values()).sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
     }
 
@@ -994,6 +998,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'x-funcionario-id': String(window.__authPrincipalId || ''),
+          'x-operational-token': String(window.__authOperationalToken || ''),
+          'x-global-admin-token': String(window.__authGlobalToken || ''),
           'Accept': 'application/json'
         }
       });
@@ -1077,12 +1084,29 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     if (!preservarPreferenciasLogin) {
       salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
     }
-    const perfilDaLoja = await obterPerfilFuncionarioParaLoja(funcionario, lojaEscolhida, perfilFuncionario);
-    if (!perfilDaLoja?.id) {
+    const ehAdminSistema = funcionario?.é_administrador === true;
+    let funcionarioContextualizado = funcionario;
+    if (ehAdminSistema) {
+      const { data: contextoOperacional, error: erroContexto } = await sb.rpc('emitir_contexto_operacional_admin_global', {
+        p_funcionario_id: funcionario.id,
+        p_token_global: funcionario.global_admin_token,
+        p_loja_id: lojaEscolhida?.id,
+      });
+      if (erroContexto || !contextoOperacional?.operational_access_token) {
+        setMsg('msgLogin', 'Não foi possível abrir um contexto operacional seguro para esta loja.', 'err');
+        return;
+      }
+      funcionarioContextualizado = { ...funcionario, ...contextoOperacional };
+      window.__authOperationalToken = contextoOperacional.operational_access_token;
+    }
+    const perfilDaLoja = ehAdminSistema
+      ? normalizarPerfilUsuario({ codigo:'ADM', nome:'Administrador do Sistema', permissoes:obterPermissoesBase('ADM') })
+      : await obterPerfilFuncionarioParaLoja(funcionarioContextualizado, lojaEscolhida, perfilFuncionario);
+    if (!ehAdminSistema && !perfilDaLoja?.id) {
       setMsg('msgLogin', 'Acesso bloqueado: esta loja ainda não possui um perfil explícito vinculado ao usuário.', 'err');
       return;
     }
-    salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionario, perfilDaLoja, lojaEscolhida), { manterConectado });
+    salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionarioContextualizado, perfilDaLoja, lojaEscolhida), { manterConectado });
     limparSelecaoLojaLogin();
     setSistemaLogado(true);
     aplicarPermissoesSistema();
