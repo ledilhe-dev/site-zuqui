@@ -4,6 +4,8 @@ let rbSourceRows = [], rbEvolution = [], rbPaymentFilters = [];
 let rbTotals = {};
 let rbPeriodLabel = '';
 
+registrarModuloTenantScoped('raffinato-faturamento',()=>{rbRows=[];rbSourceRows=[];rbEvolution=[];rbPaymentFilters=[];rbTotals={};rbPeriodLabel='';['rbKpis','rbCharts','rbTableBody','rbMobileList'].forEach(id=>document.getElementById(id)?.replaceChildren());const msg=document.getElementById('rbMessage');if(msg){msg.className='msg';msg.textContent='Nenhuma consulta realizada para esta loja.'}});
+
 function rbMoney(value) { return Number(value || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
 function rbEscape(value) { return String(value ?? '').replace(/[&<>"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[char])); }
 function rbIsoLocal(date = new Date()) { const offset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() - offset).toISOString().slice(0,10); }

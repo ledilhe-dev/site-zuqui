@@ -800,6 +800,18 @@ async function consultarSangriasRaffinato() {
 
 function cancelarConsultaSangriasRaffinato() {
   raffinatoConsultaController?.abort();
+  raffinatoConsultaController = null;
+  raffinatoLoadSequence += 1;
+  raffinatoSangrias = [];
+  raffinatoItensVisiveis = [];
+  raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
+  raffinatoBuscaDetalhe = '';
+  const corpo = document.getElementById('raffinatoTableBody'); if (corpo) corpo.replaceChildren();
+  const detalhe = document.getElementById('raffinatoDetailBody'); if (detalhe) detalhe.replaceChildren();
+  const tabela = document.getElementById('raffinatoTable'); if (tabela) tabela.hidden = true;
+  const graficos = document.getElementById('raffinatoCharts'); if (graficos) graficos.hidden = true;
+  const vazio = document.getElementById('raffinatoEmpty'); if (vazio) { vazio.hidden=false; vazio.innerHTML='<div><strong>Nenhuma consulta realizada para esta loja.</strong></div>'; }
+  const msg = document.getElementById('msgRaffinatoSangrias'); if (msg) { msg.className='msg'; msg.textContent=''; }
 }
 
 function exportarSangriasRaffinatoExcel() {

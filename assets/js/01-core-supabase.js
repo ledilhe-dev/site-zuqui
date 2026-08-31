@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.47';
-const APP_VERSION_LABEL = '3.2.47-renovacao-sessao-mobile';
+const APP_VERSION = '3.2.48';
+const APP_VERSION_LABEL = '3.2.48-isolamento-global-relatorios';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -23,6 +23,24 @@ const AUTH_REDIRECT_URL = (window.APP_CONFIG || {}).authRedirectUrl || 'https://
 
 window.__tenantContextVersion = Number(window.__tenantContextVersion || 0);
 window.__tenantScopedResetHandlers = window.__tenantScopedResetHandlers || new Set();
+window.__tenantScopedModules = window.__tenantScopedModules || new Map();
+function capturarContextoTenant() {
+  const sessao = (typeof usuarioSistemaLogado !== 'undefined' && usuarioSistemaLogado) || window.usuarioSistemaLogado || {};
+  return Object.freeze({ version:Number(window.__tenantContextVersion || 0), empresaId:String(sessao.empresa_id || '').trim(), lojaId:String(sessao.loja_id || '').trim() });
+}
+function contextoTenantAindaValido(contexto) {
+  if (!contexto) return false;
+  const atual = capturarContextoTenant();
+  return contexto.version === atual.version && contexto.empresaId === atual.empresaId && contexto.lojaId === atual.lojaId;
+}
+function registrarModuloTenantScoped(nome, reset) {
+  if (!nome || typeof reset !== 'function') throw new Error('Módulo tenant-scoped precisa registrar uma rotina de limpeza.');
+  const anterior = window.__tenantScopedModules.get(nome);
+  if (anterior) window.__tenantScopedResetHandlers.delete(anterior);
+  window.__tenantScopedModules.set(nome, reset);
+  window.__tenantScopedResetHandlers.add(reset);
+  return () => { window.__tenantScopedModules.delete(nome); window.__tenantScopedResetHandlers.delete(reset); };
+}
 function registrarResetTenantUI(handler) {
   if (typeof handler === 'function') window.__tenantScopedResetHandlers.add(handler);
   return () => window.__tenantScopedResetHandlers.delete(handler);
@@ -33,6 +51,10 @@ function resetTenantScopedUI(motivo = 'tenant-change') {
     try { handler({ motivo, version:window.__tenantContextVersion }); } catch (error) { console.warn('Falha ao limpar estado do tenant:', error); }
   }
   try { window.dispatchEvent(new CustomEvent('tenant:reset', { detail:{ motivo,version:window.__tenantContextVersion } })); } catch (_) {}
+  document.querySelectorAll('[data-tenant-result]').forEach(el => {
+    el.replaceChildren();
+    el.setAttribute('data-tenant-invalidated', 'true');
+  });
 }
 
 const fetchComContextoSeguro = async (input, init = {}) => {

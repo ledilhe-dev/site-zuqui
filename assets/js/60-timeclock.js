@@ -2923,6 +2923,7 @@ async function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
 }
 
 async function carregarRelatorioFinanceiro() {
+  const contextoTenantInicio = capturarContextoTenant();
   const listaDetalhes = document.getElementById('listaRelatorioFinanceiro');
   const listaFornecedores = document.getElementById('listaRelatorioFinanceiroFornecedores');
   const listaFormas = document.getElementById('listaRelatorioFinanceiroFormas');
@@ -3397,6 +3398,7 @@ async function buscarDadosRelatorioRecebimentos() {
 }
 
 async function carregarRelatorioRecebimentos() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioRecebimentos');
   const dataInicioEl = document.getElementById('filtroRelRecebDataInicio');
   const dataFimEl = document.getElementById('filtroRelRecebDataFim');
@@ -3457,6 +3459,7 @@ async function carregarRelatorioRecebimentos() {
       return true;
     });
 
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     relatorioRecebimentosCache = itens;
 
     const total = itens.reduce((acc, item) => acc + (Number(item.valor || 0) || 0), 0);
@@ -3742,6 +3745,7 @@ function resetFiltroRelatorioAjusteSaldo() {
 }
 
 async function carregarRelatorioAjusteSaldo() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioAjusteSaldo');
   const campoDataInicio = document.getElementById('filtroRelAjusteSaldoDataInicio');
   const campoDataFim = document.getElementById('filtroRelAjusteSaldoDataFim');
@@ -3845,6 +3849,7 @@ async function carregarRelatorioAjusteSaldo() {
       })
       .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     relatorioAjusteSaldoCache = itensFiltrados;
 
     const resumo = calcularResumoRelatorioAjusteSaldo(itensFiltrados);

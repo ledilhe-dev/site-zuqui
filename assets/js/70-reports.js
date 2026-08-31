@@ -26,6 +26,7 @@ function detectarIntervaloDias(datasOrdenadas = []) {
 }
 
 async function carregarRelatorioTarefasCadastradas() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioTarefasCad');
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando...</div>';
@@ -129,6 +130,7 @@ async function carregarRelatorioTarefasCadastradas() {
 
     _relatorioTarefasCadCache = filtradas;
 
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     if (!filtradas.length) {
       lista.innerHTML = '<div class="empty">Nenhuma tarefa cadastrada para os filtros selecionados.</div>';
       return;
@@ -338,6 +340,7 @@ function resumirEventosRelatorioLancamentos(eventos = [], contexto = {}) {
 }
 
 async function carregarRelatorioLancamentos(opcoes = {}) {
+  const contextoTenantInicio = capturarContextoTenant();
   const silencioso = opcoes?.silencioso === true;
   const lista = document.getElementById('listaRelatorioLancamentos');
   const body = document.getElementById('relatorioLancamentosRegistrosBody');
@@ -597,6 +600,7 @@ async function carregarRelatorioLancamentos(opcoes = {}) {
       checklistsMap,
       funcionariosMap,
     });
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     relatorioLancamentosCache = registrosRelatorio;
 
     if (!registrosRelatorio.length) {

@@ -29,6 +29,14 @@ async function selecionarProdutoComparativo(id,name){arProductSelected={id,name}
 function renderizarTabelaComparativo(){const current=arSelected?.ano||arYears().at(-1),rows=Array.from({length:12},(_,i)=>{const x=arMonthly(current,i+1),prev=arMonthly(current-1,i+1);return{...x,anterior:prev.faturamento,variacao:arVariation(x.faturamento,prev.faturamento)}}),dir=arSort.dir==='asc'?1:-1;rows.sort((a,b)=>(Number(a[arSort.key]||0)-Number(b[arSort.key]||0))*dir);document.getElementById('arTableBody').innerHTML=rows.map(x=>`<tr onclick="selecionarMesComparativoAnual(${current},${x.mes})"><td>${arMonths[x.mes-1]}/${current}</td><td>${arMoney(x.faturamento)}</td><td>${arNumber(x.vendas)}</td><td>${arNumber(x.quantidade,3)}</td><td>${arMoney(x.ticket_medio)}</td><td>${arMoney(x.anterior)}</td><td class="${x.variacao>=0?'positive':'negative'}">${x.variacao>0?'+':''}${arPct(x.variacao)}</td></tr>`).join('')}
 function ordenarTabelaComparativo(key){arSort={key,dir:arSort.key===key&&arSort.dir==='asc'?'desc':'asc'};renderizarTabelaComparativo()}
 
+function resetComparativoAnualTenant(){
+  arRequest+=1;arInitialized=false;arSummary=null;arDetail=null;arSelected=null;arWeekday=null;arHour=null;arProductSelected=null;arHistory=null;arDataCache.clear();
+  ['arAnnualChart','arAccumulated','arMonthlyBars','arModuleShare','arModuleEvolution','arProductsPerformance','arGroups','arWeekdays','arHours','arDaily','arProductEvolution','arTableBody'].forEach(id=>{const el=document.getElementById(id);if(el)el.replaceChildren()});
+  ['arKpis','arCharts','arTableCard','arDailyCard','arProductCard','arSelection'].forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=true});
+  const status=document.getElementById('arStatus');if(status){status.textContent='Nenhuma consulta realizada para esta loja.';status.style.color=''}
+}
+registrarModuloTenantScoped('raffinato-comparativo-anual',resetComparativoAnualTenant);
+
 function arCompactMoney(v){const n=Number(v||0);return Math.abs(n)>=1000000?`R$ ${(n/1000000).toLocaleString('pt-BR',{maximumFractionDigits:1})} mi`:Math.abs(n)>=1000?`R$ ${(n/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})} mil`:arMoney(n)}
 function arFormatDate(v){const [y,m,d]=String(v||'').slice(0,10).split('-');return d&&m&&y?`${d}/${m}/${y}`:String(v||'')}
 function arYearColumns(){const values=arYears().map((year,i)=>({year,value:(arSummary?.meses||[]).filter(x=>Number(x.ano)===year).reduce((s,x)=>s+Number(x.faturamento||0),0),color:arColors[i%arColors.length]})),max=Math.max(1,...values.map(x=>x.value));return`<div class="ar-columns">${values.filter(x=>x.value>0).map(x=>`<button onclick="selecionarAnoComparativoAnual(${x.year})"><strong>${arCompactMoney(x.value)}</strong><span class="ar-column-track"><i style="height:${Math.max(3,x.value/max*100)}%;background:${x.color}"></i></span><b>${x.year}</b><title>${x.year}\nFaturamento: ${arMoney(x.value)}</title></button>`).join('')}</div>`}

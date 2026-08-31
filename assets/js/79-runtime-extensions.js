@@ -282,6 +282,7 @@ function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
     notificacoesLista: 'Nenhuma notificação carregada.',
   };
   dashboardHorasRequestSeq += 1;
+  window.__relFinSeq = (window.__relFinSeq || 0) + 1;
   dashboardHorasUltimoResultadoValido = null;
 
   Object.entries(placeholders).forEach(([id, texto]) => {
@@ -316,6 +317,9 @@ registrarResetTenantUI(() => {
   try { if (typeof contaFinanceiraEmEdicaoId !== 'undefined') contaFinanceiraEmEdicaoId=null; } catch (_) {}
   try { if (typeof recebivelFinanceiroEmEdicaoId !== 'undefined') recebivelFinanceiroEmEdicaoId=null; } catch (_) {}
   document.querySelectorAll('.overlay.open,[data-tenant-scoped-modal].open').forEach(el=>el.classList.remove('open'));
+  const arraysTenant = ['relatorioLancamentosCache','relatorioRecebimentosCache','raffinatoSangrias','raffinatoItensVisiveis','rbRows','rsSource','rsDocumentDimensions','rpRows','rpSourceRows','rpEvolution','rpContingencies'];
+  arraysTenant.forEach(nome=>{try{if(Array.isArray(window[nome]))window[nome].length=0}catch(_){}});
+  ['rbKpis','rbCharts','rbTableBody','rbMobileList','rsKpis','rsCharts','rsTableBody','rsMobileList','rpKpis','rpCharts','rpTableBody','rpMobileList','rpContingencyBody','rpContingencyMobile','listaRelatorioSangriasRaffinato'].forEach(id=>{const el=document.getElementById(id);if(el)el.replaceChildren()});
 });
 
 function restaurarPreferenciasLogin() {
@@ -1951,6 +1955,7 @@ carregarResumoPontoHoje = async function(funcionarioId = '') {
 };
 
 async function carregarRelatorioPonto() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioPonto');
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
@@ -2031,6 +2036,7 @@ async function carregarRelatorioPonto() {
   const ajustes = await carregarAjustesAprovadosPontoPorPeriodo(dataInicio, dataFim, funcionarioId);
   const ajustesMapa = montarMapaAjustesPonto(ajustes);
   rows = rows.map(item => ({ ...item, ajustes_admin: ajustesMapa[`${String(item.funcionario_id || '')}|${String(item.data_ponto || '')}`] || [] }));
+  if (!contextoTenantAindaValido(contextoTenantInicio)) return;
   window.__relatorioPontoUltimosRows = rows;
   window.__relatorioPontoUltimoPeriodo = infoPeriodo;
   atualizarPainelRelatorioPonto(rows, infoPeriodo);
