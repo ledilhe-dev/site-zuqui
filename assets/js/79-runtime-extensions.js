@@ -491,6 +491,24 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     };
   }
 
+  async function renovarContextoOperacionalPersistido(usuario = null) {
+    if (!usuario || usuario.context_mode === 'global_admin') return true;
+    const principalId = String(usuario.id || '').trim();
+    const token = String(usuario.operational_access_token || '').trim();
+    const empresaId = String(usuario.empresa_id || '').trim();
+    const lojaId = String(usuario.loja_id || '').trim();
+    if (!principalId || !token || !empresaId || !lojaId) return false;
+    const { data, error } = await sb.rpc('renovar_contexto_operacional', {
+      p_principal_id: principalId,
+      p_token: token,
+      p_empresa_id: empresaId,
+      p_loja_id: lojaId,
+      p_global_token: String(usuario.global_admin_token || '').trim() || null,
+    });
+    if (error) throw error;
+    return data === true;
+  }
+
   async function restaurarSessaoSistema() {
     const salvoLocal = localStorage.getItem('zuqui_auth');
     const salvoLocalBackup = localStorage.getItem('check_diario_auth_persistente');
@@ -509,6 +527,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     try {
       let usuario = JSON.parse(salvo);
+      if (usuario?.context_mode !== 'global_admin' && !(await renovarContextoOperacionalPersistido(usuario))) {
+        throw new Error('A sessão operacional salva expirou ou perdeu o vínculo com a loja.');
+      }
       const autoridadeAdmin = await validarAutoridadeAdminSistemaNoBanco(usuario);
       if (usuario?.tipo === 'admin' && autoridadeAdmin === false) {
         throw new Error('A autorização de administrador do sistema foi revogada.');
@@ -566,14 +587,22 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     try {
       if (usuarioSistemaLogado.tipo === 'admin') {
         const autorizado = await validarAutoridadeAdminSistemaNoBanco(usuarioSistemaLogado);
-        if (autorizado !== false) return;
-        await logout();
-        setMsg('msgLogin', 'A autorização de administrador do sistema foi revogada. Entre novamente.', 'err');
-        return;
+        if (autorizado === false) {
+          await logout();
+          setMsg('msgLogin', 'A autorização de administrador do sistema foi revogada. Entre novamente.', 'err');
+          return;
+        }
+        if (usuarioSistemaLogado.context_mode === 'global_admin') return;
       }
-      if (usuarioSistemaLogado.tipo !== 'funcionario') return;
 
       const manterConectado = !!(localStorage.getItem('zuqui_auth') || localStorage.getItem('check_diario_auth_persistente'));
+      if (!(await renovarContextoOperacionalPersistido(usuarioSistemaLogado))) {
+        throw new Error('A sessão operacional não pôde ser renovada para esta loja.');
+      }
+      if (usuarioSistemaLogado.tipo !== 'funcionario') {
+        persistirSessaoSistemaAtual(manterConectado);
+        return;
+      }
       usuarioSistemaLogado = await revalidarSessaoFuncionarioNoBanco(usuarioSistemaLogado);
       window.usuarioSistemaLogado = usuarioSistemaLogado;
       window.__sessaoSistema = () => usuarioSistemaLogado;

@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.46';
-const APP_VERSION_LABEL = '3.2.46-perfis-aprovacao-email-cors';
+const APP_VERSION = '3.2.47';
+const APP_VERSION_LABEL = '3.2.47-renovacao-sessao-mobile';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
