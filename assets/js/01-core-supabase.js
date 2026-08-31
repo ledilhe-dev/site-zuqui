@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.44';
-const APP_VERSION_LABEL = '3.2.44-raffinato-contexto-operacional';
+const APP_VERSION = '3.2.45';
+const APP_VERSION_LABEL = '3.2.45-reset-estado-tenant';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -20,6 +20,20 @@ const SUPABASE_ANON_KEY = (window.APP_CONFIG || {}).supabaseAnonKey || '';
 const EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).emailFunctionName || 'notificar-alertas-email';
 const AUTH_EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).authEmailFunctionName || 'autenticacao-email';
 const AUTH_REDIRECT_URL = (window.APP_CONFIG || {}).authRedirectUrl || 'https://checkdiario.com.br/';
+
+window.__tenantContextVersion = Number(window.__tenantContextVersion || 0);
+window.__tenantScopedResetHandlers = window.__tenantScopedResetHandlers || new Set();
+function registrarResetTenantUI(handler) {
+  if (typeof handler === 'function') window.__tenantScopedResetHandlers.add(handler);
+  return () => window.__tenantScopedResetHandlers.delete(handler);
+}
+function resetTenantScopedUI(motivo = 'tenant-change') {
+  window.__tenantContextVersion += 1;
+  for (const handler of [...window.__tenantScopedResetHandlers]) {
+    try { handler({ motivo, version:window.__tenantContextVersion }); } catch (error) { console.warn('Falha ao limpar estado do tenant:', error); }
+  }
+  try { window.dispatchEvent(new CustomEvent('tenant:reset', { detail:{ motivo,version:window.__tenantContextVersion } })); } catch (_) {}
+}
 
 const fetchComContextoSeguro = async (input, init = {}) => {
   const sessao = (typeof usuarioSistemaLogado !== 'undefined' && usuarioSistemaLogado) || window.usuarioSistemaLogado || {};

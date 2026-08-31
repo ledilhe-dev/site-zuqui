@@ -246,6 +246,7 @@ function loginDigitadoConfereComSessaoPersistente(username = '') {
 }
 
 function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
+  if (typeof resetTenantScopedUI === 'function') resetTenantScopedUI('session-or-store-change');
   versaoSessaoSistema += 1;
   tokenRequisicaoChecklists += 1;
   assinaturaRenderChecklists = '';
@@ -295,6 +296,27 @@ function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
   }
   atualizarBadgeTarefasAtraso(0);
 }
+
+registrarResetTenantUI(() => {
+  // Estados de edição dos demais módulos operacionais. Cada limpeza é local e
+  // idempotente; a autoridade final continua sendo a RLS do novo contexto.
+  const cleaners = [
+    'limparFormularioTarefa','limparFormularioPerfil','limparFormularioFornecedorFinanceiro',
+    'limparFormularioFormaPagamentoFinanceiro','limparFormularioContaFinanceira',
+    'limparFormularioRecebivelFinanceiro','limparFormularioContaAPagarFinanceiro',
+    'cancelarEdicaoIntegracaoRaffinato','cancelarConsultaSangriasRaffinato',
+  ];
+  cleaners.forEach(nome => { try { if (typeof window[nome] === 'function') window[nome](); } catch (_) {} });
+  try { if (typeof tarefaEmEdicaoId !== 'undefined') tarefaEmEdicaoId=null; } catch (_) {}
+  try { if (typeof checklistReferenciaEmEdicaoId !== 'undefined') checklistReferenciaEmEdicaoId=null; } catch (_) {}
+  try { if (typeof perfilEmEdicaoId !== 'undefined') perfilEmEdicaoId=null; } catch (_) {}
+  try { if (typeof fornecedorFinanceiroEmEdicaoId !== 'undefined') fornecedorFinanceiroEmEdicaoId=null; } catch (_) {}
+  try { if (typeof formaPagamentoFinanceiroEmEdicaoId !== 'undefined') formaPagamentoFinanceiroEmEdicaoId=null; } catch (_) {}
+  try { if (typeof contaAPagarFinanceiroEmEdicaoId !== 'undefined') contaAPagarFinanceiroEmEdicaoId=null; } catch (_) {}
+  try { if (typeof contaFinanceiraEmEdicaoId !== 'undefined') contaFinanceiraEmEdicaoId=null; } catch (_) {}
+  try { if (typeof recebivelFinanceiroEmEdicaoId !== 'undefined') recebivelFinanceiroEmEdicaoId=null; } catch (_) {}
+  document.querySelectorAll('.overlay.open,[data-tenant-scoped-modal].open').forEach(el=>el.classList.remove('open'));
+});
 
 function restaurarPreferenciasLogin() {
   const prefs = obterPreferenciasLoginSalvas();

@@ -1,4 +1,17 @@
 // FUNCIONÁRIOS
+let funcionarioEdicaoRequestSeq = 0;
+let funcionarioEdicaoContexto = null;
+function contextoEdicaoFuncionarioAtual() {
+  return {
+    empresaId:String(usuarioSistemaLogado?.empresa_id || '').trim(),
+    lojaId:String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim(),
+    version:Number(window.__tenantContextVersion || 0),
+  };
+}
+function contextoEdicaoFuncionarioValido(contexto) {
+  const atual=contextoEdicaoFuncionarioAtual();
+  return !!contexto && contexto.empresaId===atual.empresaId && contexto.lojaId===atual.lojaId && contexto.version===atual.version;
+}
 // 
 async function carregarFuncionarios() {
   if (!usuarioPodeAcaoFuncionarios('visualizar')) {
@@ -933,6 +946,14 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
 
   async function criarFuncionario() {
   try {
+    const contextoOperacao = contextoEdicaoFuncionarioAtual();
+    const requestSeqOperacao = funcionarioEdicaoRequestSeq;
+    const operacaoAindaValida = () => requestSeqOperacao === funcionarioEdicaoRequestSeq && contextoEdicaoFuncionarioValido(contextoOperacao);
+    if (funcionarioEmEdicaoId && (!funcionarioEdicaoContexto || !contextoEdicaoFuncionarioValido(funcionarioEdicaoContexto))) {
+      limparFormularioFuncionario();
+      setMsg('msgFuncionarios', 'A edição foi cancelada porque a loja foi alterada.', 'info');
+      return;
+    }
     const acaoFuncionario = funcionarioEmEdicaoId ? 'editar' : 'criar';
     if (!usuarioPodeAcaoFuncionarios(acaoFuncionario)) {
       setMsg('msgFuncionarios', `Seu perfil não permite ${acaoFuncionario === 'editar' ? 'editar' : 'cadastrar'} funcionários.`, 'err');
@@ -940,6 +961,7 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     }
     if (funcionarioEmEdicaoId && !usuarioEhAdministrador()) {
       const escopoEdicao = await validarEscopoGestaoFuncionario(funcionarioEmEdicaoId, { exigirTodasLojas: true });
+      if (!operacaoAindaValida()) return;
       if (!escopoEdicao.ok) { setMsg('msgFuncionarios', escopoEdicao.motivo, 'err'); return; }
     }
     const nome = document.getElementById('nomeFuncionario').value.trim();
@@ -1049,14 +1071,18 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     const executarSalvamentoFuncionario = usuarioSistemaLogado?.tipo === 'admin'
       ? executarSemFiltrosTenantTemporario
       : executarSemFiltroLojaTemporario;
+    if (!operacaoAindaValida()) return;
     let { data: funcionarioSalvo, error } = await executarSalvamentoFuncionario(() => salvarFuncionarioPayload(payload));
+    if (!operacaoAindaValida()) return;
     if (error && String(error.message || '').toLowerCase().includes('tempo_intervalo_minutos') && tempoIntervaloMinutos === null) {
       const { tempo_intervalo_minutos, intervalos_semana, ...payloadSemTempoIntervalo } = payload;
       ({ data: funcionarioSalvo, error } = await executarSalvamentoFuncionario(() => salvarFuncionarioPayload(payloadSemTempoIntervalo)));
+      if (!operacaoAindaValida()) return;
     }
     if (error && String(error.message || '').toLowerCase().includes('intervalos_semana') && !temIntervalosSemanaPreenchidos) {
       const { intervalos_semana, ...payloadSemTempoIntervalo } = payload;
       ({ data: funcionarioSalvo, error } = await executarSalvamentoFuncionario(() => salvarFuncionarioPayload(payloadSemTempoIntervalo)));
+      if (!operacaoAindaValida()) return;
     }
     if (error) {
       if (isMissingWorkShiftColumnsError(error)) {
@@ -1205,6 +1231,8 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
 }
 
 function limparFormularioFuncionario() {
+  funcionarioEdicaoRequestSeq += 1;
+  funcionarioEdicaoContexto = null;
   funcionarioEmEdicaoId = null;
   funcionarioNomeOriginalEdicao = '';
   funcionarioEmailOriginalEdicao = '';
@@ -1226,8 +1254,15 @@ function limparFormularioFuncionario() {
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
   if (btnCancelar) btnCancelar.style.display = 'none';
   cadastroFuncionarioAberto = false;
+  _vinculosFuncionarioAtual = [];
+  const modalVinculos = document.getElementById('modalSeletorLojas');
+  if (modalVinculos) modalVinculos.style.display = 'none';
+  atualizarAvisoVerificacaoFuncionarioEmail({ visivel:false });
+  setMsg('msgFuncionarios', '', '');
   atualizarEstadoCadastroFuncionarioUI();
 }
+
+registrarResetTenantUI(() => limparFormularioFuncionario());
 
 async function editarFuncionario(id) {
   if (!usuarioPodeAcaoFuncionarios('editar')) {
@@ -1235,6 +1270,9 @@ async function editarFuncionario(id) {
     return;
   }
   atualizarAvisoVerificacaoFuncionarioEmail({ visivel: false });
+  const contextoInicial = contextoEdicaoFuncionarioAtual();
+  const requestSeq = ++funcionarioEdicaoRequestSeq;
+  const requisicaoAindaValida = () => requestSeq === funcionarioEdicaoRequestSeq && contextoEdicaoFuncionarioValido(contextoInicial);
   let funcionario = null;
   let error = null;
 
@@ -1244,12 +1282,14 @@ async function editarFuncionario(id) {
   const respostaSingle = await executarEdicaoFuncionario(() => sb.from('funcionarios').select('*').eq('id', id).single());
   funcionario = respostaSingle.data;
   error = respostaSingle.error;
+  if (!requisicaoAindaValida()) return;
 
   // Fallback para evitar quebra quando o .single() falha por ambiguidade/ausência.
   if (error || !funcionario) {
     const respostaFallback = await executarEdicaoFuncionario(() => sb.from('funcionarios').select('*').eq('id', id).limit(1));
     funcionario = (respostaFallback.data || [])[0] || null;
     error = funcionario ? null : (respostaFallback.error || error);
+    if (!requisicaoAindaValida()) return;
   }
 
   if (error || !funcionario) {
@@ -1260,10 +1300,12 @@ async function editarFuncionario(id) {
 
   if (!usuarioEhAdministrador()) {
     const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true });
+    if (!requisicaoAindaValida()) return;
     if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   }
 
   funcionarioEmEdicaoId = id;
+  funcionarioEdicaoContexto = contextoInicial;
   funcionarioNomeOriginalEdicao = funcionario.nome || '';
   funcionarioEmailOriginalEdicao = funcionario.email || '';
   funcionarioPerfilOriginalEdicao = funcionario.perfil_id || '';
@@ -1288,6 +1330,7 @@ async function editarFuncionario(id) {
   setMsg('msgFuncionarios', `Editando funcionário: ${funcionario.nome}.`, 'ok');
   // Carregar vínculos de empresa/lojas
   await carregarVinculosFuncionario(id);
+  if (!requisicaoAindaValida()) return;
 
   window.setTimeout(() => {
     document.getElementById('pinFuncionario')?.focus();
