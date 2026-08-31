@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.43';
-const APP_VERSION_LABEL = '3.2.43-admin-global-contexto-operacional';
+const APP_VERSION = '3.2.44';
+const APP_VERSION_LABEL = '3.2.44-raffinato-contexto-operacional';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

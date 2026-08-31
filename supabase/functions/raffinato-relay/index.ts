@@ -3,7 +3,7 @@ import { aggregatePizzaMandatoryV1 } from "./pizza-mandatory-v1.mjs";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-funcionario-id, x-loja-id, x-operational-token, x-global-admin-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -13,6 +13,7 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "Metodo nao permitido." }, 405);
   try {
     const body = await request.json();
+    body.operational_access_token = request.headers.get("x-operational-token") || "";
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
       auth: { persistSession: false },
     });
@@ -241,6 +242,9 @@ Deno.serve(async (request) => {
 
     const mappedReportActions=new Set(["abc_dashboard","pizza_mandatory_metadata_v1","pizza_mandatory_report_v1","annual_comparison","sales_bi_dashboard","sales_canonical_dashboard","products_canonical_dashboard","products_dashboard","products_metadata","metadata_dashboard","billing_dashboard","billing_forms"]);
     if(mappedReportActions.has(String(body.action||""))){
+      const {data:contextoValido,error:contextoErro}=await admin.rpc("validar_contexto_operacional_relay",{p_principal_id:body.usuario_id,p_token:body.operational_access_token,p_empresa_id:body.empresa_id,p_loja_id:body.loja_id});
+      if(contextoErro)throw contextoErro;
+      if(contextoValido!==true)throw new Error("Sua sessão operacional não possui autorização para esta loja. Entre novamente.");
       if(String(body.action||"").startsWith("pizza_mandatory_")&&body.id_filial!==undefined)throw new Error("O cliente nao pode definir a filial Raffinato.");
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");
       const {data:mapping,error:mappingError}=await admin.from("raffinato_integracoes")

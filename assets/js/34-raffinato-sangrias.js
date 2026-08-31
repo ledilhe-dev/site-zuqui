@@ -22,14 +22,24 @@ async function raffinatoRelay(body) {
   const contextAtRequest=contextoRaffinato();
   const payload={...body,...(usuarioSistemaLogado?.global_admin_authorized===true&&usuarioSistemaLogado?.global_admin_token?{global_admin_token:usuarioSistemaLogado.global_admin_token}:{} )};
   if(/dashboard$/.test(String(payload.action||''))||payload.action==='annual_comparison')delete payload.id_filial;
-  const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body:payload });
+  const operationalToken=String(usuarioSistemaLogado?.operational_access_token||'');
+  const relayHeaders={
+    'x-funcionario-id':String(usuarioSistemaLogado?.id||''),
+    'x-loja-id':String(contextAtRequest.lojaId||''),
+    'x-operational-token':operationalToken,
+    ...(usuarioSistemaLogado?.global_admin_token?{'x-global-admin-token':String(usuarioSistemaLogado.global_admin_token)}:{}),
+  };
+  console.info('[Raffinato relay request]',{operation:payload.action,empresa_id:payload.empresa_id,loja_id:payload.loja_id,has_operational_token:!!operationalToken});
+  const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body:payload,headers:relayHeaders });
   if (error) {
     let raw = '', payload = {};
     try { raw = await error.context?.clone?.().text?.() || ''; } catch (_) {}
     try { payload = JSON.parse(raw) || {}; } catch (_) {}
     const status = error.context?.status || 'sem status', message = payload.error || error.message || 'Falha na comunicação externa com o Raffinato.', requestId = payload.request_id || 'não informado';
-    console.error('[Raffinato relay]', { operation: body?.action, status, payload: raw || payload, error });
-    throw new Error(`${body?.action || 'consulta'} · HTTP ${status} · ${message} · request_id: ${requestId}`);
+    console.error('[Raffinato relay]', { operation: body?.action, data, error, context:error.context, status, response_body:raw || payload, request_id:requestId });
+    const relayError=new Error(`${body?.action || 'consulta'} · HTTP ${status} · ${message} · request_id: ${requestId}`);
+    relayError.status=status;relayError.requestId=requestId;relayError.responsePayload=payload;relayError.communicationFailure=status==='sem status';
+    throw relayError;
   }
   if (data?.error) throw new Error(data.error);
   const contextAtResponse=contextoRaffinato();
