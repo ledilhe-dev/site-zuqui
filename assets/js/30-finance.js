@@ -3364,8 +3364,10 @@ async function faturaExibirRevisao(resultado) {
   const total = _faturaItensExtraidos.reduce((s,i) => s + Number(i.valor||0), 0);
   document.getElementById('faturaResumoTexto').textContent =
     `${resultado.banco || 'Fatura'} ? ${_faturaItensExtraidos.length} lançamentos`;
-  document.getElementById('faturaResumoValor').textContent =
-    `Total: ${formatarMoedaBRFinanceiro(total)} ? Venc: ${formatarDataBRFinanceiro(resultado.vencimento || '')}`;
+  const resumoValor = document.getElementById('faturaResumoValor');
+  resumoValor.dataset.vencimento = resultado.vencimento || '';
+  resumoValor.textContent =
+    `Total: ${formatarMoedaBRFinanceiro(total)} · Venc: ${formatarDataBRFinanceiro(resultado.vencimento || '')}`;
 
   // · Pr?-preenchimento autom?tico ·················
   // Garante que os caches necess?rios estão carregados.
@@ -3529,7 +3531,12 @@ async function faturaExibirRevisao(resultado) {
             </label>
             ${campoParcelasManuais}
             ${campoObs}
-            <span style="font-size:13px;font-weight:700;color:var(--text);">${formatarMoedaBRFinanceiro(item.valor)}</span>
+            <label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Valor:
+              <input type="text" inputmode="decimal" value="${prepararValorCampoMoedaParaEdicao(item.valor)}"
+                style="width:92px;font-size:13px;font-weight:700;height:28px;padding:0 7px;text-align:right;"
+                onchange="faturaAoAlterarValor('${item.id}', this.value, this)"
+                onfocus="this.select()" aria-label="Valor da compra ${escaparHtmlBasico(item.descricao || '')}">
+            </label>
             <button type="button" data-btn-separar class="fatura-btn-separar ${item._divisoesAplicadas ? 'ativo' : ''}"
               onclick="faturaAbrirSeparacao('${item.id}')">${item._divisoesAplicadas ? `Separado (${item._divisoes.length})` : 'Separar'}</button>
             <select class="fatura-select-categoria" style="font-size:11px;height:24px;padding:0 4px;flex:1;min-width:120px;${item._catAuto ? corAuto : ''}"
@@ -3613,6 +3620,35 @@ function faturaAoAlterarObs(itemId, valor) {
   item._obsManual = String(valor || '').trim().slice(0, 200);
   item._obsAuto = false;
   item._obsEditadaManual = true;
+}
+
+function faturaAoAlterarValor(itemId, valor, campo) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const numero = lerValorMonetarioFinanceiro(valor);
+  if (!Number.isFinite(numero) || numero <= 0) {
+    if (campo) campo.value = prepararValorCampoMoedaParaEdicao(item.valor);
+    return;
+  }
+
+  const novoValor = Number(numero.toFixed(2));
+  if (faturaDivisaoCentavos(novoValor) !== faturaDivisaoCentavos(item.valor)) {
+    // Uma separacao calculada com o valor antigo deixa de ser valida.
+    item._divisoes = null;
+    item._divisoesAplicadas = false;
+    faturaAtualizarIndicadorSeparacao(itemId);
+  }
+  item.valor = novoValor;
+  item._valorEditadoManual = true;
+  if (campo) campo.value = prepararValorCampoMoedaParaEdicao(novoValor);
+
+  const total = (_faturaItensExtraidos || []).reduce((s, i) => s + Number(i.valor || 0), 0);
+  const resumoValor = document.getElementById('faturaResumoValor');
+  if (resumoValor) {
+    const vencimento = resumoValor.dataset.vencimento || '';
+    resumoValor.textContent = `Total: ${formatarMoedaBRFinanceiro(total)} · Venc: ${formatarDataBRFinanceiro(vencimento)}`;
+  }
+  faturaAtualizarFooter();
 }
 
 // Variante sem confirmação individual usada pela exclusão em lote.
