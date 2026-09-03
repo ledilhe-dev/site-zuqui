@@ -12,6 +12,6 @@ window.APP_CONFIG = {
   emailFunctionName: 'notificar-alertas-email',
   authEmailFunctionName: 'autenticacao-email',
   authRedirectUrl: 'https://checkdiario.com.br/',
-  appVersion: '3.2.13',
-  appVersionLabel: '3.2.13-restaurar-vencimento-mobile',
+  appVersion: '3.2.49',
+  appVersionLabel: '3.2.49-auth-rls-contexto',
 };

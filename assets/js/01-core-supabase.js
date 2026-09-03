@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.48';
-const APP_VERSION_LABEL = '3.2.48-isolamento-global-relatorios';
+const APP_VERSION = '3.2.49';
+const APP_VERSION_LABEL = '3.2.49-auth-rls-contexto';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

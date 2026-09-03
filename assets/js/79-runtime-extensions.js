@@ -393,6 +393,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   usuarioSistemaLogado = usuarioNormalizado;
   window.usuarioSistemaLogado = usuarioSistemaLogado;
   window.__sessaoSistema = () => usuarioSistemaLogado;
+  window.__authPrincipalId = String(usuarioNormalizado.id || '').trim();
+  window.__authOperationalToken = String(usuarioNormalizado.operational_access_token || '').trim();
+  window.__authGlobalToken = String(usuarioNormalizado.global_admin_token || '').trim();
+  window.__authLojaId = String(usuarioNormalizado.loja_id || '').trim();
   limparDadosVisuaisDaSessao('Carregando dados da loja...');
   redefinirEstadoAvisoCentralTarefas();
   atualizarUsuarioTopbar();
@@ -531,6 +535,13 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     try {
       let usuario = JSON.parse(salvo);
+      // O cliente Supabase monta os cabeçalhos de RLS a partir destas variáveis.
+      // Restaure-as antes da primeira RPC/consulta protegida; caso contrário uma
+      // sessão persistida válida é consultada como anônima e parece não ter vínculo.
+      window.__authPrincipalId = String(usuario?.id || '').trim();
+      window.__authOperationalToken = String(usuario?.operational_access_token || '').trim();
+      window.__authGlobalToken = String(usuario?.global_admin_token || '').trim();
+      window.__authLojaId = String(usuario?.loja_id || '').trim();
       if (usuario?.context_mode !== 'global_admin' && !(await renovarContextoOperacionalPersistido(usuario))) {
         throw new Error('A sessão operacional salva expirou ou perdeu o vínculo com a loja.');
       }
@@ -576,6 +587,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       limparDadosVisuaisDaSessao('Aguardando login...');
       usuarioSistemaLogado = null;
       window.usuarioSistemaLogado = null;
+      window.__authPrincipalId = '';
+      window.__authOperationalToken = '';
+      window.__authGlobalToken = '';
+      window.__authLojaId = '';
       atualizarUsuarioTopbar();
       setSistemaLogado(false);
       document.documentElement.classList.remove('admin-fouc-pendente');
@@ -642,6 +657,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     limparDadosVisuaisDaSessao('Aguardando login...');
     usuarioSistemaLogado = null;
     window.usuarioSistemaLogado = null;
+    window.__authPrincipalId = '';
+    window.__authOperationalToken = '';
+    window.__authGlobalToken = '';
+    window.__authLojaId = '';
     atualizarUsuarioTopbar();
     redefinirEstadoAvisoCentralTarefas();
     const banner = document.getElementById('overdueAlertBanner');
