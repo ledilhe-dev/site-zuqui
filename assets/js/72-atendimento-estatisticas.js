@@ -29,9 +29,9 @@ function mensagemGoogleBusiness(erro) {
   const detalhe = String(erro?.message || erro || '');
   console.error('Google Business:', erro);
   if (/AUTH_REQUIRED|ACCESS_DENIED|INVALID_CONTEXT|401|403/i.test(detalhe)) return 'Sua sessão não está autorizada para esta loja. Entre novamente e tente outra vez.';
-  if (/refresh_token|invalid_grant|token/i.test(detalhe)) return 'A autorização do Google expirou ou foi revogada. Reconecte a conta Google.';
-  if (/Nenhuma conta|Business Profile/i.test(detalhe)) return 'Esta conta Google não possui um Perfil da Empresa disponível.';
-  if (/location|localiza/i.test(detalhe)) return 'A localização do Google vinculada à loja não foi encontrada.';
+  if (/GOOGLE_AUTH_EXPIRED|refresh_token|invalid_grant|token/i.test(detalhe)) return 'A autorização do Google expirou ou foi revogada. Reconecte a conta Google.';
+  if (/NO_BUSINESS_ACCOUNT|Nenhuma conta|Business Profile/i.test(detalhe)) return 'Esta conta Google não possui um Perfil da Empresa disponível.';
+  if (/GOOGLE_LOCATION_ERROR|location|localiza/i.test(detalhe)) return 'A localização do Google vinculada à loja não foi encontrada.';
   if (/Failed to send|FunctionsHttpError|fetch/i.test(detalhe)) return 'Não foi possível comunicar com a integração do Google agora. Tente novamente.';
   return 'Não foi possível concluir a operação com o Google Business. Tente novamente.';
 }

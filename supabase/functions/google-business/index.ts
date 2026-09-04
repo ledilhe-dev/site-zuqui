@@ -152,7 +152,7 @@ Deno.serve(async (request) => {
     const status = /AUTH_REQUIRED|AUTH_VALIDATION_FAILED|INVALID_CONTEXT/.test(message) ? 401
       : /ACCESS_DENIED|NOT_AUTHORIZED/.test(message) ? 403
       : /OAUTH_STATE_INVALID_OR_USED/.test(message) ? 409 : 400;
-    return json({ error: message }, status);
+    return json({ error: publicErrorCode(message) }, status);
   }
 });
 
@@ -352,6 +352,14 @@ function buildMockDashboard(stores: any[]) {
 }
 function validateTenant(body: any) {
   if (!body?.empresa_id || !/^[0-9a-f-]{36}$/i.test(body.empresa_id)) throw new Error("Contexto de empresa invÃƒÆ’Ã‚Â¡lido.");
+}
+function publicErrorCode(message: string) {
+  if (/AUTH_REQUIRED|AUTH_VALIDATION_FAILED|INVALID_CONTEXT|ACCESS_DENIED/.test(message)) return message;
+  if (/OAUTH_STATE|Estado OAuth|Unexpected token/.test(message)) return "OAUTH_STATE_INVALID";
+  if (/Nenhuma conta/.test(message)) return "NO_BUSINESS_ACCOUNT";
+  if (/refresh_token|invalid_grant|renovar acesso/.test(message)) return "GOOGLE_AUTH_EXPIRED";
+  if (/LOCATION_|localiza/i.test(message)) return "GOOGLE_LOCATION_ERROR";
+  return "GOOGLE_BUSINESS_ERROR";
 }
 function safeReturnUrl(value: string, fallback: string) {
   try { const url = new URL(value || fallback); const base = new URL(fallback); if (url.origin !== base.origin) return fallback; return url.toString(); } catch { return fallback; }
