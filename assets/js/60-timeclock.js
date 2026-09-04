@@ -590,8 +590,12 @@ async function obterIntervalosPontoDoRegistro(registroId) {
   return data || [];
 }
 
-function obterIntervaloAberto(intervalos = []) {
-  return [...intervalos].reverse().find(item => item.inicio_em && !item.retorno_em) || null;
+function obterIntervaloAberto(intervalos = [], agoraReferencia = Date.now()) {
+  return [...intervalos].reverse().find(item =>
+    item.inicio_em
+    && !item.retorno_em
+    && interpretarIntervaloPonto(item, agoraReferencia).abertoProvisorio
+  ) || null;
 }
 
 function proximaOrdemIntervalo(intervalos = []) {
@@ -600,8 +604,11 @@ function proximaOrdemIntervalo(intervalos = []) {
 }
 
 function montarResumoIntervalos(intervalos = []) {
-  if (!intervalos.length) return 'Intervalos: nenhum registrado';
-  const texto = intervalos.map(item => {
+  const intervalosExibicao = intervalos.filter(item =>
+    item?.retorno_em || interpretarIntervaloPonto(item).abertoProvisorio
+  );
+  if (!intervalosExibicao.length) return 'Intervalos: nenhum registrado';
+  const texto = intervalosExibicao.map(item => {
     const n = item.ordem || '-';
     const duracao = calcularDuracaoIntervaloPonto(item);
     const duracaoTexto = duracao !== null ? ` (${formatarDuracaoMinutos(duracao)})` : '';
@@ -804,7 +811,7 @@ function obterIntervalosConsolidadosPonto(registro = {}, intervalos = []) {
     });
 }
 
-function obterResumoJornadaPonto(registro, intervalos = []) {
+function obterResumoJornadaPonto(registro, intervalos = [], agoraReferencia = Date.now()) {
   if (!registro?.entrada_em) {
     return {
       status: 'Sem registro no dia',
@@ -816,10 +823,16 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
   }
 
   const lista = obterIntervalosConsolidadosPonto(registro, intervalos);
-  const intervaloAberto = obterIntervaloAberto(lista);
+  const intervaloAberto = obterIntervaloAberto(lista, agoraReferencia);
+  const intervaloExpirado = [...lista].reverse().find(item =>
+    item?.inicio_em
+    && !item?.retorno_em
+    && interpretarIntervaloPonto(item, agoraReferencia).expirado
+  ) || null;
   const ultimoRetorno = [...lista].reverse().find(item => item.retorno_em)?.retorno_em || null;
-  const agoraIso = new Date().toISOString();
-  const fimJornada = registro.saida_em || intervaloAberto?.inicio_em || ultimoRetorno || agoraIso;
+  const agoraIso = new Date(agoraReferencia).toISOString();
+  const saidaFinalInterpretada = intervaloExpirado?.inicio_em || null;
+  const fimJornada = registro.saida_em || saidaFinalInterpretada || intervaloAberto?.inicio_em || ultimoRetorno || agoraIso;
 
   let totalMinutos = 0;
   if (fimJornada) {
@@ -837,14 +850,14 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
     }
   }
 
-  const jornadaFechada = !!registro.saida_em;
+  const jornadaFechada = !!registro.saida_em || !!saidaFinalInterpretada;
   const status = jornadaFechada
     ? 'Jornada fechada'
     : (intervaloAberto ? 'Fora (última batida: saída)' : 'Em jornada');
   const proximaAcao = jornadaFechada
     ? 'Entrada'
     : (intervaloAberto ? 'Retorno' : 'Saída');
-  const ultimaSaidaEm = intervaloAberto?.inicio_em || registro.saida_em || null;
+  const ultimaSaidaEm = intervaloAberto?.inicio_em || registro.saida_em || saidaFinalInterpretada || null;
 
   return {
     status,

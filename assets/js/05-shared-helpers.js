@@ -93,26 +93,58 @@ async function limparTempoAvisoManualPonto() {
   }
 }
 
-function calcularTotalIntervalosPonto(intervalos = [], saidaIntervaloSemRegistro = null) {
+const LIMITE_INTERVALO_ABERTO_PONTO_MS = 2 * 60 * 60 * 1000;
+
+function interpretarIntervaloPonto(intervalo = {}, agoraReferencia = Date.now()) {
+  const inicioMs = new Date(intervalo?.inicio_em || 0).getTime();
+  const retornoMs = intervalo?.retorno_em ? new Date(intervalo.retorno_em).getTime() : null;
+  const agoraMs = agoraReferencia instanceof Date ? agoraReferencia.getTime() : Number(agoraReferencia);
+  if (!Number.isFinite(inicioMs) || inicioMs <= 0) {
+    return { valido: false, abertoProvisorio: false, expirado: false, contabilizar: false, inicioMs: null, fimMs: null };
+  }
+  if (Number.isFinite(retornoMs) && retornoMs > inicioMs) {
+    return { valido: true, abertoProvisorio: false, expirado: false, contabilizar: true, inicioMs, fimMs: retornoMs };
+  }
+
+  const inicio = new Date(inicioMs);
+  const agora = new Date(agoraMs);
+  const mesmoDia = inicio.getFullYear() === agora.getFullYear()
+    && inicio.getMonth() === agora.getMonth()
+    && inicio.getDate() === agora.getDate();
+  const decorridoMs = agoraMs - inicioMs;
+  const abertoProvisorio = Number.isFinite(agoraMs)
+    && decorridoMs >= 0
+    && decorridoMs <= LIMITE_INTERVALO_ABERTO_PONTO_MS
+    && mesmoDia;
+
+  return {
+    valido: true,
+    abertoProvisorio,
+    expirado: !abertoProvisorio,
+    contabilizar: abertoProvisorio,
+    inicioMs,
+    fimMs: abertoProvisorio ? agoraMs : null,
+    saidaFinalEm: !abertoProvisorio ? intervalo.inicio_em : null,
+  };
+}
+
+function calcularTotalIntervalosPonto(intervalos = [], saidaIntervaloSemRegistro = null, agoraReferencia = Date.now()) {
   // Evita dobrar intervalo quando o mesmo descanso aparece em mais de uma origem
   // (ex.: ponto_intervalos + campos principais do ponto).
   // A regra correta é contar cada janela de intervalo uma única vez.
   const faixas = [];
 
   (intervalos || []).forEach(intervalo => {
-    if (!intervalo?.inicio_em) return;
-    const inicioMs = new Date(intervalo.inicio_em).getTime();
-    const fimMs = intervalo.retorno_em ? new Date(intervalo.retorno_em).getTime() : Date.now();
-    if (!Number.isNaN(inicioMs) && !Number.isNaN(fimMs) && fimMs > inicioMs) {
-      faixas.push([inicioMs, fimMs]);
+    const interpretacao = interpretarIntervaloPonto(intervalo, agoraReferencia);
+    if (interpretacao.contabilizar && interpretacao.fimMs > interpretacao.inicioMs) {
+      faixas.push([interpretacao.inicioMs, interpretacao.fimMs]);
     }
   });
 
   if (saidaIntervaloSemRegistro) {
-    const inicioMs = new Date(saidaIntervaloSemRegistro).getTime();
-    const fimMs = Date.now();
-    if (!Number.isNaN(inicioMs) && fimMs > inicioMs) {
-      faixas.push([inicioMs, fimMs]);
+    const interpretacao = interpretarIntervaloPonto({ inicio_em: saidaIntervaloSemRegistro }, agoraReferencia);
+    if (interpretacao.contabilizar && interpretacao.fimMs > interpretacao.inicioMs) {
+      faixas.push([interpretacao.inicioMs, interpretacao.fimMs]);
     }
   }
 

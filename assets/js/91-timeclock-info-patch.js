@@ -17,7 +17,7 @@
           '<li><strong>4ª batida:</strong> pode iniciar um segundo intervalo, se ainda não for saída final.</li>'+
           '<li><strong>5ª batida:</strong> retorna do segundo intervalo.</li>'+
           '<li><strong>6ª batida:</strong> fecha a jornada do dia.</li>'+
-          '<li>Se o funcionário não retornar em até 2 horas após uma saída para intervalo, o sistema deve mudar apenas o status visual para sem retorno. O ponto não é fechado de verdade.</li>'+
+          '<li>Se o funcionário não retornar em até 2 horas após uma saída para intervalo, essa batida passa a ser interpretada nos cálculos como saída final. O registro original não é alterado.</li>'+
           '<li>O ponto só fecha definitivamente com a saída final registrada ou no encerramento do dia às 23:59 no horário de Brasília.</li>'+
           '<li>Ajustes manuais entram na mesma sequência das batidas normais e não devem bloquear batidas futuras.</li>'+
         '</ul>'+

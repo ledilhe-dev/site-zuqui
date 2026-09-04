@@ -2069,7 +2069,7 @@ async function carregarRelatorioPonto() {
     const resumoJornada = obterResumoJornadaPonto(item, item.intervalos_ponto || []);
     const ajustesHtml = montarHtmlAjustesPonto(item.ajustes_admin || []);
     return `<div class="item${item.ajustes_admin?.length ? ' ponto-ajustado-admin' : ''}">
-        <div class="item-info"><div class="item-nome">${escapeHtmlPonto(nomeFuncionario)} · ${formatarDataPonto(item.data_ponto)}</div><div class="item-detalhe">Entrada: ${formatarHoraPonto(item.entrada_em)} · ${montarResumoIntervalos(item.intervalos_ponto || [])} · Saída: ${formatarHoraPonto(item.saida_em)}</div><div class="item-detalhe">Status: ${resumoJornada.status}</div><div class="item-detalhe">Total trabalhado no dia: ${resumoJornada.totalTexto}</div>${ajustesHtml}</div>
+        <div class="item-info"><div class="item-nome">${escapeHtmlPonto(nomeFuncionario)} · ${formatarDataPonto(item.data_ponto)}</div><div class="item-detalhe">Entrada: ${formatarHoraPonto(item.entrada_em)} · ${montarResumoIntervalos(item.intervalos_ponto || [])} · Saída: ${formatarHoraPonto(resumoJornada.ultimaSaidaEm || item.saida_em)}</div><div class="item-detalhe">Status: ${resumoJornada.status}</div><div class="item-detalhe">Total trabalhado no dia: ${resumoJornada.totalTexto}</div>${ajustesHtml}</div>
         <div class="item-actions">${resumoJornada.proximaAcao === 'Retorno' ? '<span class="tag tag-amber">Fora</span>' : '<span class="tag tag-green">Em jornada</span>'}</div>
       </div>`;
   }).join('') + '</div>';
@@ -2085,7 +2085,7 @@ function montarLinhasExportacaoRelatorioPonto() {
       const tipo = String(aj.motivo || '').includes('[ANULACAO MANUAL ADMIN]') ? 'Anulação manual ADM' : 'Ajuste manual ADM';
       return `${tipo} em ${aj.data_ajuste || '-'} às ${formatarHorarioAjustePonto(aj.horario_ajuste)} por ${aj.aprovado_por_nome || 'Administrador'} (${formatarDataHoraSolicitacaoPonto(aj.aprovado_em || aj.solicitado_em)})`;
     }).join(' | ');
-    return { Funcionario: nome, Data: item.data_ponto || '', Entrada: formatarHoraPonto(item.entrada_em), Intervalos: montarResumoIntervalos(item.intervalos_ponto || []).replace(/<[^>]+>/g, ''), Saida: formatarHoraPonto(item.saida_em), Status: resumo.status, Total: resumo.totalTexto, Ajustes_ADM: ajustes || 'Sem ajuste manual ADM' };
+    return { Funcionario: nome, Data: item.data_ponto || '', Entrada: formatarHoraPonto(item.entrada_em), Intervalos: montarResumoIntervalos(item.intervalos_ponto || []).replace(/<[^>]+>/g, ''), Saida: formatarHoraPonto(resumo.ultimaSaidaEm || item.saida_em), Status: resumo.status, Total: resumo.totalTexto, Ajustes_ADM: ajustes || 'Sem ajuste manual ADM' };
   });
 }
 

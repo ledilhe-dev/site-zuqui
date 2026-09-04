@@ -57,9 +57,16 @@ Deno.serve(async (request) => {
     if (request.method !== "POST") return json({ error: "MÃƒÆ’Ã‚Â©todo nÃƒÆ’Ã‚Â£o permitido." }, 405);
     const body = await request.json();
     validateTenant(body);
-    await validateOperationalContext(admin, request, body);
-    const acesso = await resolveAuthorizedStores(admin, body.usuario_id, body.loja_id);
-    if (!acesso.storeIds.length) throw new Error("ACCESS_DENIED");
+    const contextoAutorizado = await validateOperationalContext(admin, request, body);
+    const acesso = {
+      storeIds: [String(contextoAutorizado.loja_id)],
+      stores: [{
+        id: contextoAutorizado.loja_id,
+        nome: contextoAutorizado.loja_nome,
+        empresa_id: contextoAutorizado.empresa_id,
+        ativo: true,
+      }],
+    };
 
     if (body.action === "dashboard") {
       if (env.mockMode) return json(buildMockDashboard(acesso.stores));
@@ -149,8 +156,9 @@ Deno.serve(async (request) => {
   } catch (error) {
     console.error(error);
     const message = error instanceof Error ? error.message : "Erro inesperado.";
-    const status = /AUTH_REQUIRED|AUTH_VALIDATION_FAILED|INVALID_CONTEXT/.test(message) ? 401
-      : /ACCESS_DENIED|NOT_AUTHORIZED/.test(message) ? 403
+    const status = /AUTH_DATABASE_ERROR/.test(message) ? 500
+      : /AUTH_REQUIRED|INVALID_CONTEXT|SESSION_INVALID/.test(message) ? 401
+      : /ACCESS_DENIED|NOT_AUTHORIZED|TENANT_INVALID|STORE_PROFILE_NOT_LINKED|PERMISSION_DENIED/.test(message) ? 403
       : /OAUTH_STATE_INVALID_OR_USED/.test(message) ? 409 : 400;
     return json({ error: publicErrorCode(message) }, status);
   }
@@ -232,32 +240,6 @@ async function getConnection(admin: ReturnType<typeof createClient>, empresaId: 
   return data;
 }
 
-async function resolveAuthorizedStores(admin: ReturnType<typeof createClient>, userId: string, currentStoreId?: string) {
-  if (!userId || !currentStoreId) return { storeIds: [], stores: [] };
-  const { data: store, error: storeError } = await admin.from("lojas")
-    .select("id,nome,empresa_id,ativo").eq("id", currentStoreId).eq("ativo", true).maybeSingle();
-  if (storeError) throw storeError;
-  if (!store) return { storeIds: [], stores: [] };
-
-  const { data: localAdmin } = await admin.from("usuarios_admin")
-    .select("id").eq("id", userId).eq("loja_id", currentStoreId).eq("ativo", true).maybeSingle();
-  if (localAdmin) return { storeIds: [String(store.id)], stores: [store] };
-
-  const { data: globalAdmin } = await admin.from("funcionarios")
-    .select("id").eq("id", userId).eq("empresa_id", store.empresa_id).eq("loja_id", currentStoreId)
-    .eq("é_administrador", true).eq("ativo", true).maybeSingle();
-  if (globalAdmin) return { storeIds: [String(store.id)], stores: [store] };
-
-  const { data: link, error: linkError } = await admin.from("funcionario_lojas")
-    .select("perfil_id,perfis!inner(codigo,permissoes,ativo)")
-    .eq("funcionario_id", userId).eq("loja_id", currentStoreId).eq("ativo", true).maybeSingle();
-  if (linkError) throw linkError;
-  const profile: any = link?.perfis;
-  const code = String(profile?.codigo || "").toUpperCase();
-  const allowed = profile?.ativo !== false && (code === "ADM" || code === "MASTER" || profile?.permissoes?.estatisticas_atendimento === true);
-  return allowed ? { storeIds: [String(store.id)], stores: [store] } : { storeIds: [], stores: [] };
-}
-
 async function validateOperationalContext(admin: ReturnType<typeof createClient>, request: Request, body: any) {
   const principalId = String(request.headers.get("x-funcionario-id") || "");
   const operationalToken = String(request.headers.get("x-operational-token") || "");
@@ -268,17 +250,30 @@ async function validateOperationalContext(admin: ReturnType<typeof createClient>
   if (principalId !== String(body.usuario_id || "") || headerStoreId !== String(body.loja_id || "")) {
     throw new Error("INVALID_CONTEXT");
   }
-  const { data, error } = await admin.rpc("validar_contexto_operacional_relay", {
+  const { data, error } = await admin.rpc("resolver_contexto_google_business", {
     p_principal_id: principalId,
     p_token: operationalToken,
     p_empresa_id: body.empresa_id,
     p_loja_id: headerStoreId,
   });
   if (error) {
-    console.error("Falha ao validar contexto operacional:", error);
-    throw new Error("AUTH_VALIDATION_FAILED");
+    console.error("Falha de banco ao resolver contexto Google Business:", error);
+    throw new Error("AUTH_DATABASE_ERROR");
   }
-  if (data !== true) throw new Error("ACCESS_DENIED");
+  if (!data || typeof data !== "object") {
+    console.error("RPC de contexto Google Business retornou resposta inválida:", data);
+    throw new Error("AUTH_DATABASE_ERROR");
+  }
+  if (data.autorizado !== true) {
+    console.warn("Contexto Google Business recusado:", data.codigo || "ACCESS_DENIED");
+    throw new Error(String(data.codigo || "ACCESS_DENIED"));
+  }
+  if (String(data.empresa_id || "") !== String(body.empresa_id)
+      || String(data.loja_id || "") !== headerStoreId) {
+    console.error("RPC retornou contexto divergente do solicitado.");
+    throw new Error("INVALID_CONTEXT");
+  }
+  return data;
 }
 
 async function consumeOAuthState(admin: ReturnType<typeof createClient>, state: any) {
@@ -354,7 +349,7 @@ function validateTenant(body: any) {
   if (!body?.empresa_id || !/^[0-9a-f-]{36}$/i.test(body.empresa_id)) throw new Error("Contexto de empresa invÃƒÆ’Ã‚Â¡lido.");
 }
 function publicErrorCode(message: string) {
-  if (/AUTH_REQUIRED|AUTH_VALIDATION_FAILED|INVALID_CONTEXT|ACCESS_DENIED/.test(message)) return message;
+  if (/AUTH_DATABASE_ERROR|AUTH_REQUIRED|INVALID_CONTEXT|SESSION_INVALID|TENANT_INVALID|STORE_PROFILE_NOT_LINKED|PERMISSION_DENIED|ACCESS_DENIED/.test(message)) return message;
   if (/OAUTH_STATE|Estado OAuth|Unexpected token/.test(message)) return "OAUTH_STATE_INVALID";
   if (/Nenhuma conta/.test(message)) return "NO_BUSINESS_ACCOUNT";
   if (/refresh_token|invalid_grant|renovar acesso/.test(message)) return "GOOGLE_AUTH_EXPIRED";
