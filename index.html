@@ -43,7 +43,7 @@
 <link id="obsidian-precision-design-system-v3" rel="stylesheet" href="./assets/css/12-design-system.css">
 <link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css?v=20260727-sem-filtro-lojas">
 <link id="integracoes-financeiras-style" rel="stylesheet" href="./assets/css/97-financial-integrations.css?v=20260730-conciliacao-design-v4">
-<link id="atendimento-estatisticas-style" rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260724">
+<link id="atendimento-estatisticas-style" rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260903">
 
 
 
@@ -2513,6 +2513,33 @@
         <div class="card ar-table-card" id="arTableCard" hidden><div class="card-title">Resumo mensal</div><div class="ar-table-wrap"><table><thead><tr><th data-key="mes">Mês</th><th data-key="faturamento">Faturamento</th><th data-key="vendas">Vendas</th><th data-key="quantidade">Produtos</th><th data-key="ticket_medio">Ticket médio</th><th data-key="anterior">Ano anterior</th><th data-key="variacao">Variação</th></tr></thead><tbody id="arTableBody"></tbody></table></div></div>
       </section>
 
+
+      <section id="estatisticas_atendimento" class="pagina atendimento-page">
+        <header class="atendimento-hero">
+          <div><div class="atendimento-eyebrow"><span class="google-dot"></span> Google Business Profile</div><h2>Estatísticas de atendimento</h2><p>Acompanhe a reputação das lojas e responda avaliações sem sair do CheckDiário.</p></div>
+          <div class="atendimento-actions"><span id="atendimentoSyncStatus" class="atendimento-sync">Não conectado</span><button class="btn btn-ghost" type="button" onclick="sincronizarGoogleAtendimento()">↻ Sincronizar</button><button id="btnConectarGoogleAtendimento" class="btn btn-green" type="button" onclick="conectarGoogleAtendimento()">Conectar Google</button></div>
+        </header>
+        <div id="atendimentoAviso" class="atendimento-alert" hidden></div>
+        <div class="atendimento-filtros" aria-label="Filtros das avaliações">
+          <label><span>Período</span><select id="atendimentoFiltroPeriodo" onchange="carregarEstatisticasAtendimento()"><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Último ano</option><option value="0">Todo o período</option></select></label>
+          <label><span>Loja</span><select id="atendimentoFiltroLoja" onchange="carregarEstatisticasAtendimento()"><option value="">Todas as lojas</option></select></label>
+          <label><span>Nota</span><select id="atendimentoFiltroNota" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="5">5 estrelas</option><option value="4">4 estrelas</option><option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option></select></label>
+          <label><span>Situação</span><select id="atendimentoFiltroSituacao" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="pendente">Aguardando resposta</option><option value="respondida">Respondidas</option></select></label>
+        </div>
+        <div class="atendimento-kpis">
+          <article class="atendimento-kpi destaque"><span>Nota atual</span><strong id="atendimentoNota">—</strong><small id="atendimentoNotaVariacao">Sem dados do Google</small></article>
+          <article class="atendimento-kpi"><span>Total acumulado</span><strong id="atendimentoTotal">0</strong><small>avaliações</small></article>
+          <article class="atendimento-kpi"><span>Neste período</span><strong id="atendimentoPeriodo">0</strong><small>novas avaliações</small></article>
+          <article class="atendimento-kpi"><span>Taxa de resposta</span><strong id="atendimentoTaxa">0%</strong><small id="atendimentoPendentes">0 aguardando resposta</small></article>
+        </div>
+        <div class="atendimento-graficos">
+          <article class="atendimento-card atendimento-evolucao"><div class="atendimento-card-head"><div><h3>Evolução da nota</h3><p>Média das avaliações por mês</p></div></div><div id="atendimentoGraficoEvolucao" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
+          <article class="atendimento-card"><div class="atendimento-card-head"><div><h3>Distribuição por estrelas</h3><p>Composição das avaliações</p></div></div><div id="atendimentoDistribuicao" class="atendimento-distribuicao"></div></article>
+          <article class="atendimento-card atendimento-volume"><div class="atendimento-card-head"><div><h3>Avaliações recebidas</h3><p>Volume mensal no período</p></div></div><div id="atendimentoGraficoVolume" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
+        </div>
+        <article class="atendimento-card atendimento-recentes"><div class="atendimento-card-head"><div><h3>Avaliações recentes</h3><p id="atendimentoListaResumo">Nenhuma avaliação encontrada</p></div><button class="btn btn-ghost btn-sm" type="button" onclick="carregarEstatisticasAtendimento()">Atualizar lista</button></div><div id="atendimentoAvaliacoesLista" class="atendimento-lista"><div class="atendimento-vazio"><strong>Conecte seu Perfil da Empresa no Google</strong><span>As avaliações das lojas aparecerão aqui.</span></div></div></article>
+      </section>
+
       <section id="relatorio_curva_abc_raffinato" class="pagina"></section>
       <section id="relatorio_item_obrigatorio_pizza" class="pagina"></section>
 
@@ -2832,31 +2859,6 @@
 </div>
 </div>
 
-      <section id="estatisticas_atendimento" class="pagina atendimento-page">
-        <header class="atendimento-hero">
-          <div><div class="atendimento-eyebrow"><span class="google-dot"></span> Google Business Profile</div><h2>Estatísticas de atendimento</h2><p>Acompanhe a reputação das lojas e responda avaliações sem sair do CheckDiário.</p></div>
-          <div class="atendimento-actions"><span id="atendimentoSyncStatus" class="atendimento-sync">Não conectado</span><button class="btn btn-ghost" type="button" onclick="sincronizarGoogleAtendimento()">↻ Sincronizar</button><button id="btnConectarGoogleAtendimento" class="btn btn-green" type="button" onclick="conectarGoogleAtendimento()">Conectar Google</button></div>
-        </header>
-        <div id="atendimentoAviso" class="atendimento-alert" hidden></div>
-        <div class="atendimento-filtros" aria-label="Filtros das avaliações">
-          <label><span>Período</span><select id="atendimentoFiltroPeriodo" onchange="carregarEstatisticasAtendimento()"><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Último ano</option><option value="0">Todo o período</option></select></label>
-          <label><span>Loja</span><select id="atendimentoFiltroLoja" onchange="carregarEstatisticasAtendimento()"><option value="">Todas as lojas</option></select></label>
-          <label><span>Nota</span><select id="atendimentoFiltroNota" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="5">5 estrelas</option><option value="4">4 estrelas</option><option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option></select></label>
-          <label><span>Situação</span><select id="atendimentoFiltroSituacao" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="pendente">Aguardando resposta</option><option value="respondida">Respondidas</option></select></label>
-        </div>
-        <div class="atendimento-kpis">
-          <article class="atendimento-kpi destaque"><span>Nota atual</span><strong id="atendimentoNota">—</strong><small id="atendimentoNotaVariacao">Sem dados do Google</small></article>
-          <article class="atendimento-kpi"><span>Total acumulado</span><strong id="atendimentoTotal">0</strong><small>avaliações</small></article>
-          <article class="atendimento-kpi"><span>Neste período</span><strong id="atendimentoPeriodo">0</strong><small>novas avaliações</small></article>
-          <article class="atendimento-kpi"><span>Taxa de resposta</span><strong id="atendimentoTaxa">0%</strong><small id="atendimentoPendentes">0 aguardando resposta</small></article>
-        </div>
-        <div class="atendimento-graficos">
-          <article class="atendimento-card atendimento-evolucao"><div class="atendimento-card-head"><div><h3>Evolução da nota</h3><p>Média das avaliações por mês</p></div></div><div id="atendimentoGraficoEvolucao" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
-          <article class="atendimento-card"><div class="atendimento-card-head"><div><h3>Distribuição por estrelas</h3><p>Composição das avaliações</p></div></div><div id="atendimentoDistribuicao" class="atendimento-distribuicao"></div></article>
-          <article class="atendimento-card atendimento-volume"><div class="atendimento-card-head"><div><h3>Avaliações recebidas</h3><p>Volume mensal no período</p></div></div><div id="atendimentoGraficoVolume" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
-        </div>
-        <article class="atendimento-card atendimento-recentes"><div class="atendimento-card-head"><div><h3>Avaliações recentes</h3><p id="atendimentoListaResumo">Nenhuma avaliação encontrada</p></div><button class="btn btn-ghost btn-sm" type="button" onclick="carregarEstatisticasAtendimento()">Atualizar lista</button></div><div id="atendimentoAvaliacoesLista" class="atendimento-lista"><div class="atendimento-vazio"><strong>Conecte seu Perfil da Empresa no Google</strong><span>As avaliações das lojas aparecerão aqui.</span></div></div></article>
-      </section>
 </div>
 </div>
 
@@ -3336,7 +3338,7 @@
 <script src="./assets/js/60-timeclock.js?v=20260807-correcao-total-trabalhado"></script>
 <script src="./assets/js/70-reports.js"></script>
 <script src="./assets/js/71-executions.js"></script>
-<script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
+<script src="./assets/js/72-atendimento-estatisticas.js?v=20260903"></script>
 <script src="./assets/js/78-init.js"></script>
 
 <!-- LOGIN INICIAL -->
