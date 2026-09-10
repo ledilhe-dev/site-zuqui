@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const source=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',import.meta.url),'utf8');
+
+test('grupos carregam do catálogo antes da consulta e com escopo da loja',()=>{
+  assert.match(source,/async function rmInit\(\).*await rmLoadGroups\(\);rmLoad\(\)/);
+  assert.match(source,/\/api\/raffinato\/metadados/);
+  assert.match(source,/action:'metadata_dashboard'/);
+  assert.match(source,/tenantKey=`\$\{c\.empresaId\}:\$\{c\.lojaId\}:1`/);
+  assert.match(source,/Todos os grupos/);
+});
+
+test('troca de tenant invalida grupos e descarta resposta atrasada',()=>{
+  assert.match(source,/request!==RM\.groupsRequest\|\|currentKey!==tenantKey/);
+  assert.match(source,/RM\.groupsTenantKey='';RM\.groupsRequest\+\+/);
+  assert.match(source,/void rmLoadGroups\(\)/);
+});
+
+test('ordena strings e números internos antes do limite visual',()=>{
+  const sandbox={window:{},registrarModuloTenantScoped(){},console,document:{getElementById(){return null}}};
+  vm.runInNewContext(source,sandbox);
+  const rows=[
+    {produto:'C',agrupamento:'X',quantidade:3,faturamento:100,participacao:10},
+    {produto:'A',agrupamento:'Z',quantidade:20,faturamento:3,participacao:2},
+    {produto:'B',agrupamento:'Y',quantidade:1,faturamento:20,participacao:30},
+  ];
+  const sorted=vm.runInNewContext(`RM.sortField='faturamento';RM.sortDirection='asc';rmSortedProducts(${JSON.stringify(rows)})`,sandbox);
+  assert.deepEqual(Array.from(sorted,x=>x.faturamento),[3,20,100]);
+  assert.match(source,/sorted=rmSortedProducts\(prepared\);rmRenderBIBase/);
+});
+
+test('cinco cabeçalhos têm botão, indicador e aria-sort',()=>{
+  for(const field of ['produto','agrupamento','quantidade','faturamento','participacao'])assert.match(source,new RegExp(`rmSortHeader\\('${field}'`));
+  assert.match(source,/aria-sort=/);
+  assert.match(source,/↑/);
+  assert.match(source,/↓/);
+});
