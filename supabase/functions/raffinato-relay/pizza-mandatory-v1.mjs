@@ -1,52 +1,30 @@
-const EPSILON=0.00001;
 const number=value=>Number.isFinite(Number(value))?Number(value):0;
-const close=(a,b)=>Math.abs(a-b)<=EPSILON*Math.max(1,Math.abs(a),Math.abs(b));
-const fractionKind=f=>close(f,1)?'inteiras':close(f,.5)?'meias':close(f,1/3)?'tercos':close(f,2/3)?'dois_tercos':'outras_fracoes';
+const close=(a,b)=>Math.abs(a-b)<=0.00001*Math.max(1,Math.abs(a),Math.abs(b));
 
-function composition(flavors,valid){
-  if(!valid)return'REVISAR';
-  const fractions=flavors.map(x=>x.fraction).sort((a,b)=>b-a);
-  if(fractions.length===1&&close(fractions[0],1))return'INTEIRA';
-  if(fractions.length===2&&fractions.every(x=>close(x,.5)))return'MEIO_A_MEIO';
-  if(fractions.length===3&&fractions.every(x=>close(x,1/3)))return'TRES_SABORES';
-  if(fractions.length>=4)return'QUATRO_MAIS';
-  return'OUTRAS';
+export function quantidadeEfetivaItemObrigatorio(row){
+  const registrada=number(row.quantidade_componente),pais=Math.abs(number(row.quantidade_produto_principal));
+  const unitario=Math.abs(number(row.valor_unitario_componente)),total=Math.abs(number(row.valor_componente));
+  if(unitario>0&&pais>0&&close(total,unitario*pais)&&!close(total,unitario*registrada))return{quantidade:pais,criterio:'valor_total_confirma_quantidade_pai'};
+  return{quantidade:registrada,criterio:'quantidade_registrada'};
 }
 
 export function normalizePizzaMandatoryV1(rows){
-  const groups=new Map();
-  for(const row of rows||[]){
-    const key=`${row.id_venda}:${row.id_pai}:${row.id_grupo_obrigatorio}`;
-    let group=groups.get(key);
-    if(!group){const parentQty=Math.max(number(row.quantidade_produto_principal),1);group={key,id_venda:number(row.id_venda),id_pai:number(row.id_pai),id_grupo_obrigatorio:number(row.id_grupo_obrigatorio),grupo_obrigatorio:String(row.grupo_obrigatorio||'Sem tipo'),id_produto_pai:number(row.id_produto_pai),produto_pai:String(row.produto_pai||'Sem produto'),id_agrupamento_pai:number(row.id_agrupamento_pai),agrupamento_pai:String(row.agrupamento_pai||'Sem agrupamento'),origem:String(row.origem||'VENDA_RAPIDA'),data:String(row.data||''),hora:String(row.hora||'00:00:00'),parentQty,maxSlots:number(row.quantidade_maxima),valor_pai:number(row.valor_item),cancelado:row.cancelado==null?null:Boolean(row.cancelado),retornou_estoque:row.retornou_estoque==null?null:Boolean(row.retornou_estoque),retorno_estoque_original:row.retorno_estoque_original==null?null:String(row.retorno_estoque_original),flavors:new Map()};groups.set(key,group)}
-    if(row.id_componente==null)continue;
-    const flavorKey=String(row.id_componente??row.componente??'');let flavor=group.flavors.get(flavorKey);
-    if(!flavor){flavor={id_sabor:number(row.id_componente),sabor:String(row.componente||'Sem nome'),slotQty:0,value:0};group.flavors.set(flavorKey,flavor)}
-    flavor.slotQty+=number(row.quantidade_componente);flavor.value+=number(row.valor_componente);
-  }
-  const records=[];
-  for(const group of groups.values()){
-    if(!group.flavors.size){records.push({...group,flavors:undefined,composition:'REVISAR',valid:false,expectedSlots:0,observedSlots:0,id_sabor:null,sabor:null,slotQty:0,fraction:0,equivalent:0,flavorValue:0,participations:group.parentQty,fractionBucket:'outras_fracoes',placeholder:true});continue}
-    const expected=group.maxSlots*group.parentQty,observed=[...group.flavors.values()].reduce((s,x)=>s+x.slotQty,0),valid=group.maxSlots>0&&group.parentQty>0&&close(expected,observed);
-    const flavors=[...group.flavors.values()].map(x=>({...x,fraction:expected>0?x.slotQty/expected:0,equivalent:group.maxSlots>0?x.slotQty/group.maxSlots:0})),classification=composition(flavors,valid);
-    for(const flavor of flavors){const bucket=valid?fractionKind(flavor.fraction):'outras_fracoes';records.push({...group,flavors:undefined,composition:classification,valid,expectedSlots:expected,observedSlots:observed,id_sabor:flavor.id_sabor,sabor:flavor.sabor,slotQty:flavor.slotQty,fraction:flavor.fraction,equivalent:flavor.equivalent,flavorValue:flavor.value,participations:group.parentQty,fractionBucket:bucket})}
-  }
-  return records;
+  const paisVistos=new Set();
+  return(rows||[]).map(row=>{const chavePai=`${row.id_venda}:${row.id_pai}`,primeiraLinhaPai=!paisVistos.has(chavePai);paisVistos.add(chavePai);const efetiva=quantidadeEfetivaItemObrigatorio(row);return{
+    key:`${row.id_venda}:${row.id_pai}:${row.id_grupo_obrigatorio}:${row.id_item}`,chave_pai:chavePai,id_venda:number(row.id_venda),id_item:number(row.id_item),id_pai:number(row.id_pai),
+    data:String(row.data||''),hora:String(row.hora||'00:00:00'),produto_pai:String(row.produto_pai||'Sem produto pai'),agrupamento_pai:String(row.agrupamento_pai||'Sem agrupamento de produto'),
+    grupo_obrigatorio:String(row.grupo_obrigatorio||'Sem agrupamento obrigatório'),item_obrigatorio:String(row.componente||'Sem item obrigatório'),
+    quantidade_pai:primeiraLinhaPai?number(row.quantidade_produto_principal):0,quantidade_pai_registrada:number(row.quantidade_produto_principal),quantidade_registrada:number(row.quantidade_componente),
+    quantidade_efetiva:efetiva.quantidade,criterio_quantidade:efetiva.criterio,valor_unitario:number(row.valor_unitario_componente),valor_total:number(row.valor_componente),
+    modulo:String(row.modulo_venda||row.origem||'SEM_ORIGEM'),canal:String(row.canal_venda||'NAO_IDENTIFICADO'),situacao:String(row.situacao_venda||'NAO_IDENTIFICADA'),
+    origem_codigo:row.origem_codigo==null?null:number(row.origem_codigo),vinculos_modulo:number(row.vinculos_modulo),cancelado:Boolean(row.cancelado)
+  }});
 }
 
 export function aggregateRecordsPizzaMandatoryV1(records){
-  const groups=new Map(),flavors=new Map(),products=new Map(),types=new Map();
-  for(const record of records||[]){
-    if(!groups.has(record.key))groups.set(record.key,record);
-    if(record.placeholder)continue;
-    const flavorKey=`${record.id_sabor}:${record.grupo_obrigatorio}`,flavor=flavors.get(flavorKey)||{sabor:record.sabor,tipo:record.grupo_obrigatorio,inteiras:0,meias:0,tercos:0,dois_tercos:0,outras_fracoes:0,participacoes:0,equivalente:0,quantidade:0,valor:0};
-    flavor[record.fractionBucket]+=record.participations;flavor.participacoes+=record.participations;flavor.equivalente+=record.equivalent;flavor.quantidade+=record.slotQty;flavor.valor+=record.flavorValue;flavors.set(flavorKey,flavor);
-    if(!products.has(record.produto_pai))products.set(record.produto_pai,{produto:record.produto_pai,keys:new Set(),valor:0});const product=products.get(record.produto_pai);if(!product.keys.has(record.key)){product.keys.add(record.key);product.valor+=record.valor_pai}
-    if(!types.has(record.grupo_obrigatorio))types.set(record.grupo_obrigatorio,{tipo:record.grupo_obrigatorio,keys:new Set(),valor:0});const type=types.get(record.grupo_obrigatorio);if(!type.keys.has(record.key)){type.keys.add(record.key);type.valor+=record.valor_pai}
-  }
-  const summary={total_pais:0,inteiras:0,duas:0,tres:0,multiplas:0,outras:0,revisar:0,sabores:new Set((records||[]).filter(x=>!x.placeholder).map(x=>x.id_sabor||x.sabor)).size,quantidade:0,valor:0};
-  for(const group of groups.values()){summary.total_pais+=group.parentQty;summary.quantidade+=group.parentQty;summary.valor+=group.valor_pai;const field={INTEIRA:'inteiras',MEIO_A_MEIO:'duas',TRES_SABORES:'tres',QUATRO_MAIS:'multiplas',OUTRAS:'outras',REVISAR:'revisar'}[group.composition];summary[field]+=group.parentQty}
-  return{resumo:summary,itens:[...flavors.values()].sort((a,b)=>b.equivalente-a.equivalente),produtos:[...products.values()].map(x=>({produto:x.produto,quantidade:[...x.keys].reduce((s,k)=>s+groups.get(k).parentQty,0),valor:x.valor})).sort((a,b)=>b.quantidade-a.quantidade),tipos:[...types.values()].map(x=>({tipo:x.tipo,quantidade:[...x.keys].reduce((s,k)=>s+groups.get(k).parentQty,0),valor:x.valor})).sort((a,b)=>b.quantidade-a.quantidade)};
+  const liquidos=(records||[]).filter(x=>!x.cancelado),vendas=new Set(),pais=new Set(),abertas=new Set(),finalizadas=new Set();let valor=0,quantidade=0,paisQtd=0;
+  for(const r of liquidos){vendas.add(r.id_venda);valor+=r.valor_total;quantidade+=r.quantidade_efetiva;if(!pais.has(r.chave_pai)){pais.add(r.chave_pai);paisQtd+=r.quantidade_pai_registrada}if(r.situacao==='EM_ABERTO')abertas.add(r.id_venda);if(r.situacao==='FINALIZADA')finalizadas.add(r.id_venda)}
+  return{resumo:{vendas_gravadas:vendas.size,vendas_abertas:abertas.size,vendas_finalizadas:finalizadas.size,pais_vendidos:paisQtd,quantidade_itens:quantidade,valor_itens:valor,cancelados:(records||[]).filter(x=>x.cancelado).length}};
 }
 
 export function aggregatePizzaMandatoryV1(rows){const records=normalizePizzaMandatoryV1(rows);return{...aggregateRecordsPizzaMandatoryV1(records),records}}

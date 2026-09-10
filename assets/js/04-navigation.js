@@ -19,7 +19,7 @@ const topTitles = {
   relatorio_vendas_raffinato: ['Análise de Vendas Raffinato', 'Produtos × formas de pagamento'],
   relatorio_comparativo_anual: ['Comparativo Anual', 'Comparação histórica de faturamento, vendas e produtos'],
   relatorio_curva_abc_raffinato: ['Curva ABC Raffinato', 'Classificação por faturamento, giro e lucro'],
-  relatorio_item_obrigatorio_pizza: ['ItemObrigatorioPizza', 'Composição e sabores por filial Raffinato'],
+  relatorio_item_obrigatorio_pizza: ['Raffinato – Venda de Item Obrigatório', 'Produtos pais, agrupamentos e itens obrigatórios vendidos'],
   financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
   financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
   financeiro_contasapagar: ['Cadastro de contas a pagar', 'Lançamentos financeiros por fornecedor'],

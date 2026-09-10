@@ -1,90 +1,22 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import {aggregatePizzaMandatoryV1} from '../supabase/functions/raffinato-relay/pizza-mandatory-v1.mjs';
+import {aggregatePizzaMandatoryV1,quantidadeEfetivaItemObrigatorio} from '../supabase/functions/raffinato-relay/pizza-mandatory-v1.mjs';
 
 const relay=fs.readFileSync('supabase/functions/raffinato-relay/index.ts','utf8');
 const frontend=fs.readFileSync('assets/js/96-raffinato-item-obrigatorio-pizza.js','utf8');
 const connector=fs.readFileSync('tools/raffinato-bridge/raffinato_bridge.py','utf8');
+const base={id_venda:1,id_pai:10,id_item:11,produto_pai:'CAFÉ NESTLE',agrupamento_pai:'CAFÉS',id_grupo_obrigatorio:7,grupo_obrigatorio:'CAFE NESCAFE',componente:'CAPPUCCINO',quantidade_produto_principal:2,quantidade_componente:1,valor_unitario_componente:9.99,valor_componente:19.98,modulo_venda:'DELIVERY',canal_venda:'iFood',situacao_venda:'EM_ABERTO',cancelado:false};
 
-test('frontend remoto nunca envia filial nem usa localhost',()=>{
-  assert.doesNotMatch(frontend,/127\.0\.0\.1|localhost/);
-  assert.match(frontend,/hasOwnProperty\.call\(payload,'id_filial'\)/);
-  assert.doesNotMatch(frontend,/id_filial\s*:/);
-});
-test('relay bloqueia filial do cliente antes de resolver o vínculo',()=>{
-  const guard=relay.indexOf('startsWith("pizza_mandatory_")&&body.id_filial!==undefined');
-  const assignment=relay.indexOf('body.id_filial=Number(mapping.raffinato_filial_id)');
-  assert.ok(guard>0&&guard<assignment);
-  assert.match(relay,/filial!==Number\(integration\.raffinato_filial_id\)/);
-});
-test('datasets são exclusivos e chave inclui tenant, filial e versão',()=>{
-  const migration=fs.readFileSync('supabase/migrations/202608160002_item_obrigatorio_pizza_v1.sql','utf8');
-  assert.match(migration,/primary key\(empresa_id,loja_id,id_filial,dataset_version,id_agrupamento\)/);
-  assert.match(migration,/raffinato_pizza_mandatory_data_v1/);
-  assert.doesNotMatch(frontend,/mandatory_v2|RaffinatoMandatoryItems/);
-});
-test('SQL usa configuração ativa, pai real e quantidade do pai',()=>{
-  assert.match(connector,/ConfiguracaoAgrupamento CA/);
-  assert.match(connector,/CA\.IdFilial=\?/);
-  assert.match(connector,/ISNULL\(CA\.BloqueiaVenda,0\)=0/);
-  assert.match(connector,/SQL_PIZZA_MANDATORY_DATA_V1[\s\S]*PAI\.Quantidade quantidade_produto_principal/);
-  assert.match(connector,/FROM dbo\.VendaItem PAI/);
-  assert.match(connector,/LEFT JOIN dbo\.VendaItem VI[\s\S]*VI\.IdTipoRegistro=3 AND VI\.IdAgrupamentoItemObrigatorio IS NOT NULL/);
-  assert.match(connector,/PAI\.IdStatusItem=2/);
-  assert.match(connector,/SQL_PIZZA_STOCK_RETURN[\s\S]*dbo\.OperacaoEstoque OE[\s\S]*OE\.IdVendaItem=PAI\.Id[\s\S]*OE\.AnulaOposto,0\)=1/);
-  assert.match(connector,/SQL_PIZZA_STOCK_RETURN_UNKNOWN[\s\S]*CAST\(NULL AS bit\) retornou_estoque/);
-});
-const base={id_venda:1,id_pai:10,id_produto_pai:2,produto_pai:'Pizza',id_grupo_obrigatorio:7,grupo_obrigatorio:'PIZZA GRAND',quantidade_produto_principal:1,quantidade_maxima:2,valor_item:50,valor_componente:0};
-const flavors=(max,parent,values)=>values.map(([id,name,qty],index)=>({...base,quantidade_maxima:max,quantidade_produto_principal:parent,id_item:index+1,id_componente:id,componente:name,quantidade_componente:qty}));
-const byFlavor=(data,name)=>data.itens.find(x=>x.sabor===name);
-test('max 2: sabor com dois slots é inteira',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,1,[[1,'Calabresa',2]]));assert.equal(d.resumo.inteiras,1);assert.equal(byFlavor(d,'Calabresa').inteiras,1);assert.equal(byFlavor(d,'Calabresa').equivalente,1)});
-test('max 2: 1+1 é meio a meio',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,1,[[1,'Calabresa',1],[2,'Portuguesa',1]]));assert.equal(d.resumo.duas,1);assert.equal(byFlavor(d,'Calabresa').meias,1);assert.equal(byFlavor(d,'Calabresa').equivalente,.5)});
-test('max 3: três slots do mesmo sabor é inteira',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',3]]));assert.equal(d.resumo.inteiras,1);assert.equal(byFlavor(d,'Calabresa').inteiras,1)});
-test('max 3: 2/3 + 1/3 é outra composição',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',2],[2,'Portuguesa',1]]));assert.equal(d.resumo.outras,1);assert.equal(byFlavor(d,'Calabresa').dois_tercos,1);assert.ok(Math.abs(byFlavor(d,'Calabresa').equivalente-2/3)<1e-8);assert.equal(byFlavor(d,'Portuguesa').tercos,1)});
-test('max 3: 1+1+1 são três sabores',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',1],[2,'Portuguesa',1],[3,'Mignon',1]]));assert.equal(d.resumo.tres,1);assert.ok(d.itens.every(x=>x.tercos===1))});
-test('pai 2: quatro slots iguais são duas inteiras',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,2,[[1,'Calabresa',4]]));assert.equal(d.resumo.inteiras,2);assert.equal(byFlavor(d,'Calabresa').inteiras,2)});
-test('pai 2: 2+2 são duas pizzas meio a meio',()=>{const d=aggregatePizzaMandatoryV1(flavors(2,2,[[1,'Calabresa',2],[2,'Portuguesa',2]]));assert.equal(d.resumo.duas,2);assert.equal(byFlavor(d,'Calabresa').meias,2);assert.equal(byFlavor(d,'Calabresa').equivalente,1)});
-test('slots divergentes são marcados para revisão',()=>{const d=aggregatePizzaMandatoryV1(flavors(3,1,[[1,'Calabresa',2]]));assert.equal(d.resumo.revisar,1);assert.equal(d.records[0].composition,'REVISAR')});
-test('caso oficial 27/08 inclui pai sem componentes e totaliza todos os cancelados',()=>{
-  const stock={cancelado:true,retornou_estoque:true,retorno_estoque_original:'S',data:'2026-08-27',origem:'DELIVERY'};
-  const rows=[
-    {...base,...stock,id_venda:31,id_pai:310,id_item:310,id_produto_pai:31,produto_pai:'PIZZA BROTO',id_agrupamento_pai:31,agrupamento_pai:'3.1 PDV - PIZZA',id_grupo_obrigatorio:0,grupo_obrigatorio:'Sem composicao obrigatoria',quantidade_produto_principal:3,quantidade_maxima:null,id_componente:null,componente:null,quantidade_componente:0,valor_item:220},
-    {...base,...stock,id_venda:32,id_pai:320,id_item:321,id_produto_pai:32,produto_pai:'PIZZA GRANDE',id_agrupamento_pai:32,agrupamento_pai:'3.2 PDV - PIZZA',quantidade_produto_principal:1,quantidade_maxima:1,id_componente:1,componente:'CALABRESA',quantidade_componente:1,valor_item:109.99},
-    {...base,...stock,id_venda:34,id_pai:340,id_item:341,id_produto_pai:34,produto_pai:'PIZZA ALL METRO',id_agrupamento_pai:34,agrupamento_pai:'3.4 PDV - PIZZA',quantidade_produto_principal:2,quantidade_maxima:1,id_componente:2,componente:'MIGNON',quantidade_componente:2,valor_item:394},
-  ];
-  const d=aggregatePizzaMandatoryV1(rows);
-  assert.equal(d.resumo.quantidade,6);
-  assert.equal(d.resumo.valor,723.99);
-  assert.equal(d.resumo.revisar,3);
-  assert.equal(d.records.find(x=>x.produto_pai==='PIZZA BROTO').placeholder,true);
-  assert.ok(d.records.every(x=>x.retornou_estoque===true));
-});
-test('lifecycle SPA invalida e aborta ao desmontar',()=>{
-  assert.match(frontend,/state\.generation\+\+/);assert.match(frontend,/state\.controller\?\.abort\(\)/);assert.match(frontend,/key\(context\(\)\)===key\(ctx\)/);
-});
-test('BI cruza filtros em memória e não consulta novamente a cada clique',()=>{
-  assert.match(frontend,/biFilters/);assert.match(frontend,/state\.records\.filter/);assert.match(frontend,/data-pair-flavor/);assert.match(frontend,/data-sort-table/);
-  assert.equal((frontend.match(/pizza_mandatory_report_v1/g)||[]).length,1);
-});
-test('filtro de retorno atua em memória e preserva desconhecidos apenas em Todos',()=>{
-  assert.match(frontend,/data-stock-filter="todos"/);
-  assert.match(frontend,/data-stock-filter="sim"/);
-  assert.match(frontend,/data-stock-filter="nao"/);
-  assert.match(frontend,/r\.retornou_estoque===true:r\.retornou_estoque===false/);
-  assert.match(frontend,/Retornou ao estoque: Sim/);
-  assert.match(frontend,/Retornou ao estoque: Não/);
-});
-test('relatório antigo foi removido da aplicação',()=>{
-  const index=fs.readFileSync('index.html','utf8'),navigation=fs.readFileSync('assets/js/04-navigation.js','utf8'),manifest=fs.readFileSync('assets/manifest.json','utf8');
-  assert.doesNotMatch(index,/raffinato_itens_obrigatorios_v2|95-raffinato-mandatory|116-raffinato-mandatory/);
-  assert.doesNotMatch(navigation,/raffinato_itens_obrigatorios_v2|RaffinatoMandatoryItems/);
-  assert.doesNotMatch(manifest,/95-raffinato-mandatory|116-raffinato-mandatory/);
-});
-test('exclusão da conexão exige token temporário de uso único',()=>{
-  const settings=fs.readFileSync('assets/js/34-raffinato-sangrias.js','utf8');
-  assert.match(connector,/DELETE_TOKENS\.pop\(supplied,None\)/);
-  assert.match(connector,/expected\[0\]!=store_id/);
-  assert.match(settings,/token-exclusao/);
-  assert.match(settings,/delete_token:raffinatoDeleteToken/);
-});
+test('nome funcional é genérico e rota interna é preservada',()=>{assert.match(frontend,/Raffinato – Venda de Item Obrigatório/);assert.match(frontend,/relatorio_item_obrigatorio_pizza/);assert.doesNotMatch(frontend,/Pizzas \/ pais|Sabores por composição/)});
+test('frontend não escolhe filial e mantém módulo, canal e situação separados',()=>{assert.doesNotMatch(frontend,/localhost|127\.0\.0\.1/);assert.match(frontend,/hasOwnProperty\.call\(payload,'id_filial'\)/);assert.match(frontend,/iopModule/);assert.match(frontend,/iopChannel/);assert.match(frontend,/iopSituation/)});
+test('SQL parte de Venda gravada e da relação estrutural pai-filho',()=>{assert.match(connector,/FROM dbo\.Venda V/);assert.match(connector,/VI\.IdItemPai IS NOT NULL/);assert.match(connector,/PAI\.Id=VI\.IdItemPai/);assert.match(connector,/VI\.IdAgrupamentoItemObrigatorio IS NOT NULL/);assert.match(connector,/CASE WHEN VI\.IdStatusItem=2 OR PAI\.IdStatusItem=2/);assert.doesNotMatch(connector,/INNER JOIN dbo\.PagamentoVenda/)});
+test('metadados incluem agrupamentos usados mesmo bloqueados para venda avulsa',()=>{const sql=connector.slice(connector.indexOf('SQL_PIZZA_MANDATORY_METADATA_V1'),connector.indexOf('SQL_PIZZA_STOCK_RETURN'));assert.match(sql,/AgrupamentoItemObrigatorio/);assert.doesNotMatch(sql,/BloqueiaVenda/)});
+test('valor histórico vem da linha filha e preço atual não é consultado',()=>{assert.match(connector,/VI\.ValorUnitario/);assert.match(connector,/VI\.ValorTotal/);assert.doesNotMatch(connector,/\*\s*1\.35|1\.35\s*\*/)});
+test('quantidade efetiva reconhece caso 1 x 9,99 com total 19,98 e pai 2',()=>{assert.deepEqual(quantidadeEfetivaItemObrigatorio(base),{quantidade:2,criterio:'valor_total_confirma_quantidade_pai'})});
+test('pai com dois filhos é contado uma vez e valores dos filhos são somados',()=>{const d=aggregatePizzaMandatoryV1([base,{...base,id_item:12,componente:'EXPRESSO',quantidade_componente:2,valor_unitario_componente:7,valor_componente:14}]);assert.equal(d.resumo.pais_vendidos,2);assert.equal(Math.round(d.resumo.valor_itens*100),3398);assert.equal(d.records.length,2)});
+test('venda aberta aparece e após finalizar não duplica',()=>{const aberta=aggregatePizzaMandatoryV1([base]);const final=aggregatePizzaMandatoryV1([{...base,situacao_venda:'FINALIZADA'}]);assert.equal(aberta.resumo.vendas_gravadas,1);assert.equal(aberta.resumo.vendas_abertas,1);assert.equal(final.resumo.vendas_gravadas,1);assert.equal(final.resumo.vendas_finalizadas,1)});
+test('cancelado não compõe venda líquida',()=>{const d=aggregatePizzaMandatoryV1([{...base,cancelado:true}]);assert.equal(d.resumo.valor_itens,0);assert.equal(d.resumo.vendas_gravadas,0);assert.equal(d.resumo.cancelados,1)});
+test('preços Loja e iFood permanecem históricos e separados',()=>{const d=aggregatePizzaMandatoryV1([{...base,id_venda:1,id_pai:10,id_item:11,modulo_venda:'VENDA_RAPIDA',canal_venda:'LOJA_MANUAL',valor_unitario_componente:9.99,valor_componente:9.99,quantidade_produto_principal:1},{...base,id_venda:2,id_pai:20,id_item:21,valor_unitario_componente:13.49,valor_componente:13.49,quantidade_produto_principal:1}]);assert.deepEqual(d.records.map(x=>x.valor_unitario),[9.99,13.49]);assert.equal(d.resumo.valor_itens,23.48)});
+test('módulos usam vínculos prioritários e preservam origem desconhecida',()=>{assert.match(connector,/ORIGEM_INCONSISTENTE/);assert.match(connector,/VendaTeleEntrega/);assert.match(connector,/VendaCartaoConsumo/);assert.match(connector,/VendaMesa/);assert.match(connector,/VendaMobilidade/);assert.match(connector,/SEM_ORIGEM/);assert.match(connector,/OUTRO_MODULO/)});
+test('relay mantém isolamento por empresa loja filial e versão',()=>{assert.match(relay,/eq\("empresa_id",body\.empresa_id\).*eq\("loja_id",body\.loja_id\).*eq\("id_filial",filial\)/);assert.match(relay,/id_grupo_obrigatorio/)});

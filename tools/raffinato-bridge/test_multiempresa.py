@@ -136,10 +136,13 @@ class MultiempresaTests(unittest.TestCase):
         self.assertIn("PAI.Id=VI.IdItemPai", sql)
         self.assertNotIn("IdFilial=1", sql)
 
-    def test_pizza_cancellations_use_stock_operation_and_keep_parent_without_components(self):
+    def test_item_obrigatorio_uses_recorded_sales_and_historical_child_values(self):
         sql = bridge.SQL_PIZZA_MANDATORY_DATA_V1
-        self.assertIn("PAI.IdStatusItem=2", sql)
-        self.assertIn("LEFT JOIN dbo.VendaItem VI", sql)
+        self.assertIn("FROM dbo.Venda V", sql)
+        self.assertIn("VI.IdItemPai IS NOT NULL", sql)
+        self.assertIn("VI.ValorUnitario", sql)
+        self.assertIn("VI.ValorTotal", sql)
+        self.assertIn("CASE WHEN VI.IdStatusItem=2 OR PAI.IdStatusItem=2", sql)
         self.assertIn("dbo.OperacaoEstoque OE", bridge.SQL_PIZZA_STOCK_RETURN)
         self.assertIn("OE.IdVendaItem=PAI.Id", bridge.SQL_PIZZA_STOCK_RETURN)
         self.assertIn("OE.AnulaOposto,0)=1", bridge.SQL_PIZZA_STOCK_RETURN)
