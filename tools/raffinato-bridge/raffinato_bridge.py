@@ -39,7 +39,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.13"
+CONNECTOR_VERSION = "1.7.14"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -104,7 +104,7 @@ SQL_AGRUPAMENTOS = """
 SELECT DISTINCT A.Id AS id,LTRIM(RTRIM(A.Nome)) AS nome,A.Arvore AS arvore
 FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
 JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=CA.IdAgrupamento
-WHERE CA.IdFilial=? AND ISNULL(CA.BloqueiaVenda,0)=0
+WHERE CA.IdFilial=?
   AND ISNULL(LTRIM(RTRIM(A.Nome)),'')<>''
 ORDER BY A.Arvore,A.Nome;
 """
@@ -1246,6 +1246,7 @@ def query_metadados_catalogo(config: dict[str, Any], filial: int) -> dict[str, A
         cursor.execute(SQL_PRODUTOS_CATALOGO);produtos=rows_as_dicts(cursor)
         cursor.execute(SQL_FORMAS_PAGAMENTO);formas=rows_as_dicts(cursor)
     return {"id_filial":filial,"agrupamentos":agrupamentos,"produtos":produtos,"formas_pagamento":formas,
+            "capabilities":{"filtros_lista_remotos":True,"catalogo_agrupamentos_completo":True},
             "sincronizado_em":datetime.now().isoformat(timespec="seconds")}
 
 

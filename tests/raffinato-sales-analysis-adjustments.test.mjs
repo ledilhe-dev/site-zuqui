@@ -5,6 +5,7 @@ import vm from 'node:vm';
 
 const source=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',import.meta.url),'utf8');
 const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
+const connector=fs.readFileSync(new URL('../tools/raffinato-bridge/raffinato_bridge.py',import.meta.url),'utf8');
 
 test('grupos carregam do catálogo antes da consulta e com escopo da loja',()=>{
   assert.match(source,/async function rmInit\(\).*await rmLoadGroups\(\);rmRenderGroupOptions\(\);rmLoad\(\)/);
@@ -72,4 +73,12 @@ test('renderiza opções reais no DOM do seletor',()=>{
   assert.match(elements.rmGroupOptions.innerHTML,/Bebidas/);
   assert.match(elements.rmGroupOptions.innerHTML,/Lanches/);
   assert.match(elements.rmGroupOptions.innerHTML,/type="checkbox"/);
+});
+
+test('conector 1.7.14 entrega todos os agrupamentos configurados da filial',()=>{
+  assert.match(connector,/CONNECTOR_VERSION = "1\.7\.14"/);
+  const sql=connector.match(/SQL_AGRUPAMENTOS = """([\s\S]*?)"""/)?.[1]||'';
+  assert.match(sql,/CA\.IdFilial=\?/);
+  assert.doesNotMatch(sql,/BloqueiaVenda/);
+  assert.match(connector,/catalogo_agrupamentos_completo/);
 });
