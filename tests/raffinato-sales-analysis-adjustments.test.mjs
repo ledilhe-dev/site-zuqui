@@ -6,6 +6,7 @@ import vm from 'node:vm';
 const source=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',import.meta.url),'utf8');
 const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
 const connector=fs.readFileSync(new URL('../tools/raffinato-bridge/raffinato_bridge.py',import.meta.url),'utf8');
+const styles=fs.readFileSync(new URL('../assets/css/115-raffinato-managerial.css',import.meta.url),'utf8');
 
 test('grupos carregam do catálogo antes da consulta e com escopo da loja',()=>{
   assert.match(source,/async function rmInit\(\).*await rmLoadGroups\(\);rmRenderGroupOptions\(\);rmLoad\(\)/);
@@ -86,4 +87,10 @@ test('conector 1.7.14 entrega todos os agrupamentos configurados da filial',()=>
 test('análise e curva ABC tentam o conector local e período vazio não vira erro',()=>{
   assert.doesNotMatch(source,/remoteOnly=path==='\/api\/raffinato\/curva-abc'/);
   assert.doesNotMatch(relay,/CACHE_MISS: periodo ainda nao sincronizado pelo conector/);
+});
+
+test('painel de agrupamentos nao e cortado pelo card de filtros',()=>{
+  assert.match(source,/class="card rm-filter-card"/);
+  assert.match(styles,/\.raffinato-sales-page \.rm-filter-card\{[^}]*z-index:20/);
+  assert.match(styles,/\.raffinato-sales-page \.rm-filter-card\{[^}]*overflow:visible/);
 });
