@@ -3176,6 +3176,36 @@ function faturaCalcularVencimentoPorDia(dataCompraISO, diaVencimento, diaFechame
     : `${anoV}-${mm}-${dd}`;
 }
 
+// A primeira parcela preserva a fatura ja determinada para a compra. As demais
+// avancam a competencia e voltam ao dia-base configurado no cartao.
+function faturaCalcularVencimentoParcela(vencimentoPrimeiraISO, indiceParcela, diaVencimentoCartao) {
+  const primeiro = String(vencimentoPrimeiraISO || '').slice(0, 10);
+  const indice = Math.max(0, Number.parseInt(indiceParcela, 10) || 0);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(primeiro) || indice === 0) return primeiro || null;
+  const diaConfigurado = Number.parseInt(diaVencimentoCartao, 10);
+  const diaPrimeiroVencimento = Number.parseInt(primeiro.slice(8, 10), 10);
+  const diaBase = Number.isFinite(diaConfigurado) && diaConfigurado >= 1 && diaConfigurado <= 31
+    ? diaConfigurado
+    : diaPrimeiroVencimento;
+  const [anoPrimeiro, mesPrimeiro] = primeiro.split('-').map(Number);
+  const ultimoDiaPrimeiraCompetencia = new Date(anoPrimeiro, mesPrimeiro, 0).getDate();
+  const ancoraCompetencia = `${anoPrimeiro}-${String(mesPrimeiro).padStart(2, '0')}-${String(Math.min(diaBase, ultimoDiaPrimeiraCompetencia)).padStart(2, '0')}`;
+  return calcularVencimentoParcelaFinanceiro(ancoraCompetencia, indice, 30);
+}
+
+function faturaGerarParcelasCompra(valorTotal, quantidade, vencimentoPrimeiraISO, diaVencimentoCartao) {
+  const qtd = Math.max(1, Number.parseInt(quantidade, 10) || 1);
+  const totalCentavos = Math.round(Number(valorTotal || 0) * 100);
+  const baseCentavos = Math.floor(totalCentavos / qtd);
+  const centavosRestantes = totalCentavos % qtd;
+  return Array.from({ length: qtd }, (_, indice) => ({
+    numero: indice + 1,
+    totalParcelas: qtd,
+    valor: (baseCentavos + (indice < centavosRestantes ? 1 : 0)) / 100,
+    vencimento: faturaCalcularVencimentoParcela(vencimentoPrimeiraISO, indice, diaVencimentoCartao),
+  }));
+}
+
 function faturaObterCategoriaItem(item) {
   const id = String(item?.categoria_id || '').trim();
   return id ? (categoriasCompraCache || []).find(c => String(c.id) === id) || null : null;
@@ -3208,6 +3238,11 @@ function faturaAtualizarCardSelecoes(itemId) {
   if (catBtn) {
     catBtn.innerHTML = faturaHtmlCategoriaBotao(item);
     catBtn.classList.toggle('selecionado', !!item.categoria_id);
+    catBtn.classList.remove('erro');
+  }
+  if (item.categoria_id) {
+    card.style.border = '';
+    card.style.boxShadow = '';
   }
   const fornBtn = card.querySelector('[data-fatura-forn-btn]');
   if (fornBtn) {
@@ -3240,7 +3275,7 @@ function faturaCriarEscolhaOverlay({ titulo = '', subtitulo = '', body = '' } = 
           <div class="fatura-choice-title">${escaparHtmlBasico(titulo)}</div>
           <div class="fatura-choice-subtitle">${escaparHtmlBasico(subtitulo || '')}</div>
         </div>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="faturaFecharEscolhaOverlay()">?</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="faturaFecharEscolhaOverlay()" aria-label="Voltar">← Voltar</button>
       </div>
       <div class="fatura-choice-body">${body}</div>
     </div>
@@ -4490,6 +4525,13 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
   const total = (selecionados || []).reduce((s, i) => s + Number(i.valor || 0), 0);
   const totalDestinos = (selecionados || []).reduce((s, item) =>
     s + (item._divisoesAplicadas ? Math.max(1, item._divisoes?.length || 0) : 1), 0);
+  const totalTitulos = (selecionados || []).reduce((s, item) => {
+    const qtd = item.total_parcelas && item.parcela_atual
+      ? item.total_parcelas - item.parcela_atual + 1
+      : Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
+    const destinos = item._divisoesAplicadas ? Math.max(1, item._divisoes?.length || 0) : 1;
+    return s + (qtd * destinos);
+  }, 0);
   const itemSemCategoria = item => item._divisoesAplicadas
     ? !Array.isArray(item._divisoes) || item._divisoes.some(parte => !parte.categoria_id)
     : !item.categoria_id;
@@ -4512,6 +4554,15 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     const fornecedor = faturaObterFornecedorItem(item);
     const categoria = faturaObterCategoriaItem(item);
     const vencimento = formatarDataBRFinanceiro(String(item.vencimento_fatura || item.data || '').slice(0, 10));
+    const ehParceladoOFX = item.total_parcelas && item.parcela_atual;
+    const qtdParcelas = ehParceladoOFX
+      ? item.total_parcelas - item.parcela_atual + 1
+      : Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
+    const parcelas = !ehParceladoOFX && qtdParcelas > 1
+      ? faturaGerarParcelasCompra(Number(item.valorTotalCompra ?? item.valor ?? 0), qtdParcelas,
+          String(item.vencimento_fatura || item.data || '').slice(0, 10), fornecedor?.dia_vencimento)
+      : [];
+    const resumoParcelas = parcelas.length > 1 ? `<span class="fatura-confirm-parcelas"><b>${qtdParcelas} títulos · 1ª de ${formatarMoedaBRFinanceiro(parcelas[0].valor)}</b><small>Total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra ?? item.valor)}</small><small>1ª parcela: ${formatarDataBRFinanceiro(parcelas[0].vencimento)} · Próxima: ${formatarDataBRFinanceiro(parcelas[1].vencimento)}</small></span>` : '';
     const observacao = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
     const divisoes = item._divisoesAplicadas ? (item._divisoes || []) : [];
     const detalheCategorias = divisoes.length
@@ -4526,7 +4577,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     return `
       <div class="nc-confirm-line fatura-confirm-line">
         <span>${escaparHtmlBasico(item.descricao || 'Compra')}</span>
-        <strong>${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small><em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
+        <strong>${parcelas.length > 1 ? resumoParcelas : `${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small>`}<em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
         ${detalheCategorias}
       </div>
     `;
@@ -4540,7 +4591,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
   ].filter(Boolean).join(' ');
   const body = `
     <div class="nc-confirm-lines">
-      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} compra(s) · ${totalDestinos} categoria(s)<small>${formatarMoedaBRFinanceiro(total)}</small></strong></div>
+      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} compra(s) · ${totalTitulos} título(s) · ${totalDestinos} categoria(s)<small>${formatarMoedaBRFinanceiro(total)}</small></strong></div>
       ${linhas}
       ${extras}
     </div>
@@ -4564,6 +4615,22 @@ async function faturaLancarSelecionados() {
   const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
   if (semFornecedorObrigatorio.length) {
     alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.`);
+    return;
+  }
+  const categoriaValida = categoriaId => String(categoriaId || '').trim()
+    && (categoriasCompraCache || []).some(categoria => String(categoria.id) === String(categoriaId));
+  const semCategoria = selecionados.filter(item => item._divisoesAplicadas
+    ? !Array.isArray(item._divisoes) || item._divisoes.some(parte => !categoriaValida(parte.categoria_id))
+    : !categoriaValida(item.categoria_id));
+  if (semCategoria.length) {
+    const card = document.getElementById('faturaItem_' + semCategoria[0].id);
+    if (card) {
+      card.style.border = '1px solid var(--red)';
+      card.style.boxShadow = '0 0 0 2px var(--red-glow)';
+      card.querySelector('[data-fatura-cat-btn]')?.classList.add('erro');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    alert('Selecione uma categoria para todos os lançamentos antes de continuar.');
     return;
   }
   const divisoesInvalidas = selecionados.filter(item => item._divisoesAplicadas && (
@@ -4739,9 +4806,9 @@ async function faturaLancarSelecionados() {
       // parcela e calendário da compra original.
       const linhas = partesCompra.flatMap((parte, indiceParte) => {
         const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
-        const valorTotalCentavos = Math.round(Number(parte.valor || 0) * 100);
-        const valorBaseCentavos = dividirValorTotal ? Math.floor(valorTotalCentavos / qtdParcelas) : valorTotalCentavos;
-        const centavosRestantes = dividirValorTotal ? valorTotalCentavos % qtdParcelas : 0;
+        const parcelasCompra = dividirValorTotal
+          ? faturaGerarParcelasCompra(parte.valor, qtdParcelas, vencimentoBase, diaVencForn)
+          : null;
         return Array.from({ length: qtdParcelas }, (_, i) => {
         // Vencimentos:
         //  - Parcela ATUAL do OFX (i=0): respeita o vencimento definido na revis?o.
@@ -4749,7 +4816,9 @@ async function faturaLancarSelecionados() {
         //    dia de vencimento configurado, avan?a m?s a m?s mantendo esse dia;
         //    sen?o, soma 30 dias (comportamento antigo).
         let venc;
-        if (ehParceladoOFX && i === 0) {
+        if (parcelasCompra) {
+          venc = parcelasCompra[i].vencimento;
+        } else if (ehParceladoOFX && i === 0) {
           venc = ehDataValida(vencimentoBase) ? vencimentoBase : dataCompra;
         } else if (diaVencForn) {
           const baseISO = ehDataValida(vencimentoBase) ? vencimentoBase : dataCompra;
@@ -4779,7 +4848,7 @@ async function faturaLancarSelecionados() {
           // Distribui eventual diferenca de centavos nas primeiras parcelas,
           // garantindo que a soma final seja exatamente o valor informado.
           valor_compra: dividirValorTotal
-            ? (valorBaseCentavos + (i < centavosRestantes ? 1 : 0)) / 100
+            ? parcelasCompra[i].valor
             : Number(Number(parte.valor || 0).toFixed(2)),
           observacao: (() => {
             const obsItem = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();

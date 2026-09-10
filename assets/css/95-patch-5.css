@@ -267,6 +267,24 @@
   overflow-wrap: anywhere;
 }
 
+.fatura-confirm-parcelas {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  max-width: 230px;
+}
+
+.fatura-confirm-parcelas b {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.fatura-choice-btn.erro {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 2px var(--red-glow) !important;
+}
+
 @media (max-width: 520px) {
   .fatura-confirm-line {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -292,6 +310,10 @@
 
   .fatura-confirm-line > strong .fatura-confirm-observacao {
     max-width: 160px;
+  }
+
+  .fatura-confirm-parcelas {
+    max-width: 170px;
   }
 }
 
