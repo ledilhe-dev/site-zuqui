@@ -56,3 +56,20 @@ test('lista de grupos combina cadastro direto e grupos do catálogo de produtos'
   assert.match(source,/x\.id_agrupamento,nome:x\.agrupamento/);
   assert.match(source,/groupMap=new Map/);
 });
+
+test('seletor sempre renderiza Todos e usa grupos do resultado como contingência',()=>{
+  assert.match(source,/rows=\[\{id:'',nome:'Todos os grupos',all:true\}/);
+  assert.match(source,/function rmMergeGroupsFromResult/);
+  assert.match(source,/rmMergeGroupsFromResult\(d\)/);
+});
+
+test('renderiza opções reais no DOM do seletor',()=>{
+  const elements={rmGroupOptions:{innerHTML:''},rmGroupButton:{textContent:'',disabled:false},rmGroup:{value:''},rmGroupSearch:{value:''}};
+  const sandbox={window:{},registrarModuloTenantScoped(){},console,document:{getElementById(id){return elements[id]||null},querySelectorAll(){return[]}}};
+  vm.runInNewContext(source,sandbox);
+  vm.runInNewContext("RM.groupOptions=[{id:'10',nome:'Bebidas'},{id:'20',nome:'Lanches'}];rmRenderGroupOptions()",sandbox);
+  assert.match(elements.rmGroupOptions.innerHTML,/Todos os grupos/);
+  assert.match(elements.rmGroupOptions.innerHTML,/Bebidas/);
+  assert.match(elements.rmGroupOptions.innerHTML,/Lanches/);
+  assert.match(elements.rmGroupOptions.innerHTML,/type="checkbox"/);
+});
