@@ -49,3 +49,10 @@ test('agrupamentos possuem busca, checkboxes e payload multiseleção',()=>{
   assert.match(relay,/groupSet\.has\(String\(x\.id_agrupamento\)\)/);
   assert.match(relay,/Number\.isSafeInteger/);
 });
+
+test('lista de grupos combina cadastro direto e grupos do catálogo de produtos',()=>{
+  assert.match(source,/payload\.agrupamentos/);
+  assert.match(source,/payload\.produtos/);
+  assert.match(source,/x\.id_agrupamento,nome:x\.agrupamento/);
+  assert.match(source,/groupMap=new Map/);
+});
