@@ -4,9 +4,10 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',import.meta.url),'utf8');
+const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
 
 test('grupos carregam do catálogo antes da consulta e com escopo da loja',()=>{
-  assert.match(source,/async function rmInit\(\).*await rmLoadGroups\(\);rmLoad\(\)/);
+  assert.match(source,/async function rmInit\(\).*await rmLoadGroups\(\);rmRenderGroupOptions\(\);rmLoad\(\)/);
   assert.match(source,/\/api\/raffinato\/metadados/);
   assert.match(source,/action:'metadata_dashboard'/);
   assert.match(source,/tenantKey=`\$\{c\.empresaId\}:\$\{c\.lojaId\}:1`/);
@@ -37,4 +38,14 @@ test('cinco cabeçalhos têm botão, indicador e aria-sort',()=>{
   assert.match(source,/aria-sort=/);
   assert.match(source,/↑/);
   assert.match(source,/↓/);
+});
+
+test('agrupamentos possuem busca, checkboxes e payload multiseleção',()=>{
+  assert.match(source,/id="rmGroupSearch"/);
+  assert.match(source,/type="checkbox"/);
+  assert.match(source,/function rmFilterGroupOptions/);
+  assert.match(source,/id_agrupamentos:groups/);
+  assert.match(source,/body\.id_agrupamentos\.length>1/);
+  assert.match(relay,/groupSet\.has\(String\(x\.id_agrupamento\)\)/);
+  assert.match(relay,/Number\.isSafeInteger/);
 });
