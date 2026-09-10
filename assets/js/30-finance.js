@@ -184,13 +184,30 @@ function formatarMoedaBRFinanceiro(valor = 0) {
   });
 }
 
+function parseBRLCurrency(valor = '') {
+  if (valor === null || valor === undefined || valor === '') return NaN;
+  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : NaN;
+
+  let texto = String(valor).trim()
+    .replace(/^\s*(?:R\s*\$|R[S5]|S)\s*/i, '')
+    .replace(/\s/g, '')
+    .replace(/[^\d,.-]/g, '');
+  if (!texto) return NaN;
+
+  if (texto.includes(',')) {
+    texto = texto.replace(/\./g, '').replace(',', '.');
+  } else {
+    const pontos = (texto.match(/\./g) || []).length;
+    if (pontos > 1 || (pontos === 1 && /^-?\d{1,3}\.\d{3}$/.test(texto))) texto = texto.replace(/\./g, '');
+  }
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : NaN;
+}
+
+window.parseBRLCurrency = parseBRLCurrency;
+
 function lerValorMonetarioFinanceiro(valor = '') {
-  const txt = String(valor || '').trim();
-  if (!txt) return NaN;
-  const semMoeda = txt.replace(/[^\d,.-]/g, '');
-  if (!semMoeda) return NaN;
-  const normalizado = semMoeda.replace(/\./g, '').replace(',', '.');
-  return Number(normalizado);
+  return parseBRLCurrency(valor);
 }
 
 function formatarEntradaMoedaFinanceiro(valor = '') {
@@ -218,6 +235,11 @@ function prepararValorCampoMoedaParaEdicao(valor = '') {
   const numero = lerValorMonetarioFinanceiro(valor);
   if (!Number.isFinite(numero)) return '';
   return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function faturaMascararValorImportado(campo) {
+  if (!campo) return;
+  campo.value = formatarEntradaMoedaFinanceiro(campo.value);
 }
 
 function prepararCampoMoedaFinanceiro(campo) {
@@ -3437,6 +3459,10 @@ async function faturaExibirRevisao(resultado) {
       item._parcelasManuais = qtdSugerida >= 2 && qtdSugerida <= 360 ? qtdSugerida : 1;
       item._parcelasAuto = item._parcelasManuais > 1;
     }
+    item.valorTotalCompra = Number(parseBRLCurrency(item.valorTotalCompra ?? item.valor) || 0);
+    item.quantidadeParcelas = Math.max(1, Number(item._parcelasManuais || 1));
+    item.valorParcela = Number((item.valorTotalCompra / item.quantidadeParcelas).toFixed(2));
+    item.valor = item.valorTotalCompra;
     if (!item._modoValorParcelas) item._modoValorParcelas = 'total';
     // Obs edit?vel: pr?-preenchida com o nome da compra (memo limpo do OFX).
     if (item._obsManual == null) item._obsManual = String(item.descricao || '').trim();
@@ -3502,13 +3528,19 @@ async function faturaExibirRevisao(resultado) {
              onchange="faturaAoAlterarParcelasManuais('${item.id}', this.value)"
              title="Quantidade de parcelas a provisionar (vencimento mensal a partir do vencimento definido)">
          </label>
-         <label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Valor:
+         ${!item._origemImagem ? `<label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Valor:
            <select style="font-size:11px;height:24px;padding:0 4px;" onchange="faturaAoAlterarModoValor('${item.id}', this.value)">
              <option value="total" ${item._modoValorParcelas === 'total' ? 'selected' : ''}>Total (dividir)</option>
              <option value="parcela" ${item._modoValorParcelas === 'parcela' ? 'selected' : ''}>Por parcela</option>
            </select>
-         </label>`
+         </label>` : ''}`
       : '';
+    const resumoParcelamento = !ehParceladoOFX ? `<span data-resumo-parcelamento
+      style="display:${qtdLancar > 1 ? 'flex' : 'none'};flex-direction:column;line-height:1.25;font-size:10px;color:var(--text-muted);max-width:170px;">
+        <span>Valor por parcela calculado automaticamente</span>
+        <strong data-valor-parcela style="font-size:12px;color:var(--text);">${formatarMoedaBRFinanceiro(item.valorParcela)}</strong>
+        <span data-valor-total style="font-size:9px;color:var(--red);">Valor total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra)}</span>
+      </span>` : '';
     void campoObs; // usado no template abaixo
     return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface2);${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
       <div style="display:flex;align-items:flex-start;gap:8px;">
@@ -3532,11 +3564,13 @@ async function faturaExibirRevisao(resultado) {
             ${campoParcelasManuais}
             ${campoObs}
             <label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Valor:
-              <input type="text" inputmode="decimal" value="${prepararValorCampoMoedaParaEdicao(item.valor)}"
+              <input type="text" inputmode="decimal" autocomplete="off" value="${formatarMoedaBRFinanceiro(item.valorTotalCompra)}"
                 style="width:92px;font-size:13px;font-weight:700;height:28px;padding:0 7px;text-align:right;"
+                oninput="faturaMascararValorImportado(this)"
                 onchange="faturaAoAlterarValor('${item.id}', this.value, this)"
                 onfocus="this.select()" aria-label="Valor da compra ${escaparHtmlBasico(item.descricao || '')}">
             </label>
+            ${resumoParcelamento}
             <button type="button" data-btn-separar class="fatura-btn-separar ${item._divisoesAplicadas ? 'ativo' : ''}"
               onclick="faturaAbrirSeparacao('${item.id}')">${item._divisoesAplicadas ? `Separado (${item._divisoes.length})` : 'Separar'}</button>
             <select class="fatura-select-categoria" style="font-size:11px;height:24px;padding:0 4px;flex:1;min-width:120px;${item._catAuto ? corAuto : ''}"
@@ -3627,7 +3661,7 @@ function faturaAoAlterarValor(itemId, valor, campo) {
   if (!item) return;
   const numero = lerValorMonetarioFinanceiro(valor);
   if (!Number.isFinite(numero) || numero <= 0) {
-    if (campo) campo.value = prepararValorCampoMoedaParaEdicao(item.valor);
+    if (campo) campo.value = formatarMoedaBRFinanceiro(item.valorTotalCompra ?? item.valor);
     return;
   }
 
@@ -3639,8 +3673,12 @@ function faturaAoAlterarValor(itemId, valor, campo) {
     faturaAtualizarIndicadorSeparacao(itemId);
   }
   item.valor = novoValor;
+  item.valorTotalCompra = novoValor;
+  item.quantidadeParcelas = Math.max(1, Number(item._parcelasManuais || 1));
+  item.valorParcela = Number((novoValor / item.quantidadeParcelas).toFixed(2));
   item._valorEditadoManual = true;
-  if (campo) campo.value = prepararValorCampoMoedaParaEdicao(novoValor);
+  if (campo) campo.value = formatarMoedaBRFinanceiro(novoValor);
+  faturaAtualizarResumoParcelamento(item);
 
   const total = (_faturaItensExtraidos || []).reduce((s, i) => s + Number(i.valor || 0), 0);
   const resumoValor = document.getElementById('faturaResumoValor');
@@ -3649,6 +3687,21 @@ function faturaAoAlterarValor(itemId, valor, campo) {
     resumoValor.textContent = `Total: ${formatarMoedaBRFinanceiro(total)} · Venc: ${formatarDataBRFinanceiro(vencimento)}`;
   }
   faturaAtualizarFooter();
+}
+
+function faturaAtualizarResumoParcelamento(item) {
+  const card = document.getElementById('faturaItem_' + item.id);
+  if (!card) return;
+  const quantidade = Math.max(1, Number(item._parcelasManuais || 1));
+  const total = Number(item.valorTotalCompra ?? item.valor ?? 0);
+  item.quantidadeParcelas = quantidade;
+  item.valorParcela = Number((total / quantidade).toFixed(2));
+  const resumo = card.querySelector('[data-resumo-parcelamento]');
+  if (resumo) resumo.style.display = quantidade > 1 ? 'flex' : 'none';
+  const valorParcela = card.querySelector('[data-valor-parcela]');
+  if (valorParcela) valorParcela.textContent = formatarMoedaBRFinanceiro(item.valorParcela);
+  const valorTotal = card.querySelector('[data-valor-total]');
+  if (valorTotal) valorTotal.textContent = `Valor total da compra: ${formatarMoedaBRFinanceiro(total)}`;
 }
 
 // Variante sem confirmação individual usada pela exclusão em lote.
@@ -3756,6 +3809,8 @@ function faturaAoAlterarParcelasManuais(itemId, valor) {
   if (!Number.isFinite(n) || n < 1) n = 1;
   if (n > 360) n = 360;
   item._parcelasManuais = n;
+  item.quantidadeParcelas = n;
+  item.valorParcela = Number((Number(item.valorTotalCompra ?? item.valor ?? 0) / n).toFixed(2));
   // Atualiza o badge "N parcelas" do item sem recarregar a lista inteira.
   const card = document.getElementById('faturaItem_' + itemId);
   if (card) {
@@ -3777,6 +3832,7 @@ function faturaAoAlterarParcelasManuais(itemId, valor) {
       }
     }
   }
+  faturaAtualizarResumoParcelamento(item);
 }
 
 function faturaNormalizarDescricaoInteligente(descricao) {
@@ -4671,10 +4727,13 @@ async function faturaLancarSelecionados() {
       // Dia de vencimento do fornecedor, para provisionamento mensal "calend?rio".
       const fornObjLanc = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
       const diaVencForn = fornObjLanc?.dia_vencimento;
-      const dividirValorTotal = !ehParceladoOFX && item._modoValorParcelas !== 'parcela' && qtdParcelas > 1;
+      const dividirValorTotal = !ehParceladoOFX
+        && (item._origemImagem || item._modoValorParcelas !== 'parcela')
+        && qtdParcelas > 1;
+      const valorTotalCompra = Number(item.valorTotalCompra ?? item.valor ?? 0);
       const partesCompra = item._divisoesAplicadas
         ? item._divisoes.map(parte => ({ valor: Number(parte.valor), categoria_id: parte.categoria_id }))
-        : [{ valor: Number(item.valor || 0), categoria_id: item.categoria_id || null }];
+        : [{ valor: valorTotalCompra, categoria_id: item.categoria_id || null }];
 
       // Cada categoria vira uma série própria, mantendo quantidade, números de
       // parcela e calendário da compra original.

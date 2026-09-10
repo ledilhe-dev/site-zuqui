@@ -27,14 +27,14 @@
   }
 
   function imagemCompraParseValor(valorTexto) {
-    const semMoeda = String(valorTexto || '').replace(/^\s*(?:R\s*\$|R[S5]|S)\s*/i, '');
-    const limpo = semMoeda.replace(/[^\d.,]/g, '');
-    if (!limpo) return null;
-    const normalizado = limpo.includes(',')
-      ? limpo.replace(/\./g, '').replace(',', '.')
-      : limpo;
-    const valor = Number.parseFloat(normalizado);
+    const valor = window.parseBRLCurrency(valorTexto);
     return Number.isFinite(valor) && valor > 0 ? Number(valor.toFixed(2)) : null;
+  }
+
+  function imagemCompraParseParcelas(texto) {
+    const match = String(texto || '').match(/\b0*(\d{1,2})\s*[xX]\b/);
+    const quantidade = match ? Number.parseInt(match[1], 10) : 1;
+    return quantidade >= 2 && quantidade <= 99 ? quantidade : 1;
   }
 
   function imagemCompraNormalizarValoresSemSeparador(texto) {
@@ -169,7 +169,8 @@
     let m;
     while ((m = regex.exec(compacto)) !== null) {
       const valor = imagemCompraParseValor(m[1]);
-      const descricao = imagemCompraLimparDescricao(m[2]);
+      const quantidadeParcelas = imagemCompraParseParcelas(m[2]);
+      const descricao = imagemCompraLimparDescricao(String(m[2]).replace(/^\s*0*\d{1,2}\s*[xX]\s*(?:em\s+)?/i, ''));
       if (!valor || !descricao) continue;
       const contextoData = compacto.slice(Math.max(0, m.index - 220), m.index);
       const banco = imagemCompraDetectarBanco(contextoData);
@@ -177,12 +178,18 @@
         data: imagemCompraParseData(contextoData, dataPadrao),
         descricao,
         valor,
+        valorTotalCompra: valor,
+        quantidadeParcelas,
+        valorParcela: Number((valor / quantidadeParcelas).toFixed(2)),
         fitid: null,
         vencimento_fatura: imagemCompraParseData(contextoData, dataPadrao),
         selecionado: true,
         _obsManual: descricao,
         _origemImagem: true,
         _bancoImagem: banco,
+        _parcelasManuais: quantidadeParcelas,
+        _parcelasAuto: quantidadeParcelas > 1,
+        _modoValorParcelas: 'total',
       });
     }
     return itens;
