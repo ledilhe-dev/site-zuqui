@@ -82,3 +82,8 @@ test('conector 1.7.14 entrega todos os agrupamentos configurados da filial',()=>
   assert.doesNotMatch(sql,/BloqueiaVenda/);
   assert.match(connector,/catalogo_agrupamentos_completo/);
 });
+
+test('análise e curva ABC tentam o conector local e período vazio não vira erro',()=>{
+  assert.doesNotMatch(source,/remoteOnly=path==='\/api\/raffinato\/curva-abc'/);
+  assert.doesNotMatch(relay,/CACHE_MISS: periodo ainda nao sincronizado pelo conector/);
+});
