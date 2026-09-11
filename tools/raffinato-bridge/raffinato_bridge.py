@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.15"
+CONNECTOR_VERSION = "1.7.16"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -525,11 +525,13 @@ ORDER BY VI.Data,VI.Hora,PAI.Id,VI.Id;
 """
 
 SQL_PIZZA_MANDATORY_METADATA_V1 = """
-SELECT DISTINCT AIO.Id id,CAST(NULL AS varchar(1)) arvore,AIO.Descricao nome
-FROM dbo.VendaItem VI WITH(NOLOCK)
-INNER JOIN dbo.AgrupamentoItemObrigatorio AIO WITH(NOLOCK) ON AIO.Id=VI.IdAgrupamentoItemObrigatorio
-WHERE VI.IdFilial=? AND VI.IdAgrupamentoItemObrigatorio IS NOT NULL
-ORDER BY AIO.Descricao;
+SELECT DISTINCT A.Id id,A.Arvore arvore,
+ CASE WHEN ISNULL(CA.BloqueiaVenda,0)=1 THEN LTRIM(RTRIM(A.Nome))+' · NÃO EXIBE NA VENDA' ELSE LTRIM(RTRIM(A.Nome)) END nome,
+ CAST(ISNULL(CA.BloqueiaVenda,0) AS bit) bloqueado_venda
+FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
+INNER JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=CA.IdAgrupamento
+WHERE CA.IdFilial=? AND ISNULL(LTRIM(RTRIM(A.Nome)),'')<>''
+ORDER BY A.Arvore,A.Nome;
 """
 
 SQL_PIZZA_STOCK_RETURN = """CAST(CASE WHEN EXISTS(
