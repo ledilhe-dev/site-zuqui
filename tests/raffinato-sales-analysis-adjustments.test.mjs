@@ -76,8 +76,9 @@ test('renderiza opções reais no DOM do seletor',()=>{
   assert.match(elements.rmGroupOptions.innerHTML,/type="checkbox"/);
 });
 
-test('conector 1.7.14 entrega todos os agrupamentos configurados da filial',()=>{
-  assert.match(connector,/CONNECTOR_VERSION = "1\.7\.14"/);
+test('conector 1.7.14 ou posterior entrega todos os agrupamentos configurados da filial',()=>{
+  const version=connector.match(/CONNECTOR_VERSION = "1\.7\.(\d+)"/)?.[1];
+  assert.ok(Number(version)>=14);
   const sql=connector.match(/SQL_AGRUPAMENTOS = """([\s\S]*?)"""/)?.[1]||'';
   assert.match(sql,/CA\.IdFilial=\?/);
   assert.doesNotMatch(sql,/BloqueiaVenda/);
@@ -94,3 +95,4 @@ test('painel de agrupamentos nao e cortado pelo card de filtros',()=>{
   assert.match(styles,/\.raffinato-sales-page \.rm-filter-card\{[^}]*z-index:20/);
   assert.match(styles,/\.raffinato-sales-page \.rm-filter-card\{[^}]*overflow:visible/);
 });
+test('seletor de grupos fecha pelo botao OK e ao clicar fora',()=>{assert.match(source,/class="rm-group-footer"/);assert.match(source,/onclick="rmCloseGroupPicker\(\)"/);assert.match(source,/addEventListener\?\.\('pointerdown'/);assert.match(source,/!event\.target\.closest\('\.rm-group-field'\)/)});
