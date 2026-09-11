@@ -3,3 +3,23 @@
   height: 13px;
   fill: currentColor;
 }
+
+#relatorio_item_obrigatorio_pizza .iop-bar {
+  grid-template-columns: minmax(115px, 1fr) minmax(80px, 2fr) minmax(135px, auto);
+}
+
+#relatorio_item_obrigatorio_pizza .iop-bar > strong {
+  min-width: 135px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+  #relatorio_item_obrigatorio_pizza .iop-bar {
+    grid-template-columns: minmax(90px, 1fr) minmax(55px, 1.5fr) minmax(118px, auto);
+  }
+
+  #relatorio_item_obrigatorio_pizza .iop-bar > strong {
+    min-width: 118px;
+  }
+}
