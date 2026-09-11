@@ -126,6 +126,7 @@ async function raffinatoBridgePost(path, body) {
     const payloadBody = protectedRoute ? { ...tenantBody, admin_token:raffinatoAdminToken } : tenantBody;
     const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
       method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payloadBody), signal:controller.signal,
+      targetAddressSpace:'loopback',
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -142,6 +143,9 @@ async function raffinatoBridgePost(path, body) {
     return payload;
   } catch (error) {
     if (error?.name === 'AbortError') throw new Error('A consulta excedeu 30 segundos. Verifique o log do conector Raffinato.');
+    if(error instanceof TypeError&&/fetch|network/i.test(String(error.message||''))){
+      throw new Error('O navegador bloqueou o acesso ao conector local (loopback/rede local), ou o conector está parado. Permita acesso à rede local para https://checkdiario.com.br e confirme http://127.0.0.1:8766/health. O acesso remoto continuará disponível pelo relay/cache.');
+    }
     throw error;
   } finally { clearTimeout(timer); }
 }

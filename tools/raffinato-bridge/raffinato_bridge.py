@@ -24,6 +24,7 @@ import webbrowser
 from contextlib import closing
 import urllib.request
 import urllib.error
+import winreg
 from urllib.parse import urlparse
 from ctypes import wintypes
 from datetime import date, datetime, time as datetime_time, timedelta
@@ -39,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.14"
+CONNECTOR_VERSION = "1.7.15"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -80,6 +81,28 @@ DELETE_TOKEN_SECONDS = 5 * 60
 INITIAL_MASTER_SALT = "7f2d9c4e18a6b035d1c85693fa2b470d"
 INITIAL_MASTER_HASH = "1427a8d77b9355823915709a5a708bb97f5974eb420c576503a6f6c102115978"
 MASTER_ITERATIONS = 310_000
+
+def ensure_browser_loopback_policy() -> None:
+    """Allow only CheckDiário to reach this local connector, preserving policy entries."""
+    origin = "https://checkdiario.com.br"
+    policy_paths = (
+        r"Software\Policies\Microsoft\Edge\LocalNetworkAccessAllowedForUrls",
+        r"Software\Policies\Microsoft\Edge\LoopbackNetworkAllowedForUrls",
+        r"Software\Policies\Google\Chrome\LocalNetworkAccessAllowedForUrls",
+        r"Software\Policies\Google\Chrome\LoopbackNetworkAllowedForUrls",
+    )
+    for path in policy_paths:
+        try:
+            with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_READ | winreg.KEY_WRITE) as key:
+                values=[];index=0
+                while True:
+                    try: values.append(winreg.EnumValue(key,index));index+=1
+                    except OSError: break
+                if any(str(value).rstrip('/')==origin for _,value,_ in values): continue
+                numeric=[int(name) for name,_,_ in values if str(name).isdigit()]
+                winreg.SetValueEx(key,str(max(numeric,default=0)+1),0,winreg.REG_SZ,origin)
+        except OSError:
+            logger.exception("Não foi possível registrar a política de loopback em %s",path)
 
 SQL_SANGRIAS = """
 SET NOCOUNT ON;
@@ -538,7 +561,7 @@ SELECT VI.Id id_item,V.Id id_venda,CONVERT(date,V.Data) data,CONVERT(varchar(8),
  PAI.Quantidade quantidade_produto_principal,CAST(ISNULL(PAI.ValorTotal,0) AS decimal(19,4)) valor_item,
  VI.IdAgrupamentoItemObrigatorio id_grupo_obrigatorio,AIO.Descricao grupo_obrigatorio,
  AIO.QuantidadeMaxima quantidade_maxima,AIO.QuantidadeMinima quantidade_minima,
- VI.IdProduto id_componente,PI.Nome componente,
+ VI.IdProduto id_componente,{code_select} codigo_componente,PI.Nome componente,
  CAST(ISNULL(VI.Quantidade,0) AS decimal(19,6)) quantidade_componente,
  CAST(ISNULL(VI.ValorUnitario,0) AS decimal(19,4)) valor_unitario_componente,
  CAST(ISNULL(VI.ValorTotal,0) AS decimal(19,4)) valor_componente,
@@ -1446,8 +1469,9 @@ def query_pizza_mandatory_rows_v1(config:dict[str,Any],start:datetime,end:dateti
         cursor.execute("""SELECT
           CASE WHEN OBJECT_ID('dbo.OperacaoEstoque','U') IS NOT NULL AND COL_LENGTH('dbo.OperacaoEstoque','IdVendaItem') IS NOT NULL AND COL_LENGTH('dbo.OperacaoEstoque','AnulaOposto') IS NOT NULL THEN 1 ELSE 0 END,
           CASE WHEN OBJECT_ID('dbo.VendaMobilidade','U') IS NOT NULL AND COL_LENGTH('dbo.VendaMobilidade','IdVenda') IS NOT NULL THEN 1 ELSE 0 END,
-          CASE WHEN OBJECT_ID('dbo.TeleEntrega','U') IS NOT NULL AND OBJECT_ID('dbo.OrigemIntegracao','U') IS NOT NULL AND COL_LENGTH('dbo.TeleEntrega','IdOrigemIntegracao') IS NOT NULL AND COL_LENGTH('dbo.OrigemIntegracao','Descricao') IS NOT NULL THEN 1 ELSE 0 END""")
-        has_stock,has_mobility,has_channel=(bool(value) for value in cursor.fetchone())
+          CASE WHEN OBJECT_ID('dbo.TeleEntrega','U') IS NOT NULL AND OBJECT_ID('dbo.OrigemIntegracao','U') IS NOT NULL AND COL_LENGTH('dbo.TeleEntrega','IdOrigemIntegracao') IS NOT NULL AND COL_LENGTH('dbo.OrigemIntegracao','Descricao') IS NOT NULL THEN 1 ELSE 0 END,
+          CASE WHEN COL_LENGTH('dbo.Produto','Codigo') IS NOT NULL THEN 1 ELSE 0 END""")
+        has_stock,has_mobility,has_channel,has_product_code=(bool(value) for value in cursor.fetchone())
         stock_return_sql=SQL_PIZZA_STOCK_RETURN if has_stock else SQL_PIZZA_STOCK_RETURN_UNKNOWN
         mobility_exists="EXISTS(SELECT 1 FROM dbo.VendaMobilidade MO WITH(NOLOCK) WHERE MO.IdVenda=V.Id)" if has_mobility else "1=0"
         mobility_case=f"WHEN {mobility_exists} THEN 'MOBILIDADE'"
@@ -1466,7 +1490,8 @@ def query_pizza_mandatory_rows_v1(config:dict[str,Any],start:datetime,end:dateti
           "WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) "
           "OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) "
           "OR EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) OR V.Origem=1 THEN 'FINALIZADA' ELSE 'NAO_IDENTIFICADA' END")
-        sql=SQL_PIZZA_MANDATORY_DATA_V1.format(dynamic_filters="",stock_return_select=stock_return_sql,mobilidade_case=mobility_case,link_count=link_count,canal_select=canal_select,situacao_select=situacao_select)
+        code_select="CONVERT(varchar(80),PI.Codigo)" if has_product_code else "CAST(NULL AS varchar(80))"
+        sql=SQL_PIZZA_MANDATORY_DATA_V1.format(dynamic_filters="",stock_return_select=stock_return_sql,mobilidade_case=mobility_case,link_count=link_count,canal_select=canal_select,situacao_select=situacao_select,code_select=code_select)
         cursor.execute(sql,filial,start.date(),end.date()+timedelta(days=1),start,end)
         return rows_as_dicts(cursor)
 
@@ -2486,6 +2511,7 @@ def main() -> int:
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
     if not acquire_single_instance():
         return 0
+    ensure_browser_loopback_policy()
     try:
         migrate_legacy_configuration()
     except Exception as exc:
