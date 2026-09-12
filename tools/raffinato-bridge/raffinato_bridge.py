@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.16"
+CONNECTOR_VERSION = "1.7.17"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -125,10 +125,13 @@ DROP TABLE IF EXISTS #IdsDia;
 SQL_FORMAS_PAGAMENTO = "SELECT Id AS id,LTRIM(RTRIM(Nome)) AS nome FROM dbo.FormaPagamento WITH(NOLOCK) WHERE ISNULL(LTRIM(RTRIM(Nome)),'')<>'' ORDER BY Nome;"
 SQL_AGRUPAMENTOS = """
 SELECT DISTINCT A.Id AS id,LTRIM(RTRIM(A.Nome)) AS nome,A.Arvore AS arvore
-FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
-JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=CA.IdAgrupamento
-WHERE CA.IdFilial=?
-  AND ISNULL(LTRIM(RTRIM(A.Nome)),'')<>''
+FROM dbo.Agrupamento A WITH(NOLOCK)
+OUTER APPLY (
+ SELECT TOP 1 CA.IdAgrupamento
+ FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
+ WHERE CA.IdAgrupamento=A.Id AND CA.IdFilial=?
+) CFG
+WHERE ISNULL(LTRIM(RTRIM(A.Nome)),'')<>''
 ORDER BY A.Arvore,A.Nome;
 """
 SQL_PRODUTOS_CATALOGO = """
@@ -526,11 +529,15 @@ ORDER BY VI.Data,VI.Hora,PAI.Id,VI.Id;
 
 SQL_PIZZA_MANDATORY_METADATA_V1 = """
 SELECT DISTINCT A.Id id,A.Arvore arvore,
- CASE WHEN ISNULL(CA.BloqueiaVenda,0)=1 THEN LTRIM(RTRIM(A.Nome))+' · NÃO EXIBE NA VENDA' ELSE LTRIM(RTRIM(A.Nome)) END nome,
- CAST(ISNULL(CA.BloqueiaVenda,0) AS bit) bloqueado_venda
-FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
-INNER JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=CA.IdAgrupamento
-WHERE CA.IdFilial=? AND ISNULL(LTRIM(RTRIM(A.Nome)),'')<>''
+ CASE WHEN ISNULL(CFG.BloqueiaVenda,0)=1 THEN LTRIM(RTRIM(A.Nome))+' · NÃO EXIBE NA VENDA' ELSE LTRIM(RTRIM(A.Nome)) END nome,
+ CAST(ISNULL(CFG.BloqueiaVenda,0) AS bit) bloqueado_venda
+FROM dbo.Agrupamento A WITH(NOLOCK)
+OUTER APPLY (
+ SELECT TOP 1 CA.BloqueiaVenda
+ FROM dbo.ConfiguracaoAgrupamento CA WITH(NOLOCK)
+ WHERE CA.IdAgrupamento=A.Id AND CA.IdFilial=?
+) CFG
+WHERE ISNULL(LTRIM(RTRIM(A.Nome)),'')<>''
 ORDER BY A.Arvore,A.Nome;
 """
 
