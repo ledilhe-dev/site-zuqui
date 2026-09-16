@@ -760,12 +760,9 @@ function abrirPagina(id, botao) {
   }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
-    atualizarBotaoFavoritasMinimizadas();
     carregarSelectLojaTarefaCadastro();
     carregarSelectFuncionariosTarefa();
-    redefinirCampoBuscaTarefas();
-    carregarTarefas();
-    forcarCampoObservacaoTarefaEmBranco();
+    if (!tarefaEmEdicaoId) limparFormularioTarefa();
   }
   if (id === 'tarefas_rapidas') { carregarTarefasRapidas(); }
   if (id === 'execucoes') { resetFiltroData(false); carregarSelectExecucao(); carregarExecucoes(); }

@@ -2110,6 +2110,54 @@
       font-weight: 700;
       margin: 5px 0 8px;
     }
+
+    /* Cadastro de checklist: tela dedicada apenas ao modelo da tarefa. */
+    .checklist-cadastro-card { max-width: 1180px; margin-inline: auto; }
+    .checklist-cadastro-cabecalho { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:18px; }
+    .checklist-cadastro-cabecalho .card-title { margin-bottom:5px; font-size:16px; }
+    .checklist-cadastro-regras { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:20px; }
+    .checklist-cadastro-regras span { padding:9px 11px; border:1px solid var(--border); border-radius:9px; background:var(--surface2); color:var(--text-muted); font-size:11px; font-weight:700; text-align:center; }
+    .checklist-cadastro-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,.55fr); gap:16px 18px; }
+    .checklist-cadastro-campo { display:flex; flex-direction:column; gap:7px; min-width:0; }
+    .checklist-cadastro-campo > span,
+    .checklist-cadastro-dias legend { color:var(--text); font-size:12px; font-weight:800; letter-spacing:.02em; }
+    .checklist-cadastro-campo b { color:var(--red); }
+    .checklist-cadastro-campo small { color:var(--text-muted); font-size:10px; }
+    .checklist-cadastro-campo input,
+    .checklist-cadastro-campo textarea,
+    .checklist-cadastro-campo select { width:100%; border:1px solid var(--border-mid); border-radius:10px; background:var(--surface); color:var(--text); padding:11px 13px; font:inherit; color-scheme:dark; }
+    .checklist-cadastro-campo textarea { resize:vertical; min-height:104px; line-height:1.45; }
+    .checklist-cadastro-campo-nome { grid-column:1 / -1; }
+    .checklist-cadastro-campo-observacao { grid-row:2 / span 2; }
+    .checklist-cadastro-dias { margin:0; padding:12px; border:1px solid var(--border); border-radius:10px; min-width:0; }
+    .checklist-cadastro-dias legend { padding:0 5px; }
+    .checklist-cadastro-dias-grid { display:grid; grid-template-columns:repeat(7,minmax(38px,1fr)); gap:6px; }
+    .checklist-cadastro-dias-grid label { cursor:pointer; }
+    .checklist-cadastro-dias-grid input { position:absolute; opacity:0; pointer-events:none; }
+    .checklist-cadastro-dias-grid span { display:flex; align-items:center; justify-content:center; min-height:36px; border:1px solid var(--border-mid); border-radius:8px; color:var(--text-muted); background:var(--surface); font-size:11px; font-weight:800; }
+    .checklist-cadastro-dias-grid input:checked + span { border-color:var(--green); background:rgba(22,168,85,.16); color:#7ef0ad; }
+    .checklist-cadastro-dias-rodape { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:10px; color:var(--text-muted); font-size:10px; }
+    .checklist-cadastro-dias-rodape > span { flex:1 1 220px; }
+    .checklist-cadastro-acoes { grid-column:1 / -1; display:flex; align-items:center; flex-wrap:wrap; gap:9px; padding-top:4px; }
+
+    select,
+    select option {
+      color-scheme: dark;
+    }
+
+    select option {
+      background-color: #101827 !important;
+      color: #f8fafc !important;
+    }
+
+    @media (max-width: 800px) {
+      .checklist-cadastro-regras { grid-template-columns:1fr 1fr; }
+      .checklist-cadastro-grid { grid-template-columns:1fr; }
+      .checklist-cadastro-campo-nome,
+      .checklist-cadastro-campo-observacao,
+      .checklist-cadastro-acoes { grid-column:auto; grid-row:auto; }
+      .checklist-cadastro-dias-grid { grid-template-columns:repeat(4,minmax(48px,1fr)); }
+    }
     .campo-curto { max-width: 100px; flex: 0 0 100px !important; }
     .form-row input[type="checkbox"] {
       flex: 0 0 auto !important;

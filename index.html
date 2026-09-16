@@ -34,7 +34,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.50-checklist-programacoes">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.51-cadastro-checklist-v2">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -987,77 +987,66 @@
       <section id="tarefas" class="pagina">
         <div class="page-title">Cadastro de Checklist</div>
 
-        <div class="card">
-          <div class="card-title">Nova tarefa</div>
-          <div class="tarefa-form-row">
-            <input id="nomeTarefa" type="text" placeholder="Nome da tarefa (obrigatório)" required>
-            <input id="descTarefa" name="descricao_tarefa_manual_no_autofill" type="text" placeholder="Observação da tarefa (obrigatório)" autocomplete="new-password" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly required onfocus="desbloquearCampoDescricaoTarefa(this)">
+        <div class="card checklist-cadastro-card">
+          <div class="checklist-cadastro-cabecalho">
+            <div>
+              <div class="card-title" id="tituloCadastroChecklist">Cadastrar novo checklist</div>
+              <div class="item-detalhe">Crie o modelo da tarefa para esta loja. A programação, repetição e manutenção ficam na aba <strong>Listagem de checklist</strong>.</div>
+            </div>
+            <button class="regra-info-btn" type="button" title="Regras operacionais" aria-label="Regras operacionais" onclick="abrirInfoRegraChecklist('checklists')">I</button>
+          </div>
+
+          <div class="checklist-cadastro-regras">
+            <span>Início somente com PIN operacional</span>
+            <span>Quem inicia não pode finalizar</span>
+            <span>Outro funcionário confere e confirma</span>
+            <span>Cadastro isolado por loja</span>
+          </div>
+
+          <div class="checklist-cadastro-grid">
+            <label class="checklist-cadastro-campo checklist-cadastro-campo-nome">
+              <span>Nome do checklist <b>*</b></span>
+              <input id="nomeTarefa" type="text" maxlength="120" placeholder="Ex.: Verificar cafeteira Nescafé" required>
+            </label>
+            <label class="checklist-cadastro-campo checklist-cadastro-campo-observacao">
+              <span>Orientação para execução <b>*</b></span>
+              <textarea id="descTarefa" name="descricao_tarefa_manual_no_autofill" rows="4" maxlength="500" placeholder="Descreva claramente o que deve ser feito e conferido" autocomplete="off" data-lpignore="true" required></textarea>
+            </label>
+            <label class="checklist-cadastro-campo">
+              <span>Funcionário responsável padrão</span>
+              <select id="funcionarioTarefa">
+                <option value="">Definir somente ao programar</option>
+              </select>
+              <small>Pode ser alterado na listagem antes ou depois da programação.</small>
+            </label>
             <select id="lojaTarefaCadastro" class="campo-curto" style="display:none">
               <option value="">Loja</option>
             </select>
-            <select id="funcionarioTarefa" style="display:none">
-              <option value=""></option>
-            </select>
-            <div class="tarefa-form-acoes">
-              <button class="btn btn-green" id="btnSalvarTarefa" onclick="criarTarefa()">Salvar</button>
-              <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
-            </div>
-          </div>
-          <div class="item-detalhe" style="margin-top:8px">Funcionário: selecione por checkbox ao lado de cada tarefa cadastrada.</div>
-
-          <div class="msg" id="msgTarefas"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Tarefas cadastradas</div>
-          <div class="tarefas-consulta-box">
-            <div class="form-row tarefas-filtros-row">
-              <input id="filtroTarefasNome" name="consulta_tarefas_sem_autofill" type="text" placeholder="Buscar na listagem de tarefas" autocomplete="off" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="desbloquearCampoBuscaTarefas(this)" oninput="marcarCampoBuscaTarefasComoEditado(this); filtrarTarefasCadastradas()">
-              <button class="btn btn-green" id="btnSelecionarConsultaTarefas" type="button" onclick="aplicarSelecaoConsultaTarefas()">Selecionar</button>
-              <button class="btn btn-ghost" type="button" onclick="selecionarTodasTarefasConsulta()">Todas</button>
-              <button class="btn btn-ghost" type="button" onclick="toggleSomenteFavoritasTarefas()">Favoritas</button>
-              <button class="btn btn-ghost" id="btnMinimizarFavoritasTarefas" type="button" onclick="toggleMinimizarFavoritasTarefas()">Compactar favoritas</button>
-              <button class="btn btn-ghost" type="button" onclick="limparFiltroTarefasCadastradas()">Limpar</button>
-            </div>
-            <div id="resumoConsultaTarefas" class="item-detalhe">Selecione as tarefas para exibir abaixo.</div>
-            <details id="tarefasFiltroAvancado" class="tarefas-filtro-avancado">
-              <summary>Filtros avançados e exclusão em massa</summary>
-              <div class="tarefas-filtro-avancado-corpo">
-                <div class="tarefas-filtro-grid">
-                  <div class="campo-com-label">
-                    <label class="campo-label">Cadastro de</label>
-                    <input id="filtroTarefaAvDataInicio" type="date" onchange="filtrarTarefasCadastradas()">
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Cadastro até</label>
-                    <input id="filtroTarefaAvDataFim" type="date" onchange="filtrarTarefasCadastradas()">
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Contém (nome/observação)</label>
-                    <input id="filtroTarefaAvBusca" type="text" placeholder="Texto contido na tarefa" autocomplete="off" oninput="filtrarTarefasCadastradas()">
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Funcionário responsável</label>
-                    <select id="filtroTarefaAvFuncionario" onchange="filtrarTarefasCadastradas()">
-                      <option value="">- Todos -</option>
-                    </select>
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Tarefa (multi)</label>
-                    <select id="filtroTarefaAvTarefa" multiple size="4" onchange="filtrarTarefasCadastradas()" style="min-height:84px;"></select>
-                  </div>
-                </div>
-                <div class="tarefas-filtro-acoes-massa">
-                  <button class="btn btn-ghost btn-sm" type="button" onclick="selecionarTodasTarefasConsulta()">Selecionar todos filtrados</button>
-                  <button class="btn btn-ghost btn-sm" type="button" onclick="limparMarcacaoConsultaTarefas()">Desmarcar todos</button>
-                  <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefasSelecionadas()">Excluir selecionadas</button>
-                  <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltrosAvancadosTarefas()">Limpar filtros</button>
-                </div>
+            <fieldset class="checklist-cadastro-dias">
+              <legend>Dias padrão da semana</legend>
+              <div class="checklist-cadastro-dias-grid">
+                <label><input id="diasSeg" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Seg</span></label>
+                <label><input id="diasTer" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Ter</span></label>
+                <label><input id="diasQua" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Qua</span></label>
+                <label><input id="diasQui" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Qui</span></label>
+                <label><input id="diasSex" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Sex</span></label>
+                <label><input id="diasSab" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Sáb</span></label>
+                <label><input id="diasDom" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Dom</span></label>
               </div>
-            </details>
-            <div id="listaConsultaTarefas" class="tarefas-consulta-lista"><div class="empty">Carregando tarefas cadastradas...</div></div>
+              <div class="checklist-cadastro-dias-rodape">
+                <span id="diasSelecionados">Dias selecionados: Segunda, Terça, Quarta, Quinta, Sexta, Sábado, Domingo</span>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="marcarTodosDias()">Todos</button>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="limparDias()">Limpar</button>
+              </div>
+            </fieldset>
+            <div class="checklist-cadastro-acoes">
+              <button class="btn btn-green" id="btnSalvarTarefa" type="button" onclick="criarTarefa()">Cadastrar checklist</button>
+              <button class="btn btn-ghost" id="btnLimparCadastroChecklist" type="button" onclick="limparFormularioTarefa()">Limpar</button>
+              <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" type="button" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar edição</button>
+              <button class="btn btn-ghost" type="button" onclick="abrirPagina('relatorio_tarefas_cadastradas', document.querySelector('.nav-btn[data-page=&quot;relatorio_tarefas_cadastradas&quot;]'))">Ir para a listagem</button>
+            </div>
           </div>
-          <div id="listaTarefas"><div class="empty">Carregando⬦</div></div>
+          <div class="msg" id="msgTarefas"></div>
         </div>
 
       </section>
@@ -3311,7 +3300,7 @@
 <script src="./assets/js/01-core-supabase.js?v=3.2.49"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260815-global-admin-v1"></script>
-<script src="./assets/js/04-navigation.js?v=3.2.50-checklist-programacoes"></script>
+<script src="./assets/js/04-navigation.js?v=3.2.51-cadastro-checklist-v2"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260903-intervalo2h"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.42"></script>
@@ -3334,10 +3323,10 @@
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js"></script>
-<script src="./assets/js/50-tasks.js?v=3.2.50-checklist-programacoes"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.51-cadastro-checklist-v2"></script>
 <script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
 <script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
-<script src="./assets/js/70-reports.js?v=3.2.50-checklist-programacoes"></script>
+<script src="./assets/js/70-reports.js?v=3.2.51-cadastro-checklist-v2"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>

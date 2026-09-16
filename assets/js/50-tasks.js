@@ -44,7 +44,10 @@ function limparDias() {
 
 function preencherDiasSelecionados(diasStr) {
   limparDias();
-  if (!diasStr || diasStr === 'todos') return;
+  if (!diasStr || diasStr === 'todos') {
+    marcarTodosDias();
+    return;
+  }
 
   const dias = diasStr.split(',').map(d => d.trim());
   document.getElementById('diasSeg').checked = dias.includes('seg');
@@ -63,7 +66,7 @@ function preencherDiasSelecionados(diasStr) {
 async function carregarSelectFuncionariosTarefa() {
   const sel = document.getElementById('funcionarioTarefa');
   if (!sel) return;
-  sel.innerHTML = '<option value=""></option>';
+  sel.innerHTML = '<option value="">Definir somente ao programar</option>';
   let queryFuncionariosTarefa = sb.from('funcionarios').select('id, nome, loja_id, empresa_id').eq('ativo', true);
   queryFuncionariosTarefa = aplicarFiltroLojaFuncionariosQuery(queryFuncionariosTarefa).order('nome');
   const { data } = await queryFuncionariosTarefa;
@@ -1498,7 +1501,12 @@ async function criarTarefa() {
   if (!nome) { setMsg('msgTarefas', 'Digite o nome da tarefa.', 'err'); return; }
   if (!descricao) { setMsg('msgTarefas', 'Digite a observação da tarefa.', 'err'); return; }
 
-  const diasStr = 'todos';
+  const diasSelecionadosCadastro = obterDiasSelecionados();
+  if (!diasSelecionadosCadastro.length) {
+    setMsg('msgTarefas', 'Selecione ao menos um dia padrão da semana.', 'err');
+    return;
+  }
+  const diasStr = diasSelecionadosCadastro.length === 7 ? 'todos' : diasSelecionadosCadastro.join(',');
   const editandoAgora = !!tarefaEmEdicaoId;
   let checklistRefEdicao = checklistReferenciaEmEdicaoId || null;
   let checklistCriadoAntesDaTarefa = null;
@@ -1562,9 +1570,6 @@ async function criarTarefa() {
     setMsg('msgTarefas', 'Tarefa salva, mas sem retorno de ID. Tente novamente.', 'err');
     return;
   }
-  const tarefaSalvaId = String(tarefaSalva.id);
-  tarefasConfigLancamentoAbertasIds.add(tarefaSalvaId);
-
   let checklistReferencia = null;
   try {
     checklistReferencia = await garantirChecklistReferenciaDaTarefa({
@@ -1604,10 +1609,8 @@ async function criarTarefa() {
 
   limparFormularioTarefa();
   setMsg('msgTarefas', editandoAgora
-    ? 'Tarefa atualizada.'
-    : 'Tarefa cadastrada. Agora clique em "Lançar tarefa" para aparecer em Checklists lançados.', 'ok');
-  carregarTarefas();
-  carregarChecklistsTarefas();
+    ? 'Checklist atualizado. As alterações já estão disponíveis na listagem.'
+    : 'Checklist cadastrado com sucesso. Consulte, edite ou exclua na aba Listagem de checklist.', 'ok');
 }
 
 function limparFormularioTarefa() {
@@ -1615,11 +1618,13 @@ function limparFormularioTarefa() {
   checklistReferenciaEmEdicaoId = null;
   document.getElementById('nomeTarefa').value = '';
   document.getElementById('descTarefa').value = '';
-  document.getElementById('descTarefa').setAttribute('readonly', 'readonly');
   document.getElementById('funcionarioTarefa').value = '';
+  marcarTodosDias();
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
-  if (btnSalvar) btnSalvar.textContent = 'Salvar';
+  const titulo = document.getElementById('tituloCadastroChecklist');
+  if (btnSalvar) btnSalvar.textContent = 'Cadastrar checklist';
+  if (titulo) titulo.textContent = 'Cadastrar novo checklist';
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -1640,14 +1645,17 @@ async function editarTarefa(id) {
   checklistReferenciaEmEdicaoId = tarefa.checklist_id || null;
   document.getElementById('nomeTarefa').value = tarefa.nome || '';
   document.getElementById('descTarefa').value = tarefa.descricao || '';
-  document.getElementById('descTarefa').removeAttribute('readonly');
   document.getElementById('funcionarioTarefa').value = tarefa.funcionario_id || '';
+  preencherDiasSelecionados(tarefa.dias_semana || 'todos');
 
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
-  if (btnSalvar) btnSalvar.textContent = 'Salvar';
+  const titulo = document.getElementById('tituloCadastroChecklist');
+  if (btnSalvar) btnSalvar.textContent = 'Salvar alterações';
+  if (titulo) titulo.textContent = 'Editar checklist cadastrado';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
   setMsg('msgTarefas', `Editando tarefa: ${tarefa.nome}.`, 'ok');
+  document.getElementById('nomeTarefa')?.focus();
 }
 
 function cancelarEdicaoTarefa() {
