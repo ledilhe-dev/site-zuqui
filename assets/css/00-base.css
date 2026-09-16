@@ -2085,7 +2085,31 @@
     .form-row textarea:focus { border-color: var(--green); }
     .form-row input::placeholder,
     .form-row textarea::placeholder { color: var(--text-dim); }
-    .form-row select option { background: #111; }
+    .form-row select option,
+    #tarefas select option,
+    #relatorio_tarefas_cadastradas select option {
+      background: #101827;
+      color: #f8fafc;
+    }
+
+    #tarefas select[multiple] {
+      background: #101827;
+      color: #f8fafc;
+      color-scheme: dark;
+    }
+
+    #tarefas select[multiple] option:checked {
+      background: #334155 linear-gradient(0deg, #334155 0%, #334155 100%);
+      color: #ffffff;
+    }
+
+    .tarefa-funcionario-resumo {
+      min-height: 18px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+      margin: 5px 0 8px;
+    }
     .campo-curto { max-width: 100px; flex: 0 0 100px !important; }
     .form-row input[type="checkbox"] {
       flex: 0 0 auto !important;
