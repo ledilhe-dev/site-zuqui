@@ -34,7 +34,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.52-modelos-checklist">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.53-checklists-cadastrados">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -116,7 +116,7 @@
           </button>
           <button class="nav-btn nav-sub-btn" data-page="relatorio_tarefas_cadastradas" onclick="abrirPagina('relatorio_tarefas_cadastradas', this)">
             <span class="nav-copy">
-              <span class="nav-title">Listagem de checklist</span>
+              <span class="nav-title">Checklists cadastrados</span>
             </span>
           </button>
         </div>
@@ -1403,13 +1403,21 @@
       </section>
 
       <section id="relatorio_tarefas_cadastradas" class="pagina">
-        <div class="page-title">Listagem de checklist</div>
+        <div class="page-title">Checklists cadastrados</div>
 
         <div class="card">
           <div class="card-title">Filtros do relatório</div>
           <div class="form-row">
-            <input id="filtroTarefasCadDataInicio" type="date" title="Cadastro/lançamento a partir de">
-            <input id="filtroTarefasCadDataFim" type="date" title="Cadastro/lançamento até">
+            <label class="filter-field-standard"><span>Data inicial</span><input id="filtroTarefasCadDataInicio" data-date-filter-native="true" type="date" title="Data inicial"></label>
+            <label class="filter-field-standard"><span>Data final</span><input id="filtroTarefasCadDataFim" data-date-filter-native="true" type="date" title="Data final"></label>
+            <label class="filter-field-standard filter-field-select"><span>Consultar por</span><select id="filtroTarefasCadDataTipo" data-filter-labeled="true">
+              <option value="todos" selected>Todos os períodos</option>
+              <option value="cadastro">Data de cadastro</option>
+              <option value="inicio">Início programado</option>
+              <option value="fim">Fim programado</option>
+              <option value="ocorrencia">Ocorrência programada no período</option>
+              <option value="proxima">Próxima disponibilidade</option>
+            </select></label>
             <select id="filtroTarefasCadTarefa">
               <option value="">- Todas as tarefas -</option>
             </select>
@@ -3326,11 +3334,11 @@
 </div>
 
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
-<script src="./assets/js/01-core-supabase.js?v=3.2.49"></script>
+<script src="./assets/js/01-core-supabase.js?v=3.2.53-checklists-cadastrados"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260815-global-admin-v1"></script>
-<script src="./assets/js/04-navigation.js?v=3.2.52-modelos-checklist"></script>
-<script src="./assets/js/05-shared-helpers.js?v=3.2.52-modelos-checklist"></script>
+<script src="./assets/js/04-navigation.js?v=3.2.53-checklists-cadastrados"></script>
+<script src="./assets/js/05-shared-helpers.js?v=3.2.53-checklists-cadastrados"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.42"></script>
 <script src="./assets/js/20-checklists.js"></script>
@@ -3352,11 +3360,11 @@
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js"></script>
-<script src="./assets/js/50-tasks.js?v=3.2.52-modelos-checklist"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.53-checklists-cadastrados"></script>
 <script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
-<script src="./assets/js/52-checklist-models.js?v=3.2.52-modelos-checklist"></script>
+<script src="./assets/js/52-checklist-models.js?v=3.2.53-checklists-cadastrados"></script>
 <script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
-<script src="./assets/js/70-reports.js?v=3.2.52-modelos-checklist"></script>
+<script src="./assets/js/70-reports.js?v=3.2.53-checklists-cadastrados"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>

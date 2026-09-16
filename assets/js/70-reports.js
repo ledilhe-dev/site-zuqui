@@ -9,6 +9,8 @@ function resetFiltroRelatorioTarefasCadastradas() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  const tipo = document.getElementById('filtroTarefasCadDataTipo');
+  if (tipo) tipo.value = 'todos';
   carregarRelatorioTarefasCadastradas();
 }
 
@@ -34,6 +36,7 @@ async function carregarRelatorioTarefasCadastradas() {
 
   const dataInicio = String(document.getElementById('filtroTarefasCadDataInicio')?.value || '').trim();
   const dataFim = String(document.getElementById('filtroTarefasCadDataFim')?.value || '').trim();
+  const dataTipo = String(document.getElementById('filtroTarefasCadDataTipo')?.value || 'todos').trim();
   const filtroTarefaId = String(document.getElementById('filtroTarefasCadTarefa')?.value || '').trim();
   const filtroCadastrante = String(document.getElementById('filtroTarefasCadCadastrante')?.value || '').trim().toLowerCase();
   const filtroResponsavel = String(document.getElementById('filtroTarefasCadResponsavel')?.value || '').trim();
@@ -92,6 +95,8 @@ async function carregarRelatorioTarefasCadastradas() {
         : 0;
       const diasSemana = lancs[0]?.dias_semana || t?.dias_semana || 'todos';
       const duracaoConfigurada = Number(primeiroLanc?.repeticao_duracao_dias || 0) || totalDias;
+      const hoje = dataLocalISO();
+      const proximaOcorrencia = datasUnicas.find(data => data >= hoje) || '';
 
       const repeticaoTexto = lancs.length
         ? `${formatarDias(diasSemana)} · a cada ${intervalo || 1} dia(s) · por ${duracaoConfigurada || totalDias} dia(s)`
@@ -110,6 +115,8 @@ async function carregarRelatorioTarefasCadastradas() {
         cadastradoEm,
         inicio,
         fim,
+        datasProgramadas: datasUnicas,
+        proximaOcorrencia,
         diasSemana,
         intervalo,
         totalDias: duracaoConfigurada,
@@ -135,13 +142,17 @@ async function carregarRelatorioTarefasCadastradas() {
     if (filtroTarefaId) filtradas = filtradas.filter(l => l.tarefa_id === filtroTarefaId);
     if (filtroResponsavel) filtradas = filtradas.filter(l => l.responsavel_id === filtroResponsavel);
     if (filtroCadastrante) filtradas = filtradas.filter(l => String(l.cadastradoPor || '').trim().toLowerCase() === filtroCadastrante);
-    if (dataInicio || dataFim) {
+    if (dataTipo !== 'todos' && (dataInicio || dataFim)) {
       filtradas = filtradas.filter(l => {
-        const dataRef = String(l.cadastradoEm || '').slice(0, 10);
-        if (!dataRef) return false;
-        if (dataInicio && dataRef < dataInicio) return false;
-        if (dataFim && dataRef > dataFim) return false;
-        return true;
+        const dentro = data => Boolean(data) && (!dataInicio || data >= dataInicio) && (!dataFim || data <= dataFim);
+        if (dataTipo === 'ocorrencia') return (l.datasProgramadas || []).some(dentro);
+        const referencias = {
+          cadastro: l.cadastradoEm ? dataLocalISO(l.cadastradoEm) : '',
+          inicio: l.inicio,
+          fim: l.fim,
+          proxima: l.proximaOcorrencia,
+        };
+        return dentro(referencias[dataTipo] || '');
       });
     }
 
@@ -161,6 +172,7 @@ async function carregarRelatorioTarefasCadastradas() {
           <div class="item-detalhe">Funcionário: ${escaparHtmlBasico(l.responsavel)}${l.responsavelAtivo ? '' : ' (desativado — escolha um substituto)'}</div>
           <div class="item-detalhe">Cadastrado por: ${escaparHtmlBasico(l.cadastradoPor)} · ${l.cadastradoEm ? fmtDate(l.cadastradoEm) : '—'}</div>
           <div class="item-detalhe">Período: ${l.inicio ? formatarDataProgramadaBr(l.inicio) : '—'} até ${l.fim ? formatarDataProgramadaBr(l.fim) : '—'}</div>
+          <div class="item-detalhe"><strong>Próxima disponibilidade:</strong> ${l.proximaOcorrencia ? `${formatarDataProgramadaBr(l.proximaOcorrencia)}${l.horario ? ` às ${escaparHtmlBasico(horaCurta(l.horario))}` : ''} para ${escaparHtmlBasico(l.responsavel)}` : 'Nenhuma ocorrência futura'}</div>
           <div class="item-detalhe">Regra de dias: ${escaparHtmlBasico(formatarDias(l.diasSemana))}</div>
           <div class="item-detalhe">Repetição: ${escaparHtmlBasico(l.repeticaoTexto)}${l.horario ? ` · horário ${escaparHtmlBasico(horaCurta(l.horario))}` : ''}</div>
         </div>
