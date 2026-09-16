@@ -59,6 +59,7 @@
   "./assets/js/44-profiles.js",
   "./assets/js/50-tasks.js",
   "./assets/js/51-quick-alerts.js",
+  "./assets/js/52-checklist-models.js",
   "./assets/js/60-timeclock.js",
   "./assets/js/70-reports.js",
   "./assets/js/71-executions.js",

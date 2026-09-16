@@ -171,7 +171,6 @@ async function carregarRelatorioTarefasCadastradas() {
             ${(funcsData || []).filter(f => f.ativo !== false).map(f => `<option value="${escaparHtmlBasico(f.id)}">${escaparHtmlBasico(f.nome)}</option>`).join('')}
           </select>
           <button class="btn btn-red btn-sm" type="button" onclick="excluirProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}')">Excluir programação</button>` : ''}
-          <button class="btn btn-ghost btn-sm" type="button" onclick="editarChecklistPelaListagem('${escaparHtmlBasico(l.tarefa_id)}')">Editar cadastro</button>
           <button class="btn btn-red btn-sm" type="button" onclick="excluirChecklistPelaListagem('${escaparHtmlBasico(l.tarefa_id)}')">Excluir cadastro</button>
         </div>
       </div>
@@ -183,13 +182,6 @@ async function carregarRelatorioTarefasCadastradas() {
     lista.innerHTML = '<div class="empty">Erro ao carregar o relatório.</div>';
     setMsg('msgRelatorioTarefasCad', `Não foi possível carregar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
   }
-}
-
-async function editarChecklistPelaListagem(tarefaId) {
-  const botaoCadastro = document.querySelector('.nav-btn[data-page="tarefas"]');
-  abrirPagina('tarefas', botaoCadastro);
-  await carregarSelectFuncionariosTarefa();
-  await editarTarefa(String(tarefaId || ''));
 }
 
 async function excluirChecklistPelaListagem(tarefaId) {

@@ -48,13 +48,14 @@ const topTitles = {
   lojas_saas: ['Lojas por empresa', 'Filiais, feriados e configurações'],
   perfis: ['Perfis', 'Permissoes de acesso do sistema'],
   tarefas: ['Cadastro de Checklist', 'Gerenciamento (Admin)'],
+  checklist_modelos: ['Cadastro modelo de checklist', 'Biblioteca fixa de atividades da loja'],
   tarefas_rapidas: ['Alertas rápidas', 'Avisos pontuais para a equipe'],
   execucoes: ['Checklist em andamento', 'Pause, retome e finalize tarefas'],
   tarefas_atraso: ['Checklist em atraso', 'Pendências fora do prazo'],
 };
 
 function paginaPertenceMenuChecklist(pageId = '') {
-  return ['checklists', 'execucoes', 'tarefas_atraso', 'tarefas', 'relatorio_tarefas_cadastradas'].includes(String(pageId || ''));
+  return ['checklists', 'execucoes', 'tarefas_atraso', 'tarefas', 'checklist_modelos', 'relatorio_tarefas_cadastradas'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
@@ -762,8 +763,10 @@ function abrirPagina(id, botao) {
   if (id === 'tarefas') {
     carregarSelectLojaTarefaCadastro();
     carregarSelectFuncionariosTarefa();
-    if (!tarefaEmEdicaoId) limparFormularioTarefa();
+    carregarModelosChecklist();
+    limparAgendamentoChecklist();
   }
+  if (id === 'checklist_modelos') { limparFormularioModeloChecklist(); carregarModelosChecklist(); }
   if (id === 'tarefas_rapidas') { carregarTarefasRapidas(); }
   if (id === 'execucoes') { resetFiltroData(false); carregarSelectExecucao(); carregarExecucoes(); }
   if (id === 'tarefas_atraso') { carregarTarefasAtrasoMaster(); }

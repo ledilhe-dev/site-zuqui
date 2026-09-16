@@ -34,7 +34,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.51-cadastro-checklist-v2">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.52-modelos-checklist">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -110,6 +110,9 @@
             <span class="nav-copy">
               <span class="nav-title">Cadastro de checklist</span>
             </span>
+          </button>
+          <button class="nav-btn nav-sub-btn" data-page="checklist_modelos" onclick="abrirPagina('checklist_modelos', this)">
+            <span class="nav-copy"><span class="nav-title">Cadastro modelo de checklist</span></span>
           </button>
           <button class="nav-btn nav-sub-btn" data-page="relatorio_tarefas_cadastradas" onclick="abrirPagina('relatorio_tarefas_cadastradas', this)">
             <span class="nav-copy">
@@ -990,8 +993,8 @@
         <div class="card checklist-cadastro-card">
           <div class="checklist-cadastro-cabecalho">
             <div>
-              <div class="card-title" id="tituloCadastroChecklist">Cadastrar novo checklist</div>
-              <div class="item-detalhe">Crie o modelo da tarefa para esta loja. A programação, repetição e manutenção ficam na aba <strong>Listagem de checklist</strong>.</div>
+              <div class="card-title">Programar checklist</div>
+              <div class="item-detalhe">Escolha um modelo fixo, o responsável e a regra de repetição. Nada será gravado antes da conferência final.</div>
             </div>
             <button class="regra-info-btn" type="button" title="Regras operacionais" aria-label="Regras operacionais" onclick="abrirInfoRegraChecklist('checklists')">I</button>
           </div>
@@ -1000,30 +1003,27 @@
             <span>Início somente com PIN operacional</span>
             <span>Quem inicia não pode finalizar</span>
             <span>Outro funcionário confere e confirma</span>
-            <span>Cadastro isolado por loja</span>
+            <span>Programação isolada por loja</span>
           </div>
 
           <div class="checklist-cadastro-grid">
             <label class="checklist-cadastro-campo checklist-cadastro-campo-nome">
-              <span>Nome do checklist <b>*</b></span>
-              <input id="nomeTarefa" type="text" maxlength="120" placeholder="Ex.: Verificar cafeteira Nescafé" required>
+              <span>1. Nome da tarefa (modelo) <b>*</b></span>
+              <select id="modeloChecklistAgendamento" onchange="atualizarResumoModeloAgendamento()"><option value="">Selecione um modelo cadastrado</option></select>
             </label>
-            <label class="checklist-cadastro-campo checklist-cadastro-campo-observacao">
-              <span>Orientação para execução <b>*</b></span>
-              <textarea id="descTarefa" name="descricao_tarefa_manual_no_autofill" rows="4" maxlength="500" placeholder="Descreva claramente o que deve ser feito e conferido" autocomplete="off" data-lpignore="true" required></textarea>
-            </label>
+            <div class="checklist-cadastro-campo checklist-cadastro-campo-observacao">
+              <span>Orientação do modelo</span>
+              <div id="resumoModeloAgendamento" class="checklist-modelo-resumo">Selecione um modelo para visualizar sua orientação.</div>
+            </div>
             <label class="checklist-cadastro-campo">
-              <span>Funcionário responsável padrão</span>
-              <select id="funcionarioTarefa">
-                <option value="">Definir somente ao programar</option>
-              </select>
-              <small>Pode ser alterado na listagem antes ou depois da programação.</small>
+              <span>2. Funcionário responsável <b>*</b></span>
+              <select id="funcionarioTarefa"><option value="">Selecione o funcionário</option></select>
             </label>
             <select id="lojaTarefaCadastro" class="campo-curto" style="display:none">
               <option value="">Loja</option>
             </select>
             <fieldset class="checklist-cadastro-dias">
-              <legend>Dias padrão da semana</legend>
+              <legend>3. Dias da semana</legend>
               <div class="checklist-cadastro-dias-grid">
                 <label><input id="diasSeg" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Seg</span></label>
                 <label><input id="diasTer" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Ter</span></label>
@@ -1039,16 +1039,37 @@
                 <button class="btn btn-ghost btn-sm" type="button" onclick="limparDias()">Limpar</button>
               </div>
             </fieldset>
+            <fieldset class="checklist-cadastro-dias checklist-repeticao-box">
+              <legend>4. Repetições <button class="regra-info-btn regra-info-btn-mini" type="button" onclick="abrirInfoRepeticaoChecklist()">I</button></legend>
+              <div class="checklist-repeticao-grid">
+                <label><span>Horário limite</span><input id="horarioChecklistAgendamento" type="time"></label>
+                <label><span>Repetir a cada</span><input id="intervaloChecklistAgendamento" type="number" min="1" max="365" value="1"><small>dias corridos</small></label>
+                <label><span>Durante</span><input id="duracaoChecklistAgendamento" type="number" min="1" max="365" value="7"><small>dias de horizonte</small></label>
+              </div>
+            </fieldset>
             <div class="checklist-cadastro-acoes">
-              <button class="btn btn-green" id="btnSalvarTarefa" type="button" onclick="criarTarefa()">Cadastrar checklist</button>
-              <button class="btn btn-ghost" id="btnLimparCadastroChecklist" type="button" onclick="limparFormularioTarefa()">Limpar</button>
-              <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" type="button" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar edição</button>
+              <button class="btn btn-green" type="button" onclick="abrirConferenciaAgendamentoChecklist()">Salvar e conferir</button>
+              <button class="btn btn-ghost" type="button" onclick="limparAgendamentoChecklist()">Limpar</button>
               <button class="btn btn-ghost" type="button" onclick="abrirPagina('relatorio_tarefas_cadastradas', document.querySelector('.nav-btn[data-page=&quot;relatorio_tarefas_cadastradas&quot;]'))">Ir para a listagem</button>
             </div>
           </div>
           <div class="msg" id="msgTarefas"></div>
         </div>
 
+      </section>
+
+      <section id="checklist_modelos" class="pagina">
+        <div class="page-title">Cadastro modelo de checklist</div>
+        <div class="card checklist-cadastro-card">
+          <div class="checklist-cadastro-cabecalho"><div><div class="card-title" id="tituloModeloChecklist">Novo modelo fixo</div><div class="item-detalhe">Cadastre atividades permanentes reutilizáveis, como “Revisar iFood”. Os modelos existentes foram preservados.</div></div><button class="regra-info-btn" type="button" onclick="abrirInfoModeloChecklist()">I</button></div>
+          <div class="checklist-modelo-form">
+            <label class="checklist-cadastro-campo"><span>Nome do modelo <b>*</b></span><input id="nomeModeloChecklist" maxlength="120" placeholder="Ex.: Revisar iFood"></label>
+            <label class="checklist-cadastro-campo"><span>Orientação fixa <b>*</b></span><textarea id="descricaoModeloChecklist" rows="4" maxlength="500" placeholder="Informe o que deve ser executado e conferido"></textarea></label>
+            <div class="checklist-cadastro-acoes"><button class="btn btn-green" id="btnSalvarModeloChecklist" type="button" onclick="salvarModeloChecklist()">Cadastrar modelo</button><button class="btn btn-ghost" type="button" onclick="limparFormularioModeloChecklist()">Limpar</button></div>
+          </div>
+          <div class="msg" id="msgModelosChecklist"></div>
+        </div>
+        <div class="card checklist-cadastro-card"><div class="card-title">Modelos cadastrados nesta loja</div><div id="listaModelosChecklist"><div class="empty">Carregando...</div></div></div>
       </section>
 
       <section id="tarefas_rapidas" class="pagina">
@@ -3131,6 +3152,14 @@
   </div>
 </div>
 
+<div class="overlay" id="conferenciaAgendamentoOverlay">
+  <div class="modal conferencia-checklist-modal">
+    <div class="modal-header"><div><h3>Conferir programação</h3><div class="item-detalhe">Revise todas as informações antes de salvar</div></div><button class="btn btn-ghost btn-sm" type="button" onclick="fecharConferenciaAgendamentoChecklist()">×</button></div>
+    <div class="modal-body"><div id="conferenciaAgendamentoConteudo"></div><div class="msg" id="msgConferenciaAgendamento"></div></div>
+    <div class="modal-footer"><button class="btn btn-red" type="button" onclick="fecharConferenciaAgendamentoChecklist()">Cancelar</button><button class="btn btn-ghost" type="button" onclick="fecharConferenciaAgendamentoChecklist()">Editar</button><button class="btn btn-green" type="button" onclick="confirmarAgendamentoChecklist()">Confirmar e salvar</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="ajusteSaldoCofreOverlay">
   <div class="modal ajuste-saldo-modal" style="max-width:560px" onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); salvarAjusteSaldoCofre(); }">
     <div class="modal-header">
@@ -3300,8 +3329,8 @@
 <script src="./assets/js/01-core-supabase.js?v=3.2.49"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260815-global-admin-v1"></script>
-<script src="./assets/js/04-navigation.js?v=3.2.51-cadastro-checklist-v2"></script>
-<script src="./assets/js/05-shared-helpers.js?v=20260903-intervalo2h"></script>
+<script src="./assets/js/04-navigation.js?v=3.2.52-modelos-checklist"></script>
+<script src="./assets/js/05-shared-helpers.js?v=3.2.52-modelos-checklist"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.42"></script>
 <script src="./assets/js/20-checklists.js"></script>
@@ -3323,10 +3352,11 @@
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js"></script>
-<script src="./assets/js/50-tasks.js?v=3.2.51-cadastro-checklist-v2"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.52-modelos-checklist"></script>
 <script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
+<script src="./assets/js/52-checklist-models.js?v=3.2.52-modelos-checklist"></script>
 <script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
-<script src="./assets/js/70-reports.js?v=3.2.51-cadastro-checklist-v2"></script>
+<script src="./assets/js/70-reports.js?v=3.2.52-modelos-checklist"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>

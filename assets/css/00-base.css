@@ -2158,6 +2158,20 @@
       .checklist-cadastro-acoes { grid-column:auto; grid-row:auto; }
       .checklist-cadastro-dias-grid { grid-template-columns:repeat(4,minmax(48px,1fr)); }
     }
+
+    .checklist-modelo-resumo { min-height:104px; padding:13px; border:1px solid var(--border); border-radius:10px; background:var(--surface2); color:var(--text-muted); font-size:12px; line-height:1.5; }
+    .checklist-modelo-form { display:grid; gap:14px; }
+    .checklist-repeticao-box { grid-column:2; }
+    .checklist-repeticao-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .checklist-repeticao-grid label { display:flex; flex-direction:column; gap:5px; color:var(--text-muted); font-size:10px; font-weight:700; }
+    .checklist-repeticao-grid input { width:100%; min-width:0; padding:9px; border:1px solid var(--border-mid); border-radius:8px; background:var(--surface); color:var(--text); color-scheme:dark; }
+    .regra-info-btn-mini { width:20px; height:20px; min-width:20px; font-size:10px; vertical-align:middle; }
+    .conferencia-checklist-modal { width:min(720px,calc(100vw - 28px)); }
+    .conferencia-checklist-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+    .conferencia-checklist-grid > div { padding:12px; border:1px solid var(--border); border-radius:9px; background:var(--surface2); }
+    .conferencia-checklist-grid span { display:block; margin-bottom:4px; color:var(--text-muted); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+    .conferencia-checklist-grid strong { color:var(--text); font-size:13px; }
+    @media(max-width:800px) { .checklist-repeticao-box { grid-column:auto; } .checklist-repeticao-grid,.conferencia-checklist-grid { grid-template-columns:1fr; } }
     .campo-curto { max-width: 100px; flex: 0 0 100px !important; }
     .form-row input[type="checkbox"] {
       flex: 0 0 auto !important;

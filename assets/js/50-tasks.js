@@ -66,7 +66,7 @@ function preencherDiasSelecionados(diasStr) {
 async function carregarSelectFuncionariosTarefa() {
   const sel = document.getElementById('funcionarioTarefa');
   if (!sel) return;
-  sel.innerHTML = '<option value="">Definir somente ao programar</option>';
+  sel.innerHTML = '<option value="">Selecione o funcionário</option>';
   let queryFuncionariosTarefa = sb.from('funcionarios').select('id, nome, loja_id, empresa_id').eq('ativo', true);
   queryFuncionariosTarefa = aplicarFiltroLojaFuncionariosQuery(queryFuncionariosTarefa).order('nome');
   const { data } = await queryFuncionariosTarefa;
@@ -2063,6 +2063,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   carregarChecklistsTarefas();
   carregarChecklists();
   carregarNotificacoes();
+  return true;
   } finally {
     lancamentosManuaisEmAndamento.delete(tarefaIdChave);
   }
