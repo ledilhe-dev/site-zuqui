@@ -34,7 +34,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=20260727-sem-filtro-lojas">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.50-checklist-programacoes">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -111,6 +111,11 @@
               <span class="nav-title">Cadastro de checklist</span>
             </span>
           </button>
+          <button class="nav-btn nav-sub-btn" data-page="relatorio_tarefas_cadastradas" onclick="abrirPagina('relatorio_tarefas_cadastradas', this)">
+            <span class="nav-copy">
+              <span class="nav-title">Listagem de checklist</span>
+            </span>
+          </button>
         </div>
       </div></div>
       <div data-nav-item-id="tarefas_rapidas" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn nav-btn-alerta" data-page="tarefas_rapidas" onclick="abrirPagina('tarefas_rapidas', this)">
@@ -157,11 +162,6 @@
             <button class="nav-btn nav-sub-btn" data-page="relatorio_lancamentos" onclick="abrirPagina('relatorio_lancamentos', this)">
               <span class="nav-copy">
                 <span class="nav-title">Relatório tarefas</span>
-              </span>
-            </button>
-            <button class="nav-btn nav-sub-btn" data-page="relatorio_tarefas_cadastradas" onclick="abrirPagina('relatorio_tarefas_cadastradas', this)">
-              <span class="nav-copy">
-                <span class="nav-title">Tarefas cadastradas</span>
               </span>
             </button>
           </div>
@@ -1393,7 +1393,7 @@
       </section>
 
       <section id="relatorio_tarefas_cadastradas" class="pagina">
-        <div class="page-title">Relatório de tarefas cadastradas</div>
+        <div class="page-title">Listagem de checklist</div>
 
         <div class="card">
           <div class="card-title">Filtros do relatório</div>
@@ -1417,7 +1417,7 @@
 
         <div class="card">
           <div class="relatorio-ponto-title-row">
-            <div class="card-title">Tarefas cadastradas</div>
+            <div class="card-title">Checklists cadastrados e programados</div>
             <div class="relatorio-ponto-acoes">
               <button class="btn btn-export-excel btn-sm" type="button" onclick="exportarRelatorioTarefasCadastradasExcel()"><span class="btn-export-icon excel">X</span>Excel</button>
               <button class="btn btn-export-pdf btn-sm" type="button" onclick="exportarRelatorioTarefasCadastradasPDF()"><span class="btn-export-icon pdf">PDF</span>PDF</button>
@@ -3311,7 +3311,7 @@
 <script src="./assets/js/01-core-supabase.js?v=3.2.49"></script>
 <script src="./assets/js/02-core-version.js"></script>
 <script src="./assets/js/03-core-state.js?v=20260815-global-admin-v1"></script>
-<script src="./assets/js/04-navigation.js?v=20260815-global-admin-menu-v2"></script>
+<script src="./assets/js/04-navigation.js?v=3.2.50-checklist-programacoes"></script>
 <script src="./assets/js/05-shared-helpers.js?v=20260903-intervalo2h"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.42"></script>
@@ -3334,10 +3334,10 @@
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js"></script>
-<script src="./assets/js/50-tasks.js?v=20260730-pin-admin-unificado"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.50-checklist-programacoes"></script>
 <script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
 <script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
-<script src="./assets/js/70-reports.js"></script>
+<script src="./assets/js/70-reports.js?v=3.2.50-checklist-programacoes"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>
