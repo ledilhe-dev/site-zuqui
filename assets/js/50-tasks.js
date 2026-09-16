@@ -97,7 +97,10 @@ function obterFuncionariosLancamentoSelecionados(tarefaId, funcionarioPadrao = '
     return [...new Set(selecionado.map(item => String(item || '').trim()).filter(Boolean))];
   }
   const valor = String(selecionado || '').trim();
-  if (!valor) return [];
+  if (!valor) {
+    const padrao = String(funcionarioPadrao || '').trim();
+    return padrao ? [padrao] : [];
+  }
   if (valor.includes(',')) {
     return [...new Set(valor.split(',').map(item => String(item || '').trim()).filter(Boolean))];
   }
@@ -107,6 +110,12 @@ function obterFuncionariosLancamentoSelecionados(tarefaId, funcionarioPadrao = '
 function obterFuncionarioLancamentoSelecionado(tarefaId, funcionarioPadrao = '') {
   const selecionados = obterFuncionariosLancamentoSelecionados(tarefaId, funcionarioPadrao);
   return selecionados[0] || '';
+}
+
+function obterFuncionarioPadraoAtivoTarefa(funcionarioId = '') {
+  const id = String(funcionarioId || '').trim();
+  if (!id) return '';
+  return funcionariosAtivosTarefa.some(item => String(item.id || '') === id) ? id : '';
 }
 
 function obterResumoSelecaoFuncionarioLancamento(tarefaId) {
@@ -193,7 +202,9 @@ function obterDiasLancamentoSelecionados(tarefaId, diasPadrao = 'todos') {
   if (Array.isArray(sobrescrito)) {
     return ordem.filter(dia => sobrescrito.includes(dia));
   }
-  return [];
+  const padrao = String(diasPadrao || '').trim().toLowerCase();
+  if (padrao === 'todos') return [...ordem];
+  return ordem.filter(dia => padrao.split(',').map(item => item.trim()).includes(dia));
 }
 
 function obterDiasLancamentoSelecionadosTexto(tarefaId, diasPadrao = 'todos') {
@@ -385,6 +396,7 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
   }
 
   const tarefaIdEscapado = escaparHtmlBasico(tarefa.id);
+  const funcionarioPadraoAtivo = obterFuncionarioPadraoAtivoTarefa(tarefa.funcionario_id);
   const diasSelecionados = new Set(obterDiasLancamentoSelecionados(tarefa.id, tarefa.dias_semana || 'todos'));
   const diasOpcao = [
     { key: 'seg', label: 'Seg' },
@@ -408,15 +420,15 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
       </label>
     `).join('');
 
-  const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, '');
+  const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
   const botaoLancarDesktop = tarefa.ativo
     ? `<div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-lancar">
-         <button class="btn btn-sm btn-lancar-desktop-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+         <button class="btn btn-sm btn-lancar-desktop-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', '${funcionarioPadraoAtivo}'), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
        </div>`
     : '';
   const botaoLancarMobile = tarefa.ativo
     ? `<div class="tarefa-lancar-mobile-wrap">
-         <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', ''), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+         <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', '${funcionarioPadraoAtivo}'), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
        </div>`
     : '';
   return `
@@ -474,8 +486,10 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
           </label>
         </div>
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-funcionarios">
+          <span class="tarefa-funcionarios-label">Funcionário responsável</span>
+          <div id="resumoFuncionarioLancamento_${tarefaIdEscapado}" class="tarefa-funcionario-resumo">${escaparHtmlBasico(obterResumoSelecaoFuncionarioLancamento(tarefa.id) === 'Nenhum funcionário selecionado' && funcionarioPadraoAtivo ? (funcionariosAtivosTarefa.find(item => String(item.id) === funcionarioPadraoAtivo)?.nome || 'Funcionário cadastrado') : obterResumoSelecaoFuncionarioLancamento(tarefa.id))}</div>
           <div class="tarefa-funcionario-acoes">
-            <button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalFuncionariosLancamentoTarefa('${tarefaIdEscapado}')">Selecionar funcionário(s)</button>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="abrirModalFuncionariosLancamentoTarefa('${tarefaIdEscapado}')">Selecionar funcionário</button>
           </div>
         </div>
         ${botaoLancarDesktop}
@@ -1083,7 +1097,7 @@ async function carregarTarefas() {
 
     // Isolamento multi-loja: só carrega tarefas da loja logada (evita vazamento entre lojas).
     const lojaSessaoTarefas = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
-    let queryTarefas = sb.from('tarefas').select('*, funcionarios(nome), checklists(nome)').order('nome');
+    let queryTarefas = sb.from('tarefas').select('*').order('nome');
     if (lojaSessaoTarefas) {
       queryTarefas = queryTarefas.eq('loja_id', lojaSessaoTarefas);
     }
@@ -1095,7 +1109,20 @@ async function carregarTarefas() {
       return;
     }
 
-    tarefasCadastradasCache = data || [];
+    const tarefasBase = data || [];
+    const funcionarioIds = [...new Set(tarefasBase.map(item => item.funcionario_id).filter(Boolean))];
+    const checklistIds = [...new Set(tarefasBase.map(item => item.checklist_id).filter(Boolean))];
+    const [funcionariosRelacionados, checklistsRelacionados] = await Promise.all([
+      funcionarioIds.length ? sb.from('funcionarios').select('id, nome, ativo').in('id', funcionarioIds) : Promise.resolve({ data: [] }),
+      checklistIds.length ? sb.from('checklists').select('id, nome').in('id', checklistIds) : Promise.resolve({ data: [] }),
+    ]);
+    const funcionariosMap = Object.fromEntries((funcionariosRelacionados.data || []).map(item => [String(item.id), item]));
+    const checklistsMap = Object.fromEntries((checklistsRelacionados.data || []).map(item => [String(item.id), item]));
+    tarefasCadastradasCache = tarefasBase.map(item => ({
+      ...item,
+      funcionarios: funcionariosMap[String(item.funcionario_id)] || null,
+      checklists: checklistsMap[String(item.checklist_id)] || null,
+    }));
     tarefasFavoritasIds = carregarFavoritosTarefas();
     normalizarEstadosConsultaTarefas();
     filtrarTarefasCadastradas();
@@ -1502,6 +1529,11 @@ async function criarTarefa() {
     funcionario_id: funcionarioId,
     ...tenantCadastroChecklist,
   };
+  if (!editandoAgora) {
+    const atorCadastro = obterAtorAuditoriaAtual();
+    payload.criado_por_id = atorCadastro.funcionarioId;
+    payload.criado_por_nome = atorCadastro.nome;
+  }
   const query = editandoAgora
     ? sb.from('tarefas').update(payload).eq('id', tarefaEmEdicaoId).select()
     : sb.from('tarefas').insert([{ ...payload, ativo: true, lancada_checklist: false }]).select();
@@ -1790,6 +1822,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   const ignorarHojePorHorario = !!horarioSelecionado && horarioJaPassouHoje(horarioSelecionado);
   const ignorarHoje = ignorarHojePorTurno || ignorarHojePorHorario;
   const agoraIso = new Date().toISOString();
+  const agendamentoId = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const atorAuditoria = obterAtorAuditoriaAtual();
 
   const consultarLancamentosExistentes = async (comCreatedAt = true, comStatus = true) => {
@@ -1879,6 +1912,9 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       empresa_id: tarefa.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null,
       loja_id: tarefa.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null,
       status: 'pendente',
+      agendamento_id: agendamentoId,
+      repeticao_intervalo_dias: intervaloRepeticao,
+      repeticao_duracao_dias: duracaoRepeticao > 0 ? duracaoRepeticao : (HORIZONTE_AGENDAMENTO_MANUAL_DIAS + 1),
     });
   }
 

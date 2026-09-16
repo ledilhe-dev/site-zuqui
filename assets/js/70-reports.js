@@ -41,14 +41,14 @@ async function carregarRelatorioTarefasCadastradas() {
     const lojaAtual = obterLojaAtualParaIsolamento();
 
     // Tarefas da loja (para incluir até as que não têm lançamento ainda).
-    let queryTarefas = sb.from('tarefas').select('id, nome, descricao, funcionario_id, dias_semana, created_at, funcionarios(nome)').order('nome');
+    let queryTarefas = sb.from('tarefas').select('id, nome, descricao, funcionario_id, dias_semana, created_at, criado_por_id, criado_por_nome').order('nome');
     if (lojaAtual) queryTarefas = queryTarefas.eq('loja_id', lojaAtual);
     const { data: tarefasData, error: errTarefas } = await queryTarefas;
     if (errTarefas && !isMissingTableError(errTarefas)) throw errTarefas;
 
     // Lançamentos (fonte da repetição, datas e quem lançou).
     let queryLanc = sb.from('checklist_lancamentos')
-      .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome')
+      .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
       .order('data_programada', { ascending: true })
       .limit(5000);
     if (lojaAtual) queryLanc = queryLanc.eq('loja_id', lojaAtual);
@@ -56,58 +56,75 @@ async function carregarRelatorioTarefasCadastradas() {
     if (errLanc && !isMissingLancamentosTableError(errLanc)) throw errLanc;
 
     // Funcionários para resolver nomes de responsáveis.
-    const { data: funcsData } = await sb.from('funcionarios').select('id, nome');
+    let queryFuncs = sb.from('funcionarios').select('id, nome, ativo, loja_id');
+    if (lojaAtual) queryFuncs = queryFuncs.eq('loja_id', lojaAtual);
+    const { data: funcsData } = await queryFuncs.order('nome');
     const funcMap = Object.fromEntries((funcsData || []).map(f => [String(f.id), f.nome]));
 
-    // Agrupa lançamentos por tarefa.
-    const lancPorTarefa = {};
+    // Agrupa cada programação. Todas as repetições do mesmo clique em "Lançar"
+    // compartilham agendamento_id; lançamentos antigos usam a data/hora de criação.
+    const lancPorProgramacao = {};
     (lancData || []).forEach(l => {
-      const tid = String(l.tarefa_id || '');
-      if (!tid) return;
-      (lancPorTarefa[tid] = lancPorTarefa[tid] || []).push(l);
+      const chave = String(l.agendamento_id || `${l.tarefa_id || l.nome}|${l.funcionario_id || ''}|${l.lancado_em || ''}`);
+      (lancPorProgramacao[chave] = lancPorProgramacao[chave] || []).push(l);
     });
 
-    // Monta as linhas do relatório (uma por tarefa).
-    const linhas = (tarefasData || []).map(t => {
-      const tid = String(t.id);
-      const lancs = (lancPorTarefa[tid] || []).slice().sort((a, b) =>
-        String(a.data_programada || '').localeCompare(String(b.data_programada || '')));
+    const tarefaMap = Object.fromEntries((tarefasData || []).map(t => [String(t.id), t]));
+    const tarefasComProgramacao = new Set((lancData || []).map(l => String(l.tarefa_id || '')).filter(Boolean));
+
+    const montarLinha = (t, lancs = [], agendamentoId = '') => {
+      const tid = String(t?.id || lancs[0]?.tarefa_id || '');
+      lancs = lancs.slice().sort((a, b) =>
+         String(a.data_programada || '').localeCompare(String(b.data_programada || '')));
       const datas = lancs.map(l => String(l.data_programada || '').slice(0, 10)).filter(Boolean);
       const datasUnicas = [...new Set(datas)].sort();
       const primeiroLanc = lancs.slice().sort((a, b) =>
         new Date(a.lancado_em || 0) - new Date(b.lancado_em || 0))[0] || null;
 
-      const cadastradoEm = (primeiroLanc?.lancado_em || t.created_at || '') || '';
-      const cadastradoPor = primeiroLanc?.criado_por_nome || (t.funcionarios?.nome ? '' : '') || '';
+      const cadastradoEm = (primeiroLanc?.lancado_em || t?.created_at || '') || '';
+      const cadastradoPor = primeiroLanc?.criado_por_nome || t?.criado_por_nome || '';
       const inicio = datasUnicas[0] || '';
       const fim = datasUnicas[datasUnicas.length - 1] || '';
-      const intervalo = detectarIntervaloDias(datasUnicas);
+      const intervalo = Number(primeiroLanc?.repeticao_intervalo_dias || 0) || detectarIntervaloDias(datasUnicas);
       const totalDias = (inicio && fim)
         ? (Math.round((new Date(fim + 'T00:00:00') - new Date(inicio + 'T00:00:00')) / (1000 * 60 * 60 * 24)) + 1)
         : 0;
-      const diasSemana = lancs[0]?.dias_semana || t.dias_semana || 'todos';
+      const diasSemana = lancs[0]?.dias_semana || t?.dias_semana || 'todos';
+      const duracaoConfigurada = Number(primeiroLanc?.repeticao_duracao_dias || 0) || totalDias;
 
       const repeticaoTexto = lancs.length
-        ? `${formatarDias(diasSemana)}${intervalo && intervalo > 1 ? ` · a cada ${intervalo} dia(s)` : (intervalo === 1 ? ' · diária' : '')}${totalDias ? ` · por ${totalDias} dia(s)` : ''}`
-        : 'Sem lançamento';
+        ? `${formatarDias(diasSemana)} · a cada ${intervalo || 1} dia(s) · por ${duracaoConfigurada || totalDias} dia(s)`
+        : 'Ainda não programado';
 
       return {
         tarefa_id: tid,
-        nomeTarefa: t.nome || 'Tarefa',
-        descricao: t.descricao || '',
-        responsavel_id: String(t.funcionario_id || ''),
-        responsavel: funcMap[String(t.funcionario_id || '')] || t.funcionarios?.nome || 'Sem responsável',
+        agendamento_id: agendamentoId,
+        lancamento_ids: lancs.map(item => item.id),
+        nomeTarefa: t?.nome || lancs[0]?.nome || 'Tarefa',
+        descricao: t?.descricao || '',
+        responsavel_id: String(primeiroLanc?.funcionario_id || t?.funcionario_id || ''),
+        responsavel: funcMap[String(primeiroLanc?.funcionario_id || t?.funcionario_id || '')] || 'Sem responsável',
+        responsavelAtivo: (funcsData || []).find(f => String(f.id) === String(primeiroLanc?.funcionario_id || t?.funcionario_id || ''))?.ativo !== false,
         cadastradoPor: cadastradoPor || (primeiroLanc ? 'Sistema' : '—'),
         cadastradoEm,
         inicio,
         fim,
         diasSemana,
         intervalo,
-        totalDias,
+        totalDias: duracaoConfigurada,
         qtdLancamentos: lancs.length,
         repeticaoTexto,
+        horario: primeiroLanc?.horario_limite || '',
       };
-    });
+    };
+
+    const linhasProgramadas = Object.entries(lancPorProgramacao).map(([chave, lancs]) =>
+      montarLinha(tarefaMap[String(lancs[0]?.tarefa_id || '')], lancs, chave));
+    const linhasSemProgramacao = (tarefasData || [])
+      .filter(t => !tarefasComProgramacao.has(String(t.id)))
+      .map(t => montarLinha(t, [], ''));
+    const linhas = [...linhasProgramadas, ...linhasSemProgramacao]
+      .sort((a, b) => String(a.nomeTarefa).localeCompare(String(b.nomeTarefa), 'pt-BR'));
 
     // Popular selects de filtro (tarefa, cadastrante, responsável).
     popularFiltrosRelatorioTarefasCad(tarefasData || [], lancData || [], funcMap);
@@ -139,13 +156,19 @@ async function carregarRelatorioTarefasCadastradas() {
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(l.nomeTarefa)}</div>
           ${l.descricao ? `<div class="item-detalhe">${escaparHtmlBasico(l.descricao)}</div>` : ''}
-          <div class="item-detalhe">Responsável: ${escaparHtmlBasico(l.responsavel)}</div>
+          <div class="item-detalhe">Funcionário: ${escaparHtmlBasico(l.responsavel)}${l.responsavelAtivo ? '' : ' (desativado — escolha um substituto)'}</div>
           <div class="item-detalhe">Cadastrado por: ${escaparHtmlBasico(l.cadastradoPor)} · ${l.cadastradoEm ? fmtDate(l.cadastradoEm) : '—'}</div>
           <div class="item-detalhe">Período: ${l.inicio ? formatarDataProgramadaBr(l.inicio) : '—'} até ${l.fim ? formatarDataProgramadaBr(l.fim) : '—'}</div>
-          <div class="item-detalhe">Repetição: ${escaparHtmlBasico(l.repeticaoTexto)}</div>
+          <div class="item-detalhe">Regra de dias: ${escaparHtmlBasico(formatarDias(l.diasSemana))}</div>
+          <div class="item-detalhe">Repetição: ${escaparHtmlBasico(l.repeticaoTexto)}${l.horario ? ` · horário ${escaparHtmlBasico(horaCurta(l.horario))}` : ''}</div>
         </div>
         <div class="item-actions">
           <span class="tag ${l.qtdLancamentos ? 'tag-green' : 'tag-amber'}">${l.qtdLancamentos ? l.qtdLancamentos + ' lançamento(s)' : 'Sem lançamento'}</span>
+          ${l.qtdLancamentos ? `<select aria-label="Trocar funcionário" onchange="alterarFuncionarioProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}', this.value, this)">
+            <option value="">Trocar funcionário...</option>
+            ${(funcsData || []).filter(f => f.ativo !== false).map(f => `<option value="${escaparHtmlBasico(f.id)}">${escaparHtmlBasico(f.nome)}</option>`).join('')}
+          </select>
+          <button class="btn btn-red btn-sm" type="button" onclick="excluirProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}')">Excluir programação</button>` : `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirPagina('tarefas', document.querySelector('.nav-btn[data-page=\"tarefas\"]')); editarTarefa('${escaparHtmlBasico(l.tarefa_id)}')">Editar cadastro</button>`}
         </div>
       </div>
     `).join('') + '</div>';
@@ -156,6 +179,37 @@ async function carregarRelatorioTarefasCadastradas() {
     lista.innerHTML = '<div class="empty">Erro ao carregar o relatório.</div>';
     setMsg('msgRelatorioTarefasCad', `Não foi possível carregar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
   }
+}
+
+async function alterarFuncionarioProgramacaoChecklist(agendamentoId, funcionarioId, selectEl = null) {
+  const agenda = String(agendamentoId || '').trim();
+  const funcionario = String(funcionarioId || '').trim();
+  if (!agenda || !funcionario) return;
+  const { error } = await sb.from('checklist_lancamentos')
+    .update({ funcionario_id: funcionario })
+    .eq('agendamento_id', agenda)
+    .eq('status', 'pendente');
+  if (error) {
+    setMsg('msgRelatorioTarefasCad', `Não foi possível trocar o funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    if (selectEl) selectEl.value = '';
+    return;
+  }
+  setMsg('msgRelatorioTarefasCad', 'Funcionário alterado em todas as repetições pendentes da programação.', 'ok');
+  await carregarRelatorioTarefasCadastradas();
+  carregarChecklists();
+}
+
+async function excluirProgramacaoChecklist(agendamentoId) {
+  const agenda = String(agendamentoId || '').trim();
+  if (!agenda || !confirm('Excluir esta programação e todas as repetições ainda lançadas? O cadastro do checklist será preservado.')) return;
+  const { error } = await sb.from('checklist_lancamentos').delete().eq('agendamento_id', agenda);
+  if (error) {
+    setMsg('msgRelatorioTarefasCad', `Não foi possível excluir a programação: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    return;
+  }
+  setMsg('msgRelatorioTarefasCad', 'Programação e repetições excluídas. O cadastro foi preservado.', 'ok');
+  await carregarRelatorioTarefasCadastradas();
+  carregarChecklists();
 }
 
 function popularFiltrosRelatorioTarefasCad(tarefas = [], lancamentos = [], funcMap = {}) {
@@ -172,7 +226,10 @@ function popularFiltrosRelatorioTarefasCad(tarefas = [], lancamentos = [], funcM
   const selCad = document.getElementById('filtroTarefasCadCadastrante');
   if (selCad) {
     const atual = selCad.value;
-    const nomes = [...new Set((lancamentos || []).map(l => String(l.criado_por_nome || '').trim()).filter(Boolean))].sort();
+    const nomes = [...new Set([
+      ...(lancamentos || []).map(l => String(l.criado_por_nome || '').trim()),
+      ...(tarefas || []).map(t => String(t.criado_por_nome || '').trim()),
+    ].filter(Boolean))].sort();
     selCad.innerHTML = '<option value="">- Quem cadastrou (todos) -</option>' +
       nomes.map(n => `<option value="${escaparHtmlBasico(n.toLowerCase())}">${escaparHtmlBasico(n)}</option>`).join('');
     if (Array.from(selCad.options).some(o => o.value === atual)) selCad.value = atual;

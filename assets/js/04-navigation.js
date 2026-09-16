@@ -10,7 +10,7 @@ const topTitles = {
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
   relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
-  relatorio_tarefas_cadastradas: ['Relatório de tarefas cadastradas', 'O que está cadastrado: quem cadastrou, período e repetição'],
+  relatorio_tarefas_cadastradas: ['Listagem de checklist', 'Cadastros e programações da loja'],
   relatorio_financeiro: ['Relatório de contas a pagar', 'Análise detalhada de títulos e pagamentos'],
   relatorio_recebimentos: ['Relatório de recebimentos', 'Entradas com usuário e horário de lançamento'],
   relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
@@ -49,7 +49,7 @@ const topTitles = {
 };
 
 function paginaPertenceMenuChecklist(pageId = '') {
-  return ['checklists', 'execucoes', 'tarefas_atraso', 'tarefas'].includes(String(pageId || ''));
+  return ['checklists', 'execucoes', 'tarefas_atraso', 'tarefas', 'relatorio_tarefas_cadastradas'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
