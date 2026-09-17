@@ -1011,10 +1011,10 @@
               <span>1. Nome da tarefa (modelo) <b>*</b></span>
               <select id="modeloChecklistAgendamento" onchange="atualizarResumoModeloAgendamento()"><option value="">Selecione um modelo cadastrado</option></select>
             </label>
-            <div class="checklist-cadastro-campo checklist-cadastro-campo-observacao">
-              <span>Orientação do modelo</span>
-              <div id="resumoModeloAgendamento" class="checklist-modelo-resumo">Selecione um modelo para visualizar sua orientação.</div>
-            </div>
+            <label class="checklist-cadastro-campo checklist-cadastro-campo-observacao">
+              <span>Orientação desta tarefa</span>
+              <textarea id="resumoModeloAgendamento" class="checklist-modelo-resumo" rows="4" maxlength="500" placeholder="Descreva como esta tarefa deve ser executada neste turno"></textarea>
+            </label>
             <label class="checklist-cadastro-campo">
               <span>2. Funcionário responsável <b>*</b></span>
               <select id="funcionarioTarefa"><option value="">Selecione o funcionário</option></select>
@@ -1065,7 +1065,6 @@
           <div class="checklist-cadastro-cabecalho"><div><div class="card-title" id="tituloModeloChecklist">Novo modelo fixo</div><div class="item-detalhe">Cadastre atividades permanentes reutilizáveis, como “Revisar iFood”. Os modelos existentes foram preservados.</div></div><button class="regra-info-btn" type="button" onclick="abrirInfoModeloChecklist()">I</button></div>
           <div class="checklist-modelo-form">
             <label class="checklist-cadastro-campo"><span>Nome do modelo <b>*</b></span><input id="nomeModeloChecklist" maxlength="120" placeholder="Ex.: Revisar iFood"></label>
-            <label class="checklist-cadastro-campo"><span>Orientação fixa <b>*</b></span><textarea id="descricaoModeloChecklist" rows="4" maxlength="500" placeholder="Informe o que deve ser executado e conferido"></textarea></label>
             <div class="checklist-cadastro-acoes"><button class="btn btn-green" id="btnSalvarModeloChecklist" type="button" onclick="salvarModeloChecklist()">Cadastrar modelo</button><button class="btn btn-ghost" type="button" onclick="limparFormularioModeloChecklist()">Limpar</button></div>
           </div>
           <div class="msg" id="msgModelosChecklist"></div>

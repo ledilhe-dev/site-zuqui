@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v183-checklist-horarios-formulario';
+const CACHE_NAME = 'check-diario-pwa-v184-checklist-orientacao';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

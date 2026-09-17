@@ -232,7 +232,7 @@ function buildMessage(alert: TelegramAlert) {
     tarefa_iniciada: "🟢 Tarefa iniciada",
     tarefa_nao_iniciada: "🔴 Tarefa não iniciada no horário",
     tarefa_finalizada: "✅ Tarefa finalizada",
-    tarefa_nao_finalizada: "🟠 Tarefa não finalizada no prazo",
+    tarefa_nao_finalizada: "⚠️ ATENÇÃO: tarefa não finalizada no prazo",
   } as const;
 
   const lines = [titles[alert.tipo], `Descrição: ${alert.descricao}`];

@@ -31,7 +31,7 @@ function atualizarResumoModeloAgendamento() {
   const id = String(document.getElementById('modeloChecklistAgendamento')?.value || '');
   const modelo = modelosChecklistCache.find(item => String(item.id) === id);
   const resumo = document.getElementById('resumoModeloAgendamento');
-  if (resumo) resumo.textContent = modelo?.descricao || (modelo ? 'Modelo sem orientação complementar.' : 'Selecione um modelo para visualizar sua orientação.');
+  if (resumo) resumo.value = modelo?.descricao || '';
 }
 
 function renderizarModelosChecklist() {
@@ -42,18 +42,17 @@ function renderizarModelosChecklist() {
     return;
   }
   lista.innerHTML = `<div class="lista">${modelosChecklistCache.map(modelo => `
-    <div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(modelo.nome)}</div><div class="item-detalhe">${escaparHtmlBasico(modelo.descricao || 'Sem orientação')}</div></div>
+    <div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(modelo.nome)}</div></div>
     <div class="item-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="editarModeloChecklist('${modelo.id}')">Editar</button><button class="btn btn-red btn-sm" type="button" onclick="excluirModeloChecklist('${modelo.id}')">Excluir</button></div></div>`).join('')}</div>`;
 }
 
 async function salvarModeloChecklist() {
   const nome = String(document.getElementById('nomeModeloChecklist')?.value || '').trim();
-  const descricao = String(document.getElementById('descricaoModeloChecklist')?.value || '').trim();
-  if (!nome || !descricao) { setMsg('msgModelosChecklist', 'Informe o nome e a orientação fixa do modelo.', 'err'); return; }
+  if (!nome) { setMsg('msgModelosChecklist', 'Informe o nome do modelo.', 'err'); return; }
   let tenant;
   try { tenant = await resolverTenantCadastroChecklist(); }
   catch (error) { setMsg('msgModelosChecklist', mensagemErroSupabase(error, 'Não foi possível identificar a loja.'), 'err'); return; }
-  const payload = { nome, descricao, ...tenant };
+  const payload = { nome, descricao: null, ...tenant };
   const resposta = modeloChecklistEmEdicaoId
     ? await sb.from('checklists').update(payload).eq('id', modeloChecklistEmEdicaoId)
     : await sb.from('checklists').insert([payload]);
@@ -68,7 +67,6 @@ function editarModeloChecklist(id) {
   if (!modelo) return;
   modeloChecklistEmEdicaoId = String(id);
   document.getElementById('nomeModeloChecklist').value = modelo.nome || '';
-  document.getElementById('descricaoModeloChecklist').value = modelo.descricao || '';
   document.getElementById('tituloModeloChecklist').textContent = 'Editar modelo fixo';
   document.getElementById('btnSalvarModeloChecklist').textContent = 'Salvar alterações';
   document.getElementById('nomeModeloChecklist').focus();
@@ -77,9 +75,7 @@ function editarModeloChecklist(id) {
 function limparFormularioModeloChecklist() {
   modeloChecklistEmEdicaoId = '';
   const nome = document.getElementById('nomeModeloChecklist');
-  const descricao = document.getElementById('descricaoModeloChecklist');
   if (nome) nome.value = '';
-  if (descricao) descricao.value = '';
   const titulo = document.getElementById('tituloModeloChecklist');
   const botao = document.getElementById('btnSalvarModeloChecklist');
   if (titulo) titulo.textContent = 'Novo modelo fixo';
@@ -101,10 +97,11 @@ function obterDadosAgendamentoFormulario() {
   const funcionarioId = String(document.getElementById('funcionarioTarefa')?.value || '');
   const horarioInicio = horaCurta(document.getElementById('horarioInicioChecklistAgendamento')?.value || '');
   const horarioFim = horaCurta(document.getElementById('horarioFimChecklistAgendamento')?.value || '');
+  const orientacao = String(document.getElementById('resumoModeloAgendamento')?.value || '').trim();
   const intervalo = Math.max(1, Math.min(365, parseInt(document.getElementById('intervaloChecklistAgendamento')?.value || '1', 10) || 1));
   const duracao = Math.max(1, Math.min(365, parseInt(document.getElementById('duracaoChecklistAgendamento')?.value || '7', 10) || 7));
   const dias = obterDiasSelecionados();
-  return { modeloId, funcionarioId, horarioInicio, horarioFim, intervalo, duracao, dias };
+  return { modeloId, funcionarioId, orientacao, horarioInicio, horarioFim, intervalo, duracao, dias };
 }
 
 function abrirConferenciaAgendamentoChecklist() {
@@ -121,7 +118,7 @@ function abrirConferenciaAgendamentoChecklist() {
   const overlay = document.getElementById('conferenciaAgendamentoOverlay');
   document.getElementById('conferenciaAgendamentoConteudo').innerHTML = `
     <div class="conferencia-checklist-grid"><div><span>Modelo</span><strong>${escaparHtmlBasico(modelo.nome)}</strong></div><div><span>Funcionário</span><strong>${escaparHtmlBasico(funcionario.nome)}</strong></div><div><span>Dias</span><strong>${escaparHtmlBasico(formatarDias(dados.dias.length === 7 ? 'todos' : dados.dias.join(',')))}</strong></div><div><span>Horário para início</span><strong>${escaparHtmlBasico(dados.horarioInicio)}</strong></div><div><span>Horário para fim</span><strong>${escaparHtmlBasico(dados.horarioFim)}${horarioParaMinutos(dados.horarioFim) <= horarioParaMinutos(dados.horarioInicio) ? ' (dia seguinte)' : ''}</strong></div><div><span>Intervalo</span><strong>A cada ${dados.intervalo} dia(s) corrido(s)</strong></div><div><span>Duração</span><strong>${dados.duracao} dia(s) de horizonte</strong></div></div>
-    <div class="checklist-modelo-resumo"><strong>Orientação:</strong> ${escaparHtmlBasico(modelo.descricao || 'Sem orientação')}</div>`;
+    <div class="checklist-modelo-resumo"><strong>Orientação desta tarefa:</strong> ${escaparHtmlBasico(dados.orientacao || 'Sem orientação complementar')}</div>`;
   overlay?.classList.add('show');
 }
 
@@ -136,7 +133,7 @@ async function confirmarAgendamentoChecklist() {
   const ator = obterAtorAuditoriaAtual();
   const diasTexto = dados.dias.length === 7 ? 'todos' : dados.dias.join(',');
   const { data, error } = await sb.from('tarefas').insert([{
-    nome: dados.modelo.nome, descricao: dados.modelo.descricao || null, checklist_id: dados.modelo.id,
+    nome: dados.modelo.nome, descricao: dados.orientacao || null, checklist_id: dados.modelo.id,
     funcionario_id: dados.funcionarioId, horario_limite: null, dias_semana: diasTexto,
     criado_por_id: ator.funcionarioId, criado_por_nome: ator.nome, ativo: true, lancada_checklist: false, ...tenant,
   }]).select('id').single();
@@ -171,5 +168,5 @@ function abrirInfoRepeticaoChecklist() {
 }
 
 function abrirInfoModeloChecklist() {
-  abrirConfirmacaoSistema({ title:'Modelo fixo de checklist', subtitle:'Uma biblioteca reutilizável por loja', body:'<p>O modelo guarda somente o nome e a orientação permanente da atividade. Ele não cria datas, repetições ou responsáveis.</p><p>Use “Cadastro de checklist” para programar o modelo para um funcionário.</p>', confirmText:'Entendi', cancelText:'Fechar' });
+  abrirConfirmacaoSistema({ title:'Modelo fixo de checklist', subtitle:'Uma biblioteca reutilizável por loja', body:'<p>O modelo guarda somente o nome da atividade.</p><p>A orientação é preenchida em cada programação, permitindo instruções diferentes por turno.</p>', confirmText:'Entendi', cancelText:'Fechar' });
 }
