@@ -161,6 +161,24 @@ function definirHorarioLancamentoTarefa(tarefaId, valor) {
   horarioLancamentoPorTarefa[idTarefa] = hora;
 }
 
+function obterHorarioFimLancamentoSelecionado(tarefaId, horarioPadrao = '') {
+  const idTarefa = String(tarefaId || '');
+  const sobrescrito = horarioFimLancamentoPorTarefa[idTarefa];
+  if (sobrescrito) return String(sobrescrito);
+  return horaCurta(horarioPadrao || '');
+}
+
+function definirHorarioFimLancamentoTarefa(tarefaId, valor) {
+  const idTarefa = String(tarefaId || '');
+  if (!idTarefa) return;
+  const hora = horaCurta(valor || '');
+  if (!hora) {
+    delete horarioFimLancamentoPorTarefa[idTarefa];
+    return;
+  }
+  horarioFimLancamentoPorTarefa[idTarefa] = hora;
+}
+
 // ─── Repetição: dias entre relançamento (intervalo) e duração (se repete por dias) ───
 function obterIntervaloLancamentoTarefa(tarefaId) {
   const idTarefa = String(tarefaId || '');
@@ -423,15 +441,16 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
       </label>
     `).join('');
 
-  const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_limite || '');
+  const horarioSelecionado = obterHorarioLancamentoSelecionado(tarefa.id, tarefa.horario_inicio || tarefa.horario_limite || '');
+  const horarioFimSelecionado = obterHorarioFimLancamentoSelecionado(tarefa.id, tarefa.horario_fim || '');
   const botaoLancarDesktop = tarefa.ativo
     ? `<div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-lancar">
-         <button class="btn btn-sm btn-lancar-desktop-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', '${funcionarioPadraoAtivo}'), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+         <button class="btn btn-sm btn-lancar-desktop-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', '${funcionarioPadraoAtivo}'), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_inicio || tarefa.horario_limite || ''}'), obterHorarioFimLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_fim || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
        </div>`
     : '';
   const botaoLancarMobile = tarefa.ativo
     ? `<div class="tarefa-lancar-mobile-wrap">
-         <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', '${funcionarioPadraoAtivo}'), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_limite || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
+         <button class="btn btn-sm btn-lancar-mobile-destaque" type="button" title="${tarefa.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${tarefaIdEscapado}', obterFuncionarioLancamentoSelecionado('${tarefaIdEscapado}', '${funcionarioPadraoAtivo}'), obterHorarioLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_inicio || tarefa.horario_limite || ''}'), obterHorarioFimLancamentoSelecionado('${tarefaIdEscapado}', '${tarefa.horario_fim || ''}'), obterDiasLancamentoSelecionadosTexto('${tarefaIdEscapado}', '${tarefa.dias_semana || 'todos'}'))">Lançar</button>
        </div>`
     : '';
   return `
@@ -479,12 +498,21 @@ function renderizarSelecaoFuncionariosLancamento(tarefa) {
           </div>
         </div>
         <div class="tarefa-lancamento-bloco tarefa-lancamento-bloco-horario">
-          <span class="tarefa-funcionarios-label">Hora</span>
+          <span class="tarefa-funcionarios-label">Horários</span>
           <label class="tarefa-lancamento-horario">
+            <span>Início</span>
             <input
               type="time"
               value="${escaparHtmlBasico(horarioSelecionado)}"
               onchange="definirHorarioLancamentoTarefa('${tarefaIdEscapado}', this.value)"
+            >
+          </label>
+          <label class="tarefa-lancamento-horario">
+            <span>Fim</span>
+            <input
+              type="time"
+              value="${escaparHtmlBasico(horarioFimSelecionado)}"
+              onchange="definirHorarioFimLancamentoTarefa('${tarefaIdEscapado}', this.value)"
             >
           </label>
         </div>
@@ -866,7 +894,7 @@ function renderizarCardTarefaCadastrada(t) {
         </div>
         <div class="item-actions tarefa-cadastrada-actions">
           <button class="btn btn-ghost btn-sm btn-fav-star ${favorita ? '' : 'inativo'}" type="button" title="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" onclick="toggleFavoritaTarefa('${t.id}')">${favorita ? '★' : '☆'}</button>
-          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', ''), obterHorarioLancamentoSelecionado('${t.id}', ''), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
+          ${t.ativo ? `<button class="btn btn-amber btn-sm" title="${t.lancada_checklist === true ? 'Lançar tarefa novamente' : 'Lançar tarefa'}" onclick="lancarTarefa('${t.id}', obterFuncionarioLancamentoSelecionado('${t.id}', ''), obterHorarioLancamentoSelecionado('${t.id}', ''), obterHorarioFimLancamentoSelecionado('${t.id}', ''), obterDiasLancamentoSelecionadosTexto('${t.id}', '${t.dias_semana || 'todos'}'))">Lançar</button>` : ''}
           <button class="btn btn-red btn-sm btn-excluir-x" title="Excluir tarefa" aria-label="Excluir tarefa" onclick="excluirTarefa('${t.id}')">×</button>
         </div>
       </div>
@@ -1144,7 +1172,7 @@ async function carregarChecklistsTarefas() {
   try {
     let queryLancTarefas = sb
       .from('checklist_lancamentos')
-      .select('id, nome, descricao, horario_limite, funcionario_id, status, lancado_em, data_programada, criado_por_nome, observacao_lancamento')
+      .select('id, nome, descricao, horario_limite, horario_inicio, horario_fim, funcionario_id, status, lancado_em, data_programada, criado_por_nome, observacao_lancamento')
       .order('lancado_em', { ascending: false })
       .limit(300);
     queryLancTarefas = aplicarFiltroLojaGenericoQuery(queryLancTarefas); // isolamento multi-loja
@@ -1246,7 +1274,8 @@ function aplicarFiltroListaChecklistsLancados() {
         <div class="item-nome">${c.nome}</div>
         <div class="item-detalhe">Funcionário: ${checklistsLancadosFuncionariosMap[String(c.funcionario_id)] || '-'}</div>
         <div class="item-detalhe">Agendado para: ${formatarDataProgramadaBr(obterDataProgramadaLancamento(c))}</div>
-        <div class="item-detalhe">Horário: ${c.horario_limite || '-'}</div>
+        <div class="item-detalhe">Início previsto: ${horaCurta(c.horario_inicio || c.horario_limite) || '-'}</div>
+        <div class="item-detalhe">Fim previsto: ${horaCurta(c.horario_fim) || '-'}</div>
         <div class="item-detalhe">${c.descricao || 'Checklist lançado no sistema.'}</div>
         <div class="item-detalhe">Lançado em: ${c.lancado_em ? fmtDate(c.lancado_em) : '-'}</div>
         <div class="item-detalhe">Por: ${c.criado_por_nome || 'Sistema'}</div>
@@ -1735,7 +1764,7 @@ function montarHtmlConflitosLancamentoManual(conflitos = [], funcionarioNome = '
   `;
 }
 
-async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '', diasSemanaOverride = '') {
+async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = '', horarioFimOverride = '', diasSemanaOverride = '') {
   if (!tarefasDisponiveis) {
     setMsg('msgTarefas', 'Recurso de tarefas indisponível. A tabela "tarefas" não existe no Supabase.', 'err');
     return;
@@ -1781,6 +1810,19 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     abrirConfigLancamentoTarefa(id);
     setMsg('msgTarefas', 'Defina o horário nas opções de lançamento antes de lançar.', 'err');
     setMsgLancamentoTarefa(id, 'Informe o horário no card da tarefa antes de lançar.', 'err');
+    return;
+  }
+  const horarioFimSelecionado = horaCurta(horarioFimOverride || '');
+  if (!horarioFimSelecionado) {
+    abrirConfigLancamentoTarefa(id);
+    setMsg('msgTarefas', 'Defina o horário de fim nas opções de programação.', 'err');
+    setMsgLancamentoTarefa(id, 'Informe o horário de fim antes de programar.', 'err');
+    return;
+  }
+  if (horarioFimSelecionado === horarioSelecionado) {
+    abrirConfigLancamentoTarefa(id);
+    setMsg('msgTarefas', 'Horário de início e horário de fim precisam ser diferentes.', 'err');
+    setMsgLancamentoTarefa(id, 'Defina uma janela real entre o início e o fim.', 'err');
     return;
   }
 
@@ -1834,7 +1876,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   const atorAuditoria = obterAtorAuditoriaAtual();
 
   const consultarLancamentosExistentes = async (comCreatedAt = true, comStatus = true) => {
-    const camposBase = comCreatedAt ? ['id', 'lancado_em', 'created_at', 'data_programada', 'horario_limite'] : ['id', 'lancado_em', 'horario_limite'];
+    const camposBase = comCreatedAt ? ['id', 'lancado_em', 'created_at', 'data_programada', 'horario_limite', 'horario_inicio', 'horario_fim'] : ['id', 'lancado_em', 'horario_limite', 'horario_inicio', 'horario_fim'];
     const campos = [...camposBase, ...(comStatus ? ['status'] : [])].join(', ');
     const { data, error } = await sb
       .from('checklist_lancamentos')
@@ -1906,6 +1948,8 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       nome: tarefa.nome,
       descricao: tarefa.descricao || null,
       horario_limite: horarioSelecionado || null,
+      horario_inicio: horarioSelecionado,
+      horario_fim: horarioFimSelecionado,
       dias_semana: diasLancamento || 'todos',
       data_programada: dataIsoLocal,
       lancado_em: agoraIso,
@@ -2011,7 +2055,25 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     }
   }
 
-  const { data: lancamentosCriados, error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite');
+  const confirmacaoProgramacao = await abrirConfirmacaoSistema({
+    title: 'Conferir programação do checklist',
+    subtitle: tarefa.nome,
+    body: `<p><strong>Funcionário:</strong> ${escaparHtmlBasico(funcionarioTurno?.nome || '-')}</p>
+      <p><strong>Início previsto:</strong> ${escaparHtmlBasico(horarioSelecionado)}</p>
+      <p><strong>Fim previsto:</strong> ${escaparHtmlBasico(horarioFimSelecionado)}${horarioParaMinutos(horarioFimSelecionado) <= horarioParaMinutos(horarioSelecionado) ? ' (dia seguinte)' : ''}</p>
+      <p><strong>Ocorrências:</strong> ${lancamentosParaCriar.length}</p>`,
+    confirmText: 'Confirmar programação',
+    confirmClass: 'btn-green',
+    cancelText: 'Voltar e ajustar',
+    cancelClass: 'btn-ghost',
+  });
+  if (!confirmacaoProgramacao?.confirmado) {
+    abrirConfigLancamentoTarefa(id);
+    setMsgLancamentoTarefa(id, 'Programação não salva. Ajuste os dados e confirme novamente.', 'ok');
+    return;
+  }
+
+  const { data: lancamentosCriados, error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite, horario_inicio, horario_fim');
 
   if (error) {
     if (isMissingLancamentosTableError(error)) {

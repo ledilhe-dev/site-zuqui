@@ -14,9 +14,9 @@ async function montarContextoExecucoes(rows = [], dataRef = hoje()) {
       ? sb.from('tarefas').select('id, nome, descricao, horario_limite, checklist_id').in('id', tarefaIds)
       : Promise.resolve({ data: [], error: null }),
     lancamentoIds.length
-      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, lancado_em, status, data_programada').in('id', lancamentoIds)
+      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, horario_inicio, horario_fim, lancado_em, status, data_programada').in('id', lancamentoIds)
       : tarefaIds.length
-      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, lancado_em, status, data_programada').in('tarefa_id', tarefaIds)
+      ? sb.from('checklist_lancamentos').select('id, tarefa_id, nome, horario_limite, horario_inicio, horario_fim, lancado_em, status, data_programada').in('tarefa_id', tarefaIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -336,7 +336,8 @@ async function carregarExecucoes() {
       const nomeResponsavel = funcionariosMap[String(e.funcionario_id)] || '-';
       const nomeOperadorInicio = funcionariosMap[String(e.usuario_inicio_id)] || '-';
       const nomeOperadorFim = funcionariosMap[String(e.usuario_fim_id)] || '-';
-      const horarioPrevisto = horaCurta(tarefa?.horario_limite || lancamento?.horario_limite) || '-';
+      const horarioInicioPrevisto = horaCurta(lancamento?.horario_inicio || lancamento?.horario_limite || tarefa?.horario_limite) || '-';
+      const horarioFimPrevisto = horaCurta(lancamento?.horario_fim) || '-';
       const horarioInicio = fmtDate(e.inicio_confirmado_em || e.iniciado_em);
       const horarioFinalizacao = fmtDate(e.finalizacao_confirmada_em || e.finalizado_em);
       const statusTexto = e.status === 'pausado' ? 'Pausado' : e.status === 'finalizado' ? 'Finalizado' : 'Em andamento';
@@ -346,7 +347,8 @@ async function carregarExecucoes() {
       <div class="item-info">
         <div class="item-nome">${nomeExecucao}</div>
         <div class="item-detalhe">Responsável principal: ${nomeResponsavel}</div>
-        <div class="item-detalhe">Horário previsto para iniciar: ${horarioPrevisto}</div>
+        <div class="item-detalhe">Início previsto: ${horarioInicioPrevisto}</div>
+        <div class="item-detalhe">Fim previsto: ${horarioFimPrevisto}</div>
         <div class="item-detalhe">Operador que iniciou: ${nomeOperadorInicio} · ${horarioInicio}</div>
         <div class="item-detalhe">Operador que finalizou: ${nomeOperadorFim} · ${horarioFinalizacao}</div>
         <div class="item-detalhe">Status: ${statusTexto}</div>
@@ -385,7 +387,7 @@ async function carregarTarefasAtrasoMaster() {
     const carregarLancamentosPendentesAtraso = async () => {
       let consultaCompletaQuery = sb
         .from('checklist_lancamentos')
-        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, created_at, data_programada')
+        .select('id, nome, horario_limite, horario_inicio, horario_fim, dias_semana, funcionario_id, checklist_id, lancado_em, created_at, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
       consultaCompletaQuery = aplicarFiltroLojaGenericoQuery(consultaCompletaQuery); // isolamento multi-loja
@@ -400,7 +402,7 @@ async function carregarTarefasAtrasoMaster() {
 
       let consultaFallbackQuery = sb
         .from('checklist_lancamentos')
-        .select('id, nome, horario_limite, dias_semana, funcionario_id, checklist_id, lancado_em, data_programada')
+        .select('id, nome, horario_limite, horario_inicio, horario_fim, dias_semana, funcionario_id, checklist_id, lancado_em, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
       consultaFallbackQuery = aplicarFiltroLojaGenericoQuery(consultaFallbackQuery); // isolamento multi-loja
@@ -453,7 +455,7 @@ async function carregarTarefasAtrasoMaster() {
     if (lancamentosIdsExecucao.length) {
       const lancamentosRes = await sb
         .from('checklist_lancamentos')
-        .select('id, horario_limite')
+        .select('id, horario_limite, horario_inicio, horario_fim, data_programada')
         .in('id', lancamentosIdsExecucao);
       if (lancamentosRes.error && !isMissingLancamentosTableError(lancamentosRes.error)) throw lancamentosRes.error;
       lancamentosMap = Object.fromEntries((lancamentosRes.data || []).map(item => [String(item.id), item]));
@@ -469,25 +471,28 @@ async function carregarTarefasAtrasoMaster() {
       if (!tarefaDisponivelHoje(item.dias_semana)) return false;
       if (lancamentosComExecucaoAtivaIds.has(String(item.id || ''))) return false;
       if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
-      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+      const prazo = obterContextoPrazo(item.horario_inicio || item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       return prazo.vencido;
     }).map(item => ({
       tipo: 'nao_iniciado',
       id: item.id,
       nome: checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist',
       responsavel: funcionariosMap[String(item.funcionario_id)] || 'Sem responsável',
-      horario: horaCurta(item.horario_limite) || '-',
+      horario: horaCurta(item.horario_inicio || item.horario_limite) || '-',
       dataProgramada: formatarDataProgramadaBr(obterDataProgramadaLancamento(item)),
       detalhe: 'Não iniciado no prazo',
       page: 'checklists',
     }));
 
-    const execucoesAtrasadas = (execucoesRes.data || []).filter(item => execucaoPrecisaLembreteFinalizacao(item)).map(item => ({
+    const execucoesAtrasadas = (execucoesRes.data || []).filter(item => execucaoPrecisaLembreteFinalizacao({
+      ...item,
+      ...(lancamentosMap[String(item.lancamento_id)] || {}),
+    })).map(item => ({
       tipo: 'nao_finalizado',
       id: item.id,
       nome: tarefasMap[String(item.tarefa_id)]?.nome || checklistsMap[String(item.checklist_id)] || 'Checklist',
       responsavel: funcionariosMap[String(item.funcionario_id)] || 'Sem responsável',
-      horario: horaCurta(tarefasMap[String(item.tarefa_id)]?.horario_limite || lancamentosMap[String(item.lancamento_id)]?.horario_limite) || '-',
+      horario: horaCurta(lancamentosMap[String(item.lancamento_id)]?.horario_fim) || '-',
       dataProgramada: formatarDataProgramadaBr(item.data_execucao || hoje()),
       detalhe: item.status === 'pausado' ? 'Pausado sem finalização' : 'Aberto sem finalização',
       page: 'execucoes',
@@ -629,7 +634,6 @@ async function finalizarExecucaoDireta(id) {
     console.warn('Não foi possível relançar a tarefa para a próxima semana:', erroRelancamento);
   }
 
-  await enviarEmailChecklistFinalizado(id);
   pararSomNotificacao();
   carregarExecucoes();
   carregarChecklists();
@@ -755,13 +759,14 @@ async function abrirModal(execId) {
     const tarefa = tarefasMap[String(exec.tarefa_id)] || null;
     const lancamento = lancamentosMap[String(exec.lancamento_id)] || lancamentosMap[String(exec.tarefa_id)] || null;
     const nomeExecucao = tarefa?.nome || lancamento?.nome || checklistsMap[String(exec.checklist_id)] || 'Checklist';
-    const horarioPrevisto = horaCurta(tarefa?.horario_limite || lancamento?.horario_limite) || '-';
+    const horarioInicioPrevisto = horaCurta(lancamento?.horario_inicio || lancamento?.horario_limite || tarefa?.horario_limite) || '-';
+    const horarioFimPrevisto = horaCurta(lancamento?.horario_fim) || '-';
     const nomeResponsavel = funcionariosMap[String(exec.funcionario_id)] || '-';
     const nomeOperadorInicio = funcionariosMap[String(exec.usuario_inicio_id)] || '-';
     const nomeOperadorFim = funcionariosMap[String(exec.usuario_fim_id)] || '-';
 
     document.getElementById('modalTitle').textContent = nomeExecucao;
-    document.getElementById('modalSubtitle').textContent = `Responsável: ${nomeResponsavel} · Previsto: ${horarioPrevisto} · Iniciado por: ${nomeOperadorInicio}${exec.finalizado_em || exec.finalizacao_confirmada_em ? ' · Finalizado por: ' + nomeOperadorFim : ''} · ${exec.status === 'finalizado' ? 'Finalizado' : 'Em andamento'}`;
+    document.getElementById('modalSubtitle').textContent = `Responsável: ${nomeResponsavel} · Início previsto: ${horarioInicioPrevisto} · Fim previsto: ${horarioFimPrevisto} · Iniciado por: ${nomeOperadorInicio}${exec.finalizado_em || exec.finalizacao_confirmada_em ? ' · Finalizado por: ' + nomeOperadorFim : ''} · ${exec.status === 'finalizado' ? 'Finalizado' : 'Em andamento'}`;
     document.getElementById('btnFinalizar').style.display = exec.status === 'finalizado' ? 'none' : '';
   }
 
@@ -937,7 +942,6 @@ async function finalizarExecucao() {
     console.warn('Não foi possível relançar a tarefa para a próxima semana:', erroRelancamento);
   }
 
-  await enviarEmailChecklistFinalizado(execucaoAtualId);
 
   pararSomNotificacao();
   fecharModal();

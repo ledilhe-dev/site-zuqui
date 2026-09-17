@@ -4,18 +4,19 @@ function obterAvisoDiscretoChecklist(lancamento = {}) {
   if (!lancamentoProgramadoHoje(lancamento)) return null;
   if (lancamentoFoiCriadoAposHorarioNoMesmoDia(lancamento)) return null;
 
-  const prazo = obterContextoPrazo(lancamento.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+  const horarioInicio = lancamento.horario_inicio || lancamento.horario_limite;
+  const prazo = obterContextoPrazo(horarioInicio, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
   if (prazo.vencido) {
     return {
       classe: 'atrasado',
-      texto: `Prazo vencido${horaCurta(lancamento.horario_limite) ? ` desde ${horaCurta(lancamento.horario_limite)}` : ''}`,
+      texto: `Início atrasado${horaCurta(horarioInicio) ? ` desde ${horaCurta(horarioInicio)}` : ''}`,
     };
   }
   if (prazo.ativo || lancamentoRecemCriadoParaAlerta(lancamento)) {
     return {
       classe: '',
-      texto: horaCurta(lancamento.horario_limite)
-        ? `Atenção ao prazo: ${horaCurta(lancamento.horario_limite)}`
+      texto: horaCurta(horarioInicio)
+        ? `Atenção ao início: ${horaCurta(horarioInicio)}`
         : 'Checklist pendente',
     };
   }
@@ -94,8 +95,8 @@ async function carregarChecklists(opcoes = {}) {
     const dataA = String(obterDataProgramadaLancamento(a) || '').trim();
     const dataB = String(obterDataProgramadaLancamento(b) || '').trim();
     if (dataA !== dataB) return dataA.localeCompare(dataB);
-    const horaA = String(horaCurta(a?.horario_limite || '') || '99:99');
-    const horaB = String(horaCurta(b?.horario_limite || '') || '99:99');
+    const horaA = String(horaCurta(a?.horario_inicio || a?.horario_limite || '') || '99:99');
+    const horaB = String(horaCurta(b?.horario_inicio || b?.horario_limite || '') || '99:99');
     if (horaA !== horaB) return horaA.localeCompare(horaB);
     return String(a?.nome || '').localeCompare(String(b?.nome || ''), 'pt-BR');
   };
@@ -158,7 +159,8 @@ async function carregarChecklists(opcoes = {}) {
         ${t.descricao ? `<div class="item-detalhe">${t.descricao}</div>` : ''}
         <ul class="checklist-meta">
           <li>Data programada: ${formatarDataProgramadaBr(dataProgramada)}</li>
-          ${t.horario_limite ? `<li style="color:var(--amber)">Prazo máximo: ${t.horario_limite}</li>` : ''}
+          <li style="color:var(--amber)">Início previsto: ${horaCurta(t.horario_inicio || t.horario_limite) || '-'}</li>
+          <li style="color:var(--amber)">Fim previsto: ${horaCurta(t.horario_fim) || '-'}</li>
         </ul>
       </div>
       <div class="checklist-dia-semana-destaque">${escaparHtmlBasico(diaSemanaProgramado)}</div>
@@ -197,7 +199,7 @@ async function carregarChecklists(opcoes = {}) {
 
   const rowsFuturosFiltrados = rowsFuturos.filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
-    const horaReferencia = horaCurta(t?.horario_limite || '');
+    const horaReferencia = horaCurta(t?.horario_inicio || t?.horario_limite || '');
     const nomeFuncionario = normalizarTextoComparacao(funcionariosMap[String(t.funcionario_id)] || '');
     const nomeTarefa = normalizarTextoComparacao(t?.nome || '');
     if (filtroProximaData && dataReferencia !== filtroProximaData) return false;
