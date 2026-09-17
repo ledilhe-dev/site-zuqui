@@ -34,7 +34,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.53-checklists-cadastrados">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.54-permissoes-edicao-checklist">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -2704,6 +2704,32 @@
   </div>
 </div>
 
+<div class="overlay" id="editarProgramacaoChecklistOverlay">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div>
+        <h3>Editar tarefa programada</h3>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">As alterações serão aplicadas somente às ocorrências pendentes.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharEdicaoProgramacaoChecklist()">X Fechar</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <label>Nome da tarefa<input id="editarProgramacaoChecklistNome" type="text" maxlength="180"></label>
+      <label>Orientação desta tarefa<textarea id="editarProgramacaoChecklistDescricao" rows="4" maxlength="2000"></textarea></label>
+      <label>Funcionário responsável<select id="editarProgramacaoChecklistFuncionario"></select></label>
+      <div class="form-row">
+        <label style="flex:1">Horário para início<input id="editarProgramacaoChecklistInicio" type="time" required></label>
+        <label style="flex:1">Horário para fim<input id="editarProgramacaoChecklistFim" type="time" required></label>
+      </div>
+      <div class="msg" id="msgEditarProgramacaoChecklist"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" type="button" onclick="fecharEdicaoProgramacaoChecklist()">Cancelar</button>
+      <button class="btn btn-green" id="btnSalvarEdicaoProgramacaoChecklist" type="button" onclick="salvarEdicaoProgramacaoChecklist()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="pinActionOverlay">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
@@ -3334,11 +3360,11 @@
 </div>
 
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
-<script src="./assets/js/01-core-supabase.js?v=3.2.53-checklists-cadastrados"></script>
+<script src="./assets/js/01-core-supabase.js?v=3.2.54-permissoes-edicao-checklist"></script>
 <script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js?v=20260815-global-admin-v1"></script>
-<script src="./assets/js/04-navigation.js?v=3.2.53-checklists-cadastrados"></script>
-<script src="./assets/js/05-shared-helpers.js?v=3.2.53-checklists-cadastrados"></script>
+<script src="./assets/js/03-core-state.js?v=3.2.54-permissoes-edicao-checklist"></script>
+<script src="./assets/js/04-navigation.js?v=3.2.54-permissoes-edicao-checklist"></script>
+<script src="./assets/js/05-shared-helpers.js?v=3.2.54-permissoes-edicao-checklist"></script>
 <script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.42"></script>
 <script src="./assets/js/20-checklists.js"></script>
@@ -3360,11 +3386,11 @@
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js"></script>
-<script src="./assets/js/50-tasks.js?v=3.2.53-checklists-cadastrados"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.54-permissoes-edicao-checklist"></script>
 <script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
-<script src="./assets/js/52-checklist-models.js?v=3.2.53-checklists-cadastrados"></script>
+<script src="./assets/js/52-checklist-models.js?v=3.2.54-permissoes-edicao-checklist"></script>
 <script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
-<script src="./assets/js/70-reports.js?v=3.2.53-checklists-cadastrados"></script>
+<script src="./assets/js/70-reports.js?v=3.2.54-permissoes-edicao-checklist"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>

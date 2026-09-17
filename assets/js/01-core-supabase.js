@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.53';
-const APP_VERSION_LABEL = '3.2.53-checklists-cadastrados';
+const APP_VERSION = '3.2.54';
+const APP_VERSION_LABEL = '3.2.54-permissoes-edicao-checklist';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
