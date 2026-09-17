@@ -705,6 +705,12 @@ async function salvarDadosLojaAtualEmLojas(payloadConfig = {}) {
 }
 
 async function carregarConfiguracoesLoja() {
+  const campoEmailChecklist = document.getElementById('configEnviarEmailLembrete');
+  if (campoEmailChecklist) {
+    campoEmailChecklist.checked = false;
+    const containerEmailChecklist = campoEmailChecklist.closest('label');
+    if (containerEmailChecklist) containerEmailChecklist.style.display = 'none';
+  }
   aplicarVisibilidadeConfiguracoesLoja();
   const resultado = await obterConfiguracoesLoja();
   if (resultado.missing) {
@@ -717,7 +723,6 @@ async function carregarConfiguracoesLoja() {
     document.getElementById('configHorarioFechamento').value = '20:00';
     document.getElementById('configHorarioLancamento').value = '';
     document.getElementById('configHorarioLembrete').value = '';
-    document.getElementById('configEnviarEmailLembrete').checked = false;
     return;
   }
 
@@ -732,7 +737,6 @@ async function carregarConfiguracoesLoja() {
   document.getElementById('configHorarioFechamento').value = cfg.horario_fechamento || '20:00';
   document.getElementById('configHorarioLancamento').value = cfg.horario_lancamento_checklist || '';
   document.getElementById('configHorarioLembrete').value = cfg.horario_lembrete_checklist || '';
-  document.getElementById('configEnviarEmailLembrete').checked = !!cfg.enviar_email_lembrete;
   setMsg('msgConfiguracoes', '', '');
 }
 
@@ -745,7 +749,6 @@ async function salvarConfiguracoesLoja() {
   const horarioFechamento = document.getElementById('configHorarioFechamento').value || '20:00';
   const horarioLancamento = document.getElementById('configHorarioLancamento').value || null;
   const horarioLembrete = document.getElementById('configHorarioLembrete').value || null;
-  const enviarEmail = !!document.getElementById('configEnviarEmailLembrete').checked;
 
   if (!cidadeLoja || !estadoLoja) {
     setMsg('msgConfiguracoes', 'Cidade e estado são obrigatórios para o calendário de feriados funcionar corretamente.', 'err');
@@ -767,7 +770,6 @@ async function salvarConfiguracoesLoja() {
     horario_fechamento: horarioFechamento,
     horario_lancamento_checklist: horarioLancamento,
     horario_lembrete_checklist: horarioLembrete,
-    enviar_email_lembrete: enviarEmail,
   };
 
   const query = resultado.data?.id

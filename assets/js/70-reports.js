@@ -48,7 +48,7 @@ async function carregarRelatorioTarefasCadastradas() {
 
     // Lançamentos (fonte da repetição, datas e quem lançou).
     let queryLanc = sb.from('checklist_lancamentos')
-      .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
+      .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, horario_inicio, horario_fim, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
       .order('data_programada', { ascending: true })
       .limit(5000);
     if (lojaAtual) queryLanc = queryLanc.eq('loja_id', lojaAtual);
@@ -114,7 +114,8 @@ async function carregarRelatorioTarefasCadastradas() {
         totalDias: duracaoConfigurada,
         qtdLancamentos: lancs.length,
         repeticaoTexto,
-        horario: primeiroLanc?.horario_limite || '',
+        horarioInicio: primeiroLanc?.horario_inicio || primeiroLanc?.horario_limite || '',
+        horarioFim: primeiroLanc?.horario_fim || '',
       };
     };
 
@@ -160,7 +161,7 @@ async function carregarRelatorioTarefasCadastradas() {
           <div class="item-detalhe">Cadastrado por: ${escaparHtmlBasico(l.cadastradoPor)} · ${l.cadastradoEm ? fmtDate(l.cadastradoEm) : '—'}</div>
           <div class="item-detalhe">Período: ${l.inicio ? formatarDataProgramadaBr(l.inicio) : '—'} até ${l.fim ? formatarDataProgramadaBr(l.fim) : '—'}</div>
           <div class="item-detalhe">Regra de dias: ${escaparHtmlBasico(formatarDias(l.diasSemana))}</div>
-          <div class="item-detalhe">Repetição: ${escaparHtmlBasico(l.repeticaoTexto)}${l.horario ? ` · horário ${escaparHtmlBasico(horaCurta(l.horario))}` : ''}</div>
+          <div class="item-detalhe">Repetição: ${escaparHtmlBasico(l.repeticaoTexto)}${l.horarioInicio ? ` · início ${escaparHtmlBasico(horaCurta(l.horarioInicio))}` : ''}${l.horarioFim ? ` · fim ${escaparHtmlBasico(horaCurta(l.horarioFim))}` : ''}</div>
         </div>
         <div class="item-actions">
           <span class="tag ${l.qtdLancamentos ? 'tag-green' : 'tag-amber'}">${l.qtdLancamentos ? l.qtdLancamentos + ' lançamento(s)' : 'Sem lançamento'}</span>
@@ -377,7 +378,8 @@ function resumirEventosRelatorioLancamentos(eventos = [], contexto = {}) {
       observacao: observacaoRelatorio,
       responsavel: funcionariosMap[String(grupo.funcionario_responsavel_id)] || 'Sem responsável',
       dataProgramada: grupo.data_programada || lancamento?.data_programada || ultimoEvento.data_programada || '',
-      horarioProgramado: horaCurta(grupo.horario_programado || lancamento?.horario_limite || '') || '-',
+      horarioInicioProgramado: horaCurta(lancamento?.horario_inicio || grupo.horario_programado || lancamento?.horario_limite || '') || '-',
+      horarioFimProgramado: horaCurta(lancamento?.horario_fim || '') || '-',
       status: statusBase,
       statusTexto: statusBase === 'finalizado' ? 'Finalizado' : statusBase === 'iniciado' ? 'Iniciado' : statusBase === 'pendente' ? 'Pendente' : tituloEventoLancamento(statusBase),
       lancadoEm: eventoLancado?.registrado_em || lancamento?.lancado_em || '',
@@ -590,7 +592,7 @@ async function carregarRelatorioLancamentos(opcoes = {}) {
     if (lancamentoIds.length) {
       const { data: lancamentosData, error: lancamentosError } = await sb
         .from('checklist_lancamentos')
-        .select('id, nome, descricao, status, data_programada, horario_limite, lancado_em, criado_por_nome, observacao_lancamento')
+        .select('id, nome, descricao, status, data_programada, horario_limite, horario_inicio, horario_fim, lancado_em, criado_por_nome, observacao_lancamento')
         .in('id', lancamentoIds);
       if (lancamentosError && !isMissingLancamentosTableError(lancamentosError)) throw lancamentosError;
       lancamentosMap = Object.fromEntries((lancamentosData || []).map(item => [String(item.id), item]));
@@ -678,7 +680,7 @@ async function carregarRelatorioLancamentos(opcoes = {}) {
                 ${item.observacao ? `<div class="item-detalhe">Observação: ${escaparHtmlBasico(item.observacao)}</div>` : ''}
                 ${item.descricao ? `<div class="item-detalhe">${escaparHtmlBasico(item.descricao)}</div>` : ''}
                 <div class="item-detalhe">Responsável: ${escaparHtmlBasico(item.responsavel)}</div>
-                <div class="item-detalhe">Agendado para: ${escaparHtmlBasico(dataProgramada)} · Horário: ${escaparHtmlBasico(item.horarioProgramado)}</div>
+                <div class="item-detalhe">Agendado para: ${escaparHtmlBasico(dataProgramada)} · Início: ${escaparHtmlBasico(item.horarioInicioProgramado)} · Fim: ${escaparHtmlBasico(item.horarioFimProgramado)}</div>
                 <div class="item-detalhe">Lançado pelo usuário: ${escaparHtmlBasico(item.lancadoPor || '-')} ${item.lancadoEm ? `· ${escaparHtmlBasico(fmtDate(item.lancadoEm))}` : ''}</div>
                 <div class="item-detalhe">Iniciado pelo usuário: ${escaparHtmlBasico(item.iniciadoPor || '-')} ${item.iniciadoEm ? `· ${escaparHtmlBasico(fmtDate(item.iniciadoEm))}` : ''}</div>
                 <div class="item-detalhe">Finalizado pelo usuário: ${escaparHtmlBasico(item.finalizadoPor || '-')} ${item.finalizadoEm ? `· ${escaparHtmlBasico(fmtDate(item.finalizadoEm))}` : ''}</div>

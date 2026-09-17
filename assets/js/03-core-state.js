@@ -7,6 +7,7 @@ let checklistReferenciaEmEdicaoId = null;
 let funcionariosAtivosTarefa = [];
 let selecaoFuncionarioLancamentoPorTarefa = {};
 let horarioLancamentoPorTarefa = {};
+let horarioFimLancamentoPorTarefa = {};
 let diasLancamentoPorTarefa = {};
 // Repetição do lançamento: intervalo (dias entre relançamento) e duração (se repete por X dias).
 let intervaloLancamentoPorTarefa = {};
@@ -152,7 +153,6 @@ const INTERVALO_ATUALIZACAO_CHECKLIST_MS = 10 * 60 * 1000; // Consumo otimizado:
 const INTERVALO_ATUALIZACAO_NOTIFICACOES_MS = 10 * 60 * 1000; // Consumo otimizado: sem consulta a cada 5s
 const INTERVALO_LEMBRETE_CHECKLIST_MS = 1 * 60 * 1000;
 const INTERVALO_LEMBRETE_TAREFA_ATRASADA_MS = 10 * 60 * 1000;
-const TEMPO_INICIO_ALERTA_EXECUCAO_MS = 60 * 60 * 1000;
 const INTERVALO_REPETICAO_ALERTA_EXECUCAO_MS = 10 * 60 * 1000;
 const ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS = 30;
 const JANELA_CONFLITO_LANCAMENTO_MANUAL_MINUTOS = 20;

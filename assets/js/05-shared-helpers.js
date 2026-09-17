@@ -3518,10 +3518,21 @@ function obterInicioExecucaoParaLembrete(item) {
   return item?.inicio_confirmado_em || null;
 }
 
+function obterPrazoFinalizacaoExecucao(item = {}) {
+  const dataProgramada = String(item.data_programada || '').slice(0, 10);
+  const horarioInicio = horaCurta(item.horario_inicio || item.horario_limite || '');
+  const horarioFim = horaCurta(item.horario_fim || '');
+  if (!dataProgramada || !horarioInicio || !horarioFim) return null;
+  const prazo = new Date(`${dataProgramada}T${horarioFim}:00`);
+  if (horarioParaMinutos(horarioFim) <= horarioParaMinutos(horarioInicio)) {
+    prazo.setDate(prazo.getDate() + 1);
+  }
+  return Number.isNaN(prazo.getTime()) ? null : prazo;
+}
+
 function execucaoPrecisaLembreteFinalizacao(item) {
-  const inicio = obterInicioExecucaoParaLembrete(item);
-  if (!inicio) return false;
-  return (Date.now() - new Date(inicio).getTime()) >= TEMPO_INICIO_ALERTA_EXECUCAO_MS;
+  const prazo = obterPrazoFinalizacaoExecucao(item);
+  return !!prazo && Date.now() >= prazo.getTime();
 }
 
 function formatarDuracaoDecorrida(dataIso) {
@@ -3840,14 +3851,14 @@ async function carregarNotificacoes() {
     const carregarLancamentosPendentes = async () => {
       const consultaBase = () => sb
         .from('checklist_lancamentos')
-        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em')
+        .select('id, tarefa_id, checklist_id, nome, horario_limite, horario_inicio, horario_fim, dias_semana, funcionario_id, status, lancado_em')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
 
       if (checklistLancamentosSuportaColunasAgendamento !== false) {
         const consultaCompleta = await sb
           .from('checklist_lancamentos')
-          .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, created_at, data_programada')
+          .select('id, tarefa_id, checklist_id, nome, horario_limite, horario_inicio, horario_fim, dias_semana, funcionario_id, status, lancado_em, created_at, data_programada')
           .eq('status', 'pendente')
           .order('lancado_em', { ascending: false });
 
@@ -3865,7 +3876,7 @@ async function carregarNotificacoes() {
 
       const consultaFallback = await sb
         .from('checklist_lancamentos')
-        .select('id, tarefa_id, checklist_id, nome, horario_limite, dias_semana, funcionario_id, status, lancado_em, data_programada')
+        .select('id, tarefa_id, checklist_id, nome, horario_limite, horario_inicio, horario_fim, dias_semana, funcionario_id, status, lancado_em, data_programada')
         .eq('status', 'pendente')
         .order('lancado_em', { ascending: false });
 
@@ -3948,7 +3959,7 @@ async function carregarNotificacoes() {
     if (lancamentoIdsExecucao.length) {
       const { data: lancamentosExecucaoData } = await sb
         .from('checklist_lancamentos')
-        .select('id, horario_limite')
+        .select('id, horario_limite, horario_inicio, horario_fim, data_programada')
         .in('id', lancamentoIdsExecucao);
       lancamentosExecucaoMap = Object.fromEntries((lancamentosExecucaoData || []).map(item => [String(item.id), item]));
     }
@@ -3981,7 +3992,7 @@ async function carregarNotificacoes() {
       }
       if (lancamentoJaPossuiExecucaoAtiva(item)) return false;
       if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
-      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+      const prazo = obterContextoPrazo(item.horario_inicio || item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       return (prazo.ativo && !prazo.vencido) || lancamentoRecemCriadoParaAlerta(item);
     });
 
@@ -3991,7 +4002,7 @@ async function carregarNotificacoes() {
       }
       if (lancamentoJaPossuiExecucaoAtiva(item)) return false;
       if (lancamentoFoiCriadoAposHorarioNoMesmoDia(item)) return false;
-      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+      const prazo = obterContextoPrazo(item.horario_inicio || item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       return prazo.ativo && prazo.vencido;
     });
 
@@ -4007,7 +4018,7 @@ async function carregarNotificacoes() {
 
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
-      const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+      const horarioProgramado = horaCurta(item.horario_inicio || item.horario_limite) || 'não informado';
       const dataProgramada = formatarDataNotificacaoLancamento(item);
       const resumoDataHora = montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado);
 
@@ -4029,10 +4040,10 @@ async function carregarNotificacoes() {
     lancamentosAtrasados.forEach(item => {
       if (!usuarioPodeVerNotificacaoChecklist()) return;
 
-      const prazo = obterContextoPrazo(item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
+      const prazo = obterContextoPrazo(item.horario_inicio || item.horario_limite, ANTECEDENCIA_ALERTA_CHECKLIST_MINUTOS);
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
-      const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+      const horarioProgramado = horaCurta(item.horario_inicio || item.horario_limite) || 'não informado';
       const dataProgramada = formatarDataNotificacaoLancamento(item);
       const resumoDataHora = montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado);
       const titulo = prazo.vencido ? 'Checklist não iniciado após o prazo' : 'Checklist não iniciado e próximo do prazo';
@@ -4060,21 +4071,6 @@ async function carregarNotificacoes() {
         },
       });
 
-      if (cfg?.data?.enviar_email_lembrete) {
-        alertasEmail.push({
-          chaveUnica: criarChaveAlerta('lancamento_atrasado', item.id),
-          tipo: 'lancamento_atrasado',
-          assunto,
-          mensagem,
-          meta: {
-            nome_checklist: nomeChecklist,
-            nome_funcionario: nomeFuncionario || null,
-            status_alerta: prazo.vencido ? 'nao_iniciado' : 'proximo_do_prazo',
-            horario_programado: horarioProgramado,
-            data_programada: dataProgramada,
-          },
-        });
-      }
     });
 
     lancamentosAgendadosParaProximoCiclo.forEach(item => {
@@ -4082,7 +4078,7 @@ async function carregarNotificacoes() {
 
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.nome || 'Checklist';
-      const horarioProgramado = horaCurta(item.horario_limite) || 'não informado';
+      const horarioProgramado = horaCurta(item.horario_inicio || item.horario_limite) || 'não informado';
       const dataProgramada = formatarDataNotificacaoLancamento(item);
       const resumoDataHora = montarResumoDataHoraNotificacao(dataProgramada, horarioProgramado);
 
@@ -4101,7 +4097,10 @@ async function carregarNotificacoes() {
       });
     });
 
-    const execucoesAtrasadas = (execucoesPendentes || []).filter(item => execucaoPrecisaLembreteFinalizacao(item));
+    const execucoesAtrasadas = (execucoesPendentes || []).filter(item => {
+      const programacao = lancamentosExecucaoMap[String(item.lancamento_id)] || {};
+      return execucaoPrecisaLembreteFinalizacao({ ...item, ...programacao });
+    });
 
     execucoesAtrasadas.forEach(item => {
       if (!usuarioPodeVerNotificacaoExecucao()) return;
@@ -4110,15 +4109,17 @@ async function carregarNotificacoes() {
       const tempoDecorrido = formatarDuracaoDecorrida(inicioReferencia);
       const nomeChecklist = checklistsMap[String(item.checklist_id)] || item.tarefas?.nome || 'Checklist';
       const nomeFuncionario = funcionariosMap[String(item.funcionario_id)] || '';
-      const horarioProgramado = horaCurta(item.tarefas?.horario_limite || lancamentosExecucaoMap[String(item.lancamento_id)]?.horario_limite) || 'não informado';
+      const programacao = lancamentosExecucaoMap[String(item.lancamento_id)] || {};
+      const horarioInicioProgramado = horaCurta(programacao.horario_inicio || programacao.horario_limite || item.tarefas?.horario_limite) || 'não informado';
+      const horarioFimProgramado = horaCurta(programacao.horario_fim) || 'não informado';
       const pausada = item.status === 'pausado';
       const titulo = pausada ? 'Checklist pausado sem finalização' : 'Checklist aberto sem finalização';
       const descricao = pausada
-        ? `${nomeChecklist} está pausado${nomeFuncionario ? ' por ' + nomeFuncionario : ''} há ${tempoDecorrido}. Horário previsto: ${horarioProgramado}.`
-        : `${nomeChecklist} ainda não foi concluído${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Já se passaram ${tempoDecorrido} desde o início. Horário previsto: ${horarioProgramado}.`;
+        ? `${nomeChecklist} está pausado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Fim previsto: ${horarioFimProgramado}.`
+        : `${nomeChecklist} ainda não foi concluído${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Fim previsto: ${horarioFimProgramado}.`;
       const mensagem = pausada
-        ? `${nomeChecklist} está pausado${nomeFuncionario ? ' por ' + nomeFuncionario : ''} há ${tempoDecorrido}. Horário previsto: ${horarioProgramado}.`
-        : `${nomeChecklist} ainda não foi concluído${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Já se passaram ${tempoDecorrido} desde o início. Horário previsto: ${horarioProgramado}.`;
+        ? `${nomeChecklist} está pausado${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Fim previsto: ${horarioFimProgramado}.`
+        : `${nomeChecklist} ainda não foi concluído${nomeFuncionario ? ' por ' + nomeFuncionario : ''}. Fim previsto: ${horarioFimProgramado}.`;
 
       itens.push({
         chave: criarChaveAlerta('execucao_atrasada', item.id),
@@ -4129,26 +4130,11 @@ async function carregarNotificacoes() {
         meta: {
           nomeTarefa: nomeChecklist,
           nomeFuncionario: nomeFuncionario || 'Sem responsável',
-          horarioProgramado,
+          horarioProgramado: horarioFimProgramado,
+          horarioInicioProgramado,
+          horarioFimProgramado,
         },
       });
-
-      if (cfg?.data?.enviar_email_lembrete) {
-        alertasEmail.push({
-          chaveUnica: criarChaveAlerta('execucao_atrasada', item.id),
-          tipo: 'execucao_atrasada',
-          assunto: `CHECK DIARIO: checklist após o prazo - ${nomeChecklist}`,
-          mensagem,
-          meta: {
-            nome_checklist: nomeChecklist,
-            nome_funcionario: nomeFuncionario || null,
-            status_alerta: item.status === 'pausado' ? 'nao_concluido' : 'em_andamento_atrasado',
-            horario_programado: horarioProgramado,
-            inicio_execucao: inicioReferencia,
-            tempo_decorrido: tempoDecorrido,
-          },
-        });
-      }
     });
 
     const horarioLembrete = cfg?.data?.horario_lembrete_checklist || '';
@@ -4180,33 +4166,12 @@ async function carregarNotificacoes() {
           tipo: 'lembrete_checklist',
           page: 'checklists',
           titulo: 'Lembrete de checklist',
-          descricao: `${pendentesHoje.length} checklist(s) aguardando início. Lembrete configurado para ${horarioLembrete.slice(0, 5)}.${cfg?.data?.enviar_email_lembrete ? ' O envio por e-mail está ativado.' : ''}`,
+          descricao: `${pendentesHoje.length} checklist(s) aguardando início. Lembrete configurado para ${horarioLembrete.slice(0, 5)}.`,
         });
 
-        if (cfg?.data?.enviar_email_lembrete) {
-          alertasEmail.push({
-            chaveUnica: criarChaveAlerta('lembrete_checklist', `pendentes-${pendentesHoje.length}`),
-            tipo: 'lembrete_checklist',
-            assunto: `CHECK DIARIO: ${pendentesHoje.length} checklist(s) aguardando inicio`,
-            mensagem: `${pendentesHoje.length} checklist(s) aguardando início. Horário de lembrete: ${horaCurta(horarioLembrete)}.`,
-            meta: {
-              quantidade_pendentes: pendentesHoje.length,
-              horario_lembrete: horarioLembrete,
-              data_execucao: hoje(),
-              checklist_ids: pendentesHoje.map(item => item.id),
-            },
-          });
-        }
       }
     }
 
-    if (alertasEmail.length) {
-      const destinatariosResultado = await obterDestinatariosEmailAtivos();
-      if (!destinatariosResultado.missing && destinatariosResultado.data.length) {
-        await Promise.all(alertasEmail.map(alerta => registrarAlertaEmail(alerta, destinatariosResultado.data)));
-        await processarFilaAlertasEmail();
-      }
-    }
   } catch (e) {}
 
   if (usuarioEhMasterNotificacoes()) {
