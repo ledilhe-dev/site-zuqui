@@ -99,11 +99,12 @@ async function excluirModeloChecklist(id) {
 function obterDadosAgendamentoFormulario() {
   const modeloId = String(document.getElementById('modeloChecklistAgendamento')?.value || '');
   const funcionarioId = String(document.getElementById('funcionarioTarefa')?.value || '');
-  const horario = horaCurta(document.getElementById('horarioChecklistAgendamento')?.value || '');
+  const horarioInicio = horaCurta(document.getElementById('horarioInicioChecklistAgendamento')?.value || '');
+  const horarioFim = horaCurta(document.getElementById('horarioFimChecklistAgendamento')?.value || '');
   const intervalo = Math.max(1, Math.min(365, parseInt(document.getElementById('intervaloChecklistAgendamento')?.value || '1', 10) || 1));
   const duracao = Math.max(1, Math.min(365, parseInt(document.getElementById('duracaoChecklistAgendamento')?.value || '7', 10) || 7));
   const dias = obterDiasSelecionados();
-  return { modeloId, funcionarioId, horario, intervalo, duracao, dias };
+  return { modeloId, funcionarioId, horarioInicio, horarioFim, intervalo, duracao, dias };
 }
 
 function abrirConferenciaAgendamentoChecklist() {
@@ -113,11 +114,13 @@ function abrirConferenciaAgendamentoChecklist() {
   if (!modelo) { setMsg('msgTarefas', 'Selecione o modelo da tarefa.', 'err'); return; }
   if (!funcionario) { setMsg('msgTarefas', 'Selecione o funcionário responsável.', 'err'); return; }
   if (!dados.dias.length) { setMsg('msgTarefas', 'Selecione ao menos um dia da semana.', 'err'); return; }
-  if (!dados.horario) { setMsg('msgTarefas', 'Informe o horário limite.', 'err'); return; }
+  if (!dados.horarioInicio) { setMsg('msgTarefas', 'Informe o horário para início.', 'err'); return; }
+  if (!dados.horarioFim) { setMsg('msgTarefas', 'Informe o horário para fim.', 'err'); return; }
+  if (dados.horarioInicio === dados.horarioFim) { setMsg('msgTarefas', 'Os horários de início e fim precisam ser diferentes.', 'err'); return; }
   conferenciaAgendamentoAtual = { ...dados, modelo, funcionario };
   const overlay = document.getElementById('conferenciaAgendamentoOverlay');
   document.getElementById('conferenciaAgendamentoConteudo').innerHTML = `
-    <div class="conferencia-checklist-grid"><div><span>Modelo</span><strong>${escaparHtmlBasico(modelo.nome)}</strong></div><div><span>Funcionário</span><strong>${escaparHtmlBasico(funcionario.nome)}</strong></div><div><span>Dias</span><strong>${escaparHtmlBasico(formatarDias(dados.dias.length === 7 ? 'todos' : dados.dias.join(',')))}</strong></div><div><span>Horário limite</span><strong>${escaparHtmlBasico(dados.horario)}</strong></div><div><span>Intervalo</span><strong>A cada ${dados.intervalo} dia(s) corrido(s)</strong></div><div><span>Duração</span><strong>${dados.duracao} dia(s) de horizonte</strong></div></div>
+    <div class="conferencia-checklist-grid"><div><span>Modelo</span><strong>${escaparHtmlBasico(modelo.nome)}</strong></div><div><span>Funcionário</span><strong>${escaparHtmlBasico(funcionario.nome)}</strong></div><div><span>Dias</span><strong>${escaparHtmlBasico(formatarDias(dados.dias.length === 7 ? 'todos' : dados.dias.join(',')))}</strong></div><div><span>Horário para início</span><strong>${escaparHtmlBasico(dados.horarioInicio)}</strong></div><div><span>Horário para fim</span><strong>${escaparHtmlBasico(dados.horarioFim)}${horarioParaMinutos(dados.horarioFim) <= horarioParaMinutos(dados.horarioInicio) ? ' (dia seguinte)' : ''}</strong></div><div><span>Intervalo</span><strong>A cada ${dados.intervalo} dia(s) corrido(s)</strong></div><div><span>Duração</span><strong>${dados.duracao} dia(s) de horizonte</strong></div></div>
     <div class="checklist-modelo-resumo"><strong>Orientação:</strong> ${escaparHtmlBasico(modelo.descricao || 'Sem orientação')}</div>`;
   overlay?.classList.add('show');
 }
@@ -139,12 +142,13 @@ async function confirmarAgendamentoChecklist() {
   }]).select('id').single();
   if (error || !data?.id) { setMsg('msgConferenciaAgendamento', `Não foi possível preparar a programação: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err'); return; }
   selecaoFuncionarioLancamentoPorTarefa[data.id] = dados.funcionarioId;
-  horarioLancamentoPorTarefa[data.id] = dados.horario;
+  horarioLancamentoPorTarefa[data.id] = dados.horarioInicio;
+  horarioFimLancamentoPorTarefa[data.id] = dados.horarioFim;
   diasLancamentoPorTarefa[data.id] = [...dados.dias];
   intervaloLancamentoPorTarefa[data.id] = dados.intervalo;
   duracaoLancamentoPorTarefa[data.id] = dados.duracao;
   fecharConferenciaAgendamentoChecklist();
-  const lancou = await lancarTarefa(data.id, dados.funcionarioId, dados.horario, diasTexto);
+  const lancou = await lancarTarefa(data.id, dados.funcionarioId, dados.horarioInicio, dados.horarioFim, diasTexto);
   if (!lancou) {
     await sb.from('tarefas').delete().eq('id', data.id);
     setMsg('msgTarefas', 'A programação não foi salva porque o lançamento foi cancelado ou não gerou nenhuma ocorrência.', 'err');
@@ -155,7 +159,7 @@ async function confirmarAgendamentoChecklist() {
 }
 
 function limparAgendamentoChecklist() {
-  const ids = ['modeloChecklistAgendamento','funcionarioTarefa','horarioChecklistAgendamento'];
+  const ids = ['modeloChecklistAgendamento','funcionarioTarefa','horarioInicioChecklistAgendamento','horarioFimChecklistAgendamento'];
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const intervalo = document.getElementById('intervaloChecklistAgendamento'); if (intervalo) intervalo.value = '1';
   const duracao = document.getElementById('duracaoChecklistAgendamento'); if (duracao) duracao.value = '7';

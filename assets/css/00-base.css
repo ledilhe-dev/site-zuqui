@@ -2162,7 +2162,7 @@
     .checklist-modelo-resumo { min-height:104px; padding:13px; border:1px solid var(--border); border-radius:10px; background:var(--surface2); color:var(--text-muted); font-size:12px; line-height:1.5; }
     .checklist-modelo-form { display:grid; gap:14px; }
     .checklist-repeticao-box { grid-column:2; }
-    .checklist-repeticao-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .checklist-repeticao-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
     .checklist-repeticao-grid label { display:flex; flex-direction:column; gap:5px; color:var(--text-muted); font-size:10px; font-weight:700; }
     .checklist-repeticao-grid input { width:100%; min-width:0; padding:9px; border:1px solid var(--border-mid); border-radius:8px; background:var(--surface); color:var(--text); color-scheme:dark; }
     .regra-info-btn-mini { width:20px; height:20px; min-width:20px; font-size:10px; vertical-align:middle; }
