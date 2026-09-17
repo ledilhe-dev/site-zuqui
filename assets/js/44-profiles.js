@@ -367,7 +367,13 @@ async function editarPerfil(id) {
   perfilEmEdicaoCodigo = String(perfil.codigo || '').trim() || gerarCodigoBasePerfil(perfil.nome);
   document.getElementById('nomePerfil').value = perfil.nome || '';
   const codigoPerfilNormalizado = normalizarCodigoPerfil(perfil.codigo || 'FUNCIONARIO');
-  renderizarPermissoesPerfil(perfil.permissoes || obterPermissoesBase(codigoPerfilNormalizado || 'FUNCIONARIO'));
+  // Perfis antigos não possuem as chaves criadas depois do seu cadastro.
+  // Mostra os padrões atuais e, por cima, as escolhas já salvas no perfil.
+  const permissoesPerfil = {
+    ...obterPermissoesBase(codigoPerfilNormalizado || 'FUNCIONARIO'),
+    ...normalizarPermissoesPerfil(perfil.permissoes),
+  };
+  renderizarPermissoesPerfil(permissoesPerfil);
   const titulo = document.getElementById('tituloFormularioPerfil');
   const btnSalvar = document.getElementById('btnSalvarPerfil');
   const btnCancelar = document.getElementById('btnCancelarEdicaoPerfil');

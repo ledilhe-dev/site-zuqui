@@ -12,6 +12,6 @@ window.APP_CONFIG = {
   emailFunctionName: 'notificar-alertas-email',
   authEmailFunctionName: 'autenticacao-email',
   authRedirectUrl: 'https://checkdiario.com.br/',
-  appVersion: '3.2.54',
-  appVersionLabel: '3.2.54-permissoes-edicao-checklist',
+  appVersion: '3.2.55',
+  appVersionLabel: '3.2.55-permissoes-edicao-checklist',
 };
