@@ -3288,12 +3288,12 @@ function faturaAbrirCategoriasItem(itemId) {
   const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
   if (!item) return;
   const cards = [
-    `<button type="button" class="fatura-cat-card ${!item.categoria_id ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '')">
+    `<button type="button" class="fatura-cat-card ${!item.categoria_id ? 'selecionado' : ''}" data-fatura-cat-nome="sem categoria" onclick="faturaEscolherCategoriaItem('${itemId}', '')">
       <span class="fatura-cat-icone vazio">+</span>
       <strong>Sem categoria</strong>
     </button>`,
     ...(categoriasCompraCache || []).map(cat => `
-      <button type="button" class="fatura-cat-card ${String(cat.id) === String(item.categoria_id || '') ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '${cat.id}')">
+      <button type="button" class="fatura-cat-card ${String(cat.id) === String(item.categoria_id || '') ? 'selecionado' : ''}" data-fatura-cat-nome="${escaparHtmlBasico(String(cat.nome || '').toLowerCase())}" onclick="faturaEscolherCategoriaItem('${itemId}', '${cat.id}')">
         <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(cat.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(cat.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(cat.icone, 30)}</span>
         <strong>${escaparHtmlBasico(cat.nome || 'Categoria')}</strong>
       </button>
@@ -3302,7 +3302,17 @@ function faturaAbrirCategoriasItem(itemId) {
   faturaCriarEscolhaOverlay({
     titulo: 'Categoria',
     subtitulo: item.descricao || '',
-    body: `<div class="fatura-cat-grid">${cards}</div>`,
+    body: `<input class="fatura-choice-search fatura-category-search" type="search" autocomplete="off" placeholder="Buscar categoria" aria-label="Buscar categoria pelo nome" oninput="faturaFiltrarCategoriasEscolha(this.value)">
+      <div class="fatura-cat-grid">${cards}</div>`,
+  });
+  setTimeout(() => document.querySelector('#faturaEscolhaOverlay .fatura-category-search')?.focus(), 0);
+}
+
+function faturaFiltrarCategoriasEscolha(valor) {
+  const normalizar = texto => String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const busca = normalizar(valor).trim();
+  document.querySelectorAll('#faturaEscolhaOverlay [data-fatura-cat-nome]').forEach(card => {
+    card.style.display = !busca || normalizar(card.getAttribute('data-fatura-cat-nome')).includes(busca) ? '' : 'none';
   });
 }
 

@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.61';
-const APP_VERSION_LABEL = '3.2.61-menu-personalizado-usuario';
+const APP_VERSION = '3.2.62';
+const APP_VERSION_LABEL = '3.2.62-busca-categoria-contas';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
