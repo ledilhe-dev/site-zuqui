@@ -2,6 +2,8 @@
 // O resultado cai na mesma tela de revisao do importador OFX.
 (function () {
   const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+  const PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+  const PDFJS_WORKER_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
   function imagemCompraHojeISO() {
     return new Date().toISOString().slice(0, 10);
@@ -81,6 +83,8 @@
 
   function imagemCompraLimparDescricao(desc) {
     return String(desc || '')
+      .replace(/^\s*\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\s+/, '')
+      .replace(/\b(?:BRL|US\$)\b/gi, ' ')
       .replace(/\s+para\s+o\s+cart[aã]o.*$/i, '')
       .replace(/\s*,?\s+no\s+cart[aã]o.*$/i, '')
       .replace(/\s+final\s+\d+.*$/i, '')
@@ -374,6 +378,74 @@
     return window.Tesseract;
   }
 
+  async function imagemCompraCarregarPdfJs() {
+    if (window.pdfjsLib?.getDocument) return window.pdfjsLib;
+    await new Promise((resolve, reject) => {
+      const existente = document.querySelector(`script[src="${PDFJS_CDN}"]`);
+      if (existente) {
+        existente.addEventListener('load', resolve, { once: true });
+        existente.addEventListener('error', reject, { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = PDFJS_CDN;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Nao foi possivel carregar o leitor de PDF.'));
+      document.head.appendChild(script);
+    });
+    if (!window.pdfjsLib?.getDocument) throw new Error('Leitor de PDF indisponivel.');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+    return window.pdfjsLib;
+  }
+
+  function imagemCompraTextoPaginaPdf(conteudo = {}) {
+    const linhas = [];
+    (conteudo.items || []).forEach(item => {
+      const texto = String(item?.str || '').trim();
+      if (!texto) return;
+      const x = Number(item?.transform?.[4] || 0);
+      const y = Number(item?.transform?.[5] || 0);
+      let linha = linhas.find(registro => Math.abs(registro.y - y) <= 3);
+      if (!linha) {
+        linha = { y, partes: [] };
+        linhas.push(linha);
+      }
+      linha.partes.push({ x, texto });
+    });
+    return linhas
+      .sort((a, b) => b.y - a.y)
+      .map(linha => linha.partes.sort((a, b) => a.x - b.x).map(parte => parte.texto).join(' '))
+      .join('\n');
+  }
+
+  async function imagemCompraPrepararPdf(file) {
+    const pdfjsLib = await imagemCompraCarregarPdfJs();
+    const dados = new Uint8Array(await file.arrayBuffer());
+    const documento = await pdfjsLib.getDocument({ data: dados }).promise;
+    const paginas = [];
+    const textos = [];
+    for (let numero = 1; numero <= documento.numPages; numero++) {
+      faturaSetProgress(10 + Math.round((numero / documento.numPages) * 20), `Abrindo pagina ${numero} de ${documento.numPages}...`);
+      const pagina = await documento.getPage(numero);
+      try {
+        textos.push(imagemCompraTextoPaginaPdf(await pagina.getTextContent()));
+      } catch (_) {
+        textos.push('');
+      }
+      const viewportBase = pagina.getViewport({ scale: 1 });
+      const escala = Math.min(2.4, 2200 / Math.max(viewportBase.width, viewportBase.height));
+      const viewport = pagina.getViewport({ scale: Math.max(1.4, escala) });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
+      await pagina.render({ canvasContext: canvas.getContext('2d', { alpha: false }), viewport }).promise;
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(valor => valor ? resolve(valor) : reject(new Error('Nao foi possivel converter uma pagina do PDF.')), 'image/png'));
+      paginas.push(blob);
+    }
+    return { paginas, texto: textos.filter(Boolean).join('\n\n') };
+  }
+
   function imagemCompraPrepararArquivo(file) {
     return new Promise((resolve, reject) => {
       if (!file || !/^image\//i.test(String(file.type || ''))) {
@@ -469,7 +541,57 @@
     }
     faturaSetProgress(8, 'Preparando imagem...');
 
+    const concluirImportacao = (itensReconhecidos, texto, origem = 'Imagem/OCR') => {
+      const itens = imagemCompraDeduplicar(itensReconhecidos).map((item, idx) => ({
+        id: `img_${Date.now()}_${idx}`,
+        ...item,
+        fornecedor_id: null,
+        _fornAuto: false,
+        _exigeFornecedorManual: true,
+      }));
+      if (!itens.length) throw new Error(`Nao encontrei valores de compra no ${origem === 'PDF/OCR' ? 'PDF' : 'arquivo'}. Confira se o documento esta nitido ou use o cadastro manual.`);
+      _faturaItensExtraidos = itens;
+      _faturaBancoDetectado = origem;
+      faturaSetProgress(100, 'Concluido!');
+      setTimeout(() => {
+        faturaExibirRevisao({
+          banco: origem,
+          referenciaCartao: texto,
+          vencimento: itens[0]?.vencimento_fatura || itens[0]?.data || imagemCompraHojeISO(),
+          total_fatura: itens.reduce((s, item) => s + Number(item.valor || 0), 0),
+        });
+        setMsg('msgImportarFatura', `${itens.length} conta(s) identificada(s). Revise as sugestoes editaveis de observacao, fornecedor, categoria e vencimento antes de lancar.`, 'ok');
+      }, 250);
+    };
+
     try {
+      const ehPdf = String(file.type || '').toLowerCase() === 'application/pdf' || /\.pdf$/i.test(String(file.name || ''));
+      if (ehPdf) {
+        faturaSetProgress(9, 'Abrindo PDF...');
+        const pdf = await imagemCompraPrepararPdf(file);
+        let textoPdf = pdf.texto || '';
+        let itensPdf = imagemCompraExtrairItens(textoPdf);
+        // PDFs digitais fornecem texto diretamente e ficam mais precisos. Em
+        // PDFs escaneados, usa as mesmas páginas renderizadas no OCR dos prints.
+        if (!itensPdf.length) {
+          const Tesseract = await imagemCompraCarregarTesseract();
+          const textosOcr = [];
+          for (let indice = 0; indice < pdf.paginas.length; indice++) {
+            faturaSetProgress(32 + Math.round((indice / Math.max(1, pdf.paginas.length)) * 55), `Lendo pagina ${indice + 1} de ${pdf.paginas.length}...`);
+            const resultadoPagina = await Tesseract.recognize(pdf.paginas[indice], 'por+eng', {
+              tessedit_pageseg_mode: '6',
+              preserve_interword_spaces: '1',
+            });
+            textosOcr.push(resultadoPagina?.data?.text || '');
+          }
+          textoPdf = [textoPdf, ...textosOcr].filter(Boolean).join('\n\n');
+          itensPdf = imagemCompraExtrairItens(textoPdf);
+        }
+        faturaSetProgress(90, 'Interpretando compras do PDF...');
+        concluirImportacao(itensPdf, textoPdf, 'PDF/OCR');
+        return;
+      }
+
       const imagens = await imagemCompraPrepararArquivo(file);
       faturaSetProgress(18, 'Carregando OCR gratuito...');
       const Tesseract = await imagemCompraCarregarTesseract();
@@ -526,29 +648,7 @@
       }
       const texto = textosReconhecidos.filter(Boolean).join('\n\n');
       faturaSetProgress(88, 'Interpretando compras...');
-      const itens = itensReconhecidos.map((item, idx) => ({
-        id: `img_${Date.now()}_${idx}`,
-        ...item,
-        fornecedor_id: null,
-        _fornAuto: false,
-        _exigeFornecedorManual: true,
-      }));
-      if (!itens.length) {
-        throw new Error('Nao encontrei valor de compra na imagem. Tente uma imagem mais nitida ou use o cadastro manual.');
-      }
-      _faturaItensExtraidos = itens;
-      faturaSetProgress(100, 'Concluido!');
-      setTimeout(() => {
-        faturaExibirRevisao({
-          banco: 'Imagem/OCR',
-          // Preserva o texto completo porque o emissor (ex.: BRADESCO CARTOES)
-          // geralmente esta no cabecalho, fora da descricao de cada compra.
-          referenciaCartao: texto,
-          vencimento: itens[0]?.vencimento_fatura || itens[0]?.data || imagemCompraHojeISO(),
-          total_fatura: itens.reduce((s, item) => s + Number(item.valor || 0), 0),
-        });
-        setMsg('msgImportarFatura', `${itens.length} conta(s) identificada(s). Revise as sugestoes editaveis de observacao, fornecedor, categoria e vencimento antes de lancar.`, 'ok');
-      }, 250);
+      concluirImportacao(itensReconhecidos, texto, 'Imagem/OCR');
     } catch (e) {
       console.error('Erro ao importar imagem por OCR:', e);
       if (step2) step2.style.display = 'none';

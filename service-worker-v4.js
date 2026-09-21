@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v190-sessao-persistente-windows';
+const CACHE_NAME = 'check-diario-pwa-v191-importacao-pdf-contas';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

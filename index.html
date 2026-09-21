@@ -1921,10 +1921,10 @@
                 ondragleave="this.style.borderColor='var(--border-mid)'"
                 ondrop="imagemCompraHandleDrop(event)">
                 <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
-                <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria ou imagem</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto ou comprovante</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria, imagem ou PDF</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto, PDF ou comprovante</div>
                 <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Sem custo de API</div>
-                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
+                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,application/pdf,.pdf" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
               </div>
             </div>
             <!-- Dica OFX -->
@@ -1933,7 +1933,7 @@
               App Nubank → Cartão de crédito → Fatura → ··· → Exportar fatura → OFX
             </div>
             <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px;">
-              <strong style="color:var(--text);">Imagem:</strong> o sistema tenta preencher valor, data e observação, mas confira antes de lançar. Prints nítidos funcionam melhor que fotos escuras ou tremidas.
+              <strong style="color:var(--text);">Imagem ou PDF:</strong> o sistema tenta preencher valor, data e observação, mas confira antes de lançar. Prints e PDFs nítidos funcionam melhor que fotos escuras ou tremidas.
             </div>
             <div class="msg" id="msgImportarFatura" style="margin-top:10px;"></div>
           </div>
@@ -3377,7 +3377,7 @@
 </div>
 
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
-<script src="./assets/js/01-core-supabase.js?v=3.2.59-sessao-persistente-windows"></script>
+<script src="./assets/js/01-core-supabase.js?v=3.2.60-importacao-pdf-contas"></script>
 <script src="./assets/js/02-core-version.js?v=3.2.59-sessao-persistente-windows"></script>
 <script src="./assets/js/03-core-state.js?v=3.2.55-permissoes-edicao-checklist"></script>
 <script src="./assets/js/04-navigation.js?v=3.2.55-permissoes-edicao-checklist"></script>
@@ -3397,7 +3397,7 @@
       <script src="./assets/js/93-raffinato-managerial.js?v=20260911-group-close-v2"></script>
       <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
       <script src="./assets/js/38-annual-comparison.js?v=3.2.48"></script>
-<script src="./assets/js/32-image-ocr-importer.js?v=20260909-bradesco-parcelas"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=3.2.60-importacao-pdf-contas"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
