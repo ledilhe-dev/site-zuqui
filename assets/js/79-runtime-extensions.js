@@ -219,6 +219,39 @@ function salvarPreferenciasLogin({ username = '', password = '', salvarSenha = f
     localStorage.setItem(chave, bruto);
     sessionStorage.setItem(chave, bruto);
   });
+  if (salvarSenha && emailNormalizado && password) {
+    salvarCredencialLoginNoGerenciadorSeguro(emailNormalizado, password);
+  }
+}
+
+async function salvarCredencialLoginNoGerenciadorSeguro(username = '', password = '') {
+  const usuario = String(username || '').trim().toLowerCase();
+  const senha = String(password || '');
+  if (!usuario || !senha || !navigator.credentials?.store || typeof window.PasswordCredential !== 'function') return false;
+  try {
+    await navigator.credentials.store(new PasswordCredential({ id: usuario, name: usuario, password: senha }));
+    return true;
+  } catch (error) {
+    console.warn('O gerenciador seguro do navegador não aceitou a credencial:', error);
+    return false;
+  }
+}
+
+async function restaurarCredencialLoginDoGerenciadorSeguro() {
+  const prefs = obterPreferenciasLoginSalvas();
+  if (!prefs.salvarSenha || !navigator.credentials?.get) return false;
+  const user = document.getElementById('username');
+  const pass = document.getElementById('password');
+  if (!user || !pass || pass.value) return false;
+  try {
+    const credencial = await navigator.credentials.get({ password: true, mediation: 'optional' });
+    if (!credencial || !credencial.password) return false;
+    user.value = String(credencial.id || prefs.username || '').trim();
+    pass.value = String(credencial.password || '');
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 function obterSessaoPersistenteLoginSalva() {
@@ -337,6 +370,7 @@ function restaurarPreferenciasLogin() {
     user.value = String(prefs.username || sessao?.email || sessao?.username || '').trim();
   }
   if (pass) pass.value = '';
+  restaurarCredencialLoginDoGerenciadorSeguro();
 }
 
 function sincronizarPreferenciasLoginDaTela() {
@@ -580,8 +614,17 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       }
       return !!usuario;
     } catch (e) {
-      localStorage.removeItem('zuqui_auth');
-      localStorage.removeItem('check_diario_auth_persistente');
+      const tinhaSessaoPersistente = !!(salvoLocal || salvoLocalBackup);
+      const mensagemFalha = String(e?.message || '').toLowerCase();
+      const falhaDefinitiva = mensagemFalha.includes('revogad')
+        || mensagemFalha.includes('perdeu o vínculo')
+        || mensagemFalha.includes('cadastro inativo');
+      // Após reiniciar o Windows, a rede pode ainda não estar pronta quando a
+      // PWA abre. Falhas transitórias não podem destruir uma sessão persistente.
+      if (!tinhaSessaoPersistente || falhaDefinitiva) {
+        localStorage.removeItem('zuqui_auth');
+        localStorage.removeItem('check_diario_auth_persistente');
+      }
       sessionStorage.removeItem('zuqui_auth');
       sessionStorage.removeItem('check_diario_auth_persistente');
       limparDadosVisuaisDaSessao('Aguardando login...');
@@ -594,7 +637,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       atualizarUsuarioTopbar();
       setSistemaLogado(false);
       document.documentElement.classList.remove('admin-fouc-pendente');
-      console.warn('Sessão encerrada durante a revalidação de segurança:', e);
+      console.warn(tinhaSessaoPersistente && !falhaDefinitiva
+        ? 'Sessão persistente preservada após falha temporária na restauração:'
+        : 'Sessão encerrada durante a revalidação de segurança:', e);
       return false;
     }
   }

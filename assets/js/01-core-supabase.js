@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.55';
-const APP_VERSION_LABEL = '3.2.55-permissoes-edicao-checklist';
+const APP_VERSION = '3.2.59';
+const APP_VERSION_LABEL = '3.2.59-sessao-persistente-windows';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
