@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v193-busca-categoria-contas';
+const CACHE_NAME = 'check-diario-pwa-v194-parcelas-pdf-pagamento';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

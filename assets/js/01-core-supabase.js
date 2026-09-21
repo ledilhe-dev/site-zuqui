@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.62';
-const APP_VERSION_LABEL = '3.2.62-busca-categoria-contas';
+const APP_VERSION = '3.2.63';
+const APP_VERSION_LABEL = '3.2.63-parcelas-pdf-pagamento';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');

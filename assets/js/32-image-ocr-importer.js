@@ -39,6 +39,30 @@
     return quantidade >= 2 && quantidade <= 99 ? quantidade : 1;
   }
 
+  function imagemCompraParseReferenciaParcelas(texto) {
+    const bruto = String(texto || '');
+    const referencias = [...bruto.matchAll(/\b(\d{1,3})\s*\/\s*(\d{1,3})\b/g)];
+    for (const referencia of referencias) {
+      if ((referencia.index || 0) <= 3 && /^\s*\d{1,2}\s*\/\s*\d{1,2}/.test(bruto)) continue;
+      const atual = Number.parseInt(referencia[1], 10);
+      const total = Number.parseInt(referencia[2], 10);
+      if (atual >= 1 && total >= 2 && atual <= total && total <= 360) return { atual, total };
+    }
+    return null;
+  }
+
+  function imagemCompraExtrairPagamentosFatura(texto) {
+    return imagemCompraNormalizarTexto(texto).split('\n').map(linha => linha.trim()).filter(linha => {
+      const normalizada = imagemCompraRemoverAcentos(linha).toLowerCase();
+      return /(?:pag(?:amento)?|boleto|debito automatico)/.test(normalizada)
+        && /-\s*(?:R\$|BRL)?\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/i.test(linha);
+    }).map(linha => {
+      const valorTexto = linha.match(/-\s*(?:R\$|BRL)?\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/i)?.[0] || '';
+      const numero = valorTexto.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+      return { descricao: imagemCompraLimparDescricao(linha) || 'Pagamento da fatura', valor: Number(numero) || 0 };
+    });
+  }
+
   function imagemCompraNormalizarValoresSemSeparador(texto) {
     return String(texto || '').split('\n').map(linha => {
       if (/[,.]\d{2}\b/.test(linha)) return linha;
@@ -289,16 +313,29 @@
         const descricao = descricaoProxima(idx, linha);
         if (!descricao) return;
         const data = imagemCompraParseData(linha, dataPadrao);
+        const linhaComecaComData = /^\s*\d{1,2}\s*[\/.-]\s*\d{1,2}\b/.test(linha);
+        const contextoParcela = linhaComecaComData ? linha : [linhas[idx - 1] || '', linha].join(' ');
+        const referenciaParcela = imagemCompraParseReferenciaParcelas(contextoParcela);
+        const descricaoFinal = referenciaParcela
+          ? imagemCompraLimparDescricao(descricao.replace(new RegExp(`\\b${referenciaParcela.atual}\\s*\\/\\s*${referenciaParcela.total}\\b`), ' '))
+          : descricao;
         compras.push({
           data,
-          descricao,
+          descricao: descricaoFinal,
           valor,
           fitid: null,
           vencimento_fatura: data,
           selecionado: true,
-          _obsManual: descricao,
+          _obsManual: descricaoFinal,
           _origemImagem: true,
           _exigeFornecedorManual: true,
+          ...(referenciaParcela ? {
+            parcela_atual: referenciaParcela.atual,
+            total_parcelas: referenciaParcela.total,
+            _parcelasManuais: 1,
+            _parcelasAuto: true,
+            _modoValorParcelas: 'parcela',
+          } : {}),
         });
       });
     });
@@ -542,6 +579,7 @@
     faturaSetProgress(8, 'Preparando imagem...');
 
     const concluirImportacao = (itensReconhecidos, texto, origem = 'Imagem/OCR') => {
+      const pagamentosFatura = imagemCompraExtrairPagamentosFatura(texto);
       const itens = imagemCompraDeduplicar(itensReconhecidos).map((item, idx) => ({
         id: `img_${Date.now()}_${idx}`,
         ...item,
@@ -553,14 +591,24 @@
       _faturaItensExtraidos = itens;
       _faturaBancoDetectado = origem;
       faturaSetProgress(100, 'Concluido!');
-      setTimeout(() => {
-        faturaExibirRevisao({
+      setTimeout(async () => {
+        await faturaExibirRevisao({
           banco: origem,
           referenciaCartao: texto,
           vencimento: itens[0]?.vencimento_fatura || itens[0]?.data || imagemCompraHojeISO(),
           total_fatura: itens.reduce((s, item) => s + Number(item.valor || 0), 0),
         });
-        setMsg('msgImportarFatura', `${itens.length} conta(s) identificada(s). Revise as sugestoes editaveis de observacao, fornecedor, categoria e vencimento antes de lancar.`, 'ok');
+        if (pagamentosFatura.length) {
+          const lista = document.getElementById('faturaListaItens');
+          if (lista) {
+            const aviso = document.createElement('div');
+            aviso.className = 'fatura-payment-warning';
+            aviso.innerHTML = `<strong>Pagamento da fatura identificado — não será lançado como conta a pagar.</strong>${pagamentosFatura.map(pagamento => `<span>${escaparHtmlBasico(pagamento.descricao)} · ${formatarMoedaBRFinanceiro(pagamento.valor)}</span>`).join('')}`;
+            lista.prepend(aviso);
+          }
+        }
+        const complementoPagamento = pagamentosFatura.length ? ` ${pagamentosFatura.length} pagamento(s) da fatura destacado(s) e fora do lançamento.` : '';
+        setMsg('msgImportarFatura', `${itens.length} conta(s) identificada(s). Revise as sugestoes editaveis de observacao, fornecedor, categoria e vencimento antes de lancar.${complementoPagamento}`, 'ok');
       }, 250);
     };
 

@@ -2425,3 +2425,5 @@
 #navContainer .nav-suborder-handle{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:22px;height:26px;border-radius:6px;color:var(--text-muted);font-size:15px;line-height:1;cursor:grab;opacity:.42;user-select:none;-webkit-user-select:none}
 #navContainer .nav-sub-btn:hover>.nav-suborder-handle,#navContainer .nav-suborder-handle:focus{opacity:1;background:var(--surface3)}
 #navContainer .nav-subitem-moving{opacity:.4!important;outline:2px solid var(--accent);outline-offset:-2px}
+.fatura-payment-warning{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;padding:10px 12px;border:1px solid rgba(239,68,68,.7);border-radius:10px;background:rgba(239,68,68,.12);color:var(--red)}
+.fatura-payment-warning strong{font-size:12px}.fatura-payment-warning span{font-size:11px;color:var(--text)}
