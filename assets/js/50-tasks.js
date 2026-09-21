@@ -2056,7 +2056,19 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     return;
   }
 
-  const { data: lancamentosCriados, error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite, horario_inicio, horario_fim');
+  // O PostgREST pode limitar mutações grandes. Divide a programação para que
+  // todos os dias solicitados sejam persistidos, inclusive horizontes de 365 dias.
+  const lancamentosCriados = [];
+  let error = null;
+  for (let inicioLote = 0; inicioLote < lancamentosParaCriar.length; inicioLote += 100) {
+    const lote = lancamentosParaCriar.slice(inicioLote, inicioLote + 100);
+    const respostaLote = await sb.from('checklist_lancamentos').insert(lote).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite, horario_inicio, horario_fim');
+    if (respostaLote.error) {
+      error = respostaLote.error;
+      break;
+    }
+    lancamentosCriados.push(...(respostaLote.data || []));
+  }
 
   if (error) {
     if (isMissingLancamentosTableError(error)) {

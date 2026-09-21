@@ -333,8 +333,10 @@ async function salvarEdicaoProgramacaoChecklist() {
       loja_id: modelo.loja_id || lojaEdicao || null,
     }));
     if (novos.length) {
-      const { error: erroInserir } = await sb.from('checklist_lancamentos').insert(novos);
-      if (erroInserir) throw erroInserir;
+      for (let inicioLote = 0; inicioLote < novos.length; inicioLote += 100) {
+        const { error: erroInserir } = await sb.from('checklist_lancamentos').insert(novos.slice(inicioLote, inicioLote + 100));
+        if (erroInserir) throw erroInserir;
+      }
     }
 
     fecharEdicaoProgramacaoChecklist();
