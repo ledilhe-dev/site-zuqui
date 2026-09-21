@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v186-permissoes-edicao-checklist';
+const CACHE_NAME = 'check-diario-pwa-v187-recalculo-programacoes';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

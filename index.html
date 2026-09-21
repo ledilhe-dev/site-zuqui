@@ -2718,8 +2718,25 @@
       <label>Orientação desta tarefa<textarea id="editarProgramacaoChecklistDescricao" rows="4" maxlength="2000"></textarea></label>
       <label>Funcionário responsável<select id="editarProgramacaoChecklistFuncionario"></select></label>
       <div class="form-row">
+        <label style="flex:1">Data inicial<input id="editarProgramacaoChecklistDataInicio" type="date" required></label>
+        <label style="flex:1">Data final<input id="editarProgramacaoChecklistDataFim" type="date" required></label>
+      </div>
+      <div class="form-row">
         <label style="flex:1">Horário para início<input id="editarProgramacaoChecklistInicio" type="time" required></label>
         <label style="flex:1">Horário para fim<input id="editarProgramacaoChecklistFim" type="time" required></label>
+      </div>
+      <label style="max-width:180px">Repetir a cada (dias)<input id="editarProgramacaoChecklistIntervalo" type="number" min="1" max="365" step="1" required></label>
+      <div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Dias da semana</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <label><input class="editar-programacao-dia" type="checkbox" value="seg"> Seg</label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="ter"> Ter</label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="qua"> Qua</label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="qui"> Qui</label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="sex"> Sex</label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="sab"> Sáb</label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="dom"> Dom</label>
+        </div>
       </div>
       <div class="msg" id="msgEditarProgramacaoChecklist"></div>
     </div>
@@ -3386,11 +3403,11 @@
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js?v=3.2.55-permissoes-edicao-checklist"></script>
-<script src="./assets/js/50-tasks.js?v=3.2.55-permissoes-edicao-checklist"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.56-recalculo-programacoes"></script>
 <script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
 <script src="./assets/js/52-checklist-models.js?v=3.2.55-permissoes-edicao-checklist"></script>
 <script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
-<script src="./assets/js/70-reports.js?v=3.2.55-permissoes-edicao-checklist"></script>
+<script src="./assets/js/70-reports.js?v=3.2.56-recalculo-programacoes"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>

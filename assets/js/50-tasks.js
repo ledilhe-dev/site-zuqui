@@ -1849,28 +1849,21 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     : HORIZONTE_AGENDAMENTO_MANUAL_DIAS;
   const { data: funcionarioTurno, error: erroFuncionarioTurno } = await sb
     .from('funcionarios')
-    .select('id, nome, horario_trabalho_inicio, horario_trabalho_fim')
+    .select('id, nome')
     .eq('id', funcionarioSelecionado)
     .single();
 
   if (erroFuncionarioTurno) {
-    if (isMissingWorkShiftColumnsError(erroFuncionarioTurno)) {
-      setMsg('msgTarefas', 'Rode o SQL das colunas de turno (horario_trabalho_inicio/fim) na tabela funcionarios.', 'err');
-      setMsgLancamentoTarefa(id, 'Faltam as colunas de turno no cadastro de funcionários.', 'err');
-      return;
-    }
-    console.error('Erro ao validar turno do funcionário:', erroFuncionarioTurno);
-    setMsg('msgTarefas', 'Não foi possível validar o turno do funcionário antes do lançamento.', 'err');
-    setMsgLancamentoTarefa(id, 'Erro ao validar turno do funcionário.', 'err');
+    console.error('Erro ao carregar o funcionário:', erroFuncionarioTurno);
+    setMsg('msgTarefas', 'Não foi possível carregar o funcionário antes do lançamento.', 'err');
+    setMsgLancamentoTarefa(id, 'Erro ao carregar o funcionário.', 'err');
     return;
   }
 
   const hojeData = new Date();
   hojeData.setHours(0, 0, 0, 0);
-  const turnoFuncionarioPreenchido = funcionarioPossuiTurnoPreenchido(funcionarioTurno);
-  const ignorarHojePorTurno = turnoFuncionarioPreenchido && !funcionarioDentroDoTurnoOperacional(funcionarioTurno);
   const ignorarHojePorHorario = !!horarioSelecionado && horarioJaPassouHoje(horarioSelecionado);
-  const ignorarHoje = ignorarHojePorTurno || ignorarHojePorHorario;
+  const ignorarHoje = ignorarHojePorHorario;
   const agoraIso = new Date().toISOString();
   const agendamentoId = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const atorAuditoria = obterAtorAuditoriaAtual();
@@ -1916,7 +1909,6 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const lancamentosParaCriar = [];
   let pulouHojePorHorario = false;
-  let pulouHojePorTurno = false;
   let primeiroOffsetValido = null; // base para intervalo em DIAS CORRIDOS
 
   for (let offset = 0; offset <= horizonteAgendamento; offset++) {
@@ -1931,7 +1923,6 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     if (intervaloRepeticao > 1 && ((offset - primeiroOffsetValido) % intervaloRepeticao !== 0)) continue;
 
     if (offset === 0 && ignorarHoje) {
-      pulouHojePorTurno = ignorarHojePorTurno;
       pulouHojePorHorario = ignorarHojePorHorario;
       continue;
     }
@@ -1956,9 +1947,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       criado_por_id: atorAuditoria.funcionarioId,
       criado_por_nome: atorAuditoria.nome,
       origem_lancamento: 'manual',
-      observacao_lancamento: pulouHojePorTurno && dataIsoLocal !== hoje()
-        ? `Hoje foi ignorado porque o funcionário está fora do turno cadastrado (${horaCurta(funcionarioTurno?.horario_trabalho_inicio)} às ${horaCurta(funcionarioTurno?.horario_trabalho_fim)} no horário local).`
-        : pulouHojePorHorario && dataIsoLocal !== hoje()
+      observacao_lancamento: pulouHojePorHorario && dataIsoLocal !== hoje()
           ? `Hoje foi ignorado porque o horário ${horarioSelecionado} já havia passado.`
           : null,
       empresa_id: tarefa.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null,
@@ -1970,12 +1959,10 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     });
   }
 
-  if (pulouHojePorHorario || pulouHojePorTurno) {
+  if (pulouHojePorHorario) {
     try {
-      const motivoIgnorado = pulouHojePorTurno ? 'fora_turno_funcionario' : 'horario_expirado';
-      const observacaoIgnorado = pulouHojePorTurno
-        ? `Hoje foi ignorado porque o funcionário está fora do turno cadastrado (${horaCurta(funcionarioTurno?.horario_trabalho_inicio)} às ${horaCurta(funcionarioTurno?.horario_trabalho_fim)} no horário local). O sistema agendou apenas o próximo ciclo válido.`
-        : `Hoje foi ignorado porque o lançamento ocorreu após ${horarioSelecionado}. O sistema agendou apenas o próximo ciclo válido.`;
+      const motivoIgnorado = 'horario_expirado';
+      const observacaoIgnorado = `Hoje foi ignorado porque o lançamento ocorreu após ${horarioSelecionado}. O sistema agendou apenas o próximo ciclo válido.`;
 
       await registrarEventoLancamento({
         tarefaId: tarefa.id,
@@ -1994,8 +1981,6 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
           hora_lancamento: agoraHoraMinuto(),
           hora_lancamento_utc: agoraHoraMinutoUTC(),
           hora_lancamento_local: agoraHoraMinutoOperacional(),
-          turno_inicio_local: horaCurta(funcionarioTurno?.horario_trabalho_inicio || ''),
-          turno_fim_local: horaCurta(funcionarioTurno?.horario_trabalho_fim || ''),
         },
       });
     } catch (erroAuditoria) {
@@ -2004,9 +1989,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   }
 
   if (!lancamentosParaCriar.length) {
-    const mensagemSemNovoLancamento = pulouHojePorTurno
-      ? 'Hoje foi ignorado porque o funcionário está fora do turno cadastrado. Os próximos dias já estavam agendados.'
-      : pulouHojePorHorario
+    const mensagemSemNovoLancamento = pulouHojePorHorario
         ? 'Hoje foi ignorado porque o horário já passou. Os próximos dias já estavam agendados.'
         : 'Nenhum novo lançamento criado. Esta tarefa já estava agendada para os próximos dias.';
     setMsg('msgTarefas', mensagemSemNovoLancamento, 'ok');
@@ -2098,25 +2081,18 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       dataProgramada: item.data_programada,
       horarioProgramado: item.horario_limite,
       registradoEm: agoraIso,
-      observacao: pulouHojePorTurno
-        ? 'Lançamento manual criado após ignorar o dia corrente por funcionário fora do turno cadastrado.'
-        : pulouHojePorHorario
+      observacao: pulouHojePorHorario
           ? 'Lançamento manual criado após ignorar o dia corrente por horário expirado.'
           : 'Lançamento manual registrado.',
       meta: {
         dias_semana: diasLancamento || 'todos',
-        turno_validado_local: turnoFuncionarioPreenchido,
-        turno_inicio_local: horaCurta(funcionarioTurno?.horario_trabalho_inicio || ''),
-        turno_fim_local: horaCurta(funcionarioTurno?.horario_trabalho_fim || ''),
       },
     })));
   } catch (erroAuditoria) {
     console.warn('Não foi possível registrar a auditoria do lançamento manual:', erroAuditoria);
   }
 
-  const mensagemSucesso = pulouHojePorTurno
-    ? `Hoje foi ignorado (funcionário fora do turno cadastrado no horário local). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
-    : pulouHojePorHorario
+  const mensagemSucesso = pulouHojePorHorario
       ? `Hoje foi ignorado (horário já passou). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
       : `${lancamentosParaCriar.length} lançamento(s) enviado(s) para a aba Checklists.`;
   setMsg('msgTarefas', mensagemSucesso, 'ok');

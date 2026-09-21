@@ -214,6 +214,13 @@ function abrirEdicaoProgramacaoChecklist(tarefaId, agendamentoId) {
   document.getElementById('editarProgramacaoChecklistDescricao').value = item.descricao || '';
   document.getElementById('editarProgramacaoChecklistInicio').value = horaCurta(item.horarioInicio || '');
   document.getElementById('editarProgramacaoChecklistFim').value = horaCurta(item.horarioFim || '');
+  document.getElementById('editarProgramacaoChecklistDataInicio').value = item.inicio || '';
+  document.getElementById('editarProgramacaoChecklistDataFim').value = item.fim || '';
+  document.getElementById('editarProgramacaoChecklistIntervalo').value = Number(item.intervalo || 1);
+  const diasSelecionados = diasSemanaParaConjunto(item.diasSemana || 'todos');
+  document.querySelectorAll('.editar-programacao-dia').forEach(campo => {
+    campo.checked = diasSelecionados.has(String(campo.value || ''));
+  });
   const select = document.getElementById('editarProgramacaoChecklistFuncionario');
   select.innerHTML = _relatorioTarefasCadFuncionariosCache
     .filter(f => f.ativo !== false || String(f.id) === String(item.responsavel_id))
@@ -237,8 +244,16 @@ async function salvarEdicaoProgramacaoChecklist() {
   const funcionarioId = String(document.getElementById('editarProgramacaoChecklistFuncionario')?.value || '').trim();
   const horarioInicio = String(document.getElementById('editarProgramacaoChecklistInicio')?.value || '').trim();
   const horarioFim = String(document.getElementById('editarProgramacaoChecklistFim')?.value || '').trim();
-  if (!nome || !funcionarioId || !horarioInicio || !horarioFim) {
-    setMsg('msgEditarProgramacaoChecklist', 'Preencha nome, funcionário, horário para início e horário para fim.', 'err');
+  const dataInicio = String(document.getElementById('editarProgramacaoChecklistDataInicio')?.value || '').trim();
+  const dataFim = String(document.getElementById('editarProgramacaoChecklistDataFim')?.value || '').trim();
+  const intervalo = Math.max(1, Math.min(365, parseInt(document.getElementById('editarProgramacaoChecklistIntervalo')?.value, 10) || 1));
+  const dias = Array.from(document.querySelectorAll('.editar-programacao-dia:checked')).map(campo => String(campo.value));
+  if (!nome || !funcionarioId || !horarioInicio || !horarioFim || !dataInicio || !dataFim || !dias.length) {
+    setMsg('msgEditarProgramacaoChecklist', 'Preencha todos os campos e selecione ao menos um dia da semana.', 'err');
+    return;
+  }
+  if (dataFim < dataInicio) {
+    setMsg('msgEditarProgramacaoChecklist', 'A data final deve ser igual ou posterior à data inicial.', 'err');
     return;
   }
   if (horarioInicio === horarioFim) {
@@ -249,22 +264,78 @@ async function salvarEdicaoProgramacaoChecklist() {
   if (botao) botao.disabled = true;
   try {
     const lojaEdicao = obterLojaAtualParaIsolamento();
-    let queryTarefa = sb.from('tarefas').update({ nome, descricao, funcionario_id: funcionarioId }).eq('id', item.tarefa_id);
+    const diasTexto = dias.length === 7 ? 'todos' : dias.join(',');
+    const inicio = new Date(`${dataInicio}T12:00:00`);
+    const fim = new Date(`${dataFim}T12:00:00`);
+    const datasDesejadas = [];
+    let primeiroOffsetValido = null;
+    for (let data = new Date(inicio), offset = 0; data <= fim; data.setDate(data.getDate() + 1), offset++) {
+      if (!dias.includes(diaSemanaTokenDaData(data))) continue;
+      if (primeiroOffsetValido === null) primeiroOffsetValido = offset;
+      if ((offset - primeiroOffsetValido) % intervalo === 0) datasDesejadas.push(dataLocalISO(data));
+    }
+    if (!datasDesejadas.length) throw new Error('A regra informada não gera nenhuma ocorrência nesse período.');
+
+    let queryAtuais = sb.from('checklist_lancamentos').select('*').eq('agendamento_id', item.agendamento_id);
+    if (lojaEdicao) queryAtuais = queryAtuais.eq('loja_id', lojaEdicao);
+    const { data: atuais, error: erroAtuais } = await queryAtuais;
+    if (erroAtuais) throw erroAtuais;
+
+    let queryTarefa = sb.from('tarefas').update({ nome, descricao, funcionario_id: funcionarioId, dias_semana: diasTexto, horario_limite: horarioInicio }).eq('id', item.tarefa_id);
     if (lojaEdicao) queryTarefa = queryTarefa.eq('loja_id', lojaEdicao);
     const { error: erroTarefa } = await queryTarefa;
     if (erroTarefa) throw erroTarefa;
 
-    let queryLancamentos = sb.from('checklist_lancamentos').update({
+    const duracao = Math.round((fim - inicio) / 86400000) + 1;
+    const camposLancamento = {
       nome,
       descricao,
       funcionario_id: funcionarioId,
       horario_limite: horarioInicio,
       horario_inicio: horarioInicio,
       horario_fim: horarioFim,
-    }).eq('agendamento_id', item.agendamento_id).eq('status', 'pendente');
-    if (lojaEdicao) queryLancamentos = queryLancamentos.eq('loja_id', lojaEdicao);
-    const { error: erroLancamentos } = await queryLancamentos;
-    if (erroLancamentos) throw erroLancamentos;
+      dias_semana: diasTexto,
+      repeticao_intervalo_dias: intervalo,
+      repeticao_duracao_dias: duracao,
+    };
+    const datasSet = new Set(datasDesejadas);
+    const pendentes = (atuais || []).filter(registro => String(registro.status || '').toLowerCase() === 'pendente');
+    const idsExcluir = pendentes.filter(registro => !datasSet.has(String(registro.data_programada || ''))).map(registro => registro.id);
+    if (idsExcluir.length) {
+      let excluir = sb.from('checklist_lancamentos').delete().in('id', idsExcluir);
+      if (lojaEdicao) excluir = excluir.eq('loja_id', lojaEdicao);
+      const { error: erroExcluir } = await excluir;
+      if (erroExcluir) throw erroExcluir;
+    }
+    const idsAtualizar = pendentes.filter(registro => datasSet.has(String(registro.data_programada || ''))).map(registro => registro.id);
+    if (idsAtualizar.length) {
+      let atualizar = sb.from('checklist_lancamentos').update(camposLancamento).in('id', idsAtualizar);
+      if (lojaEdicao) atualizar = atualizar.eq('loja_id', lojaEdicao);
+      const { error: erroAtualizar } = await atualizar;
+      if (erroAtualizar) throw erroAtualizar;
+    }
+
+    const datasExistentes = new Set((atuais || []).map(registro => String(registro.data_programada || '')));
+    const modelo = (atuais || [])[0] || {};
+    const ator = obterAtorAuditoriaAtual();
+    const novos = datasDesejadas.filter(data => !datasExistentes.has(data)).map(data => ({
+      ...camposLancamento,
+      tarefa_id: item.tarefa_id,
+      checklist_id: modelo.checklist_id || null,
+      data_programada: data,
+      lancado_em: new Date().toISOString(),
+      status: 'pendente',
+      agendamento_id: item.agendamento_id,
+      criado_por_id: modelo.criado_por_id || ator.funcionarioId,
+      criado_por_nome: modelo.criado_por_nome || ator.nome,
+      origem_lancamento: modelo.origem_lancamento || 'manual',
+      empresa_id: modelo.empresa_id || obterEmpresaIdSessao?.() || null,
+      loja_id: modelo.loja_id || lojaEdicao || null,
+    }));
+    if (novos.length) {
+      const { error: erroInserir } = await sb.from('checklist_lancamentos').insert(novos);
+      if (erroInserir) throw erroInserir;
+    }
 
     fecharEdicaoProgramacaoChecklist();
     setMsg('msgRelatorioTarefasCad', 'Tarefa atualizada. As ocorrências já iniciadas ou concluídas foram preservadas.', 'ok');
