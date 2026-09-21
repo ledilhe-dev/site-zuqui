@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v188-lotes-programacoes';
+const CACHE_NAME = 'check-diario-pwa-v189-relatorio-paginado';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

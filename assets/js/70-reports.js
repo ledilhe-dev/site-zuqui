@@ -53,12 +53,26 @@ async function carregarRelatorioTarefasCadastradas() {
     if (errTarefas && !isMissingTableError(errTarefas)) throw errTarefas;
 
     // Lançamentos (fonte da repetição, datas e quem lançou).
-    let queryLanc = sb.from('checklist_lancamentos')
-      .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, horario_inicio, horario_fim, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
-      .order('data_programada', { ascending: true })
-      .limit(5000);
-    if (lojaAtual) queryLanc = queryLanc.eq('loja_id', lojaAtual);
-    const { data: lancData, error: errLanc } = await queryLanc;
+    const lancData = [];
+    let errLanc = null;
+    const tamanhoPaginaLancamentos = 1000;
+    for (let pagina = 0; pagina < 100; pagina++) {
+      const inicioPagina = pagina * tamanhoPaginaLancamentos;
+      let queryLanc = sb.from('checklist_lancamentos')
+        .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, horario_inicio, horario_fim, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
+        .order('data_programada', { ascending: true })
+        .order('id', { ascending: true })
+        .range(inicioPagina, inicioPagina + tamanhoPaginaLancamentos - 1);
+      if (lojaAtual) queryLanc = queryLanc.eq('loja_id', lojaAtual);
+      const respostaPagina = await queryLanc;
+      if (respostaPagina.error) {
+        errLanc = respostaPagina.error;
+        break;
+      }
+      const registrosPagina = respostaPagina.data || [];
+      lancData.push(...registrosPagina);
+      if (registrosPagina.length < tamanhoPaginaLancamentos) break;
+    }
     if (errLanc && !isMissingLancamentosTableError(errLanc)) throw errLanc;
 
     // Funcionários para resolver nomes de responsáveis.
