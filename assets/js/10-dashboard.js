@@ -1,12 +1,21 @@
 // DASHBOARD
 // 
 
+function chaveLocalPreferenciaUsuario(chave) {
+  const funcId = String(usuarioSistemaLogado?.id || '').trim();
+  return funcId ? `checkdiario:preferencia:${funcId}:${chave}` : '';
+}
+
 async function salvarPreferenciaUsuario(chave, valor) {
+  const chaveLocal = chaveLocalPreferenciaUsuario(chave);
+  if (chaveLocal) {
+    try { localStorage.setItem(chaveLocal, JSON.stringify(valor)); } catch (_) {}
+  }
   try {
     const funcId = usuarioSistemaLogado?.id;
     const empresaId = usuarioSistemaLogado?.empresa_id || obterEmpresaIdSessao?.() || null;
     if (!funcId) return;
-    await executarSemFiltroLojaTemporario(() =>
+    const { error } = await executarSemFiltroLojaTemporario(() =>
       sb.from('preferencias_usuario').upsert([{
         funcionario_id: funcId,
         empresa_id: empresaId,
@@ -15,6 +24,7 @@ async function salvarPreferenciaUsuario(chave, valor) {
         atualizado_em: new Date().toISOString(),
       }], { onConflict: 'funcionario_id,chave' })
     );
+    if (error) throw error;
   } catch(e) { console.warn('Erro ao salvar preferência:', e); }
 }
 
@@ -22,11 +32,31 @@ async function carregarPreferenciaUsuario(chave, fallback = null) {
   try {
     const funcId = usuarioSistemaLogado?.id;
     if (!funcId) return fallback;
-    const { data } = await executarSemFiltroLojaTemporario(() =>
+    const chaveLocal = chaveLocalPreferenciaUsuario(chave);
+    if (chaveLocal) {
+      const salvoLocal = localStorage.getItem(chaveLocal);
+      if (salvoLocal != null) return JSON.parse(salvoLocal);
+    }
+    const { data, error } = await executarSemFiltroLojaTemporario(() =>
       sb.from('preferencias_usuario').select('valor').eq('funcionario_id', funcId).eq('chave', chave).maybeSingle()
     );
-    if (data?.valor) return JSON.parse(data.valor);
+    if (error) throw error;
+    if (data?.valor != null) {
+      const valor = typeof data.valor === 'string' ? JSON.parse(data.valor) : data.valor;
+      const chaveLocal = chaveLocalPreferenciaUsuario(chave);
+      if (chaveLocal) {
+        try { localStorage.setItem(chaveLocal, JSON.stringify(valor)); } catch (_) {}
+      }
+      return valor;
+    }
   } catch(e) {}
+  const chaveLocal = chaveLocalPreferenciaUsuario(chave);
+  if (chaveLocal) {
+    try {
+      const salvo = localStorage.getItem(chaveLocal);
+      if (salvo != null) return JSON.parse(salvo);
+    } catch (_) {}
+  }
   return fallback;
 }
 
@@ -110,7 +140,9 @@ async function carregarOrdemNavMenu() {
       if (Array.isArray(ordem) && grupo) ordem.forEach(id => mapa[id] && grupo.appendChild(mapa[id]));
     }
   } catch(e) { console.warn('Erro ao carregar ordem nav:', e); }
+  await carregarOrdemSubitensNav();
   inicializarControlesOrdemNav();
+  inicializarControlesOrdemSubitensNav();
   atualizarGruposVaziosNav();
 }
 
@@ -148,6 +180,97 @@ function inicializarControlesOrdemNav() {
       _navItemDragSrc = null;
     });
     item.appendChild(handle);
+  });
+}
+
+let _navSubitemDragSrc = null;
+
+function chaveContainerSubmenuNav(container) {
+  const grupo = container?.closest('[id^="menu"]');
+  if (!grupo?.id) return '';
+  const submenu = grupo.querySelector(':scope > .nav-submenu');
+  if (container === submenu) return grupo.id;
+  const secoes = [...(submenu?.querySelectorAll(':scope > .nav-report-section') || [])];
+  const indice = secoes.indexOf(container);
+  return indice >= 0 ? `${grupo.id}:secao:${indice}` : '';
+}
+
+function containersOrdenaveisSubmenuNav() {
+  const containers = [];
+  document.querySelectorAll('#navContainer [id^="menu"] > .nav-submenu').forEach(submenu => {
+    if (submenu.querySelector(':scope > .nav-sub-btn')) containers.push(submenu);
+    submenu.querySelectorAll(':scope > .nav-report-section').forEach(secao => {
+      if (secao.querySelector(':scope > .nav-sub-btn')) containers.push(secao);
+    });
+  });
+  return containers;
+}
+
+async function salvarOrdemSubitensNav() {
+  const ordem = {};
+  containersOrdenaveisSubmenuNav().forEach(container => {
+    const chave = chaveContainerSubmenuNav(container);
+    if (chave) ordem[chave] = [...container.querySelectorAll(':scope > .nav-sub-btn[data-page]')].map(item => item.dataset.page);
+  });
+  await salvarPreferenciaUsuario('nav_ordem_subitens_v1', ordem);
+}
+
+async function carregarOrdemSubitensNav() {
+  const ordem = await carregarPreferenciaUsuario('nav_ordem_subitens_v1', null);
+  if (!ordem || typeof ordem !== 'object' || Array.isArray(ordem)) return;
+  containersOrdenaveisSubmenuNav().forEach(container => {
+    const ids = ordem[chaveContainerSubmenuNav(container)];
+    if (!Array.isArray(ids)) return;
+    const mapa = {};
+    container.querySelectorAll(':scope > .nav-sub-btn[data-page]').forEach(item => { mapa[item.dataset.page] = item; });
+    ids.forEach(id => mapa[id] && container.appendChild(mapa[id]));
+  });
+}
+
+function inicializarControlesOrdemSubitensNav() {
+  containersOrdenaveisSubmenuNav().forEach(container => {
+    if (container.dataset.navSuborderBound !== '1') {
+      container.dataset.navSuborderBound = '1';
+      container.addEventListener('dragover', e => {
+        if (!_navSubitemDragSrc || _navSubitemDragSrc.parentElement !== container) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const alvo = e.target.closest('.nav-sub-btn[data-page]');
+        if (!alvo || alvo === _navSubitemDragSrc || alvo.parentElement !== container) return;
+        const rect = alvo.getBoundingClientRect();
+        container.insertBefore(_navSubitemDragSrc, e.clientY < rect.top + rect.height / 2 ? alvo : alvo.nextSibling);
+      });
+      container.addEventListener('drop', e => {
+        if (!_navSubitemDragSrc) return;
+        e.preventDefault();
+        e.stopPropagation();
+        salvarOrdemSubitensNav();
+      });
+    }
+    container.querySelectorAll(':scope > .nav-sub-btn[data-page]').forEach(item => {
+      if (item.dataset.navSuborderBound === '1') return;
+      item.dataset.navSuborderBound = '1';
+      item.draggable = true;
+      item.addEventListener('dragstart', e => {
+        _navSubitemDragSrc = item;
+        item.classList.add('nav-subitem-moving');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.dataset.page || '');
+        e.stopPropagation();
+      });
+      item.addEventListener('dragend', e => {
+        item.classList.remove('nav-subitem-moving');
+        _navSubitemDragSrc = null;
+        e.stopPropagation();
+      });
+      const handle = document.createElement('span');
+      handle.className = 'nav-suborder-handle';
+      handle.textContent = 'â ¿';
+      handle.title = 'Arraste para ordenar esta funÃ§Ã£o';
+      handle.setAttribute('aria-label', 'Arraste para ordenar esta funÃ§Ã£o');
+      handle.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+      item.appendChild(handle);
+    });
   });
 }
 // ══════════════════════════════════════════════════════════════════

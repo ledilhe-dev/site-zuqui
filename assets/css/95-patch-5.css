@@ -2413,3 +2413,7 @@
 #navContainer .nav-order-handle{position:absolute;right:4px;top:50%;transform:translateY(-50%);z-index:5;display:flex;align-items:center;justify-content:center;width:22px;height:28px;border-radius:7px;color:var(--text-muted);font-size:17px;line-height:1;cursor:grab;touch-action:none;opacity:.48;user-select:none;-webkit-user-select:none}
 #navContainer [data-nav-item-id]:hover>.nav-order-handle,#navContainer .nav-order-handle:focus{opacity:1;background:var(--surface3)}
 #navContainer .nav-touch-moving{opacity:.45!important;outline:2px solid var(--accent);outline-offset:-2px}
+#navContainer .nav-sub-btn{position:relative;padding-right:34px!important}
+#navContainer .nav-suborder-handle{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;width:22px;height:26px;border-radius:6px;color:var(--text-muted);font-size:15px;line-height:1;cursor:grab;opacity:.42;user-select:none;-webkit-user-select:none}
+#navContainer .nav-sub-btn:hover>.nav-suborder-handle,#navContainer .nav-suborder-handle:focus{opacity:1;background:var(--surface3)}
+#navContainer .nav-subitem-moving{opacity:.4!important;outline:2px solid var(--accent);outline-offset:-2px}

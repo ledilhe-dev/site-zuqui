@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.60';
-const APP_VERSION_LABEL = '3.2.60-importacao-pdf-contas';
+const APP_VERSION = '3.2.61';
+const APP_VERSION_LABEL = '3.2.61-menu-personalizado-usuario';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
