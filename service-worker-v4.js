@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v194-parcelas-pdf-pagamento';
+const CACHE_NAME = 'check-diario-pwa-v195-comparativo-contingencia';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

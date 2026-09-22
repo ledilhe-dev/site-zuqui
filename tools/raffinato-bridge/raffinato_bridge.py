@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.17"
+CONNECTOR_VERSION = "1.7.18"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -1990,27 +1990,34 @@ def query_annual_history(config:dict[str,Any],body:dict[str,Any]) -> dict[str,An
 
 
 def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:
-    filial=resolve_raffinato_filial(config,body);start=date(first,1,1);end=date(last+1,1,1);module=str(body.get("modulo_venda") or "");started=time.perf_counter()
+    filial=resolve_raffinato_filial(config,body);start=date(first,1,1);end=date(last+1,1,1);module=str(body.get("modulo_venda") or "");emission=str(body.get("emissao") or "TODOS").upper()
+    if emission not in ("TODOS","CONTINGENCIA","SEM_CONTINGENCIA"):raise ValueError("Filtro de emissao fiscal invalido.")
+    group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();started=time.perf_counter()
     sql="""SET NOCOUNT ON;DROP TABLE IF EXISTS #ARDocs;
-      SELECT D.Id,CONVERT(date,D.Data) data,CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega VTE WITH(NOLOCK) ON VTE.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY' WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa VM WITH(NOLOCK) ON VM.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo VC WITH(NOLOCK) ON VC.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (VM.IdVenda IS NOT NULL OR VC.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA' ELSE 'VENDA_RAPIDA' END modulo_venda,
-      SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) faturamento INTO #ARDocs FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 GROUP BY D.Id,D.Data;
+      SELECT D.Id,CONVERT(date,D.Data) data,CAST(CASE WHEN ISNULL(D.EhContingencia,0)=1 THEN 1 ELSE 0 END AS bit) eh_contingencia,CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega VTE WITH(NOLOCK) ON VTE.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY' WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa VM WITH(NOLOCK) ON VM.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo VC WITH(NOLOCK) ON VC.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (VM.IdVenda IS NOT NULL OR VC.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA' ELSE 'VENDA_RAPIDA' END modulo_venda,
+      SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) faturamento INTO #ARDocs FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 GROUP BY D.Id,D.Data,D.EhContingencia;
       CREATE UNIQUE CLUSTERED INDEX IX_ARDocs ON #ARDocs(Id);
-      SELECT YEAR(data) ano,MONTH(data) mes,SUM(faturamento) faturamento,COUNT(*) vendas FROM #ARDocs WHERE (?='' OR modulo_venda=?) GROUP BY YEAR(data),MONTH(data) ORDER BY ano,mes;
-      SELECT X.modulo_venda,YEAR(X.data) ano,MONTH(X.data) mes,SUM(X.faturamento) faturamento FROM #ARDocs X WHERE (?='' OR X.modulo_venda=?) GROUP BY X.modulo_venda,YEAR(X.data),MONTH(X.data) ORDER BY ano,mes,X.modulo_venda;
-      SELECT YEAR(X.data) ano,MONTH(X.data) mes,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade FROM #ARDocs X JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=X.Id WHERE (?='' OR X.modulo_venda=?) GROUP BY YEAR(X.data),MONTH(X.data);
+      SELECT YEAR(data) ano,MONTH(data) mes,SUM(faturamento) faturamento,COUNT(*) vendas,SUM(CASE WHEN eh_contingencia=1 THEN faturamento ELSE 0 END) faturamento_contingencia,SUM(CASE WHEN eh_contingencia=0 THEN faturamento ELSE 0 END) faturamento_sem_contingencia,SUM(CASE WHEN eh_contingencia=1 THEN 1 ELSE 0 END) vendas_contingencia,SUM(CASE WHEN eh_contingencia=0 THEN 1 ELSE 0 END) vendas_sem_contingencia FROM #ARDocs WHERE (?='' OR modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY YEAR(data),MONTH(data) ORDER BY ano,mes;
+      SELECT X.modulo_venda,YEAR(X.data) ano,MONTH(X.data) mes,SUM(X.faturamento) faturamento FROM #ARDocs X WHERE (?='' OR X.modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY X.modulo_venda,YEAR(X.data),MONTH(X.data) ORDER BY ano,mes,X.modulo_venda;
+      SELECT YEAR(X.data) ano,MONTH(X.data) mes,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade FROM #ARDocs X JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=X.Id WHERE (?='' OR X.modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY YEAR(X.data),MONTH(X.data);
       DROP TABLE IF EXISTS #ARDocs;"""
+    if group or product:
+        product_filter="DELETE X FROM #ARDocs X WHERE NOT EXISTS(SELECT 1 FROM dbo.ItemDocumentoFiscal I WITH(NOLOCK) JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto WHERE I.IdDocumentoFiscal=X.Id AND (?='' OR CONVERT(varchar(40),P.IdAgrupamento)=?) AND (?='' OR CONVERT(varchar(40),P.Id)=? OR P.Nome LIKE ?));"
+        sql=sql.replace("SELECT YEAR(data) ano",product_filter+"SELECT YEAR(data) ano",1)
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
-        connection.timeout=90;cursor=connection.cursor();cursor.execute(sql,start,end,filial,module,module,module,module,module,module);monthly=rows_as_dicts(cursor);modules=[];quantities=[]
+        connection.timeout=90;cursor=connection.cursor();params=[start,end,filial]
+        if group or product:params.extend([group,group,product,product,f"%{product}%"])
+        params.extend([module,module,emission,emission,emission,module,module,emission,emission,emission,module,module,emission,emission,emission]);cursor.execute(sql,*params);monthly=rows_as_dicts(cursor);modules=[];quantities=[]
         while cursor.nextset():
             if cursor.description:modules=rows_as_dicts(cursor);break
         while cursor.nextset():
             if cursor.description:quantities=rows_as_dicts(cursor);break
     qty={(int(x["ano"]),int(x["mes"])):float(x.get("quantidade") or 0) for x in quantities}
     for x in monthly:x["quantidade"]=qty.get((int(x["ano"]),int(x["mes"])),0);x["ticket_medio"]=float(x.get("faturamento") or 0)/int(x.get("vendas") or 1)
-    if not module or module=="DELIVERY":
+    if emission=="TODOS" and (not module or module=="DELIVERY"):
         by_month={(int(x["ano"]),int(x["mes"])):x for x in monthly}
         for delivery in query_deliveries_abertos(config,datetime.combine(start,datetime.min.time()),datetime.combine(end,datetime.min.time()),filial):
-            raw=delivery.get("data");day=raw if isinstance(raw,date) else date.fromisoformat(str(raw)[:10]);key=(day.year,day.month);row=by_month.setdefault(key,{"ano":day.year,"mes":day.month,"faturamento":0.0,"vendas":0,"quantidade":0.0,"ticket_medio":0.0});row["faturamento"]+=float(delivery.get("valor") or 0);row["vendas"]+=1
+            raw=delivery.get("data");day=raw if isinstance(raw,date) else date.fromisoformat(str(raw)[:10]);key=(day.year,day.month);row=by_month.setdefault(key,{"ano":day.year,"mes":day.month,"faturamento":0.0,"vendas":0,"quantidade":0.0,"ticket_medio":0.0,"faturamento_contingencia":0.0,"faturamento_sem_contingencia":0.0,"vendas_contingencia":0,"vendas_sem_contingencia":0});value=float(delivery.get("valor") or 0);row["faturamento"]+=value;row["faturamento_sem_contingencia"]=float(row.get("faturamento_sem_contingencia") or 0)+value;row["vendas"]+=1;row["vendas_sem_contingencia"]=int(row.get("vendas_sem_contingencia") or 0)+1
             module_row=next((x for x in modules if x.get("modulo_venda")=="DELIVERY" and int(x["ano"])==day.year and int(x["mes"])==day.month),None)
             if not module_row:module_row={"modulo_venda":"DELIVERY","ano":day.year,"mes":day.month,"faturamento":0.0};modules.append(module_row)
             module_row["faturamento"]+=float(delivery.get("valor") or 0)
@@ -2022,17 +2029,20 @@ def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,l
 
 
 def query_annual_detail_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:
-    filial=resolve_raffinato_filial(config,body);year=int(body.get("ano") or last);month=int(body.get("mes") or 0);start=date(year,month or 1,1);end=date(year+1,1,1) if not month or month==12 else date(year,month+1,1);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or body.get("id_produto") or "").strip();weekday=body.get("dia_semana");hour=body.get("hora");limit=min(20,max(10,int(body.get("limite") or 10)));started=time.perf_counter()
+    filial=resolve_raffinato_filial(config,body);year=int(body.get("ano") or last);month=int(body.get("mes") or 0);start=date(year,month or 1,1);end=date(year+1,1,1) if not month or month==12 else date(year,month+1,1);module=str(body.get("modulo_venda") or "");emission=str(body.get("emissao") or "TODOS").upper();group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or body.get("id_produto") or "").strip();weekday=body.get("dia_semana");hour=body.get("hora");limit=min(20,max(10,int(body.get("limite") or 10)));started=time.perf_counter()
     sale_filters=[];sale_params:list[Any]=[]
     if module:sale_filters.append("modulo_venda=?");sale_params.append(module)
+    if emission=="CONTINGENCIA":sale_filters.append("eh_contingencia=1")
+    elif emission=="SEM_CONTINGENCIA":sale_filters.append("eh_contingencia=0")
+    elif emission!="TODOS":raise ValueError("Filtro de emissao fiscal invalido.")
     if weekday is not None:sale_filters.append("((DATEDIFF(day,'19000101',data)%7)+7)%7=?");sale_params.append((int(weekday)+6)%7)
     if hour is not None:sale_filters.append("DATEPART(hour,hora)=?");sale_params.append(int(hour))
     item_filter="";item_values:list[Any]=[]
     if group:item_filter+=" AND CONVERT(varchar(40),P.IdAgrupamento)=?";item_values.append(group)
     if product:item_filter+=" AND (CONVERT(varchar(40),P.Id)=? OR P.Nome LIKE ?)";item_values.extend([product,f"%{product}%"])
     sql="""SET NOCOUNT ON;DROP TABLE IF EXISTS #ARVendas;
-      WITH Financeiro AS (SELECT D.Id id_documento,D.Data data_documento,D.Hora hora_documento,D.IdFilial,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) faturamento FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 GROUP BY D.Id,D.Data,D.Hora,D.IdFilial)
-      SELECT F.id_documento,V.Id id_venda,CONVERT(date,COALESCE(V.Data,F.data_documento)) data,CAST(COALESCE(V.Hora,F.hora_documento) AS time) hora,V.Origem,F.IdFilial,F.faturamento,
+      WITH Financeiro AS (SELECT D.Id id_documento,D.Data data_documento,D.Hora hora_documento,D.IdFilial,CAST(CASE WHEN ISNULL(D.EhContingencia,0)=1 THEN 1 ELSE 0 END AS bit) eh_contingencia,SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) faturamento FROM dbo.DocumentoFiscal D WITH(NOLOCK) JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0 GROUP BY D.Id,D.Data,D.Hora,D.IdFilial,D.EhContingencia)
+      SELECT F.id_documento,V.Id id_venda,CONVERT(date,COALESCE(V.Data,F.data_documento)) data,CAST(COALESCE(V.Hora,F.hora_documento) AS time) hora,V.Origem,F.IdFilial,F.eh_contingencia,F.faturamento,
        CASE WHEN V.Id IS NULL THEN 'ORIGEM_NAO_IDENTIFICADA' WHEN EXISTS(SELECT 1 FROM dbo.VendaTeleEntrega T WITH(NOLOCK) WHERE T.IdVenda=V.Id) THEN 'DELIVERY' WHEN EXISTS(SELECT 1 FROM dbo.VendaMesa M WITH(NOLOCK) WHERE M.IdVenda=V.Id) OR EXISTS(SELECT 1 FROM dbo.VendaCartaoConsumo C WITH(NOLOCK) WHERE C.IdVenda=V.Id) THEN 'CARTAO_MESA' WHEN V.Origem=1 THEN 'VENDA_RAPIDA' WHEN V.Origem=2 THEN 'DELIVERY' WHEN V.Origem=4 THEN 'CARTAO_MESA' ELSE 'ORIGEM_NAO_IDENTIFICADA' END modulo_venda
       INTO #ARVendas FROM Financeiro F OUTER APPLY(SELECT TOP 1 V0.* FROM dbo.VendaCupomFiscal VC WITH(NOLOCK) JOIN dbo.Venda V0 WITH(NOLOCK) ON V0.Id=VC.IdVenda WHERE VC.IdDocumentoFiscal=F.id_documento ORDER BY V0.Id) V;
       CREATE UNIQUE CLUSTERED INDEX IX_ARVendasDocumento ON #ARVendas(id_documento);"""
@@ -2065,10 +2075,13 @@ def query_annual_detail_sql(config:dict[str,Any],body:dict[str,Any],first:int,la
 def query_annual_product_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:
     filial=resolve_raffinato_filial(config,body);product=str(body.get("id_produto") or "");
     if not product:raise ValueError("Selecione um produto.")
+    emission=str(body.get("emissao") or "TODOS").upper()
+    if emission not in ("TODOS","CONTINGENCIA","SEM_CONTINGENCIA"):raise ValueError("Filtro de emissao fiscal invalido.")
+    emission_sql="" if emission=="TODOS" else " AND ISNULL(D.EhContingencia,0)="+("1" if emission=="CONTINGENCIA" else "0")
     started=time.perf_counter();sql="""SELECT YEAR(V.Data) ano,MONTH(V.Data) mes,SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,COUNT(DISTINCT V.Id) vendas
       FROM dbo.Venda V WITH(NOLOCK) JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=V.Id AND ISNULL(I.IdStatusItem,1)<>2
       WHERE V.Data>=? AND V.Data<? AND V.IdFilial=? AND CONVERT(varchar(40),I.IdProduto)=?
-      AND EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VC WITH(NOLOCK) JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VC.IdDocumentoFiscal WHERE VC.IdVenda=V.Id AND ISNULL(D.Cancelado,0)=0 AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id))
+      AND EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VC WITH(NOLOCK) JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VC.IdDocumentoFiscal WHERE VC.IdVenda=V.Id AND ISNULL(D.Cancelado,0)=0"""+emission_sql+""" AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id))
       GROUP BY YEAR(V.Data),MONTH(V.Data) ORDER BY ano,mes;"""
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=60;cursor=connection.cursor();cursor.execute(sql,date(first,1,1),date(last+1,1,1),filial,product);rows=rows_as_dicts(cursor)
@@ -2098,7 +2111,7 @@ def query_annual_comparison(store_id:str,body:dict[str,Any],config:dict[str,Any]
         return query_annual_history(config,body)
     first=max(1900,int(body.get("ano_inicial") or date.today().year-1));last=min(2100,int(body.get("ano_final") or date.today().year))
     if last<first: raise ValueError("Intervalo de anos invalido.")
-    if str(body.get("mode") or "summary") == "summary" and config and not body.get("id_agrupamento") and not body.get("produto"):
+    if str(body.get("mode") or "summary") == "summary" and config:
         return query_annual_summary_sql(config,body,first,last)
     if str(body.get("mode") or "") == "detail" and config:
         return query_annual_detail_sql(config,body,first,last)

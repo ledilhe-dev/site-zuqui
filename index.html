@@ -2387,7 +2387,7 @@
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
             <button class="btn btn-ghost" type="button" onclick="alterarSenhaMasterRaffinato()">Alterar senha master</button>
-            <a class="btn btn-ghost" id="raffinatoConnectorDownload" href="./downloads/Conector-Raffinato-v1.7.17.exe" download>Baixar conector</a>
+            <a class="btn btn-ghost" id="raffinatoConnectorDownload" href="./downloads/Conector-Raffinato-v1.7.18.exe" download>Baixar conector</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="raffinato-delete-token" id="raffinatoDeleteTokenBox" hidden><label for="raffinatoDeleteToken">Token temporário de exclusão</label><div><input id="raffinatoDeleteToken" type="text" readonly><button class="btn btn-ghost btn-sm" type="button" onclick="navigator.clipboard?.writeText(document.getElementById('raffinatoDeleteToken').value)">Copiar</button></div><small>Válido por 5 minutos e utilizado uma única vez.</small></div>
@@ -2511,12 +2511,13 @@
       <section id="relatorio_comparativo_anual" class="pagina annual-report-page">
         <div class="page-title">Comparativo Anual</div>
         <div class="card ar-hero"><div><div class="card-title">Desempenho histórico Raffinato</div><div class="page-sub">Compare faturamento, vendas, produtos e origem entre anos. Os detalhes são carregados somente quando necessários.</div></div><div class="ar-status" id="arStatus">Pronto para consultar</div></div>
-        <div class="card ar-filters"><label>Ano inicial<select id="arStartYear"></select></label><label>Ano final<select id="arEndYear"></select></label><label>Módulo<select id="arModule"><option value="">Todos os módulos</option><option value="VENDA_RAPIDA">Venda Rápida</option><option value="DELIVERY">Delivery</option><option value="CARTAO_MESA">Cartão / Mesa</option></select></label><label>Agrupamento<select id="arGroup"><option value="">Todos os agrupamentos</option></select></label><label>Produto<input id="arProduct" type="search" placeholder="Código ou nome"></label><button class="btn btn-green" id="arQuery" onclick="consultarComparativoAnual()">Comparar</button><button class="btn btn-ghost" onclick="limparComparativoAnual()">Limpar consulta</button></div>
+        <div class="card ar-filters"><label>Ano inicial<select id="arStartYear"></select></label><label>Ano final<select id="arEndYear"></select></label><label>Módulo<select id="arModule"><option value="">Todos os módulos</option><option value="VENDA_RAPIDA">Venda Rápida</option><option value="DELIVERY">Delivery</option><option value="CARTAO_MESA">Cartão / Mesa</option></select></label><label>Emissão fiscal<select id="arIssuance"><option value="TODOS">Todos (comparar)</option><option value="CONTINGENCIA">Em contingência</option><option value="SEM_CONTINGENCIA">Sem contingência</option></select></label><label>Agrupamento<select id="arGroup"><option value="">Todos os agrupamentos</option></select></label><label>Produto<input id="arProduct" type="search" placeholder="Código ou nome"></label><button class="btn btn-green" id="arQuery" onclick="consultarComparativoAnual()">Comparar</button><button class="btn btn-ghost" onclick="limparComparativoAnual()">Limpar consulta</button></div>
         <div class="ar-selection" id="arSelection" hidden><strong>Analisando:</strong><div id="arFilterChips"></div><button onclick="limparSelecoesComparativoAnual()">Limpar tudo</button></div>
         <div class="ar-kpis" id="arKpis" hidden><article><span>Faturamento</span><strong id="arRevenueCurrent">R$ 0,00</strong><small id="arEquivalent"></small></article><article><span>Variação</span><strong id="arVariation">0,00%</strong></article><article><span>Quantidade de vendas</span><strong id="arSales">0</strong></article><article><span>Ticket médio</span><strong id="arTicket">R$ 0,00</strong></article><article><span>Produtos vendidos</span><strong id="arQuantity">0</strong></article><article><span>Melhor período</span><strong id="arBestPeriod">—</strong></article><strong id="arRevenuePrevious" hidden>R$ 0,00</strong></div>
         <div class="ar-grid" id="arCharts" hidden>
           <article class="card ar-chart ar-wide"><div class="card-title">Faturamento por ano</div><small class="ar-unit">Valores em R$ mil</small><div id="arYearColumns"></div></article>
           <article class="card ar-chart ar-wide"><div class="card-title">Faturamento mês a mês</div><small class="ar-unit">Valores em R$ mil</small><div id="arMonthlyBars"></div></article>
+          <article class="card ar-chart ar-wide" id="arFiscalComparisonCard"><div class="card-title">Faturamento fiscal × não fiscal</div><div class="page-sub">Total recebido, emissões em contingência e emissões sem contingência, preservando os filtros e o cruzamento selecionados.</div><div id="arFiscalComparison"></div></article>
           <article class="card ar-chart ar-wide"><header><div><div class="card-title">Comparativo anual</div><div class="page-sub">Clique em um ponto para selecionar o mês.</div></div></header><div id="arAnnualChart"></div></article>
           <article class="card ar-chart"><div class="card-title">Faturamento acumulado</div><div id="arAccumulated"></div></article>
           <article class="card ar-chart"><div class="card-title">Participação dos módulos</div><div id="arModuleShare"></div></article>
@@ -3052,7 +3053,7 @@
 <link rel="stylesheet" href="./assets/css/115-raffinato-managerial.css?v=20260911-group-close-v2">
 <link rel="stylesheet" href="./assets/css/117-raffinato-item-obrigatorio-pizza.css?v=20260911-filtros-excel-v6">
 <link rel="stylesheet" href="./assets/css/118-raffinato-item-obrigatorio-filters.css?v=20260911-valores-modulo-v7">
-<link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260815-v7">
+<link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260921-v8">
 <link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260826-payable-sheet-v1">
 <link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
 <link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
@@ -3396,7 +3397,7 @@
       <script src="./assets/js/37-raffinato-products.js?v=3.2.48"></script>
       <script src="./assets/js/93-raffinato-managerial.js?v=20260911-group-close-v2"></script>
       <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
-      <script src="./assets/js/38-annual-comparison.js?v=3.2.48"></script>
+      <script src="./assets/js/38-annual-comparison.js?v=3.2.49"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=3.2.63-parcelas-pdf-pagamento"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
