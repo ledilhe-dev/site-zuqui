@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.18"
+CONNECTOR_VERSION = "1.7.19"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -1990,7 +1990,7 @@ def query_annual_history(config:dict[str,Any],body:dict[str,Any]) -> dict[str,An
 
 
 def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:
-    filial=resolve_raffinato_filial(config,body);start=date(first,1,1);end=date(last+1,1,1);module=str(body.get("modulo_venda") or "");emission=str(body.get("emissao") or "TODOS").upper()
+    filial=resolve_raffinato_filial(config,body);start=date(first,1,1);end=date(last+1,1,1);selected_modules=[str(x) for x in (body.get("modulos_venda") or ([body.get("modulo_venda")] if body.get("modulo_venda") else [])) if str(x).strip()][:20];module=selected_modules[0] if len(selected_modules)==1 else "";emission=str(body.get("emissao") or "TODOS").upper()
     if emission not in ("TODOS","CONTINGENCIA","SEM_CONTINGENCIA"):raise ValueError("Filtro de emissao fiscal invalido.")
     groups=[str(x) for x in (body.get("id_agrupamentos") or ([body.get("id_agrupamento")] if body.get("id_agrupamento") else [])) if str(x).strip()][:500];product=str(body.get("produto") or "").strip();started=time.perf_counter()
     sql="""SET NOCOUNT ON;DROP TABLE IF EXISTS #ARDocs;
@@ -2001,38 +2001,41 @@ def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,l
       SELECT X.modulo_venda,YEAR(X.data) ano,MONTH(X.data) mes,SUM(X.faturamento) faturamento FROM #ARDocs X WHERE (?='' OR X.modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY X.modulo_venda,YEAR(X.data),MONTH(X.data) ORDER BY ano,mes,X.modulo_venda;
       SELECT YEAR(X.data) ano,MONTH(X.data) mes,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade FROM #ARDocs X JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=X.Id WHERE (?='' OR X.modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY YEAR(X.data),MONTH(X.data);
       DROP TABLE IF EXISTS #ARDocs;"""
+    if len(selected_modules)>1:
+        sql=sql.replace("SELECT YEAR(data) ano",f"DELETE FROM #ARDocs WHERE modulo_venda NOT IN ({','.join('?' for _ in selected_modules)});SELECT YEAR(data) ano",1)
     if groups or product:
         group_filter=f" AND CONVERT(varchar(40),P.IdAgrupamento) IN ({','.join('?' for _ in groups)})" if groups else ""
         product_filter=f"DELETE X FROM #ARDocs X WHERE NOT EXISTS(SELECT 1 FROM dbo.ItemDocumentoFiscal I WITH(NOLOCK) JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto WHERE I.IdDocumentoFiscal=X.Id{group_filter} AND (?='' OR CONVERT(varchar(40),P.Id)=? OR P.Nome LIKE ?));"
         sql=sql.replace("SELECT YEAR(data) ano",product_filter+"SELECT YEAR(data) ano",1)
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=90;cursor=connection.cursor();params=[start,end,filial]
+        if len(selected_modules)>1:params.extend(selected_modules)
         if groups or product:params.extend([*groups,product,product,f"%{product}%"])
-        params.extend([module,module,emission,emission,emission,module,module,emission,emission,emission,module,module,emission,emission,emission]);cursor.execute(sql,*params);monthly=rows_as_dicts(cursor);modules=[];quantities=[]
+        params.extend([module,module,emission,emission,emission,module,module,emission,emission,emission,module,module,emission,emission,emission]);cursor.execute(sql,*params);monthly=rows_as_dicts(cursor);module_rows=[];quantities=[]
         while cursor.nextset():
-            if cursor.description:modules=rows_as_dicts(cursor);break
+            if cursor.description:module_rows=rows_as_dicts(cursor);break
         while cursor.nextset():
             if cursor.description:quantities=rows_as_dicts(cursor);break
     qty={(int(x["ano"]),int(x["mes"])):float(x.get("quantidade") or 0) for x in quantities}
     for x in monthly:x["quantidade"]=qty.get((int(x["ano"]),int(x["mes"])),0);x["ticket_medio"]=float(x.get("faturamento") or 0)/int(x.get("vendas") or 1)
-    if emission=="TODOS" and (not module or module=="DELIVERY"):
+    if emission=="TODOS" and (not selected_modules or "DELIVERY" in selected_modules):
         by_month={(int(x["ano"]),int(x["mes"])):x for x in monthly}
         for delivery in query_deliveries_abertos(config,datetime.combine(start,datetime.min.time()),datetime.combine(end,datetime.min.time()),filial):
             raw=delivery.get("data");day=raw if isinstance(raw,date) else date.fromisoformat(str(raw)[:10]);key=(day.year,day.month);row=by_month.setdefault(key,{"ano":day.year,"mes":day.month,"faturamento":0.0,"vendas":0,"quantidade":0.0,"ticket_medio":0.0,"faturamento_contingencia":0.0,"faturamento_sem_contingencia":0.0,"vendas_contingencia":0,"vendas_sem_contingencia":0});value=float(delivery.get("valor") or 0);row["faturamento"]+=value;row["faturamento_sem_contingencia"]=float(row.get("faturamento_sem_contingencia") or 0)+value;row["vendas"]+=1;row["vendas_sem_contingencia"]=int(row.get("vendas_sem_contingencia") or 0)+1
-            module_row=next((x for x in modules if x.get("modulo_venda")=="DELIVERY" and int(x["ano"])==day.year and int(x["mes"])==day.month),None)
-            if not module_row:module_row={"modulo_venda":"DELIVERY","ano":day.year,"mes":day.month,"faturamento":0.0};modules.append(module_row)
+            module_row=next((x for x in module_rows if x.get("modulo_venda")=="DELIVERY" and int(x["ano"])==day.year and int(x["mes"])==day.month),None)
+            if not module_row:module_row={"modulo_venda":"DELIVERY","ano":day.year,"mes":day.month,"faturamento":0.0};module_rows.append(module_row)
             module_row["faturamento"]+=float(delivery.get("valor") or 0)
         monthly=sorted(by_month.values(),key=lambda x:(int(x["ano"]),int(x["mes"])))
         for x in monthly:x["ticket_medio"]=float(x.get("faturamento") or 0)/int(x.get("vendas") or 1)
-    totals=[{"modulo_venda":name,"faturamento":sum(float(x.get("faturamento") or 0) for x in modules if x.get("modulo_venda")==name)} for name in ("VENDA_RAPIDA","DELIVERY","CARTAO_MESA")]
+    totals=[{"modulo_venda":name,"faturamento":sum(float(x.get("faturamento") or 0) for x in module_rows if x.get("modulo_venda")==name)} for name in ("VENDA_RAPIDA","DELIVERY","CARTAO_MESA")]
     logger.info("TEMPO SQL: COMPARATIVO RESUMO %.3fs | meses=%s",time.perf_counter()-started,len(monthly))
-    return {"schema_version":2,"meses":monthly,"modulos":modules,"modulos_totais":totals,"agrupamentos":cache_status(validate_store_id(body.get("loja_id"))).get("agrupamentos",[]),"tempo_ms":round((time.perf_counter()-started)*1000)}
+    return {"schema_version":2,"meses":monthly,"modulos":module_rows,"modulos_totais":totals,"agrupamentos":cache_status(validate_store_id(body.get("loja_id"))).get("agrupamentos",[]),"tempo_ms":round((time.perf_counter()-started)*1000)}
 
 
 def query_annual_detail_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:
-    filial=resolve_raffinato_filial(config,body);year=int(body.get("ano") or last);month=int(body.get("mes") or 0);start=date(year,month or 1,1);end=date(year+1,1,1) if not month or month==12 else date(year,month+1,1);module=str(body.get("modulo_venda") or "");emission=str(body.get("emissao") or "TODOS").upper();groups=[str(x) for x in (body.get("id_agrupamentos") or ([body.get("id_agrupamento")] if body.get("id_agrupamento") else [])) if str(x).strip()][:500];product=str(body.get("produto") or body.get("id_produto") or "").strip();weekday=body.get("dia_semana");hour=body.get("hora");limit=min(20,max(10,int(body.get("limite") or 10)));started=time.perf_counter()
+    filial=resolve_raffinato_filial(config,body);year=int(body.get("ano") or last);month=int(body.get("mes") or 0);start=date(year,month or 1,1);end=date(year+1,1,1) if not month or month==12 else date(year,month+1,1);modules=[str(x) for x in (body.get("modulos_venda") or ([body.get("modulo_venda")] if body.get("modulo_venda") else [])) if str(x).strip()][:20];emission=str(body.get("emissao") or "TODOS").upper();groups=[str(x) for x in (body.get("id_agrupamentos") or ([body.get("id_agrupamento")] if body.get("id_agrupamento") else [])) if str(x).strip()][:500];product=str(body.get("produto") or body.get("id_produto") or "").strip();weekday=body.get("dia_semana");hour=body.get("hora");limit=min(20,max(10,int(body.get("limite") or 10)));started=time.perf_counter()
     sale_filters=[];sale_params:list[Any]=[]
-    if module:sale_filters.append("modulo_venda=?");sale_params.append(module)
+    if modules:sale_filters.append(f"modulo_venda IN ({','.join('?' for _ in modules)})");sale_params.extend(modules)
     if emission=="CONTINGENCIA":sale_filters.append("eh_contingencia=1")
     elif emission=="SEM_CONTINGENCIA":sale_filters.append("eh_contingencia=0")
     elif emission!="TODOS":raise ValueError("Filtro de emissao fiscal invalido.")
@@ -2120,9 +2123,9 @@ def query_annual_comparison(store_id:str,body:dict[str,Any],config:dict[str,Any]
         return query_annual_product_sql(config,body,first,last)
     if str(body.get("mode") or "") == "unknown_origins" and config:
         return query_annual_unknown_origins(config,body,last)
-    start=f"{first:04d}-01-01";end=f"{last+1:04d}-01-01";filial=int(body["id_filial"]);module=str(body.get("modulo_venda") or "");group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();mode=str(body.get("mode") or "summary")
+    start=f"{first:04d}-01-01";end=f"{last+1:04d}-01-01";filial=int(body["id_filial"]);selected_modules=[str(x) for x in (body.get("modulos_venda") or ([body.get("modulo_venda")] if body.get("modulo_venda") else [])) if str(x).strip()][:20];group=str(body.get("id_agrupamento") or "");product=str(body.get("produto") or "").strip();mode=str(body.get("mode") or "summary")
     product_where="";product_params:list[Any]=[]
-    if module: product_where+=" AND modulo_venda=?";product_params.append(module)
+    if selected_modules: product_where+=f" AND modulo_venda IN ({','.join('?' for _ in selected_modules)})";product_params.extend(selected_modules)
     if group: product_where+=" AND id_agrupamento=?";product_params.append(group)
     if product: product_where+=" AND (id_produto=? OR produto LIKE ?)";product_params.extend([product,f"%{product}%"])
     with closing(cache_connection()) as cache,cache:
@@ -2132,7 +2135,7 @@ def query_annual_comparison(store_id:str,body:dict[str,Any],config:dict[str,Any]
               FROM produto_pagamento_modulo_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<?{product_where}
               GROUP BY substr(data,1,4),substr(data,6,2) ORDER BY ano,mes""",[store_id,filial,start,end,*product_params])]
         else:
-            status_where=" AND modulo_venda=?" if module else "";status_params=[module] if module else []
+            status_where=f" AND modulo_venda IN ({','.join('?' for _ in selected_modules)})" if selected_modules else "";status_params=selected_modules
             monthly=[dict(x) for x in cache.execute(f"""SELECT CAST(substr(data,1,4) AS INTEGER) ano,CAST(substr(data,6,2) AS INTEGER) mes,
               SUM(valor) faturamento,COUNT(DISTINCT id_venda||':'||id_documento_fiscal) vendas,0 quantidade
               FROM vendas_status_diario WHERE loja_id=? AND id_filial=? AND data>=? AND data<? AND (faturado=1 OR (modulo_venda='DELIVERY' AND aberto=1)){status_where}
