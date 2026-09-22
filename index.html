@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="autocomplete" content="on">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -15,6 +16,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CheckDiário">
   <title>CheckDiário</title>
+  <script id="limpeza-url-login-imediata" src="./assets/js/90-sensitive-url-cleanup.js?v=20260922-login-url-v2"></script>
   <script src="./assets/js/00-theme-bootstrap.js?v=20260807-theme-v1"></script>
   <!--
     Versão 3.2.37 - Preservação do histórico Raffinato após fechamento
@@ -3427,7 +3429,7 @@
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->
     <div id="loginFase1" class="login-fase">
-      <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="on">
+      <form id="loginForm" class="login-form" method="post" action="./" onsubmit="event.preventDefault(); return handleLogin(event)" autocomplete="on">
         <div class="login-field-group">
           <div class="login-field-label">E-mail de acesso</div>
           <input type="email" id="username" name="username" class="login-input" placeholder="seuemail@empresa.com.br" required autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -3447,7 +3449,7 @@
             Manter conectado
           </label>
         </div>
-        <button type="submit" class="login-btn-primary">Entrar</button>
+        <button type="submit" formmethod="post" class="login-btn-primary">Entrar</button>
         <div id="msgLogin" class="msg" style="margin-top:0; text-align:center;"></div>
         <div class="login-divider">outras opções</div>
         <button type="button" class="login-btn-secondary" onclick="toggleSolicitacaoAcesso()">Solicitar acesso</button>
@@ -3579,12 +3581,11 @@
 
 <script id="patch-feriados-definitivo-por-loja" src="./assets/js/87-holidays-store-patch.js"></script>
 
-<script id="bloqueio-gerenciador-senhas" src="./assets/js/88-password-manager-guard.js?v=20260810-raffinato-password-v1"></script>
+<script id="bloqueio-gerenciador-senhas" src="./assets/js/88-password-manager-guard.js?v=20260922-login-url-v2"></script>
 
 
 <script id="patch-ponto-atualizar-primeiro-clique" src="./assets/js/89-timeclock-refresh-patch.js"></script>
 
-<script id="limpar-url-sensivel-passivo" src="./assets/js/90-sensitive-url-cleanup.js"></script>
 
 
 <script id="patch-ponto-info-botao-3-1-57" src="./assets/js/91-timeclock-info-patch.js?v=20260903-intervalo2h"></script>

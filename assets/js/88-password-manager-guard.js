@@ -70,6 +70,12 @@
     try {
       document.querySelectorAll('form').forEach(function(form) {
         if (form.id === 'loginForm') {
+          form.method = 'post';
+          form.action = './';
+          if (form.dataset.nativeSubmitBlocked !== 'true') {
+            form.addEventListener('submit', function(event) { event.preventDefault(); }, true);
+            form.dataset.nativeSubmitBlocked = 'true';
+          }
           form.setAttribute('autocomplete', 'on');
           form.removeAttribute('data-lpignore');
           form.removeAttribute('data-1p-ignore');
