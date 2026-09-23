@@ -12,6 +12,6 @@ window.APP_CONFIG = {
   emailFunctionName: 'notificar-alertas-email',
   authEmailFunctionName: 'autenticacao-email',
   authRedirectUrl: 'https://checkdiario.com.br/',
-  appVersion: '3.2.65',
-  appVersionLabel: '3.2.65-checklist-sem-corte-1000',
+  appVersion: '3.2.66',
+  appVersionLabel: '3.2.66-editor-programacao-atomico',
 };

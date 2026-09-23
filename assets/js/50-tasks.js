@@ -1700,21 +1700,25 @@ function fecharConfigLancamentoTarefa(id = '') {
   renderizarListaTarefas();
 }
 
-async function localizarConflitosLancamentoManual({ funcionarioId = '', lancamentosParaCriar = [] } = {}) {
+async function localizarConflitosLancamentoManual({ funcionarioId = '', lancamentosParaCriar = [], ignorarAgendamentoId = '' } = {}) {
   const funcionario = String(funcionarioId || '').trim();
   const datas = [...new Set((lancamentosParaCriar || []).map(item => String(item.data_programada || '').trim()).filter(Boolean))];
   if (!funcionario || !datas.length) return [];
 
   const { data, error } = await sb
     .from('checklist_lancamentos')
-    .select('id, nome, horario_limite, data_programada, lancado_em, created_at, status')
+    .select('id, nome, horario_limite, data_programada, lancado_em, created_at, status, agendamento_id')
     .eq('funcionario_id', funcionario)
     .in('data_programada', datas)
     .limit(500);
 
   if (error) throw error;
 
-  const existentes = (data || []).filter(item => lancamentoContaComoExistenteParaAgenda(item));
+  const agendaIgnorada = String(ignorarAgendamentoId || '').trim();
+  const existentes = (data || []).filter(item =>
+    lancamentoContaComoExistenteParaAgenda(item)
+    && (!agendaIgnorada || String(item.agendamento_id || '') !== agendaIgnorada)
+  );
   const conflitos = [];
 
   lancamentosParaCriar.forEach(novo => {

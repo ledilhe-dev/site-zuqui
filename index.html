@@ -36,7 +36,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.55-permissoes-edicao-checklist">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.66-editor-programacao">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -2707,45 +2707,56 @@
   </div>
 </div>
 
-<div class="overlay" id="editarProgramacaoChecklistOverlay">
-  <div class="modal" style="max-width:680px">
-    <div class="modal-header">
+<div class="overlay programacao-editor-overlay" id="editarProgramacaoChecklistOverlay">
+  <div class="modal programacao-editor-modal">
+    <div class="modal-header programacao-editor-header">
       <div>
+        <div class="programacao-editor-kicker">PROGRAMAÇÃO DE CHECKLIST</div>
         <h3>Editar tarefa programada</h3>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">As alterações serão aplicadas somente às ocorrências pendentes.</div>
+        <div class="programacao-editor-subtitle">Recalcula somente esta programação. Tarefas iniciadas ou concluídas serão preservadas.</div>
       </div>
-      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharEdicaoProgramacaoChecklist()">X Fechar</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharEdicaoProgramacaoChecklist()">Fechar</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <label>Nome da tarefa<input id="editarProgramacaoChecklistNome" type="text" maxlength="180"></label>
-      <label>Orientação desta tarefa<textarea id="editarProgramacaoChecklistDescricao" rows="4" maxlength="2000"></textarea></label>
-      <label>Funcionário responsável<select id="editarProgramacaoChecklistFuncionario"></select></label>
-      <div class="form-row">
-        <label style="flex:1">Data inicial<input id="editarProgramacaoChecklistDataInicio" type="date" required></label>
-        <label style="flex:1">Data final<input id="editarProgramacaoChecklistDataFim" type="date" required></label>
-      </div>
-      <div class="form-row">
-        <label style="flex:1">Horário para início<input id="editarProgramacaoChecklistInicio" type="time" required></label>
-        <label style="flex:1">Horário para fim<input id="editarProgramacaoChecklistFim" type="time" required></label>
-      </div>
-      <label style="max-width:180px">Repetir a cada (dias)<input id="editarProgramacaoChecklistIntervalo" type="number" min="1" max="365" step="1" required></label>
-      <div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Dias da semana</div>
-        <div style="display:flex;flex-wrap:wrap;gap:10px">
-          <label><input class="editar-programacao-dia" type="checkbox" value="seg"> Seg</label>
-          <label><input class="editar-programacao-dia" type="checkbox" value="ter"> Ter</label>
-          <label><input class="editar-programacao-dia" type="checkbox" value="qua"> Qua</label>
-          <label><input class="editar-programacao-dia" type="checkbox" value="qui"> Qui</label>
-          <label><input class="editar-programacao-dia" type="checkbox" value="sex"> Sex</label>
-          <label><input class="editar-programacao-dia" type="checkbox" value="sab"> Sáb</label>
-          <label><input class="editar-programacao-dia" type="checkbox" value="dom"> Dom</label>
+    <div class="modal-body programacao-editor-body">
+      <section class="programacao-editor-section">
+        <div class="programacao-editor-section-title"><span>1</span><div><strong>Identificação</strong><small>Nome, orientação e responsável desta programação</small></div></div>
+        <div class="programacao-editor-grid">
+          <label class="programacao-editor-field programacao-editor-wide"><span>Nome da tarefa</span><input id="editarProgramacaoChecklistNome" type="text" maxlength="180"></label>
+          <label class="programacao-editor-field programacao-editor-wide"><span>Orientação para execução</span><textarea id="editarProgramacaoChecklistDescricao" rows="3" maxlength="2000"></textarea></label>
+          <label class="programacao-editor-field programacao-editor-wide"><span>Funcionário responsável</span><select id="editarProgramacaoChecklistFuncionario"></select><small>A alteração vale apenas para esta programação, sem afetar outra programação da mesma tarefa.</small></label>
         </div>
-      </div>
+      </section>
+      <section class="programacao-editor-section">
+        <div class="programacao-editor-section-title"><span>2</span><div><strong>Período e horários</strong><small>Defina quando as ocorrências devem existir</small></div></div>
+        <div class="programacao-editor-grid programacao-editor-grid-4">
+          <label class="programacao-editor-field"><span>Data inicial</span><input id="editarProgramacaoChecklistDataInicio" type="date" required></label>
+          <label class="programacao-editor-field"><span>Data final</span><input id="editarProgramacaoChecklistDataFim" type="date" required></label>
+          <label class="programacao-editor-field"><span>Início previsto</span><input id="editarProgramacaoChecklistInicio" type="time" required></label>
+          <label class="programacao-editor-field"><span>Fim previsto</span><input id="editarProgramacaoChecklistFim" type="time" required></label>
+          <label class="programacao-editor-field"><span>Repetir a cada</span><div class="programacao-editor-number"><input id="editarProgramacaoChecklistIntervalo" type="number" min="1" max="365" step="1" required><b>dia(s)</b></div><small>1 significa todos os dias selecionados.</small></label>
+        </div>
+      </section>
+      <section class="programacao-editor-section">
+        <div class="programacao-editor-section-title"><span>3</span><div><strong>Dias da semana</strong><small>Desmarcar um dia remove automaticamente suas ocorrências pendentes</small></div></div>
+        <div class="programacao-editor-days">
+          <label><input class="editar-programacao-dia" type="checkbox" value="seg"><span>Seg</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="ter"><span>Ter</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="qua"><span>Qua</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="qui"><span>Qui</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="sex"><span>Sex</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="sab"><span>Sáb</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="dom"><span>Dom</span></label>
+        </div>
+      </section>
+      <div id="editarProgramacaoChecklistResumo" class="programacao-editor-summary"></div>
       <div class="msg" id="msgEditarProgramacaoChecklist"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" type="button" onclick="fecharEdicaoProgramacaoChecklist()">Cancelar</button>
-      <button class="btn btn-green" id="btnSalvarEdicaoProgramacaoChecklist" type="button" onclick="salvarEdicaoProgramacaoChecklist()">Salvar alterações</button>
+    <div class="modal-footer programacao-editor-footer">
+      <div><strong>Recálculo automático</strong><span>Remove pendentes fora da regra e inclui as datas que faltarem.</span></div>
+      <div>
+        <button class="btn btn-ghost" type="button" onclick="fecharEdicaoProgramacaoChecklist()">Cancelar</button>
+        <button class="btn btn-green" id="btnSalvarEdicaoProgramacaoChecklist" type="button" onclick="salvarEdicaoProgramacaoChecklist()">Salvar e recalcular</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3406,11 +3417,11 @@
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js?v=3.2.55-permissoes-edicao-checklist"></script>
-<script src="./assets/js/50-tasks.js?v=3.2.64-incluir-dia-vencido"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.66-conflitos-edicao"></script>
 <script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
 <script src="./assets/js/52-checklist-models.js?v=3.2.55-permissoes-edicao-checklist"></script>
 <script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
-<script src="./assets/js/70-reports.js?v=3.2.58-relatorio-paginado"></script>
+<script src="./assets/js/70-reports.js?v=3.2.66-editor-programacao"></script>
 <script src="./assets/js/71-executions.js"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>
