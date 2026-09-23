@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v201-editor-programacao-atomico';
+const CACHE_NAME = 'check-diario-pwa-v202-url-atualizacao-limpa';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
