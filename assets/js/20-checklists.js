@@ -63,14 +63,39 @@ async function carregarChecklists(opcoes = {}) {
     console.warn('Não foi possível preparar os checklists automáticos do dia:', error);
   }
 
-  let query = sb
-    .from('checklist_lancamentos')
-    .select('*')
-    .eq('status', 'pendente')
-    .order('lancado_em', { ascending: false });
-  query = aplicarFiltroLojaGenericoQuery(query); // isolamento multi-loja
+  const dataHoje = hoje();
+  const criarConsultaLancamentos = () => aplicarFiltroLojaGenericoQuery(
+    sb.from('checklist_lancamentos').select('*').eq('status', 'pendente')
+  );
 
-  const { data, error } = await query;
+  // Programacoes longas podem ultrapassar o limite padrao de 1.000 linhas do
+  // PostgREST. Separar fila atual e futura impede que tarefas de hoje sejam
+  // cortadas por centenas de ocorrencias futuras.
+  const [atuaisRes, futurasRes, legadasRes] = await Promise.all([
+    criarConsultaLancamentos()
+      .lte('data_programada', dataHoje)
+      .order('data_programada', { ascending: true })
+      .order('horario_inicio', { ascending: true })
+      .limit(5000),
+    criarConsultaLancamentos()
+      .gt('data_programada', dataHoje)
+      .order('data_programada', { ascending: true })
+      .order('horario_inicio', { ascending: true })
+      .limit(5000),
+    criarConsultaLancamentos()
+      .is('data_programada', null)
+      .order('lancado_em', { ascending: false })
+      .limit(1000),
+  ]);
+  const error = atuaisRes.error || futurasRes.error || legadasRes.error;
+  const vistos = new Set();
+  const data = [...(atuaisRes.data || []), ...(futurasRes.data || []), ...(legadasRes.data || [])]
+    .filter(item => {
+      const chave = String(item?.id || '');
+      if (!chave || vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
   if (versaoSessaoInicio !== versaoSessaoSistema) return;
   if (tokenAtual !== tokenRequisicaoChecklists) return;
 
@@ -84,7 +109,6 @@ async function carregarChecklists(opcoes = {}) {
     return;
   }
 
-  const dataHoje = hoje();
   let rows = (data || []).filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
     if (dataReferencia < DATA_INICIO_PENDENCIAS_PERSISTENTES) return false;

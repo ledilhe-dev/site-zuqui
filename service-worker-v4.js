@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v199-pendencias-persistentes';
+const CACHE_NAME = 'check-diario-pwa-v200-checklist-sem-corte-1000';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
