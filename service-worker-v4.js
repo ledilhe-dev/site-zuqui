@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v198-login-url-seguro';
+const CACHE_NAME = 'check-diario-pwa-v199-pendencias-persistentes';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

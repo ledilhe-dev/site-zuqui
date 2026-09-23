@@ -1862,8 +1862,8 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const hojeData = new Date();
   hojeData.setHours(0, 0, 0, 0);
-  const ignorarHojePorHorario = !!horarioSelecionado && horarioJaPassouHoje(horarioSelecionado);
-  const ignorarHoje = ignorarHojePorHorario;
+  // A ocorrência do dia deve ser criada mesmo quando o horário previsto já passou.
+  // Ela permanece pendente/atrasada até conclusão ou cancelamento explícito.
   const agoraIso = new Date().toISOString();
   const agendamentoId = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const atorAuditoria = obterAtorAuditoriaAtual();
@@ -1908,7 +1908,6 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   );
 
   const lancamentosParaCriar = [];
-  let pulouHojePorHorario = false;
   let primeiroOffsetValido = null; // base para intervalo em DIAS CORRIDOS
 
   for (let offset = 0; offset <= horizonteAgendamento; offset++) {
@@ -1921,11 +1920,6 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     // Ex.: segunda + 7 dias = toda segunda; segunda + 14 dias = segunda sim/segunda não.
     if (primeiroOffsetValido === null) primeiroOffsetValido = offset;
     if (intervaloRepeticao > 1 && ((offset - primeiroOffsetValido) % intervaloRepeticao !== 0)) continue;
-
-    if (offset === 0 && ignorarHoje) {
-      pulouHojePorHorario = ignorarHojePorHorario;
-      continue;
-    }
 
     const dataIsoLocal = dataLocalISO(dataAlvo);
     const horaChave = horaCurta(horarioSelecionado || '') || 'sem-hora';
@@ -1947,9 +1941,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       criado_por_id: atorAuditoria.funcionarioId,
       criado_por_nome: atorAuditoria.nome,
       origem_lancamento: 'manual',
-      observacao_lancamento: pulouHojePorHorario && dataIsoLocal !== hoje()
-          ? `Hoje foi ignorado porque o horário ${horarioSelecionado} já havia passado.`
-          : null,
+      observacao_lancamento: null,
       empresa_id: tarefa.empresa_id || obterEmpresaIdSessao?.() || usuarioSistemaLogado?.empresa_id || null,
       loja_id: tarefa.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null,
       status: 'pendente',
@@ -1959,39 +1951,8 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     });
   }
 
-  if (pulouHojePorHorario) {
-    try {
-      const motivoIgnorado = 'horario_expirado';
-      const observacaoIgnorado = `Hoje foi ignorado porque o lançamento ocorreu após ${horarioSelecionado}. O sistema agendou apenas o próximo ciclo válido.`;
-
-      await registrarEventoLancamento({
-        tarefaId: tarefa.id,
-        checklistId: tarefa.checklist_id || null,
-        funcionarioResponsavelId: funcionarioSelecionado,
-        funcionarioAtorId: atorAuditoria.funcionarioId,
-        funcionarioAtorNome: atorAuditoria.nome,
-        tipoEvento: 'agendamento_ignorado',
-        origemEvento: atorAuditoria.origem,
-        dataProgramada: hoje(),
-        horarioProgramado: horarioSelecionado,
-        registradoEm: agoraIso,
-        observacao: observacaoIgnorado,
-        meta: {
-          motivo: motivoIgnorado,
-          hora_lancamento: agoraHoraMinuto(),
-          hora_lancamento_utc: agoraHoraMinutoUTC(),
-          hora_lancamento_local: agoraHoraMinutoOperacional(),
-        },
-      });
-    } catch (erroAuditoria) {
-      console.warn('Não foi possível registrar o agendamento ignorado:', erroAuditoria);
-    }
-  }
-
   if (!lancamentosParaCriar.length) {
-    const mensagemSemNovoLancamento = pulouHojePorHorario
-        ? 'Hoje foi ignorado porque o horário já passou. Os próximos dias já estavam agendados.'
-        : 'Nenhum novo lançamento criado. Esta tarefa já estava agendada para os próximos dias.';
+    const mensagemSemNovoLancamento = 'Nenhum novo lançamento criado. Esta tarefa já estava agendada para o período.';
     setMsg('msgTarefas', mensagemSemNovoLancamento, 'ok');
     setMsgLancamentoTarefa(id, mensagemSemNovoLancamento, 'ok');
     return;
@@ -2093,9 +2054,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
       dataProgramada: item.data_programada,
       horarioProgramado: item.horario_limite,
       registradoEm: agoraIso,
-      observacao: pulouHojePorHorario
-          ? 'Lançamento manual criado após ignorar o dia corrente por horário expirado.'
-          : 'Lançamento manual registrado.',
+      observacao: 'Lançamento manual registrado.',
       meta: {
         dias_semana: diasLancamento || 'todos',
       },
@@ -2104,9 +2063,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     console.warn('Não foi possível registrar a auditoria do lançamento manual:', erroAuditoria);
   }
 
-  const mensagemSucesso = pulouHojePorHorario
-      ? `Hoje foi ignorado (horário já passou). ${lancamentosParaCriar.length} lançamento(s) agendado(s) para os próximos dias.`
-      : `${lancamentosParaCriar.length} lançamento(s) enviado(s) para a aba Checklists.`;
+  const mensagemSucesso = `${lancamentosParaCriar.length} lançamento(s) enviado(s) para a aba Checklists.`;
   setMsg('msgTarefas', mensagemSucesso, 'ok');
   setMsgLancamentoTarefa(id, mensagemSucesso, 'ok');
   carregarTarefas();

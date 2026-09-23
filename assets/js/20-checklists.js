@@ -1,6 +1,12 @@
 // CHECKLISTS
 // 
+const DATA_INICIO_PENDENCIAS_PERSISTENTES = '2026-09-23';
+
 function obterAvisoDiscretoChecklist(lancamento = {}) {
+  const dataProgramada = String(obterDataProgramadaLancamento(lancamento) || '').trim();
+  if (dataProgramada && dataProgramada < hoje()) {
+    return { classe: 'atrasado', texto: `Pendente desde ${formatarDataProgramadaBr(dataProgramada)}` };
+  }
   if (!lancamentoProgramadoHoje(lancamento)) return null;
   if (lancamentoFoiCriadoAposHorarioNoMesmoDia(lancamento)) return null;
 
@@ -81,7 +87,7 @@ async function carregarChecklists(opcoes = {}) {
   const dataHoje = hoje();
   let rows = (data || []).filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
-    if (dataReferencia < dataHoje) return false;
+    if (dataReferencia < DATA_INICIO_PENDENCIAS_PERSISTENTES) return false;
     return lancamentoAtendeFiltroDiaSemana(t, dataReferencia);
   });
 
@@ -132,7 +138,7 @@ async function carregarChecklists(opcoes = {}) {
   if (!rows.length) {
     lista.innerHTML = usandoFiltros
       ? '<div class="empty">Nenhum checklist encontrado com os filtros informados.</div>'
-      : '<div class="empty">Nenhum checklist lancado para hoje.</div>';
+      : '<div class="empty">Nenhum checklist pendente.</div>';
     return;
   }
 
@@ -175,9 +181,10 @@ async function carregarChecklists(opcoes = {}) {
     </div>`;
   }).join('') + '</div>';
 
+  // Pendências antigas permanecem na fila principal até conclusão ou cancelamento.
   const rowsHoje = rows.filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
-    return dataReferencia === dataHoje;
+    return dataReferencia <= dataHoje;
   });
 
   const rowsFuturos = rows.filter(t => {
@@ -228,7 +235,7 @@ async function carregarChecklists(opcoes = {}) {
 
   const htmlHoje = rowsHoje.length
     ? renderizarCardsChecklist(rowsHoje)
-    : `<div class="empty">${usandoFiltros ? 'Nenhum checklist de hoje encontrado com os filtros informados.' : 'Nenhum checklist lancado para hoje.'}</div>`;
+    : `<div class="empty">${usandoFiltros ? 'Nenhum checklist pendente encontrado com os filtros informados.' : 'Nenhum checklist pendente.'}</div>`;
 
   const htmlFuturos = rowsFuturos.length
     ? `<details class="checklists-futuros-box"${checklistsFuturosExpandido ? ' open' : ''}>
