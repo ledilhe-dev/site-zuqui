@@ -49,7 +49,7 @@ async function carregarPreferenciaUsuario(chave, fallback = null) {
       }
       return valor;
     }
-  } catch(e) {}
+  } catch(e) { console.warn('Erro ao carregar preferência:', e); }
   const chaveLocal = chaveLocalPreferenciaUsuario(chave);
   if (chaveLocal) {
     try {
