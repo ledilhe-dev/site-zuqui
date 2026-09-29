@@ -779,7 +779,10 @@ async function consultarSangriasRaffinato() {
       });
       payload.origem_consulta = 'sincronizacao';
     }
-    raffinatoSangrias = Array.isArray(payload.items) ? payload.items.map(normalizarMovimentoRaffinato) : [];
+    raffinatoSangrias = Array.isArray(payload.items) ? payload.items.map(normalizarMovimentoRaffinato).filter(item => {
+      const hora=String(item.hora||'00:00:00').slice(0,8),inicio=`${periodo.horaInicio}:00`,fim=`${periodo.horaFim}:59`;
+      return inicio<=fim ? hora>=inicio&&hora<=fim : hora>=inicio||hora<=fim;
+    }) : [];
     raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
     raffinatoBuscaDetalhe = '';
     const buscaDetalhe = document.getElementById('raffinatoDetailSearch');
