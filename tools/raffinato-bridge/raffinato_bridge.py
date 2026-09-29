@@ -1173,7 +1173,7 @@ def parse_datetime(value: Any, field: str) -> datetime:
         raise ValueError(f"{field} inválido.") from exc
 
 
-def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datetime, filial: int) -> dict[str, Any]:
+def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datetime, filial: int, hour_start: str | None = None, hour_end: str | None = None) -> dict[str, Any]:
     if end_exclusive <= start:
         raise ValueError("O fim do período deve ser posterior ao início.")
     if (end_exclusive - start).days > MAX_INTERVAL_DAYS:
@@ -1202,6 +1202,12 @@ def query_sangrias(config: dict[str, Any], start: datetime, end_exclusive: datet
         row_datetime = datetime.combine(row_date, row_time)
         if row_datetime < start or row_datetime >= end_exclusive:
             continue
+        row_hour = row_time.strftime("%H:%M:%S")
+        if hour_start and hour_end:
+            if hour_start <= hour_end and not hour_start <= row_hour <= hour_end:
+                continue
+            if hour_start > hour_end and not (row_hour >= hour_start or row_hour <= hour_end):
+                continue
         value = Decimal(str(row.get("valortotal") or 0))
         total += value
         tipo = int(row.get("tipocomprovantenaofiscal") or 0)
@@ -2458,7 +2464,7 @@ class Handler(BaseHTTPRequestHandler):
             validate_request_tenant(body, store_id)
             config = get_store_config(store_id)
             filial = resolve_raffinato_filial(config, body)
-            result = query_sangrias(config, start, end, filial)
+            result = query_sangrias(config, start, end, filial, str(body.get("hora_inicio") or "")[:8] or None, str(body.get("hora_fim") or "")[:8] or None)
             self.send_json(200, result)
         except (ValueError, json.JSONDecodeError) as exc:
             self.send_json(400, {"error": str(exc)})

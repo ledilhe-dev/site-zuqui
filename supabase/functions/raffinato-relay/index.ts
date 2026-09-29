@@ -75,6 +75,8 @@ Deno.serve(async (request) => {
           empresa_id: integration.empresa_id, loja_id: integration.loja_id,
           data: brDateToIso(item.data), hora: String(item.hora || "00:00:00").slice(0, 8),
           motivo: String(item.motivo || "Sem motivo").slice(0, 500), valor: Number(item.valor || 0),
+          documento_fiscal_id: String(item.id || item.documento_fiscal_id || "").slice(0, 100) || null,
+          tipo_comprovante_nao_fiscal: validateMovementType(item.tipo_comprovante_nao_fiscal),
         }));
         const { error } = await admin.from("raffinato_sangrias_cache").insert(rows);
         if (error) throw error;
@@ -306,7 +308,7 @@ const groups=new Set((Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map
     if (body.action === "sales_bi_dashboard") {
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
-      const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=start&&dt<end;});};
+      const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>matchesDailyPeriod(x,start,end,body.hora_inicio,body.hora_fim));};
       const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),allItems=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado");
       const payment=body.id_forma_pagamento==null?"":String(body.id_forma_pagamento),module=String(body.origem||body.modulo_venda||""),groupIds=[...new Set((Array.isArray(body.id_agrupamentos)?body.id_agrupamentos:(body.id_agrupamento==null?[]:[body.id_agrupamento])).map((x:any)=>Number(x)).filter((x:number)=>Number.isSafeInteger(x)&&x>0))].slice(0,500),groupSet=new Set(groupIds.map(String)),product=String(body.produto||"").trim().toLocaleLowerCase("pt-BR"),weekday=body.dia_semana==null?null:Number(body.dia_semana),hour=body.hora==null?null:Number(body.hora),dayOf=(d:string)=>new Date(`${d}T12:00:00Z`).getUTCDay();
       const docMeta=new Map<string,any>(),docTotal=new Map<string,number>();for(const d of docs){const id=String(d.id_documento_fiscal);docMeta.set(id,d);docTotal.set(id,(docTotal.get(id)||0)+Number(d.valor_pagamento||0));}
@@ -324,7 +326,7 @@ const groups=new Set((Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map
     if (body.action === "sales_canonical_dashboard") {
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
-      const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=start&&dt<end;});};
+      const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>matchesDailyPeriod(x,start,end,body.hora_inicio,body.hora_fim));};
       const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),items=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado"),openDeliveries=await load("raffinato_delivery_aberto_cache","id_tele_entrega,id_venda,pedido,data,hora,id_status,status,valor,cancelado,finalizado,id_documento_fiscal"),paymentsByDoc=new Map<string,any[]>(),totalByDoc=new Map<string,number>();
       for(const d of docs){const id=String(d.id_documento_fiscal),list=paymentsByDoc.get(id)||[];list.push(d);paymentsByDoc.set(id,list);totalByDoc.set(id,(totalByDoc.get(id)||0)+Number(d.valor_pagamento||0));}
       const rows:any[]=[],dimensions:any[]=[];for(const item of items){const id=String(item.id_documento_fiscal),payments=paymentsByDoc.get(id)||[];for(const payment of payments){const factor=Number(payment.valor_pagamento||0)/(totalByDoc.get(id)||1),row={data:item.data,hora:item.hora,id_documento_fiscal:item.id_documento_fiscal,modulo_venda:payment.modulo_venda||"VENDA_RAPIDA",codigo:item.codigo,produto:item.produto,id_agrupamento:item.id_agrupamento,agrupamento:item.agrupamento,quantidade_atribuida:Number(item.quantidade||0)*factor,preco_medio:Number(item.quantidade||0)?Number(item.total_faturado||0)/Number(item.quantidade):0,faturamento_produto:Number(item.total_faturado||0),id_forma_pagamento:payment.id_forma_pagamento,forma_pagamento:payment.forma_pagamento,valor_atribuido:Number(item.total_faturado||0)*factor};rows.push(row);dimensions.push({id_documento:id,codigo:item.codigo,id_agrupamento:item.id_agrupamento,id_forma_pagamento:payment.id_forma_pagamento,modulo_venda:row.modulo_venda});}}
@@ -341,7 +343,7 @@ const groups=new Set((Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);
       if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
       const startDate=start.slice(0,10),endDate=end.slice(0,10),payment=body.id_forma_pagamento?Number(body.id_forma_pagamento):null;
-      const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",startDate).lte("data",endDate).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>{const dt=`${x.data}T${String(x.hora||"00:00:00").slice(0,8)}`;return dt>=start&&dt<end;});};
+      const load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",startDate).lte("data",endDate).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>matchesDailyPeriod(x,start,end,body.hora_inicio,body.hora_fim));};
       const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,id_forma_pagamento,forma_pagamento,valor_pagamento");
       const allByDoc=new Map<string,number>();for(const d of docs)allByDoc.set(String(d.id_documento_fiscal),(allByDoc.get(String(d.id_documento_fiscal))||0)+Number(d.valor_pagamento||0));
       const selectedDocs=payment?docs.filter(x=>Number(x.id_forma_pagamento)===payment):docs;
@@ -453,16 +455,14 @@ const groups=new Set((Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map
       const inicioCompleto = validateDateTime(body.inicio, "inicio");
       const fimCompleto = validateDateTime(body.fim, "fim");
       const inicio = inicioCompleto.slice(0, 10); const fim = fimCompleto.slice(0, 10);
-      let query = admin.from("raffinato_sangrias_cache").select("motivo,valor,hora,data")
+      let query = admin.from("raffinato_sangrias_cache").select("documento_fiscal_id,tipo_comprovante_nao_fiscal,motivo,valor,hora,data")
         .eq("empresa_id", body.empresa_id).eq("loja_id", body.loja_id)
         .gte("data", inicio).lte("data", fim).order("data").order("hora").limit(10000);
       const { data, error } = await query;
       if (error) throw error;
-      const items = (data || []).filter((item: any) => {
-        const instante = `${String(item.data).slice(0, 10)}T${String(item.hora || "00:00:00").slice(0, 8)}`;
-        return instante >= inicioCompleto && instante <= fimCompleto;
-      }).map((item: any) => ({ ...item, data: isoDateToBr(item.data) }));
-      return json({ items, quantidade: items.length, total: items.reduce((sum: number, item: any) => sum + Number(item.valor || 0), 0), ultima_sincronizacao_em: integration?.ultima_sincronizacao_em || null });
+      const items = (data || []).filter((item: any) => matchesDailyPeriod(item,inicioCompleto,fimCompleto,body.hora_inicio,body.hora_fim)).map((item: any) => ({ ...item, tipo_movimento:Number(item.tipo_comprovante_nao_fiscal)===4?'RETIRADA':'SANGRIA', data: isoDateToBr(item.data) }));
+      const sangrias=items.filter((item:any)=>Number(item.tipo_comprovante_nao_fiscal)===1),retiradas=items.filter((item:any)=>Number(item.tipo_comprovante_nao_fiscal)===4),sum=(rows:any[])=>rows.reduce((total:number,item:any)=>total+Number(item.valor||0),0);
+      return json({items,quantidade:items.length,total:sum(items),total_sangrias:sum(sangrias),quantidade_sangrias:sangrias.length,total_retiradas:sum(retiradas),quantidade_retiradas:retiradas.length,ultima_sincronizacao_em:integration?.ultima_sincronizacao_em||null});
     }
     throw new Error("Acao desconhecida.");
   } catch (error) {
@@ -523,6 +523,9 @@ function validateToken(value: any) { const token=String(value||""); if(!/^[A-Za-
 function validateUuid(value: any, label: string) { if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||""))) throw new Error(`Contexto de ${label} invalido.`); }
 function validateDate(value: any, label: string) { const result=String(value||"").slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(result)) throw new Error(`Data de ${label} invalida.`); return result; }
 function validateDateTime(value: any, label: string) { const result=String(value||""); if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(result)) throw new Error(`Data/hora de ${label} invalida.`); return result; }
+function validateMovementType(value:any){const type=Number(value);if(type!==1&&type!==4)throw new Error("Tipo de movimento do Raffinato invalido.");return type;}
+function normalizeTime(value:any,fallback:string){const raw=String(value||fallback).slice(0,8),result=raw.length===5?`${raw}:00`:raw;if(!/^\d{2}:\d{2}:\d{2}$/.test(result))throw new Error("Horario invalido.");const [h,m,s]=result.split(":").map(Number);if(h>23||m>59||s>59)throw new Error("Horario invalido.");return result;}
+function matchesDailyPeriod(item:any,start:string,end:string,startTime?:string,endTime?:string){const date=String(item?.data||"").slice(0,10),first=start.slice(0,10),last=end.slice(0,10),time=normalizeTime(item?.hora,"00:00:00"),from=normalizeTime(startTime,start.slice(11,19)||"00:00:00"),to=normalizeTime(endTime,end.slice(11,19)||"23:59:59");return date>=first&&date<=last&&(from<=to?time>=from&&time<=to:time>=from||time<=to);}
 function brDateToIso(value: any) { const raw=String(value||""); if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw; const [d,m,y]=raw.split("/"); return `${y}-${m}-${d}`; }
 function isoDateToBr(value: any) { const [y,m,d]=String(value||"").slice(0,10).split("-"); return `${d}/${m}/${y}`; }
 function isRecent(value: any) { return !!value && Date.now() - new Date(value).getTime() < 150000; }

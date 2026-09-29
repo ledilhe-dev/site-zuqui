@@ -488,13 +488,12 @@ function obterPeriodoSangriasRaffinato() {
   const dataFim = document.getElementById('raffinatoDataFim')?.value;
   const horaFim = document.getElementById('raffinatoHoraFim')?.value || '23:59';
   if (!dataInicio || !dataFim) throw new Error('Informe as datas inicial e final.');
-  const inicio = `${dataInicio}T${horaInicio}:00`;
-  const fimSelecionado = new Date(`${dataFim}T${horaFim}:00`);
-  const fimExclusivoDate = new Date(fimSelecionado);
-  fimExclusivoDate.setMinutes(fimExclusivoDate.getMinutes() + 1);
-  const fimExclusivo = `${dataLocalIso(fimExclusivoDate)}T${String(fimExclusivoDate.getHours()).padStart(2,'0')}:${String(fimExclusivoDate.getMinutes()).padStart(2,'0')}:00`;
-  if (fimExclusivoDate <= new Date(inicio)) throw new Error('A data final deve ser posterior à data inicial.');
-  return { inicio, fim:fimExclusivo, fimExclusivo, dataInicio, dataFim };
+  if (dataFim < dataInicio) throw new Error('A data final deve ser igual ou posterior à data inicial.');
+  const fimDate = new Date(`${dataFim}T12:00:00`);
+  fimDate.setDate(fimDate.getDate() + 1);
+  const inicio = `${dataInicio}T00:00:00`;
+  const fimExclusivo = `${dataLocalIso(fimDate)}T00:00:00`;
+  return { inicio, fim:fimExclusivo, fimExclusivo, dataInicio, dataFim, horaInicio, horaFim };
 }
 
 function escapeRaffinatoHtml(value) {
@@ -767,12 +766,14 @@ async function consultarSangriasRaffinato() {
       // Fonte de verdade: consulta o DocumentoFiscal diretamente no Raffinato.
       payload = await raffinatoBridgePost('/api/sangrias', {
         inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
+        hora_inicio:`${periodo.horaInicio}:00`, hora_fim:`${periodo.horaFim}:59`,
         loja_id:contexto.lojaId,
       });
     } catch (localError) {
       // Permite consultar em celular ou computador no qual o conector não esteja aberto.
       payload = await raffinatoRelay({
         action:'dashboard', inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
+        hora_inicio:`${periodo.horaInicio}:00`, hora_fim:`${periodo.horaFim}:59`,
         empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
         usuario_id:String(usuarioSistemaLogado?.id || ''),
       });
