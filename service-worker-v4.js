@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v202-url-atualizacao-limpa';
+const CACHE_NAME = 'check-diario-pwa-v203-persistencia-menu-usuario';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
