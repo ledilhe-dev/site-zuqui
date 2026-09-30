@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.24"
+CONNECTOR_VERSION = "2.0.0"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -2494,9 +2494,15 @@ class Handler(BaseHTTPRequestHandler):
                 store_id=validate_store_id(body.get("loja_id")); validate_request_tenant(body,store_id)
                 result=diagnose_raffinato_api(get_store_config(store_id)); self.send_json(200 if result.get("ok") else 503,result); return
             if route == "/api/raffinato-api/configurar-local":
-                state=load_profile_state(); mappings=[(key,value) for key,value in state.get("mappings",{}).items() if value.get("active",True)]
-                if len(mappings)!=1: raise ValueError("A configuração local exige exatamente uma loja vinculada.")
-                store_id,mapping=mappings[0]; profile_id=str(mapping.get("connection_profile_id") or ""); profile=state.get("profiles",{}).get(profile_id)
+                state=load_profile_state(); requested=str(body.get("loja_id") or "").strip(); active=[(key,value) for key,value in state.get("mappings",{}).items() if value.get("active",True)]
+                if not requested:
+                    zuqui=[(key,value) for key,value in active if "zuqui" in " ".join(str(state.get("profiles",{}).get(value.get("connection_profile_id"),{}).get(field) or "") for field in ("name","database")).casefold()]
+                    if len(zuqui)==1: requested=zuqui[0][0]
+                    elif len(active)==1: requested=active[0][0]
+                    else: raise ValueError("Há mais de uma loja vinculada; abra a configuração Raffinato da loja Zuqui no CheckDiário.")
+                store_id=validate_store_id(requested); mapping=state.get("mappings",{}).get(store_id)
+                if not mapping or not mapping.get("active",True): raise ValueError("Selecione uma loja vinculada válida.")
+                profile_id=str(mapping.get("connection_profile_id") or ""); profile=state.get("profiles",{}).get(profile_id)
                 if not profile: raise ValueError("Perfil Raffinato vinculado não encontrado.")
                 api_url=str(body.get("raffinato_api_url") or "").strip().rstrip("/"); api_auth=str(body.get("raffinato_api_auth") or "").strip()
                 candidate={**profile,"raffinato_api_url":api_url,"raffinato_api_auth":api_auth}
@@ -2684,8 +2690,8 @@ def create_tray_image():
     from PIL import Image, ImageDraw
     image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((4, 4, 60, 60), radius=16, fill=(249, 115, 22, 255))
-    draw.text((18, 21), "SR", fill="white", stroke_width=1)
+    draw.rounded_rectangle((3, 3, 61, 61), radius=15, fill=(255, 255, 255, 255), outline=(34, 197, 94, 255), width=6)
+    draw.line((16, 32, 27, 43, 49, 20), fill=(15, 23, 42, 255), width=7, joint="curve")
     return image
 
 
