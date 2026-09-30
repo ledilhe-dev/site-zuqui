@@ -37,15 +37,12 @@
   function decorateButton(button, name) {
     if (!button || !icons[name]) return;
     let holder = button.querySelector(':scope > .icon, :scope > span > .icon');
+    if (holder && holder.parentElement !== button) button.insertBefore(holder, button.firstChild);
     if (holder && button.dataset.sidebarIcon === name && holder.classList.contains('nav-icon-polished')) return;
     if (!holder) {
       holder = document.createElement('span');
       holder.className = 'icon';
-      const directCopy = button.querySelector(':scope > .nav-copy');
-      const contentRow = button.querySelector(':scope > span:has(.nav-copy)');
-      if (contentRow) contentRow.insertBefore(holder, contentRow.firstChild);
-      else if (directCopy) button.insertBefore(holder, directCopy);
-      else button.insertBefore(holder, button.firstChild);
+      button.insertBefore(holder, button.firstChild);
     }
     holder.innerHTML = icons[name];
     holder.classList.add('nav-icon-polished');
