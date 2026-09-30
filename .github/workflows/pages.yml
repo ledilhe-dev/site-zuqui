@@ -62,6 +62,7 @@ jobs:
           cp tools/raffinato-bridge/download-v1721-final/Conector-Raffinato-v1.7.21.exe _site/downloads/
           cp tools/raffinato-bridge/download-v1722-final/Conector-Raffinato-v1.7.22.exe _site/downloads/
           cp tools/raffinato-bridge/download-v1723-final/Conector-Raffinato-v1.7.23.exe _site/downloads/
+          cp tools/raffinato-bridge/download-v1724-final/Conector-Raffinato-v1.7.24.exe _site/downloads/
 
           touch _site/.nojekyll
 
