@@ -59,6 +59,18 @@ class RaffinatoApiTests(unittest.TestCase):
         with patch.object(bridge,"RaffinatoApiClient",Client): result=bridge.prepare_raffinato_test_order({},body)
         self.assertFalse(result["enviado"]); self.assertEqual(result["payload"]["pedido"]["itens"][0]["idgarcom"],20)
 
+    def test_preview_uses_configured_waiter_id(self):
+        class Client:
+            def __init__(self,_config): pass
+            def get(self,route):
+                return {"integracao/garcom":{"result":[{"garcons":[{"id":33,"nome":"Site externo"}]}]},
+                    "integracao/produto":{"result":[[{"id":2777,"valor":10.0}]]},
+                    "integracao/cartaoconsumo":{"result":[[{"id":127,"codigovirtual":"3","bloqueado":False,"extratoimpresso":False}]]},
+                    "integracao/pontoreferencia":{"result":[[{"nome":"MESA 01"}]]}}[route]
+        body={"identificador":"11111111-1111-4111-8111-111111111111","identificador_pedido":"22222222-2222-4222-8222-222222222222","idgarcom":33}
+        with patch.object(bridge,"RaffinatoApiClient",Client): result=bridge.prepare_raffinato_test_order({},body)
+        self.assertEqual(result["payload"]["pedido"]["itens"][0]["idgarcom"],33)
+
     def test_send_requires_confirmation_and_is_idempotent(self):
         with self.assertRaises(ValueError): bridge.send_raffinato_test_order({}, {"confirmation":"sim"})
         saved={"raffinato_test_order_preview":{"enviado":True,"resultado":{"gravado":True,"idvenda":9}}}

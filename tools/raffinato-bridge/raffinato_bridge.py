@@ -25,7 +25,7 @@ from contextlib import closing
 import urllib.request
 import urllib.error
 import winreg
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 from ctypes import wintypes
 from datetime import date, datetime, time as datetime_time, timedelta
 from decimal import Decimal
@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.1"
+CONNECTOR_VERSION = "2.0.2"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -986,14 +986,15 @@ def prepare_raffinato_test_order(config: dict[str, Any], body: dict[str, Any]) -
     waiter_rows = raffinato_result_items(client.get("integracao/garcom")); waiters = []
     for row in waiter_rows:
         waiters.extend(row.get("garcons", [])) if isinstance(row, dict) and isinstance(row.get("garcons"), list) else waiters.append(row)
-    waiter = next((x for x in waiters if isinstance(x, dict) and str(x.get("nome", "")).strip().casefold() == "cardapiozuqui"), None)
+    waiter_id = int(body.get("idgarcom") or config.get("idgarcom") or 20)
+    waiter = next((x for x in waiters if isinstance(x, dict) and int(x.get("id") or 0) == waiter_id), None)
     products = raffinato_result_items(client.get("integracao/produto")); product_id = int(body.get("idproduto") or 2777)
     product = next((x for x in products if isinstance(x, dict) and int(x.get("id") or 0) == product_id), None)
     cards = raffinato_result_items(client.get("integracao/cartaoconsumo")); card_code = str(body.get("codigovirtual") or "3")
     card = next((x for x in cards if isinstance(x, dict) and str(x.get("codigovirtual") or "") == card_code), None)
     reference = str(body.get("nomereferencia") or "MESA 01").strip()
     refs = raffinato_result_items(client.get("integracao/pontoreferencia"))
-    if not waiter or not product or not card: raise ValueError("Garcom, produto ou cartao do teste nao encontrado.")
+    if not waiter or not product or not card: raise ValueError(f"Garcom {waiter_id}, produto ou cartao do teste nao encontrado.")
     if bool(card.get("bloqueado")) or bool(card.get("extratoimpresso")): raise ValueError("Cartao 3 bloqueado ou com extrato impresso.")
     if reference.casefold() not in {str(x.get("nome") or "").strip().casefold() for x in refs if isinstance(x, dict)}:
         raise ValueError("Ponto de referencia nao encontrado.")
@@ -1013,8 +1014,7 @@ def send_raffinato_test_order(config: dict[str, Any], body: dict[str, Any]) -> d
     if saved.get("enviado"):
         return {"ok": True, "enviado": True, "ja_enviado": True, "resultado": saved.get("resultado") or {}}
     preview = prepare_raffinato_test_order(config, {"identificador": saved.get("identificador"),
-        "identificador_pedido": saved.get("identificadorpedidointegracao"), "idproduto": 2777,
-        "codigovirtual": "3", "nomereferencia": "MESA 01", "setorimpressao": "0"})
+        "identificador_pedido": saved.get("identificadorpedidointegracao"), **(saved.get("parametros") or {})})
     response = RaffinatoApiClient(config).post("integracao/recebepedidos", preview["payload"])
     results = raffinato_result_items(response); result = results[0] if results and isinstance(results[0], dict) else {}
     if result.get("gravado") is not True:
@@ -2387,6 +2387,11 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True, "paired":connector_is_paired(), "connector_instance_id":state["connector_instance_id"], "empresa_id":state.get("paired_empresa_id"), "lojas_vinculadas":list(state.get("mappings", {}).keys()), "zuqui_configurado":bool(zuqui_integration_config(state).get("raffinato_api_auth"))})
             return
         if self.route_path() == "/zuqui-teste":
+            query=parse_qs(urlparse(self.path).query); waiter_values=query.get("idgarcom",[])
+            if waiter_values:
+                waiter_id=int(waiter_values[0])
+                if waiter_id<=0: raise ValueError("ID do garçom inválido.")
+                state=load_profile_state(); state["zuqui_integration"]={**zuqui_integration_config(state),"idgarcom":waiter_id}; save_profile_state(state)
             self.send_html(200, f'''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Teste Zuqui · Raffinato</title><style>body{{margin:0;background:#f4efe4;color:#243029;font:15px system-ui}}main{{width:min(850px,calc(100% - 28px));margin:30px auto;padding:28px;border-radius:20px;background:#fffdf8;box-shadow:0 20px 60px #24302922}}h1{{font-family:Georgia,serif}}button,input{{box-sizing:border-box;padding:12px 16px;border-radius:10px;font:inherit}}button{{border:0;background:#244a36;color:white;font-weight:800;cursor:pointer}}button[disabled]{{opacity:.55}}input{{width:100%;margin:6px 0;border:1px solid #ccd5cd}}.danger{{background:#a33}}.status{{padding:14px;border-radius:10px;background:#fff3cf}}.ok{{background:#def4e5}}.bad{{background:#fee4e4}}.setup{{padding:16px;border:1px solid #ddd4bf;border-radius:12px}}pre{{max-height:420px;overflow:auto;padding:15px;border-radius:10px;background:#122018;color:#e8f5ec;white-space:pre-wrap}}</style><main><small>CONECTOR RAFFINATO {CONNECTOR_VERSION}</small><h1>Teste controlado do Zuqui</h1><p>Esta integração é local e independente das lojas e permissões do CheckDiário. Gerar a prévia não envia pedido.</p><p id="msg" class="status">Pronto para validar a API.</p><section id="setup" class="setup" hidden><b>Configuração única da API do cardápio</b><p>A credencial será validada e armazenada somente no DPAPI deste computador.</p><label>URL da API<input id="apiUrl" value="http://26.61.114.43:10060/raffinato/api"></label><label>Credencial completa<input id="apiAuth" type="password" placeholder="Basic &lt;base64&gt;"></label><button id="saveApi">Validar e salvar com segurança</button></section><button id="prepare">Validar API e gerar prévia</button><pre id="preview" hidden></pre><button id="send" class="danger" hidden>Confirmar e enviar UM pedido de teste</button><script>async function call(path,body){{let r=await fetch(path,{{method:body?'POST':'GET',headers:body?{{'content-type':'application/json'}}:{{}},body:body?JSON.stringify(body):null}}),j=await r.json().catch(()=>({{}}));if(!r.ok)throw Error(j.error||'HTTP '+r.status);return j}}saveApi.onclick=async()=>{{saveApi.disabled=true;try{{await call('/api/raffinato-api/configurar-local',{{raffinato_api_url:apiUrl.value,raffinato_api_auth:apiAuth.value}});apiAuth.value='';setup.hidden=true;msg.className='status ok';msg.textContent='Credencial validada e protegida pelo DPAPI. Agora gere a prévia.'}}catch(e){{msg.className='status bad';msg.textContent=e.message}}finally{{saveApi.disabled=false}}}};prepare.onclick=async()=>{{prepare.disabled=true;msg.className='status';msg.textContent='Validando dados reais...';try{{let d=await call('/api/raffinato-api/diagnostico',{{}});if(!d.ok)throw Error('Diagnóstico da API apresentou erro.');let p=await call('/api/raffinato-api/pedido-teste/preparar',{{idproduto:2777,codigovirtual:'3',nomereferencia:'MESA 01'}});preview.textContent=JSON.stringify(p.payload,null,2);preview.hidden=false;send.hidden=false;msg.className='status ok';msg.textContent='Prévia gerada. Nenhum pedido foi enviado.'}}catch(e){{msg.className='status bad';msg.textContent=e.message;if(/credencial completa Basic|Token Basic|não configurada/i.test(e.message))setup.hidden=false}}finally{{prepare.disabled=false}}}};send.onclick=async()=>{{if(!confirm('Confirma o envio de UM pedido real de teste para o Raffinato?'))return;send.disabled=true;try{{let r=await call('/api/raffinato-api/pedido-teste/enviar',{{confirmation:'ENVIAR PEDIDO TESTE'}});msg.className='status '+(r.resultado&&r.resultado.gravado===true?'ok':'bad');msg.textContent=r.resultado&&r.resultado.gravado===true?'Pedido gravado. idvenda '+(r.resultado.idvenda||'-')+' · número '+(r.resultado.numeropedido||'-'):'Raffinato não confirmou gravado: true.';if(r.resultado&&r.resultado.gravado===true)send.hidden=true}}catch(e){{msg.className='status bad';msg.textContent=e.message}}finally{{send.disabled=false}}}};</script></main></html>''')
             return
         if self.route_path() == "/":
@@ -2511,9 +2516,12 @@ class Handler(BaseHTTPRequestHandler):
                 config=zuqui_integration_config()
                 if not config.get("raffinato_api_auth"): raise ValueError("API do cardápio ainda não configurada neste computador.")
                 saved=config.get("raffinato_test_order_preview") or {}
+                if saved.get("enviado"):
+                    saved={}
                 identifier=str(saved.get("identificador") or uuid4()); order_id=str(saved.get("identificadorpedidointegracao") or uuid4())
                 result=prepare_raffinato_test_order(config,{**body,"identificador":identifier,"identificador_pedido":order_id})
-                state=load_profile_state(); state["zuqui_integration"]={**zuqui_integration_config(state),"raffinato_test_order_preview":{"identificador":identifier,"identificadorpedidointegracao":order_id,"payload":result["payload"],"enviado":False}}
+                parametros={"idproduto":int(body.get("idproduto") or 2777),"codigovirtual":str(body.get("codigovirtual") or "3"),"nomereferencia":str(body.get("nomereferencia") or "MESA 01"),"setorimpressao":str(body.get("setorimpressao") or "0"),"idgarcom":int(body.get("idgarcom") or config.get("idgarcom") or 20)}
+                state=load_profile_state(); state["zuqui_integration"]={**zuqui_integration_config(state),"idgarcom":parametros["idgarcom"],"raffinato_test_order_preview":{"identificador":identifier,"identificadorpedidointegracao":order_id,"parametros":parametros,"payload":result["payload"],"enviado":False}}
                 save_profile_state(state); self.send_json(200,result); return
             if route == "/api/raffinato-api/pedido-teste/enviar":
                 config=zuqui_integration_config()
