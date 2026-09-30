@@ -1,7 +1,7 @@
 {
-  "latest_version": "1.7.19",
-  "download_url": "./downloads/Conector-Raffinato-v1.7.19.exe",
-  "published_at": "2026-09-21",
-  "rollback_version": "1.7.18",
-  "rollback_url": "./downloads/Conector-Raffinato-v1.7.18.exe"
+  "latest_version": "1.7.20",
+  "download_url": "./downloads/Conector-Raffinato-v1.7.20.exe",
+  "published_at": "2026-09-30",
+  "rollback_version": "1.7.19",
+  "rollback_url": "./downloads/Conector-Raffinato-v1.7.19.exe"
 }

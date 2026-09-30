@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.19"
+CONNECTOR_VERSION = "1.7.20"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -788,7 +788,7 @@ def require_admin_session(token: Any) -> None:
 
 
 def profile_public(profile: dict[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in profile.items() if key not in {"pwd", "relay_token"}}
+    return {key: value for key, value in profile.items() if key not in {"pwd", "relay_token", "raffinato_api_auth"}}
 
 
 def mapped_config(store_id: str) -> dict[str, Any] | None:
@@ -878,6 +878,14 @@ def config_from_body(body: dict[str, Any], base: dict[str, Any] | None = None) -
         "driver": str(body.get("driver") or base.get("driver") or "{ODBC Driver 17 for SQL Server}").strip(),
         "empresa_id": str(body.get("empresa_id") or base.get("empresa_id") or "").strip(),
         "relay_token": str(body.get("relay_token") or base.get("relay_token") or "").strip(),
+        "raffinato_api_url": str(body.get("raffinato_api_url") or base.get("raffinato_api_url") or
+                                  os.environ.get("RAFFINATO_API_URL") or
+                                  "http://127.0.0.1:10060/raffinato/api").strip().rstrip("/"),
+        "raffinato_api_auth": str(body.get("raffinato_api_auth") or base.get("raffinato_api_auth") or
+                                   os.environ.get("RAFFINATO_API_AUTH") or "").strip(),
+        "raffinato_api_identifier": str(body.get("raffinato_api_identifier") or
+                                         base.get("raffinato_api_identifier") or
+                                         os.environ.get("RAFFINATO_API_IDENTIFIER") or "").strip(),
         "id_filial": int(body.get("raffinato_filial_id") or body.get("id_filial") or base.get("id_filial"))
             if (body.get("raffinato_filial_id") or body.get("id_filial") or base.get("id_filial")) is not None else None,
     }
@@ -887,6 +895,120 @@ def config_from_body(body: dict[str, Any], base: dict[str, Any] | None = None) -
     if any(len(str(value)) > 256 for value in config.values()):
         raise ValueError("Um dos campos excede o tamanho permitido.")
     return config
+
+
+class RaffinatoApiError(RuntimeError):
+    def __init__(self, status: int, message: str, payload: Any = None):
+        super().__init__(message); self.status = status; self.payload = payload
+
+
+class RaffinatoApiClient:
+    """Cliente servidor-servidor da API local; a credencial nunca sai do DPAPI."""
+    def __init__(self, config: dict[str, Any], timeout: int = 20):
+        self.base_url = str(config.get("raffinato_api_url") or "http://127.0.0.1:10060/raffinato/api").strip().rstrip("/")
+        self.auth = str(config.get("raffinato_api_auth") or "").strip()
+        self.identifier = str(config.get("raffinato_api_identifier") or "").strip()
+        self.timeout = timeout
+        parsed = urlparse(self.base_url)
+        if parsed.scheme != "http" or not parsed.hostname or parsed.username or parsed.password:
+            raise ValueError("URL HTTP local da API Raffinato invalida.")
+        if not self.auth.startswith("Basic ") or not self.auth[6:].strip():
+            raise ValueError("Informe a credencial completa Basic <base64> gerada pelo Raffinato.")
+
+    @staticmethod
+    def _decode(raw: bytes) -> Any:
+        for encoding in ("utf-8", "iso-8859-1"):
+            try:
+                text = raw.decode(encoding); return json.loads(text) if text.strip() else {}
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                pass
+        return {"raw": raw.decode("iso-8859-1", errors="replace")[:4000]}
+
+    def request(self, method: str, route: str, payload: dict[str, Any] | None = None) -> Any:
+        headers = {"Authorization": self.auth, "Content-Type": "application/json"}
+        if self.identifier: headers["identifier"] = self.identifier
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8") if payload is not None else None
+        request = urllib.request.Request(f"{self.base_url}/{route.lstrip('/')}", data=data, headers=headers, method=method)
+        logger.info("RAFFINATO_API method=%s route=%s", method, route)
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                result = self._decode(response.read()); logger.info("RAFFINATO_API status=%s route=%s", response.status, route); return result
+        except urllib.error.HTTPError as exc:
+            result = self._decode(exc.read()); raise RaffinatoApiError(exc.code, f"HTTP {exc.code}", result) from exc
+        except (urllib.error.URLError, TimeoutError) as exc:
+            raise RaffinatoApiError(503, "Timeout ou API indisponivel; resultado incerto, confira antes de repetir.") from exc
+
+    def get(self, route: str) -> Any: return self.request("GET", route)
+    def post(self, route: str, payload: dict[str, Any]) -> Any: return self.request("POST", route, payload)
+
+
+def raffinato_result_items(payload: Any) -> list[Any]:
+    result = payload.get("result", []) if isinstance(payload, dict) else []
+    while isinstance(result, list) and len(result) == 1 and isinstance(result[0], list): result = result[0]
+    return result if isinstance(result, list) else []
+
+
+def diagnose_raffinato_api(config: dict[str, Any]) -> dict[str, Any]:
+    client = RaffinatoApiClient(config)
+    routes = {"versao":"integracao/versaosistema", "garcons":"integracao/garcom", "produtos":"integracao/produto",
+              "mesas":"integracao/mesa", "cartoes":"integracao/cartaoconsumo", "cartao_3":"integracao/cartaoconsumo/3",
+              "pontos_referencia":"integracao/pontoreferencia", "setores_impressao":"integracao/SetorImpressao/"}
+    report: dict[str, Any] = {"ok": True, "api_url": client.base_url, "rotas": {}}
+    for name, route in routes.items():
+        try:
+            response = client.get(route); items = raffinato_result_items(response)
+            report["rotas"][name] = {"ok": True, "http_status": 200, "quantidade": len(items)}
+            if name == "versao": report["versao"] = items[0] if items else None
+        except RaffinatoApiError as exc:
+            report["ok"] = False; report["rotas"][name] = {"ok": False, "http_status": exc.status, "erro": str(exc)}
+    return report
+
+
+def prepare_raffinato_test_order(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    try:
+        identifier = str(UUID(str(body.get("identificador") or "")))
+        order_identifier = str(UUID(str(body.get("identificador_pedido") or "")))
+    except (ValueError, AttributeError) as exc:
+        raise ValueError("Informe os dois UUIDs persistentes da previa.") from exc
+    client = RaffinatoApiClient(config)
+    waiter_rows = raffinato_result_items(client.get("integracao/garcom")); waiters = []
+    for row in waiter_rows:
+        waiters.extend(row.get("garcons", [])) if isinstance(row, dict) and isinstance(row.get("garcons"), list) else waiters.append(row)
+    waiter = next((x for x in waiters if isinstance(x, dict) and str(x.get("nome", "")).strip().casefold() == "cardapiozuqui"), None)
+    products = raffinato_result_items(client.get("integracao/produto")); product_id = int(body.get("idproduto") or 2777)
+    product = next((x for x in products if isinstance(x, dict) and int(x.get("id") or 0) == product_id), None)
+    cards = raffinato_result_items(client.get("integracao/cartaoconsumo")); card_code = str(body.get("codigovirtual") or "3")
+    card = next((x for x in cards if isinstance(x, dict) and str(x.get("codigovirtual") or "") == card_code), None)
+    reference = str(body.get("nomereferencia") or "MESA 01").strip()
+    refs = raffinato_result_items(client.get("integracao/pontoreferencia"))
+    if not waiter or not product or not card: raise ValueError("Garcom, produto ou cartao do teste nao encontrado.")
+    if bool(card.get("bloqueado")) or bool(card.get("extratoimpresso")): raise ValueError("Cartao 3 bloqueado ou com extrato impresso.")
+    if reference.casefold() not in {str(x.get("nome") or "").strip().casefold() for x in refs if isinstance(x, dict)}:
+        raise ValueError("Ponto de referencia nao encontrado.")
+    now = datetime.now().replace(microsecond=0).isoformat(); value = float(product["valor"])
+    payload = {"setorimpressao": str(body.get("setorimpressao") or "0"), "identificador": identifier,
+      "cartaoconsumo":{"codigovirtual":card_code,"nomecliente":""},
+      "pedido":{"datahora":now,"nomereferencia":reference,"ocupantes":1,"identificadorpedidointegracao":order_identifier,"observacao":"",
+      "itens":[{"idproduto":product_id,"idgarcom":int(waiter["id"]),"quantidade":1,"valorunitario":value,"valorvariacao":-1,
+      "valortotal":value,"observacao":"","datahora":now,"identificadorintegracao":"","porcoespadrao":[]}]}}
+    return {"ok":True,"enviado":False,"payload":payload,"confirmacoes":{"garcom":waiter,"produto":product,"cartao":card,"ponto_referencia":reference}}
+
+
+def send_raffinato_test_order(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+    if str(body.get("confirmation") or "").strip() != "ENVIAR PEDIDO TESTE":
+        raise ValueError("Confirmacao invalida. Digite ENVIAR PEDIDO TESTE.")
+    saved = config.get("raffinato_test_order_preview") or {}
+    if saved.get("enviado"):
+        return {"ok": True, "enviado": True, "ja_enviado": True, "resultado": saved.get("resultado") or {}}
+    preview = prepare_raffinato_test_order(config, {"identificador": saved.get("identificador"),
+        "identificador_pedido": saved.get("identificadorpedidointegracao"), "idproduto": 2777,
+        "codigovirtual": "3", "nomereferencia": "MESA 01", "setorimpressao": "0"})
+    response = RaffinatoApiClient(config).post("integracao/recebepedidos", preview["payload"])
+    results = raffinato_result_items(response); result = results[0] if results and isinstance(results[0], dict) else {}
+    if result.get("gravado") is not True:
+        raise RaffinatoApiError(502, "Raffinato nao confirmou gravado=true.", response)
+    return {"ok":True,"enviado":True,"ja_enviado":False,"identificador":saved["identificador"],
+            "identificadorpedidointegracao":saved["identificadorpedidointegracao"],"resultado":result,"payload":preview["payload"]}
 
 
 def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
@@ -2283,6 +2405,10 @@ class Handler(BaseHTTPRequestHandler):
             "/api/integracoes/raffinato/desbloquear",
             "/api/integracoes/raffinato/perfis",
             "/api/integracoes/raffinato/alterar-senha-master",
+            "/api/integracoes/raffinato/api-configurar",
+            "/api/raffinato-api/diagnostico",
+            "/api/raffinato-api/pedido-teste/preparar",
+            "/api/raffinato-api/pedido-teste/enviar",
             "/api/connector/pair",
         }
         route = self.route_path()
@@ -2325,6 +2451,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if route.startswith("/api/integracoes/raffinato/"):
                 require_admin_session(body.get("admin_token"))
+            if route.startswith("/api/raffinato-api/"):
+                require_admin_session(body.get("admin_token"))
             if route == "/api/integracoes/raffinato/perfis":
                 state = load_profile_state()
                 self.send_json(200, {"profiles": [profile_public(item) for item in state["profiles"].values()],
@@ -2340,6 +2468,43 @@ class Handler(BaseHTTPRequestHandler):
                 save_profile_state(state); ADMIN_SESSIONS.clear()
                 self.send_json(200, {"ok": True})
                 return
+            if route == "/api/integracoes/raffinato/api-configurar":
+                store_id = validate_store_id(body.get("loja_id")); state = load_profile_state()
+                mapping = state.get("mappings", {}).get(store_id)
+                if not mapping: raise ValueError("Vincule a loja antes de configurar a API.")
+                profile = state.get("profiles", {}).get(str(mapping.get("connection_profile_id") or ""))
+                if not profile: raise ValueError("Perfil Raffinato vinculado nao encontrado.")
+                candidate = {**profile,
+                    "raffinato_api_url": str(body.get("raffinato_api_url") or profile.get("raffinato_api_url") or "http://127.0.0.1:10060/raffinato/api").strip().rstrip("/"),
+                    "raffinato_api_auth": str(body.get("raffinato_api_auth") or profile.get("raffinato_api_auth") or "").strip(),
+                    "raffinato_api_identifier": str(body.get("raffinato_api_identifier") or profile.get("raffinato_api_identifier") or "").strip()}
+                result = diagnose_raffinato_api(candidate)
+                if not result.get("ok"): raise ValueError("Configuracao nao salva: diagnostico da API falhou.")
+                profile.update({key:candidate[key] for key in ("raffinato_api_url","raffinato_api_auth","raffinato_api_identifier")})
+                profile.update({"raffinato_api_last_test_at":datetime.now().isoformat(),"raffinato_api_last_status":"connected"})
+                save_profile_state(state); self.send_json(200, result); return
+            if route == "/api/raffinato-api/diagnostico":
+                store_id=validate_store_id(body.get("loja_id")); validate_request_tenant(body,store_id)
+                result=diagnose_raffinato_api(get_store_config(store_id)); self.send_json(200 if result.get("ok") else 503,result); return
+            if route == "/api/raffinato-api/pedido-teste/preparar":
+                store_id=validate_store_id(body.get("loja_id")); validate_request_tenant(body,store_id)
+                config=get_store_config(store_id); saved=config.get("raffinato_test_order_preview") or {}
+                identifier=str(saved.get("identificador") or uuid4()); order_id=str(saved.get("identificadorpedidointegracao") or uuid4())
+                result=prepare_raffinato_test_order(config,{**body,"identificador":identifier,"identificador_pedido":order_id})
+                state=load_profile_state(); profile_id=state["mappings"][store_id]["connection_profile_id"]
+                state["profiles"][profile_id]["raffinato_test_order_preview"]={"identificador":identifier,"identificadorpedidointegracao":order_id,"payload":result["payload"],"enviado":False}
+                save_profile_state(state); self.send_json(200,result); return
+            if route == "/api/raffinato-api/pedido-teste/enviar":
+                store_id=validate_store_id(body.get("loja_id")); validate_request_tenant(body,store_id); config=get_store_config(store_id)
+                try: result=send_raffinato_test_order(config,body)
+                except RaffinatoApiError as exc:
+                    self.send_json(504 if exc.status==503 else exc.status,{"error":str(exc),"status":"incerto" if exc.status==503 else "erro"}); return
+                if not result.get("ja_enviado"):
+                    state=load_profile_state(); profile_id=state["mappings"][store_id]["connection_profile_id"]; state["profiles"][profile_id]["raffinato_test_order_preview"]={
+                        "identificador":result["identificador"],"identificadorpedidointegracao":result["identificadorpedidointegracao"],
+                        "payload":result["payload"],"enviado":True,"resultado":result["resultado"],"enviado_em":datetime.now().isoformat()}
+                    save_profile_state(state)
+                self.send_json(200,result); return
             if route == "/api/integracoes/raffinato/testar":
                 store_id = validate_store_id(body.get("loja_id"))
                 saved = get_store_config(store_id) if (mapped_config(store_id) or load_store_configs().get(store_id)) else {}
