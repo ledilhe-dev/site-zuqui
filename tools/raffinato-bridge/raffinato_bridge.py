@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.20"
+CONNECTOR_VERSION = "1.7.21"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -55,6 +55,8 @@ CACHE_REQUESTS: dict[str, set[date]] = {}
 DEFAULT_ALLOWED_ORIGINS = [
     "https://checkdiario.com.br",
     "https://www.checkdiario.com.br",
+    "https://zuquicafe.com.br",
+    "https://www.zuquicafe.com.br",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:8766",
