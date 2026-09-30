@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "1.7.21"
+CONNECTOR_VERSION = "1.7.22"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -86,7 +86,7 @@ MASTER_ITERATIONS = 310_000
 
 def ensure_browser_loopback_policy() -> None:
     """Allow only CheckDiário to reach this local connector, preserving policy entries."""
-    origin = "https://checkdiario.com.br"
+    origins = ("https://checkdiario.com.br", "https://zuquicafe.com.br")
     policy_paths = (
         r"Software\Policies\Microsoft\Edge\LocalNetworkAccessAllowedForUrls",
         r"Software\Policies\Microsoft\Edge\LoopbackNetworkAllowedForUrls",
@@ -100,9 +100,12 @@ def ensure_browser_loopback_policy() -> None:
                 while True:
                     try: values.append(winreg.EnumValue(key,index));index+=1
                     except OSError: break
-                if any(str(value).rstrip('/')==origin for _,value,_ in values): continue
                 numeric=[int(name) for name,_,_ in values if str(name).isdigit()]
-                winreg.SetValueEx(key,str(max(numeric,default=0)+1),0,winreg.REG_SZ,origin)
+                next_value=max(numeric,default=0)+1
+                existing={str(value).rstrip('/') for _,value,_ in values}
+                for origin in origins:
+                    if origin in existing: continue
+                    winreg.SetValueEx(key,str(next_value),0,winreg.REG_SZ,origin);next_value+=1
         except OSError:
             logger.exception("Não foi possível registrar a política de loopback em %s",path)
 
@@ -2452,8 +2455,6 @@ class Handler(BaseHTTPRequestHandler):
                     "connector_instance_id": state["connector_instance_id"], "expires_in": ADMIN_SESSION_SECONDS})
                 return
             if route.startswith("/api/integracoes/raffinato/"):
-                require_admin_session(body.get("admin_token"))
-            if route.startswith("/api/raffinato-api/"):
                 require_admin_session(body.get("admin_token"))
             if route == "/api/integracoes/raffinato/perfis":
                 state = load_profile_state()
