@@ -35,6 +35,17 @@ class RaffinatoApiTests(unittest.TestCase):
         public=bridge.profile_public({"pwd":"sql","relay_token":"relay","raffinato_api_auth":"Basic segredo","name":"Loja"})
         self.assertEqual(public,{"name":"Loja"})
 
+    def test_zuqui_configuration_is_independent_from_checkdiario_mappings(self):
+        state={
+            "profiles":{"perfil-patrick":{"name":"Patrick"}},
+            "mappings":{"loja-patrick":{"connection_profile_id":"perfil-patrick"}},
+            "zuqui_integration":{"raffinato_api_url":"http://127.0.0.1/api","raffinato_api_auth":"Basic protegido"},
+        }
+        config=bridge.zuqui_integration_config(state)
+        self.assertEqual(config["raffinato_api_auth"],"Basic protegido")
+        self.assertNotIn("profiles",config)
+        self.assertNotIn("mappings",config)
+
     def test_preview_uses_api_data_without_post(self):
         class Client:
             def __init__(self,_config): pass

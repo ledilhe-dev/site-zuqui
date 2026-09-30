@@ -40,7 +40,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.0"
+CONNECTOR_VERSION = "2.0.1"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -693,7 +693,7 @@ def load_profile_state() -> dict[str, Any]:
     if not PROFILE_CONFIG_PATH.exists():
         return {
             "schema_version": 1, "connector_instance_id": str(uuid4()),
-            "profiles": {}, "mappings": {},
+            "profiles": {}, "mappings": {}, "zuqui_integration": {},
             "master": {"salt": INITIAL_MASTER_SALT, "hash": INITIAL_MASTER_HASH, "iterations": MASTER_ITERATIONS},
         }
     encrypted = base64.b64decode(PROFILE_CONFIG_PATH.read_bytes())
@@ -702,6 +702,7 @@ def load_profile_state() -> dict[str, Any]:
     state.setdefault("connector_instance_id", str(uuid4()))
     state.setdefault("profiles", {})
     state.setdefault("mappings", {})
+    state.setdefault("zuqui_integration", {})
     state.setdefault("master", {"salt": INITIAL_MASTER_SALT, "hash": INITIAL_MASTER_HASH, "iterations": MASTER_ITERATIONS})
     return state
 
@@ -711,6 +712,12 @@ def save_profile_state(state: dict[str, Any]) -> None:
     temporary = PROFILE_CONFIG_PATH.with_suffix(".tmp")
     temporary.write_bytes(base64.b64encode(protect_bytes(raw)))
     os.replace(temporary, PROFILE_CONFIG_PATH)
+
+
+def zuqui_integration_config(state: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Configuração local do cardápio, independente dos tenants do CheckDiário."""
+    current = state or load_profile_state()
+    return dict(current.get("zuqui_integration") or {})
 
 
 def connector_identity() -> tuple[str, str]:
@@ -747,7 +754,7 @@ def migrate_legacy_configuration() -> None:
         profile_id = str(uuid4())
         profile = dict(config)
         profile.update({
-            "id": profile_id, "name": "Zuqui" if len(legacy) == 1 else f"Raffinato {store_id}",
+            "id": profile_id, "name": f"Conexão migrada {store_id}",
             "active": True, "last_test_at": None, "last_status": "migrated",
         })
         state["profiles"][profile_id] = profile
@@ -2377,10 +2384,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.route_path() == "/health":
             state=load_profile_state()
-            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True, "paired":connector_is_paired(), "connector_instance_id":state["connector_instance_id"], "empresa_id":state.get("paired_empresa_id"), "lojas_vinculadas":list(state.get("mappings", {}).keys())})
+            self.send_json(200, {"ok": True, "service": "raffinato-bridge", "version": CONNECTOR_VERSION, "port": 8766, "tray": True, "external_sync": True, "paired":connector_is_paired(), "connector_instance_id":state["connector_instance_id"], "empresa_id":state.get("paired_empresa_id"), "lojas_vinculadas":list(state.get("mappings", {}).keys()), "zuqui_configurado":bool(zuqui_integration_config(state).get("raffinato_api_auth"))})
             return
         if self.route_path() == "/zuqui-teste":
-            self.send_html(200, f'''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Teste Zuqui · Raffinato</title><style>body{{margin:0;background:#f4efe4;color:#243029;font:15px system-ui}}main{{width:min(850px,calc(100% - 28px));margin:30px auto;padding:28px;border-radius:20px;background:#fffdf8;box-shadow:0 20px 60px #24302922}}h1{{font-family:Georgia,serif}}button,input{{box-sizing:border-box;padding:12px 16px;border-radius:10px;font:inherit}}button{{border:0;background:#244a36;color:white;font-weight:800;cursor:pointer}}button[disabled]{{opacity:.55}}input{{width:100%;margin:6px 0;border:1px solid #ccd5cd}}.danger{{background:#a33}}.status{{padding:14px;border-radius:10px;background:#fff3cf}}.ok{{background:#def4e5}}.bad{{background:#fee4e4}}.setup{{padding:16px;border:1px solid #ddd4bf;border-radius:12px}}pre{{max-height:420px;overflow:auto;padding:15px;border-radius:10px;background:#122018;color:#e8f5ec;white-space:pre-wrap}}</style><main><small>CONECTOR RAFFINATO {CONNECTOR_VERSION}</small><h1>Teste controlado do Zuqui</h1><p>Esta página é executada localmente no servidor da loja. Gerar a prévia não envia pedido.</p><p id="msg" class="status">Pronto para validar a API.</p><section id="setup" class="setup" hidden><b>Configuração única da API</b><p>A credencial será validada e armazenada somente no DPAPI deste computador.</p><label>URL da API<input id="apiUrl" value="http://26.61.114.43:10060/raffinato/api"></label><label>Credencial completa<input id="apiAuth" type="password" placeholder="Basic &lt;base64&gt;"></label><button id="saveApi">Validar e salvar com segurança</button></section><button id="prepare">Validar API e gerar prévia</button><pre id="preview" hidden></pre><button id="send" class="danger" hidden>Confirmar e enviar UM pedido de teste</button><script>let context=null;async function call(path,body){{let r=await fetch(path,{{method:body?'POST':'GET',headers:body?{{'content-type':'application/json'}}:{{}},body:body?JSON.stringify(body):null}}),j=await r.json().catch(()=>({{}}));if(!r.ok)throw Error(j.error||'HTTP '+r.status);return j}}saveApi.onclick=async()=>{{saveApi.disabled=true;try{{await call('/api/raffinato-api/configurar-local',{{raffinato_api_url:apiUrl.value,raffinato_api_auth:apiAuth.value}});apiAuth.value='';setup.hidden=true;msg.className='status ok';msg.textContent='Credencial validada e protegida pelo DPAPI. Agora gere a prévia.'}}catch(e){{msg.className='status bad';msg.textContent=e.message}}finally{{saveApi.disabled=false}}}};prepare.onclick=async()=>{{prepare.disabled=true;msg.className='status';msg.textContent='Validando dados reais...';try{{let h=await call('/health'),loja=h.lojas_vinculadas&&h.lojas_vinculadas[0];if(!h.paired||!loja||!h.empresa_id)throw Error('Conector ainda não está vinculado à empresa e à loja.');context={{loja_id:loja,empresa_id:h.empresa_id}};let d=await call('/api/raffinato-api/diagnostico',context);if(!d.ok)throw Error('Diagnóstico da API apresentou erro.');let p=await call('/api/raffinato-api/pedido-teste/preparar',{{...context,idproduto:2777,codigovirtual:'3',nomereferencia:'MESA 01'}});preview.textContent=JSON.stringify(p.payload,null,2);preview.hidden=false;send.hidden=false;msg.className='status ok';msg.textContent='Prévia gerada. Nenhum pedido foi enviado.'}}catch(e){{msg.className='status bad';msg.textContent=e.message;if(/credencial completa Basic|Token Basic/i.test(e.message))setup.hidden=false}}finally{{prepare.disabled=false}}}};send.onclick=async()=>{{if(!confirm('Confirma o envio de UM pedido real de teste para o Raffinato?'))return;send.disabled=true;try{{let r=await call('/api/raffinato-api/pedido-teste/enviar',{{...context,confirmation:'ENVIAR PEDIDO TESTE'}});msg.className='status '+(r.resultado&&r.resultado.gravado===true?'ok':'bad');msg.textContent=r.resultado&&r.resultado.gravado===true?'Pedido gravado. idvenda '+(r.resultado.idvenda||'-')+' · número '+(r.resultado.numeropedido||'-'):'Raffinato não confirmou gravado: true.';if(r.resultado&&r.resultado.gravado===true)send.hidden=true}}catch(e){{msg.className='status bad';msg.textContent=e.message}}finally{{send.disabled=false}}}};</script></main></html>''')
+            self.send_html(200, f'''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Teste Zuqui · Raffinato</title><style>body{{margin:0;background:#f4efe4;color:#243029;font:15px system-ui}}main{{width:min(850px,calc(100% - 28px));margin:30px auto;padding:28px;border-radius:20px;background:#fffdf8;box-shadow:0 20px 60px #24302922}}h1{{font-family:Georgia,serif}}button,input{{box-sizing:border-box;padding:12px 16px;border-radius:10px;font:inherit}}button{{border:0;background:#244a36;color:white;font-weight:800;cursor:pointer}}button[disabled]{{opacity:.55}}input{{width:100%;margin:6px 0;border:1px solid #ccd5cd}}.danger{{background:#a33}}.status{{padding:14px;border-radius:10px;background:#fff3cf}}.ok{{background:#def4e5}}.bad{{background:#fee4e4}}.setup{{padding:16px;border:1px solid #ddd4bf;border-radius:12px}}pre{{max-height:420px;overflow:auto;padding:15px;border-radius:10px;background:#122018;color:#e8f5ec;white-space:pre-wrap}}</style><main><small>CONECTOR RAFFINATO {CONNECTOR_VERSION}</small><h1>Teste controlado do Zuqui</h1><p>Esta integração é local e independente das lojas e permissões do CheckDiário. Gerar a prévia não envia pedido.</p><p id="msg" class="status">Pronto para validar a API.</p><section id="setup" class="setup" hidden><b>Configuração única da API do cardápio</b><p>A credencial será validada e armazenada somente no DPAPI deste computador.</p><label>URL da API<input id="apiUrl" value="http://26.61.114.43:10060/raffinato/api"></label><label>Credencial completa<input id="apiAuth" type="password" placeholder="Basic &lt;base64&gt;"></label><button id="saveApi">Validar e salvar com segurança</button></section><button id="prepare">Validar API e gerar prévia</button><pre id="preview" hidden></pre><button id="send" class="danger" hidden>Confirmar e enviar UM pedido de teste</button><script>async function call(path,body){{let r=await fetch(path,{{method:body?'POST':'GET',headers:body?{{'content-type':'application/json'}}:{{}},body:body?JSON.stringify(body):null}}),j=await r.json().catch(()=>({{}}));if(!r.ok)throw Error(j.error||'HTTP '+r.status);return j}}saveApi.onclick=async()=>{{saveApi.disabled=true;try{{await call('/api/raffinato-api/configurar-local',{{raffinato_api_url:apiUrl.value,raffinato_api_auth:apiAuth.value}});apiAuth.value='';setup.hidden=true;msg.className='status ok';msg.textContent='Credencial validada e protegida pelo DPAPI. Agora gere a prévia.'}}catch(e){{msg.className='status bad';msg.textContent=e.message}}finally{{saveApi.disabled=false}}}};prepare.onclick=async()=>{{prepare.disabled=true;msg.className='status';msg.textContent='Validando dados reais...';try{{let d=await call('/api/raffinato-api/diagnostico',{{}});if(!d.ok)throw Error('Diagnóstico da API apresentou erro.');let p=await call('/api/raffinato-api/pedido-teste/preparar',{{idproduto:2777,codigovirtual:'3',nomereferencia:'MESA 01'}});preview.textContent=JSON.stringify(p.payload,null,2);preview.hidden=false;send.hidden=false;msg.className='status ok';msg.textContent='Prévia gerada. Nenhum pedido foi enviado.'}}catch(e){{msg.className='status bad';msg.textContent=e.message;if(/credencial completa Basic|Token Basic|não configurada/i.test(e.message))setup.hidden=false}}finally{{prepare.disabled=false}}}};send.onclick=async()=>{{if(!confirm('Confirma o envio de UM pedido real de teste para o Raffinato?'))return;send.disabled=true;try{{let r=await call('/api/raffinato-api/pedido-teste/enviar',{{confirmation:'ENVIAR PEDIDO TESTE'}});msg.className='status '+(r.resultado&&r.resultado.gravado===true?'ok':'bad');msg.textContent=r.resultado&&r.resultado.gravado===true?'Pedido gravado. idvenda '+(r.resultado.idvenda||'-')+' · número '+(r.resultado.numeropedido||'-'):'Raffinato não confirmou gravado: true.';if(r.resultado&&r.resultado.gravado===true)send.hidden=true}}catch(e){{msg.className='status bad';msg.textContent=e.message}}finally{{send.disabled=false}}}};</script></main></html>''')
             return
         if self.route_path() == "/":
             state=load_profile_state(); paired=connector_is_paired()
@@ -2491,41 +2498,33 @@ class Handler(BaseHTTPRequestHandler):
                 profile.update({"raffinato_api_last_test_at":datetime.now().isoformat(),"raffinato_api_last_status":"connected"})
                 save_profile_state(state); self.send_json(200, result); return
             if route == "/api/raffinato-api/diagnostico":
-                store_id=validate_store_id(body.get("loja_id")); validate_request_tenant(body,store_id)
-                result=diagnose_raffinato_api(get_store_config(store_id)); self.send_json(200 if result.get("ok") else 503,result); return
+                config=zuqui_integration_config()
+                if not config.get("raffinato_api_auth"): raise ValueError("API do cardápio ainda não configurada neste computador.")
+                result=diagnose_raffinato_api(config); self.send_json(200 if result.get("ok") else 503,result); return
             if route == "/api/raffinato-api/configurar-local":
-                state=load_profile_state(); requested=str(body.get("loja_id") or "").strip(); active=[(key,value) for key,value in state.get("mappings",{}).items() if value.get("active",True)]
-                if not requested:
-                    zuqui=[(key,value) for key,value in active if "zuqui" in " ".join(str(state.get("profiles",{}).get(value.get("connection_profile_id"),{}).get(field) or "") for field in ("name","database")).casefold()]
-                    if len(zuqui)==1: requested=zuqui[0][0]
-                    elif len(active)==1: requested=active[0][0]
-                    else: raise ValueError("Há mais de uma loja vinculada; abra a configuração Raffinato da loja Zuqui no CheckDiário.")
-                store_id=validate_store_id(requested); mapping=state.get("mappings",{}).get(store_id)
-                if not mapping or not mapping.get("active",True): raise ValueError("Selecione uma loja vinculada válida.")
-                profile_id=str(mapping.get("connection_profile_id") or ""); profile=state.get("profiles",{}).get(profile_id)
-                if not profile: raise ValueError("Perfil Raffinato vinculado não encontrado.")
                 api_url=str(body.get("raffinato_api_url") or "").strip().rstrip("/"); api_auth=str(body.get("raffinato_api_auth") or "").strip()
-                candidate={**profile,"raffinato_api_url":api_url,"raffinato_api_auth":api_auth}
+                candidate={"raffinato_api_url":api_url,"raffinato_api_auth":api_auth}
                 client=RaffinatoApiClient(candidate); version=client.get("integracao/versaosistema")
-                profile.update({"raffinato_api_url":api_url,"raffinato_api_auth":api_auth,"raffinato_api_last_test_at":datetime.now().isoformat(),"raffinato_api_last_status":"connected"})
+                state=load_profile_state(); state["zuqui_integration"]={**zuqui_integration_config(state),"raffinato_api_url":api_url,"raffinato_api_auth":api_auth,"raffinato_api_last_test_at":datetime.now().isoformat(),"raffinato_api_last_status":"connected"}
                 save_profile_state(state); self.send_json(200,{"ok":True,"versao":raffinato_result_items(version)}); return
             if route == "/api/raffinato-api/pedido-teste/preparar":
-                store_id=validate_store_id(body.get("loja_id")); validate_request_tenant(body,store_id)
-                config=get_store_config(store_id); saved=config.get("raffinato_test_order_preview") or {}
+                config=zuqui_integration_config()
+                if not config.get("raffinato_api_auth"): raise ValueError("API do cardápio ainda não configurada neste computador.")
+                saved=config.get("raffinato_test_order_preview") or {}
                 identifier=str(saved.get("identificador") or uuid4()); order_id=str(saved.get("identificadorpedidointegracao") or uuid4())
                 result=prepare_raffinato_test_order(config,{**body,"identificador":identifier,"identificador_pedido":order_id})
-                state=load_profile_state(); profile_id=state["mappings"][store_id]["connection_profile_id"]
-                state["profiles"][profile_id]["raffinato_test_order_preview"]={"identificador":identifier,"identificadorpedidointegracao":order_id,"payload":result["payload"],"enviado":False}
+                state=load_profile_state(); state["zuqui_integration"]={**zuqui_integration_config(state),"raffinato_test_order_preview":{"identificador":identifier,"identificadorpedidointegracao":order_id,"payload":result["payload"],"enviado":False}}
                 save_profile_state(state); self.send_json(200,result); return
             if route == "/api/raffinato-api/pedido-teste/enviar":
-                store_id=validate_store_id(body.get("loja_id")); validate_request_tenant(body,store_id); config=get_store_config(store_id)
+                config=zuqui_integration_config()
+                if not config.get("raffinato_api_auth"): raise ValueError("API do cardápio ainda não configurada neste computador.")
                 try: result=send_raffinato_test_order(config,body)
                 except RaffinatoApiError as exc:
                     self.send_json(504 if exc.status==503 else exc.status,{"error":str(exc),"status":"incerto" if exc.status==503 else "erro"}); return
                 if not result.get("ja_enviado"):
-                    state=load_profile_state(); profile_id=state["mappings"][store_id]["connection_profile_id"]; state["profiles"][profile_id]["raffinato_test_order_preview"]={
+                    state=load_profile_state(); state["zuqui_integration"]={**zuqui_integration_config(state),"raffinato_test_order_preview":{
                         "identificador":result["identificador"],"identificadorpedidointegracao":result["identificadorpedidointegracao"],
-                        "payload":result["payload"],"enviado":True,"resultado":result["resultado"],"enviado_em":datetime.now().isoformat()}
+                        "payload":result["payload"],"enviado":True,"resultado":result["resultado"],"enviado_em":datetime.now().isoformat()}}
                     save_profile_state(state)
                 self.send_json(200,result); return
             if route == "/api/integracoes/raffinato/testar":
