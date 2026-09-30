@@ -15,6 +15,7 @@
   "./assets/css/103-vault-responsive.css",
   "./assets/css/104-device-layout.css",
   "./assets/css/105-raffinato-sangrias.css",
+  "./assets/css/106-sidebar-icons.css",
   "./assets/css/106-ui-foundation.css",
   "./assets/css/107-dashboard-login-ponto.css",
   "./assets/css/108-premium-brand.css",
@@ -80,5 +81,6 @@
   "./assets/js/89-timeclock-refresh-patch.js",
   "./assets/js/90-sensitive-url-cleanup.js",
   "./assets/js/91-timeclock-info-patch.js",
-  "./assets/js/92-timeclock-title-patch.js"
+  "./assets/js/92-timeclock-title-patch.js",
+  "./assets/js/93-sidebar-icons.js"
 ]

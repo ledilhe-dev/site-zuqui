@@ -1,0 +1,120 @@
+/* CheckDiario sidebar icon system: compact, polished and readable at small sizes. */
+.sidebar .nav-btn .icon.nav-icon-polished {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: 1px solid rgba(148, 184, 164, .22);
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, .13), transparent 36%),
+    linear-gradient(145deg, rgba(31, 56, 50, .92), rgba(13, 27, 25, .96));
+  color: #9fb5aa;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .06),
+    0 3px 8px rgba(0, 0, 0, .16);
+  transition: color .18s ease, border-color .18s ease, background .18s ease,
+    box-shadow .18s ease, transform .18s ease;
+}
+
+.sidebar .nav-btn .icon.nav-icon-polished::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -60%;
+  left: -85%;
+  width: 58%;
+  height: 215%;
+  transform: rotate(28deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent);
+  transition: left .36s ease;
+  pointer-events: none;
+}
+
+.sidebar .nav-btn .nav-icon-svg {
+  width: 18px;
+  height: 18px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .3));
+}
+
+.sidebar .nav-btn:hover .icon.nav-icon-polished,
+.sidebar .nav-btn:focus-visible .icon.nav-icon-polished {
+  color: #d6e8df;
+  border-color: rgba(130, 210, 174, .48);
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, .2), transparent 38%),
+    linear-gradient(145deg, rgba(39, 75, 64, .98), rgba(15, 36, 31, .98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .1),
+    0 0 0 1px rgba(34, 197, 94, .08),
+    0 5px 12px rgba(0, 0, 0, .22);
+  transform: translateY(-1px);
+}
+
+.sidebar .nav-btn:hover .icon.nav-icon-polished::after,
+.sidebar .nav-btn:focus-visible .icon.nav-icon-polished::after {
+  left: 128%;
+}
+
+.sidebar .nav-btn.ativo .icon.nav-icon-polished,
+.sidebar .nav-btn-parent[aria-expanded='true'] .icon.nav-icon-polished,
+.sidebar .nav-group-checklist:has(.nav-sub-btn.ativo) > .nav-btn-parent .icon.nav-icon-polished,
+.sidebar .nav-group-relatorios:has(.nav-sub-btn.ativo) > .nav-btn-parent .icon.nav-icon-polished,
+.sidebar .nav-group-financeiro:has(.nav-sub-btn.ativo) > .nav-btn-parent .icon.nav-icon-polished,
+.sidebar .nav-group-funcionarios:has(.nav-sub-btn.ativo) > .nav-btn-parent .icon.nav-icon-polished,
+.sidebar .nav-group-configuracao:has(.nav-sub-btn.ativo) > .nav-btn-parent .icon.nav-icon-polished,
+.sidebar .nav-group-saas:has(.nav-sub-btn.ativo) > .nav-btn-parent .icon.nav-icon-polished {
+  color: #f8c54f;
+  border-color: rgba(240, 165, 0, .5);
+  background:
+    radial-gradient(circle at 27% 16%, rgba(255, 255, 255, .23), transparent 34%),
+    linear-gradient(145deg, rgba(104, 72, 12, .72), rgba(45, 34, 13, .94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 0 0 1px rgba(240, 165, 0, .08),
+    0 4px 12px rgba(240, 165, 0, .16);
+}
+
+/* Financial and report icons keep their own identity without breaking the system. */
+.sidebar #btnMenuFinanceiro .icon.nav-icon-polished,
+.sidebar #btnMenuIntegracoesFinanceiras .icon.nav-icon-polished {
+  color: #7ee0a9;
+}
+
+.sidebar #btnMenuRelatorios .icon.nav-icon-polished {
+  color: #8ecbff;
+}
+
+.sidebar .nav-btn-alerta .icon.nav-icon-polished {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, .42);
+  background: linear-gradient(145deg, rgba(91, 37, 37, .92), rgba(38, 20, 22, .96));
+}
+
+@media (max-width: 900px) {
+  .sidebar .nav-btn .icon.nav-icon-polished {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .sidebar .nav-btn .nav-icon-svg {
+    width: 19px;
+    height: 19px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .nav-btn .icon.nav-icon-polished,
+  .sidebar .nav-btn .icon.nav-icon-polished::after {
+    transition: none;
+  }
+}

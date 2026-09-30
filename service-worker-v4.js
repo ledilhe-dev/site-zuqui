@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v203-persistencia-menu-usuario';
+const CACHE_NAME = 'check-diario-pwa-v204-sidebar-icons';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
