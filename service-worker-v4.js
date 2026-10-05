@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v206-sidebar-icons-aligned';
+const CACHE_NAME = 'check-diario-pwa-v207-rateio-contraste';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

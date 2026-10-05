@@ -390,20 +390,23 @@
   flex-direction: column;
   padding: 6px 7px;
   border-radius: 7px;
-  background: #eef1f6;
-  color: #737e91;
+  background: #182235;
+  color: #cbd5e1;
   font-size: 9px;
 }
 
 #ncSheet .nc-split-totals strong {
   margin-top: 2px;
-  color: #252d3d;
+  color: #ffffff;
   font-size: 11px;
 }
 
-#ncSheet .nc-split-totals .complete { background: #edf8f1; color: #39724e; }
-#ncSheet .nc-split-totals .pending { background: #fff7e7; color: #8a641c; }
-#ncSheet .nc-split-totals .exceeded { background: #fff0f0; color: #a84444; }
+#ncSheet .nc-split-totals .complete { background: #123b2c; color: #a7f3d0; }
+#ncSheet .nc-split-totals .pending { background: #3b2f14; color: #fde68a; }
+#ncSheet .nc-split-totals .exceeded { background: #451f26; color: #fecaca; }
+#ncSheet .nc-split-totals .complete strong,
+#ncSheet .nc-split-totals .pending strong,
+#ncSheet .nc-split-totals .exceeded strong { color: inherit; }
 
 #confirmacaoSistemaOverlay:has(.nc-payable-confirmation) .nc-confirm-split {
   display: grid;
