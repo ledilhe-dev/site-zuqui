@@ -29,14 +29,21 @@ async function salvarPreferenciaUsuario(chave, valor) {
 }
 
 async function carregarPreferenciaUsuario(chave, fallback = null) {
+  const chaveLocal = chaveLocalPreferenciaUsuario(chave);
+  let valorLocal = null;
+  let temValorLocal = false;
+  if (chaveLocal) {
+    try {
+      const salvoLocal = localStorage.getItem(chaveLocal);
+      if (salvoLocal != null) {
+        valorLocal = JSON.parse(salvoLocal);
+        temValorLocal = true;
+      }
+    } catch (_) {}
+  }
   try {
     const funcId = usuarioSistemaLogado?.id;
-    if (!funcId) return fallback;
-    const chaveLocal = chaveLocalPreferenciaUsuario(chave);
-    if (chaveLocal) {
-      const salvoLocal = localStorage.getItem(chaveLocal);
-      if (salvoLocal != null) return JSON.parse(salvoLocal);
-    }
+    if (!funcId) return temValorLocal ? valorLocal : fallback;
     const { data, error } = await executarSemFiltroLojaTemporario(() =>
       sb.from('preferencias_usuario').select('valor').eq('funcionario_id', funcId).eq('chave', chave).maybeSingle()
     );
@@ -49,14 +56,12 @@ async function carregarPreferenciaUsuario(chave, fallback = null) {
       }
       return valor;
     }
+    if (temValorLocal) {
+      salvarPreferenciaUsuario(chave, valorLocal);
+      return valorLocal;
+    }
   } catch(e) { console.warn('Erro ao carregar preferência:', e); }
-  const chaveLocal = chaveLocalPreferenciaUsuario(chave);
-  if (chaveLocal) {
-    try {
-      const salvo = localStorage.getItem(chaveLocal);
-      if (salvo != null) return JSON.parse(salvo);
-    } catch (_) {}
-  }
+  if (temValorLocal) return valorLocal;
   return fallback;
 }
 

@@ -671,6 +671,11 @@ function abrirPagina(id, botao) {
   const tituloPagina = paginaAtual.querySelector(':scope > .page-title')?.textContent?.trim() || tituloFallback;
   document.getElementById('topbar-title').textContent = tituloPagina;
   document.getElementById('topbar-sub').textContent = '';
+  const indicadorPagina = document.getElementById('activePageName');
+  if (indicadorPagina) {
+    indicadorPagina.textContent = tituloPagina || 'Página atual';
+    indicadorPagina.hidden = false;
+  }
   salvarPaginaAtiva(id);
   atualizarEstadoMenuIntegracoesFinanceiras(paginaPertenceMenuIntegracoesFinanceiras(id));
   if (paginaPertenceMenuIntegracoesFinanceiras(id) && typeof carregarPaginaIntegracoesFinanceiras === 'function') carregarPaginaIntegracoesFinanceiras(id);

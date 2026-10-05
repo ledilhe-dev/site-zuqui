@@ -33,6 +33,39 @@ body,
   word-break: normal !important;
 }
 
+/* Contexto permanente e discreto: a pagina atual fica identificada mesmo
+   quando o titulo do topbar e ocultado para ganhar espaco. */
+.active-page-name {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  margin: 0 0 7px;
+  padding: 2px 7px;
+  border-left: 2px solid color-mix(in srgb, var(--accent, #6366f1) 72%, transparent);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: .035em;
+}
+
+.active-page-name[hidden] {
+  display: none !important;
+}
+
+/* A versao e secundaria: texto menor dentro da caixa existente. */
+#topbarVersionBadge {
+  min-width: 0 !important;
+  max-width: 52px !important;
+  padding: 2px 3px !important;
+  overflow: hidden !important;
+  border-radius: 6px !important;
+  font-size: 6px !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-overflow: clip !important;
+}
+
 /* iPad em paisagem possui ate 1180 CSS px. Nessa faixa o menu vira gaveta,
    liberando toda a largura para qualquer relatorio. */
 @media (max-width: 1180px) {
@@ -142,9 +175,10 @@ body,
   .pagina.ativa input[type="time"],
   .pagina.ativa input[type="datetime-local"] {
     display: block !important;
-    inline-size: 100% !important;
+    inline-size: calc(100% - 6px) !important;
+    width: calc(100% - 6px) !important;
     min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
+    max-inline-size: calc(100% - 6px) !important;
     box-sizing: border-box !important;
     overflow: visible !important;
     min-height: 30px !important;
@@ -154,6 +188,9 @@ body,
     font-size: 10px !important;
     line-height: 22px !important;
     text-align: center !important;
+    justify-self: start !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
   }
 
   .pagina.ativa input[type="date"]::-webkit-date-and-time-value,
