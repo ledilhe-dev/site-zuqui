@@ -149,10 +149,11 @@ body,
     overflow: visible !important;
     min-height: 30px !important;
     height: 30px !important;
-    padding: 3px 6px !important;
+    padding: 4px 6px 2px !important;
     border-radius: 8px !important;
     font-size: 10px !important;
-    line-height: 1 !important;
+    line-height: 22px !important;
+    text-align: center !important;
   }
 
   .pagina.ativa input[type="date"]::-webkit-date-and-time-value,
@@ -161,12 +162,18 @@ body,
   .pagina.ativa input[type="date"]::-webkit-datetime-edit,
   .pagina.ativa input[type="time"]::-webkit-datetime-edit {
     min-width: 0 !important;
-    padding: 0 !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    padding: 1px 0 0 !important;
+    line-height: 22px !important;
+    text-align: center !important;
+    transform: translateY(1px);
   }
 
   /* Relatorios gerenciais e demais filtros dinamicos compartilham a mesma
      regra. Evita a largura intrinseca dos controles nativos do Safari. */
   .rm-filters,
+  .raffinato-filter-grid,
   .rs-filter-grid,
   .rb-filter-grid,
   .iop-filters,
@@ -180,6 +187,7 @@ body,
   }
 
   .rm-filters > *,
+  .raffinato-filter-grid > *,
   .rs-filter-grid > *,
   .rb-filter-grid > *,
   .iop-filters > *,
@@ -192,6 +200,7 @@ body,
   }
 
   .rm-filters :is(input, select, button),
+  .raffinato-filter-grid :is(input, select, button),
   .rs-filter-grid :is(input, select, button),
   .rb-filter-grid :is(input, select, button),
   .iop-filters :is(input, select, button) {
@@ -201,6 +210,7 @@ body,
   }
 
   .rm-filters label,
+  .raffinato-filter-grid .raffinato-field,
   .rs-filter-grid label,
   .rb-filter-grid label,
   .iop-filters label,
@@ -212,6 +222,8 @@ body,
 
   .rm-filters input[type="date"],
   .rm-filters input[type="time"],
+  .raffinato-filter-grid input[type="date"],
+  .raffinato-filter-grid input[type="time"],
   .rs-filter-grid input[type="date"],
   .rs-filter-grid input[type="time"],
   .rb-filter-grid input[type="date"],
@@ -271,14 +283,27 @@ body,
 
   /* Quatro colunas equilibradas no iPad em paisagem. A segunda linha recebe
      grupo, origem, produto e as duas acoes, sem sobreposicao. */
-  .rm-filters {
+  .rm-filters,
+  .raffinato-filter-grid,
+  .rb-filter-grid,
+  .rs-filter-grid,
+  .iop-filters {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     column-gap: 8px !important;
     row-gap: 7px !important;
   }
 
-  .rm-filter-card {
+  .rm-filter-card,
+  .raffinato-filter-card,
+  .rb-filters,
+  .rs-filters,
+  .iop-panel {
     padding: 10px 12px !important;
+  }
+
+  .rs-query,
+  .rb-payment-filter {
+    grid-column: auto !important;
   }
 
   .rm-actions {
@@ -297,6 +322,8 @@ body,
 
 @media (min-width: 701px) and (max-width: 900px) {
   .rm-filters,
+  .raffinato-filter-grid,
+  .rb-filter-grid,
   .rs-filter-grid,
   .iop-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -307,6 +334,11 @@ body,
   .rm-actions {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .rs-query,
+  .rb-payment-filter {
+    grid-column: auto !important;
   }
 }
 

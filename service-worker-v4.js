@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v211-ipad-compact-fields';
+const CACHE_NAME = 'check-diario-pwa-v212-raffinato-filters';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
