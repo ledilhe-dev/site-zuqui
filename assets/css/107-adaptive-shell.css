@@ -109,6 +109,33 @@ body,
     max-inline-size: 100% !important;
   }
 
+  /* Uma unica linha de enquadramento para cabecalho, filtros, alertas,
+     indicadores e resultados. */
+  .pagina.ativa > .card,
+  .pagina.ativa > [class*="-active"],
+  .pagina.ativa > [class*="-content"],
+  .pagina.ativa > [class*="-kpis"],
+  .pagina.ativa > [class*="-grid"],
+  .rm-head,
+  .rm-filter-card,
+  .rm-active,
+  .rm-content,
+  .rm-kpis,
+  .rm-bi-grid {
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .rm-filter-card,
+  .raffinato-filter-card,
+  .rs-filters,
+  .rb-filters {
+    overflow: hidden !important;
+  }
+
   /* Safari/iPad aplica largura intrinseca a date/time. A grade e cada campo
      precisam poder encolher sem invadir o campo vizinho. */
   .pagina.ativa input[type="date"],
@@ -120,6 +147,11 @@ body,
     max-inline-size: 100% !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
   }
 
   .pagina.ativa input[type="date"]::-webkit-date-and-time-value,
@@ -167,6 +199,31 @@ body,
     max-inline-size: 100% !important;
   }
 
+  .rm-filters label,
+  .rs-filter-grid label,
+  .rb-filter-grid label,
+  .iop-filters label,
+  .date-filter-standard label {
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .rm-filters input[type="date"],
+  .rm-filters input[type="time"],
+  .rs-filter-grid input[type="date"],
+  .rs-filter-grid input[type="time"],
+  .rb-filter-grid input[type="date"],
+  .rb-filter-grid input[type="time"],
+  .iop-filters input[type="date"],
+  .iop-filters input[type="time"] {
+    /* inline-size:0 remove a largura minima interna do controle no WebKit;
+       min-inline-size recompõe exatamente a largura da coluna. */
+    inline-size: 0 !important;
+    min-inline-size: 100% !important;
+    max-inline-size: 100% !important;
+  }
+
   .raffinato-filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
@@ -210,7 +267,12 @@ body,
      grupo, origem, produto e as duas acoes, sem sobreposicao. */
   .rm-filters {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 10px !important;
+    column-gap: 14px !important;
+    row-gap: 9px !important;
+  }
+
+  .rm-filter-card {
+    padding: 12px 14px !important;
   }
 
   .rm-actions {
@@ -232,7 +294,8 @@ body,
   .rs-filter-grid,
   .iop-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 9px !important;
+    column-gap: 12px !important;
+    row-gap: 9px !important;
   }
 
   .rm-actions {
@@ -284,4 +347,3 @@ body,
     min-width: 0 !important;
   }
 }
-

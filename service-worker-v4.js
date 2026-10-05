@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v209-adaptive-reports';
+const CACHE_NAME = 'check-diario-pwa-v210-ipad-field-alignment';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
