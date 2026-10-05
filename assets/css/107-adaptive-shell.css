@@ -36,6 +36,21 @@ body,
 /* iPad em paisagem possui ate 1180 CSS px. Nessa faixa o menu vira gaveta,
    liberando toda a largura para qualquer relatorio. */
 @media (max-width: 1180px) {
+  /* A navegacao esta fora do fluxo nesta faixa. O shell deixa de reservar
+     qualquer coluna fantasma, inclusive depois de girar o aparelho. */
+  .shell {
+    display: block !important;
+    inline-size: 100% !important;
+  }
+
+  .main {
+    display: flex !important;
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: none !important;
+    margin: 0 !important;
+  }
+
   .sidebar {
     position: fixed !important;
     inset: 0 auto 0 0 !important;
@@ -79,7 +94,19 @@ body,
   .content {
     inline-size: 100% !important;
     max-inline-size: 100% !important;
+    margin: 0 !important;
     overflow-x: hidden !important;
+  }
+
+  .content > .pagina.ativa {
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: none !important;
+    margin-inline: 0 !important;
+  }
+
+  .content > .pagina.ativa > * {
+    max-inline-size: 100% !important;
   }
 
   /* Safari/iPad aplica largura intrinseca a date/time. A grade e cada campo
@@ -102,6 +129,42 @@ body,
   .pagina.ativa input[type="time"]::-webkit-datetime-edit {
     min-width: 0 !important;
     padding: 0 !important;
+  }
+
+  /* Relatorios gerenciais e demais filtros dinamicos compartilham a mesma
+     regra. Evita a largura intrinseca dos controles nativos do Safari. */
+  .rm-filters,
+  .rs-filter-grid,
+  .rb-filter-grid,
+  .iop-filters,
+  .date-filter-standard,
+  .financeiro-filtros-row,
+  .financeiro-filtros-flex,
+  .report-filter-grid {
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+  }
+
+  .rm-filters > *,
+  .rs-filter-grid > *,
+  .rb-filter-grid > *,
+  .iop-filters > *,
+  .date-filter-standard > *,
+  .financeiro-filtros-row > *,
+  .financeiro-filtros-flex > *,
+  .report-filter-grid > * {
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+  }
+
+  .rm-filters :is(input, select, button),
+  .rs-filter-grid :is(input, select, button),
+  .rb-filter-grid :is(input, select, button),
+  .iop-filters :is(input, select, button) {
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
   }
 
   .raffinato-filter-grid {
@@ -141,6 +204,40 @@ body,
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
+  }
+
+  /* Quatro colunas equilibradas no iPad em paisagem. A segunda linha recebe
+     grupo, origem, produto e as duas acoes, sem sobreposicao. */
+  .rm-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .rm-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .rm-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-inline: 8px !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+  .rm-filters,
+  .rs-filter-grid,
+  .iop-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+
+  .rm-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
@@ -187,5 +284,4 @@ body,
     min-width: 0 !important;
   }
 }
-
 
