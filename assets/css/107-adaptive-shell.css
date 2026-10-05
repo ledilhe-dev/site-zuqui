@@ -1,0 +1,191 @@
+/* Ajuste global de enquadramento: desktop, tablets em ambas orientacoes e celular. */
+html,
+body,
+.shell,
+.main,
+.content {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.main {
+  flex: 1 1 0;
+}
+
+.topbar-main,
+.topbar-store-main,
+.topbar-actions,
+.pagina.ativa,
+.pagina.ativa > *,
+.pagina.ativa [class*="-grid"] > *,
+.pagina.ativa [class*="-row"] > * {
+  min-inline-size: 0;
+}
+
+/* O cabecalho nunca quebra nomes em varias linhas; preserva altura e ritmo. */
+.topbar-store-name,
+.topbar-user-name {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: normal !important;
+}
+
+/* iPad em paisagem possui ate 1180 CSS px. Nessa faixa o menu vira gaveta,
+   liberando toda a largura para qualquer relatorio. */
+@media (max-width: 1180px) {
+  .sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 90 !important;
+    width: min(340px, 88vw) !important;
+    max-width: 88vw !important;
+    height: 100dvh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    transform: translateX(-100%) !important;
+    transition: transform .22s ease !important;
+  }
+
+  .sidebar.open {
+    transform: translateX(0) !important;
+  }
+
+  body.mobile-nav-open {
+    overflow: hidden !important;
+  }
+
+  body.mobile-nav-open .mobile-nav-overlay {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .sidebar-collapse-toggle {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex !important;
+  }
+
+  .shell,
+  .main {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .content {
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Safari/iPad aplica largura intrinseca a date/time. A grade e cada campo
+     precisam poder encolher sem invadir o campo vizinho. */
+  .pagina.ativa input[type="date"],
+  .pagina.ativa input[type="time"],
+  .pagina.ativa input[type="datetime-local"] {
+    display: block !important;
+    inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .pagina.ativa input[type="date"]::-webkit-date-and-time-value,
+  .pagina.ativa input[type="time"]::-webkit-date-and-time-value,
+  .pagina.ativa input[type="datetime-local"]::-webkit-date-and-time-value,
+  .pagina.ativa input[type="date"]::-webkit-datetime-edit,
+  .pagina.ativa input[type="time"]::-webkit-datetime-edit {
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+
+  .raffinato-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .raffinato-actions {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+}
+
+/* Cabecalho do iPad: duas linhas equilibradas, sem usuario, loja, hora ou
+   versao disputando a mesma coluna. */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .topbar-main {
+    grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) auto !important;
+  }
+
+  .topbar-store,
+  .topbar-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .topbar-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+  }
+
+  #topbarUserInfo {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .topbar,
+  .topbar-main,
+  .topbar-store,
+  .topbar-actions {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .topbar-main {
+    grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .topbar-actions {
+    grid-template-columns: minmax(0, 1fr) 40px minmax(64px, auto) !important;
+  }
+
+  .topbar-actions .notification-btn {
+    width: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .topbar-actions > .btn-red {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .raffinato-filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .raffinato-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100% !important;
+  }
+
+  .raffinato-actions > * {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+
