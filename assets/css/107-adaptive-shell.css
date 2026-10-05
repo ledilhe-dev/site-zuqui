@@ -8,6 +8,25 @@ body,
   max-inline-size: 100%;
 }
 
+/* Área confortável para reordenar submenus com o dedo no iPad/tablet. */
+@media (max-width: 1180px), (pointer: coarse) {
+  #navContainer .nav-sub-btn { padding-right: 42px !important; }
+  #navContainer .nav-suborder-handle {
+    right: 2px !important;
+    width: 36px !important;
+    height: 36px !important;
+    opacity: .72 !important;
+    touch-action: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+  #navContainer .nav-sub-btn.nav-subitem-moving {
+    outline: 2px solid var(--accent, #655df5) !important;
+    outline-offset: -2px !important;
+    opacity: .8;
+  }
+}
+
 .main {
   flex: 1 1 0;
 }

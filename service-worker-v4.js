@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v213-global-layout-preferences';
+const CACHE_NAME = 'check-diario-pwa-v214-menu-sync-touch';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

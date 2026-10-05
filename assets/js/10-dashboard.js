@@ -126,7 +126,49 @@ async function salvarOrdemNavItens() {
   await salvarPreferenciaUsuario('nav_ordem_itens_v2', ordem);
 }
 
+let _layoutInicialPatrickVerificado = false;
+const ORDEM_INICIAL_PATRICK = [
+  { id: 'financeiro', grupo: 'navgrp_operacao' },
+  { id: 'relatorios', grupo: 'navgrp_operacao' },
+  { id: 'bater_ponto', grupo: 'navgrp_operacao' },
+  { id: 'escala_plantoes', grupo: 'navgrp_operacao' },
+  { id: 'checklist', grupo: 'navgrp_operacao' },
+  { id: 'tarefas_rapidas', grupo: 'navgrp_operacao' },
+  { id: 'dashboard', grupo: 'navgrp_operacao' },
+  { id: 'estatisticas_atendimento', grupo: 'navgrp_operacao' },
+  { id: 'raffinato', grupo: 'navgrp_integracoes' },
+  { id: 'administracao_funcionarios', grupo: 'navgrp_administracao' }
+];
+const ORDEM_FINANCEIRO_PATRICK = [
+  'financeiro_contasapagar', 'financeiro_fornecedores', 'financeiro_formas_pagamento',
+  'financeiro_baixar_contas', 'financeiro_conta_financeira', 'financeiro_recebiveis',
+  'financeiro_grupo_fornecedor', 'financeiro_categorias_compra', 'financeiro_cofre',
+  'integracoes_financeiras_conciliacao'
+];
+
+function usuarioAtualEhPatrick() {
+  const identificacao = [usuarioSistemaLogado?.nome, usuarioSistemaLogado?.username, usuarioSistemaLogado?.email]
+    .filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return /\bpatrick\b/.test(identificacao);
+}
+
+async function aplicarLayoutInicialPatrick() {
+  if (_layoutInicialPatrickVerificado || !usuarioAtualEhPatrick()) return;
+  _layoutInicialPatrickVerificado = true;
+  const chaveMigracao = 'nav_layout_patrick_v1_aplicado';
+  if (await carregarPreferenciaUsuario(chaveMigracao, false)) return;
+  const subitensAtuais = await carregarPreferenciaUsuario('nav_ordem_subitens_v1', {});
+  const novaOrdemSubitens = subitensAtuais && typeof subitensAtuais === 'object' && !Array.isArray(subitensAtuais)
+    ? { ...subitensAtuais }
+    : {};
+  novaOrdemSubitens.menuFinanceiroGroup = ORDEM_FINANCEIRO_PATRICK;
+  await salvarPreferenciaUsuario('nav_ordem_itens_v2', ORDEM_INICIAL_PATRICK);
+  await salvarPreferenciaUsuario('nav_ordem_subitens_v1', novaOrdemSubitens);
+  await salvarPreferenciaUsuario(chaveMigracao, true);
+}
+
 async function carregarOrdemNavMenu() {
+  await aplicarLayoutInicialPatrick();
   try {
     let ordem = await carregarPreferenciaUsuario('nav_ordem_itens_v2', null);
     const mapa = {};
@@ -149,6 +191,34 @@ async function carregarOrdemNavMenu() {
   inicializarControlesOrdemNav();
   inicializarControlesOrdemSubitensNav();
   atualizarGruposVaziosNav();
+  inicializarSincronizacaoOrdemNav();
+}
+
+let _navSyncTimer = null;
+let _navSyncEmAndamento = false;
+async function sincronizarOrdemNavEntreDispositivos() {
+  if (_navSyncEmAndamento || document.hidden || _navItemDragSrc || _navSubitemDragSrc || !usuarioSistemaLogado?.id) return;
+  _navSyncEmAndamento = true;
+  try {
+    const ordem = await carregarPreferenciaUsuario('nav_ordem_itens_v2', null);
+    if (Array.isArray(ordem)) ordem.forEach(item => {
+      const seletorId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(String(item.id || '')) : String(item.id || '').replace(/"/g, '\\"');
+      const el = document.querySelector(`#navContainer [data-nav-item-id="${seletorId}"]`);
+      const grupo = document.getElementById(item.grupo);
+      if (el && grupo?.classList.contains('nav-group')) grupo.appendChild(el);
+    });
+    await carregarOrdemSubitensNav();
+    atualizarGruposVaziosNav();
+  } finally {
+    _navSyncEmAndamento = false;
+  }
+}
+
+function inicializarSincronizacaoOrdemNav() {
+  if (_navSyncTimer) return;
+  window.addEventListener('focus', sincronizarOrdemNavEntreDispositivos);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) sincronizarOrdemNavEntreDispositivos(); });
+  _navSyncTimer = setInterval(sincronizarOrdemNavEntreDispositivos, 15000);
 }
 
 function atualizarGruposVaziosNav() {
@@ -270,10 +340,36 @@ function inicializarControlesOrdemSubitensNav() {
       });
       const handle = document.createElement('span');
       handle.className = 'nav-suborder-handle';
-      handle.textContent = 'â ¿';
-      handle.title = 'Arraste para ordenar esta funÃ§Ã£o';
-      handle.setAttribute('aria-label', 'Arraste para ordenar esta funÃ§Ã£o');
+      handle.textContent = '⠿';
+      handle.title = 'Arraste para ordenar esta função';
+      handle.setAttribute('aria-label', 'Arraste para ordenar esta função');
       handle.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
+      handle.addEventListener('touchstart', e => {
+        _navSubitemDragSrc = item;
+        item.classList.add('nav-subitem-moving');
+        e.stopPropagation();
+      }, { passive: true });
+      handle.addEventListener('touchmove', e => {
+        if (_navSubitemDragSrc !== item) return;
+        const toque = e.touches[0];
+        const alvo = document.elementFromPoint(toque.clientX, toque.clientY)?.closest('.nav-sub-btn[data-page]');
+        if (alvo && alvo !== item && alvo.parentElement === item.parentElement) {
+          const rect = alvo.getBoundingClientRect();
+          item.parentElement.insertBefore(item, toque.clientY < rect.top + rect.height / 2 ? alvo : alvo.nextSibling);
+        }
+        e.preventDefault();
+        e.stopPropagation();
+      }, { passive: false });
+      const finalizarToqueSubitem = e => {
+        if (_navSubitemDragSrc !== item) return;
+        item.classList.remove('nav-subitem-moving');
+        _navSubitemDragSrc = null;
+        salvarOrdemSubitensNav();
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      handle.addEventListener('touchend', finalizarToqueSubitem, { passive: false });
+      handle.addEventListener('touchcancel', finalizarToqueSubitem, { passive: false });
       item.appendChild(handle);
     });
   });
