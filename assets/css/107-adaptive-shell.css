@@ -146,11 +146,12 @@ body,
     min-inline-size: 0 !important;
     max-inline-size: 100% !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
-    min-height: 34px !important;
-    height: 34px !important;
-    padding: 4px 7px !important;
-    font-size: 11px !important;
+    overflow: visible !important;
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 3px 6px !important;
+    border-radius: 8px !important;
+    font-size: 10px !important;
     line-height: 1 !important;
   }
 
@@ -206,7 +207,7 @@ body,
   .date-filter-standard label {
     min-inline-size: 0 !important;
     max-inline-size: 100% !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   .rm-filters input[type="date"],
@@ -217,11 +218,16 @@ body,
   .rb-filter-grid input[type="time"],
   .iop-filters input[type="date"],
   .iop-filters input[type="time"] {
-    /* inline-size:0 remove a largura minima interna do controle no WebKit;
-       min-inline-size recompõe exatamente a largura da coluna. */
-    inline-size: 0 !important;
-    min-inline-size: 100% !important;
-    max-inline-size: 100% !important;
+    /* O controle fica menor que a coluna: o Safari nao alcanca nem recorta
+       o arredondamento direito do campo vizinho. */
+    inline-size: calc(100% - 6px) !important;
+    width: calc(100% - 6px) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: calc(100% - 6px) !important;
+    justify-self: start !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    clip-path: none !important;
   }
 
   .raffinato-filter-grid {
@@ -267,12 +273,12 @@ body,
      grupo, origem, produto e as duas acoes, sem sobreposicao. */
   .rm-filters {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    column-gap: 14px !important;
-    row-gap: 9px !important;
+    column-gap: 8px !important;
+    row-gap: 7px !important;
   }
 
   .rm-filter-card {
-    padding: 12px 14px !important;
+    padding: 10px 12px !important;
   }
 
   .rm-actions {
@@ -294,8 +300,8 @@ body,
   .rs-filter-grid,
   .iop-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    column-gap: 12px !important;
-    row-gap: 9px !important;
+    column-gap: 8px !important;
+    row-gap: 7px !important;
   }
 
   .rm-actions {
