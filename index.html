@@ -1419,7 +1419,7 @@
 
         <div class="card">
           <div class="card-title">Filtros do relatório</div>
-          <div class="form-row">
+          <div class="form-row tarefas-cad-filtros">
             <label class="filter-field-standard"><span>Data inicial</span><input id="filtroTarefasCadDataInicio" data-date-filter-native="true" type="date" title="Data inicial"></label>
             <label class="filter-field-standard"><span>Data final</span><input id="filtroTarefasCadDataFim" data-date-filter-native="true" type="date" title="Data final"></label>
             <label class="filter-field-standard filter-field-select"><span>Consultar por</span><select id="filtroTarefasCadDataTipo" data-filter-labeled="true">
@@ -1430,15 +1430,10 @@
               <option value="ocorrencia">Ocorrência programada no período</option>
               <option value="proxima">Próxima disponibilidade</option>
             </select></label>
-            <select id="filtroTarefasCadTarefa">
-              <option value="">- Todas as tarefas -</option>
-            </select>
-            <select id="filtroTarefasCadCadastrante">
-              <option value="">- Quem cadastrou (todos) -</option>
-            </select>
-            <select id="filtroTarefasCadResponsavel">
-              <option value="">- Responsável (todos) -</option>
-            </select>
+            <label class="filter-field-standard tarefas-cad-busca"><span>Tarefas</span><input id="filtroTarefasCadTarefa" type="search" list="listaFiltroTarefasCad" placeholder="Buscar por parte do nome" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();carregarRelatorioTarefasCadastradas()}"><datalist id="listaFiltroTarefasCad"></datalist></label>
+            <label class="filter-field-standard tarefas-cad-busca"><span>Responsável</span><input id="filtroTarefasCadResponsavel" type="search" list="listaFiltroResponsaveisCad" placeholder="Buscar por parte do nome" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();carregarRelatorioTarefasCadastradas()}"><datalist id="listaFiltroResponsaveisCad"></datalist></label>
+            <label class="filter-field-standard"><span>Horário inicial</span><input id="filtroTarefasCadHorarioInicio" type="time" title="Mostrar tarefas a partir deste horário"></label>
+            <label class="filter-field-standard"><span>Horário final</span><input id="filtroTarefasCadHorarioFim" type="time" title="Mostrar tarefas até este horário"></label>
             <button class="btn btn-ghost" type="button" onclick="resetFiltroRelatorioTarefasCadastradas()">Limpar</button>
             <button class="btn btn-green" type="button" onclick="carregarRelatorioTarefasCadastradas()">Filtrar</button>
           </div>
@@ -3086,6 +3081,7 @@
 <link id="sidebar-icons-style" rel="stylesheet" href="./assets/css/106-sidebar-icons.css?v=20261008-validade-neon">
 <link id="adaptive-shell-style" rel="stylesheet" href="./assets/css/107-adaptive-shell.css?v=20261005-menu-touch-v7">
 <link id="critical-contrast-style" rel="stylesheet" href="./assets/css/119-critical-contrast.css?v=20261008-v1">
+<link id="checklist-report-filter-style" rel="stylesheet" href="./assets/css/120-checklist-report-filters.css?v=20261008-v1">
 <link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v5">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 

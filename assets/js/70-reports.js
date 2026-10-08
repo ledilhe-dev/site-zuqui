@@ -6,8 +6,12 @@ let _relatorioTarefasCadCache = [];
 let _relatorioTarefasCadFuncionariosCache = [];
 let _edicaoProgramacaoChecklistAtual = null;
 
+function normalizarBuscaRelatorioTarefas(valor) {
+  return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
 function resetFiltroRelatorioTarefasCadastradas() {
-  ['filtroTarefasCadDataInicio', 'filtroTarefasCadDataFim', 'filtroTarefasCadTarefa', 'filtroTarefasCadCadastrante', 'filtroTarefasCadResponsavel'].forEach(id => {
+  ['filtroTarefasCadDataInicio', 'filtroTarefasCadDataFim', 'filtroTarefasCadTarefa', 'filtroTarefasCadResponsavel', 'filtroTarefasCadHorarioInicio', 'filtroTarefasCadHorarioFim'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -39,9 +43,11 @@ async function carregarRelatorioTarefasCadastradas() {
   const dataInicio = String(document.getElementById('filtroTarefasCadDataInicio')?.value || '').trim();
   const dataFim = String(document.getElementById('filtroTarefasCadDataFim')?.value || '').trim();
   const dataTipo = String(document.getElementById('filtroTarefasCadDataTipo')?.value || 'todos').trim();
-  const filtroTarefaId = String(document.getElementById('filtroTarefasCadTarefa')?.value || '').trim();
-  const filtroCadastrante = String(document.getElementById('filtroTarefasCadCadastrante')?.value || '').trim().toLowerCase();
+  const filtroTarefa = normalizarBuscaRelatorioTarefas(document.getElementById('filtroTarefasCadTarefa')?.value || '');
   const filtroResponsavel = String(document.getElementById('filtroTarefasCadResponsavel')?.value || '').trim();
+  const filtroResponsavelBusca = normalizarBuscaRelatorioTarefas(filtroResponsavel);
+  const filtroHorarioInicio = String(document.getElementById('filtroTarefasCadHorarioInicio')?.value || '').slice(0, 5);
+  const filtroHorarioFim = String(document.getElementById('filtroTarefasCadHorarioFim')?.value || '').slice(0, 5);
 
   try {
     const lojaAtual = obterLojaAtualParaIsolamento();
@@ -157,9 +163,13 @@ async function carregarRelatorioTarefasCadastradas() {
 
     // Aplicar filtros.
     let filtradas = linhas;
-    if (filtroTarefaId) filtradas = filtradas.filter(l => l.tarefa_id === filtroTarefaId);
-    if (filtroResponsavel) filtradas = filtradas.filter(l => l.responsavel_id === filtroResponsavel);
-    if (filtroCadastrante) filtradas = filtradas.filter(l => String(l.cadastradoPor || '').trim().toLowerCase() === filtroCadastrante);
+    if (filtroTarefa) filtradas = filtradas.filter(l => normalizarBuscaRelatorioTarefas(l.nomeTarefa).includes(filtroTarefa));
+    if (filtroResponsavelBusca) filtradas = filtradas.filter(l => normalizarBuscaRelatorioTarefas(l.responsavel).includes(filtroResponsavelBusca));
+    if (filtroHorarioInicio) filtradas = filtradas.filter(l => String(l.horarioInicio || '').slice(0, 5) >= filtroHorarioInicio);
+    if (filtroHorarioFim) filtradas = filtradas.filter(l => {
+      const horarioComparacao = String(l.horarioFim || l.horarioInicio || '').slice(0, 5);
+      return horarioComparacao && horarioComparacao <= filtroHorarioFim;
+    });
     if (dataTipo !== 'todos' && (dataInicio || dataFim)) {
       filtradas = filtradas.filter(l => {
         const dentro = data => Boolean(data) && (!dataInicio || data >= dataInicio) && (!dataFim || data <= dataFim);
@@ -434,36 +444,17 @@ async function excluirProgramacaoChecklist(agendamentoId) {
 }
 
 function popularFiltrosRelatorioTarefasCad(tarefas = [], lancamentos = [], funcMap = {}) {
-  // Tarefa
-  const selTarefa = document.getElementById('filtroTarefasCadTarefa');
-  if (selTarefa) {
-    const atual = selTarefa.value;
-    const ordenadas = [...tarefas].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
-    selTarefa.innerHTML = '<option value="">- Todas as tarefas -</option>' +
-      ordenadas.map(t => `<option value="${escaparHtmlBasico(String(t.id))}">${escaparHtmlBasico(t.nome || 'Tarefa')}</option>`).join('');
-    if (Array.from(selTarefa.options).some(o => o.value === atual)) selTarefa.value = atual;
+  const listaTarefas = document.getElementById('listaFiltroTarefasCad');
+  if (listaTarefas) {
+    const nomes = [...new Set((tarefas || []).map(t => String(t.nome || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    listaTarefas.innerHTML = nomes.map(nome => `<option value="${escaparHtmlBasico(nome)}"></option>`).join('');
   }
-  // Quem cadastrou
-  const selCad = document.getElementById('filtroTarefasCadCadastrante');
-  if (selCad) {
-    const atual = selCad.value;
-    const nomes = [...new Set([
-      ...(lancamentos || []).map(l => String(l.criado_por_nome || '').trim()),
-      ...(tarefas || []).map(t => String(t.criado_por_nome || '').trim()),
-    ].filter(Boolean))].sort();
-    selCad.innerHTML = '<option value="">- Quem cadastrou (todos) -</option>' +
-      nomes.map(n => `<option value="${escaparHtmlBasico(n.toLowerCase())}">${escaparHtmlBasico(n)}</option>`).join('');
-    if (Array.from(selCad.options).some(o => o.value === atual)) selCad.value = atual;
-  }
-  // Responsável
-  const selResp = document.getElementById('filtroTarefasCadResponsavel');
-  if (selResp) {
-    const atual = selResp.value;
-    const respIds = [...new Set((tarefas || []).map(t => String(t.funcionario_id || '')).filter(Boolean))];
-    const ordenados = respIds.map(id => [id, funcMap[id] || 'Funcionário']).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-    selResp.innerHTML = '<option value="">- Responsável (todos) -</option>' +
-      ordenados.map(([id, nome]) => `<option value="${escaparHtmlBasico(id)}">${escaparHtmlBasico(nome)}</option>`).join('');
-    if (Array.from(selResp.options).some(o => o.value === atual)) selResp.value = atual;
+  const listaResponsaveis = document.getElementById('listaFiltroResponsaveisCad');
+  if (listaResponsaveis) {
+    const nomes = [...new Set(Object.values(funcMap).map(nome => String(nome || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    listaResponsaveis.innerHTML = nomes.map(nome => `<option value="${escaparHtmlBasico(nome)}"></option>`).join('');
   }
 }
 
