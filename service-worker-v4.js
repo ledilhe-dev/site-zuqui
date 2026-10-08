@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v216-permissoes-gerente';
+const CACHE_NAME = 'check-diario-pwa-v217-validade-neon';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

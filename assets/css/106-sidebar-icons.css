@@ -187,6 +187,25 @@
 .sidebar .nav-btn[data-sidebar-icon='dashboard'],
 .sidebar .nav-btn[data-sidebar-icon='meu_painel'] { --nav-icon-color: #a78bfa; --nav-icon-rgb: 167, 139, 250; }
 .sidebar .nav-btn[data-sidebar-icon='estatisticas_atendimento'] { --nav-icon-color: #fbbf24; --nav-icon-rgb: 251, 191, 36; }
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] { --nav-icon-color: #facc15; --nav-icon-rgb: 250, 204, 21; }
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .nav-icon-warning-triangle {
+  fill: rgba(250, 204, 21, .2);
+  stroke-width: 1.8;
+}
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .nav-icon-warning-mark {
+  stroke-width: 2.4;
+}
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .nav-icon-warning-dot {
+  fill: currentColor;
+  stroke: none;
+}
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .icon.nav-icon-polished {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .28),
+    inset 0 -1px 0 rgba(250, 204, 21, .26),
+    0 0 10px rgba(250, 204, 21, .58),
+    0 0 23px rgba(245, 158, 11, .28) !important;
+}
 .sidebar .nav-btn[data-sidebar-icon='raffinato'] { --nav-icon-color: #22d3ee; --nav-icon-rgb: 34, 211, 238; }
 .sidebar .nav-btn[data-sidebar-icon='administracao_funcionarios'] { --nav-icon-color: #f472b6; --nav-icon-rgb: 244, 114, 182; }
 .sidebar .nav-btn[data-sidebar-icon='configuracoes'] { --nav-icon-color: #94a3b8; --nav-icon-rgb: 148, 163, 184; }
