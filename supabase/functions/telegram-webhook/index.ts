@@ -12,7 +12,7 @@ type TelegramUpdate = {
 type TelegramAlert = {
   id: string;
   tipo: "tarefa_iniciada" | "tarefa_nao_iniciada" | "tarefa_finalizada" | "tarefa_nao_finalizada"
-    | "financeiro_vencimento" | "financeiro_saldo" | "produto_cadastrado" | "produto_vencimento"
+    | "financeiro_vencimento" | "financeiro_saldo" | "financeiro_ajuste" | "produto_cadastrado" | "produto_vencimento"
     | "agenda_cadastrada" | "agenda_dia";
   empresa_id: string;
   loja_id: string;
@@ -63,9 +63,7 @@ Deno.serve(async (request) => {
     });
   }
 
-  if (payload.origem !== "cron") {
-    return json({ ok: true });
-  }
+  if (payload.origem !== "cron") return json({ ok: true });
 
   return processQueue();
 });
@@ -184,6 +182,8 @@ async function processQueue() {
   if (overdueError) return json({ error: overdueError.message }, 500);
   const { error: scheduledError } = await admin.rpc("telegram_enfileirar_alertas_programados");
   if (scheduledError) return json({ error: scheduledError.message }, 500);
+  const { error: summaryError } = await admin.rpc("telegram_enfileirar_resumo_financeiro");
+  if (summaryError) return json({ error: summaryError.message }, 500);
   const { error: agendaError } = await admin.rpc("telegram_enfileirar_agendas_do_dia");
   if (agendaError) return json({ error: agendaError.message }, 500);
 
@@ -196,17 +196,35 @@ async function processQueue() {
   const { data, error } = await admin.rpc("telegram_reservar_alertas", { p_limite: 20 });
   if (error) return json({ error: error.message }, 500);
 
+  const { data: financialStores } = await admin.from("lojas").select("id,nome").eq("ativo", true);
+  const patrickStoreIds = new Set((financialStores || [])
+    .filter((store) => normalizeTitle(String(store.nome || "")).includes("patrick"))
+    .map((store) => String(store.id)));
+
   let sent = 0;
   let failed = 0;
 
   for (const alert of (data || []) as TelegramAlert[]) {
+    if (isFinancialAlert(alert.tipo) && !patrickStoreIds.has(String(alert.loja_id))) {
+      await admin.from("telegram_alertas").update({
+        status: "enviado",
+        enviado_em: new Date().toISOString(),
+        ultimo_erro: "Ignorado: financeiro centralizado na loja Patrick.",
+      }).eq("id", alert.id).eq("status", "processando");
+      continue;
+    }
     const flag = destinationFlag(alert.tipo);
     let destinationsQuery = admin
       .from("telegram_destinos")
       .select("chat_id")
-      .eq("empresa_id", alert.empresa_id)
-      .eq("ativo", true)
-      .or(`loja_id.eq.${alert.loja_id},loja_id.is.null`);
+      .eq("ativo", true);
+    // O financeiro fica concentrado na Patrick, mas o grupo foi conectado pela
+    // Zuqui. Eventos financeiros sao roteados por empresa; operacionais continuam
+    // isolados pela loja para nao misturar tarefas, agendas e validades.
+    if (!isFinancialAlert(alert.tipo)) {
+      destinationsQuery = destinationsQuery.eq("empresa_id", alert.empresa_id)
+        .or(`loja_id.eq.${alert.loja_id},loja_id.is.null`);
+    }
     if (flag) destinationsQuery = destinationsQuery.eq(flag, true);
     const { data: destinations, error: destinationsError } = await destinationsQuery;
 
@@ -304,6 +322,7 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
     tarefa_nao_finalizada: "notificar_tarefa_nao_finalizada",
     financeiro_vencimento: "notificar_financeiro",
     financeiro_saldo: "notificar_financeiro",
+    financeiro_ajuste: "notificar_financeiro",
     produto_cadastrado: "notificar_produtos_vencimento",
     produto_vencimento: "notificar_produtos_vencimento",
     agenda_cadastrada: "notificar_tarefa_iniciada",
@@ -313,7 +332,7 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
 }
 
 function buildMessage(alert: TelegramAlert) {
-  if (alert.tipo === "financeiro_vencimento" || alert.tipo === "financeiro_saldo"
+  if (alert.tipo === "financeiro_vencimento" || alert.tipo === "financeiro_saldo" || alert.tipo === "financeiro_ajuste"
     || alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento"
     || alert.tipo === "agenda_cadastrada" || alert.tipo === "agenda_dia") {
     return alert.descricao;
@@ -355,6 +374,10 @@ function buildMessage(alert: TelegramAlert) {
   lines.push(`Fim previsto: ${formatDateTime(alert.fim_previsto || alert.horario_previsto)}`);
   lines.push("Finalização real: não registrada");
   return lines.join("\n");
+}
+
+function isFinancialAlert(tipo: TelegramAlert["tipo"]) {
+  return tipo === "financeiro_vencimento" || tipo === "financeiro_saldo" || tipo === "financeiro_ajuste";
 }
 
 function formatDateTime(value: string) {

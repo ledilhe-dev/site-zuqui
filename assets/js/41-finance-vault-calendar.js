@@ -2292,6 +2292,11 @@ async function salvarModalEditarTituloFinanceiro() {
     return;
   }
 
+  if (!categoriaId) {
+    setModalMsg('Selecione uma categoria de compra. Toda compra precisa de categoria.');
+    return;
+  }
+
   const formaSelecionada = formasPagamentoFinanceiroCache.find(forma => String(forma.id) === formaPagamentoId) || null;
   const contaSelecionada = contasFinanceirasCache.find(conta => String(conta.id) === contaFinanceiraId) || null;
   const observacao = ajustarObservacaoBaixaSemMovimentacao(observacaoBase, !movimentarSaldo);
@@ -2305,7 +2310,7 @@ async function salvarModalEditarTituloFinanceiro() {
     forma_pagamento_id: formaSelecionada?.id || null,
     forma_pagamento: formaSelecionada?.nome || null,
     conta_financeira_id: contaSelecionada?.id || null,
-    categoria_id: categoriaId || null,
+    categoria_id: categoriaId,
     updated_at: new Date().toISOString(),
   };
 
