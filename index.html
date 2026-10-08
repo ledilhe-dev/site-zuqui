@@ -46,8 +46,8 @@
 <link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css?v=20260727-sem-filtro-lojas">
 <link id="integracoes-financeiras-style" rel="stylesheet" href="./assets/css/97-financial-integrations.css?v=20260730-conciliacao-design-v4">
 <link id="atendimento-estatisticas-style" rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260903">
-<link rel="stylesheet" href="./assets/css/108-checkia.css?v=20261007">
-<link rel="stylesheet" href="./assets/css/109-produtos-vencimento.css?v=20261007">
+<link rel="stylesheet" href="./assets/css/108-checkia.css?v=20261008-v3">
+<link rel="stylesheet" href="./assets/css/109-produtos-vencimento.css?v=20261008-v3">
 
 
 
@@ -599,7 +599,7 @@
         <div class="page-title">Produtos próximos ao vencimento</div>
         <div class="card pv-card">
           <div class="card-title" id="pvFormTitle">Cadastrar produto</div><input id="pvId" type="hidden">
-          <div class="pv-form-grid"><label class="pv-field pv-grow"><span>Nome do produto</span><input id="pvNome" type="text" maxlength="180" placeholder="Ex.: Leite integral"></label><label class="pv-field"><span>Código de barras</span><input id="pvCodigo" type="text" inputmode="numeric" maxlength="80" placeholder="Leia ou digite"></label><label class="pv-field"><span>Data de vencimento</span><input id="pvData" type="date"></label><label class="pv-field"><span>PIN operacional</span><input id="pvPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"></label></div>
+          <div class="pv-form-grid"><label class="pv-field pv-grow"><span>Nome do produto</span><input id="pvNome" type="text" maxlength="180" placeholder="Ex.: Leite integral"></label><label class="pv-field pv-quantity"><span>Quantidade</span><input id="pvQuantidade" type="number" min="1" step="1" value="1"></label><label class="pv-field"><span>Código de barras</span><input id="pvCodigo" type="text" inputmode="numeric" maxlength="80" placeholder="Leia ou digite"></label><label class="pv-field"><span>Data de vencimento</span><input id="pvData" type="date"></label><label class="pv-field"><span>PIN operacional</span><input id="pvPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"></label><label class="pv-field pv-observation"><span>Observação</span><input id="pvObservacao" type="text" maxlength="500" placeholder="Lote, local ou detalhe opcional"></label></div>
           <div class="pv-alert-row"><label class="pv-check"><input id="pvAlertar" type="checkbox" checked> Alertar no Telegram</label><label class="pv-inline"><span>com</span><input id="pvDias" type="number" min="0" max="365" value="1"><span>dia(s) antes</span></label><label class="pv-check"><input id="pvNoDia" type="checkbox" checked> Avisar no dia do vencimento</label><label class="pv-inline"><span>Horário</span><input id="pvHorario" type="time" value="08:00"></label></div>
           <div class="pv-actions"><button class="btn btn-ghost" id="pvCancelar" type="button" onclick="limparProdutoVencimentoForm()" hidden>Cancelar edição</button><button class="btn btn-green" id="pvSalvar" type="button" onclick="salvarProdutoVencimento()">Cadastrar produto</button></div><div class="msg" id="pvMsg"></div>
         </div>
@@ -615,22 +615,17 @@
             <button class="regra-info-btn" type="button" title="Regra dos checklists lançados" aria-label="Regra dos checklists lançados" onclick="abrirInfoRegraChecklist('lancados')">I</button>
             <div class="card-title" style="margin:0">Checklists lancados</div>
           </div>
-          <div class="form-row">
+          <div class="form-row checklist-filtros-unificados">
             <select id="filtroChecklistFuncionario" onchange="carregarChecklists()">
               <option value="">- Todos os funcionarios -</option>
             </select>
             <select id="filtroChecklistTarefa" onchange="carregarChecklists()">
               <option value="">- Todas as tarefas -</option>
             </select>
-            <button class="btn btn-ghost" type="button" onclick="limparFiltrosChecklists()">Limpar filtros</button>
-          </div>
-          <div class="form-row checklist-periodo-filtro" style="margin-top:8px;align-items:flex-end;">
-            <label class="campo-label" for="filtroChecklistDataInicio">Data inicial</label>
-            <input id="filtroChecklistDataInicio" type="date" onclick="this.showPicker?.()">
-            <label class="campo-label" for="filtroChecklistDataFim">Data final</label>
-            <input id="filtroChecklistDataFim" type="date" onclick="this.showPicker?.()">
-            <button class="btn btn-green" type="button" onclick="filtrarPeriodoChecklists()">Filtrar período</button>
-            <button class="btn btn-ghost" type="button" onclick="limparPeriodoChecklists()">Limpar período</button>
+            <label class="checklist-data-campo"><span>Data inicial</span><input id="filtroChecklistDataInicio" type="date" onclick="this.showPicker?.()"></label>
+            <label class="checklist-data-campo"><span>Data final</span><input id="filtroChecklistDataFim" type="date" onclick="this.showPicker?.()"></label>
+            <button class="btn btn-green" type="button" onclick="filtrarPeriodoChecklists()">Filtrar</button>
+            <button class="btn btn-ghost checklist-limpar-unico" type="button" title="Limpar todos os filtros" onclick="limparFiltrosChecklists(); limparPeriodoChecklists()">× Limpar</button>
           </div>
           <div class="msg" id="msgChecklists"></div>
           <div id="listaChecklists"><div class="empty">Carregando...</div></div>
@@ -3092,7 +3087,7 @@
 <link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260826-secure-input-v2">
 <link id="sidebar-icons-style" rel="stylesheet" href="./assets/css/106-sidebar-icons.css?v=20261008-validade-neon">
 <link id="adaptive-shell-style" rel="stylesheet" href="./assets/css/107-adaptive-shell.css?v=20261005-menu-touch-v7">
-<link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v1">
+<link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v2">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3639,5 +3634,5 @@
 <script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260809-rateio-manual-v8"></script>
 
 <script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js?v=20260804-ajuda-sequencial"></script>
-<script src="./assets/js/94-checkia.js?v=20261007"></script>
-<script src="./assets/js/95-produtos-vencimento.js?v=20261007"></script>
+<script src="./assets/js/94-checkia.js?v=20261008-v3"></script>
+<script src="./assets/js/95-produtos-vencimento.js?v=20261008-v3"></script>

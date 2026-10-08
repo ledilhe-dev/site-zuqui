@@ -1,3 +1,25 @@
+/* Ajustes pontuais dos filtros, sem alterar a identidade visual vigente. */
+.checklist-filtros-unificados {
+  display:grid !important;
+  grid-template-columns:minmax(145px,220px) minmax(165px,250px) 140px 140px auto auto;
+  align-items:end !important;
+  justify-content:start !important;
+  gap:8px !important;
+}
+.checklist-filtros-unificados > select { width:100% !important; min-width:0 !important; }
+.checklist-data-campo { display:flex; min-width:0; flex-direction:column; gap:4px; }
+.checklist-data-campo > span { color:var(--text-muted); font-size:9px; font-weight:800; text-transform:uppercase; }
+.checklist-data-campo input[type="date"] { width:140px !important; min-width:0 !important; }
+.checklist-limpar-unico { white-space:nowrap; padding-inline:9px !important; }
+
+@media (max-width:900px) {
+  .checklist-filtros-unificados { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .checklist-data-campo input[type="date"] { width:100% !important; }
+}
+@media (max-width:560px) {
+  .checklist-filtros-unificados { grid-template-columns:1fr; }
+}
+
 /* Compact desktop: notebooks de 15 polegadas e janelas entre tablet e desktop. */
 @media (min-width: 901px) and (max-width: 1440px) {
   :root {
@@ -47,26 +69,22 @@
   }
 
   /* Checklists: nomes curtos nao precisam ocupar metade do painel. */
-  #cardChecklistsLancados > .form-row:not(.checklist-periodo-filtro) {
+  #cardChecklistsLancados > .checklist-filtros-unificados {
     display: grid !important;
-    grid-template-columns: minmax(170px, 240px) minmax(190px, 280px) auto !important;
-    align-items: center !important;
+    grid-template-columns: minmax(145px,220px) minmax(165px,250px) 140px 140px auto auto !important;
+    align-items: end !important;
     justify-content: start !important;
   }
-  #cardChecklistsLancados > .form-row:not(.checklist-periodo-filtro) select {
+  #cardChecklistsLancados > .checklist-filtros-unificados select {
     width: 100% !important;
     flex: none !important;
   }
-  #cardChecklistsLancados .checklist-periodo-filtro {
-    display: grid !important;
-    grid-template-columns: auto 140px auto 140px auto auto !important;
-    align-items: end !important;
-    justify-content: start !important;
-    margin-top: 6px !important;
-  }
-  #cardChecklistsLancados .checklist-periodo-filtro input[type="date"] {
+  #cardChecklistsLancados .checklist-data-campo { display:flex; min-width:0; flex-direction:column; gap:4px; }
+  #cardChecklistsLancados .checklist-data-campo > span { color:var(--text-muted); font-size:9px !important; font-weight:800; text-transform:uppercase; }
+  #cardChecklistsLancados .checklist-data-campo input[type="date"] {
     width: 140px !important;
   }
+  #cardChecklistsLancados .checklist-limpar-unico { padding-inline:9px !important; white-space:nowrap; }
 
   /* Execucoes: campos de funcionario compactos e quebra previsivel. */
   #cardFiltrosExecucao > .form-row {
@@ -97,19 +115,18 @@
     grid-column: 1 / -1;
   }
   #produtos_vencimento .pv-form-grid {
-    grid-template-columns: minmax(210px, 2fr) minmax(155px, 1fr) 160px 116px !important;
+    grid-template-columns: minmax(190px,2fr) 90px minmax(140px,1fr) 150px 110px !important;
     gap: 9px !important;
   }
   #produtos_vencimento .pv-alert-row {
-    grid-column: 1;
+    grid-column: 1 / -1;
     min-height: 48px;
     padding: 8px 10px !important;
     gap: 8px 12px !important;
   }
   #produtos_vencimento .pv-actions {
-    grid-column: 2;
     align-self: center;
-    margin: 0 !important;
+    margin:0 0 0 auto !important;
   }
   #produtos_vencimento .pv-actions .btn {
     white-space: nowrap;
@@ -130,6 +147,6 @@
     width: auto !important;
   }
   #produtos_vencimento .pv-form-grid {
-    grid-template-columns: minmax(200px, 2fr) minmax(150px, 1fr) 155px 110px !important;
+    grid-template-columns: minmax(180px,2fr) 86px minmax(135px,1fr) 145px 105px !important;
   }
 }

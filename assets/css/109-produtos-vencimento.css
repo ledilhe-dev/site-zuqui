@@ -10,6 +10,8 @@
     minmax(130px, 0.65fr);
   gap: 12px;
 }
+.pv-quantity { max-width:120px; }
+.pv-observation { grid-column:1 / -1; }
 .pv-field {
   display: flex;
   flex-direction: column;
@@ -61,7 +63,9 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  margin-left:auto;
 }
+.pv-actions .btn { min-height:36px; padding:7px 12px; font-size:12px; }
 .pv-list-head {
   display: flex;
   align-items: center;
