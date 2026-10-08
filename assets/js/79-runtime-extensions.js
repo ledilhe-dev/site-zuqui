@@ -605,6 +605,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       carregarNotificacoes();
       // Carregar ordem do menu ANTES de abrir a primeira página
       Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
+        aplicarPermissoesSistema();
         restaurarPaginaAtivaSalvaOuPadrao();
       });
       reiniciarAssinaturaRealtimeNotificacoes();
@@ -1231,7 +1232,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     aplicarPermissoesSistema();
     carregarNotificacoes();
     atualizarBotaoTrocarLojaTopbar();
-    Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => restaurarPaginaAtivaSalvaOuPadrao());
+    Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
+      aplicarPermissoesSistema();
+      restaurarPaginaAtivaSalvaOuPadrao();
+    });
   }
 
   function mostrarSelecaoLojaLogin(contexto, lojasPermitidas) {
@@ -1534,7 +1538,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
           setSistemaLogado(true);
           aplicarPermissoesSistema();
           carregarNotificacoes();
-          Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => restaurarPaginaAtivaSalvaOuPadrao());
+          Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
+            aplicarPermissoesSistema();
+            restaurarPaginaAtivaSalvaOuPadrao();
+          });
           return;
         }
       }

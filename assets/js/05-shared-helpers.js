@@ -1313,7 +1313,10 @@ function aplicarPermissoesSistema() {
 
   document.querySelectorAll('.nav-btn[data-page]').forEach(btn => {
     const page = btn.dataset.page;
-    btn.style.display = usuarioPodeAcessar(page) ? '' : 'none';
+    const permitido = usuarioPodeAcessar(page);
+    btn.style.display = permitido ? '' : 'none';
+    const wrapperDireto = btn.parentElement?.matches?.('[data-nav-item-id]') ? btn.parentElement : null;
+    if (wrapperDireto) wrapperDireto.style.display = permitido ? 'block' : 'none';
   });
 
   const paginaAtiva = document.querySelector('.pagina.ativa')?.id;

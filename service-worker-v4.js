@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v215-checkia-vencimentos';
+const CACHE_NAME = 'check-diario-pwa-v216-permissoes-gerente';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
