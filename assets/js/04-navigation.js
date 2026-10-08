@@ -5,6 +5,7 @@ const topTitles = {
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
   bater_ponto: ['Bater ponto', 'Registro de entrada, intervalo e saída'],
   escala_plantoes: ['Agenda', 'Calendário de trabalho, folgas, domingos e feriados'],
+  produtos_vencimento: ['Produtos próximos ao vencimento', 'Controle de validade e alertas por loja'],
   relatorio_plantao: ['Relatório escala/plantões', 'Plantões lançados, valores combinados e exportações'],
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
@@ -687,6 +688,7 @@ function abrirPagina(id, botao) {
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
   if (id === 'escala_plantoes') { carregarEscalaPlantoes(); }
+  if (id === 'produtos_vencimento' && typeof carregarProdutosVencimento === 'function') { carregarProdutosVencimento(); }
   if (id === 'relatorio_plantao') { if (typeof renderizarRelatorioEscalaPlantoes === 'function') renderizarRelatorioEscalaPlantoes(); }
   if (id === 'relatorio_ponto') { carregarRelatorioPonto(); }
   if (id === 'ponto_ajustes') { carregarAjustesPonto(); }

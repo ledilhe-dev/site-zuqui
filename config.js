@@ -12,6 +12,6 @@ window.APP_CONFIG = {
   emailFunctionName: 'notificar-alertas-email',
   authEmailFunctionName: 'autenticacao-email',
   authRedirectUrl: 'https://checkdiario.com.br/',
-  appVersion: '3.2.67',
-  appVersionLabel: '3.2.67-url-atualizacao-limpa',
+  appVersion: '3.4.0',
+  appVersionLabel: '3.4.0-checkia-vencimentos-telegram',
 };

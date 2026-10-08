@@ -1,0 +1,227 @@
+.checkia-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: 999px;
+  padding: 12px 17px;
+  background: linear-gradient(135deg, #123a2b, #0b211a);
+  color: #ecfdf5;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.38);
+  font: 800 14px/1 system-ui;
+  cursor: pointer;
+}
+.checkia-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 17px 42px rgba(16, 185, 129, 0.2);
+}
+.checkia-fab svg {
+  width: 21px;
+  height: 21px;
+  fill: #34d399;
+}
+.checkia-fab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 12px #34d399;
+}
+.checkia-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2400;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(2, 8, 7, 0.72);
+  backdrop-filter: blur(7px);
+}
+.checkia-overlay.aberta {
+  display: flex;
+}
+.checkia-card {
+  width: min(680px, 100%);
+  max-height: min(820px, 92vh);
+  overflow: auto;
+  border: 1px solid rgba(52, 211, 153, 0.26);
+  border-radius: 22px;
+  background: var(--card, #101817);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+.checkia-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 12px;
+}
+.checkia-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.checkia-logo {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #34d399, #16a34a);
+  color: #062b1d;
+  font-size: 22px;
+}
+.checkia-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text, #fff);
+}
+.checkia-sub {
+  font-size: 12px;
+  color: var(--text-muted, #9ca3af);
+  margin-top: 3px;
+}
+.checkia-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted, #aaa);
+  font-size: 25px;
+  cursor: pointer;
+}
+.checkia-body {
+  padding: 8px 22px 22px;
+}
+.checkia-examples {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted, #9ca3af);
+  margin-bottom: 10px;
+}
+.checkia-compose {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+.checkia-input {
+  min-height: 108px;
+  resize: vertical;
+  padding: 14px;
+  border: 1px solid var(--border, #33413d);
+  border-radius: 14px;
+  background: var(--bg, #0a100e);
+  color: var(--text, #fff);
+  font: 500 15px/1.5 inherit;
+}
+.checkia-mic {
+  align-self: stretch;
+  width: 58px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 14px;
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  cursor: pointer;
+  font-size: 25px;
+}
+.checkia-mic.ouvindo {
+  background: #ef4444;
+  color: white;
+  animation: checkia-pulse 1s infinite;
+}
+@keyframes checkia-pulse {
+  50% {
+    box-shadow: 0 0 0 9px rgba(239, 68, 68, 0.12);
+  }
+}
+.checkia-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.checkia-result {
+  margin-top: 16px;
+  padding: 15px;
+  border: 1px solid var(--border, #33413d);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.checkia-result[hidden] {
+  display: none;
+}
+.checkia-result h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.checkia-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.checkia-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.checkia-field.full {
+  grid-column: 1/-1;
+}
+.checkia-field label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted, #aaa);
+  text-transform: uppercase;
+}
+.checkia-field input,
+.checkia-field select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border, #33413d);
+  border-radius: 9px;
+  background: var(--bg, #0a100e);
+  color: var(--text, #fff);
+}
+.checkia-answer {
+  font-size: 20px;
+  font-weight: 850;
+  color: #6ee7b7;
+  padding: 8px 0;
+}
+.checkia-warn {
+  font-size: 12px;
+  color: #fbbf24;
+  margin-top: 8px;
+}
+.checkia-status {
+  min-height: 18px;
+  margin-top: 9px;
+  font-size: 13px;
+  color: var(--text-muted, #aaa);
+}
+@media (max-width: 640px) {
+  .checkia-fab {
+    right: 14px;
+    bottom: 14px;
+    padding: 13px;
+  }
+  .checkia-fab-label {
+    display: none;
+  }
+  .checkia-card {
+    border-radius: 18px;
+  }
+  .checkia-grid {
+    grid-template-columns: 1fr;
+  }
+  .checkia-field.full {
+    grid-column: auto;
+  }
+  .checkia-head,
+  .checkia-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

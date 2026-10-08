@@ -83,5 +83,9 @@
   "./assets/js/90-sensitive-url-cleanup.js",
   "./assets/js/91-timeclock-info-patch.js",
   "./assets/js/92-timeclock-title-patch.js",
-  "./assets/js/93-sidebar-icons.js"
+  "./assets/js/93-sidebar-icons.js",
+  "./assets/css/108-checkia.css",
+  "./assets/css/109-produtos-vencimento.css",
+  "./assets/js/94-checkia.js",
+  "./assets/js/95-produtos-vencimento.js"
 ]

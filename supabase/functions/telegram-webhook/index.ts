@@ -11,7 +11,8 @@ type TelegramUpdate = {
 
 type TelegramAlert = {
   id: string;
-  tipo: "tarefa_iniciada" | "tarefa_nao_iniciada" | "tarefa_finalizada" | "tarefa_nao_finalizada";
+  tipo: "tarefa_iniciada" | "tarefa_nao_iniciada" | "tarefa_finalizada" | "tarefa_nao_finalizada"
+    | "financeiro_vencimento" | "financeiro_saldo" | "produto_cadastrado" | "produto_vencimento";
   empresa_id: string;
   loja_id: string;
   descricao: string;
@@ -149,6 +150,8 @@ async function processQueue() {
 
   const { error: overdueError } = await admin.rpc("telegram_enfileirar_atrasos");
   if (overdueError) return json({ error: overdueError.message }, 500);
+  const { error: scheduledError } = await admin.rpc("telegram_enfileirar_alertas_programados");
+  if (scheduledError) return json({ error: scheduledError.message }, 500);
 
   if (!botToken) {
     return json({ processed: 0, sent: 0, failed: 0, waiting_for: "TELEGRAM_BOT_TOKEN" });
@@ -162,13 +165,14 @@ async function processQueue() {
 
   for (const alert of (data || []) as TelegramAlert[]) {
     const flag = destinationFlag(alert.tipo);
-    const { data: destinations, error: destinationsError } = await admin
+    let destinationsQuery = admin
       .from("telegram_destinos")
       .select("chat_id")
       .eq("empresa_id", alert.empresa_id)
       .eq("ativo", true)
-      .eq(flag, true)
       .or(`loja_id.eq.${alert.loja_id},loja_id.is.null`);
+    if (flag) destinationsQuery = destinationsQuery.eq(flag, true);
+    const { data: destinations, error: destinationsError } = await destinationsQuery;
 
     if (destinationsError) {
       failed += 1;
@@ -223,19 +227,29 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
     tarefa_nao_iniciada: "notificar_tarefa_nao_iniciada",
     tarefa_finalizada: "notificar_tarefa_finalizada",
     tarefa_nao_finalizada: "notificar_tarefa_nao_finalizada",
+    financeiro_vencimento: "notificar_financeiro",
+    financeiro_saldo: "notificar_financeiro",
+    produto_cadastrado: "notificar_produtos_vencimento",
+    produto_vencimento: "notificar_produtos_vencimento",
   } as const;
   return flags[tipo];
 }
 
 function buildMessage(alert: TelegramAlert) {
+  if (alert.tipo === "financeiro_vencimento" || alert.tipo === "financeiro_saldo"
+    || alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento") {
+    return alert.descricao;
+  }
   const titles = {
     tarefa_iniciada: "🟢 Tarefa iniciada",
     tarefa_nao_iniciada: "🔴 Tarefa não iniciada no horário",
     tarefa_finalizada: "✅ Tarefa finalizada",
-    tarefa_nao_finalizada: "⚠️ ATENÇÃO: tarefa não finalizada no prazo",
+    tarefa_nao_finalizada: "🟠 Tarefa não finalizada no prazo",
   } as const;
 
-  const lines = [titles[alert.tipo], `Descrição: ${alert.descricao}`];
+  // O banco prefixa a orientacao com o nome do checklist. O rotulo "Tarefa"
+  // deixa explicito no Telegram qual atividade originou o alerta.
+  const lines = [titles[alert.tipo], `Tarefa: ${alert.descricao}`];
 
   if (alert.tipo === "tarefa_nao_iniciada") {
     lines.push(`Responsável: ${alert.funcionario_nome}`);
