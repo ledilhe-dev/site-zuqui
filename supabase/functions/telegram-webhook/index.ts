@@ -3,10 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const TELEGRAM_API = "https://api.telegram.org";
 
 type TelegramUpdate = {
-  message?: { chat?: { id?: number } };
-  edited_message?: { chat?: { id?: number } };
-  channel_post?: { chat?: { id?: number } };
-  edited_channel_post?: { chat?: { id?: number } };
+  message?: { chat?: { id?: number; title?: string; first_name?: string } };
+  edited_message?: { chat?: { id?: number; title?: string; first_name?: string } };
+  channel_post?: { chat?: { id?: number; title?: string } };
+  edited_channel_post?: { chat?: { id?: number; title?: string } };
 };
 
 type TelegramAlert = {
@@ -49,7 +49,7 @@ Deno.serve(async (request) => {
     const chatId = getChatId(payload);
     if (!chatId) return json({ ok: true });
 
-    const registration = await registerZuquiDestination(chatId);
+    const registration = await registerZuquiDestination(chatId, getChatTitle(payload));
     if (!registration.ok) {
       console.error("Falha ao vincular chat do Telegram:", registration.error);
     }
@@ -73,7 +73,7 @@ function isTelegramUpdate(payload: Record<string, unknown>): payload is Record<s
   return typeof payload.update_id === "number";
 }
 
-async function registerZuquiDestination(chatId: number) {
+async function registerZuquiDestination(chatId: number, chatTitle = "") {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   if (!supabaseUrl || !serviceRoleKey) return { ok: false, error: "Missing Supabase secrets" };
@@ -111,16 +111,18 @@ async function registerZuquiDestination(chatId: number) {
     .maybeSingle();
   if (existingError) return { ok: false, error: existingError.message };
 
+  const route = destinationRoute(chatTitle);
   const values = {
     empresa_id: empresa.id,
     loja_id: loja.id,
     chat_id: chatId,
-    nome: "Telegram CheckDiário - Zuqui",
+    nome: chatTitle || "Telegram CheckDiário - Zuqui",
     ativo: true,
     notificar_tarefa_iniciada: true,
     notificar_tarefa_nao_iniciada: true,
     notificar_tarefa_finalizada: true,
     notificar_tarefa_nao_finalizada: true,
+    ...route,
     atualizado_em: new Date().toISOString(),
   };
   const result = existing
@@ -128,6 +130,35 @@ async function registerZuquiDestination(chatId: number) {
     : await admin.from("telegram_destinos").insert(values);
 
   return result.error ? { ok: false, error: result.error.message } : { ok: true };
+}
+
+function getChatTitle(update: TelegramUpdate) {
+  const chat = update.message?.chat ?? update.edited_message?.chat
+    ?? update.channel_post?.chat ?? update.edited_channel_post?.chat;
+  return String(chat?.title || chat?.first_name || "").trim();
+}
+
+function normalizeTitle(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function destinationRoute(title: string) {
+  const value = normalizeTitle(title);
+  if (value.includes("financeiro")) return {
+    notificar_tarefa_iniciada: false, notificar_tarefa_nao_iniciada: false,
+    notificar_tarefa_finalizada: false, notificar_tarefa_nao_finalizada: false,
+    notificar_financeiro: true, notificar_produtos_vencimento: false,
+  };
+  if (value.includes("tarefa") || value.includes("padaria")) return {
+    notificar_tarefa_iniciada: true, notificar_tarefa_nao_iniciada: true,
+    notificar_tarefa_finalizada: true, notificar_tarefa_nao_finalizada: true,
+    notificar_financeiro: false, notificar_produtos_vencimento: true,
+  };
+  return {
+    notificar_tarefa_iniciada: false, notificar_tarefa_nao_iniciada: false,
+    notificar_tarefa_finalizada: false, notificar_tarefa_nao_finalizada: false,
+    notificar_financeiro: false, notificar_produtos_vencimento: false,
+  };
 }
 
 function getChatId(update: TelegramUpdate) {
@@ -156,6 +187,8 @@ async function processQueue() {
   if (!botToken) {
     return json({ processed: 0, sent: 0, failed: 0, waiting_for: "TELEGRAM_BOT_TOKEN" });
   }
+
+  const routes = await syncDestinationRoutes(admin, botToken);
 
   const { data, error } = await admin.rpc("telegram_reservar_alertas", { p_limite: 20 });
   if (error) return json({ error: error.message }, 500);
@@ -229,7 +262,35 @@ async function processQueue() {
     }
   }
 
-  return json({ processed: (data || []).length, sent, failed });
+  return json({ processed: (data || []).length, sent, failed, routes });
+}
+
+async function syncDestinationRoutes(admin: ReturnType<typeof createClient>, botToken: string) {
+  const { data: destinations, error } = await admin.from("telegram_destinos")
+    .select("id, chat_id, nome").eq("ativo", true);
+  if (error) {
+    console.error("Falha ao carregar destinos para roteamento:", error.message);
+    return { tarefas: 0, financeiro: 0 };
+  }
+  let tarefas = 0;
+  let financeiro = 0;
+  for (const destination of destinations || []) {
+    try {
+      const response = await fetch(`${TELEGRAM_API}/bot${botToken}/getChat?chat_id=${encodeURIComponent(String(destination.chat_id))}`);
+      if (!response.ok) continue;
+      const body = await response.json();
+      const title = String(body?.result?.title || body?.result?.first_name || destination.nome || "").trim();
+      const route = destinationRoute(title);
+      if (!Object.keys(route).length) continue;
+      if (route.notificar_financeiro === true) financeiro += 1;
+      if (route.notificar_tarefa_iniciada === true) tarefas += 1;
+      await admin.from("telegram_destinos").update({ nome: title, ...route, atualizado_em: new Date().toISOString() })
+        .eq("id", destination.id);
+    } catch (cause) {
+      console.error("Falha ao identificar grupo do Telegram:", cause);
+    }
+  }
+  return { tarefas, financeiro };
 }
 
 function destinationFlag(tipo: TelegramAlert["tipo"]) {
