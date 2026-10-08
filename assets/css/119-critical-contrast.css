@@ -1,0 +1,37 @@
+/* Alto contraste protegido: texto claro nunca fica sobre fundo claro. */
+.overdue-alert-card {
+  background:linear-gradient(160deg,#5f0b18 0%,#31050c 100%)!important;
+  border:2px solid #fb7185!important;color:#fff!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.72),0 0 0 4px rgba(239,68,68,.18)!important;
+}
+.overdue-alert-eyebrow,.overdue-alert-title,.overdue-alert-text,
+.overdue-alert-task,.overdue-alert-funcionario,.overdue-alert-horario,
+.overdue-alert-rodape,.overdue-alert-item strong,.overdue-alert-item span,
+.overdue-alert-item li {color:#fff!important;opacity:1!important;text-shadow:0 1px 2px rgba(0,0,0,.72)}
+.overdue-alert-eyebrow,.overdue-alert-rodape {color:#ffd7de!important;font-weight:900!important}
+.overdue-alert-item {background:#26050b!important;border:1px solid #fb7185!important}
+.overdue-alert-actions .btn-ghost {background:#fff!important;border-color:#fff!important;color:#31050c!important;font-weight:900!important}
+.overdue-alert-actions .btn-red {background:#dc2626!important;border-color:#fecaca!important;color:#fff!important;font-weight:900!important}
+.ponto-pendente-card,.ponto-entrada-alerta-card {
+  background:linear-gradient(160deg,#5f0b18 0%,#31050c 100%)!important;
+  border:2px solid #fb7185!important;color:#fff!important;
+}
+.ponto-pendente-eyebrow,.ponto-pendente-title,.ponto-pendente-texto,
+.ponto-pendente-lista,.ponto-entrada-alerta-title,.ponto-entrada-alerta-item,
+.ponto-entrada-alerta-texto {color:#fff!important;opacity:1!important}
+.ponto-pendente-lista,.ponto-entrada-alerta-item {background:#26050b!important;border-color:#fb7185!important}
+.nav-btn.nav-btn-alerta {background:#4c0713!important;border-color:#fb7185!important}
+.nav-btn.nav-btn-alerta,.nav-btn.nav-btn-alerta .nav-title,
+.nav-btn.nav-btn-alerta .nav-hint,.nav-btn.nav-btn-alerta .icon {color:#fff!important;opacity:1!important}
+.sync-status.is-error {background:#4c0713!important;border-color:#fb7185!important;color:#fff!important}
+.ponto-retorno-destaque,.checklist-responsavel-destaque {background:#3f0710!important;border-color:#fb7185!important}
+.ponto-retorno-destaque .retorno-label,
+.ponto-retorno-destaque.atrasado .retorno-label,
+.ponto-retorno-destaque.atrasado .retorno-contador,
+.checklist-responsavel-label {color:#fff!important;opacity:1!important}
+.checklist-responsavel-nome {color:#ff8a8a!important}
+@media (forced-colors:active) {
+  .overdue-alert-card,.ponto-pendente-card,.ponto-entrada-alerta-card {
+    forced-color-adjust:none;background:#000!important;border-color:#fff!important;color:#fff!important;
+  }
+}
