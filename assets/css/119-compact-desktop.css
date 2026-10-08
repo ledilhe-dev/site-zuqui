@@ -86,7 +86,7 @@
     gap:5px !important;
   }
   .topbar-main { display:flex !important; align-items:center !important; flex:1 1 auto !important; min-width:0 !important; gap:4px !important; }
-  .topbar-main .mobile-menu-btn { width:38px !important; min-width:38px !important; height:38px !important; min-height:38px !important; padding:0 !important; }
+  .topbar-main .mobile-menu-btn { display:none !important; }
   .topbar-main .theme-switcher { width:126px !important; min-width:112px !important; height:38px !important; }
   .topbar-main .theme-switcher select { height:38px !important; min-height:38px !important; padding:5px 25px 5px 9px !important; font-size:10px !important; }
   .topbar-clock,.topbar-business-day { width:86px !important; min-width:86px !important; height:38px !important; min-height:38px !important; padding:4px 6px !important; }

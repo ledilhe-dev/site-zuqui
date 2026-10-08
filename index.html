@@ -9,7 +9,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="app-version" content="3.4.0">
+  <meta name="app-version" content="3.2.67">
   <meta name="theme-color" content="#0F172A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -54,7 +54,6 @@
 
 </head>
 <body>
-<div id="appVersionBadge" class="app-version-badge" style="display:none;">INDEX 4.4</div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
 <div class="shell">
 
@@ -427,7 +426,6 @@
           <span class="topbar-info-label">5º dia útil</span>
           <span class="topbar-business-day-date" id="topbar-business-day-date">--/--</span>
         </div>
-        <div id="topbarVersionBadge" title="Versão do sistema" style="background:rgba(240,165,0,.25);border:1.5px solid #f0a500;border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#f0a500;white-space:nowrap;letter-spacing:.5px;display:flex!important;align-items:center;">INDEX 4.4</div>
       </div>
       <div class="topbar-store" id="topbarStoreInfo" hidden>
         <div class="topbar-store-main">
@@ -3087,7 +3085,7 @@
 <link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260826-secure-input-v2">
 <link id="sidebar-icons-style" rel="stylesheet" href="./assets/css/106-sidebar-icons.css?v=20261008-validade-neon">
 <link id="adaptive-shell-style" rel="stylesheet" href="./assets/css/107-adaptive-shell.css?v=20261005-menu-touch-v7">
-<link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v4">
+<link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v5">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3406,7 +3404,7 @@
 </div>
 
 <script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
-<script src="./assets/js/01-core-supabase.js?v=3.2.63-parcelas-pdf-pagamento"></script>
+<script src="./assets/js/01-core-supabase.js?v=3.2.67-topo-uniforme"></script>
 <script src="./assets/js/02-core-version.js?v=3.2.59-sessao-persistente-windows"></script>
 <script src="./assets/js/03-core-state.js?v=3.2.55-permissoes-edicao-checklist"></script>
 <script src="./assets/js/04-navigation.js?v=3.2.55-permissoes-edicao-checklist"></script>
@@ -3451,7 +3449,7 @@
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div class="login-brand-title">CHECK DIARIO</div>
       <div class="login-brand-sub">ROTINA · CHECKLIST · OPERAÇÃO</div>
-      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.37</div>
+      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.67</div>
     </div>
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->

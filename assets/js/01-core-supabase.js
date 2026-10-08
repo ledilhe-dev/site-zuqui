@@ -1,10 +1,7 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.63';
-const APP_VERSION_LABEL = '3.2.63-parcelas-pdf-pagamento';
+const APP_VERSION = '3.2.67';
+const APP_VERSION_LABEL = '3.2.67-topo-uniforme-telegram';
 function aplicarVersaoVisivelSistema() {
-  const texto = `INDEX ${APP_VERSION}`;
-  const badge = document.getElementById('appVersionBadge');
-  if (badge) badge.textContent = texto;
   const loginBadge = document.getElementById('loginVersionProtecao');
   if (loginBadge) loginBadge.textContent = `VERSÃO DE PROTEÇÃO: ${APP_VERSION}`;
   try { document.documentElement.setAttribute('data-app-version', APP_VERSION); } catch (_) {}
