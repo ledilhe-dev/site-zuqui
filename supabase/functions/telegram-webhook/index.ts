@@ -187,7 +187,8 @@ async function processQueue() {
       continue;
     }
 
-    let alertError = "";
+    const deliveryErrors: string[] = [];
+    let delivered = 0;
     for (const chatId of chatIds) {
       try {
         const response = await fetch(`${TELEGRAM_API}/bot${botToken}/sendMessage`, {
@@ -198,22 +199,32 @@ async function processQueue() {
             text: buildMessage(alert),
           }),
         });
-        if (!response.ok) alertError = (await response.text()).slice(0, 1500);
+        if (response.ok) {
+          delivered += 1;
+        } else {
+          const detail = (await response.text()).slice(0, 1200);
+          deliveryErrors.push(`${chatId}: ${detail}`);
+          // Chat removido, bot bloqueado ou identificador inválido não deve
+          // bloquear os demais grupos nem consumir novas tentativas eternamente.
+          if (response.status === 400 || response.status === 403) {
+            await admin.from("telegram_destinos").update({ ativo: false, atualizado_em: new Date().toISOString() })
+              .eq("empresa_id", alert.empresa_id).eq("chat_id", chatId);
+          }
+        }
       } catch (cause) {
-        alertError = cause instanceof Error ? cause.message : "Falha ao chamar o Telegram.";
+        deliveryErrors.push(`${chatId}: ${cause instanceof Error ? cause.message : "Falha ao chamar o Telegram."}`);
       }
-      if (alertError) break;
     }
 
-    if (alertError) {
+    if (!delivered) {
       failed += 1;
-      await markError(admin, alert.id, alertError);
+      await markError(admin, alert.id, deliveryErrors.join(" | "));
     } else {
       sent += 1;
       await admin.from("telegram_alertas").update({
         status: "enviado",
         enviado_em: new Date().toISOString(),
-        ultimo_erro: null,
+        ultimo_erro: deliveryErrors.length ? deliveryErrors.join(" | ").slice(0, 1500) : null,
       }).eq("id", alert.id).eq("status", "processando");
     }
   }
