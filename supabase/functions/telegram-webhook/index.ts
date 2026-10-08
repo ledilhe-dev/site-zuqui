@@ -12,7 +12,8 @@ type TelegramUpdate = {
 type TelegramAlert = {
   id: string;
   tipo: "tarefa_iniciada" | "tarefa_nao_iniciada" | "tarefa_finalizada" | "tarefa_nao_finalizada"
-    | "financeiro_vencimento" | "financeiro_saldo" | "produto_cadastrado" | "produto_vencimento";
+    | "financeiro_vencimento" | "financeiro_saldo" | "produto_cadastrado" | "produto_vencimento"
+    | "agenda_cadastrada" | "agenda_dia";
   empresa_id: string;
   loja_id: string;
   descricao: string;
@@ -183,6 +184,8 @@ async function processQueue() {
   if (overdueError) return json({ error: overdueError.message }, 500);
   const { error: scheduledError } = await admin.rpc("telegram_enfileirar_alertas_programados");
   if (scheduledError) return json({ error: scheduledError.message }, 500);
+  const { error: agendaError } = await admin.rpc("telegram_enfileirar_agendas_do_dia");
+  if (agendaError) return json({ error: agendaError.message }, 500);
 
   if (!botToken) {
     return json({ processed: 0, sent: 0, failed: 0, waiting_for: "TELEGRAM_BOT_TOKEN" });
@@ -303,13 +306,16 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
     financeiro_saldo: "notificar_financeiro",
     produto_cadastrado: "notificar_produtos_vencimento",
     produto_vencimento: "notificar_produtos_vencimento",
+    agenda_cadastrada: "notificar_tarefa_iniciada",
+    agenda_dia: "notificar_tarefa_iniciada",
   } as const;
   return flags[tipo];
 }
 
 function buildMessage(alert: TelegramAlert) {
   if (alert.tipo === "financeiro_vencimento" || alert.tipo === "financeiro_saldo"
-    || alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento") {
+    || alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento"
+    || alert.tipo === "agenda_cadastrada" || alert.tipo === "agenda_dia") {
     return alert.descricao;
   }
   const titles = {
