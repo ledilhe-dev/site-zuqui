@@ -6,6 +6,12 @@ let raffinatoTelaInicializada = false;
 let raffinatoIntegracaoAtual = null;
 let raffinatoTesteValido = false;
 let raffinatoLoadSequence = 0;
+let raffinatoAdminToken = '';
+let raffinatoConnectionProfileId = '';
+let raffinatoConnectorInstanceId = '';
+let raffinatoAdminSessionExpired = false;
+let raffinatoDeleteToken = '';
+let raffinatoTenantContextKey = '';
 let raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
 let raffinatoOrdenacao = { coluna:'data', direcao:'asc' };
 let raffinatoBuscaDetalhe = '';
@@ -13,9 +19,31 @@ let raffinatoItensVisiveis = [];
 const RAFFINATO_RELAY_FUNCTION = 'raffinato-relay';
 
 async function raffinatoRelay(body) {
-  const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body });
-  if (error) throw new Error(error.message || 'Falha na comunicacao externa com o Raffinato.');
+  const contextAtRequest=contextoRaffinato();
+  const payload={...body,...(usuarioSistemaLogado?.global_admin_authorized===true&&usuarioSistemaLogado?.global_admin_token?{global_admin_token:usuarioSistemaLogado.global_admin_token}:{} )};
+  if(/dashboard$/.test(String(payload.action||''))||payload.action==='annual_comparison')delete payload.id_filial;
+  const operationalToken=String(usuarioSistemaLogado?.operational_access_token||'');
+  const relayHeaders={
+    'x-funcionario-id':String(usuarioSistemaLogado?.id||''),
+    'x-loja-id':String(contextAtRequest.lojaId||''),
+    'x-operational-token':operationalToken,
+    ...(usuarioSistemaLogado?.global_admin_token?{'x-global-admin-token':String(usuarioSistemaLogado.global_admin_token)}:{}),
+  };
+  console.info('[Raffinato relay request]',{operation:payload.action,empresa_id:payload.empresa_id,loja_id:payload.loja_id,has_operational_token:!!operationalToken});
+  const { data, error } = await sb.functions.invoke(RAFFINATO_RELAY_FUNCTION, { body:payload,headers:relayHeaders });
+  if (error) {
+    let raw = '', payload = {};
+    try { raw = await error.context?.clone?.().text?.() || ''; } catch (_) {}
+    try { payload = JSON.parse(raw) || {}; } catch (_) {}
+    const status = error.context?.status || 'sem status', message = payload.error || error.message || 'Falha na comunicação externa com o Raffinato.', requestId = payload.request_id || 'não informado';
+    console.error('[Raffinato relay]', { operation: body?.action, data, error, context:error.context, status, response_body:raw || payload, request_id:requestId });
+    const relayError=new Error(`${body?.action || 'consulta'} · HTTP ${status} · ${message} · request_id: ${requestId}`);
+    relayError.status=status;relayError.requestId=requestId;relayError.responsePayload=payload;relayError.communicationFailure=status==='sem status';
+    throw relayError;
+  }
   if (data?.error) throw new Error(data.error);
+  const contextAtResponse=contextoRaffinato();
+  if(String(contextAtResponse.empresaId)!==String(contextAtRequest.empresaId)||String(contextAtResponse.lojaId)!==String(contextAtRequest.lojaId))throw new Error('Contexto de loja alterado; resposta anterior descartada.');
   return data || {};
 }
 
@@ -27,9 +55,15 @@ function gerarTokenRaffinato() {
 async function parearConectorExternoRaffinato() {
   const contexto = contextoRaffinato();
   const token = gerarTokenRaffinato();
-  await raffinatoBridgePost('/api/integracoes/raffinato/parear', {
+  const local = await raffinatoBridgePost('/api/integracoes/raffinato/parear', {
     loja_id: contexto.lojaId, empresa_id: contexto.empresaId, relay_token: token,
   });
+  raffinatoConnectorInstanceId=String(local.connector_instance_id||raffinatoConnectorInstanceId||'');
+  if(local.paired&&raffinatoConnectorInstanceId){
+    await raffinatoRelay({action:'connector_link_store',connector_instance_id:raffinatoConnectorInstanceId,
+      empresa_id:contexto.empresaId,loja_id:contexto.lojaId,usuario_id:String(usuarioSistemaLogado?.id||'')});
+    return;
+  }
   await raffinatoRelay({
     action:'pair', token, empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
     usuario_id:String(usuarioSistemaLogado?.id || ''),
@@ -76,18 +110,165 @@ function iniciarTelaRelatorioSangriasRaffinato() {
 }
 
 async function raffinatoBridgePost(path, body) {
-  const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || 'Falha no conector Raffinato.');
-  return payload;
+  const contextAtRequest=contextoRaffinato();
+  const currentTenantKey=`${contextAtRequest.empresaId||''}:${contextAtRequest.lojaId||''}`;
+  if(raffinatoTenantContextKey&&raffinatoTenantContextKey!==currentTenantKey){
+    if(typeof RM!=='undefined')RM.cache.clear();
+    ['rmContent','abcContent'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="empty">Contexto alterado. Consulte os dados da loja atual.</div>';});
+  }
+  raffinatoTenantContextKey=currentTenantKey;
+  const tenantBody={...body,empresa_id:String(body?.empresa_id||contextAtRequest.empresaId||''),loja_id:String(body?.loja_id||contextAtRequest.lojaId||'')};
+  if(path.startsWith('/api/raffinato/')||path==='/api/sangrias')delete tenantBody.id_filial;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const protectedRoute = path.startsWith('/api/integracoes/raffinato/') && !path.endsWith('/desbloquear');
+    const payloadBody = protectedRoute ? { ...tenantBody, admin_token:raffinatoAdminToken } : tenantBody;
+    const response = await fetch(`${RAFFINATO_BRIDGE_URL}${path}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payloadBody), signal:controller.signal,
+      targetAddressSpace:'loopback',
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if(response.status===403&&protectedRoute){
+        raffinatoAdminToken='';raffinatoAdminSessionExpired=true;limparSenhaReveladaRaffinato();
+        const panel=document.getElementById('raffinatoAdminPanel'),lock=document.getElementById('raffinatoAdminLockCard'),lockMsg=document.getElementById('msgRaffinatoMaster');
+        if(panel)panel.hidden=true;if(lock)lock.hidden=false;if(lockMsg){lockMsg.className='msg err';lockMsg.textContent='Sessão administrativa expirada. Desbloqueie as configurações para continuar.';}
+        throw new Error('Sessão administrativa expirada. Desbloqueie as configurações para continuar.');
+      }
+      throw new Error(mensagemAmigavelErroRaffinato(payload.error));
+    }
+    const contextAtResponse=contextoRaffinato();
+    if(String(contextAtResponse.empresaId)!==String(contextAtRequest.empresaId)||String(contextAtResponse.lojaId)!==String(contextAtRequest.lojaId))throw new Error('Contexto de loja alterado; resposta anterior descartada.');
+    return payload;
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('A consulta excedeu 30 segundos. Verifique o log do conector Raffinato.');
+    if(error instanceof TypeError&&/fetch|network/i.test(String(error.message||''))){
+      throw new Error('O navegador bloqueou o acesso ao conector local (loopback/rede local), ou o conector está parado. Permita acesso à rede local para https://checkdiario.com.br e confirme http://127.0.0.1:8766/health. O acesso remoto continuará disponível pelo relay/cache.');
+    }
+    throw error;
+  } finally { clearTimeout(timer); }
 }
 
+async function desbloquearConfiguracaoRaffinato() {
+  const input=document.getElementById('raffinatoMasterPassword'),msg=document.getElementById('msgRaffinatoMaster');
+  try {
+    const result=await raffinatoBridgePost('/api/integracoes/raffinato/desbloquear',{password:input?.value||''});
+    raffinatoAdminToken=String(result.admin_token||''); if(input)input.value='';
+    raffinatoConnectorInstanceId=String(result.connector_instance_id||'');
+    document.getElementById('raffinatoAdminLockCard').hidden=true;
+    document.getElementById('raffinatoAdminPanel').hidden=false;
+    if(raffinatoAdminSessionExpired){raffinatoAdminSessionExpired=false;if(msg){msg.className='msg ok';msg.textContent='Configurações desbloqueadas. Os valores não sensíveis foram preservados.';}}
+    else await carregarIntegracaoRaffinato();
+  } catch(error) { if(msg){msg.className='msg err';msg.textContent=error?.message||'Acesso negado.';} }
+}
+
+async function alterarSenhaMasterRaffinato() {
+  const atual=window.prompt('Senha master atual:'); if(atual===null)return;
+  const nova=window.prompt('Nova senha master (mínimo 12 caracteres):'); if(nova===null)return;
+  const confirmar=window.prompt('Confirme a nova senha master:');
+  if(nova!==confirmar){window.alert('A confirmação não corresponde.');return;}
+  await raffinatoBridgePost('/api/integracoes/raffinato/alterar-senha-master',{current_password:atual,new_password:nova});
+  raffinatoAdminToken=''; document.getElementById('raffinatoAdminPanel').hidden=true;document.getElementById('raffinatoAdminLockCard').hidden=false;
+  window.alert('Senha master alterada. Entre novamente.');
+}
+
+function mensagemAmigavelErroRaffinato(error) {
+  const message=String(error?.message||error||'');
+  if (/18456|falha de logon|login failed/i.test(message)) return 'Usuário ou senha do banco inválidos. Confira os dados e tente novamente.';
+  if (/08001|servidor.*não.*encontr|server.*not.*found|timeout|tempo limite/i.test(message)) return 'Não foi possível localizar o servidor Raffinato. Verifique a instância SQL e a conexão de rede/VPN.';
+  return message || 'Falha no conector Raffinato.';
+}
+
+async function alternarSenhaRaffinato(event) {
+  event?.preventDefault();
+  const input = document.getElementById('raffinatoDbPassword');
+  const button = document.getElementById('raffinatoPasswordToggle');
+  if (!input || !button) return;
+  const mostrar = button.getAttribute('aria-pressed') !== 'true';
+  const inicioSelecao = input.selectionStart;
+  const fimSelecao = input.selectionEnd;
+  if (mostrar && raffinatoIntegracaoAtual && input.dataset.senhaDigitada !== 'true' && input.dataset.senhaCarregada !== 'true') {
+    try {
+      if (typeof usuarioEhAdminOuPerfilAdmin === 'function' && !usuarioEhAdminOuPerfilAdmin()) {
+        throw new Error('Somente um administrador pode visualizar a senha SQL salva.');
+      }
+      const confirmacao = typeof abrirModalPin === 'function' ? await abrirModalPin({
+        titulo:'Mostrar senha do banco',
+        subtitulo:'Confirme seu PIN ou senha administrativa para visualizar temporariamente a senha SQL.',
+        textoUsuario:`Administrador: ${usuarioSistemaLogado?.nome || 'usuário atual'}`,
+        textoAcao:'Autorizar',
+        placeholderInput:'PIN ou senha administrativa',
+      }) : null;
+      if (!confirmacao?.pin) return;
+      const autorizado = typeof obterFuncionarioAtivoPorPinEmpresa === 'function'
+        ? await obterFuncionarioAtivoPorPinEmpresa(confirmacao.pin)
+        : null;
+      if (!autorizado || String(autorizado.id || '') !== String(usuarioSistemaLogado?.id || '')) {
+        throw new Error('PIN ou senha administrativa inválida.');
+      }
+      button.disabled = true;
+      button.textContent = 'Carregando...';
+      const { lojaId } = contextoRaffinato();
+      const result = await raffinatoBridgePost('/api/integracoes/raffinato/senha', { loja_id:lojaId });
+      input.value = String(result.pwd || '');
+      if (!input.value) throw new Error('A senha protegida não foi encontrada no conector desta loja.');
+      input.dataset.senhaCarregada = 'true';
+    } catch (error) {
+      const msg = document.getElementById('msgRaffinatoIntegracao');
+      if (msg) { msg.className = 'msg err'; msg.textContent = error?.message || 'Não foi possível recuperar a senha protegida.'; }
+      button.textContent = 'Mostrar';
+      return;
+    } finally {
+      button.disabled = false;
+    }
+  }
+  input.setAttribute('type', mostrar ? 'text' : 'password');
+  input.classList.toggle('raffinato-password-revealed', mostrar);
+  button.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+  button.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  button.setAttribute('title', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  button.setAttribute('aria-pressed', String(mostrar));
+  if (document.activeElement === input) {
+    input.focus({ preventScroll:true });
+    if (inicioSelecao != null && fimSelecao != null) input.setSelectionRange(inicioSelecao, fimSelecao);
+  }
+}
+
+function limparSenhaReveladaRaffinato() {
+  const input=document.getElementById('raffinatoDbPassword'),button=document.getElementById('raffinatoPasswordToggle');
+  if (!input || !button) return;
+  if (input.dataset.senhaCarregada === 'true' && input.dataset.senhaDigitada !== 'true') input.value='';
+  delete input.dataset.senhaCarregada;
+  input.type='password';
+  input.classList.remove('raffinato-password-revealed','pin-secure-input');
+  button.textContent='Mostrar';button.setAttribute('aria-label','Mostrar senha');button.setAttribute('title','Mostrar senha');button.setAttribute('aria-pressed','false');
+}
+
+function iniciarBotaoSenhaRaffinato() {
+  const button = document.getElementById('raffinatoPasswordToggle');
+  const input = document.getElementById('raffinatoDbPassword');
+  if (!button || !input) return;
+  button.onclick = alternarSenhaRaffinato;
+  input.setAttribute('autocomplete','off');
+  input.setAttribute('data-lpignore','true');
+  input.setAttribute('data-1p-ignore','true');
+  input.setAttribute('data-bwignore','true');
+  input.addEventListener('input',event=>{if(event.isTrusted){input.dataset.senhaDigitada='true';delete input.dataset.senhaCarregada;}});
+  document.addEventListener('click',event=>{const pageButton=event.target.closest?.('[data-page]');if(pageButton&&pageButton.dataset.page!=='financeiro_sangrias_raffinato')limparSenhaReveladaRaffinato()},true);
+  window.addEventListener('pagehide',limparSenhaReveladaRaffinato);
+}
+
+window.alternarSenhaRaffinato = alternarSenhaRaffinato;
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciarBotaoSenhaRaffinato, { once:true });
+else iniciarBotaoSenhaRaffinato();
+
 function dadosFormularioRaffinato() {
-  const { lojaId } = contextoRaffinato();
+  const { lojaId, empresaId } = contextoRaffinato();
   return {
-    loja_id: lojaId,
+    loja_id: lojaId, empresa_id:empresaId, connection_profile_id:raffinatoConnectionProfileId,
+    profile_name:document.getElementById('raffinatoProfileName')?.value.trim() || '',
+    raffinato_filial_id:document.getElementById('raffinatoFilialSelect')?.value ? Number(document.getElementById('raffinatoFilialSelect').value) : null,
     server: document.getElementById('raffinatoSqlServer')?.value.trim(),
     database: document.getElementById('raffinatoDatabase')?.value.trim(),
     uid: document.getElementById('raffinatoDbUser')?.value.trim(),
@@ -96,12 +277,25 @@ function dadosFormularioRaffinato() {
 }
 
 function preencherFormularioIntegracaoRaffinato(item) {
+  const profileName=document.getElementById('raffinatoProfileName'); if(profileName)profileName.value=item?.nome_conexao||'';
+  raffinatoConnectionProfileId=String(item?.connection_profile_id||'');
   document.getElementById('raffinatoSqlServer').value = item?.instancia_sql || '';
   document.getElementById('raffinatoDatabase').value = item?.banco_dados || '';
   document.getElementById('raffinatoDbUser').value = item?.usuario_mascarado || '';
   document.getElementById('raffinatoDbPassword').value = '';
+  const filialSelect=document.getElementById('raffinatoFilialSelect');
+  if(filialSelect)filialSelect.innerHTML=item?.raffinato_filial_id?`<option value="${Number(item.raffinato_filial_id)}">Filial ${Number(item.raffinato_filial_id)} salva · teste para atualizar o nome</option>`:'<option value="">- Teste a conexão para descobrir as filiais -</option>';
+  delete document.getElementById('raffinatoDbPassword').dataset.senhaCarregada;
+  delete document.getElementById('raffinatoDbPassword').dataset.senhaDigitada;
   document.getElementById('raffinatoDbPassword').placeholder = item ? 'Senha protegida; preencha apenas para alterar' : 'Senha do banco';
-  document.getElementById('raffinatoDeleteIntegrationBtn').hidden = !item;
+  document.getElementById('raffinatoDbPassword').type = 'password';
+  document.getElementById('raffinatoDbPassword').classList.remove('raffinato-password-revealed','pin-secure-input');
+  const passwordToggle=document.getElementById('raffinatoPasswordToggle');
+  if(passwordToggle){passwordToggle.textContent='Mostrar';passwordToggle.setAttribute('aria-label','Mostrar senha');passwordToggle.setAttribute('title','Mostrar senha');passwordToggle.setAttribute('aria-pressed','false');}
+  raffinatoDeleteToken='';
+  const deleteActions=document.getElementById('raffinatoDeleteActions'),deleteButton=document.getElementById('raffinatoDeleteIntegrationBtn'),tokenBox=document.getElementById('raffinatoDeleteTokenBox');
+  if(deleteActions)deleteActions.hidden=!item;if(deleteButton)deleteButton.disabled=true;if(tokenBox)tokenBox.hidden=true;
+  renderizarIdadeSincronizacaoRaffinato(item?.ultima_sincronizacao_em);
   const ocultarConsulta = !item || item.status !== 'ativa';
   document.getElementById('raffinatoSangriasPanel').hidden = ocultarConsulta;
   document.getElementById('raffinatoSummary').hidden = ocultarConsulta;
@@ -109,6 +303,21 @@ function preencherFormularioIntegracaoRaffinato(item) {
   document.getElementById('raffinatoCharts').hidden = ocultarConsulta || !raffinatoSangrias.length;
   raffinatoTesteValido = false;
   document.getElementById('raffinatoSaveBtn').disabled = true;
+}
+
+function renderizarIdadeSincronizacaoRaffinato(value) {
+  const node=document.getElementById('raffinatoSyncAge');if(!node)return;
+  if(!value){node.textContent='Esta conexão ainda não recebeu nenhuma atualização.';node.classList.add('is-stale');return;}
+  const date=new Date(value),seconds=Math.max(0,Math.floor((Date.now()-date.getTime())/1000));
+  const age=seconds<60?'há menos de 1 minuto':seconds<3600?`há ${Math.floor(seconds/60)} min`:seconds<86400?`há ${Math.floor(seconds/3600)} h`:`há ${Math.floor(seconds/86400)} dia(s)`;
+  node.textContent=`Última atualização: ${date.toLocaleString('pt-BR')} · ${age}`;node.classList.toggle('is-stale',seconds>900);
+}
+
+async function gerarTokenExclusaoRaffinato(){
+  const button=document.getElementById('raffinatoGenerateDeleteTokenBtn'),msg=document.getElementById('msgRaffinatoIntegracao');
+  try{button.disabled=true;button.textContent='Gerando...';const {lojaId}=contextoRaffinato(),result=await raffinatoBridgePost('/api/integracoes/raffinato/token-exclusao',{loja_id:lojaId});raffinatoDeleteToken=String(result.delete_token||'');document.getElementById('raffinatoDeleteToken').value=raffinatoDeleteToken;document.getElementById('raffinatoDeleteTokenBox').hidden=false;document.getElementById('raffinatoDeleteIntegrationBtn').disabled=!raffinatoDeleteToken;if(msg){msg.className='msg';msg.textContent='Token temporário gerado. Confirme-o ao excluir esta conexão.';}}
+  catch(error){if(msg){msg.className='msg err';msg.textContent=error?.message||'Não foi possível gerar o token.';}}
+  finally{button.disabled=false;button.textContent='Gerar token para excluir';}
 }
 
 async function carregarIntegracaoRaffinato() {
@@ -129,7 +338,9 @@ async function carregarIntegracaoRaffinato() {
     if (sequence !== raffinatoLoadSequence || contextoAtual.lojaId !== contexto.lojaId || contextoAtual.empresaId !== contexto.empresaId) return;
     raffinatoIntegracaoAtual = data || null;
     preencherFormularioIntegracaoRaffinato(raffinatoIntegracaoAtual);
-    if (data && !data.conector_token_hash) {
+    // Renova o pareamento sempre que o conector local estiver acessível. Isso
+    // recupera automaticamente tokens locais antigos sem alterar a integração SQL.
+    if (data && data.status === 'ativa') {
       try {
         await parearConectorExternoRaffinato();
         raffinatoIntegracaoAtual.conector_token_hash = 'pareado';
@@ -150,6 +361,8 @@ function renderizarTesteIntegracaoRaffinato(result) {
   const box = document.getElementById('raffinatoTestResult');
   box.hidden = false;
   box.innerHTML = `<div class="raffinato-test-title"><span>Conexão estabelecida com sucesso</span><span>${escapeRaffinatoHtml(result.latencia_ms)} ms</span></div><div class="raffinato-test-steps">${(result.steps || []).map(step => `<div class="raffinato-test-step"><span class="raffinato-test-check">✓</span>${escapeRaffinatoHtml(step.label)}</div>`).join('')}</div>`;
+  const select=document.getElementById('raffinatoFilialSelect'),current=String(raffinatoIntegracaoAtual?.raffinato_filial_id||'');
+  if(select&&Array.isArray(result.filiais)){select.innerHTML='<option value="">- Selecione a filial encontrada -</option>'+result.filiais.map(item=>`<option value="${Number(item.id_filial)}">${Number(item.id_filial)} - ${escapeRaffinatoHtml(item.nome||`Filial ${Number(item.id_filial)}`)}</option>`).join('');if(current&&[...select.options].some(o=>o.value===current))select.value=current;}
 }
 
 async function testarIntegracaoRaffinato() {
@@ -176,12 +389,16 @@ async function salvarIntegracaoRaffinato() {
   const btn = document.getElementById('raffinatoSaveBtn');
   const msg = document.getElementById('msgRaffinatoIntegracao');
   try {
+    if(!document.getElementById('raffinatoProfileName')?.value.trim())throw new Error('Informe o nome da conexão.');
+    if(!document.getElementById('raffinatoFilialSelect')?.value)throw new Error('Selecione uma filial Raffinato descoberta no teste.');
     btn.disabled = true; btn.textContent = 'Salvando...';
     const contexto = contextoRaffinato();
     const form = dadosFormularioRaffinato();
     const result = await raffinatoBridgePost('/api/integracoes/raffinato/salvar', form);
     const atorId = /^[0-9a-f-]{36}$/i.test(String(usuarioSistemaLogado?.id || '')) ? usuarioSistemaLogado.id : null;
-    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId };
+    raffinatoConnectionProfileId=result.connection_profile_id;
+    raffinatoConnectorInstanceId=String(result.connector_instance_id||raffinatoConnectorInstanceId||'');
+    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId, connection_profile_id:result.connection_profile_id, connector_instance_id:raffinatoConnectorInstanceId||null, raffinato_filial_id:form.raffinato_filial_id, nome_conexao:form.profile_name };
     const { error } = await sb.from('raffinato_integracoes').upsert(payload, { onConflict:'loja_id' });
     if (error) throw error;
     await parearConectorExternoRaffinato();
@@ -200,6 +417,10 @@ function cancelarEdicaoIntegracaoRaffinato() {
 }
 
 async function excluirIntegracaoRaffinato() {
+  if(!raffinatoDeleteToken){window.alert('Gere primeiro um token temporário de exclusão.');return;}
+  const tokenInformado=window.prompt('Digite o token temporário exibido na tela para confirmar a exclusão:','');
+  if(tokenInformado===null)return;
+  if(String(tokenInformado).trim().toUpperCase()!==raffinatoDeleteToken){window.alert('Token de exclusão não confere.');return;}
   const resposta = typeof abrirConfirmacaoSistema === 'function'
     ? await abrirConfirmacaoSistema({ title:'Excluir integração Raffinato?', subtitle:'A configuração será removida somente desta loja.', confirmText:'Excluir' })
     : { confirmado:window.confirm('Excluir a integração Raffinato desta loja?') };
@@ -207,7 +428,7 @@ async function excluirIntegracaoRaffinato() {
   const msg = document.getElementById('msgRaffinatoIntegracao');
   try {
     const { lojaId } = contextoRaffinato();
-    await raffinatoBridgePost('/api/integracoes/raffinato/excluir', { loja_id:lojaId });
+    await raffinatoBridgePost('/api/integracoes/raffinato/excluir', { loja_id:lojaId, delete_token:raffinatoDeleteToken });
     const { error } = await sb.from('raffinato_integracoes').delete().eq('loja_id', lojaId);
     if (error) throw error;
     raffinatoIntegracaoAtual = null;
@@ -232,23 +453,24 @@ function atualizarStatusConectorRaffinato(estado, texto) {
 }
 
 async function verificarConectorRaffinato() {
-  try {
-    const contexto = contextoRaffinato();
-    const statusRemoto = await raffinatoRelay({
+  const contexto = contextoRaffinato();
+  const [local,cloud]=await Promise.allSettled([
+    fetch(`${RAFFINATO_BRIDGE_URL}/health`,{cache:'no-store',signal:AbortSignal.timeout(3500)}).then(async response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.json();}),
+    raffinatoRelay({
       action:'status', empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
       usuario_id:String(usuarioSistemaLogado?.id || ''),
-    });
-    if (!statusRemoto.online) {
-      atualizarStatusConectorRaffinato('offline', statusRemoto.pareado ? 'Aguardando sincronizacao' : 'Conector nao pareado');
-      return false;
-    }
-    atualizarStatusConectorRaffinato('online', 'Conector Raffinato ativo');
-    return true;
-  } catch (_) {
-    atualizarStatusConectorRaffinato('offline', 'Conector indisponível');
-    return false;
-  }
+    })
+  ]);
+  const localOk=local.status==='fulfilled'&&local.value?.ok===true,cloudOnline=cloud.status==='fulfilled'&&cloud.value?.online===true;
+  if(local.status==='rejected')console.info('LOCAL_BRIDGE_UNREACHABLE',{loja_id:contexto.lojaId});
+  if(cloud.status==='rejected')console.warn('CLOUD_CONNECTOR_STATUS_ERROR',{loja_id:contexto.lojaId,error:String(cloud.reason)});
+  const localText=localOk?'Local disponível':'Local indisponível neste computador';
+  const cloudText=cloudOnline?'Instalação ONLINE':(cloud.status==='fulfilled'&&cloud.value?.pareado?'Instalação OFFLINE':'Instalação ainda não vinculada à loja');
+  atualizarStatusConectorRaffinato(cloudOnline?'online':'offline',`${cloudText} · ${localText}`);
+  return localOk||cloudOnline;
 }
+
+window.gerarTokenExclusaoRaffinato=gerarTokenExclusaoRaffinato;
 
 function definirPeriodoSangriasRaffinato(dias) {
   const fim = new Date();
@@ -266,20 +488,12 @@ function obterPeriodoSangriasRaffinato() {
   const dataFim = document.getElementById('raffinatoDataFim')?.value;
   const horaFim = document.getElementById('raffinatoHoraFim')?.value || '23:59';
   if (!dataInicio || !dataFim) throw new Error('Informe as datas inicial e final.');
-  const inicio = `${dataInicio}T${horaInicio}:00`;
-  const fim = `${dataFim}T${horaFim}:59`;
   if (dataFim < dataInicio) throw new Error('A data final deve ser igual ou posterior à data inicial.');
-  return { inicio, fim, dataInicio, dataFim, horaInicio, horaFim };
-}
-
-function tipoMovimentoRaffinato(item) {
-  const tipo = Number(item?.tipo_comprovante_nao_fiscal);
-  return tipo === 4 ? 'RETIRADA_COFRE' : tipo === 1 ? 'SANGRIA' : 'PENDENTE_CLASSIFICACAO';
-}
-
-function rotuloTipoMovimentoRaffinato(item) {
-  const tipo = tipoMovimentoRaffinato(item);
-  return tipo === 'RETIRADA_COFRE' ? 'Retirada para cofre' : tipo === 'SANGRIA' ? 'Sangria / despesa' : 'Pendente de ressincronização';
+  const fimDate = new Date(`${dataFim}T12:00:00`);
+  fimDate.setDate(fimDate.getDate() + 1);
+  const inicio = `${dataInicio}T00:00:00`;
+  const fimExclusivo = `${dataLocalIso(fimDate)}T00:00:00`;
+  return { inicio, fim:fimExclusivo, fimExclusivo, dataInicio, dataFim, horaInicio, horaFim };
 }
 
 function escapeRaffinatoHtml(value) {
@@ -289,6 +503,35 @@ function escapeRaffinatoHtml(value) {
 function formatarMoedaRaffinato(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 }
+
+function limparFiltrosSangriasRaffinato() {
+  definirPeriodoSangriasRaffinato(1);
+  raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
+  raffinatoBuscaDetalhe = '';
+  const busca = document.getElementById('raffinatoDetailSearch');
+  if (busca) busca.value = '';
+  const msg = document.getElementById('msgRaffinatoSangrias');
+  if (msg) { msg.className = 'msg'; msg.textContent = 'Filtros limpos. Período redefinido para hoje.'; }
+  if (raffinatoSangrias.length) atualizarPainelAnaliticoRaffinato();
+}
+
+function normalizarMovimentoRaffinato(item) {
+  const tipo = Number(item?.tipo_comprovante_nao_fiscal ?? item?.TipoComprovanteNaoFiscal ?? (String(item?.tipo_movimento || '').toUpperCase() === 'RETIRADA' ? 4 : 1));
+  return {
+    ...item,
+    valor:Number(item?.valor ?? item?.ValorTotal ?? 0),
+    motivo:String(item?.motivo ?? item?.Motivo ?? 'Sem motivo'),
+    data:String(item?.data ?? item?.data_formatada ?? ''),
+    hora:String(item?.hora ?? item?.hora_formatada ?? ''),
+    tipo_comprovante_nao_fiscal:tipo,
+    tipo_movimento:tipo === 4 ? 'RETIRADA' : 'SANGRIA',
+    finalidade:tipo === 4 ? 'Retirada para cofre' : 'Pagamento de despesa',
+    id_usuario:String(item?.id_usuario ?? item?.IdUsuario ?? ''),
+    id_usuario_autorizador:String(item?.id_usuario_autorizador ?? item?.IdUsuarioAutorizadorSangria ?? ''),
+  };
+}
+
+function ehRetiradaCofreRaffinato(item) { return Number(item?.tipo_comprovante_nao_fiscal) === 4; }
 
 function chaveTextoRaffinato(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -325,11 +568,11 @@ function motivosSemelhantesRaffinato(a, b) {
 function prepararMotivosAgrupadosRaffinato(items) {
   const frequencias = new Map();
   items.forEach(item => {
-    const chave = `${tipoMovimentoRaffinato(item)}:${chaveTextoRaffinato(item.motivo) || 'sem motivo'}`;
+    const chave = chaveTextoRaffinato(item.motivo) || 'sem motivo';
     const atual = frequencias.get(chave) || { chave, quantidade:0, valor:0, rotulos:new Map() };
     atual.quantidade += 1;
     atual.valor += Number(item.valor || 0);
-    const rotulo = `${rotuloTipoMovimentoRaffinato(item)} · ${String(item.motivo || 'Sem motivo').trim() || 'Sem motivo'}`;
+    const rotulo = String(item.motivo || 'Sem motivo').trim() || 'Sem motivo';
     atual.rotulos.set(rotulo, (atual.rotulos.get(rotulo) || 0) + 1);
     frequencias.set(chave, atual);
   });
@@ -362,10 +605,10 @@ function diaSemanaRaffinato(item) { return RAFFINATO_DIAS_SEMANA[dataRaffinatoPa
 function itensFiltradosRaffinato() {
   return raffinatoSangrias.filter(item => {
     const f = raffinatoFiltrosAnaliticos;
-    const motivo = `${tipoMovimentoRaffinato(item)}:${chaveTextoRaffinato(item.motivo) || 'sem motivo'}`;
+    const motivo = chaveTextoRaffinato(item.motivo) || 'sem motivo';
     return (!f.data || item.data === f.data) && (!f.motivo || motivosSemelhantesRaffinato(f.motivo, motivo))
       && (!f.semana || diaSemanaRaffinato(item) === f.semana) && (!f.faixa || faixaHoraRaffinato(item) === f.faixa)
-      && (!f.tipo || tipoMovimentoRaffinato(item) === f.tipo);
+      && (!f.tipo || item.tipo_movimento === f.tipo);
   });
 }
 
@@ -378,7 +621,7 @@ function renderizarFiltrosAtivosRaffinato() {
   const box = document.getElementById('raffinatoActiveFilters');
   const chips = document.getElementById('raffinatoFilterChips');
   if (!box || !chips) return;
-  const nomes = { data:'Data', motivo:'Motivo', semana:'Dia', faixa:'Horário', tipo:'Categoria' };
+  const nomes = { data:'Data', motivo:'Motivo', semana:'Dia', faixa:'Horário', tipo:'Tipo' };
   const ativos = Object.entries(raffinatoFiltrosAnaliticos).filter(([,valor]) => valor);
   box.hidden = !ativos.length;
   chips.innerHTML = ativos.map(([tipo,valor]) => `<button type="button" class="raffinato-filter-chip" onclick="removerFiltroAnaliticoRaffinato('${tipo}')"><span>${nomes[tipo]}:</span> ${escapeRaffinatoHtml(tipo === 'motivo' ? valor.charAt(0).toUpperCase() + valor.slice(1) : valor)} ×</button>`).join('');
@@ -402,7 +645,7 @@ function renderizarDetalhamentoRaffinato(items) {
   const table = document.getElementById('raffinatoTable');
   if (!body || !empty || !table) return;
   const busca = raffinatoBuscaDetalhe;
-  const filtrados = items.filter(item => !busca || chaveTextoRaffinato(`${item.data} ${item.hora} ${rotuloTipoMovimentoRaffinato(item)} ${item.motivo} ${item.valor}`).includes(busca));
+  const filtrados = items.filter(item => !busca || chaveTextoRaffinato(`${item.data} ${item.hora} ${item.tipo_movimento} ${item.finalidade} ${item.motivo} ${item.id_usuario} ${item.id_usuario_autorizador} ${item.valor}`).includes(busca));
   const fator = raffinatoOrdenacao.direcao === 'asc' ? 1 : -1;
   raffinatoItensVisiveis = [...filtrados].sort((a,b) => {
     const va = valorOrdenacaoRaffinato(a, raffinatoOrdenacao.coluna), vb = valorOrdenacaoRaffinato(b, raffinatoOrdenacao.coluna);
@@ -411,9 +654,9 @@ function renderizarDetalhamentoRaffinato(items) {
   if (!raffinatoItensVisiveis.length) {
     table.hidden = true;
     empty.hidden = false;
-    empty.innerHTML = '<div><strong>Nenhuma sangria encontrada</strong>Remova algum filtro ou altere o período.</div>';
+    empty.innerHTML = '<div><strong>Nenhum movimento encontrado</strong>Remova algum filtro ou altere o período.</div>';
   } else {
-    body.innerHTML = raffinatoItensVisiveis.map(item => `<tr><td class="is-time"><button class="raffinato-cell-filter" onclick="alternarFiltroAnaliticoRaffinato('data','${escapeRaffinatoHtml(item.data)}')">${escapeRaffinatoHtml(item.data)}</button></td><td class="is-time">${escapeRaffinatoHtml(item.hora)}</td><td><button class="raffinato-cell-filter" onclick="alternarFiltroAnaliticoRaffinato('tipo','${tipoMovimentoRaffinato(item)}')">${escapeRaffinatoHtml(rotuloTipoMovimentoRaffinato(item))}</button></td><td>${escapeRaffinatoHtml(item.motivo)}</td><td class="is-value">${formatarMoedaRaffinato(item.valor)}</td></tr>`).join('');
+    body.innerHTML = raffinatoItensVisiveis.map(item => { const retirada = ehRetiradaCofreRaffinato(item); return `<tr class="${retirada ? 'is-vault' : 'is-expense'}"><td class="is-time"><button class="raffinato-cell-filter" onclick="alternarFiltroAnaliticoRaffinato('data','${escapeRaffinatoHtml(item.data)}')">${escapeRaffinatoHtml(item.data)}</button></td><td class="is-time">${escapeRaffinatoHtml(item.hora)}</td><td><button class="raffinato-type-badge ${retirada ? 'is-vault' : 'is-expense'}" onclick="alternarFiltroAnaliticoRaffinato('tipo','${item.tipo_movimento}')">${retirada ? 'RETIRADA PARA COFRE' : 'SANGRIA / DESPESA'}</button><small>${escapeRaffinatoHtml(item.finalidade)}</small></td><td>${escapeRaffinatoHtml(item.motivo)}</td><td class="raffinato-user-cell"><span>${escapeRaffinatoHtml(item.id_usuario || '—')}</span><small>Autoriza: ${escapeRaffinatoHtml(item.id_usuario_autorizador || '—')}</small></td><td class="is-value">${formatarMoedaRaffinato(item.valor)}</td></tr>`; }).join('');
     table.hidden = false;
     empty.hidden = true;
   }
@@ -443,7 +686,7 @@ function renderizarPizzaRaffinato(containerId, entries, tipoFiltro) {
   const total = entries.reduce((s,e) => s + Number(e[1] || 0), 0) || 1;
   let acumulado = 0;
   const fatias = entries.map((entry,i) => { const pct = Number(entry[1] || 0) / total * 100; const ini = acumulado; acumulado += pct; return `${RAFFINATO_CORES[i % RAFFINATO_CORES.length]} ${ini}% ${acumulado}%`; });
-  const legenda = entries.map(([label,value,meta],i) => `<button type="button" class="raffinato-donut-item ${tipoFiltro && raffinatoFiltrosAnaliticos[tipoFiltro] === (meta?.filtro || label) ? 'is-selected' : ''}" ${tipoFiltro ? `onclick="alternarFiltroAnaliticoRaffinato('${tipoFiltro}','${escapeRaffinatoHtml(meta?.filtro || label)}')"` : ''}><i style="background:${RAFFINATO_CORES[i % RAFFINATO_CORES.length]}"></i><span>${escapeRaffinatoHtml(label)}</span><strong>${escapeRaffinatoHtml(meta?.texto || String(value))}</strong></button>`).join('');
+  const legenda = entries.map(([label,value,meta],i) => `<button type="button" class="raffinato-donut-item ${raffinatoFiltrosAnaliticos[tipoFiltro] === (meta?.filtro || label) ? 'is-selected' : ''}" onclick="alternarFiltroAnaliticoRaffinato('${tipoFiltro}','${escapeRaffinatoHtml(meta?.filtro || label)}')"><i style="background:${RAFFINATO_CORES[i % RAFFINATO_CORES.length]}"></i><span>${escapeRaffinatoHtml(label)}</span><strong>${escapeRaffinatoHtml(meta?.texto || String(value))}</strong></button>`).join('');
   el.innerHTML = `<div class="raffinato-donut" style="background:conic-gradient(${fatias.join(',')})"><div><strong>${entries.length}</strong><span>grupos</span></div></div><div class="raffinato-donut-legend">${legenda}</div>`;
 }
 
@@ -452,36 +695,42 @@ function renderizarGraficosSangriasRaffinato(items) {
   if (!charts) return;
   charts.hidden = !items.length;
   if (!items.length) return;
-  const porDia = agruparSangriasRaffinato(items, item => `${item.data} · ${rotuloTipoMovimentoRaffinato(item)}`).sort((a, b) => {
-    const br = value => String(value).split(' · ')[0].split('/').reverse().join('-');
+  const ordenarDias = entries => entries.sort((a, b) => {
+    const br = value => String(value).split('/').reverse().join('-');
     return br(a[0]).localeCompare(br(b[0]));
   });
-  const motivos = prepararMotivosAgrupadosRaffinato(items).sort((a,b) => b.quantidade - a.quantidade);
+  const sangrias = items.filter(item => !ehRetiradaCofreRaffinato(item));
+  const retiradas = items.filter(ehRetiradaCofreRaffinato);
+  const porDiaSangrias = ordenarDias(agruparSangriasRaffinato(sangrias, item => item.data));
+  const porDiaRetiradas = ordenarDias(agruparSangriasRaffinato(retiradas, item => item.data));
+  const motivos = prepararMotivosAgrupadosRaffinato(sangrias).sort((a,b) => b.quantidade - a.quantidade);
   const top10 = motivos.slice(0,10).map(g => [g.rotulo, g.quantidade, { filtro:g.chave, texto:`${g.quantidade}× · ${formatarMoedaRaffinato(g.valor)}` }]);
-  const pizzaMotivos = [...motivos].sort((a,b) => b.valor - a.valor).slice(0,9).map(g => [g.rotulo, g.valor, { filtro:g.chave, texto:formatarMoedaRaffinato(g.valor) }]);
-  const semanaMap = new Map();
-  items.forEach(item => { const key = `${diaSemanaRaffinato(item)} · ${rotuloTipoMovimentoRaffinato(item)}`; const atual = semanaMap.get(key) || { quantidade:0, valor:0 }; atual.quantidade += 1; atual.valor += Number(item.valor || 0); semanaMap.set(key, atual); });
-  const semana = [...semanaMap.entries()].map(([label,v]) => [label,v.valor,{ texto:`${formatarMoedaRaffinato(v.valor)} · ${v.quantidade}×` }]);
-  const faixas = RAFFINATO_FAIXAS.flatMap(([label]) => ['SANGRIA','RETIRADA_COFRE'].map(tipo => { const encontrados = items.filter(item => faixaHoraRaffinato(item) === label && tipoMovimentoRaffinato(item) === tipo); return [`${label} · ${tipo === 'SANGRIA' ? 'Sangrias' : 'Cofre'}`, encontrados.length,{ texto:`${encontrados.length}×` }]; })).filter(([,quantidade]) => quantidade);
-  document.getElementById('raffinatoChartDias').innerHTML = barrasSangriasRaffinato(porDia, formatarMoedaRaffinato);
+  const totalSangrias = sangrias.reduce((sum,item) => sum + item.valor, 0);
+  const totalRetiradas = retiradas.reduce((sum,item) => sum + item.valor, 0);
+  const composicao = [
+    ['Pagamentos de despesas', totalSangrias, { filtro:'SANGRIA', texto:formatarMoedaRaffinato(totalSangrias) }],
+    ['Retiradas para cofre', totalRetiradas, { filtro:'RETIRADA', texto:formatarMoedaRaffinato(totalRetiradas) }],
+  ];
+  document.getElementById('raffinatoChartSangriasDias').innerHTML = porDiaSangrias.length ? barrasSangriasRaffinato(porDiaSangrias, formatarMoedaRaffinato, 'data') : '<div class="raffinato-chart-empty">Sem sangrias no período.</div>';
+  document.getElementById('raffinatoChartRetiradasDias').innerHTML = porDiaRetiradas.length ? barrasSangriasRaffinato(porDiaRetiradas, formatarMoedaRaffinato, 'data') : '<div class="raffinato-chart-empty">Sem retiradas para cofre no período.</div>';
   document.getElementById('raffinatoChartMotivos').innerHTML = barrasSangriasRaffinato(top10, (value,meta) => meta.texto, 'motivo');
-  renderizarPizzaRaffinato('raffinatoPizzaMotivos', pizzaMotivos, 'motivo');
-  renderizarPizzaRaffinato('raffinatoPizzaSemana', semana, '');
-  renderizarPizzaRaffinato('raffinatoPizzaHoras', faixas, '');
+  renderizarPizzaRaffinato('raffinatoPizzaComposicao', composicao, 'tipo');
+  document.getElementById('raffinatoHistoricoRetiradas').innerHTML = retiradas.length ? [...retiradas].sort((a,b) => `${b.data_hora || b.data} ${b.hora}`.localeCompare(`${a.data_hora || a.data} ${a.hora}`)).map(item => `<div class="raffinato-vault-item"><div><strong>${escapeRaffinatoHtml(item.data)} · ${escapeRaffinatoHtml(item.hora)}</strong><span>${escapeRaffinatoHtml(item.motivo)}</span></div><div><strong>${formatarMoedaRaffinato(item.valor)}</strong><small>Usuário ${escapeRaffinatoHtml(item.id_usuario || '—')} · autoriza ${escapeRaffinatoHtml(item.id_usuario_autorizador || '—')}</small></div></div>`).join('') : '<div class="raffinato-chart-empty">Nenhuma retirada para cofre neste período.</div>';
 }
 
 function atualizarPainelAnaliticoRaffinato() {
   const items = itensFiltradosRaffinato();
-  const total = items.reduce((sum,item) => sum + Number(item.valor || 0), 0);
-  const sangrias = items.filter(item => tipoMovimentoRaffinato(item) === 'SANGRIA');
-  const retiradas = items.filter(item => tipoMovimentoRaffinato(item) === 'RETIRADA_COFRE');
-  document.getElementById('raffinatoTotal').textContent = formatarMoedaRaffinato(total);
-  document.getElementById('raffinatoQuantidade').textContent = String(items.length);
-  document.getElementById('raffinatoTicketMedio').textContent = formatarMoedaRaffinato(items.length ? total / items.length : 0);
-  document.getElementById('raffinatoTotalSangrias').textContent = formatarMoedaRaffinato(sangrias.reduce((sum,item) => sum + Number(item.valor || 0), 0));
+  const sangrias = items.filter(item => !ehRetiradaCofreRaffinato(item));
+  const retiradas = items.filter(ehRetiradaCofreRaffinato);
+  const totalSangrias = sangrias.reduce((sum,item) => sum + Number(item.valor || 0), 0);
+  const totalRetiradas = retiradas.reduce((sum,item) => sum + Number(item.valor || 0), 0);
+  const total = totalSangrias + totalRetiradas;
+  document.getElementById('raffinatoTotalSangrias').textContent = formatarMoedaRaffinato(totalSangrias);
+  document.getElementById('raffinatoTotalRetiradas').textContent = formatarMoedaRaffinato(totalRetiradas);
+  document.getElementById('raffinatoTotalGeral').textContent = formatarMoedaRaffinato(total);
   document.getElementById('raffinatoQuantidadeSangrias').textContent = String(sangrias.length);
-  document.getElementById('raffinatoTotalCofre').textContent = formatarMoedaRaffinato(retiradas.reduce((sum,item) => sum + Number(item.valor || 0), 0));
-  document.getElementById('raffinatoQuantidadeCofre').textContent = String(retiradas.length);
+  document.getElementById('raffinatoQuantidadeRetiradas').textContent = String(retiradas.length);
+  document.getElementById('raffinatoTicketMedio').textContent = formatarMoedaRaffinato(items.length ? total / items.length : 0);
   renderizarFiltrosAtivosRaffinato();
   renderizarGraficosSangriasRaffinato(items);
   renderizarDetalhamentoRaffinato(items);
@@ -512,20 +761,35 @@ async function consultarSangriasRaffinato() {
     if (empty) { empty.hidden = false; empty.innerHTML = '<div><div class="raffinato-spinner"></div><strong>Consultando o Raffinato</strong>Aguarde a resposta pela rede Radmin VPN.</div>'; }
 
     const contexto = contextoRaffinato();
-    const payload = await raffinatoRelay({
-      action:'dashboard', inicio:periodo.inicio, fim:periodo.fim,
-      hora_inicio:`${periodo.horaInicio}:00`, hora_fim:`${periodo.horaFim}:59`,
-      empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
-      usuario_id:String(usuarioSistemaLogado?.id || ''),
-    });
-    raffinatoSangrias = Array.isArray(payload.items) ? payload.items : [];
+    let payload;
+    try {
+      // Fonte de verdade: consulta o DocumentoFiscal diretamente no Raffinato.
+      payload = await raffinatoBridgePost('/api/sangrias', {
+        inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
+        hora_inicio:`${periodo.horaInicio}:00`, hora_fim:`${periodo.horaFim}:59`,
+        loja_id:contexto.lojaId,
+      });
+    } catch (localError) {
+      // Permite consultar em celular ou computador no qual o conector não esteja aberto.
+      payload = await raffinatoRelay({
+        action:'dashboard', inicio:periodo.inicio, fim:periodo.fim, fim_exclusivo:periodo.fimExclusivo,
+        hora_inicio:`${periodo.horaInicio}:00`, hora_fim:`${periodo.horaFim}:59`,
+        empresa_id:contexto.empresaId, loja_id:contexto.lojaId,
+        usuario_id:String(usuarioSistemaLogado?.id || ''),
+      });
+      payload.origem_consulta = 'sincronizacao';
+    }
+    raffinatoSangrias = Array.isArray(payload.items) ? payload.items.map(normalizarMovimentoRaffinato).filter(item => {
+      const hora=String(item.hora||'00:00:00').slice(0,8),inicio=`${periodo.horaInicio}:00`,fim=`${periodo.horaFim}:59`;
+      return inicio<=fim ? hora>=inicio&&hora<=fim : hora>=inicio||hora<=fim;
+    }) : [];
     raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
     raffinatoBuscaDetalhe = '';
     const buscaDetalhe = document.getElementById('raffinatoDetailSearch');
     if (buscaDetalhe) buscaDetalhe.value = '';
     renderizarSangriasRaffinato(raffinatoSangrias, Number(payload.total || 0));
     atualizarStatusConectorRaffinato('online', 'Raffinato conectado');
-    if (msg) { msg.className = 'msg ok'; msg.textContent = `${Number(payload.quantidade_sangrias || 0)} sangria(s) e ${Number(payload.quantidade_retiradas || 0)} retirada(s) para cofre.`; }
+    if (msg) { const retiradas = raffinatoSangrias.filter(ehRetiradaCofreRaffinato).length; msg.className = 'msg ok'; msg.textContent = `${raffinatoSangrias.length - retiradas} sangria(s) e ${retiradas} retirada(s) para cofre encontradas${payload.origem_consulta === 'sincronizacao' ? ' na sincronização' : ' diretamente no Raffinato'}.`; }
   } catch (error) {
     if (error?.name === 'AbortError') {
       if (msg) { msg.className = 'msg'; msg.textContent = 'Consulta cancelada.'; }
@@ -544,16 +808,28 @@ async function consultarSangriasRaffinato() {
 
 function cancelarConsultaSangriasRaffinato() {
   raffinatoConsultaController?.abort();
+  raffinatoConsultaController = null;
+  raffinatoLoadSequence += 1;
+  raffinatoSangrias = [];
+  raffinatoItensVisiveis = [];
+  raffinatoFiltrosAnaliticos = { data:'', motivo:'', semana:'', faixa:'', tipo:'' };
+  raffinatoBuscaDetalhe = '';
+  const corpo = document.getElementById('raffinatoTableBody'); if (corpo) corpo.replaceChildren();
+  const detalhe = document.getElementById('raffinatoDetailBody'); if (detalhe) detalhe.replaceChildren();
+  const tabela = document.getElementById('raffinatoTable'); if (tabela) tabela.hidden = true;
+  const graficos = document.getElementById('raffinatoCharts'); if (graficos) graficos.hidden = true;
+  const vazio = document.getElementById('raffinatoEmpty'); if (vazio) { vazio.hidden=false; vazio.innerHTML='<div><strong>Nenhuma consulta realizada para esta loja.</strong></div>'; }
+  const msg = document.getElementById('msgRaffinatoSangrias'); if (msg) { msg.className='msg'; msg.textContent=''; }
 }
 
 function exportarSangriasRaffinatoExcel() {
   if (!raffinatoItensVisiveis.length) return;
-  const rows = [['Data', 'Hora', 'Categoria', 'Motivo', 'Valor'], ...raffinatoItensVisiveis.map(item => [item.data, item.hora, rotuloTipoMovimentoRaffinato(item), item.motivo, Number(item.valor || 0).toFixed(2).replace('.', ',')])];
-  rows.push(['', '', '', 'TOTAL RETIRADO DOS CAIXAS', raffinatoItensVisiveis.reduce((sum, item) => sum + Number(item.valor || 0), 0).toFixed(2).replace('.', ',')]);
+  const rows = [['Data', 'Hora', 'Tipo', 'Finalidade', 'Motivo', 'Usuário', 'Autorizador', 'Valor'], ...raffinatoItensVisiveis.map(item => [item.data, item.hora, item.tipo_movimento, item.finalidade, item.motivo, item.id_usuario, item.id_usuario_autorizador, Number(item.valor || 0).toFixed(2).replace('.', ',')])];
+  rows.push(['', '', '', '', '', '', 'TOTAL', raffinatoItensVisiveis.reduce((sum, item) => sum + Number(item.valor || 0), 0).toFixed(2).replace('.', ',')]);
   const csv = '\ufeff' + rows.map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
-  link.download = `sangrias-raffinato-${dataLocalIso()}.csv`;
+  link.download = `saidas-caixa-raffinato-${dataLocalIso()}.csv`;
   document.body.appendChild(link);
   link.click();
   URL.revokeObjectURL(link.href);

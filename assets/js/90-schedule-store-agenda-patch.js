@@ -83,6 +83,10 @@
     var titulo = byId('escalaModalTitulo');
     if (titulo) titulo.textContent = 'Cadastro de Agenda';
   }
+  window.addEventListener('tenant:reset', function(){
+    state.data='';state.id='';limparCadastroNovoAgenda();
+    var modal=byId('modalEscalaPlantao');if(modal){modal.classList.remove('open');modal.style.display='none';}
+  });
   async function executarAmplo(query){
     if (typeof window.executarSemFiltrosTenantTemporario === 'function') {
       return await window.executarSemFiltrosTenantTemporario(function(){ return query; });

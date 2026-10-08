@@ -590,8 +590,12 @@ async function obterIntervalosPontoDoRegistro(registroId) {
   return data || [];
 }
 
-function obterIntervaloAberto(intervalos = []) {
-  return [...intervalos].reverse().find(item => item.inicio_em && !item.retorno_em) || null;
+function obterIntervaloAberto(intervalos = [], agoraReferencia = Date.now()) {
+  return [...intervalos].reverse().find(item =>
+    item.inicio_em
+    && !item.retorno_em
+    && interpretarIntervaloPonto(item, agoraReferencia).abertoProvisorio
+  ) || null;
 }
 
 function proximaOrdemIntervalo(intervalos = []) {
@@ -600,8 +604,11 @@ function proximaOrdemIntervalo(intervalos = []) {
 }
 
 function montarResumoIntervalos(intervalos = []) {
-  if (!intervalos.length) return 'Intervalos: nenhum registrado';
-  const texto = intervalos.map(item => {
+  const intervalosExibicao = intervalos.filter(item =>
+    item?.retorno_em || interpretarIntervaloPonto(item).abertoProvisorio
+  );
+  if (!intervalosExibicao.length) return 'Intervalos: nenhum registrado';
+  const texto = intervalosExibicao.map(item => {
     const n = item.ordem || '-';
     const duracao = calcularDuracaoIntervaloPonto(item);
     const duracaoTexto = duracao !== null ? ` (${formatarDuracaoMinutos(duracao)})` : '';
@@ -804,7 +811,7 @@ function obterIntervalosConsolidadosPonto(registro = {}, intervalos = []) {
     });
 }
 
-function obterResumoJornadaPonto(registro, intervalos = []) {
+function obterResumoJornadaPonto(registro, intervalos = [], agoraReferencia = Date.now()) {
   if (!registro?.entrada_em) {
     return {
       status: 'Sem registro no dia',
@@ -816,10 +823,16 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
   }
 
   const lista = obterIntervalosConsolidadosPonto(registro, intervalos);
-  const intervaloAberto = obterIntervaloAberto(lista);
+  const intervaloAberto = obterIntervaloAberto(lista, agoraReferencia);
+  const intervaloExpirado = [...lista].reverse().find(item =>
+    item?.inicio_em
+    && !item?.retorno_em
+    && interpretarIntervaloPonto(item, agoraReferencia).expirado
+  ) || null;
   const ultimoRetorno = [...lista].reverse().find(item => item.retorno_em)?.retorno_em || null;
-  const agoraIso = new Date().toISOString();
-  const fimJornada = registro.saida_em || intervaloAberto?.inicio_em || ultimoRetorno || agoraIso;
+  const agoraIso = new Date(agoraReferencia).toISOString();
+  const saidaFinalInterpretada = intervaloExpirado?.inicio_em || null;
+  const fimJornada = registro.saida_em || saidaFinalInterpretada || intervaloAberto?.inicio_em || ultimoRetorno || agoraIso;
 
   let totalMinutos = 0;
   if (fimJornada) {
@@ -827,25 +840,24 @@ function obterResumoJornadaPonto(registro, intervalos = []) {
     const fimMs = new Date(fimJornada).getTime();
     if (!Number.isNaN(entradaMs) && !Number.isNaN(fimMs) && fimMs > entradaMs) {
       const duracaoBrutaMin = Math.floor((fimMs - entradaMs) / 60000);
-      const intervaloMin = lista.reduce((acc, item) => {
-        if (!item.inicio_em || !item.retorno_em) return acc;
-        const inicioMs = new Date(item.inicio_em).getTime();
-        const retornoMs = new Date(item.retorno_em).getTime();
-        if (Number.isNaN(inicioMs) || Number.isNaN(retornoMs) || retornoMs <= inicioMs) return acc;
-        return acc + Math.floor((retornoMs - inicioMs) / 60000);
-      }, 0);
+      // Usa a mesma consolidação aplicada ao "Total intervalo". O descanso pode
+      // existir simultaneamente nos campos principais de ponto_registros e em
+      // ponto_intervalos; somar a lista diretamente descontava a mesma faixa duas
+      // vezes quando os registros eram iguais ou sobrepostos.
+      const intervalosConcluidos = lista.filter(item => item?.inicio_em && item?.retorno_em);
+      const intervaloMin = calcularTotalIntervalosPonto(intervalosConcluidos, null);
       totalMinutos = Math.max(0, duracaoBrutaMin - intervaloMin);
     }
   }
 
-  const jornadaFechada = !!registro.saida_em;
+  const jornadaFechada = !!registro.saida_em || !!saidaFinalInterpretada;
   const status = jornadaFechada
     ? 'Jornada fechada'
     : (intervaloAberto ? 'Fora (última batida: saída)' : 'Em jornada');
   const proximaAcao = jornadaFechada
     ? 'Entrada'
     : (intervaloAberto ? 'Retorno' : 'Saída');
-  const ultimaSaidaEm = intervaloAberto?.inicio_em || registro.saida_em || null;
+  const ultimaSaidaEm = intervaloAberto?.inicio_em || registro.saida_em || saidaFinalInterpretada || null;
 
   return {
     status,
@@ -2776,8 +2788,10 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
       const nome = obterNomeFornecedorRelatorioFinanceiro(item);
       const pago = obterStatusContaRelatorioFinanceiro(item) === 'pago';
       const valor = Number(item.valor_compra || 0);
-      if (!grupos[nome]) grupos[nome] = { nome, qtd: 0, pago: 0, pendente: 0 };
+      if (!grupos[nome]) grupos[nome] = { nome, qtd: 0, pago: 0, pendente: 0, cadastros: [], vencimentos: [] };
       grupos[nome].qtd += 1;
+      if (item.created_at) grupos[nome].cadastros.push(item.created_at);
+      if (item.data_vencimento) grupos[nome].vencimentos.push(item.data_vencimento);
       if (pago) grupos[nome].pago += valor; else grupos[nome].pendente += valor;
     });
     const linhas = Object.values(grupos)
@@ -2785,6 +2799,8 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
     lista.innerHTML = resumoExcluidos + `
       <div class="rf-grupo-cabecalho" aria-hidden="true">
         <span>Fornecedor</span>
+        <span>Cadastro</span>
+        <span>Vencimento</span>
         <span>Pago</span>
         <span>Em aberto</span>
         <span>Total</span>
@@ -2793,6 +2809,8 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
       <div class="lista rf-grupo-lista">` + linhas.map(g => `
       <div class="item rf-grupo-item">
         <strong class="rf-grupo-fornecedor">${escaparHtmlBasico(g.nome)}</strong>
+        <span class="rf-grupo-cadastro">${(() => { const datas = [...g.cadastros].sort(); if (!datas.length) return '-'; const primeira = fmtDate(datas[0]); const ultima = fmtDate(datas[datas.length - 1]); return primeira === ultima ? primeira : `${primeira} a ${ultima}`; })()}</span>
+        <span class="rf-grupo-vencimento">${(() => { const datas = [...g.vencimentos].sort(); if (!datas.length) return '-'; const primeira = formatarDataBRFinanceiro(datas[0]); const ultima = formatarDataBRFinanceiro(datas[datas.length - 1]); return primeira === ultima ? primeira : `${primeira} a ${ultima}`; })()}</span>
         <span class="rf-grupo-pago">${formatarMoedaBRFinanceiro(g.pago)}</span>
         <span class="rf-grupo-aberto">${formatarMoedaBRFinanceiro(g.pendente)}</span>
         <span class="rf-grupo-total">${formatarMoedaBRFinanceiro(g.pago + g.pendente)}</span>
@@ -2816,7 +2834,8 @@ function renderizarDetalhesRelatorioFinanceiro(itens = []) {
       <div class="${classeItem}">
         <div class="item-info">
           <div class="item-nome">${escaparHtmlBasico(fornecedor)}</div>
-          <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
+          <div class="item-detalhe">Data de cadastro: ${escaparHtmlBasico(item.created_at ? fmtDate(item.created_at) : '-')} · Data de vencimento: ${formatarDataBRFinanceiro(item.data_vencimento)}</div>
+          <div class="item-detalhe">Compra: ${formatarDataBRFinanceiro(item.data_compra)} · Pagamento: ${formatarDataBRFinanceiro(item.data_pagamento)}</div>
           <div class="item-detalhe">Original: ${formatarMoedaBRFinanceiro(valorOriginal)} · Previsto/atual: ${formatarMoedaBRFinanceiro(valorCompra)} · ${status === 'pago' ? `Pago: ${formatarMoedaBRFinanceiro(valorRealizado)}` : `A pagar: ${formatarMoedaBRFinanceiro(valorRealizado)}`}</div>
           <div class="item-detalhe">Forma de pagamento: ${escaparHtmlBasico(forma)} · ${escaparHtmlBasico(infoParcelas.resumoTexto)}</div>
           <div class="item-detalhe">Obs.: ${escaparHtmlBasico(observacao)}</div>
@@ -2917,6 +2936,7 @@ async function aplicarAtalhoPeriodoRelatorioFinanceiro(dias = 7) {
 }
 
 async function carregarRelatorioFinanceiro() {
+  const contextoTenantInicio = capturarContextoTenant();
   const listaDetalhes = document.getElementById('listaRelatorioFinanceiro');
   const listaFornecedores = document.getElementById('listaRelatorioFinanceiroFornecedores');
   const listaFormas = document.getElementById('listaRelatorioFinanceiroFormas');
@@ -3391,6 +3411,7 @@ async function buscarDadosRelatorioRecebimentos() {
 }
 
 async function carregarRelatorioRecebimentos() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioRecebimentos');
   const dataInicioEl = document.getElementById('filtroRelRecebDataInicio');
   const dataFimEl = document.getElementById('filtroRelRecebDataFim');
@@ -3451,6 +3472,7 @@ async function carregarRelatorioRecebimentos() {
       return true;
     });
 
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     relatorioRecebimentosCache = itens;
 
     const total = itens.reduce((acc, item) => acc + (Number(item.valor || 0) || 0), 0);
@@ -3736,6 +3758,7 @@ function resetFiltroRelatorioAjusteSaldo() {
 }
 
 async function carregarRelatorioAjusteSaldo() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioAjusteSaldo');
   const campoDataInicio = document.getElementById('filtroRelAjusteSaldoDataInicio');
   const campoDataFim = document.getElementById('filtroRelAjusteSaldoDataFim');
@@ -3839,6 +3862,7 @@ async function carregarRelatorioAjusteSaldo() {
       })
       .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     relatorioAjusteSaldoCache = itensFiltrados;
 
     const resumo = calcularResumoRelatorioAjusteSaldo(itensFiltrados);

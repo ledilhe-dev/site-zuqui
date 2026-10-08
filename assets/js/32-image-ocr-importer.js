@@ -2,6 +2,8 @@
 // O resultado cai na mesma tela de revisao do importador OFX.
 (function () {
   const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+  const PDFJS_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+  const PDFJS_WORKER_CDN = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
   function imagemCompraHojeISO() {
     return new Date().toISOString().slice(0, 10);
@@ -35,6 +37,30 @@
     const match = String(texto || '').match(/\b0*(\d{1,2})\s*[xX]\b/);
     const quantidade = match ? Number.parseInt(match[1], 10) : 1;
     return quantidade >= 2 && quantidade <= 99 ? quantidade : 1;
+  }
+
+  function imagemCompraParseReferenciaParcelas(texto) {
+    const bruto = String(texto || '');
+    const referencias = [...bruto.matchAll(/\b(\d{1,3})\s*\/\s*(\d{1,3})\b/g)];
+    for (const referencia of referencias) {
+      if ((referencia.index || 0) <= 3 && /^\s*\d{1,2}\s*\/\s*\d{1,2}/.test(bruto)) continue;
+      const atual = Number.parseInt(referencia[1], 10);
+      const total = Number.parseInt(referencia[2], 10);
+      if (atual >= 1 && total >= 2 && atual <= total && total <= 360) return { atual, total };
+    }
+    return null;
+  }
+
+  function imagemCompraExtrairPagamentosFatura(texto) {
+    return imagemCompraNormalizarTexto(texto).split('\n').map(linha => linha.trim()).filter(linha => {
+      const normalizada = imagemCompraRemoverAcentos(linha).toLowerCase();
+      return /(?:pag(?:amento)?|boleto|debito automatico)/.test(normalizada)
+        && /-\s*(?:R\$|BRL)?\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/i.test(linha);
+    }).map(linha => {
+      const valorTexto = linha.match(/-\s*(?:R\$|BRL)?\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/i)?.[0] || '';
+      const numero = valorTexto.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+      return { descricao: imagemCompraLimparDescricao(linha) || 'Pagamento da fatura', valor: Number(numero) || 0 };
+    });
   }
 
   function imagemCompraNormalizarValoresSemSeparador(texto) {
@@ -81,6 +107,8 @@
 
   function imagemCompraLimparDescricao(desc) {
     return String(desc || '')
+      .replace(/^\s*\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\s+/, '')
+      .replace(/\b(?:BRL|US\$)\b/gi, ' ')
       .replace(/\s+para\s+o\s+cart[aã]o.*$/i, '')
       .replace(/\s*,?\s+no\s+cart[aã]o.*$/i, '')
       .replace(/\s+final\s+\d+.*$/i, '')
@@ -170,9 +198,7 @@
     while ((m = regex.exec(compacto)) !== null) {
       const valor = imagemCompraParseValor(m[1]);
       const quantidadeParcelas = imagemCompraParseParcelas(m[2]);
-      const descricao = imagemCompraLimparDescricao(
-        String(m[2]).replace(/^\s*0*\d{1,2}\s*[xX]\s*(?:em\s+)?/i, '')
-      );
+      const descricao = imagemCompraLimparDescricao(String(m[2]).replace(/^\s*0*\d{1,2}\s*[xX]\s*(?:em\s+)?/i, ''));
       if (!valor || !descricao) continue;
       const contextoData = compacto.slice(Math.max(0, m.index - 220), m.index);
       const banco = imagemCompraDetectarBanco(contextoData);
@@ -287,16 +313,29 @@
         const descricao = descricaoProxima(idx, linha);
         if (!descricao) return;
         const data = imagemCompraParseData(linha, dataPadrao);
+        const linhaComecaComData = /^\s*\d{1,2}\s*[\/.-]\s*\d{1,2}\b/.test(linha);
+        const contextoParcela = linhaComecaComData ? linha : [linhas[idx - 1] || '', linha].join(' ');
+        const referenciaParcela = imagemCompraParseReferenciaParcelas(contextoParcela);
+        const descricaoFinal = referenciaParcela
+          ? imagemCompraLimparDescricao(descricao.replace(new RegExp(`\\b${referenciaParcela.atual}\\s*\\/\\s*${referenciaParcela.total}\\b`), ' '))
+          : descricao;
         compras.push({
           data,
-          descricao,
+          descricao: descricaoFinal,
           valor,
           fitid: null,
           vencimento_fatura: data,
           selecionado: true,
-          _obsManual: descricao,
+          _obsManual: descricaoFinal,
           _origemImagem: true,
           _exigeFornecedorManual: true,
+          ...(referenciaParcela ? {
+            parcela_atual: referenciaParcela.atual,
+            total_parcelas: referenciaParcela.total,
+            _parcelasManuais: 1,
+            _parcelasAuto: true,
+            _modoValorParcelas: 'parcela',
+          } : {}),
         });
       });
     });
@@ -374,6 +413,74 @@
     });
     if (!window.Tesseract?.recognize) throw new Error('Biblioteca OCR indisponivel.');
     return window.Tesseract;
+  }
+
+  async function imagemCompraCarregarPdfJs() {
+    if (window.pdfjsLib?.getDocument) return window.pdfjsLib;
+    await new Promise((resolve, reject) => {
+      const existente = document.querySelector(`script[src="${PDFJS_CDN}"]`);
+      if (existente) {
+        existente.addEventListener('load', resolve, { once: true });
+        existente.addEventListener('error', reject, { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = PDFJS_CDN;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Nao foi possivel carregar o leitor de PDF.'));
+      document.head.appendChild(script);
+    });
+    if (!window.pdfjsLib?.getDocument) throw new Error('Leitor de PDF indisponivel.');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+    return window.pdfjsLib;
+  }
+
+  function imagemCompraTextoPaginaPdf(conteudo = {}) {
+    const linhas = [];
+    (conteudo.items || []).forEach(item => {
+      const texto = String(item?.str || '').trim();
+      if (!texto) return;
+      const x = Number(item?.transform?.[4] || 0);
+      const y = Number(item?.transform?.[5] || 0);
+      let linha = linhas.find(registro => Math.abs(registro.y - y) <= 3);
+      if (!linha) {
+        linha = { y, partes: [] };
+        linhas.push(linha);
+      }
+      linha.partes.push({ x, texto });
+    });
+    return linhas
+      .sort((a, b) => b.y - a.y)
+      .map(linha => linha.partes.sort((a, b) => a.x - b.x).map(parte => parte.texto).join(' '))
+      .join('\n');
+  }
+
+  async function imagemCompraPrepararPdf(file) {
+    const pdfjsLib = await imagemCompraCarregarPdfJs();
+    const dados = new Uint8Array(await file.arrayBuffer());
+    const documento = await pdfjsLib.getDocument({ data: dados }).promise;
+    const paginas = [];
+    const textos = [];
+    for (let numero = 1; numero <= documento.numPages; numero++) {
+      faturaSetProgress(10 + Math.round((numero / documento.numPages) * 20), `Abrindo pagina ${numero} de ${documento.numPages}...`);
+      const pagina = await documento.getPage(numero);
+      try {
+        textos.push(imagemCompraTextoPaginaPdf(await pagina.getTextContent()));
+      } catch (_) {
+        textos.push('');
+      }
+      const viewportBase = pagina.getViewport({ scale: 1 });
+      const escala = Math.min(2.4, 2200 / Math.max(viewportBase.width, viewportBase.height));
+      const viewport = pagina.getViewport({ scale: Math.max(1.4, escala) });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
+      await pagina.render({ canvasContext: canvas.getContext('2d', { alpha: false }), viewport }).promise;
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(valor => valor ? resolve(valor) : reject(new Error('Nao foi possivel converter uma pagina do PDF.')), 'image/png'));
+      paginas.push(blob);
+    }
+    return { paginas, texto: textos.filter(Boolean).join('\n\n') };
   }
 
   function imagemCompraPrepararArquivo(file) {
@@ -471,7 +578,68 @@
     }
     faturaSetProgress(8, 'Preparando imagem...');
 
+    const concluirImportacao = (itensReconhecidos, texto, origem = 'Imagem/OCR') => {
+      const pagamentosFatura = imagemCompraExtrairPagamentosFatura(texto);
+      const itens = imagemCompraDeduplicar(itensReconhecidos).map((item, idx) => ({
+        id: `img_${Date.now()}_${idx}`,
+        ...item,
+        fornecedor_id: null,
+        _fornAuto: false,
+        _exigeFornecedorManual: true,
+      }));
+      if (!itens.length) throw new Error(`Nao encontrei valores de compra no ${origem === 'PDF/OCR' ? 'PDF' : 'arquivo'}. Confira se o documento esta nitido ou use o cadastro manual.`);
+      _faturaItensExtraidos = itens;
+      _faturaBancoDetectado = origem;
+      faturaSetProgress(100, 'Concluido!');
+      setTimeout(async () => {
+        await faturaExibirRevisao({
+          banco: origem,
+          referenciaCartao: texto,
+          vencimento: itens[0]?.vencimento_fatura || itens[0]?.data || imagemCompraHojeISO(),
+          total_fatura: itens.reduce((s, item) => s + Number(item.valor || 0), 0),
+        });
+        if (pagamentosFatura.length) {
+          const lista = document.getElementById('faturaListaItens');
+          if (lista) {
+            const aviso = document.createElement('div');
+            aviso.className = 'fatura-payment-warning';
+            aviso.innerHTML = `<strong>Pagamento da fatura identificado — não será lançado como conta a pagar.</strong>${pagamentosFatura.map(pagamento => `<span>${escaparHtmlBasico(pagamento.descricao)} · ${formatarMoedaBRFinanceiro(pagamento.valor)}</span>`).join('')}`;
+            lista.prepend(aviso);
+          }
+        }
+        const complementoPagamento = pagamentosFatura.length ? ` ${pagamentosFatura.length} pagamento(s) da fatura destacado(s) e fora do lançamento.` : '';
+        setMsg('msgImportarFatura', `${itens.length} conta(s) identificada(s). Revise as sugestoes editaveis de observacao, fornecedor, categoria e vencimento antes de lancar.${complementoPagamento}`, 'ok');
+      }, 250);
+    };
+
     try {
+      const ehPdf = String(file.type || '').toLowerCase() === 'application/pdf' || /\.pdf$/i.test(String(file.name || ''));
+      if (ehPdf) {
+        faturaSetProgress(9, 'Abrindo PDF...');
+        const pdf = await imagemCompraPrepararPdf(file);
+        let textoPdf = pdf.texto || '';
+        let itensPdf = imagemCompraExtrairItens(textoPdf);
+        // PDFs digitais fornecem texto diretamente e ficam mais precisos. Em
+        // PDFs escaneados, usa as mesmas páginas renderizadas no OCR dos prints.
+        if (!itensPdf.length) {
+          const Tesseract = await imagemCompraCarregarTesseract();
+          const textosOcr = [];
+          for (let indice = 0; indice < pdf.paginas.length; indice++) {
+            faturaSetProgress(32 + Math.round((indice / Math.max(1, pdf.paginas.length)) * 55), `Lendo pagina ${indice + 1} de ${pdf.paginas.length}...`);
+            const resultadoPagina = await Tesseract.recognize(pdf.paginas[indice], 'por+eng', {
+              tessedit_pageseg_mode: '6',
+              preserve_interword_spaces: '1',
+            });
+            textosOcr.push(resultadoPagina?.data?.text || '');
+          }
+          textoPdf = [textoPdf, ...textosOcr].filter(Boolean).join('\n\n');
+          itensPdf = imagemCompraExtrairItens(textoPdf);
+        }
+        faturaSetProgress(90, 'Interpretando compras do PDF...');
+        concluirImportacao(itensPdf, textoPdf, 'PDF/OCR');
+        return;
+      }
+
       const imagens = await imagemCompraPrepararArquivo(file);
       faturaSetProgress(18, 'Carregando OCR gratuito...');
       const Tesseract = await imagemCompraCarregarTesseract();
@@ -528,29 +696,7 @@
       }
       const texto = textosReconhecidos.filter(Boolean).join('\n\n');
       faturaSetProgress(88, 'Interpretando compras...');
-      const itens = itensReconhecidos.map((item, idx) => ({
-        id: `img_${Date.now()}_${idx}`,
-        ...item,
-        fornecedor_id: null,
-        _fornAuto: false,
-        _exigeFornecedorManual: true,
-      }));
-      if (!itens.length) {
-        throw new Error('Nao encontrei valor de compra na imagem. Tente uma imagem mais nitida ou use o cadastro manual.');
-      }
-      _faturaItensExtraidos = itens;
-      faturaSetProgress(100, 'Concluido!');
-      setTimeout(() => {
-        faturaExibirRevisao({
-          banco: 'Imagem/OCR',
-          // Preserva o texto completo porque o emissor (ex.: BRADESCO CARTOES)
-          // geralmente esta no cabecalho, fora da descricao de cada compra.
-          referenciaCartao: texto,
-          vencimento: itens[0]?.vencimento_fatura || itens[0]?.data || imagemCompraHojeISO(),
-          total_fatura: itens.reduce((s, item) => s + Number(item.valor || 0), 0),
-        });
-        setMsg('msgImportarFatura', `${itens.length} conta(s) identificada(s). Revise as sugestoes editaveis de observacao, fornecedor, categoria e vencimento antes de lancar.`, 'ok');
-      }, 250);
+      concluirImportacao(itensReconhecidos, texto, 'Imagem/OCR');
     } catch (e) {
       console.error('Erro ao importar imagem por OCR:', e);
       if (step2) step2.style.display = 'none';

@@ -1,26 +1,20 @@
 {
   "id": "./index.html",
-  "name": "CHECK DIARIO",
-  "short_name": "CHECK DIARIO",
+  "name": "CheckDiário",
+  "short_name": "CheckDiário",
   "description": "Painel operacional para rotina de checklists e tarefas.",
   "lang": "pt-BR",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0a0f0d",
-  "theme_color": "#0a0f0d",
+  "background_color": "#F1F5F9",
+  "theme_color": "#0F172A",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "./assets/brand/logo-checkdiario-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

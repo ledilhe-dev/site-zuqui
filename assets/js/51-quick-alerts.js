@@ -560,7 +560,7 @@ async function iniciarChecklistDireto(lancamentoId) {
 
   const { data: lancamentoAtual, error: errLancamento } = await sb
     .from('checklist_lancamentos')
-    .select('id, tarefa_id, nome, descricao, funcionario_id, checklist_id, status, data_programada, horario_limite')
+    .select('id, tarefa_id, nome, descricao, funcionario_id, checklist_id, status, data_programada, horario_limite, empresa_id, loja_id')
     .eq('id', lancamentoId)
     .single();
 
@@ -616,7 +616,12 @@ async function iniciarChecklistDireto(lancamentoId) {
     usuario_inicio_id: confirmacao.funcionarioId,
     inicio_confirmado_em: confirmacao.confirmadoEm,
     data_execucao: hoje(),
-    status: 'aberto'
+    status: 'aberto',
+    // A execução pertence necessariamente ao mesmo tenant do lançamento que
+    // acabou de ser lido/reservado sob RLS. Não dependa de cache de sessão para
+    // preencher estes campos sensíveis.
+    empresa_id: lancamentoAtual.empresa_id,
+    loja_id: lancamentoAtual.loja_id
   };
 
   const { data: exec, error } = await sb

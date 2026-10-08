@@ -9,11 +9,7 @@ async function carregarSolicitacoesAcesso() {
   }
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
 
-  const { data, error } = await sb
-    .from('solicitacoes_acesso')
-    .select('*')
-    .eq('status', 'pendente')
-    .order('created_at', { ascending: false });
+  const { data, error } = await gerenciarSolicitacoesAcesso('listar');
 
   if (error) {
     if (isMissingAccessRequestsTableError(error)) {
@@ -24,12 +20,11 @@ async function carregarSolicitacoesAcesso() {
     return;
   }
 
-  if (!data?.length) {
+  const solicitacoesVisiveis = (data || []).filter(item => item.status === 'pendente');
+  if (!solicitacoesVisiveis.length) {
     lista.innerHTML = '<div class="empty">Nenhuma solicitação de acesso encontrada.</div>';
     return;
   }
-
-  const solicitacoesVisiveis = data || [];
 
   const emails = [...new Set((solicitacoesVisiveis || []).map(item => (item.email || '').toLowerCase()).filter(Boolean))];
   let funcionariosPorEmail = {};
@@ -71,11 +66,7 @@ async function carregarSolicitacoesAcesso() {
 }
 
 async function aprovarSolicitacaoAcesso(id) {
-  const { data: solicitacao, error: errSolicitacao } = await sb
-    .from('solicitacoes_acesso')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data: solicitacao, error: errSolicitacao } = await gerenciarSolicitacoesAcesso('obter', { id });
 
   if (errSolicitacao || !solicitacao) {
     setMsg('msgSolicitacoes', 'Não foi possível carregar a solicitação.', 'err');
@@ -112,10 +103,15 @@ let _aprovacaoLojasCache = [];                // lojas disponíveis
 let _aprovacaoEmpresasCache = [];             // empresas disponíveis
 let _aprovacaoPerfisCache = [];               // perfis disponíveis
 let _aprovacaoSelecao = {};                   // { loja_id: perfil_id | '' }
+let _aprovacaoPerfisEstado = new Map();        // loja_id -> idle|loading|loaded|error
+let _aprovacaoPerfisRequestSeq = new Map();
 
 async function abrirModalAprovacaoSolicitacao(solicitacao) {
   _aprovacaoSolicitacaoAtual = solicitacao;
   _aprovacaoSelecao = {};
+  _aprovacaoPerfisCache = [];
+  _aprovacaoPerfisEstado.clear();
+  _aprovacaoPerfisRequestSeq.clear();
 
   const modal = document.getElementById('modalAprovacaoSolicitacao');
   const resumo = document.getElementById('aprovacaoSolicitacaoResumo');
@@ -133,20 +129,19 @@ function fecharModalAprovacaoSolicitacao() {
   if (modal) modal.style.display = 'none';
   _aprovacaoSolicitacaoAtual = null;
   _aprovacaoSelecao = {};
+  _aprovacaoPerfisRequestSeq.clear();
 }
 
 async function recarregarLojasAprovacao() {
   const lista = document.getElementById('listaLojasAprovacao');
   if (lista) lista.innerHTML = '<div class="empty" style="font-size:12px;">Carregando lojas…</div>';
   try {
-    const [resLojas, resEmpresas, resPerfis] = await Promise.all([
+    const [resLojas, resEmpresas] = await Promise.all([
       executarSemFiltrosTenantTemporario(() => sb.from('lojas').select('id, nome, codigo, cidade, uf, empresa_id, ativo').order('nome')),
       executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome, ativo').order('nome')),
-      executarSemFiltrosTenantTemporario(() => sb.from('perfis').select('id, nome, codigo, loja_id').eq('ativo', true).order('nome')),
     ]);
     _aprovacaoLojasCache = (resLojas.data || []).filter(l => l.ativo !== false);
     _aprovacaoEmpresasCache = resEmpresas.data || [];
-    _aprovacaoPerfisCache = resPerfis.data || [];
   } catch (e) {
     console.error('Erro ao carregar lojas/empresas/perfis para aprovação:', e);
     if (lista) lista.innerHTML = '<div class="empty" style="font-size:12px;color:var(--red);">Erro ao carregar lojas. Tente novamente.</div>';
@@ -188,7 +183,16 @@ function renderizarLojasAprovacao() {
       <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">🏢 ${escaparHtmlBasico(emp.nome)}</div>
       ${emp.lojas.map(loja => {
         const marcada = Object.prototype.hasOwnProperty.call(_aprovacaoSelecao, loja.id);
-        const perfisOpts = '<option value="">Perfil padrão</option>' + _aprovacaoPerfisCache
+        const estadoPerfis = _aprovacaoPerfisEstado.get(String(loja.id)) || 'idle';
+        const perfisDaLoja = _aprovacaoPerfisCache.filter(p => String(p.loja_id || '') === String(loja.id));
+        const placeholderPerfil = estadoPerfis === 'loading'
+          ? 'Carregando perfis...'
+          : estadoPerfis === 'error'
+            ? 'Erro ao carregar perfis'
+            : estadoPerfis === 'loaded' && !perfisDaLoja.length
+              ? 'Nenhum perfil ativo'
+              : 'Selecione um perfil (obrigatório)';
+        const perfisOpts = `<option value="">${placeholderPerfil}</option>` + _aprovacaoPerfisCache
           .filter(p => String(p.loja_id || '') === String(loja.id))
           .map(p => `<option value="${escaparHtmlBasico(p.id)}">${escaparHtmlBasico(p.nome)}</option>`).join('');
         return `
@@ -213,15 +217,27 @@ function renderizarLojasAprovacao() {
   });
 }
 
-function alternarLojaAprovacao(lojaId, marcada) {
+async function alternarLojaAprovacao(lojaId, marcada) {
   const id = String(lojaId || '');
   if (!id) return;
   if (marcada) {
     if (!Object.prototype.hasOwnProperty.call(_aprovacaoSelecao, id)) _aprovacaoSelecao[id] = '';
-    const sel = document.getElementById('perfilAprovacao_' + id);
-    if (sel) { sel.disabled = false; sel.style.opacity = '1'; }
+    const seq = (_aprovacaoPerfisRequestSeq.get(id) || 0) + 1;
+    _aprovacaoPerfisRequestSeq.set(id, seq);
+    _aprovacaoPerfisCache = _aprovacaoPerfisCache.filter(p => String(p.loja_id) !== id);
+    _aprovacaoPerfisEstado.set(id, 'loading');
+    renderizarLojasAprovacao();
+    const inicio=performance.now();
+    const {data,error}=await sb.rpc('listar_perfis_ativos_loja_admin_global',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_loja_id:id});
+    if (_aprovacaoPerfisRequestSeq.get(id)!==seq || !Object.prototype.hasOwnProperty.call(_aprovacaoSelecao,id)) return;
+    if(error){_aprovacaoPerfisEstado.set(id,'error');console.error('[Aprovação] perfis da loja',{loja_id:id,duracao_ms:Math.round(performance.now()-inicio),error});}
+    else{_aprovacaoPerfisCache.push(...(data||[]));_aprovacaoPerfisEstado.set(id,'loaded');console.info('[Aprovação] perfis da loja',{loja_id:id,duracao_ms:Math.round(performance.now()-inicio),quantidade:(data||[]).length});}
+    renderizarLojasAprovacao();
   } else {
+    _aprovacaoPerfisRequestSeq.set(id,(_aprovacaoPerfisRequestSeq.get(id)||0)+1);
     delete _aprovacaoSelecao[id];
+    _aprovacaoPerfisEstado.delete(id);
+    _aprovacaoPerfisCache = _aprovacaoPerfisCache.filter(p => String(p.loja_id) !== id);
     const sel = document.getElementById('perfilAprovacao_' + id);
     if (sel) { sel.disabled = true; sel.style.opacity = '.45'; sel.value = ''; }
   }
@@ -245,6 +261,12 @@ function abrirCadastroLojaDaAprovacao() {
   try { abrirPagina('lojas_saas'); } catch (e) { console.warn('Não foi possível abrir lojas_saas:', e); }
 }
 
+function abrirCadastroPerfilDaAprovacao() {
+  fecharModalAprovacaoSolicitacao();
+  setMsg('msgSolicitacoes', 'Cadastre um perfil ativo na loja e depois reabra a solicitação para concluir a vinculação.', 'ok');
+  try { abrirPagina('perfis'); } catch (e) { console.warn('Não foi possível abrir perfis:', e); }
+}
+
 async function confirmarAprovacaoSolicitacao() {
   const solicitacao = _aprovacaoSolicitacaoAtual;
   if (!solicitacao) { fecharModalAprovacaoSolicitacao(); return; }
@@ -252,6 +274,30 @@ async function confirmarAprovacaoSolicitacao() {
   const lojasSelecionadas = Object.keys(_aprovacaoSelecao);
   if (!lojasSelecionadas.length) {
     setMsg('msgAprovacaoSolicitacao', 'Selecione pelo menos uma loja para conceder acesso.', 'err');
+    return;
+  }
+  const lojaCarregando = lojasSelecionadas.find(lojaId => _aprovacaoPerfisEstado.get(String(lojaId)) === 'loading');
+  if (lojaCarregando) {
+    setMsg('msgAprovacaoSolicitacao', 'Aguarde o carregamento dos perfis das lojas selecionadas.', 'err');
+    return;
+  }
+  const lojaComErro = lojasSelecionadas.find(lojaId => _aprovacaoPerfisEstado.get(String(lojaId)) === 'error');
+  if (lojaComErro) {
+    const nomeLoja = _aprovacaoLojasCache.find(l => String(l.id) === String(lojaComErro))?.nome || 'selecionada';
+    setMsg('msgAprovacaoSolicitacao', `Não foi possível carregar os perfis da loja ${nomeLoja}. Desmarque e selecione a loja novamente.`, 'err');
+    return;
+  }
+  const lojaSemPerfil = lojasSelecionadas.find(lojaId => !String(_aprovacaoSelecao[lojaId] || '').trim());
+  if (lojaSemPerfil) {
+    const nomeLoja = _aprovacaoLojasCache.find(l => String(l.id) === String(lojaSemPerfil))?.nome || 'selecionada';
+    const possuiPerfilAtivo = _aprovacaoPerfisCache.some(p => String(p.loja_id || '') === String(lojaSemPerfil));
+    const msg = document.getElementById('msgAprovacaoSolicitacao');
+    if (msg && !possuiPerfilAtivo) {
+      msg.className = 'msg err';
+      msg.innerHTML = `Esta loja não possui perfil ativo disponível para vinculação. Cadastre um perfil antes de aprovar este usuário. <button type="button" class="btn btn-ghost btn-sm" onclick="abrirCadastroPerfilDaAprovacao()">Cadastrar perfil</button>`;
+    } else {
+      setMsg('msgAprovacaoSolicitacao', `Escolha explicitamente um perfil ativo da loja ${nomeLoja}.`, 'err');
+    }
     return;
   }
 
@@ -280,7 +326,7 @@ async function confirmarAprovacaoSolicitacao() {
       email: solicitacao.email.toLowerCase(),
       loja_id: primeiraLoja.id,
       empresa_id: primeiraLoja.empresa_id,
-      perfil_id: _aprovacaoSelecao[primeiraLoja.id] || null,
+      perfil_id: _aprovacaoSelecao[primeiraLoja.id],
       ativo: true,
       email_verificado: false,
       senha_troca_obrigatoria: true,
@@ -301,7 +347,7 @@ async function confirmarAprovacaoSolicitacao() {
     const vinculos = lojasSelecionadas.map(lojaId => ({
       funcionario_id: funcionarioId,
       loja_id: lojaId,
-      perfil_id: _aprovacaoSelecao[lojaId] || null,
+      perfil_id: _aprovacaoSelecao[lojaId],
       ativo: true,
     }));
 
@@ -319,18 +365,19 @@ async function confirmarAprovacaoSolicitacao() {
       avisoVinculos = ' (atenção: não foi possível registrar os acessos por loja — verifique na edição do funcionário)';
     }
 
-    // 3) Marca somente esta solicitação como aprovada e registra o vínculo escolhido.
-    const { error: errUpdate } = await sb
-      .from('solicitacoes_acesso')
-      .update({
-        status: 'aprovada',
-        aprovado_em: new Date().toISOString(),
-        empresa_id: primeiraLoja.empresa_id,
-        loja_id: primeiraLoja.id,
-      })
-      .eq('id', solicitacao.id);
-    if (errUpdate) {
+    // 3) Registra na solicitação exatamente o vínculo escolhido pelo administrador global.
+    const funcionarioAdminId = String(usuarioSistemaLogado?.id || '').trim();
+    const tokenAdmin = String(usuarioSistemaLogado?.global_admin_token || '').trim();
+    const { data: resultadoVinculo, error: errUpdate } = await sb.rpc('vincular_solicitacao_acesso', {
+      p_funcionario_id: funcionarioAdminId,
+      p_token: tokenAdmin,
+      p_solicitacao_id: solicitacao.id,
+      p_empresa_id: primeiraLoja.empresa_id,
+      p_loja_id: primeiraLoja.id,
+    });
+    if (errUpdate || !resultadoVinculo?.ok) {
       setMsg('msgAprovacaoSolicitacao', 'Funcionário criado, mas houve erro ao marcar a solicitação como aprovada.', 'err');
+      return;
     }
 
     const nomesLojas = lojasSelecionadas
@@ -361,10 +408,7 @@ async function confirmarAprovacaoSolicitacao() {
 
 
 async function rejeitarSolicitacaoAcesso(id) {
-  const { error } = await sb
-    .from('solicitacoes_acesso')
-    .update({ status: 'rejeitada', rejeitado_em: new Date().toISOString() })
-    .eq('id', id);
+  const { error } = await gerenciarSolicitacoesAcesso('rejeitar', { id });
 
   if (error) {
     setMsg('msgSolicitacoes', 'Não foi possível rejeitar a solicitação.', 'err');
@@ -379,7 +423,7 @@ async function rejeitarSolicitacaoAcesso(id) {
 async function excluirSolicitacaoAcesso(id, email = '') {
   if (!confirm('Excluir esta solicitação de acesso?')) return;
 
-  const { error } = await sb.from('solicitacoes_acesso').delete().eq('id', id);
+  const { error } = await gerenciarSolicitacoesAcesso('excluir', { id });
   if (error) {
     setMsg('msgSolicitacoes', 'Não foi possível excluir a solicitação.', 'err');
     return;

@@ -173,8 +173,13 @@ function renderizarCardsCofreContas(contas = []) {
     container.innerHTML = '<div class="empty">Nenhuma conta financeira ativa cadastrada.</div>';
     return;
   }
+  const identidadeConta = (nome, idx) => {
+    const value=String(nome||'').toUpperCase();
+    if(value.includes('INTER'))return 'inter';if(value.includes('BRADESCO'))return 'bradesco';if(value.includes('NUBANK'))return 'nubank';
+    if(value.includes('MERCADO PAGO'))return 'mercado-pago';if(value.includes('ITAU')||value.includes('ITAÚ'))return 'itau';return `cor-${idx%6}`;
+  };
   container.innerHTML = contasAtivas.map((item, idx) => `
-    <div class="stat-card conta-financeira-cor-${idx % 6}">
+    <div class="stat-card conta-financeira-${identidadeConta(item.nome,idx)}">
       <div class="stat-label" style="color:rgba(255,255,255,0.82)">Conta financeira</div>
       <div class="stat-value" style="color:#fff">${escaparHtmlBasico(item.nome || '-')}</div>
       <div class="s-value" style="color:#fff;margin-top:8px">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_atual || 0))}</div>

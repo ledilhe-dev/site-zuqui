@@ -47,14 +47,13 @@ function pvSetMsg(texto, tipo = "") {
   }
 }
 function limparProdutoVencimentoForm() {
-  ["pvId", "pvNome", "pvCodigo", "pvPin", "pvObservacao"].forEach((id) => {
+  ["pvId", "pvNome", "pvCodigo", "pvPin"].forEach((id) => {
     const e = document.getElementById(id);
     if (e) e.value = "";
   });
   const data = document.getElementById("pvData");
   if (data) data.value = "";
   document.getElementById("pvDias").value = "1";
-  document.getElementById("pvQuantidade").value = "1";
   document.getElementById("pvHorario").value = "08:00";
   document.getElementById("pvAlertar").checked = true;
   document.getElementById("pvNoDia").checked = true;
@@ -127,7 +126,7 @@ function renderizarProdutosVencimento() {
             : dias === 0
               ? "Vence hoje"
               : `Vence em ${dias} dia(s)`;
-        return `<article class="pv-item ${classe}"><div><div class="pv-name">${pvEsc(x.nome_produto)}</div><div class="pv-meta">Código: ${pvEsc(x.codigo_barras || "não informado")} · Quantidade: ${pvEsc(x.quantidade || 1)}${x.observacao ? `<br>Observação: ${pvEsc(x.observacao)}` : ""}</div></div><div><div class="pv-label">Vencimento</div><div class="pv-date">${pvDataBR(x.data_vencimento)}</div></div><div><span class="pv-badge">${pvEsc(prazo)}</span></div><div class="pv-meta">Telegram: ${x.alertar_telegram ? `${x.dias_antecedencia} dia(s) antes · ${String(x.horario_alerta).slice(0, 5)}` : "desativado"}<br>Responsável: ${pvEsc(x.funcionario_nome)}</div><div class="pv-item-actions">${pvPode("editar") ? `<button class="btn btn-ghost btn-sm" onclick="editarProdutoVencimento('${x.id}')">Editar</button>` : ""}${pvPode("excluir") ? `<button class="btn btn-red btn-sm" onclick="excluirProdutoVencimento('${x.id}')">Excluir</button>` : ""}</div></article>`;
+        return `<article class="pv-item ${classe}"><div><div class="pv-name">${pvEsc(x.nome_produto)}</div><div class="pv-meta">Código: ${pvEsc(x.codigo_barras || "não informado")}</div></div><div><div class="pv-label">Vencimento</div><div class="pv-date">${pvDataBR(x.data_vencimento)}</div></div><div><span class="pv-badge">${pvEsc(prazo)}</span></div><div class="pv-meta">Telegram: ${x.alertar_telegram ? `${x.dias_antecedencia} dia(s) antes · ${String(x.horario_alerta).slice(0, 5)}` : "desativado"}<br>Responsável: ${pvEsc(x.funcionario_nome)}</div><div class="pv-item-actions">${pvPode("editar") ? `<button class="btn btn-ghost btn-sm" onclick="editarProdutoVencimento('${x.id}')">Editar</button>` : ""}${pvPode("excluir") ? `<button class="btn btn-red btn-sm" onclick="excluirProdutoVencimento('${x.id}')">Excluir</button>` : ""}</div></article>`;
       })
       .join("") +
     "</div>";
@@ -136,8 +135,6 @@ async function salvarProdutoVencimento() {
   const id = String(document.getElementById("pvId").value || ""),
     nome = document.getElementById("pvNome").value.trim(),
     codigo = document.getElementById("pvCodigo").value.trim(),
-    quantidade = Number(document.getElementById("pvQuantidade").value),
-    observacao = document.getElementById("pvObservacao").value.trim(),
     dataV = document.getElementById("pvData").value,
     pin = document.getElementById("pvPin").value.trim(),
     dias = Number(document.getElementById("pvDias").value),
@@ -152,8 +149,6 @@ async function salvarProdutoVencimento() {
     !nome ||
     !dataV ||
     !pin ||
-    !Number.isInteger(quantidade) ||
-    quantidade < 1 ||
     !Number.isInteger(dias) ||
     dias < 0 ||
     dias > 365
@@ -180,8 +175,6 @@ async function salvarProdutoVencimento() {
     loja_id: lojaId,
     nome_produto: nome,
     codigo_barras: codigo,
-    quantidade,
-    observacao,
     data_vencimento: dataV,
     funcionario_id: funcionario.id,
     funcionario_nome: funcionario.nome || "Funcionário",
@@ -227,8 +220,6 @@ function editarProdutoVencimento(id) {
   document.getElementById("pvId").value = x.id;
   document.getElementById("pvNome").value = x.nome_produto || "";
   document.getElementById("pvCodigo").value = x.codigo_barras || "";
-  document.getElementById("pvQuantidade").value = x.quantidade || 1;
-  document.getElementById("pvObservacao").value = x.observacao || "";
   document.getElementById("pvData").value = String(x.data_vencimento).slice(
     0,
     10,
@@ -281,8 +272,3 @@ window.salvarProdutoVencimento = salvarProdutoVencimento;
 window.editarProdutoVencimento = editarProdutoVencimento;
 window.excluirProdutoVencimento = excluirProdutoVencimento;
 window.limparProdutoVencimentoForm = limparProdutoVencimentoForm;
-
-// Mantem a acao principal junto do horario e elimina o espaco vazio do formulario.
-const pvAlertRow = document.querySelector(".pv-alert-row");
-const pvActions = document.querySelector("#produtos_vencimento .pv-actions");
-if (pvAlertRow && pvActions) pvAlertRow.appendChild(pvActions);

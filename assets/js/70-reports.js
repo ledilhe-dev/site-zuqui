@@ -3,12 +3,16 @@
 // quem cadastrou/lançou, data de cadastro, início, fim e repetição (dias + intervalo + duração).
 // ═══════════════════════════════════════════════════════════════════════════
 let _relatorioTarefasCadCache = [];
+let _relatorioTarefasCadFuncionariosCache = [];
+let _edicaoProgramacaoChecklistAtual = null;
 
 function resetFiltroRelatorioTarefasCadastradas() {
   ['filtroTarefasCadDataInicio', 'filtroTarefasCadDataFim', 'filtroTarefasCadTarefa', 'filtroTarefasCadCadastrante', 'filtroTarefasCadResponsavel'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  const tipo = document.getElementById('filtroTarefasCadDataTipo');
+  if (tipo) tipo.value = 'todos';
   carregarRelatorioTarefasCadastradas();
 }
 
@@ -26,6 +30,7 @@ function detectarIntervaloDias(datasOrdenadas = []) {
 }
 
 async function carregarRelatorioTarefasCadastradas() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioTarefasCad');
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando...</div>';
@@ -33,6 +38,7 @@ async function carregarRelatorioTarefasCadastradas() {
 
   const dataInicio = String(document.getElementById('filtroTarefasCadDataInicio')?.value || '').trim();
   const dataFim = String(document.getElementById('filtroTarefasCadDataFim')?.value || '').trim();
+  const dataTipo = String(document.getElementById('filtroTarefasCadDataTipo')?.value || 'todos').trim();
   const filtroTarefaId = String(document.getElementById('filtroTarefasCadTarefa')?.value || '').trim();
   const filtroCadastrante = String(document.getElementById('filtroTarefasCadCadastrante')?.value || '').trim().toLowerCase();
   const filtroResponsavel = String(document.getElementById('filtroTarefasCadResponsavel')?.value || '').trim();
@@ -47,18 +53,33 @@ async function carregarRelatorioTarefasCadastradas() {
     if (errTarefas && !isMissingTableError(errTarefas)) throw errTarefas;
 
     // Lançamentos (fonte da repetição, datas e quem lançou).
-    let queryLanc = sb.from('checklist_lancamentos')
-      .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, horario_inicio, horario_fim, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
-      .order('data_programada', { ascending: true })
-      .limit(5000);
-    if (lojaAtual) queryLanc = queryLanc.eq('loja_id', lojaAtual);
-    const { data: lancData, error: errLanc } = await queryLanc;
+    const lancData = [];
+    let errLanc = null;
+    const tamanhoPaginaLancamentos = 1000;
+    for (let pagina = 0; pagina < 100; pagina++) {
+      const inicioPagina = pagina * tamanhoPaginaLancamentos;
+      let queryLanc = sb.from('checklist_lancamentos')
+        .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, horario_inicio, horario_fim, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
+        .order('data_programada', { ascending: true })
+        .order('id', { ascending: true })
+        .range(inicioPagina, inicioPagina + tamanhoPaginaLancamentos - 1);
+      if (lojaAtual) queryLanc = queryLanc.eq('loja_id', lojaAtual);
+      const respostaPagina = await queryLanc;
+      if (respostaPagina.error) {
+        errLanc = respostaPagina.error;
+        break;
+      }
+      const registrosPagina = respostaPagina.data || [];
+      lancData.push(...registrosPagina);
+      if (registrosPagina.length < tamanhoPaginaLancamentos) break;
+    }
     if (errLanc && !isMissingLancamentosTableError(errLanc)) throw errLanc;
 
     // Funcionários para resolver nomes de responsáveis.
     let queryFuncs = sb.from('funcionarios').select('id, nome, ativo, loja_id');
     if (lojaAtual) queryFuncs = queryFuncs.eq('loja_id', lojaAtual);
     const { data: funcsData } = await queryFuncs.order('nome');
+    _relatorioTarefasCadFuncionariosCache = funcsData || [];
     const funcMap = Object.fromEntries((funcsData || []).map(f => [String(f.id), f.nome]));
 
     // Agrupa cada programação. Todas as repetições do mesmo clique em "Lançar"
@@ -91,6 +112,8 @@ async function carregarRelatorioTarefasCadastradas() {
         : 0;
       const diasSemana = lancs[0]?.dias_semana || t?.dias_semana || 'todos';
       const duracaoConfigurada = Number(primeiroLanc?.repeticao_duracao_dias || 0) || totalDias;
+      const hoje = dataLocalISO();
+      const proximaOcorrencia = datasUnicas.find(data => data >= hoje) || '';
 
       const repeticaoTexto = lancs.length
         ? `${formatarDias(diasSemana)} · a cada ${intervalo || 1} dia(s) · por ${duracaoConfigurada || totalDias} dia(s)`
@@ -109,6 +132,8 @@ async function carregarRelatorioTarefasCadastradas() {
         cadastradoEm,
         inicio,
         fim,
+        datasProgramadas: datasUnicas,
+        proximaOcorrencia,
         diasSemana,
         intervalo,
         totalDias: duracaoConfigurada,
@@ -135,18 +160,23 @@ async function carregarRelatorioTarefasCadastradas() {
     if (filtroTarefaId) filtradas = filtradas.filter(l => l.tarefa_id === filtroTarefaId);
     if (filtroResponsavel) filtradas = filtradas.filter(l => l.responsavel_id === filtroResponsavel);
     if (filtroCadastrante) filtradas = filtradas.filter(l => String(l.cadastradoPor || '').trim().toLowerCase() === filtroCadastrante);
-    if (dataInicio || dataFim) {
+    if (dataTipo !== 'todos' && (dataInicio || dataFim)) {
       filtradas = filtradas.filter(l => {
-        const dataRef = String(l.cadastradoEm || '').slice(0, 10);
-        if (!dataRef) return false;
-        if (dataInicio && dataRef < dataInicio) return false;
-        if (dataFim && dataRef > dataFim) return false;
-        return true;
+        const dentro = data => Boolean(data) && (!dataInicio || data >= dataInicio) && (!dataFim || data <= dataFim);
+        if (dataTipo === 'ocorrencia') return (l.datasProgramadas || []).some(dentro);
+        const referencias = {
+          cadastro: l.cadastradoEm ? dataLocalISO(l.cadastradoEm) : '',
+          inicio: l.inicio,
+          fim: l.fim,
+          proxima: l.proximaOcorrencia,
+        };
+        return dentro(referencias[dataTipo] || '');
       });
     }
 
     _relatorioTarefasCadCache = filtradas;
 
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     if (!filtradas.length) {
       lista.innerHTML = '<div class="empty">Nenhuma tarefa cadastrada para os filtros selecionados.</div>';
       return;
@@ -160,17 +190,19 @@ async function carregarRelatorioTarefasCadastradas() {
           <div class="item-detalhe">Funcionário: ${escaparHtmlBasico(l.responsavel)}${l.responsavelAtivo ? '' : ' (desativado — escolha um substituto)'}</div>
           <div class="item-detalhe">Cadastrado por: ${escaparHtmlBasico(l.cadastradoPor)} · ${l.cadastradoEm ? fmtDate(l.cadastradoEm) : '—'}</div>
           <div class="item-detalhe">Período: ${l.inicio ? formatarDataProgramadaBr(l.inicio) : '—'} até ${l.fim ? formatarDataProgramadaBr(l.fim) : '—'}</div>
+          <div class="item-detalhe"><strong>Próxima disponibilidade:</strong> ${l.proximaOcorrencia ? `${formatarDataProgramadaBr(l.proximaOcorrencia)}${l.horario ? ` às ${escaparHtmlBasico(horaCurta(l.horario))}` : ''} para ${escaparHtmlBasico(l.responsavel)}` : 'Nenhuma ocorrência futura'}</div>
           <div class="item-detalhe">Regra de dias: ${escaparHtmlBasico(formatarDias(l.diasSemana))}</div>
           <div class="item-detalhe">Repetição: ${escaparHtmlBasico(l.repeticaoTexto)}${l.horarioInicio ? ` · início ${escaparHtmlBasico(horaCurta(l.horarioInicio))}` : ''}${l.horarioFim ? ` · fim ${escaparHtmlBasico(horaCurta(l.horarioFim))}` : ''}</div>
         </div>
         <div class="item-actions">
           <span class="tag ${l.qtdLancamentos ? 'tag-green' : 'tag-amber'}">${l.qtdLancamentos ? l.qtdLancamentos + ' lançamento(s)' : 'Sem lançamento'}</span>
-          ${l.qtdLancamentos ? `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirEdicaoProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}')">Editar tarefa</button>
-          <select aria-label="Trocar funcionário" onchange="alterarFuncionarioProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}', this.value, this)">
+          ${l.qtdLancamentos && usuarioTemPermissao('editar_programacao_checklist') ? `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirEdicaoProgramacaoChecklist('${escaparHtmlBasico(l.tarefa_id)}', '${escaparHtmlBasico(l.agendamento_id)}')">Editar tarefa</button>` : ''}
+          ${l.qtdLancamentos && usuarioTemPermissao('editar_programacao_checklist') ? `<select aria-label="Trocar funcionário" onchange="alterarFuncionarioProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}', this.value, this)">
             <option value="">Trocar funcionário...</option>
             ${(funcsData || []).filter(f => f.ativo !== false).map(f => `<option value="${escaparHtmlBasico(f.id)}">${escaparHtmlBasico(f.nome)}</option>`).join('')}
           </select>
-          <button class="btn btn-red btn-sm" type="button" onclick="excluirProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}')">Excluir programação</button>` : `<button class="btn btn-ghost btn-sm" type="button" onclick="abrirPagina('tarefas', document.querySelector('.nav-btn[data-page=\"tarefas\"]')); editarTarefa('${escaparHtmlBasico(l.tarefa_id)}')">Editar cadastro</button>`}
+          <button class="btn btn-red btn-sm" type="button" onclick="excluirProgramacaoChecklist('${escaparHtmlBasico(l.agendamento_id)}')">Excluir programação</button>` : ''}
+          <button class="btn btn-red btn-sm" type="button" onclick="excluirChecklistPelaListagem('${escaparHtmlBasico(l.tarefa_id)}')">Excluir cadastro</button>
         </div>
       </div>
     `).join('') + '</div>';
@@ -183,14 +215,201 @@ async function carregarRelatorioTarefasCadastradas() {
   }
 }
 
+function abrirEdicaoProgramacaoChecklist(tarefaId, agendamentoId) {
+  if (!usuarioTemPermissao('editar_programacao_checklist')) {
+    setMsg('msgRelatorioTarefasCad', 'Seu perfil não possui permissão para editar tarefas programadas.', 'err');
+    return;
+  }
+  const item = _relatorioTarefasCadCache.find(l =>
+    String(l.tarefa_id) === String(tarefaId) && String(l.agendamento_id) === String(agendamentoId));
+  if (!item) return;
+  _edicaoProgramacaoChecklistAtual = item;
+  document.getElementById('editarProgramacaoChecklistNome').value = item.nomeTarefa || '';
+  document.getElementById('editarProgramacaoChecklistDescricao').value = item.descricao || '';
+  document.getElementById('editarProgramacaoChecklistInicio').value = horaCurta(item.horarioInicio || '');
+  document.getElementById('editarProgramacaoChecklistFim').value = horaCurta(item.horarioFim || '');
+  document.getElementById('editarProgramacaoChecklistDataInicio').value = item.inicio || '';
+  document.getElementById('editarProgramacaoChecklistDataFim').value = item.fim || '';
+  document.getElementById('editarProgramacaoChecklistIntervalo').value = Number(item.intervalo || 1);
+  const diasSelecionados = diasSemanaParaConjunto(item.diasSemana || 'todos');
+  document.querySelectorAll('.editar-programacao-dia').forEach(campo => {
+    campo.checked = diasSelecionados.has(String(campo.value || ''));
+  });
+  const select = document.getElementById('editarProgramacaoChecklistFuncionario');
+  select.innerHTML = _relatorioTarefasCadFuncionariosCache
+    .filter(f => f.ativo !== false || String(f.id) === String(item.responsavel_id))
+    .map(f => `<option value="${escaparHtmlBasico(String(f.id))}">${escaparHtmlBasico(f.nome || 'Funcionário')}${f.ativo === false ? ' (desativado)' : ''}</option>`)
+    .join('');
+  select.value = item.responsavel_id || '';
+  ['editarProgramacaoChecklistDataInicio','editarProgramacaoChecklistDataFim','editarProgramacaoChecklistIntervalo'].forEach(id => {
+    const campo = document.getElementById(id);
+    if (campo) campo.oninput = atualizarResumoEdicaoProgramacaoChecklist;
+  });
+  document.querySelectorAll('.editar-programacao-dia').forEach(campo => {
+    campo.onchange = atualizarResumoEdicaoProgramacaoChecklist;
+  });
+  setMsg('msgEditarProgramacaoChecklist', '', '');
+  document.getElementById('editarProgramacaoChecklistOverlay')?.classList.add('show');
+  atualizarResumoEdicaoProgramacaoChecklist();
+}
+
+function obterDatasDesejadasEdicaoProgramacaoChecklist() {
+  const dataInicio = String(document.getElementById('editarProgramacaoChecklistDataInicio')?.value || '').trim();
+  const dataFim = String(document.getElementById('editarProgramacaoChecklistDataFim')?.value || '').trim();
+  const intervalo = Math.max(1, Math.min(365, parseInt(document.getElementById('editarProgramacaoChecklistIntervalo')?.value, 10) || 1));
+  const dias = Array.from(document.querySelectorAll('.editar-programacao-dia:checked')).map(campo => String(campo.value));
+  if (!dataInicio || !dataFim || dataFim < dataInicio || !dias.length) return [];
+  const inicio = new Date(`${dataInicio}T12:00:00`), fim = new Date(`${dataFim}T12:00:00`), datas = [];
+  let primeiroOffsetValido = null;
+  for (let data = new Date(inicio), offset = 0; data <= fim; data.setDate(data.getDate() + 1), offset++) {
+    if (!dias.includes(diaSemanaTokenDaData(data))) continue;
+    if (primeiroOffsetValido === null) primeiroOffsetValido = offset;
+    if ((offset - primeiroOffsetValido) % intervalo === 0) datas.push(dataLocalISO(data));
+  }
+  return datas;
+}
+
+function atualizarResumoEdicaoProgramacaoChecklist() {
+  const resumo = document.getElementById('editarProgramacaoChecklistResumo');
+  if (!resumo) return;
+  const datas = obterDatasDesejadasEdicaoProgramacaoChecklist();
+  resumo.innerHTML = datas.length
+    ? `<strong>${datas.length} ocorrência(s) previstas</strong><span>De ${formatarDataProgramadaBr(datas[0])} até ${formatarDataProgramadaBr(datas[datas.length - 1])}. Ao salvar, a fila pendente será sincronizada com esta regra.</span>`
+    : '<strong>Regra incompleta</strong><span>Informe um período válido e selecione ao menos um dia da semana.</span>';
+}
+
+function fecharEdicaoProgramacaoChecklist() {
+  document.getElementById('editarProgramacaoChecklistOverlay')?.classList.remove('show');
+  _edicaoProgramacaoChecklistAtual = null;
+}
+
+async function salvarEdicaoProgramacaoChecklist() {
+  const item = _edicaoProgramacaoChecklistAtual;
+  if (!item || !usuarioTemPermissao('editar_programacao_checklist')) return;
+  const nome = String(document.getElementById('editarProgramacaoChecklistNome')?.value || '').trim();
+  const descricao = String(document.getElementById('editarProgramacaoChecklistDescricao')?.value || '').trim();
+  const funcionarioId = String(document.getElementById('editarProgramacaoChecklistFuncionario')?.value || '').trim();
+  const horarioInicio = String(document.getElementById('editarProgramacaoChecklistInicio')?.value || '').trim();
+  const horarioFim = String(document.getElementById('editarProgramacaoChecklistFim')?.value || '').trim();
+  const dataInicio = String(document.getElementById('editarProgramacaoChecklistDataInicio')?.value || '').trim();
+  const dataFim = String(document.getElementById('editarProgramacaoChecklistDataFim')?.value || '').trim();
+  const intervalo = Math.max(1, Math.min(365, parseInt(document.getElementById('editarProgramacaoChecklistIntervalo')?.value, 10) || 1));
+  const dias = Array.from(document.querySelectorAll('.editar-programacao-dia:checked')).map(campo => String(campo.value));
+  if (!nome || !funcionarioId || !horarioInicio || !horarioFim || !dataInicio || !dataFim || !dias.length) {
+    setMsg('msgEditarProgramacaoChecklist', 'Preencha todos os campos e selecione ao menos um dia da semana.', 'err');
+    return;
+  }
+  if (dataFim < dataInicio) {
+    setMsg('msgEditarProgramacaoChecklist', 'A data final deve ser igual ou posterior à data inicial.', 'err');
+    return;
+  }
+  if (horarioInicio === horarioFim) {
+    setMsg('msgEditarProgramacaoChecklist', 'O horário para fim deve ser diferente do horário para início.', 'err');
+    return;
+  }
+  const botao = document.getElementById('btnSalvarEdicaoProgramacaoChecklist');
+  if (botao) botao.disabled = true;
+  try {
+    const diasTexto = dias.length === 7 ? 'todos' : dias.join(',');
+    const inicio = new Date(`${dataInicio}T12:00:00`);
+    const fim = new Date(`${dataFim}T12:00:00`);
+    const datasDesejadas = obterDatasDesejadasEdicaoProgramacaoChecklist();
+    if (!datasDesejadas.length) throw new Error('A regra informada não gera nenhuma ocorrência nesse período.');
+    const duracao = Math.round((fim - inicio) / 86400000) + 1;
+
+    const simulados = datasDesejadas.map(data => ({
+      nome,
+      data_programada: data,
+      horario_limite: horarioInicio,
+    }));
+    const [conflitos, atuaisRes] = await Promise.all([
+      localizarConflitosLancamentoManual({
+        funcionarioId,
+        lancamentosParaCriar: simulados,
+        ignorarAgendamentoId: item.agendamento_id,
+      }),
+      sb.from('checklist_lancamentos')
+        .select('id, data_programada, status')
+        .eq('agendamento_id', item.agendamento_id),
+    ]);
+    if (atuaisRes.error) throw atuaisRes.error;
+    const desejadasSet = new Set(datasDesejadas);
+    const pendentesAtuais = (atuaisRes.data || []).filter(registro => String(registro.status || '').toLowerCase() === 'pendente');
+    const removidosPrevistos = pendentesAtuais.filter(registro => !desejadasSet.has(String(registro.data_programada || ''))).length;
+    const datasExistentesAtivas = new Set((atuaisRes.data || [])
+      .filter(registro => lancamentoContaComoExistenteParaAgenda(registro))
+      .map(registro => String(registro.data_programada || '')));
+    const incluidosPrevistos = datasDesejadas.filter(data => !datasExistentesAtivas.has(data)).length;
+    const nomeFuncionario = document.getElementById('editarProgramacaoChecklistFuncionario')?.selectedOptions?.[0]?.textContent || '';
+    const conflitoHtml = conflitos.length
+      ? `<div style="margin-top:12px;padding:12px;border:1px solid rgba(245,158,11,.35);border-radius:10px;background:rgba(245,158,11,.08)">${montarHtmlConflitosLancamentoManual(conflitos, nomeFuncionario)}</div>`
+      : '<p style="margin-top:12px;color:#86efac"><strong>Nenhum conflito de horário encontrado.</strong></p>';
+    const confirmacao = await abrirConfirmacaoSistema({
+      title: conflitos.length ? 'Conferir edição e conflitos' : 'Conferir edição da programação',
+      subtitle: nome,
+      body: `<p><strong>Responsável:</strong> ${escaparHtmlBasico(nomeFuncionario)}</p>
+        <p><strong>Período:</strong> ${escaparHtmlBasico(formatarDataProgramadaBr(dataInicio))} até ${escaparHtmlBasico(formatarDataProgramadaBr(dataFim))}</p>
+        <p><strong>Horário:</strong> ${escaparHtmlBasico(horarioInicio)} até ${escaparHtmlBasico(horarioFim)}</p>
+        <p><strong>Dias:</strong> ${escaparHtmlBasico(formatarDias(diasTexto))} · a cada ${intervalo} dia(s)</p>
+        <p><strong>Resultado:</strong> ${datasDesejadas.length} ocorrência(s), ${incluidosPrevistos} inclusão(ões) e ${removidosPrevistos} remoção(ões) pendente(s).</p>
+        ${conflitoHtml}`,
+      confirmText: conflitos.length ? 'Salvar mesmo assim' : 'Confirmar e salvar',
+      confirmClass: conflitos.length ? 'btn-amber' : 'btn-green',
+      cancelText: 'Voltar para edição',
+      cancelClass: 'btn-ghost',
+    });
+    if (!confirmacao?.confirmado) {
+      if (botao) botao.disabled = false;
+      return;
+    }
+
+    const { data: resultado, error } = await sb.rpc('recalcular_programacao_checklist', {
+      p_agendamento_id: item.agendamento_id,
+      p_nome: nome,
+      p_descricao: descricao,
+      p_funcionario_id: funcionarioId,
+      p_horario_inicio: horarioInicio,
+      p_horario_fim: horarioFim,
+      p_dias_semana: diasTexto,
+      p_intervalo: intervalo,
+      p_duracao: duracao,
+      p_datas: datasDesejadas,
+    });
+    if (error) throw error;
+
+    fecharEdicaoProgramacaoChecklist();
+    const resumo = resultado || {};
+    setMsg('msgRelatorioTarefasCad', `Programação recalculada: ${Number(resumo.incluidos || 0)} incluída(s), ${Number(resumo.excluidos || 0)} removida(s) e ${Number(resumo.atualizados || 0)} atualizada(s). Execuções existentes foram preservadas.`, 'ok');
+    await carregarRelatorioTarefasCadastradas();
+    carregarChecklists();
+  } catch (error) {
+    setMsg('msgEditarProgramacaoChecklist', `Não foi possível salvar: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+  } finally {
+    if (botao) botao.disabled = false;
+  }
+}
+
+async function excluirChecklistPelaListagem(tarefaId) {
+  await excluirTarefa(String(tarefaId || ''));
+  await carregarRelatorioTarefasCadastradas();
+}
+
 async function alterarFuncionarioProgramacaoChecklist(agendamentoId, funcionarioId, selectEl = null) {
+  if (!usuarioTemPermissao('editar_programacao_checklist')) {
+    setMsg('msgRelatorioTarefasCad', 'Seu perfil não possui permissão para editar tarefas programadas.', 'err');
+    if (selectEl) selectEl.value = '';
+    return;
+  }
   const agenda = String(agendamentoId || '').trim();
   const funcionario = String(funcionarioId || '').trim();
   if (!agenda || !funcionario) return;
-  const { error } = await sb.from('checklist_lancamentos')
+  let query = sb.from('checklist_lancamentos')
     .update({ funcionario_id: funcionario })
     .eq('agendamento_id', agenda)
     .eq('status', 'pendente');
+  const lojaEdicao = obterLojaAtualParaIsolamento();
+  if (lojaEdicao) query = query.eq('loja_id', lojaEdicao);
+  const { error } = await query;
   if (error) {
     setMsg('msgRelatorioTarefasCad', `Não foi possível trocar o funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     if (selectEl) selectEl.value = '';
@@ -199,125 +418,6 @@ async function alterarFuncionarioProgramacaoChecklist(agendamentoId, funcionario
   setMsg('msgRelatorioTarefasCad', 'Funcionário alterado em todas as repetições pendentes da programação.', 'ok');
   await carregarRelatorioTarefasCadastradas();
   carregarChecklists();
-}
-
-function fecharEdicaoProgramacaoChecklist() {
-  document.getElementById('modalEdicaoProgramacaoChecklist')?.remove();
-}
-
-async function abrirEdicaoProgramacaoChecklist(agendamentoId) {
-  const agenda = String(agendamentoId || '').trim();
-  const linha = (_relatorioTarefasCadCache || []).find(item => String(item.agendamento_id || '') === agenda);
-  if (!agenda || !linha) return;
-  fecharEdicaoProgramacaoChecklist();
-
-  let query = sb.from('funcionarios').select('id, nome, ativo, loja_id').eq('ativo', true).order('nome');
-  const lojaAtual = obterLojaAtualParaIsolamento();
-  if (lojaAtual) query = query.eq('loja_id', lojaAtual);
-  const { data: funcionarios, error } = await query;
-  if (error) return setMsg('msgRelatorioTarefasCad', `Não foi possível abrir a edição: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
-
-  const selecionados = diasSemanaParaConjunto(linha.diasSemana || 'todos');
-  const dias = [['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']];
-  const modal = document.createElement('div');
-  modal.id = 'modalEdicaoProgramacaoChecklist';
-  modal.className = 'overlay show programacao-editor-overlay';
-  modal.innerHTML = `<div class="modal programacao-editor-modal">
-    <div class="modal-header programacao-editor-header"><div><div class="programacao-editor-kicker">PROGRAMAÇÃO DE CHECKLIST</div><h3>Editar tarefa programada</h3><div class="programacao-editor-subtitle">Recalcula somente esta programação. Tarefas iniciadas ou concluídas serão preservadas.</div></div><button class="btn btn-ghost btn-sm" onclick="fecharEdicaoProgramacaoChecklist()">Fechar</button></div>
-    <div class="modal-body programacao-editor-body">
-      <section class="programacao-editor-section"><div class="programacao-editor-section-title"><span>1</span><div><strong>Identificação</strong><small>Nome, orientação e responsável desta programação</small></div></div><div class="programacao-editor-grid">
-        <label class="programacao-editor-field programacao-editor-wide"><span>Nome da tarefa</span><input id="epNome" maxlength="160" value="${escaparHtmlBasico(linha.nomeTarefa)}"></label>
-        <label class="programacao-editor-field programacao-editor-wide"><span>Orientação para execução</span><textarea id="epDescricao" rows="3">${escaparHtmlBasico(linha.descricao || '')}</textarea></label>
-        <label class="programacao-editor-field programacao-editor-wide"><span>Funcionário responsável</span><select id="epFuncionario">${(funcionarios || []).map(f => `<option value="${f.id}" ${String(f.id) === String(linha.responsavel_id) ? 'selected' : ''}>${escaparHtmlBasico(f.nome)}</option>`).join('')}</select><small>A alteração vale apenas para esta programação, sem afetar outra programação da mesma tarefa.</small></label>
-      </div></section>
-      <section class="programacao-editor-section"><div class="programacao-editor-section-title"><span>2</span><div><strong>Período e horários</strong><small>Defina quando as ocorrências devem existir</small></div></div><div class="programacao-editor-grid programacao-editor-grid-4">
-        <label class="programacao-editor-field"><span>Data inicial</span><input id="epInicio" type="date" value="${escaparHtmlBasico(linha.inicio)}" onchange="atualizarResumoEdicaoProgramacao()"></label>
-        <label class="programacao-editor-field"><span>Data final</span><input id="epFim" type="date" value="${escaparHtmlBasico(linha.fim)}" onchange="atualizarResumoEdicaoProgramacao()"></label>
-        <label class="programacao-editor-field"><span>Início previsto</span><input id="epHoraInicio" type="time" value="${horaCurta(linha.horarioInicio)}"></label>
-        <label class="programacao-editor-field"><span>Fim previsto</span><input id="epHoraFim" type="time" value="${horaCurta(linha.horarioFim)}"></label>
-        <label class="programacao-editor-field"><span>Repetir a cada</span><div class="programacao-editor-number"><input id="epIntervalo" type="number" min="1" max="365" value="${Number(linha.intervalo || 1)}" oninput="atualizarResumoEdicaoProgramacao()"><b>dia(s)</b></div><small>1 significa repetir em todos os dias selecionados.</small></label>
-      </div></section>
-      <section class="programacao-editor-section"><div class="programacao-editor-section-title"><span>3</span><div><strong>Dias da semana</strong><small>Desmarcar um dia remove automaticamente suas ocorrências pendentes</small></div></div><div class="programacao-editor-days">${dias.map(([v,n]) => `<label><input class="ep-dia" type="checkbox" value="${v}" ${selecionados.has(v) ? 'checked' : ''} onchange="atualizarResumoEdicaoProgramacao()"><span>${n}</span></label>`).join('')}</div></section>
-      <div id="epResumo" class="programacao-editor-summary"></div><div id="msgEdicaoProgramacaoChecklist" class="msg"></div>
-    </div>
-    <div class="modal-footer programacao-editor-footer"><div><strong>Recálculo automático</strong><span>Remove pendentes fora da regra e inclui as datas que faltarem.</span></div><div><button class="btn btn-ghost" onclick="fecharEdicaoProgramacaoChecklist()">Cancelar</button><button id="btnSalvarEdicaoProgramacao" class="btn btn-primary" onclick="salvarEdicaoProgramacaoChecklist('${escaparHtmlBasico(agenda)}')">Salvar e recalcular</button></div></div>
-  </div>`;
-  document.body.appendChild(modal);
-  atualizarResumoEdicaoProgramacao();
-}
-
-function obterDatasDesejadasEdicaoProgramacao() {
-  const obter = id => String(document.getElementById(id)?.value || '').trim();
-  const inicio = obter('epInicio'), fim = obter('epFim');
-  const intervalo = Math.max(1, Math.min(365, parseInt(obter('epIntervalo'), 10) || 1));
-  const dias = [...document.querySelectorAll('#modalEdicaoProgramacaoChecklist .ep-dia:checked')].map(el => el.value);
-  if (!inicio || !fim || fim < inicio || !dias.length) return [];
-  const datas = [], inicioDate = new Date(`${inicio}T12:00:00`), fimDate = new Date(`${fim}T12:00:00`);
-  let primeiroOffsetValido = null;
-  for (let data = new Date(inicioDate), offset = 0; data <= fimDate; data.setDate(data.getDate() + 1), offset++) {
-    if (!dias.includes(diaSemanaTokenDaData(data))) continue;
-    if (primeiroOffsetValido === null) primeiroOffsetValido = offset;
-    if ((offset - primeiroOffsetValido) % intervalo === 0) datas.push(dataLocalISO(data));
-  }
-  return datas;
-}
-
-function atualizarResumoEdicaoProgramacao() {
-  const resumo = document.getElementById('epResumo');
-  if (!resumo) return;
-  const datas = obterDatasDesejadasEdicaoProgramacao();
-  resumo.innerHTML = datas.length
-    ? `<strong>${datas.length} ocorrência(s) previstas</strong><span>De ${formatarDataProgramadaBr(datas[0])} até ${formatarDataProgramadaBr(datas[datas.length - 1])}. Ao salvar, a fila pendente será sincronizada com esta regra.</span>`
-    : '<strong>Regra incompleta</strong><span>Informe um período válido e selecione ao menos um dia da semana.</span>';
-}
-
-async function salvarEdicaoProgramacaoChecklist(agendamentoId) {
-  const agenda = String(agendamentoId || '').trim();
-  const linha = (_relatorioTarefasCadCache || []).find(item => String(item.agendamento_id || '') === agenda);
-  const obter = id => String(document.getElementById(id)?.value || '').trim();
-  const msg = document.getElementById('msgEdicaoProgramacaoChecklist');
-  const informar = (texto, tipo = 'err') => { if (msg) { msg.textContent = texto; msg.className = `msg ${tipo}`; } };
-  const nome = obter('epNome'), descricao = obter('epDescricao'), funcionarioId = obter('epFuncionario');
-  const inicio = obter('epInicio'), fim = obter('epFim'), horaInicio = horaCurta(obter('epHoraInicio')), horaFim = horaCurta(obter('epHoraFim'));
-  const intervalo = Math.max(1, Math.min(365, parseInt(obter('epIntervalo'), 10) || 1));
-  const dias = [...document.querySelectorAll('#modalEdicaoProgramacaoChecklist .ep-dia:checked')].map(el => el.value);
-  if (!linha || !nome || !funcionarioId || !inicio || !fim || !horaInicio || !horaFim || !dias.length) return informar('Preencha todos os campos e selecione ao menos um dia.');
-  if (fim < inicio) return informar('A data final deve ser igual ou posterior à inicial.');
-  if (horaInicio === horaFim) return informar('Os horários de início e fim precisam ser diferentes.');
-  const btn = document.getElementById('btnSalvarEdicaoProgramacao');
-  if (btn) btn.disabled = true;
-  informar('Salvando alterações...', 'ok');
-
-  try {
-    const inicioDate = new Date(`${inicio}T12:00:00`), fimDate = new Date(`${fim}T12:00:00`);
-    const datas = obterDatasDesejadasEdicaoProgramacao();
-    if (!datas.length) throw new Error('A regra informada não gera ocorrências nesse período.');
-    const diasTexto = dias.length === 7 ? 'todos' : dias.join(',');
-    const duracao = Math.round((fimDate - inicioDate) / 86400000) + 1;
-    const { data: resultado, error } = await sb.rpc('recalcular_programacao_checklist', {
-      p_agendamento_id: agenda,
-      p_nome: nome,
-      p_descricao: descricao || '',
-      p_funcionario_id: funcionarioId,
-      p_horario_inicio: horaInicio,
-      p_horario_fim: horaFim,
-      p_dias_semana: diasTexto,
-      p_intervalo: intervalo,
-      p_duracao: duracao,
-      p_datas: datas,
-    });
-    if (error) throw error;
-    fecharEdicaoProgramacaoChecklist();
-    const resumo = resultado || {};
-    setMsg('msgRelatorioTarefasCad', `Programação recalculada: ${Number(resumo.incluidos || 0)} incluída(s), ${Number(resumo.excluidos || 0)} removida(s) e ${Number(resumo.atualizados || 0)} atualizada(s). Execuções existentes foram preservadas.`, 'ok');
-    await carregarRelatorioTarefasCadastradas();
-    carregarChecklists();
-    carregarNotificacoes();
-  } catch (error) {
-    console.error('Erro ao editar programação:', error);
-    informar(`Não foi possível salvar: ${mensagemErroSupabase(error, error.message || 'erro desconhecido')}`);
-    if (btn) btn.disabled = false;
-  }
 }
 
 async function excluirProgramacaoChecklist(agendamentoId) {
@@ -517,6 +617,7 @@ function resumirEventosRelatorioLancamentos(eventos = [], contexto = {}) {
 }
 
 async function carregarRelatorioLancamentos(opcoes = {}) {
+  const contextoTenantInicio = capturarContextoTenant();
   const silencioso = opcoes?.silencioso === true;
   const lista = document.getElementById('listaRelatorioLancamentos');
   const body = document.getElementById('relatorioLancamentosRegistrosBody');
@@ -776,6 +877,7 @@ async function carregarRelatorioLancamentos(opcoes = {}) {
       checklistsMap,
       funcionariosMap,
     });
+    if (!contextoTenantAindaValido(contextoTenantInicio)) return;
     relatorioLancamentosCache = registrosRelatorio;
 
     if (!registrosRelatorio.length) {

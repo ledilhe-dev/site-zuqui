@@ -1,6 +1,5 @@
 // ---- NAVIGATION ----
 const topTitles = {
-  meu_painel: ['Meu Painel', 'Dashboard personalizado'],
   dashboard: ['Dashboard', 'Visao geral do sistema'],
   estatisticas_atendimento: ['Estatísticas de atendimento', 'Avaliações e reputação no Google'],
   checklists: ['Iniciar checklist', 'Fila pronta para iniciar'],
@@ -11,11 +10,17 @@ const topTitles = {
   relatorio_ponto: ['Relatório ponto', 'Consulta de registros por funcionário e período'],
   ponto_ajustes: ['Solicitações de ajuste de ponto', 'Aprovação de pedidos de correção de batida'],
   relatorio_lancamentos: ['Relatório de tarefas', 'Histórico completo de lançamentos e execuções'],
-  relatorio_tarefas_cadastradas: ['Listagem de checklist', 'Cadastros e programações da loja'],
+  relatorio_tarefas_cadastradas: ['Checklists cadastrados', 'Cadastros e programações da loja'],
   relatorio_financeiro: ['Relatório de contas a pagar', 'Análise detalhada de títulos e pagamentos'],
   relatorio_recebimentos: ['Relatório de recebimentos', 'Entradas com usuário e horário de lançamento'],
   relatorio_ajuste_saldo: ['Relatório ajuste de saldo', 'Histórico de ajustes manuais de saldo por conta'],
   relatorio_sangrias_raffinato: ['Relatório de Sangrias', 'Análise de sangrias do Raffinato por loja'],
+  relatorio_faturamento_raffinato: ['Faturamento Raffinato', 'Análise de vendas por forma de pagamento'],
+  relatorio_produtos_raffinato: ['Produtos faturados Raffinato', 'Produtos vendidos, quantidades e faturamento'],
+  relatorio_vendas_raffinato: ['Análise de Vendas Raffinato', 'Produtos × formas de pagamento'],
+  relatorio_comparativo_anual: ['Comparativo Anual', 'Comparação histórica de faturamento, vendas e produtos'],
+  relatorio_curva_abc_raffinato: ['Curva ABC Raffinato', 'Classificação por faturamento, giro e lucro'],
+  relatorio_item_obrigatorio_pizza: ['Raffinato – Venda de Item Obrigatório', 'Produtos pais, agrupamentos e itens obrigatórios vendidos'],
   financeiro_fornecedores: ['Cadastro de fornecedor', 'Base de fornecedores do financeiro'],
   financeiro_formas_pagamento: ['Formas de pagamento', 'Cadastros utilizados na baixa de títulos'],
   financeiro_contasapagar: ['Cadastro de contas a pagar', 'Lançamentos financeiros por fornecedor'],
@@ -44,17 +49,18 @@ const topTitles = {
   lojas_saas: ['Lojas por empresa', 'Filiais, feriados e configurações'],
   perfis: ['Perfis', 'Permissoes de acesso do sistema'],
   tarefas: ['Cadastro de Checklist', 'Gerenciamento (Admin)'],
+  checklist_modelos: ['Cadastro modelo de checklist', 'Biblioteca fixa de atividades da loja'],
   tarefas_rapidas: ['Alertas rápidas', 'Avisos pontuais para a equipe'],
   execucoes: ['Checklist em andamento', 'Pause, retome e finalize tarefas'],
   tarefas_atraso: ['Checklist em atraso', 'Pendências fora do prazo'],
 };
 
 function paginaPertenceMenuChecklist(pageId = '') {
-  return ['checklists', 'execucoes', 'tarefas_atraso', 'tarefas', 'relatorio_tarefas_cadastradas'].includes(String(pageId || ''));
+  return ['checklists', 'execucoes', 'tarefas_atraso', 'tarefas', 'checklist_modelos', 'relatorio_tarefas_cadastradas'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato', 'relatorio_vendas_raffinato', 'relatorio_comparativo_anual', 'relatorio_curva_abc_raffinato', 'relatorio_item_obrigatorio_pizza'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
@@ -201,11 +207,35 @@ function atualizarBotaoDesktopSidebar() {
   const recolhido = document.body.classList.contains('sidebar-collapsed');
   botao.textContent = recolhido ? '›' : '‹';
   botao.setAttribute('aria-expanded', String(!recolhido));
-  botao.setAttribute('aria-label', recolhido ? 'Mostrar menu lateral' : 'Esconder menu lateral');
-  botao.title = recolhido ? 'Mostrar menu lateral' : 'Esconder menu lateral';
+  botao.setAttribute('aria-label', recolhido ? 'Expandir menu lateral' : 'Recolher menu lateral');
+  botao.title = recolhido ? 'Expandir menu lateral' : 'Recolher menu lateral';
+}
+
+let sidebarTooltipFlutuante = null;
+
+function ocultarTooltipDesktopSidebar() {
+  sidebarTooltipFlutuante?.classList.remove('open');
+}
+
+function mostrarTooltipDesktopSidebar(botao) {
+  if (!document.body.classList.contains('sidebar-collapsed') || window.innerWidth <= 900) return;
+  const titulo = botao?.dataset?.sidebarTooltip;
+  if (!titulo) return;
+  if (!sidebarTooltipFlutuante) {
+    sidebarTooltipFlutuante = document.createElement('div');
+    sidebarTooltipFlutuante.className = 'sidebar-floating-tooltip';
+    sidebarTooltipFlutuante.setAttribute('role', 'tooltip');
+    document.body.appendChild(sidebarTooltipFlutuante);
+  }
+  const caixa = botao.getBoundingClientRect();
+  sidebarTooltipFlutuante.textContent = titulo;
+  sidebarTooltipFlutuante.style.left = `${Math.round(caixa.right + 12)}px`;
+  sidebarTooltipFlutuante.style.top = `${Math.round(caixa.top + caixa.height / 2)}px`;
+  sidebarTooltipFlutuante.classList.add('open');
 }
 
 function toggleDesktopSidebar() {
+  ocultarTooltipDesktopSidebar();
   const recolhido = document.body.classList.toggle('sidebar-collapsed');
   try { localStorage.setItem('checkdiario:sidebar-recolhida', recolhido ? '1' : '0'); } catch (_) {}
   atualizarBotaoDesktopSidebar();
@@ -215,6 +245,23 @@ function inicializarDesktopSidebar() {
   let recolhido = false;
   try { recolhido = localStorage.getItem('checkdiario:sidebar-recolhida') === '1'; } catch (_) {}
   document.body.classList.toggle('sidebar-collapsed', recolhido);
+  document.querySelectorAll('.sidebar .nav-btn').forEach((botao) => {
+    const titulo = botao.querySelector('.nav-title')?.textContent?.trim();
+    if (titulo) {
+      botao.title = titulo;
+      botao.dataset.sidebarTooltip = titulo;
+      botao.setAttribute('aria-label', titulo);
+      if (botao.dataset.sidebarTooltipBound !== 'true') {
+        botao.dataset.sidebarTooltipBound = 'true';
+        botao.addEventListener('mouseenter', () => mostrarTooltipDesktopSidebar(botao));
+        botao.addEventListener('mouseleave', ocultarTooltipDesktopSidebar);
+        botao.addEventListener('focus', () => mostrarTooltipDesktopSidebar(botao));
+        botao.addEventListener('blur', ocultarTooltipDesktopSidebar);
+      }
+    }
+  });
+  window.addEventListener('resize', ocultarTooltipDesktopSidebar, { passive: true });
+  document.querySelector('.sidebar')?.addEventListener('scroll', ocultarTooltipDesktopSidebar, { passive: true });
   atualizarBotaoDesktopSidebar();
 }
 
@@ -604,6 +651,7 @@ function renderizarEscalaPlantoes(){
 }
 
 function abrirPagina(id, botao) {
+  if (id !== 'relatorio_item_obrigatorio_pizza' && window.ItemObrigatorioPizza) window.ItemObrigatorioPizza.unmount();
   if (usuarioSistemaLogado && !usuarioPodeAcessar(id)) return;
   if (id === 'itens') {
     id = 'tarefas';
@@ -624,11 +672,18 @@ function abrirPagina(id, botao) {
   const tituloPagina = paginaAtual.querySelector(':scope > .page-title')?.textContent?.trim() || tituloFallback;
   document.getElementById('topbar-title').textContent = tituloPagina;
   document.getElementById('topbar-sub').textContent = '';
+  const indicadorPagina = document.getElementById('activePageName');
+  if (indicadorPagina) {
+    indicadorPagina.textContent = tituloPagina || 'Página atual';
+    indicadorPagina.hidden = false;
+  }
   salvarPaginaAtiva(id);
   atualizarEstadoMenuIntegracoesFinanceiras(paginaPertenceMenuIntegracoesFinanceiras(id));
   if (paginaPertenceMenuIntegracoesFinanceiras(id) && typeof carregarPaginaIntegracoesFinanceiras === 'function') carregarPaginaIntegracoesFinanceiras(id);
-  if (id === 'meu_painel') carregarMeuPainel();
   if (id === 'dashboard') carregarDashboard();
+  if (id === 'dashboard_saas' && typeof carregarDashboardSaas === 'function') carregarDashboardSaas();
+  if (id === 'usuarios_saas' && typeof carregarUsuariosSaas === 'function') carregarUsuariosSaas();
+  if (id === 'conectores_saas' && typeof carregarConectoresSaas === 'function') carregarConectoresSaas();
   if (id === 'estatisticas_atendimento' && typeof carregarEstatisticasAtendimento === 'function') carregarEstatisticasAtendimento();
   if (id === 'checklists') { carregarChecklists(); }
   if (id === 'bater_ponto') { carregarBaterPonto(); }
@@ -646,6 +701,12 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_recebimentos') { carregarRelatorioRecebimentos(); }
   if (id === 'relatorio_ajuste_saldo') { carregarRelatorioAjusteSaldo(); }
   if (id === 'relatorio_sangrias_raffinato' && typeof iniciarTelaRelatorioSangriasRaffinato === 'function') { iniciarTelaRelatorioSangriasRaffinato(); }
+  if (id === 'relatorio_faturamento_raffinato' && typeof iniciarTelaFaturamentoRaffinato === 'function') { iniciarTelaFaturamentoRaffinato(); }
+  if (id === 'relatorio_produtos_raffinato' && typeof iniciarTelaProdutosRaffinato === 'function') { iniciarTelaProdutosRaffinato(); }
+  if (id === 'relatorio_vendas_raffinato' && typeof iniciarTelaAnaliseVendasRaffinato === 'function') { iniciarTelaAnaliseVendasRaffinato(); }
+  if (id === 'relatorio_curva_abc_raffinato' && typeof iniciarTelaCurvaAbcRaffinato === 'function') { iniciarTelaCurvaAbcRaffinato(); }
+  if (id === 'relatorio_item_obrigatorio_pizza' && window.ItemObrigatorioPizza) { window.ItemObrigatorioPizza.mount(); }
+  if (id === 'relatorio_comparativo_anual' && typeof iniciarComparativoAnual === 'function') { iniciarComparativoAnual(); }
   if (id === 'financeiro_fornecedores') {
     limparFormularioFornecedorFinanceiro();
     carregarFornecedoresFinanceiro();
@@ -707,18 +768,35 @@ function abrirPagina(id, botao) {
   }
   if (id === 'perfis') { renderizarPermissoesPerfil(); carregarPerfis(); }
   if (id === 'tarefas') {
-    atualizarBotaoFavoritasMinimizadas();
     carregarSelectLojaTarefaCadastro();
     carregarSelectFuncionariosTarefa();
-    redefinirCampoBuscaTarefas();
-    carregarTarefas();
-    forcarCampoObservacaoTarefaEmBranco();
+    carregarModelosChecklist();
+    limparAgendamentoChecklist();
   }
+  if (id === 'checklist_modelos') { limparFormularioModeloChecklist(); carregarModelosChecklist(); }
   if (id === 'tarefas_rapidas') { carregarTarefasRapidas(); }
   if (id === 'execucoes') { resetFiltroData(false); carregarSelectExecucao(); carregarExecucoes(); }
   if (id === 'tarefas_atraso') { carregarTarefasAtrasoMaster(); }
   carregarNotificacoes();
   iniciarAtualizacaoAutomatica();
+}
+
+function renderizarMenuContextual() {
+  const global = contextoEhAdminGlobal();
+  const operacional = document.getElementById('navContainer');
+  const admin = document.getElementById('navGlobalAdmin');
+  if (operacional) {
+    operacional.hidden = global;
+    operacional.style.display = global ? 'none' : '';
+    operacional.setAttribute('aria-hidden', String(global));
+  }
+  if (admin) {
+    admin.hidden = !global;
+    admin.style.display = global ? '' : 'none';
+    admin.setAttribute('aria-hidden', String(!global));
+  }
+  document.body.classList.toggle('contexto-admin-global', global);
+  document.body.classList.toggle('contexto-loja', !global);
 }
 
 function obterPaginaAtivaAtual() {

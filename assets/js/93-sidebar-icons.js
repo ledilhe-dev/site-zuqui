@@ -3,6 +3,7 @@
   const icons = {
     bater_ponto: icon('<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/><path d="M9 2h6"/>'),
     escala_plantoes: icon('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/>'),
+    produtos_vencimento: icon('<path class="nav-icon-warning-triangle" d="M12 3.1 21 19H3L12 3.1Z"/><path class="nav-icon-warning-mark" d="M12 8v5.2"/><circle class="nav-icon-warning-dot" cx="12" cy="16.5" r=".75"/>'),
     checklist: icon('<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 3.5h6M8.5 11l2 2 4.5-5M9 17h6"/>'),
     tarefas_rapidas: icon('<path d="M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.3 1.3 2.3h4.8c.1-1 .6-1.7 1.3-2.3A6 6 0 0 0 12 3Z"/><path d="M10 20h4M9.5 17.5h5M12 6v3"/>'),
     meu_painel: icon('<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="4" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="11" width="7" height="10" rx="2"/>'),
@@ -20,6 +21,7 @@
   const targets = [
     ['[data-nav-item-id="bater_ponto"] > .nav-btn', 'bater_ponto'],
     ['[data-nav-item-id="escala_plantoes"] > .nav-btn', 'escala_plantoes'],
+    ['[data-nav-item-id="produtos_vencimento"] > .nav-btn', 'produtos_vencimento'],
     ['[data-nav-item-id="checklist"] #btnMenuChecklist', 'checklist'],
     ['[data-nav-item-id="tarefas_rapidas"] > .nav-btn', 'tarefas_rapidas'],
     ['[data-nav-item-id="meu_painel"] > .nav-btn', 'meu_painel'],
@@ -34,11 +36,26 @@
     ['#btnMenuSaas', 'saas']
   ];
 
-  targets.forEach(([selector, name]) => {
-    const button = document.querySelector(selector);
-    const holder = button?.querySelector('.icon');
-    if (!holder || !icons[name]) return;
+  function decorateButton(button, name) {
+    if (!button || !icons[name]) return;
+    let holder = button.querySelector(':scope > .icon, :scope > span > .icon');
+    if (holder && holder.parentElement !== button) button.insertBefore(holder, button.firstChild);
+    if (holder && button.dataset.sidebarIcon === name && holder.classList.contains('nav-icon-polished')) return;
+    if (!holder) {
+      holder = document.createElement('span');
+      holder.className = 'icon';
+      button.insertBefore(holder, button.firstChild);
+    }
     holder.innerHTML = icons[name];
     holder.classList.add('nav-icon-polished');
-  });
+    button.dataset.sidebarIcon = name;
+  }
+
+  function applyAll() {
+    targets.forEach(([selector, name]) => decorateButton(document.querySelector(selector), name));
+  }
+
+  applyAll();
+  const nav = document.getElementById('navContainer');
+  if (nav) new MutationObserver(applyAll).observe(nav, { childList: true, subtree: true });
 })();

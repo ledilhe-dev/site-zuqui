@@ -68,10 +68,9 @@ async function carregarChecklists(opcoes = {}) {
     sb.from('checklist_lancamentos').select('*').eq('status', 'pendente')
   );
 
-  // O PostgREST limita consultas a 1.000 linhas por padrao. Programacoes longas
-  // (por exemplo, 365 dias) de varias tarefas faziam a ocorrencia de hoje ficar
-  // fora desse corte. Buscamos a fila atual e a futura separadamente para que
-  // pendencias do dia e atrasadas nunca sejam ocultadas por lancamentos futuros.
+  // Programacoes longas podem ultrapassar o limite padrao de 1.000 linhas do
+  // PostgREST. Separar fila atual e futura impede que tarefas de hoje sejam
+  // cortadas por centenas de ocorrencias futuras.
   const [atuaisRes, futurasRes, legadasRes] = await Promise.all([
     criarConsultaLancamentos()
       .lte('data_programada', dataHoje)
@@ -206,8 +205,7 @@ async function carregarChecklists(opcoes = {}) {
     </div>`;
   }).join('') + '</div>';
 
-  // Pendências antigas continuam na fila principal até serem concluídas
-  // ou canceladas explicitamente; apenas itens futuros ficam recolhidos.
+  // Pendências antigas permanecem na fila principal até conclusão ou cancelamento.
   const rowsHoje = rows.filter(t => {
     const dataReferencia = String(obterDataProgramadaLancamento(t) || '').trim() || dataHoje;
     return dataReferencia <= dataHoje;

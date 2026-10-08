@@ -5,13 +5,141 @@ let lojasSaasCache = [];
 let empresaSaasEmEdicaoId = null;
 let lojaSaasEmEdicaoId = null;
 let copiaDadosEntreLojasEmAndamento = false;
+let painelAdminGlobalCache = null;
+let connectorPairCountdownTimer = null;
+let connectorPairCurrentCode = '';
+let connectorVersionManifest = null;
+
+async function obterManifestoConector() {
+  if (connectorVersionManifest) return connectorVersionManifest;
+  const response = await fetch('./assets/connector-version.json', { cache:'no-store' });
+  if (!response.ok) throw new Error(`Manifesto do conector indisponível (HTTP ${response.status}).`);
+  connectorVersionManifest = await response.json();
+  return connectorVersionManifest;
+}
+
+function compararVersaoConector(instalada, disponivel) {
+  const parts=value=>String(value||'0').split('.').map(x=>Number(x)||0);
+  const a=parts(instalada),b=parts(disponivel);
+  for(let i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)!==(b[i]||0))return(a[i]||0)>(b[i]||0)?1:-1;}
+  return 0;
+}
+
+function renderizarCentralDownloadsConector(manifesto) {
+  const alvo=document.getElementById('connectorDownloadCenter');
+  if(alvo)alvo.innerHTML=`<div class="connector-download-grid"><article class="connector-download-release is-current"><span>VERSÃO ATUAL</span><strong>CheckDiário Conector ${escaparHtmlBasico(manifesto.latest_version)}</strong><small>Publicada em ${escaparHtmlBasico(new Date(`${manifesto.published_at}T12:00:00`).toLocaleDateString('pt-BR'))}</small><a class="btn btn-green" href="${escaparHtmlBasico(manifesto.download_url)}" download>Baixar ${escaparHtmlBasico(manifesto.latest_version)}</a></article><article class="connector-download-release"><span>VERSÃO ANTERIOR</span><strong>CheckDiário Conector ${escaparHtmlBasico(manifesto.rollback_version)}</strong><small>Use apenas para retorno de emergência.</small><a class="btn btn-ghost" href="${escaparHtmlBasico(manifesto.rollback_url)}" download>Baixar ${escaparHtmlBasico(manifesto.rollback_version)}</a></article></div>`;
+  const atalho=document.getElementById('raffinatoConnectorDownload');if(atalho){atalho.href=manifesto.download_url;atalho.textContent=`Baixar conector ${manifesto.latest_version}`;}
+}
+
+async function obterDadosPainelAdminGlobal({ renovar = false } = {}) {
+  if (!contextoEhAdminGlobal() || usuarioSistemaLogado?.global_admin_authorized !== true) throw new Error('Contexto administrativo global não autorizado.');
+  if (painelAdminGlobalCache && !renovar) return painelAdminGlobalCache;
+  const parametros={p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token};
+  const [{data,error},{data:usuariosClassificados,error:erroClassificacao}]=await Promise.all([
+    sb.rpc('obter_painel_admin_global',parametros),
+    sb.rpc('obter_usuarios_classificados_admin_global',parametros),
+  ]);
+  if (error) throw error;
+  if (erroClassificacao) throw erroClassificacao;
+  painelAdminGlobalCache = data || { empresas:[], lojas:[], usuarios:[], conectores:[] };
+  painelAdminGlobalCache.usuarios_classificados=usuariosClassificados||{administradores_sistema:[],masters:[]};
+  return painelAdminGlobalCache;
+}
+
+async function carregarDashboardSaas() {
+  const alvo=document.getElementById('dashboardSaasMetricas'),msg=document.getElementById('msgDashboardSaas');
+  if(!alvo)return;
+  try {
+    const dados=await obterDadosPainelAdminGlobal({renovar:true});
+    const empresas=dados.empresas||[],lojas=dados.lojas||[],usuarios=dados.usuarios||[],conectores=dados.conectores||[];
+    const online=conectores.filter(item=>item.status==='ativa'&&item.ultima_sincronizacao_em&&(Date.now()-new Date(item.ultima_sincronizacao_em).getTime()<150000)).length;
+    const cards=[['Empresas',empresas.length],['Lojas / filiais',lojas.length],['Usuários ativos',usuarios.filter(x=>x.ativo!==false).length],['Conectores',conectores.length],['Conectores online',online],['Conectores offline',Math.max(0,conectores.length-online)]];
+    alvo.innerHTML=cards.map(([label,value])=>`<div class="card"><div class="card-title">${escaparHtmlBasico(label)}</div><div style="font-size:32px;font-weight:800">${Number(value)}</div></div>`).join('');
+    if(msg){msg.className='msg ok';msg.textContent='Métricas carregadas diretamente da administração SaaS.';}
+  } catch(error){alvo.innerHTML='<div class="card"><div class="empty">Acesso administrativo não autorizado.</div></div>';if(msg){msg.className='msg err';msg.textContent=mensagemErroSupabase(error,'Falha ao carregar o painel SaaS.');}}
+}
+
+async function carregarUsuariosSaas() {
+  const alvo=document.getElementById('listaUsuariosSaas');if(!alvo)return;
+  try { const dados=await obterDadosPainelAdminGlobal(); const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
+    const grupos=dados.usuarios_classificados||{},globais=grupos.administradores_sistema||[],masters=grupos.masters||[];
+    const itemGlobal=x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||x.email||'Administrador')}</div><div class="item-detalhe">${escaparHtmlBasico(x.email||'Sem e-mail')} · Administrador do Sistema · ${x.ativo===false?'Inativo':'Ativo'}${x.ultimo_acesso?' · Último acesso: '+escaparHtmlBasico(new Date(x.ultimo_acesso).toLocaleString('pt-BR')):''}</div></div><div class="item-actions"><span class="tag ${x.ativo===false?'tag-gray':'tag-green'}">${x.ativo===false?'Desativado':'Ativo'}</span><button class="btn btn-ghost btn-sm" onclick="editarAdministradorSistema('${escaparHtmlBasico(x.id)}')">Editar</button><button class="btn btn-amber btn-sm" onclick="alternarAdministradorSistema('${escaparHtmlBasico(x.id)}',${x.ativo!==false})">${x.ativo===false?'Ativar':'Desativar'}</button></div></div>`;
+    const itemMaster=x=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(x.nome||x.email||'Master')}</div><div class="item-detalhe">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'Empresa')} · ${escaparHtmlBasico(lojas.get(String(x.loja_id))||'Loja')} · ${escaparHtmlBasico(x.perfil_nome||x.perfil_codigo||'Master')} · ${x.ativo===false?'Inativo':'Ativo'}</div></div></div>`;
+    alvo.innerHTML=`<div class="saas-user-section"><div class="card-title">Administradores do Sistema</div>${globais.length?'<div class="lista">'+globais.map(itemGlobal).join('')+'</div>':'<div class="empty">Nenhum administrador global.</div>'}</div><div class="saas-user-section" style="margin-top:18px"><div class="card-title">Masters das lojas</div>${masters.length?'<div class="lista">'+masters.map(itemMaster).join('')+'</div>':'<div class="empty">Nenhum Master de loja.</div>'}</div>`;
+  } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
+}
+
+async function atualizarAdministradorSistemaRpc(alvoId,campos={}){
+  const {error}=await sb.rpc('atualizar_administrador_sistema',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_alvo_id:alvoId,p_nome:campos.nome??null,p_email:campos.email??null,p_ativo:campos.ativo??null});
+  if(error)throw error;painelAdminGlobalCache=null;await carregarUsuariosSaas();
+}
+async function editarAdministradorSistema(id){
+  const atual=(painelAdminGlobalCache?.usuarios_classificados?.administradores_sistema||[]).find(x=>String(x.id)===String(id));if(!atual)return;
+  const nome=window.prompt('Nome do Administrador do Sistema:',atual.nome||'');if(nome===null)return;
+  const email=window.prompt('E-mail:',atual.email||'');if(email===null)return;
+  try{await atualizarAdministradorSistemaRpc(id,{nome,email});}catch(error){window.alert(mensagemErroSupabase(error,'Não foi possível atualizar o administrador.'));}
+}
+async function alternarAdministradorSistema(id,ativoAtual){
+  if(!window.confirm(`${ativoAtual?'Desativar':'Ativar'} este Administrador do Sistema?`))return;
+  try{await atualizarAdministradorSistemaRpc(id,{ativo:!ativoAtual});}catch(error){window.alert(mensagemErroSupabase(error,'Não foi possível alterar o status.'));}
+}
+
+async function carregarConectoresSaas() {
+  const alvo=document.getElementById('listaConectoresSaas');if(!alvo)return;
+  try { const [dados,manifesto]=await Promise.all([obterDadosPainelAdminGlobal({renovar:true}),obterManifestoConector()]);renderizarCentralDownloadsConector(manifesto);const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));const lojas=new Map((dados.lojas||[]).map(x=>[String(x.id),nomeLojaSaas(x)]));
+    const select=document.getElementById('connectorPairEmpresa');if(select){const atual=select.value;select.innerHTML='<option value="">- Selecione -</option>'+(dados.empresas||[]).filter(x=>x.ativo!==false).map(x=>`<option value="${escaparHtmlBasico(x.id)}">${escaparHtmlBasico(nomeEmpresaSaas(x))}</option>`).join('');if([...select.options].some(o=>o.value===atual))select.value=atual;}
+    const vinculos=dados.conectores||[],instancias=dados.connector_instances||[];
+    alvo.innerHTML=instancias.length?'<div class="lista">'+instancias.map(x=>{const relacionados=vinculos.filter(v=>String(v.connector_instance_id||'')===String(x.id));const nomesLojas=relacionados.map(v=>`${lojas.get(String(v.loja_id))||'Loja'} (Filial ${Number(v.raffinato_filial_id)})`).join(', ')||'Nenhuma filial vinculada';const contato=x.ultimo_contato_em?new Date(x.ultimo_contato_em).toLocaleString('pt-BR'):'Nunca',online=x.status!=='revogado'&&x.ultimo_contato_em&&(Date.now()-new Date(x.ultimo_contato_em).getTime()<150000),atualizado=compararVersaoConector(x.versao,manifesto.latest_version)>=0;return `<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(empresas.get(String(x.empresa_id))||'-')} · ${online?'ONLINE':'OFFLINE'}</div><div class="item-detalhe">${escaparHtmlBasico(x.nome||'Conector Raffinato')}<br>Instalada: ${escaparHtmlBasico(x.versao||'-')} · Disponível: ${escaparHtmlBasico(manifesto.latest_version)} · <strong>${atualizado?'ATUALIZADO':'ATUALIZAÇÃO DISPONÍVEL'}</strong> · Último contato: ${escaparHtmlBasico(contato)}<br>connector_instance_id: ${escaparHtmlBasico(x.id)} · Perfis: ${Number(x.perfis_cadastrados||0)} · Filiais: ${Number(x.filiais_vinculadas||0)}<br>${escaparHtmlBasico(nomesLojas)}</div></div><a class="btn btn-ghost" href="${escaparHtmlBasico(manifesto.download_url)}" download>Baixar ${escaparHtmlBasico(manifesto.latest_version)}</a></div>`}).join('')+'</div>':'<div class="empty">Nenhuma instalação física pareada. A versão mais recente continua disponível acima.</div>';
+  } catch(error){alvo.innerHTML=`<div class="empty">${escaparHtmlBasico(mensagemErroSupabase(error,'Acesso negado.'))}</div>`;}
+}
+
+const carregarConectoresSaasBase=carregarConectoresSaas;
+carregarConectoresSaas=async function(){
+  await carregarConectoresSaasBase();
+  const dados=painelAdminGlobalCache||{},alvo=document.getElementById('listaConectoresSaas');if(!alvo)return;
+  const empresas=new Map((dados.empresas||[]).map(x=>[String(x.id),nomeEmpresaSaas(x)]));
+  for(const [index,node] of [...alvo.querySelectorAll(':scope > .lista > .item')].entries()){
+    const instance=(dados.connector_instances||[])[index];if(!instance)continue;
+    const filiais=(dados.lojas||[]).filter(x=>String(x.empresa_id)===String(instance.empresa_id)),links=(dados.conectores||[]).filter(x=>String(x.connector_instance_id||'')===String(instance.id)),byStore=new Map(links.map(x=>[String(x.loja_id),x]));
+    const rows=filiais.map(store=>{const link=byStore.get(String(store.id));return `<li><strong>${escaparHtmlBasico(nomeLojaSaas(store)||'Filial')}</strong><span>${link?`Raffinato ${Number(link.raffinato_filial_id)} · ${escaparHtmlBasico(link.status||'ativa')} · atualização ${escaparHtmlBasico(link.ultima_sincronizacao_em?new Date(link.ultima_sincronizacao_em).toLocaleString('pt-BR'):'nunca')}`:'Não vinculada nesta instalação'}</span></li>`}).join('');
+    const detail=document.createElement('div');detail.className='connector-company-detail';detail.hidden=true;detail.innerHTML=`<div><strong>${escaparHtmlBasico(empresas.get(String(instance.empresa_id))||'Empresa')}</strong><small>Esta é uma empresa com ${filiais.length} filial(is).<br>connector_instance_id: ${escaparHtmlBasico(instance.id)}</small></div><ul>${rows||'<li>Nenhuma filial cadastrada.</li>'}</ul>`;
+    const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm connector-detail-button';button.textContent='Detalhar empresa';button.onclick=()=>{detail.hidden=!detail.hidden;button.textContent=detail.hidden?'Detalhar empresa':'Ocultar detalhes'};
+    const deleteButton=document.createElement('button');deleteButton.type='button';deleteButton.className='btn btn-red btn-sm connector-delete-button';deleteButton.textContent='Excluir instalação';deleteButton.disabled=links.length>0;deleteButton.title=links.length?'Esta instalação ainda possui filiais vinculadas.':'Excluir somente este registro de instalação.';deleteButton.onclick=()=>excluirInstalacaoConectorSaas(instance.id,empresas.get(String(instance.empresa_id))||'empresa');
+    const actions=document.createElement('div');actions.className='connector-instance-actions';actions.append(button,deleteButton);
+    node.classList.add('connector-company');node.querySelector('.item-info')?.append(actions);node.append(detail);
+    if(instance.status==='offline'){detail.hidden=false;button.textContent='Ocultar detalhes';}
+  }
+};
+
+async function excluirInstalacaoConectorSaas(instanceId,empresaNome){
+  const resposta=typeof abrirConfirmacaoSistema==='function'?await abrirConfirmacaoSistema({title:'Excluir instalação do conector?',subtitle:`Será removido somente o registro antigo de ${empresaNome}. A empresa e suas filiais serão preservadas.`,confirmText:'Excluir instalação'}):{confirmado:window.confirm('Excluir somente esta instalação antiga?')};if(!resposta?.confirmado)return;
+  try{const {error}=await sb.rpc('excluir_instalacao_raffinato_admin',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_connector_instance_id:instanceId});if(error)throw error;painelAdminGlobalCache=null;await carregarConectoresSaas();}catch(error){window.alert(mensagemErroSupabase(error,'Não foi possível excluir a instalação.'));}
+}
+
+async function gerarCodigoPareamentoConector(){
+  const empresaId=String(document.getElementById('connectorPairEmpresa')?.value||'').trim(),msg=document.getElementById('connectorPairCode');
+  if(!empresaId){if(msg){msg.className='msg err';msg.textContent='Selecione uma empresa.';}return;}
+  try{const {data,error}=await sb.rpc('gerar_codigo_pareamento_raffinato',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_empresa_id:empresaId});if(error)throw error;connectorPairCurrentCode=String(data.codigo||'').trim();renderizarCodigoPareamentoConector(data.expira_em);if(connectorPairCountdownTimer)clearInterval(connectorPairCountdownTimer);connectorPairCountdownTimer=setInterval(()=>renderizarCodigoPareamentoConector(data.expira_em),1000);}catch(error){msg.className='msg err';msg.textContent=mensagemErroSupabase(error,'Não foi possível gerar o código.');}
+}
+
+function renderizarCodigoPareamentoConector(expiraEm){
+  const msg=document.getElementById('connectorPairCode');if(!msg||!connectorPairCurrentCode)return;
+  const restante=Math.max(0,new Date(expiraEm).getTime()-Date.now()),segundos=Math.ceil(restante/1000),expirado=segundos<=0,min=String(Math.floor(segundos/60)).padStart(2,'0'),seg=String(segundos%60).padStart(2,'0');
+  msg.className=`connector-pair-result ${expirado?'is-expired':'is-waiting'}`;
+  msg.innerHTML=`<div class="connector-pair-state">${expirado?'EXPIRADO':'AGUARDANDO VINCULAÇÃO'}</div><div class="connector-pair-title">Código de vinculação</div><div class="connector-pair-code-row"><code>${escaparHtmlBasico(connectorPairCurrentCode)}</code><button class="btn btn-ghost" type="button" onclick="copiarCodigoPareamentoConector(this)" ${expirado?'disabled':''}>COPIAR</button></div><div class="connector-pair-meta"><span>${expirado?'Código expirado':`Expira em ${min}:${seg}`}</span><span>Uso único</span></div>${expirado?'<button class="btn btn-green" type="button" onclick="gerarCodigoPareamentoConector()">GERAR NOVO CÓDIGO</button>':''}`;
+  if(expirado&&connectorPairCountdownTimer){clearInterval(connectorPairCountdownTimer);connectorPairCountdownTimer=null;}
+}
+
+async function copiarCodigoPareamentoConector(botao){
+  if(!connectorPairCurrentCode)return;try{await navigator.clipboard.writeText(connectorPairCurrentCode);const anterior=botao.textContent;botao.textContent='✓ Copiado';setTimeout(()=>{if(botao.isConnected)botao.textContent=anterior;},1600);}catch(_){window.prompt('Copie o código:',connectorPairCurrentCode);}
+}
 
 function usuarioPodeGerenciarEmpresasSaas() {
-  return usuarioEhAdministrador();
+  return contextoEhAdminGlobal() && usuarioSistemaLogado?.global_admin_authorized === true;
 }
 
 function usuarioPodeGerenciarLojasSaas() {
-  return usuarioEhAdministrador();
+  return contextoEhAdminGlobal() && usuarioSistemaLogado?.global_admin_authorized === true;
 }
 
 function nomeEmpresaSaas(item = {}) {
@@ -97,7 +225,9 @@ async function carregarEmpresasSaas({ render = true, silencioso = false } = {}) 
     return [];
   }
 
-  const { data, error } = await sb.from('empresas').select('*').order('nome', { ascending: true });
+  let data, error;
+  try { data = (await obterDadosPainelAdminGlobal({ renovar:true })).empresas || []; }
+  catch (erro) { error = erro; }
   if (error) {
     empresasSaasCache = [];
     if (render && lista) lista.innerHTML = '<div class="empty">Erro ao carregar empresas.</div>';
@@ -243,7 +373,9 @@ async function carregarLojasSaas() {
     return [];
   }
 
-  const { data, error } = await sb.from('lojas').select('*').order('nome', { ascending: true });
+  let data, error;
+  try { data = (await obterDadosPainelAdminGlobal({ renovar:true })).lojas || []; }
+  catch (erro) { error = erro; }
   if (error) {
     lojasSaasCache = [];
     inicializarCopiarDadosEntreLojasSaas();

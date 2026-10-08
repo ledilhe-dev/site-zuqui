@@ -43,6 +43,8 @@ let formaPagamentoFinanceiroEmEdicaoId = null;
 let contaAPagarFinanceiroEmEdicaoId = null;
 let contasAPagarListaVisivel = false;
 let contaFinanceiraEmEdicaoId = null;
+let fornecedorCartaoContaFinanceiraEmEdicaoId = null;
+let configuracoesCartaoContaFinanceiraCache = [];
 let recebivelFinanceiroEmEdicaoId = null;
 let ajusteSaldoCofreModo = 'ajuste';
 let ajusteSaldoCofreTipo = 'entrada';
@@ -60,6 +62,10 @@ let cofreExtratoVisivel = false;
 let recebiveisFinanceiroSelecionadosIds = new Set();
 let recebiveisFinanceiroVisiveisIds = [];
 let recFuturosSelecionadosIds = new Set();
+let baixaMultiplaRecebiveisContaId = '';
+let baixaMultiplaRecebiveisMovimentarSaldo = true;
+let baixaMultiplaRecebiveisProcessando = false;
+let modalConfirmarRecFuturoMovimentarSaldo = true;
 let recFuturosVisiveisIds = [];
 let recebiveisFinanceiroCache = [];
 let recebiveisFinanceiroListaVisivel = false;
@@ -92,6 +98,7 @@ let formasModalPagamentoFinanceiro = [];
 let resolverModalContaFinanceiraBaixaPendente = null;
 let contasModalContaFinanceiraBaixa = [];
 let modalContaFinanceiraMovimentarSaldo = true;
+let modalContaFinanceiraSelecionadaId = '';
 let resolverModalConfirmacaoFinanceiraPendente = null;
 let editarTituloFinanceiroId = null;
 let resolverModalPontoPendente = null;
@@ -299,7 +306,8 @@ function limparAvisosNotificacaoMaster() {
 }
 
 function obterStoragePaginaAtiva() {
-  return `zuqui_pagina_ativa:${obterChaveUsuarioNotificacoes()}`;
+  const modo = typeof obterModoContexto === 'function' ? obterModoContexto() : 'store';
+  return `zuqui_pagina_ativa:${obterChaveUsuarioNotificacoes()}:${modo}`;
 }
 
 function salvarPaginaAtiva(id) {
@@ -333,9 +341,10 @@ function restaurarPaginaAtivaSalvaOuPadrao() {
 
   // Sem pagina salva valida, usa a tela preferida ou a primeira disponivel.
   const telaPreferida = typeof obterTelaPreferidaAoLogin === 'function' ? obterTelaPreferidaAoLogin() : null;
-  const primeiroBtnVisivel = Array.from(document.querySelectorAll('#navContainer .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)'))
+  const seletorMenu = contextoEhAdminGlobal() ? '#navGlobalAdmin' : '#navContainer';
+  const primeiroBtnVisivel = Array.from(document.querySelectorAll(`${seletorMenu} .nav-btn[data-page]:not(.nav-sub-btn):not(.nav-btn-parent)`))
     .find(btn => btn.style.display !== 'none' && (!usuarioSistemaLogado || usuarioPodeAcessar(btn.dataset.page)));
-  const paginaPrimeira = telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists';
+  const paginaPrimeira = contextoEhAdminGlobal() ? (primeiroBtnVisivel?.dataset?.page || 'dashboard_saas') : (telaPreferida || primeiroBtnVisivel?.dataset?.page || 'checklists');
   if (document.getElementById(paginaPrimeira) && (!usuarioSistemaLogado || usuarioPodeAcessar(paginaPrimeira))) {
     const botaoPrincipal = document.querySelector(`.nav-btn[data-page="${paginaPrimeira}"]`);
     abrirPagina(paginaPrimeira, botaoPrincipal);
@@ -734,7 +743,6 @@ const PERFIL_PERMISSOES = [
   { key: 'estatisticas_atendimento', label: 'Estatísticas de atendimento' },
   { key: 'estatisticas_atendimento_responder', label: 'Atendimento - responder avaliações' },
   { key: 'estatisticas_atendimento_conectar', label: 'Atendimento - conectar e sincronizar Google' },
-  { key: 'meu_painel', label: 'Meu Painel (personalizado)' },
   { key: 'checklists', label: 'Iniciar checklist' },
   { key: 'bater_ponto', label: 'Bater ponto' },
   { key: 'agenda', label: 'Agenda' },
@@ -747,11 +755,13 @@ const PERFIL_PERMISSOES = [
   { key: 'ponto_ajustes', label: 'Solicitações de ajuste de ponto' },
   { key: 'alterar_tempo_aviso_ponto', label: 'Ponto - alterar tempo para aviso de retorno' },
   { key: 'relatorio_lancamentos', label: 'Relatório de tarefas' },
-  { key: 'relatorio_tarefas_cadastradas', label: 'Relatório de tarefas cadastradas' },
+  { key: 'checklists_cadastrados', label: 'Checklists cadastrados - visualizar' },
+  { key: 'editar_programacao_checklist', label: 'Checklists cadastrados - editar programação' },
   { key: 'relatorio_financeiro', label: 'Relatório de contas a pagar' },
   { key: 'relatorio_recebimentos', label: 'Relatório de recebimentos' },
   { key: 'relatorio_ajuste_saldo', label: 'Relatório ajuste de saldo' },
   { key: 'relatorio_sangrias_raffinato', label: 'Relatório de sangrias Raffinato' },
+  { key: 'relatorio_produtos_raffinato', label: 'Produtos faturados Raffinato' },
   { key: 'financeiro_fornecedores', label: 'Financeiro - Fornecedores' },
   { key: 'financeiro_formas_pagamento', label: 'Financeiro - Formas de pagamento' },
   { key: 'financeiro_contasapagar', label: 'Financeiro - Contas a pagar' },
@@ -802,7 +812,6 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
   { nome: 'Operação diária', recursos: [
     { nome: 'Dashboard', visualizar: 'dashboard' },
     { nome: 'Estatísticas de atendimento', visualizar: 'estatisticas_atendimento', criar: 'estatisticas_atendimento_conectar', editar: 'estatisticas_atendimento_responder' },
-    { nome: 'Meu Painel', visualizar: 'meu_painel', editar: 'meu_painel_editar' },
     { nome: 'Execução de checklist', visualizar: 'checklists', criar: 'nova_execucao_manual', editar: 'checklists_editar', excluir: 'excluir_checklist_lancado' },
     { nome: 'Agenda', visualizar: 'agenda', criar: 'cadastro_plantao', editar: 'agenda_editar', excluir: 'excluir_agenda_cadastrada' },
     { nome: 'Produtos próximos ao vencimento', visualizar: 'produtos_vencimento', criar: 'produtos_vencimento_criar', editar: 'produtos_vencimento_editar', excluir: 'produtos_vencimento_excluir' },
@@ -813,6 +822,7 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
     { nome: 'Funcionários', visualizar: 'funcionarios', criar: 'funcionarios_criar', editar: 'funcionarios_editar', excluir: 'funcionarios_excluir' },
     { nome: 'Perfis de acesso', visualizar: 'perfis', criar: 'perfis_criar', editar: 'perfis_editar', excluir: 'perfis_excluir' },
     { nome: 'Checklists / Tarefas', visualizar: 'tarefas', criar: 'tarefas_criar', editar: 'tarefas_editar', excluir: 'excluir_tarefas_massa' },
+    { nome: 'Checklists cadastrados', visualizar: 'checklists_cadastrados', editar: 'editar_programacao_checklist' },
     { nome: 'Lojas', visualizar: 'cadastro_lojas', criar: 'criar_lojas', editar: 'configuracoes', excluir: 'lojas_excluir' },
     { nome: 'Administradores de loja', visualizar: 'cadastro_admins_loja', criar: 'admins_loja_criar', editar: 'admins_loja_editar', excluir: 'admins_loja_excluir' },
   ]},
@@ -835,11 +845,11 @@ const PERFIL_MODULOS_MATRIZ_BASE = [
     { nome: 'Relatório de escala/plantões', visualizar: 'relatorio_plantao' },
     { nome: 'Relatório de ponto', visualizar: 'relatorio_ponto' },
     { nome: 'Lançamentos e tarefas', visualizar: 'relatorio_lancamentos' },
-    { nome: 'Tarefas cadastradas', visualizar: 'relatorio_tarefas_cadastradas' },
     { nome: 'Contas a pagar', visualizar: 'relatorio_financeiro' },
     { nome: 'Recebimentos', visualizar: 'relatorio_recebimentos' },
     { nome: 'Ajustes de saldo', visualizar: 'relatorio_ajuste_saldo' },
     { nome: 'Sangrias Raffinato', visualizar: 'relatorio_sangrias_raffinato' },
+    { nome: 'Produtos faturados Raffinato', visualizar: 'relatorio_produtos_raffinato' },
   ]},
   { nome: 'Administração', recursos: [
     { nome: 'Solicitações de acesso', visualizar: 'solicitacoes', editar: 'aprovar_solicitacao_acesso' },
@@ -880,7 +890,6 @@ function obterPermissoesBase(codigo) {
   if (codigoNormalizado === 'VENDEDOR') {
     return {
       dashboard: false,
-      meu_painel: false,
       checklists: false,
       bater_ponto: false,
       agenda: false,
@@ -891,7 +900,8 @@ function obterPermissoesBase(codigo) {
       relatorio_ponto: false,
       ponto_ajustes: false,
       relatorio_lancamentos: false,
-      relatorio_tarefas_cadastradas: false,
+      checklists_cadastrados: false,
+      editar_programacao_checklist: false,
       relatorio_financeiro: false,
       relatorio_recebimentos: false,
       relatorio_ajuste_saldo: false,
@@ -941,7 +951,8 @@ function obterPermissoesBase(codigo) {
       relatorio_ponto: true,
       ponto_ajustes: true,
       relatorio_lancamentos: true,
-      relatorio_tarefas_cadastradas: true,
+      checklists_cadastrados: true,
+      editar_programacao_checklist: false,
       relatorio_financeiro: false,
       relatorio_recebimentos: false,
       relatorio_ajuste_saldo: false,
@@ -980,7 +991,6 @@ function obterPermissoesBase(codigo) {
 
   return {
     dashboard: false,
-      meu_painel: false,
     checklists: true,
     bater_ponto: true,
     agenda: false,
@@ -991,7 +1001,8 @@ function obterPermissoesBase(codigo) {
     relatorio_ponto: false,
     ponto_ajustes: false,
     relatorio_lancamentos: false,
-    relatorio_tarefas_cadastradas: false,
+    checklists_cadastrados: false,
+    editar_programacao_checklist: false,
     relatorio_financeiro: false,
     relatorio_recebimentos: false,
     relatorio_ajuste_saldo: false,

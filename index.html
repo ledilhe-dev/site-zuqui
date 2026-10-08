@@ -4,19 +4,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="autocomplete" content="on">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="app-version" content="3.4.0">
-  <meta name="theme-color" content="#090b10">
+  <meta name="theme-color" content="#0F172A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CHECK DIARIO">
-  <title>CHECK DIARIO</title>
+  <meta name="apple-mobile-web-app-title" content="CheckDiário">
+  <title>CheckDiário</title>
+  <script id="limpeza-url-login-imediata" src="./assets/js/90-sensitive-url-cleanup.js?v=20260923-url-limpa-v3"></script>
+  <script src="./assets/js/00-theme-bootstrap.js?v=20260807-theme-v1"></script>
   <!--
-    Versão 3.2.13 - Restaurar vencimento no mobile
+    Versão 3.2.37 - Preservação do histórico Raffinato após fechamento
     Principais ajustes:
     - Registro de ponto: correção de batidas matinais que não apareciam (backfill loja_id).
     - Isolamento multi-loja: checklists, lançamentos e modelos agora são filtrados por loja.
@@ -26,16 +29,14 @@
     - Segurança: fallback de consulta de ponto usa inner join (funcionarios.loja_id) para evitar vazamento entre lojas.
   -->
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
-  <link rel="apple-touch-icon" href="./logo-check-diario.svg">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxOCIgZmlsbD0iIzBBMEYwRCIvPgogIDxyZWN0IHg9IjciIHk9IjciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgcng9IjE1IiBmaWxsPSIjMTYzNjI2Ii8+CiAgPHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iMjQiIGhlaWdodD0iMzIiIHJ4PSI1IiBmaWxsPSIjRjRGRkY3Ii8+CiAgPGNpcmNsZSBjeD0iNDQiIGN5PSI0MSIgcj0iMTAiIGZpbGw9IiMyMkM1NUUiLz4KICA8cGF0aCBkPSJNMzkuNSA0MUw0MyA0NC41TDQ5IDM4LjUiIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K">
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="./assets/brand/favicon.svg">
+  <link rel="apple-touch-icon" href="./assets/brand/logo-checkdiario-icon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=20260915-checklist-programacoes">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.66-editor-programacao">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -44,7 +45,9 @@
 <link id="obsidian-precision-design-system-v3" rel="stylesheet" href="./assets/css/12-design-system.css">
 <link id="escala-plantoes-layout-fix" rel="stylesheet" href="./assets/css/20-schedule.css?v=20260727-sem-filtro-lojas">
 <link id="integracoes-financeiras-style" rel="stylesheet" href="./assets/css/97-financial-integrations.css?v=20260730-conciliacao-design-v4">
-<link id="atendimento-estatisticas-style" rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260724">
+<link id="atendimento-estatisticas-style" rel="stylesheet" href="./assets/css/98-atendimento-estatisticas.css?v=20260903">
+<link rel="stylesheet" href="./assets/css/108-checkia.css?v=20261007">
+<link rel="stylesheet" href="./assets/css/109-produtos-vencimento.css?v=20261007">
 
 
 
@@ -53,43 +56,39 @@
 <body>
 <div id="appVersionBadge" class="app-version-badge" style="display:none;">INDEX 4.4</div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileMenu()"></div>
-<button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" type="button" onclick="toggleDesktopSidebar()" aria-label="Esconder menu lateral" aria-expanded="true" title="Esconder menu lateral">‹</button>
 <div class="shell">
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="logo">
+    <div class="logo" aria-label="CheckDiário">
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div>
         <strong>CHECK DIARIO</strong>
         <span>Painel Operacional</span>
       </div>
     </div>
+    <button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" type="button" onclick="toggleDesktopSidebar()" aria-label="Recolher menu lateral" aria-expanded="true" title="Recolher menu lateral">‹</button>
     <div id="navContainer" style="flex:1;overflow-y:auto;">
     <div id="navgrp_operacao" class="nav-group featured">
       <div class="nav-label">Operação diária</div>
       <div data-nav-item-id="bater_ponto" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="bater_ponto" onclick="abrirPagina('bater_ponto', this)">
-        <span class="icon">PT</span>
         <span class="nav-copy">
           <span class="nav-title">Bater ponto</span>
           <span class="nav-hint">Registro de jornada</span>
         </span>
       </button></div>
       <div data-nav-item-id="escala_plantoes" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="escala_plantoes" onclick="abrirPagina('escala_plantoes', this)">
-        <span class="icon">EP</span>
         <span class="nav-copy">
           <span class="nav-title">Agenda</span>
           <span class="nav-hint">Calendário de turnos, domingos e feriados</span>
         </span>
       </button></div>
       <div data-nav-item-id="produtos_vencimento" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="produtos_vencimento" onclick="abrirPagina('produtos_vencimento', this)">
-        <span class="icon">PV</span>
-        <span class="nav-copy"><span class="nav-title">Produtos próximos ao vencimento</span><span class="nav-hint">Controle e alertas por loja</span></span>
+        <span class="icon">PV</span><span class="nav-copy"><span class="nav-title">Produtos próximos ao vencimento</span><span class="nav-hint">Controle e alertas por loja</span></span>
       </button></div>
       <div data-nav-item-id="checklist" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><div class="nav-group-checklist" id="menuChecklistGroup" style="display:block">
         <button class="nav-btn nav-btn-parent" id="btnMenuChecklist" type="button" onclick="toggleMenuChecklistSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">CK</span>
             <span class="nav-copy">
               <span class="nav-title">Checklist</span>
               <span class="nav-hint">Funções de checklist</span>
@@ -119,38 +118,29 @@
               <span class="nav-title">Cadastro de checklist</span>
             </span>
           </button>
+          <button class="nav-btn nav-sub-btn" data-page="checklist_modelos" onclick="abrirPagina('checklist_modelos', this)">
+            <span class="nav-copy"><span class="nav-title">Cadastro modelo de checklist</span></span>
+          </button>
           <button class="nav-btn nav-sub-btn" data-page="relatorio_tarefas_cadastradas" onclick="abrirPagina('relatorio_tarefas_cadastradas', this)">
             <span class="nav-copy">
-              <span class="nav-title">Listagem de checklist</span>
+              <span class="nav-title">Checklists cadastrados</span>
             </span>
           </button>
         </div>
       </div></div>
       <div data-nav-item-id="tarefas_rapidas" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn nav-btn-alerta" data-page="tarefas_rapidas" onclick="abrirPagina('tarefas_rapidas', this)">
-        <span class="icon">AR</span>
         <span class="nav-copy">
           <span class="nav-title">Alertas rápidas</span>
           <span class="nav-hint">Avisos pontuais para equipe</span>
         </span>
       </button></div>
-      <div data-nav-item-id="meu_painel" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="meu_painel" onclick="abrirPagina('meu_painel', this)">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">MP</span>
-            <span class="nav-copy">
-              <span class="nav-title">Meu Painel</span>
-              <span class="nav-hint">Dashboard personalizado</span>
-            </span>
-          </span>
-        </button></div>
       <div data-nav-item-id="dashboard" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="dashboard" onclick="abrirPagina('dashboard', this)">
-        <span class="icon">DB</span>
         <span class="nav-copy">
           <span class="nav-title">Dashboard</span>
           <span class="nav-hint">Resumo rapido da operacao</span>
         </span>
       </button></div>
       <div data-nav-item-id="estatisticas_atendimento" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="estatisticas_atendimento" onclick="abrirPagina('estatisticas_atendimento', this)">
-        <span class="icon">EA</span>
         <span class="nav-copy"><span class="nav-title">Estatísticas de atendimento</span><span class="nav-hint">Avaliações do Google</span></span>
       </button></div>
     </div>
@@ -159,7 +149,6 @@
       <div class="nav-group-relatorios" id="menuRelatoriosGroup" data-nav-item-id="relatorios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuRelatorios" type="button" onclick="toggleMenuRelatoriosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">RL</span>
             <span class="nav-copy">
               <span class="nav-title">Relatórios</span>
               <span class="nav-hint">Funções de relatório</span>
@@ -208,6 +197,10 @@
                 <span class="nav-title">Sangrias Raffinato</span>
               </span>
             </button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_vendas_raffinato" onclick="abrirPagina('relatorio_vendas_raffinato', this)"><span class="nav-copy"><span class="nav-title">Análise de vendas Raffinato</span></span></button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_comparativo_anual" onclick="abrirPagina('relatorio_comparativo_anual', this)"><span class="nav-copy"><span class="nav-title">Comparativo Anual</span></span></button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_curva_abc_raffinato" onclick="abrirPagina('relatorio_curva_abc_raffinato', this)"><span class="nav-copy"><span class="nav-title">Curva ABC Raffinato</span></span></button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_item_obrigatorio_pizza" onclick="abrirPagina('relatorio_item_obrigatorio_pizza', this)"><span class="nav-copy"><span class="nav-title">Raffinato – Venda de Item Obrigatório</span></span></button>
           </div>
         </div>
       </div>
@@ -215,7 +208,6 @@
     <div id="navgrp_integracoes" class="nav-group">
       <div class="nav-label">Integrações</div>
       <button class="nav-btn" data-nav-item-id="raffinato" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" data-page="financeiro_sangrias_raffinato" onclick="abrirPagina('financeiro_sangrias_raffinato', this)">
-        <span class="icon">RF</span>
         <span class="nav-copy"><span class="nav-title">Raffinato</span><span class="nav-hint">Conexão SQL e sangrias</span></span>
       </button>
     </div>
@@ -224,7 +216,6 @@
       <div class="nav-group-financeiro" id="menuFinanceiroGroup" data-nav-item-id="financeiro" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFinanceiro" type="button" onclick="toggleMenuFinanceiroSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">FI</span>
             <span class="nav-copy">
               <span class="nav-title">Financeiro</span>
               <span class="nav-hint">Fornecedores e contas</span>
@@ -286,7 +277,7 @@
       <div class="nav-label">Integrações</div>
       <div class="nav-group-financeiro" id="menuIntegracoesFinanceirasGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuIntegracoesFinanceiras" type="button" onclick="toggleMenuIntegracoesFinanceirasSubmenu()">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="icon">IF</span><span class="nav-copy"><span class="nav-title">Integrações Financeiras</span><span class="nav-hint">Bancos, cartões e conciliação</span></span></span>
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="nav-copy"><span class="nav-title">Integrações Financeiras</span><span class="nav-hint">Bancos, cartões e conciliação</span></span></span>
           <span class="nav-caret">▾</span>
         </button>
         <div class="nav-submenu">
@@ -307,7 +298,6 @@
       <div class="nav-group-funcionarios" id="menuFuncionariosGroup" data-nav-item-id="administracao_funcionarios" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)">
         <button class="nav-btn nav-btn-parent" id="btnMenuFuncionarios" type="button" onclick="toggleMenuFuncionariosSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">CF</span>
             <span class="nav-copy">
               <span class="nav-title">Configuração de funcionários</span>
               <span class="nav-hint">Equipe e perfis</span>
@@ -336,7 +326,6 @@
       <div class="nav-group-configuracao" id="menuConfiguracoesGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuConfiguracoes" type="button" onclick="toggleMenuConfiguracoesSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">CG</span>
             <span class="nav-copy">
               <span class="nav-title">Configuração</span>
               <span class="nav-hint">Ajustes do sistema</span>
@@ -372,7 +361,6 @@
       <div class="nav-group-saas" id="menuSaasGroup">
         <button class="nav-btn nav-btn-parent" id="btnMenuSaas" type="button" onclick="toggleMenuSaasSubmenu()">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="icon">SA</span>
             <span class="nav-copy">
               <span class="nav-title">Administração SaaS</span>
               <span class="nav-hint">Clientes, empresas e lojas</span>
@@ -396,6 +384,22 @@
       </div>
     </div>
     </div><!-- /navContainer -->
+    <div id="navGlobalAdmin" hidden aria-label="Navegação da administração global">
+      <div class="nav-label">Administração SaaS</div>
+      <button class="nav-btn" data-page="dashboard_saas" onclick="abrirPagina('dashboard_saas', this)"><span class="nav-copy"><span class="nav-title">Dashboard SaaS</span><span class="nav-hint">Visão geral da plataforma</span></span></button>
+      <div class="nav-label">Cadastros globais</div>
+      <button class="nav-btn" data-page="empresas_saas" onclick="abrirPagina('empresas_saas', this)"><span class="nav-copy"><span class="nav-title">Empresas</span></span></button>
+      <button class="nav-btn" data-page="lojas_saas" onclick="abrirPagina('lojas_saas', this)"><span class="nav-copy"><span class="nav-title">Lojas / Filiais</span></span></button>
+      <button class="nav-btn" data-page="usuarios_saas" onclick="abrirPagina('usuarios_saas', this)"><span class="nav-copy"><span class="nav-title">Usuários</span></span></button>
+      <button class="nav-btn" data-page="perfis" onclick="abrirPagina('perfis', this)"><span class="nav-copy"><span class="nav-title">Perfis e permissões</span></span></button>
+      <div class="nav-label">Operação da plataforma</div>
+      <button class="nav-btn" data-page="conectores_saas" onclick="abrirPagina('conectores_saas', this)"><span class="nav-copy"><span class="nav-title">Conectores</span></span></button>
+      <button class="nav-btn" data-page="solicitacoes" onclick="abrirPagina('solicitacoes', this)"><span class="nav-copy"><span class="nav-title">Solicitações</span></span></button>
+      <button class="nav-btn" data-page="emails" onclick="abrirPagina('emails', this)"><span class="nav-copy"><span class="nav-title">Configuração de e-mail</span></span></button>
+      <button class="nav-btn" data-page="forcar_atualizacao_geral" onclick="forcarAtualizacaoGeralUsuarios()"><span class="nav-copy"><span class="nav-title">Atualização geral</span></span></button>
+      <div class="nav-label">Contexto operacional</div>
+      <button class="nav-btn" type="button" onclick="abrirTrocaLojaTopbar()"><span class="nav-copy"><span class="nav-title">Entrar em uma loja</span><span class="nav-hint">Sair da administração global</span></span></button>
+    </div>
   </aside>
 
   <!-- MAIN -->
@@ -403,6 +407,14 @@
     <div class="topbar">
       <div class="topbar-main">
         <button class="btn btn-ghost mobile-menu-btn" type="button" onclick="toggleMobileMenu()" aria-label="Abrir menu">☰</button>
+        <label class="theme-switcher" title="Tema da interface">
+          <span class="sr-only">Tema</span>
+          <select id="themeSelector" aria-label="Tema da interface" onchange="definirTemaInterface(this.value)">
+            <option value="light">Claro</option>
+            <option value="dark">Escuro</option>
+            <option value="system">Sistema</option>
+          </select>
+        </label>
         <div id="topbarTitleWrap">
           <h1 id="topbar-title">Checklists</h1>
           <div class="sub" id="topbar-sub"></div>
@@ -425,9 +437,16 @@
         <button class="topbar-store-switch" id="topbarStoreSwitchBtn" type="button" onclick="event.stopPropagation(); abrirTrocaLojaTopbar();">Trocar</button>
       </div>
       <div class="topbar-actions">
-        <div class="topbar-user" id="topbarUserInfo" hidden>
-          <div class="topbar-user-label">Usuário logado</div>
-          <div class="topbar-user-name" id="topbar-user-name">-</div>
+        <div class="topbar-user account-menu-wrap" id="topbarUserInfo" hidden>
+          <button class="account-menu-trigger" type="button" onclick="toggleMenuMinhaConta(event)" aria-haspopup="menu" aria-expanded="false">
+            <span class="account-avatar" id="topbarAccountAvatar">U</span>
+            <span class="topbar-user-name" id="topbar-user-name">-</span><span aria-hidden="true">▾</span>
+          </button>
+          <div class="account-menu" id="accountMenu" role="menu" hidden>
+            <button type="button" role="menuitem" onclick="abrirMinhaConta('conta')"><span aria-hidden="true">◉</span> Minha conta</button>
+            <hr>
+            <button class="account-menu-logout" type="button" role="menuitem" onclick="logout()"><span aria-hidden="true">↪</span> Sair</button>
+          </div>
         </div>
         <div class="notification-panel" id="notificationPanel">
           <div class="notification-header">
@@ -454,73 +473,9 @@
     </div>
 
     <div class="content">
+      <div class="active-page-name" id="activePageName" aria-live="polite" hidden></div>
 
       <!--  DASHBOARD  -->
-      <section id="meu_painel" class="pagina">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-          <div class="page-title" style="margin:0;">Meu Painel</div>
-          <button class="btn btn-ghost btn-sm" onclick="abrirEditorMeuPainel()" style="font-size:11px;">
-            ✏️ Personalizar
-          </button>
-        </div>
-        <div class="msg" id="msgMeuPainel"></div>
-        <div id="meuPainelGrid" class="meu-painel-grid">
-          <div class="empty" style="grid-column:1/-1;">Carregando seu painel⬦</div>
-        </div>
-
-        <!-- Modal editor de widgets -->
-        <div id="modalMeuPainel" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,.7);align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto;">
-          <div style="background:var(--surface);border:1px solid var(--border-mid);border-radius:var(--radius-lg);width:min(680px,96vw);box-shadow:var(--shadow-lg);overflow:hidden;">
-            <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-              <div>
-                <div style="font-size:13px;font-weight:700;">Personalizar Meu Painel</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Clique nos itens para adicionar ou remover do seu painel</div>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="fecharEditorMeuPainel()" style="font-size:18px;padding:0 8px;">×</button>
-            </div>
-            <!-- Abas do modal -->
-            <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:14px;">
-              <button onclick="trocarAbaEditor('widgets')" id="abaEditorWidgets" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--accent);border-bottom:2px solid var(--accent);">🧩 Widgets</button>
-              <button onclick="trocarAbaEditor('tema')" id="abaEditorTema" style="padding:7px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;">🎨 Aparência</button>
-            </div>
-            <!-- Aba widgets -->
-            <div id="abaConteudoWidgets">
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">📊 Indicadores financeiros</div>
-              <div class="meu-painel-editor" id="editorWidgetsFinanceiro"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.4px;">💰 Atalhos — Financeiro</div>
-              <div class="meu-painel-editor" id="editorWidgetsAtalhosFinanceiro"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.4px;">⚡ Atalhos — Operação</div>
-              <div class="meu-painel-editor" id="editorWidgetsAtalhosOp"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.4px;">⚙️ Atalhos — Administração</div>
-              <div class="meu-painel-editor" id="editorWidgetsAtalhosAdm"></div>
-            </div><!-- /abaConteudoWidgets -->
-
-            <!-- Aba aparência -->
-            <div id="abaConteudoTema" style="display:none;">
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;">Temas predefinidos</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;" id="gridTemasPredefinidos"></div>
-              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Cor de destaque personalizada</div>
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <input type="color" id="corAcentoPersonalizado" value="#f0a500" style="width:44px;height:36px;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border-mid);">
-                <div>
-                  <div style="font-size:12px;color:var(--text);">Cor de destaque</div>
-                  <div style="font-size:11px;color:var(--text-muted);">Afeta botões, links e elementos ativos</div>
-                </div>
-                <button class="btn btn-ghost btn-sm" onclick="aplicarCorAcentoPersonalizado()">Aplicar</button>
-                <button class="btn btn-ghost btn-sm" onclick="resetarTema()">Restaurar padrão</button>
-              </div>
-              <div style="margin-top:14px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted);">
-                💡 Dica: use temas diferentes em cada loja para identificar rapidamente em qual você está logado.
-              </div>
-            </div>
-            <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
-              <button class="btn btn-ghost btn-sm" onclick="fecharEditorMeuPainel()">Fechar</button>
-              <button class="btn btn-green" onclick="salvarMeuPainel()">Salvar painel</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="dashboard" class="pagina">
         <div class="card" id="cardDashboardGraficosFinanceiros">
           <div class="card-title dash-gf-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
@@ -593,12 +548,6 @@
           <div class="msg" id="dashGfMsg" style="margin-top:8px;"></div>
         </div>
 
-        <div class="card" id="cardDashboardExecucoesRecentes">
-          <div class="card-title">Execuções recentes</div>
-          <div id="dash-execucoes">
-            <div class="empty">Carregando⬦</div>
-          </div>
-        </div>
       </section>
 
 
@@ -646,33 +595,15 @@
         </div>
       </section>
 
-      <!-- PRODUTOS PROXIMOS AO VENCIMENTO -->
       <section id="produtos_vencimento" class="pagina">
         <div class="page-title">Produtos próximos ao vencimento</div>
         <div class="card pv-card">
-          <div class="card-title" id="pvFormTitle">Cadastrar produto</div>
-          <input id="pvId" type="hidden">
-          <div class="pv-form-grid">
-            <label class="pv-field pv-grow"><span>Nome do produto</span><input id="pvNome" type="text" maxlength="180" placeholder="Ex.: Leite integral"></label>
-            <label class="pv-field pv-quantity"><span>Quantidade</span><input id="pvQuantidade" type="number" min="1" step="1" value="1"></label>
-            <label class="pv-field"><span>Código de barras</span><input id="pvCodigo" type="text" inputmode="numeric" maxlength="80" placeholder="Leia ou digite"></label>
-            <label class="pv-field"><span>Data de vencimento</span><input id="pvData" type="date"></label>
-            <label class="pv-field"><span>PIN operacional</span><input id="pvPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"></label>
-            <label class="pv-field pv-observation"><span>Observação</span><input id="pvObservacao" type="text" maxlength="500" placeholder="Lote, local ou detalhe opcional"></label>
-          </div>
-          <div class="pv-alert-row">
-            <label class="pv-check"><input id="pvAlertar" type="checkbox" checked> Alertar no Telegram</label>
-            <label class="pv-inline"><span>com</span><input id="pvDias" type="number" min="0" max="365" value="1"><span>dia(s) antes</span></label>
-            <label class="pv-check"><input id="pvNoDia" type="checkbox" checked> Avisar no dia do vencimento</label>
-            <label class="pv-inline"><span>Horário</span><input id="pvHorario" type="time" value="08:00"></label>
-          </div>
-          <div class="pv-actions"><button class="btn btn-ghost" id="pvCancelar" type="button" onclick="limparProdutoVencimentoForm()" hidden>Cancelar edição</button><button class="btn btn-green" id="pvSalvar" type="button" onclick="salvarProdutoVencimento()">Cadastrar produto</button></div>
-          <div class="msg" id="pvMsg"></div>
+          <div class="card-title" id="pvFormTitle">Cadastrar produto</div><input id="pvId" type="hidden">
+          <div class="pv-form-grid"><label class="pv-field pv-grow"><span>Nome do produto</span><input id="pvNome" type="text" maxlength="180" placeholder="Ex.: Leite integral"></label><label class="pv-field"><span>Código de barras</span><input id="pvCodigo" type="text" inputmode="numeric" maxlength="80" placeholder="Leia ou digite"></label><label class="pv-field"><span>Data de vencimento</span><input id="pvData" type="date"></label><label class="pv-field"><span>PIN operacional</span><input id="pvPin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"></label></div>
+          <div class="pv-alert-row"><label class="pv-check"><input id="pvAlertar" type="checkbox" checked> Alertar no Telegram</label><label class="pv-inline"><span>com</span><input id="pvDias" type="number" min="0" max="365" value="1"><span>dia(s) antes</span></label><label class="pv-check"><input id="pvNoDia" type="checkbox" checked> Avisar no dia do vencimento</label><label class="pv-inline"><span>Horário</span><input id="pvHorario" type="time" value="08:00"></label></div>
+          <div class="pv-actions"><button class="btn btn-ghost" id="pvCancelar" type="button" onclick="limparProdutoVencimentoForm()" hidden>Cancelar edição</button><button class="btn btn-green" id="pvSalvar" type="button" onclick="salvarProdutoVencimento()">Cadastrar produto</button></div><div class="msg" id="pvMsg"></div>
         </div>
-        <div class="card pv-card">
-          <div class="pv-list-head"><div class="card-title">Produtos da loja</div><div class="pv-filters"><input id="pvBusca" type="search" placeholder="Buscar produto ou código" oninput="renderizarProdutosVencimento()"><select id="pvFiltro" onchange="renderizarProdutosVencimento()"><option value="ativos">Ativos</option><option value="vencidos">Vencidos</option><option value="todos">Todos</option></select></div></div>
-          <div id="pvLista"><div class="empty">Carregando...</div></div>
-        </div>
+        <div class="card pv-card"><div class="pv-list-head"><div class="card-title">Produtos da loja</div><div class="pv-filters"><input id="pvBusca" type="search" placeholder="Buscar produto ou código" oninput="renderizarProdutosVencimento()"><select id="pvFiltro" onchange="renderizarProdutosVencimento()"><option value="ativos">Ativos</option><option value="vencidos">Vencidos</option><option value="todos">Todos</option></select></div></div><div id="pvLista"><div class="empty">Carregando...</div></div></div>
       </section>
 
       <!--  CHECKLISTS  -->
@@ -684,17 +615,22 @@
             <button class="regra-info-btn" type="button" title="Regra dos checklists lançados" aria-label="Regra dos checklists lançados" onclick="abrirInfoRegraChecklist('lancados')">I</button>
             <div class="card-title" style="margin:0">Checklists lancados</div>
           </div>
-          <div class="form-row checklist-filtros-barra">
+          <div class="form-row">
             <select id="filtroChecklistFuncionario" onchange="carregarChecklists()">
               <option value="">- Todos os funcionarios -</option>
             </select>
             <select id="filtroChecklistTarefa" onchange="carregarChecklists()">
               <option value="">- Todas as tarefas -</option>
             </select>
-            <label class="checklist-data-campo" for="filtroChecklistDataInicio"><span>Data inicial</span><input id="filtroChecklistDataInicio" type="date" onclick="this.showPicker?.()"></label>
-            <label class="checklist-data-campo" for="filtroChecklistDataFim"><span>Data final</span><input id="filtroChecklistDataFim" type="date" onclick="this.showPicker?.()"></label>
-            <button class="btn btn-green checklist-filtrar-btn" type="button" onclick="filtrarPeriodoChecklists()">Filtrar</button>
-            <button class="btn btn-ghost checklist-limpar-btn" type="button" title="Limpar todos os filtros" onclick="limparFiltrosChecklists(); limparPeriodoChecklists()">× Limpar</button>
+            <button class="btn btn-ghost" type="button" onclick="limparFiltrosChecklists()">Limpar filtros</button>
+          </div>
+          <div class="form-row checklist-periodo-filtro" style="margin-top:8px;align-items:flex-end;">
+            <label class="campo-label" for="filtroChecklistDataInicio">Data inicial</label>
+            <input id="filtroChecklistDataInicio" type="date" onclick="this.showPicker?.()">
+            <label class="campo-label" for="filtroChecklistDataFim">Data final</label>
+            <input id="filtroChecklistDataFim" type="date" onclick="this.showPicker?.()">
+            <button class="btn btn-green" type="button" onclick="filtrarPeriodoChecklists()">Filtrar período</button>
+            <button class="btn btn-ghost" type="button" onclick="limparPeriodoChecklists()">Limpar período</button>
           </div>
           <div class="msg" id="msgChecklists"></div>
           <div id="listaChecklists"><div class="empty">Carregando...</div></div>
@@ -779,12 +715,6 @@
               </div>
             </div>
             <div class="funcionario-cadastro-footer">
-              <div class="funcionario-admin-global-box" id="containerFuncionarioAdmin" style="display:none;">
-                <label class="funcionario-admin-toggle" for="funcionarioAdmin">
-                  <input id="funcionarioAdmin" type="checkbox" onchange="atualizarFuncionarioAdminToggle()">
-                  <span><strong>Acesso global</strong><small>Usuário administrador com acesso ao painel SaaS</small></span>
-                </label>
-              </div>
               <div class="funcionario-cadastro-actions">
                 <button class="btn btn-ghost btn-sm" id="btnCancelarEdicaoFuncionario" style="display:none;" onclick="cancelarEdicaoFuncionario()">Cancelar</button>
                 <button class="btn btn-green btn-sm" id="btnSalvarFuncionario" onclick="criarFuncionario()">Cadastrar</button>
@@ -793,7 +723,7 @@
             <!-- Gerenciador de vínculos empresa → lojas -->
             <div id="containerVinculosFuncionario" style="margin-top:12px;">
               <div class="funcionario-vinculos-header">
-                <div><div class="campo-label">Acesso por empresa e lojas</div><div class="item-detalhe">O perfil limita-se às lojas vinculadas. O acesso global libera todas as lojas e o painel SaaS.</div></div>
+                <div><div class="campo-label">Acesso por empresa e lojas</div><div class="item-detalhe">Cada vínculo usa exclusivamente um perfil ativo da própria loja.</div></div>
                 <button id="btnAbrirSeletorLojas" class="btn btn-ghost btn-sm" type="button" onclick="abrirSeletorLojas()" style="display:none;font-size:11px;padding:3px 10px;height:24px;">+ Gerenciar lojas</button>
               </div>
               <div id="listaVinculosEmpresas" style="display:flex;flex-direction:column;gap:4px;">
@@ -895,6 +825,25 @@
           <div class="card-title">Destinatários cadastrados</div>
           <div id="listaDestinatariosEmail"><div class="empty">Carregando⬦</div></div>
         </div>
+      </section>
+
+      <section id="dashboard_saas" class="pagina">
+        <div class="page-title">Dashboard SaaS</div>
+        <div class="card"><div class="page-sub">Visão administrativa global do CheckDiário. Nenhuma loja operacional está selecionada neste modo.</div></div>
+        <div class="dash-grid" id="dashboardSaasMetricas"><div class="card"><div class="empty">Carregando métricas reais...</div></div></div>
+        <div class="msg" id="msgDashboardSaas"></div>
+      </section>
+
+      <section id="usuarios_saas" class="pagina">
+        <div class="page-title">Usuários do sistema</div>
+        <div class="card"><div class="card-title">Usuários por empresa e loja</div><div id="listaUsuariosSaas"><div class="empty">Carregando...</div></div></div>
+      </section>
+
+      <section id="conectores_saas" class="pagina">
+        <div class="page-title">Conectores</div>
+        <div class="card"><div class="card-title">Central de downloads</div><div class="page-sub">Distribuição independente do conector local, SQL e heartbeat.</div><div id="connectorDownloadCenter"><div class="empty">Carregando versões...</div></div></div>
+        <div class="card"><div class="card-title">Adicionar conector</div><div class="page-sub">Gere um código temporário para vincular uma instalação física à empresa.</div><div class="form-grid"><label>Empresa<select id="connectorPairEmpresa"></select></label><div style="align-self:end"><button class="btn btn-green" type="button" onclick="gerarCodigoPareamentoConector()">Gerar código de vinculação</button></div></div><div id="connectorPairCode" class="msg"></div></div>
+        <div class="card"><div class="card-title">Instalações e vínculos Raffinato</div><div class="page-sub">Somente metadados operacionais. Credenciais SQL permanecem protegidas no computador do conector.</div><div id="listaConectoresSaas"><div class="empty">Carregando...</div></div></div>
       </section>
 
       <section id="empresas_saas" class="pagina">
@@ -1060,79 +1009,86 @@
       <section id="tarefas" class="pagina">
         <div class="page-title">Cadastro de Checklist</div>
 
-        <div class="card">
-          <div class="card-title">Nova tarefa</div>
-          <div class="tarefa-form-row">
-            <input id="nomeTarefa" type="text" placeholder="Nome da tarefa (obrigatório)" required>
-            <input id="descTarefa" name="descricao_tarefa_manual_no_autofill" type="text" placeholder="Observação da tarefa (obrigatório)" autocomplete="new-password" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly required onfocus="desbloquearCampoDescricaoTarefa(this)">
+        <div class="card checklist-cadastro-card">
+          <div class="checklist-cadastro-cabecalho">
+            <div>
+              <div class="card-title">Programar checklist</div>
+              <div class="item-detalhe">Escolha um modelo fixo, o responsável e a regra de repetição. Nada será gravado antes da conferência final.</div>
+            </div>
+            <button class="regra-info-btn" type="button" title="Regras operacionais" aria-label="Regras operacionais" onclick="abrirInfoRegraChecklist('checklists')">I</button>
+          </div>
+
+          <div class="checklist-cadastro-regras">
+            <span>Início somente com PIN operacional</span>
+            <span>Quem inicia não pode finalizar</span>
+            <span>Outro funcionário confere e confirma</span>
+            <span>Programação isolada por loja</span>
+          </div>
+
+          <div class="checklist-cadastro-grid">
+            <label class="checklist-cadastro-campo checklist-cadastro-campo-nome">
+              <span>1. Nome da tarefa (modelo) <b>*</b></span>
+              <select id="modeloChecklistAgendamento" onchange="atualizarResumoModeloAgendamento()"><option value="">Selecione um modelo cadastrado</option></select>
+            </label>
+            <label class="checklist-cadastro-campo checklist-cadastro-campo-observacao">
+              <span>Orientação desta tarefa</span>
+              <textarea id="resumoModeloAgendamento" class="checklist-modelo-resumo" rows="4" maxlength="500" placeholder="Descreva como esta tarefa deve ser executada neste turno"></textarea>
+            </label>
+            <label class="checklist-cadastro-campo">
+              <span>2. Funcionário responsável <b>*</b></span>
+              <select id="funcionarioTarefa"><option value="">Selecione o funcionário</option></select>
+            </label>
             <select id="lojaTarefaCadastro" class="campo-curto" style="display:none">
               <option value="">Loja</option>
             </select>
-            <select id="funcionarioTarefa" style="display:none">
-              <option value=""></option>
-            </select>
-            <div class="tarefa-form-acoes">
-              <button class="btn btn-green" id="btnSalvarTarefa" onclick="criarTarefa()">Salvar</button>
-              <button class="btn btn-ghost" id="btnCancelarEdicaoTarefa" onclick="cancelarEdicaoTarefa()" style="display:none">Cancelar</button>
+            <fieldset class="checklist-cadastro-dias">
+              <legend>3. Dias da semana</legend>
+              <div class="checklist-cadastro-dias-grid">
+                <label><input id="diasSeg" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Seg</span></label>
+                <label><input id="diasTer" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Ter</span></label>
+                <label><input id="diasQua" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Qua</span></label>
+                <label><input id="diasQui" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Qui</span></label>
+                <label><input id="diasSex" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Sex</span></label>
+                <label><input id="diasSab" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Sáb</span></label>
+                <label><input id="diasDom" type="checkbox" checked onchange="atualizarDiasSelecionados()"><span>Dom</span></label>
+              </div>
+              <div class="checklist-cadastro-dias-rodape">
+                <span id="diasSelecionados">Dias selecionados: Segunda, Terça, Quarta, Quinta, Sexta, Sábado, Domingo</span>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="marcarTodosDias()">Todos</button>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="limparDias()">Limpar</button>
+              </div>
+            </fieldset>
+            <fieldset class="checklist-cadastro-dias checklist-repeticao-box">
+              <legend>4. Repetições <button class="regra-info-btn regra-info-btn-mini" type="button" onclick="abrirInfoRepeticaoChecklist()">I</button></legend>
+              <div class="checklist-repeticao-grid">
+                <label><span>Horário para início</span><input id="horarioInicioChecklistAgendamento" type="time"></label>
+                <label><span>Horário para fim</span><input id="horarioFimChecklistAgendamento" type="time"></label>
+                <label><span>Repetir a cada</span><input id="intervaloChecklistAgendamento" type="number" min="1" max="365" value="1"><small>dias corridos</small></label>
+                <label><span>Durante</span><input id="duracaoChecklistAgendamento" type="number" min="1" max="365" value="7"><small>dias de horizonte</small></label>
+              </div>
+            </fieldset>
+            <div class="checklist-cadastro-acoes">
+              <button class="btn btn-green" type="button" onclick="abrirConferenciaAgendamentoChecklist()">Salvar e conferir</button>
+              <button class="btn btn-ghost" type="button" onclick="limparAgendamentoChecklist()">Limpar</button>
+              <button class="btn btn-ghost" type="button" onclick="abrirPagina('relatorio_tarefas_cadastradas', document.querySelector('.nav-btn[data-page=&quot;relatorio_tarefas_cadastradas&quot;]'))">Ir para a listagem</button>
             </div>
           </div>
-          <div class="item-detalhe" style="margin-top:8px">Funcionário: selecione por checkbox ao lado de cada tarefa cadastrada.</div>
-
           <div class="msg" id="msgTarefas"></div>
         </div>
 
-        <div class="card">
-          <div class="card-title">Tarefas cadastradas</div>
-          <div class="tarefas-consulta-box">
-            <div class="form-row tarefas-filtros-row">
-              <input id="filtroTarefasNome" name="consulta_tarefas_sem_autofill" type="text" placeholder="Buscar na listagem de tarefas" autocomplete="off" data-lpignore="true" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="desbloquearCampoBuscaTarefas(this)" oninput="marcarCampoBuscaTarefasComoEditado(this); filtrarTarefasCadastradas()">
-              <button class="btn btn-green" id="btnSelecionarConsultaTarefas" type="button" onclick="aplicarSelecaoConsultaTarefas()">Selecionar</button>
-              <button class="btn btn-ghost" type="button" onclick="selecionarTodasTarefasConsulta()">Todas</button>
-              <button class="btn btn-ghost" type="button" onclick="toggleSomenteFavoritasTarefas()">Favoritas</button>
-              <button class="btn btn-ghost" id="btnMinimizarFavoritasTarefas" type="button" onclick="toggleMinimizarFavoritasTarefas()">Compactar favoritas</button>
-              <button class="btn btn-ghost" type="button" onclick="limparFiltroTarefasCadastradas()">Limpar</button>
-            </div>
-            <div id="resumoConsultaTarefas" class="item-detalhe">Selecione as tarefas para exibir abaixo.</div>
-            <details id="tarefasFiltroAvancado" class="tarefas-filtro-avancado">
-              <summary>Filtros avançados e exclusão em massa</summary>
-              <div class="tarefas-filtro-avancado-corpo">
-                <div class="tarefas-filtro-grid">
-                  <div class="campo-com-label">
-                    <label class="campo-label">Cadastro de</label>
-                    <input id="filtroTarefaAvDataInicio" type="date" onchange="filtrarTarefasCadastradas()">
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Cadastro até</label>
-                    <input id="filtroTarefaAvDataFim" type="date" onchange="filtrarTarefasCadastradas()">
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Contém (nome/observação)</label>
-                    <input id="filtroTarefaAvBusca" type="text" placeholder="Texto contido na tarefa" autocomplete="off" oninput="filtrarTarefasCadastradas()">
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Funcionário responsável</label>
-                    <select id="filtroTarefaAvFuncionario" onchange="filtrarTarefasCadastradas()">
-                      <option value="">- Todos -</option>
-                    </select>
-                  </div>
-                  <div class="campo-com-label">
-                    <label class="campo-label">Tarefa (multi)</label>
-                    <select id="filtroTarefaAvTarefa" multiple size="4" onchange="filtrarTarefasCadastradas()" style="min-height:84px;"></select>
-                  </div>
-                </div>
-                <div class="tarefas-filtro-acoes-massa">
-                  <button class="btn btn-ghost btn-sm" type="button" onclick="selecionarTodasTarefasConsulta()">Selecionar todos filtrados</button>
-                  <button class="btn btn-ghost btn-sm" type="button" onclick="limparMarcacaoConsultaTarefas()">Desmarcar todos</button>
-                  <button class="btn btn-red btn-sm" type="button" onclick="excluirTarefasSelecionadas()">Excluir selecionadas</button>
-                  <button class="btn btn-ghost btn-sm" type="button" onclick="limparFiltrosAvancadosTarefas()">Limpar filtros</button>
-                </div>
-              </div>
-            </details>
-            <div id="listaConsultaTarefas" class="tarefas-consulta-lista"><div class="empty">Carregando tarefas cadastradas...</div></div>
-          </div>
-          <div id="listaTarefas"><div class="empty">Carregando⬦</div></div>
-        </div>
+      </section>
 
+      <section id="checklist_modelos" class="pagina">
+        <div class="page-title">Cadastro modelo de checklist</div>
+        <div class="card checklist-cadastro-card">
+          <div class="checklist-cadastro-cabecalho"><div><div class="card-title" id="tituloModeloChecklist">Novo modelo fixo</div><div class="item-detalhe">Cadastre atividades permanentes reutilizáveis, como “Revisar iFood”. Os modelos existentes foram preservados.</div></div><button class="regra-info-btn" type="button" onclick="abrirInfoModeloChecklist()">I</button></div>
+          <div class="checklist-modelo-form">
+            <label class="checklist-cadastro-campo"><span>Nome do modelo <b>*</b></span><input id="nomeModeloChecklist" maxlength="120" placeholder="Ex.: Revisar iFood"></label>
+            <div class="checklist-cadastro-acoes"><button class="btn btn-green" id="btnSalvarModeloChecklist" type="button" onclick="salvarModeloChecklist()">Cadastrar modelo</button><button class="btn btn-ghost" type="button" onclick="limparFormularioModeloChecklist()">Limpar</button></div>
+          </div>
+          <div class="msg" id="msgModelosChecklist"></div>
+        </div>
+        <div class="card checklist-cadastro-card"><div class="card-title">Modelos cadastrados nesta loja</div><div id="listaModelosChecklist"><div class="empty">Carregando...</div></div></div>
       </section>
 
       <section id="tarefas_rapidas" class="pagina">
@@ -1466,13 +1422,21 @@
       </section>
 
       <section id="relatorio_tarefas_cadastradas" class="pagina">
-        <div class="page-title">Listagem de checklist</div>
+        <div class="page-title">Checklists cadastrados</div>
 
         <div class="card">
           <div class="card-title">Filtros do relatório</div>
           <div class="form-row">
-            <input id="filtroTarefasCadDataInicio" type="date" title="Cadastro/lançamento a partir de">
-            <input id="filtroTarefasCadDataFim" type="date" title="Cadastro/lançamento até">
+            <label class="filter-field-standard"><span>Data inicial</span><input id="filtroTarefasCadDataInicio" data-date-filter-native="true" type="date" title="Data inicial"></label>
+            <label class="filter-field-standard"><span>Data final</span><input id="filtroTarefasCadDataFim" data-date-filter-native="true" type="date" title="Data final"></label>
+            <label class="filter-field-standard filter-field-select"><span>Consultar por</span><select id="filtroTarefasCadDataTipo" data-filter-labeled="true">
+              <option value="todos" selected>Todos os períodos</option>
+              <option value="cadastro">Data de cadastro</option>
+              <option value="inicio">Início programado</option>
+              <option value="fim">Fim programado</option>
+              <option value="ocorrencia">Ocorrência programada no período</option>
+              <option value="proxima">Próxima disponibilidade</option>
+            </select></label>
             <select id="filtroTarefasCadTarefa">
               <option value="">- Todas as tarefas -</option>
             </select>
@@ -1976,10 +1940,10 @@
                 ondragleave="this.style.borderColor='var(--border-mid)'"
                 ondrop="imagemCompraHandleDrop(event)">
                 <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
-                <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria ou imagem</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto ou comprovante</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria, imagem ou PDF</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto, PDF ou comprovante</div>
                 <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Sem custo de API</div>
-                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
+                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,application/pdf,.pdf" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
               </div>
             </div>
             <!-- Dica OFX -->
@@ -1988,7 +1952,7 @@
               App Nubank → Cartão de crédito → Fatura → ··· → Exportar fatura → OFX
             </div>
             <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px;">
-              <strong style="color:var(--text);">Imagem:</strong> o sistema tenta preencher valor, data e observação, mas confira antes de lançar. Prints nítidos funcionam melhor que fotos escuras ou tremidas.
+              <strong style="color:var(--text);">Imagem ou PDF:</strong> o sistema tenta preencher valor, data e observação, mas confira antes de lançar. Prints e PDFs nítidos funcionam melhor que fotos escuras ou tremidas.
             </div>
             <div class="msg" id="msgImportarFatura" style="margin-top:10px;"></div>
           </div>
@@ -2037,14 +2001,15 @@
         <div class="card">
           <div class="card-title">Filtros</div>
           <div class="form-row financeiro-filtros-row financeiro-filtros-baixar">
-            <input id="filtroBaixarContaBusca" type="text" placeholder="Buscar por fornecedor" oninput="debounceConsumo('filtro_baixar_contas', () => carregarBaixarContasFinanceiro(), 700)">
-            <input id="filtroBaixarContaVencimentoInicio" class="campo-curto" type="date" title="Vencimento início" aria-label="Vencimento início" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()">
-            <input id="filtroBaixarContaVencimentoFim" class="campo-curto" type="date" title="Vencimento fim" aria-label="Vencimento fim" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()">
-            <select id="filtroBaixarContaStatus" class="campo-curto" onchange="carregarBaixarContasFinanceiro()">
+            <label class="filter-field-standard baixar-contas-busca"><span>Buscar</span><input id="filtroBaixarContaBusca" type="search" placeholder="Buscar por fornecedor, descrição, documento..." autocomplete="off" oninput="debounceConsumo('filtro_baixar_contas', () => carregarBaixarContasFinanceiro(), 350)"></label>
+            <label class="filter-field-standard baixar-contas-data"><span>Data inicial</span><input id="filtroBaixarContaVencimentoInicio" class="campo-curto" type="date" data-filter-native="true" aria-label="Data inicial" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()"></label>
+            <label class="filter-field-standard baixar-contas-data"><span>Data final</span><input id="filtroBaixarContaVencimentoFim" class="campo-curto" type="date" data-filter-native="true" aria-label="Data final" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()"></label>
+            <label class="filter-field-standard baixar-contas-criterio"><span>Consultar por</span><select id="filtroBaixarContaDataTipo" aria-label="Consultar por" onchange="limparAtalhoBaixarContas(); carregarBaixarContasFinanceiro()"><option value="vencimento">Data de vencimento</option><option value="cadastro">Data de cadastro</option><option value="atualizacao">Data de atualização</option><option value="pagamento">Data de pagamento</option></select></label>
+            <label class="filter-field-standard baixar-contas-status"><span>Status</span><select id="filtroBaixarContaStatus" class="campo-curto" onchange="carregarBaixarContasFinanceiro()">
               <option value="pendente">Pendentes</option>
               <option value="pago">Pagas</option>
               <option value="">Todas</option>
-            </select>
+            </select></label>
             <button class="btn btn-ghost" type="button" onclick="limparFiltrosBaixarContasFinanceiro()">Limpar</button>
             <button class="btn btn-ghost" type="button" onclick="carregarBaixarContasFinanceiro()">Atualizar</button>
             <button class="btn btn-ghost" id="btnAgruparFornecedorBaixa" type="button" onclick="alternarAgrupamentoFornecedorBaixa()">Agrupar por fornecedor</button>
@@ -2090,12 +2055,23 @@
             <button class="btn btn-green" id="btnSalvarContaFinanceira" type="button" onclick="salvarContaFinanceira()">Cadastrar</button>
             <button class="btn btn-ghost" id="btnCancelarContaFinanceira" type="button" onclick="cancelarEdicaoContaFinanceira()" style="display:none">Cancelar</button>
           </div>
+          <div class="conta-cartao-config" id="contaFinanceiraCartaoConfig" hidden>
+            <div class="conta-cartao-config-head"><div><strong>Configuração de cartão no Contas a Pagar</strong><span>Utiliza o fornecedor de mesmo nome e a regra já existente no vencimento das faturas.</span></div><label><input id="contaFinanceiraIsCartao" type="checkbox" onchange="alternarCamposCartaoContaFinanceira()"> É cartão</label></div>
+            <div class="conta-cartao-config-fields" id="contaFinanceiraCartaoCampos" hidden><label>Dia de fechamento<input id="contaFinanceiraDiaFechamento" type="number" min="1" max="31" inputmode="numeric"></label><label>Dia de vencimento<input id="contaFinanceiraDiaVencimento" type="number" min="1" max="31" inputmode="numeric"></label></div>
+            <div class="page-sub" id="contaFinanceiraCartaoVinculo"></div>
+          </div>
           <div class="msg" id="msgContaFinanceira"></div>
         </div>
 
         <div class="card">
           <div class="card-title">Contas cadastradas</div>
           <div id="listaContasFinanceiras"><div class="empty">Carregando...</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Cartões e reembolsos do Contas a Pagar</div>
+          <div class="page-sub">Cadastros existentes em fornecedores. A edição mantém a mesma regra usada no lançamento das contas.</div>
+          <div id="listaConfiguracoesCartaoContaFinanceira"><div class="empty">Carregando...</div></div>
         </div>
 
         <div class="card">
@@ -2158,6 +2134,7 @@
           <div class="form-row financeiro-filtros-row financeiro-selecao-rec-futuros-row" id="acoesSelecaoRecFuturos" style="margin-bottom:8px;gap:8px;align-items:center;display:none;">
             <button class="btn btn-ghost btn-sm" id="btnSelecionarTodosRecFuturos" type="button" onclick="toggleSelecionarTodosRecFuturos()">Selecionar todas</button>
             <div class="item-detalhe" id="resumoSelecaoRecFuturos" style="align-self:center">Nenhum recebimento selecionado.</div>
+            <button class="btn btn-green btn-sm" id="btnConfirmarRecFuturosSelecionados" type="button" disabled>Confirmar recebimentos</button>
             <button class="btn btn-red btn-sm" id="btnExcluirRecFuturosSelecionados" type="button" onclick="excluirRecFuturosSelecionados()" style="display:none;" disabled>Excluir selecionadas</button>
           </div>
           <div class="msg" id="msgRecFuturosLista"></div>
@@ -2189,6 +2166,10 @@
                 <div class="campo-com-label" style="grid-column:1/-1;">
                   <label class="campo-label">Observação</label>
                   <input id="modalConfirmarObs" type="text" placeholder="Opcional">
+                </div>
+                <div class="campo-com-label" style="grid-column:1/-1;">
+                  <label class="campo-label">Movimentar saldo da conta financeira?</label>
+                  <div class="baixa-multipla-toggle modal-confirmar-rec-toggle"><span id="modalConfirmarMovimentacaoResumo">SIM — adicionar o valor ao saldo</span><button class="btn btn-ghost ativo" id="btnModalConfirmarMovimentarSim" type="button" onclick="definirMovimentacaoRecebimentoIndividual(true)">SIM</button><button class="btn btn-ghost" id="btnModalConfirmarMovimentarNao" type="button" onclick="definirMovimentacaoRecebimentoIndividual(false)">NÃO</button></div>
                 </div>
               </div>
               <div class="msg" id="msgModalConfirmarRecFuturo"></div>
@@ -2400,32 +2381,44 @@
           </div>
         </div>
 
-        <div class="card raffinato-integration-card">
+        <div class="card raffinato-integration-card" id="raffinatoAdminLockCard">
+          <div class="raffinato-integration-head"><div><div class="card-title">Configurações do conector</div><div class="page-sub">A operação normal continua automática. A senha master é exigida somente para administrar conexões.</div></div></div>
+          <div class="raffinato-config-grid"><div class="raffinato-field"><label for="raffinatoMasterPassword">Senha master</label><input id="raffinatoMasterPassword" type="password" autocomplete="current-password" placeholder="Senha master"></div></div>
+          <div class="raffinato-config-actions"><button class="btn btn-green" type="button" onclick="desbloquearConfiguracaoRaffinato()">Entrar nas configurações</button></div>
+          <div class="msg" id="msgRaffinatoMaster"></div>
+        </div>
+
+        <div class="card raffinato-integration-card" id="raffinatoAdminPanel" hidden>
           <div class="raffinato-integration-head">
-            <div><div class="card-title">Conexão desta loja</div><div class="page-sub" id="raffinatoLojaContexto">Carregando loja...</div></div>
-            <button class="btn btn-red btn-sm" id="raffinatoDeleteIntegrationBtn" type="button" onclick="excluirIntegracaoRaffinato()" hidden>Excluir integração</button>
+            <div><div class="card-title">Conexão desta loja</div><div class="page-sub" id="raffinatoLojaContexto">Carregando loja...</div><div class="raffinato-sync-age" id="raffinatoSyncAge">Última atualização: verificando...</div></div>
+            <div class="raffinato-delete-actions" id="raffinatoDeleteActions" hidden><button class="btn btn-ghost btn-sm" id="raffinatoGenerateDeleteTokenBtn" type="button" onclick="gerarTokenExclusaoRaffinato()">Gerar token para excluir</button><button class="btn btn-red btn-sm" id="raffinatoDeleteIntegrationBtn" type="button" onclick="excluirIntegracaoRaffinato()" disabled>Excluir integração</button></div>
           </div>
           <div class="raffinato-config-grid">
+            <div class="raffinato-field"><label for="raffinatoProfileName">Nome da conexão</label><input id="raffinatoProfileName" type="text" placeholder="Nome da conexão" autocomplete="off"></div>
             <div class="raffinato-field"><label for="raffinatoSqlServer">Instância SQL</label><input id="raffinatoSqlServer" type="text" placeholder="26.x.x.x\\sql2019" autocomplete="off"></div>
             <div class="raffinato-field"><label for="raffinatoDatabase">Banco de dados</label><input id="raffinatoDatabase" type="text" placeholder="Nome do banco" autocomplete="off"></div>
             <div class="raffinato-field"><label for="raffinatoDbUser">Usuário do banco</label><input id="raffinatoDbUser" type="text" placeholder="Usuário SQL" autocomplete="off"></div>
-            <div class="raffinato-field"><label for="raffinatoDbPassword">Senha do banco</label><input id="raffinatoDbPassword" type="password" placeholder="Informe para testar ou alterar" autocomplete="new-password"></div>
+            <div class="raffinato-field"><label for="raffinatoDbPassword">Senha do banco</label><div class="raffinato-password-control"><input id="raffinatoDbPassword" type="password" placeholder="Informe para testar ou alterar" autocomplete="off"><button type="button" id="raffinatoPasswordToggle" class="raffinato-password-toggle" aria-label="Mostrar senha" title="Mostrar senha" aria-pressed="false">Mostrar</button></div></div>
+            <div class="raffinato-field"><label for="raffinatoFilialSelect">Filial Raffinato vinculada</label><select id="raffinatoFilialSelect"><option value="">- Teste a conexão para descobrir as filiais -</option></select></div>
           </div>
           <div class="raffinato-config-actions">
             <button class="btn btn-ghost" id="raffinatoTestBtn" type="button" onclick="testarIntegracaoRaffinato()">Testar conexão</button>
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
+            <button class="btn btn-ghost" type="button" onclick="alterarSenhaMasterRaffinato()">Alterar senha master</button>
+            <a class="btn btn-ghost" id="raffinatoConnectorDownload" href="./downloads/Conector-Raffinato-v1.7.19.exe" download>Baixar conector</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
+          <div class="raffinato-delete-token" id="raffinatoDeleteTokenBox" hidden><label for="raffinatoDeleteToken">Token temporário de exclusão</label><div><input id="raffinatoDeleteToken" type="text" readonly><button class="btn btn-ghost btn-sm" type="button" onclick="navigator.clipboard?.writeText(document.getElementById('raffinatoDeleteToken').value)">Copiar</button></div><small>Válido por 5 minutos e utilizado uma única vez.</small></div>
           <div class="msg" id="msgRaffinatoIntegracao"></div>
         </div>
 
       </section>
 
       <section id="relatorio_sangrias_raffinato" class="pagina raffinato-page raffinato-report-page">
-        <div class="page-title">Sangrias e retiradas para cofre</div>
+        <div class="page-title">Saídas de caixa do Raffinato</div>
         <div class="card raffinato-report-intro">
-          <div><div class="card-title">Análise de sangrias do Raffinato</div><div class="page-sub">Acompanhe valores, frequência, motivos e horários da loja selecionada.</div></div>
+          <div><div class="card-title">Sangrias e retiradas para cofre</div><div class="page-sub">Acompanhe pagamentos de despesas e retiradas para cofre, sempre separados por finalidade.</div></div>
           <div class="raffinato-connection" id="raffinatoReportConnectionStatus"><span class="raffinato-connection-dot"></span><span id="raffinatoReportConnectionLabel">Verificando integração...</span></div>
         </div>
 
@@ -2446,14 +2439,17 @@
             <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(7)">7 dias</button>
             <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(15)">15 dias</button>
             <button class="btn btn-ghost btn-sm" type="button" onclick="definirPeriodoSangriasRaffinato(30)">30 dias</button>
+            <button class="btn btn-ghost btn-sm raffinato-clear-filters" type="button" onclick="limparFiltrosSangriasRaffinato()">✕ Limpar consulta</button>
           </div>
           <div class="msg" id="msgRaffinatoSangrias"></div>
         </div>
 
         <div class="raffinato-summary" id="raffinatoSummary" hidden>
-          <div class="stat-card"><div class="stat-label">Sangrias / despesas</div><div class="stat-value" id="raffinatoTotalSangrias">R$ 0,00</div><div class="page-sub"><span id="raffinatoQuantidadeSangrias">0</span> operação(ões)</div></div>
-          <div class="stat-card"><div class="stat-label">Retiradas para cofre</div><div class="stat-value" id="raffinatoTotalCofre">R$ 0,00</div><div class="page-sub"><span id="raffinatoQuantidadeCofre">0</span> operação(ões)</div></div>
-          <div class="stat-card"><div class="stat-label">Total retirado dos caixas</div><div class="stat-value" id="raffinatoTotal">R$ 0,00</div><div class="page-sub"><span id="raffinatoQuantidade">0</span> operação(ões)</div></div>
+          <div class="stat-card raffinato-stat-expense"><div class="stat-label">Sangrias / despesas</div><div class="stat-value" id="raffinatoTotalSangrias">R$ 0,00</div></div>
+          <div class="stat-card raffinato-stat-vault"><div class="stat-label">Retiradas para cofre</div><div class="stat-value" id="raffinatoTotalRetiradas">R$ 0,00</div></div>
+          <div class="stat-card raffinato-stat-total"><div class="stat-label">Total retirado dos caixas</div><div class="stat-value" id="raffinatoTotalGeral">R$ 0,00</div></div>
+          <div class="stat-card"><div class="stat-label">Quantidade de sangrias</div><div class="stat-value" id="raffinatoQuantidadeSangrias">0</div></div>
+          <div class="stat-card"><div class="stat-label">Quantidade de retiradas</div><div class="stat-value" id="raffinatoQuantidadeRetiradas">0</div></div>
           <div class="stat-card"><div class="stat-label">Valor médio geral</div><div class="stat-value" id="raffinatoTicketMedio">R$ 0,00</div></div>
         </div>
 
@@ -2464,11 +2460,11 @@
         </div>
 
         <div class="raffinato-charts" id="raffinatoCharts" hidden>
-          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Evolução por dia</div><div class="page-sub">Clique em um dia para cruzar com motivo, dia da semana e horário.</div><div id="raffinatoChartDias" class="raffinato-chart"></div></div>
-          <div class="card raffinato-chart-card raffinato-top-card"><div class="card-title">Top 10 retiradas mais frequentes</div><div class="page-sub">Motivos semelhantes são unificados somente nesta análise.</div><div id="raffinatoChartMotivos" class="raffinato-chart raffinato-top-list"></div></div>
-          <div class="card raffinato-chart-card raffinato-donut-card"><div class="card-title">Participação dos principais motivos</div><div class="page-sub">Valor movimentado por motivo agrupado.</div><div id="raffinatoPizzaMotivos" class="raffinato-donut-layout"></div></div>
-          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Dia da semana com mais gastos</div><div class="page-sub">Todos os dias permanecem visíveis no período.</div><div id="raffinatoPizzaSemana" class="raffinato-donut-layout"></div></div>
-          <div class="card raffinato-chart-card raffinato-compact-chart"><div class="card-title">Horário com mais sangrias</div><div class="page-sub">Quantidade por faixa horária.</div><div id="raffinatoPizzaHoras" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card"><div class="card-title">Evolução de sangrias por dia</div><div class="page-sub">Somente pagamentos de despesas (tipo 1).</div><div id="raffinatoChartSangriasDias" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card"><div class="card-title">Evolução de retiradas para cofre</div><div class="page-sub">Somente retiradas para guardar no cofre (tipo 4).</div><div id="raffinatoChartRetiradasDias" class="raffinato-chart"></div></div>
+          <div class="card raffinato-chart-card raffinato-donut-card"><div class="card-title">Composição das saídas do caixa</div><div class="page-sub">Pagamento de despesas versus retirada para cofre.</div><div id="raffinatoPizzaComposicao" class="raffinato-donut-layout"></div></div>
+          <div class="card raffinato-chart-card raffinato-top-card"><div class="card-title">Motivos mais frequentes das sangrias</div><div class="page-sub">Somente tipo 1; motivos semelhantes são agrupados.</div><div id="raffinatoChartMotivos" class="raffinato-chart raffinato-top-list"></div></div>
+          <div class="card raffinato-chart-card raffinato-chart-wide"><div class="card-title">Retiradas para cofre</div><div class="page-sub">Histórico real de movimentos tipo 4.</div><div id="raffinatoHistoricoRetiradas" class="raffinato-vault-history"></div></div>
         </div>
 
         <div class="card raffinato-table-card" id="raffinatoTableCard" hidden>
@@ -2478,13 +2474,112 @@
           </div>
           <div class="raffinato-table-wrap">
             <table class="raffinato-table" id="raffinatoTable" hidden>
-              <thead><tr><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('data')">Data <span id="raffinatoSortData">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('hora')">Hora <span id="raffinatoSortHora">↕</span></button></th><th>Categoria</th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('motivo')">Motivo <span id="raffinatoSortMotivo">↕</span></button></th><th><button class="raffinato-sort is-right" type="button" onclick="ordenarDetalhamentoRaffinato('valor')">Valor <span id="raffinatoSortValor">↕</span></button></th></tr></thead>
+              <thead><tr><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('data')">Data <span id="raffinatoSortData">↕</span></button></th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('hora')">Hora <span id="raffinatoSortHora">↕</span></button></th><th>Tipo / finalidade</th><th><button class="raffinato-sort" type="button" onclick="ordenarDetalhamentoRaffinato('motivo')">Motivo <span id="raffinatoSortMotivo">↕</span></button></th><th>Usuário / autorizador</th><th><button class="raffinato-sort is-right" type="button" onclick="ordenarDetalhamentoRaffinato('valor')">Valor <span id="raffinatoSortValor">↕</span></button></th></tr></thead>
               <tbody id="raffinatoTableBody"></tbody>
             </table>
             <div class="raffinato-empty" id="raffinatoEmpty"><div><strong>Pronto para consultar</strong>Escolha o período e clique em Executar consulta.</div></div>
           </div>
         </div>
       </section>
+
+      <section id="relatorio_faturamento_raffinato" class="pagina raffinato-billing-page">
+        <div class="page-title">Faturamento Raffinato</div>
+        <div class="card rb-intro"><div><div class="card-title">Análise de faturamento por forma de pagamento</div><div class="page-sub">Movimento, abertura, suprimentos, sangrias, valor apurado e confirmado da filial selecionada.</div></div><div class="rb-status" id="rbStatus"><span></span><strong>Aguardando consulta</strong></div></div>
+        <div class="card rb-filters">
+          <div class="rb-filter-grid">
+            <label>Data inicial<input id="rbDataInicio" type="date"></label><label>Hora inicial<input id="rbHoraInicio" type="time" value="00:00"></label>
+            <label>Data final<input id="rbDataFim" type="date"></label><label>Hora final<input id="rbHoraFim" type="time" value="23:59"></label>
+            <label class="rb-payment-filter">Forma de pagamento<select id="rbFormaPagamento"><option value="">Todas as formas</option></select></label>
+            <button class="btn rb-query-btn" id="rbQueryBtn" type="button" onclick="consultarFaturamentoRaffinato()">Executar consulta</button>
+          </div>
+          <div class="rb-shortcuts"><span>Período rápido</span><button type="button" onclick="definirPeriodoFaturamentoRaffinato(1)">Hoje</button><button type="button" onclick="definirPeriodoFaturamentoRaffinato(7)">7 dias</button><button type="button" onclick="definirPeriodoFaturamentoRaffinato(15)">15 dias</button><button type="button" onclick="definirPeriodoFaturamentoRaffinato(30)">30 dias</button><button class="rb-clear-filters" type="button" onclick="limparFiltrosFaturamentoRaffinato()">✕ Limpar filtros</button></div>
+          <div class="msg" id="rbMessage"></div>
+        </div>
+        <div class="rs-active" id="rbActive" hidden><strong>Filtros ativos</strong><div id="rbChips"></div><button class="btn btn-ghost btn-sm" type="button" onclick="rbClearChartFilters()">Limpar todos</button></div>
+        <div class="rb-kpis" id="rbKpis" hidden>
+          <div class="stat-card"><div class="stat-label">Movimento</div><div class="stat-value" id="rbTotalMovimento">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Abertura</div><div class="stat-value" id="rbTotalAbertura">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Suprimentos</div><div class="stat-value" id="rbTotalSuprimento">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Sangrias</div><div class="stat-value" id="rbTotalSangria">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Valor apurado</div><div class="stat-value" id="rbTotalApurado">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Valor confirmado</div><div class="stat-value" id="rbTotalConfirmado">R$ 0,00</div></div><div class="stat-card rb-open-value"><div class="stat-label">Aguardando fechamento / em aberto</div><div class="stat-value" id="rbTotalOpen">R$ 0,00</div></div>
+        </div>
+        <div class="rb-analytics" id="rbAnalytics" hidden>
+          <div class="card rb-chart-card"><div class="card-title">Faturamento por forma</div><div class="page-sub">Valor do movimento por forma de pagamento.</div><div id="rbChartFormas" class="rb-bars"></div></div><div class="card rb-chart-card"><div class="card-title">Participação no faturamento</div><div class="page-sub">Percentual sobre o movimento total.</div><div id="rbChartParticipacao" class="rb-bars"></div></div><div class="card rb-chart-card rb-wide"><div class="card-title">Evolução do faturamento</div><div class="page-sub">Total por dia no período e forma selecionados.</div><div id="rbChartEvolucao" class="rb-bars"></div></div><div class="card rb-chart-card"><div class="card-title">Formas mais utilizadas</div><div id="rbRanking" class="rb-ranking"></div></div><div class="card rb-chart-card"><div class="card-title">Movimento, apurado e confirmado</div><div id="rbComparison" class="rb-comparison"></div></div>
+        </div>
+        <div class="card rb-table-card" id="rbTableCard" hidden><div class="rb-table-head"><div><div class="card-title">Detalhamento por forma de pagamento</div><div class="page-sub" id="rbTableSummary"></div></div><button class="btn btn-ghost btn-sm" type="button" onclick="exportarFaturamentoRaffinatoCsv()">Exportar CSV</button></div><div class="rb-table-wrap"><table><thead><tr><th>Forma de pagamento</th><th>Movimento</th><th>Abertura</th><th>Suprimento</th><th>Sangria</th><th>Apurado</th><th>Confirmado</th></tr></thead><tbody id="rbTableBody"></tbody></table></div><div class="rb-mobile-list" id="rbMobileList"></div></div>
+      </section>
+
+      <section id="relatorio_produtos_raffinato" class="pagina raffinato-sales-page">
+        <div class="page-title">Produtos faturados — Raffinato</div>
+        <div class="card rs-intro"><div><div class="card-title">Produtos vendidos no período</div><div class="page-sub">Faturamento, quantidade, participação e evolução dos produtos da filial.</div></div><div class="rs-cache-tools"><div class="rs-status" id="rpCacheStatus">Última sincronização: verificando...</div><button class="btn btn-ghost btn-sm" type="button" onclick="atualizarProdutosRaffinato()">Atualizar dados</button></div></div>
+        <div class="card rs-filters"><div class="rs-filter-grid"><label>Data inicial<input id="rpStart" type="date"></label><label>Hora inicial<input id="rpStartTime" type="time" value="00:00"></label><label>Data final<input id="rpEnd" type="date"></label><label>Hora final<input id="rpEndTime" type="time" value="23:59"></label><label>Produto<input id="rpProductSearch" type="search" placeholder="Código ou nome" autocomplete="off"></label><label>Agrupamento<select id="rpGroup"><option value="">Todos os grupos</option></select></label><label>Forma de pagamento<select id="rpPayment"><option value="">Todas as formas</option></select></label><button class="btn rs-query" id="rpQuery" type="button" onclick="consultarProdutosRaffinato()">Executar consulta</button></div><div class="rs-shortcuts"><button onclick="definirPeriodoProdutosRaffinato(1)">Hoje</button><button onclick="definirPeriodoProdutosRaffinato(7)">7 dias</button><button onclick="definirPeriodoProdutosRaffinato(15)">15 dias</button><button onclick="definirPeriodoProdutosRaffinato(30)">30 dias</button><button onclick="definirMesProdutosRaffinato()">Este mês</button><button onclick="limparFiltrosProdutosRaffinato()">Limpar filtros</button></div><div class="msg" id="rpMessage"></div></div>
+        <div class="rs-kpis" id="rpKpis" hidden><div class="stat-card"><div class="stat-label">Faturamento total</div><div class="stat-value" id="rpRevenue">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Produtos identificados</div><div class="stat-value" id="rpIdentified">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Contingência</div><div class="stat-value" id="rpContingency">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Ajustes</div><div class="stat-value" id="rpAdjustments">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Quantidade vendida</div><div class="stat-value" id="rpQuantity">0</div></div><div class="stat-card"><div class="stat-label">Produtos diferentes</div><div class="stat-value" id="rpProducts">0</div></div><div class="stat-card"><div class="stat-label">Produto líder</div><div class="stat-value rs-text-kpi" id="rpLeader">—</div></div></div>
+        <div class="rs-active" id="rpViews" hidden><strong>Visão</strong><div><button class="rs-chip" id="rpProductsTab" onclick="alternarVisaoProdutosRaffinato('produtos')">Produtos faturados</button><button class="rs-chip" id="rpContingencyTab" onclick="alternarVisaoProdutosRaffinato('contingencia')">Contingência</button></div></div>
+        <div class="rs-grid" id="rpCharts" hidden><div class="card rs-chart"><div class="card-title">Top 10 produtos por faturamento</div><div id="rpRevenueChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Top 10 produtos por quantidade</div><div id="rpQuantityChart" class="rb-bars"></div></div><div class="card rs-chart"><div class="card-title">Participação dos produtos</div><div id="rpParticipationChart" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Faturamento por agrupamento</div><div id="rpGroupChart" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Composição do faturamento</div><div id="rpCompositionChart" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Evolução do faturamento</div><div id="rpEvolutionChart" class="rb-bars"></div></div></div>
+        <div class="card rs-table-card" id="rpTableCard" hidden><div class="rs-table-head"><div><div class="card-title">Produtos faturados</div><div class="page-sub" id="rpTableSummary"></div></div></div><div class="rs-table-wrap"><table><thead><tr id="rpTableHead"></tr></thead><tbody id="rpTableBody"></tbody></table></div><div class="rs-mobile-list" id="rpMobileList"></div></div>
+        <div class="card rs-table-card" id="rpContingencyCard" hidden><div class="rs-table-head"><div><div class="card-title">Documentos em contingência</div><div class="page-sub" id="rpContingencySummary"></div></div></div><div class="rs-table-wrap"><table><thead><tr><th>Data</th><th>Hora</th><th>Documento</th><th>Tipo</th><th>Forma de pagamento</th><th>Valor</th><th>Status</th></tr></thead><tbody id="rpContingencyBody"></tbody></table></div><div class="rs-mobile-list" id="rpContingencyMobile"></div></div>
+      </section>
+
+      <section id="relatorio_vendas_raffinato" class="pagina raffinato-sales-page">
+        <div class="page-title">Análise de Vendas Raffinato</div>
+        <div class="card rs-intro"><div><div class="card-title">Produtos × formas de pagamento</div><div class="page-sub">Cruze produtos, faturamento e formas de pagamento.</div></div><div class="rs-cache-tools"><div class="rs-status" id="rsStatus">Aguardando consulta</div><button class="btn btn-ghost btn-sm" type="button" onclick="atualizarCacheRaffinato()">Atualizar dados</button></div></div>
+        <div class="card rs-filters"><div class="rs-filter-grid"><label>Data inicial<input id="rsStart" type="date"></label><label>Hora inicial<input id="rsStartTime" type="time" value="00:00"></label><label>Data final<input id="rsEnd" type="date"></label><label>Hora final<input id="rsEndTime" type="time" value="23:59"></label><label>Produto<input id="rsProductSearch" type="search" placeholder="Código ou nome" autocomplete="off"></label><label>Agrupamento<select id="rsGroup"><option value="">Todos os grupos</option></select></label><label>Forma de pagamento<select id="rsPayment"><option value="">Todas as formas</option></select></label><label>Módulo<select id="rsModule"><option value="">Todos os módulos</option><option value="VENDA_RAPIDA">Venda rápida</option><option value="DELIVERY">Delivery</option><option value="CARTAO_MESA">Cartão / Mesa</option></select></label><button class="btn rs-query" id="rsQuery" type="button" onclick="consultarAnaliseVendasRaffinato()">Executar consulta</button></div><div class="rs-shortcuts"><button onclick="definirPeriodoAnaliseVendas(1)">Hoje</button><button onclick="definirPeriodoAnaliseVendas(7)">7 dias</button><button onclick="definirPeriodoAnaliseVendas(15)">15 dias</button><button onclick="definirPeriodoAnaliseVendas(30)">30 dias</button><button onclick="definirMesAnaliseVendas()">Este mês</button><button onclick="limparFiltrosAnaliseVendas()">Limpar filtros</button></div><div class="msg" id="rsMessage"></div></div>
+        <div class="rs-active" id="rsActive" hidden><strong>Filtros da análise</strong><div id="rsChips"></div><button class="btn btn-ghost btn-sm" onclick="limparFiltrosAnaliseVendas()">Limpar todos</button></div>
+        <div class="rs-kpis" id="rsKpis" hidden><div class="stat-card rs-kpi-received"><div class="stat-label">Total recebido / faturado</div><div class="stat-value" id="rsTotalReceived">R$ 0,00</div></div><div class="stat-card rs-kpi-open"><div class="stat-label">Total em aberto</div><div class="stat-value" id="rsTotalOpen">R$ 0,00</div></div><div class="stat-card rs-kpi-forecast"><div class="stat-label">Previsto após fechamento</div><div class="stat-value" id="rsTotalForecast">R$ 0,00</div></div><div class="stat-card"><div class="stat-label">Quantidade vendida</div><div class="stat-value" id="rsQuantity">0</div></div><div class="stat-card"><div class="stat-label">Produtos diferentes</div><div class="stat-value" id="rsProducts">0</div></div><div class="stat-card"><div class="stat-label">Vendas / documentos</div><div class="stat-value" id="rsDocuments">0</div></div><div class="stat-card"><div class="stat-label">Produto líder</div><div class="stat-value rs-text-kpi" id="rsTopProduct">—</div></div><div class="stat-card"><div class="stat-label">Pagamento líder</div><div class="stat-value rs-text-kpi" id="rsTopPayment">—</div></div><div class="stat-card"><div class="stat-label">Módulo líder</div><div class="stat-value rs-text-kpi" id="rsTopModule">—</div></div></div>
+        <div class="rs-grid" id="rsCharts" hidden><div class="card rs-chart"><div class="card-title">Top 10 produtos por faturamento</div><div id="rsRevenueProducts" class="rs-bars"></div></div><div class="card rs-chart"><div class="card-title">Top 10 produtos por quantidade</div><div id="rsQuantityProducts" class="rs-bars"></div></div><div class="card rs-chart"><div class="card-title">Formas de pagamento</div><div id="rsPayments" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Faturamento por módulo</div><div id="rsModules" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Faturamento por agrupamento</div><div id="rsGroups" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Participação dos produtos</div><div id="rsParticipation" class="rs-donut-wrap"></div></div><div class="card rs-chart"><div class="card-title">Evolução do faturamento</div><div id="rsEvolution" class="rs-bars"></div></div><div class="card rs-chart rs-wide" id="rsDrilldown" hidden></div></div>
+        <div class="card rs-table-card" id="rsTableCard" hidden><div class="rs-table-head"><div><div class="card-title">Detalhamento</div><div class="page-sub" id="rsTableSummary"></div></div><div class="rs-table-tools"><input id="rsTableSearch" type="search" placeholder="Pesquisar na tabela..." oninput="pesquisarTabelaAnaliseVendas(this.value)"><select id="rsPageSize" onchange="alterarPaginaAnaliseVendas(1)"><option>25</option><option>50</option><option>100</option></select><button class="btn btn-ghost btn-sm" onclick="exportarAnaliseVendasCsv()">Exportar CSV</button></div></div><div class="rs-table-wrap"><table><thead><tr id="rsTableHead"></tr></thead><tbody id="rsTableBody"></tbody></table></div><div class="rs-mobile-list" id="rsMobileList"></div><div class="rs-pagination"><button onclick="alterarPaginaAnaliseVendas(-1)">Anterior</button><span id="rsPageInfo"></span><button onclick="alterarPaginaAnaliseVendas(1)">Próxima</button></div></div>
+        <div class="card rs-chart rs-open-operations" id="rsOpenCard" hidden><div class="card-title">Operação em aberto</div><div class="page-sub">Pedidos ainda não faturados; não participam do faturamento por módulo.</div><div id="rsOpenOperations"></div><div class="card-title rs-open-chart-title">Operação em aberto por módulo</div><div id="rsOpenChart" class="rs-bars"></div></div>
+      </section>
+
+      <section id="relatorio_comparativo_anual" class="pagina annual-report-page">
+        <div class="page-title">Comparativo Anual</div>
+        <div class="card ar-hero"><div><div class="card-title">Desempenho histórico Raffinato</div><div class="page-sub">Compare faturamento, vendas, produtos e origem entre anos. Os detalhes são carregados somente quando necessários.</div></div><div class="ar-status" id="arStatus">Pronto para consultar</div></div>
+        <div class="card ar-filters"><div class="ar-hidden-selects" aria-hidden="true"><select id="arStartYear" tabindex="-1"></select><select id="arEndYear" tabindex="-1"></select><select id="arModule" tabindex="-1"><option value="">Todos</option><option value="VENDA_RAPIDA">Venda Rápida</option><option value="DELIVERY">Delivery</option><option value="CARTAO_MESA">Cartão / Mesa</option></select><select id="arIssuance" tabindex="-1"><option value="TODOS">Todos</option><option value="CONTINGENCIA">Em contingência</option><option value="SEM_CONTINGENCIA">Sem contingência</option></select><select id="arGroup" tabindex="-1"><option value="">Todos</option></select></div><label class="ar-filter-years">Anos<details class="ar-multiselect" id="arYearsMulti"><summary id="arYearsSummary">Todos os anos</summary><div class="ar-multiselect-panel"><div class="ar-multiselect-actions"><button type="button" onclick="arMarkAll('arYearsOptions',true)">Marcar todos</button><button type="button" onclick="arMarkAll('arYearsOptions',false)">Limpar</button></div><div id="arYearsOptions" class="ar-multiselect-options"></div></div></details></label><label>Módulos<details class="ar-multiselect" id="arModulesMulti"><summary id="arModulesSummary">Todos os módulos</summary><div class="ar-multiselect-panel"><div class="ar-multiselect-actions"><button type="button" onclick="arMarkAll('arModulesOptions',true)">Marcar todos</button><button type="button" onclick="arMarkAll('arModulesOptions',false)">Limpar</button></div><div id="arModulesOptions" class="ar-multiselect-options"><label><input type="checkbox" value="VENDA_RAPIDA" checked onchange="arSyncMultiFilters()"> Venda Rápida</label><label><input type="checkbox" value="DELIVERY" checked onchange="arSyncMultiFilters()"> Delivery</label><label><input type="checkbox" value="CARTAO_MESA" checked onchange="arSyncMultiFilters()"> Cartão / Mesa</label></div></div></details></label><label>Tipo de Documento<details class="ar-multiselect" id="arIssuanceMulti"><summary id="arIssuanceSummary">Todos os documentos</summary><div class="ar-multiselect-panel"><div class="ar-multiselect-actions"><button type="button" onclick="arMarkAll('arIssuanceOptions',true)">Marcar todos</button><button type="button" onclick="arMarkAll('arIssuanceOptions',false)">Limpar</button></div><div id="arIssuanceOptions" class="ar-multiselect-options"><label><input type="checkbox" value="CONTINGENCIA" checked onchange="arSyncMultiFilters()"> Em contingência</label><label><input type="checkbox" value="SEM_CONTINGENCIA" checked onchange="arSyncMultiFilters()"> Sem contingência</label></div></div></details></label><label>Agrupamentos<details class="ar-multiselect" id="arGroupsMulti"><summary id="arGroupsSummary">Todos os agrupamentos</summary><div class="ar-multiselect-panel"><div class="ar-multiselect-actions"><button type="button" onclick="arMarkAll('arGroupsOptions',true)">Marcar todos</button><button type="button" onclick="arMarkAll('arGroupsOptions',false)">Limpar</button></div><div id="arGroupsOptions" class="ar-multiselect-options"></div></div></details></label><label>Produto<input id="arProduct" type="search" placeholder="Código ou nome"></label><button class="btn btn-green" id="arQuery" onclick="consultarComparativoAnual()">Comparar</button><button class="btn btn-ghost" onclick="limparComparativoAnual()">Limpar consulta</button></div>
+        <div class="ar-selection" id="arSelection" hidden><strong>Analisando:</strong><div id="arFilterChips"></div><button onclick="limparSelecoesComparativoAnual()">Limpar tudo</button></div>
+        <div class="ar-kpis" id="arKpis" hidden><article><span>Faturamento</span><strong id="arRevenueCurrent">R$ 0,00</strong><small id="arEquivalent"></small></article><article><span>Variação</span><strong id="arVariation">0,00%</strong></article><article><span>Quantidade de vendas</span><strong id="arSales">0</strong></article><article><span>Ticket médio</span><strong id="arTicket">R$ 0,00</strong></article><article><span>Produtos vendidos</span><strong id="arQuantity">0</strong></article><article><span>Melhor período</span><strong id="arBestPeriod">—</strong></article><strong id="arRevenuePrevious" hidden>R$ 0,00</strong></div>
+        <div class="ar-grid" id="arCharts" hidden>
+          <article class="card ar-chart ar-wide"><div class="card-title">Faturamento por ano</div><small class="ar-unit">Valores em R$ mil</small><div id="arYearColumns"></div></article>
+          <article class="card ar-chart ar-wide"><div class="card-title">Faturamento mês a mês</div><small class="ar-unit">Valores em R$ mil</small><div id="arMonthlyBars"></div></article>
+          <article class="card ar-chart ar-wide" id="arFiscalComparisonCard"><div class="card-title">Faturamento fiscal × não fiscal</div><div class="page-sub">Total recebido, emissões em contingência e emissões sem contingência, preservando os filtros e o cruzamento selecionados.</div><div id="arFiscalComparison"></div></article>
+          <article class="card ar-chart ar-wide"><header><div><div class="card-title">Comparativo anual</div><div class="page-sub">Clique em um ponto para selecionar o mês.</div></div></header><div id="arAnnualChart"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento acumulado</div><div id="arAccumulated"></div></article>
+          <article class="card ar-chart"><div class="card-title">Participação dos módulos</div><div id="arModuleShare"></div></article>
+          <article class="card ar-chart ar-wide"><div class="card-title">Evolução mensal por módulo</div><small class="ar-unit">Valores em R$ mil</small><div id="arModuleEvolution"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento por dia da semana</div><div id="arWeekdays" class="ar-async"></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento por horário</div><div id="arHours" class="ar-async"><div class="empty">Selecione um dia da semana.</div></div></article>
+          <article class="card ar-chart ar-wide"><header><div class="card-title">Desempenho de produtos</div><div class="ar-product-tabs"><button class="active" onclick="alternarVisaoProdutosComparativo('faturamento',this)">Faturamento</button><button onclick="alternarVisaoProdutosComparativo('quantidade',this)">Quantidade</button><button onclick="alternarVisaoProdutosComparativo('matriz',this)">Quantidade × faturamento</button></div><select id="arTopLimit" onchange="carregarDetalhesComparativoAnual()"><option value="10">Top 10</option><option value="20">Top 20</option></select></header><div id="arProductsPerformance" class="ar-async"></div><div id="arTopRevenue" hidden></div><div id="arTopQuantity" hidden></div><div id="arProductMatrix" hidden></div></article>
+          <article class="card ar-chart"><div class="card-title">Faturamento por agrupamento</div><div id="arGroups" class="ar-async"></div></article>
+          <article class="card ar-chart ar-wide" id="arDailyCard" hidden><div class="card-title">Evolução diária</div><div id="arDaily" class="ar-async"></div></article>
+          <article class="card ar-chart ar-wide" id="arProductCard" hidden><div class="card-title" id="arProductTitle">Evolução do produto</div><div id="arProductEvolution" class="ar-async"></div></article>
+        </div>
+        <div class="card ar-table-card" id="arTableCard" hidden><div class="card-title">Resumo mensal</div><div class="ar-table-wrap"><table><thead><tr><th data-key="mes">Mês</th><th data-key="faturamento">Faturamento</th><th data-key="vendas">Vendas</th><th data-key="quantidade">Produtos</th><th data-key="ticket_medio">Ticket médio</th><th data-key="anterior">Ano anterior</th><th data-key="variacao">Variação</th></tr></thead><tbody id="arTableBody"></tbody></table></div></div>
+      </section>
+
+
+      <section id="estatisticas_atendimento" class="pagina atendimento-page">
+        <header class="atendimento-hero">
+          <div><div class="atendimento-eyebrow"><span class="google-dot"></span> Google Business Profile</div><h2>Estatísticas de atendimento</h2><p>Acompanhe a reputação das lojas e responda avaliações sem sair do CheckDiário.</p></div>
+          <div class="atendimento-actions"><span id="atendimentoSyncStatus" class="atendimento-sync">Não conectado</span><button class="btn btn-ghost" type="button" onclick="sincronizarGoogleAtendimento()">↻ Sincronizar</button><button id="btnConectarGoogleAtendimento" class="btn btn-green" type="button" onclick="conectarGoogleAtendimento()">Conectar Google</button></div>
+        </header>
+        <div id="atendimentoAviso" class="atendimento-alert" hidden></div>
+        <div class="atendimento-filtros" aria-label="Filtros das avaliações">
+          <label><span>Período</span><select id="atendimentoFiltroPeriodo" onchange="carregarEstatisticasAtendimento()"><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Último ano</option><option value="0">Todo o período</option></select></label>
+          <label><span>Loja</span><select id="atendimentoFiltroLoja" onchange="carregarEstatisticasAtendimento()"><option value="">Todas as lojas</option></select></label>
+          <label><span>Nota</span><select id="atendimentoFiltroNota" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="5">5 estrelas</option><option value="4">4 estrelas</option><option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option></select></label>
+          <label><span>Situação</span><select id="atendimentoFiltroSituacao" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="pendente">Aguardando resposta</option><option value="respondida">Respondidas</option></select></label>
+        </div>
+        <div class="atendimento-kpis">
+          <article class="atendimento-kpi destaque"><span>Nota atual</span><strong id="atendimentoNota">—</strong><small id="atendimentoNotaVariacao">Sem dados do Google</small></article>
+          <article class="atendimento-kpi"><span>Total acumulado</span><strong id="atendimentoTotal">0</strong><small>avaliações</small></article>
+          <article class="atendimento-kpi"><span>Neste período</span><strong id="atendimentoPeriodo">0</strong><small>novas avaliações</small></article>
+          <article class="atendimento-kpi"><span>Taxa de resposta</span><strong id="atendimentoTaxa">0%</strong><small id="atendimentoPendentes">0 aguardando resposta</small></article>
+        </div>
+        <div class="atendimento-graficos">
+          <article class="atendimento-card atendimento-evolucao"><div class="atendimento-card-head"><div><h3>Evolução da nota</h3><p>Média das avaliações por mês</p></div></div><div id="atendimentoGraficoEvolucao" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
+          <article class="atendimento-card"><div class="atendimento-card-head"><div><h3>Distribuição por estrelas</h3><p>Composição das avaliações</p></div></div><div id="atendimentoDistribuicao" class="atendimento-distribuicao"></div></article>
+          <article class="atendimento-card atendimento-volume"><div class="atendimento-card-head"><div><h3>Avaliações recebidas</h3><p>Volume mensal no período</p></div></div><div id="atendimentoGraficoVolume" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
+        </div>
+        <article class="atendimento-card atendimento-recentes"><div class="atendimento-card-head"><div><h3>Avaliações recentes</h3><p id="atendimentoListaResumo">Nenhuma avaliação encontrada</p></div><button class="btn btn-ghost btn-sm" type="button" onclick="carregarEstatisticasAtendimento()">Atualizar lista</button></div><div id="atendimentoAvaliacoesLista" class="atendimento-lista"><div class="atendimento-vazio"><strong>Conecte seu Perfil da Empresa no Google</strong><span>As avaliações das lojas aparecerão aqui.</span></div></div></article>
+      </section>
+
+      <section id="relatorio_curva_abc_raffinato" class="pagina"></section>
+      <section id="relatorio_item_obrigatorio_pizza" class="pagina"></section>
 
       <!-- Paginas declarativas do modulo. O conteudo e montado por 33-financial-integrations.js para evitar duplicacao. -->
       <section id="integracoes_financeiras_dashboard" class="pagina"><div class="page-title">Dashboard Financeiro</div><div class="page-sub">Estrutura para indicadores e movimentações consolidadas.</div><div class="if-page-content"></div></section>
@@ -2629,6 +2724,60 @@
   </div>
 </div>
 
+<div class="overlay programacao-editor-overlay" id="editarProgramacaoChecklistOverlay">
+  <div class="modal programacao-editor-modal">
+    <div class="modal-header programacao-editor-header">
+      <div>
+        <div class="programacao-editor-kicker">PROGRAMAÇÃO DE CHECKLIST</div>
+        <h3>Editar tarefa programada</h3>
+        <div class="programacao-editor-subtitle">Recalcula somente esta programação. Tarefas iniciadas ou concluídas serão preservadas.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharEdicaoProgramacaoChecklist()">Fechar</button>
+    </div>
+    <div class="modal-body programacao-editor-body">
+      <section class="programacao-editor-section">
+        <div class="programacao-editor-section-title"><span>1</span><div><strong>Identificação</strong><small>Nome, orientação e responsável desta programação</small></div></div>
+        <div class="programacao-editor-grid">
+          <label class="programacao-editor-field programacao-editor-wide"><span>Nome da tarefa</span><input id="editarProgramacaoChecklistNome" type="text" maxlength="180"></label>
+          <label class="programacao-editor-field programacao-editor-wide"><span>Orientação para execução</span><textarea id="editarProgramacaoChecklistDescricao" rows="3" maxlength="2000"></textarea></label>
+          <label class="programacao-editor-field programacao-editor-wide"><span>Funcionário responsável</span><select id="editarProgramacaoChecklistFuncionario"></select><small>A alteração vale apenas para esta programação, sem afetar outra programação da mesma tarefa.</small></label>
+        </div>
+      </section>
+      <section class="programacao-editor-section">
+        <div class="programacao-editor-section-title"><span>2</span><div><strong>Período e horários</strong><small>Defina quando as ocorrências devem existir</small></div></div>
+        <div class="programacao-editor-grid programacao-editor-grid-4">
+          <label class="programacao-editor-field"><span>Data inicial</span><input id="editarProgramacaoChecklistDataInicio" type="date" required></label>
+          <label class="programacao-editor-field"><span>Data final</span><input id="editarProgramacaoChecklistDataFim" type="date" required></label>
+          <label class="programacao-editor-field"><span>Início previsto</span><input id="editarProgramacaoChecklistInicio" type="time" required></label>
+          <label class="programacao-editor-field"><span>Fim previsto</span><input id="editarProgramacaoChecklistFim" type="time" required></label>
+          <label class="programacao-editor-field"><span>Repetir a cada</span><div class="programacao-editor-number"><input id="editarProgramacaoChecklistIntervalo" type="number" min="1" max="365" step="1" required><b>dia(s)</b></div><small>1 significa todos os dias selecionados.</small></label>
+        </div>
+      </section>
+      <section class="programacao-editor-section">
+        <div class="programacao-editor-section-title"><span>3</span><div><strong>Dias da semana</strong><small>Desmarcar um dia remove automaticamente suas ocorrências pendentes</small></div></div>
+        <div class="programacao-editor-days">
+          <label><input class="editar-programacao-dia" type="checkbox" value="seg"><span>Seg</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="ter"><span>Ter</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="qua"><span>Qua</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="qui"><span>Qui</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="sex"><span>Sex</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="sab"><span>Sáb</span></label>
+          <label><input class="editar-programacao-dia" type="checkbox" value="dom"><span>Dom</span></label>
+        </div>
+      </section>
+      <div id="editarProgramacaoChecklistResumo" class="programacao-editor-summary"></div>
+      <div class="msg" id="msgEditarProgramacaoChecklist"></div>
+    </div>
+    <div class="modal-footer programacao-editor-footer">
+      <div><strong>Recálculo automático</strong><span>Remove pendentes fora da regra e inclui as datas que faltarem.</span></div>
+      <div>
+        <button class="btn btn-ghost" type="button" onclick="fecharEdicaoProgramacaoChecklist()">Cancelar</button>
+        <button class="btn btn-green" id="btnSalvarEdicaoProgramacaoChecklist" type="button" onclick="salvarEdicaoProgramacaoChecklist()">Salvar e recalcular</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="pinActionOverlay">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
@@ -2677,7 +2826,7 @@
       <div>
         <div id="ncTitulo" style="font-size:14px;font-weight:700;color:var(--text);">Nova conta</div>
       </div>
-      <button class="nc-sheet-close" onclick="ncFechar()" aria-label="Fechar">✕</button>
+      <button class="nc-sheet-close" type="button" onclick="ncFechar()" aria-label="Fechar" title="Fechar">✕</button>
     </div>
   </div>
 
@@ -2717,6 +2866,14 @@
         <div class="nc-category-title" style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Categoria <span style="color:var(--red)">*</span></div>
         <input id="ncCatBusca" type="search" autocomplete="off" placeholder="Pesquisar categoria" aria-label="Pesquisar categoria pelo nome" oninput="ncFiltrarCategorias(this.value)">
       </div>
+      <div class="nc-selected-category" aria-live="polite">
+        <span class="nc-selected-category-label">Categoria selecionada</span>
+        <div id="ncSelectedCategoryValue" class="nc-selected-category-empty">Nenhuma categoria selecionada</div>
+      </div>
+      <div class="nc-split-category-row">
+        <button id="ncSplitCategoryButton" class="btn btn-ghost btn-sm" type="button" onclick="ncAtivarDivisaoCategorias()">＋ Dividir em categorias</button>
+      </div>
+      <div id="ncSplitPanel" class="nc-split-panel" hidden></div>
       <div id="ncCatGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
     </div>
 
@@ -2794,31 +2951,6 @@
 </div>
 </div>
 
-      <section id="estatisticas_atendimento" class="pagina atendimento-page">
-        <header class="atendimento-hero">
-          <div><div class="atendimento-eyebrow"><span class="google-dot"></span> Google Business Profile</div><h2>Estatísticas de atendimento</h2><p>Acompanhe a reputação das lojas e responda avaliações sem sair do CheckDiário.</p></div>
-          <div class="atendimento-actions"><span id="atendimentoSyncStatus" class="atendimento-sync">Não conectado</span><button class="btn btn-ghost" type="button" onclick="sincronizarGoogleAtendimento()">↻ Sincronizar</button><button id="btnConectarGoogleAtendimento" class="btn btn-green" type="button" onclick="conectarGoogleAtendimento()">Conectar Google</button></div>
-        </header>
-        <div id="atendimentoAviso" class="atendimento-alert" hidden></div>
-        <div class="atendimento-filtros" aria-label="Filtros das avaliações">
-          <label><span>Período</span><select id="atendimentoFiltroPeriodo" onchange="carregarEstatisticasAtendimento()"><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="365">Último ano</option><option value="0">Todo o período</option></select></label>
-          <label><span>Loja</span><select id="atendimentoFiltroLoja" onchange="carregarEstatisticasAtendimento()"><option value="">Todas as lojas</option></select></label>
-          <label><span>Nota</span><select id="atendimentoFiltroNota" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="5">5 estrelas</option><option value="4">4 estrelas</option><option value="3">3 estrelas</option><option value="2">2 estrelas</option><option value="1">1 estrela</option></select></label>
-          <label><span>Situação</span><select id="atendimentoFiltroSituacao" onchange="carregarEstatisticasAtendimento()"><option value="">Todas</option><option value="pendente">Aguardando resposta</option><option value="respondida">Respondidas</option></select></label>
-        </div>
-        <div class="atendimento-kpis">
-          <article class="atendimento-kpi destaque"><span>Nota atual</span><strong id="atendimentoNota">—</strong><small id="atendimentoNotaVariacao">Sem dados do Google</small></article>
-          <article class="atendimento-kpi"><span>Total acumulado</span><strong id="atendimentoTotal">0</strong><small>avaliações</small></article>
-          <article class="atendimento-kpi"><span>Neste período</span><strong id="atendimentoPeriodo">0</strong><small>novas avaliações</small></article>
-          <article class="atendimento-kpi"><span>Taxa de resposta</span><strong id="atendimentoTaxa">0%</strong><small id="atendimentoPendentes">0 aguardando resposta</small></article>
-        </div>
-        <div class="atendimento-graficos">
-          <article class="atendimento-card atendimento-evolucao"><div class="atendimento-card-head"><div><h3>Evolução da nota</h3><p>Média das avaliações por mês</p></div></div><div id="atendimentoGraficoEvolucao" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
-          <article class="atendimento-card"><div class="atendimento-card-head"><div><h3>Distribuição por estrelas</h3><p>Composição das avaliações</p></div></div><div id="atendimentoDistribuicao" class="atendimento-distribuicao"></div></article>
-          <article class="atendimento-card atendimento-volume"><div class="atendimento-card-head"><div><h3>Avaliações recebidas</h3><p>Volume mensal no período</p></div></div><div id="atendimentoGraficoVolume" class="atendimento-chart-empty">Aguardando avaliações sincronizadas.</div></article>
-        </div>
-        <article class="atendimento-card atendimento-recentes"><div class="atendimento-card-head"><div><h3>Avaliações recentes</h3><p id="atendimentoListaResumo">Nenhuma avaliação encontrada</p></div><button class="btn btn-ghost btn-sm" type="button" onclick="carregarEstatisticasAtendimento()">Atualizar lista</button></div><div id="atendimentoAvaliacoesLista" class="atendimento-lista"><div class="atendimento-vazio"><strong>Conecte seu Perfil da Empresa no Google</strong><span>As avaliações das lojas aparecerão aqui.</span></div></div></article>
-      </section>
 </div>
 </div>
 
@@ -2937,19 +3069,31 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20260807-menu-personalizavel-v2">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=3.2.63-parcelas-pdf-pagamento">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260804-sequencial-dias-corridos">
-<link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260727-enquadramento-global">
+<link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260826-payable-sheet-v1">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
-<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260727-filtros-ordenados">
-<link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20260728-nova-conta-v6">
+<link rel="stylesheet" href="./assets/css/101-financial-pages-responsive.css?v=20260809-cartoes-contas">
+<link rel="stylesheet" href="./assets/css/102-new-payable-responsive.css?v=20261004-rateio-contraste-v12">
 <link rel="stylesheet" href="./assets/css/103-vault-responsive.css?v=20260727-sem-filtro-lojas">
 <link rel="stylesheet" href="./assets/css/104-device-layout.css?v=20260805-ipad-dashboard-v4">
-<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260807-loading-fix-v8">
-<link id="sidebar-icons-style" rel="stylesheet" href="./assets/css/106-sidebar-icons.css?v=20260929">
-<link id="checkia-style" rel="stylesheet" href="./assets/css/108-checkia.css?v=20261008-v2">
-<link id="produtos-vencimento-style" rel="stylesheet" href="./assets/css/109-produtos-vencimento.css?v=20261008-v2">
-<link id="adaptive-shell-style" rel="stylesheet" href="./assets/css/107-adaptive-shell.css?v=20261008-v2">
+<link rel="stylesheet" href="./assets/css/105-raffinato-sangrias.css?v=20260810-password-v11">
+<link rel="stylesheet" href="./assets/css/111-raffinato-billing.css?v=20260810-clear-v2">
+<link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-crossfilter-v2">
+<link rel="stylesheet" href="./assets/css/115-raffinato-managerial.css?v=20260911-group-close-v2">
+<link rel="stylesheet" href="./assets/css/117-raffinato-item-obrigatorio-pizza.css?v=20260911-filtros-excel-v6">
+<link rel="stylesheet" href="./assets/css/118-raffinato-item-obrigatorio-filters.css?v=20260911-valores-modulo-v7">
+<link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260922-v10">
+<link id="ui-foundation-stage-1" rel="stylesheet" href="./assets/css/106-ui-foundation.css?v=20260826-payable-sheet-v1">
+<link id="ui-stage-2" rel="stylesheet" href="./assets/css/107-dashboard-login-ponto.css?v=20260807-stage2">
+<link id="premium-brand-stage-3" rel="stylesheet" href="./assets/css/108-premium-brand.css?v=20260808-pilot-v1">
+<link id="identity-evolution-stage" rel="stylesheet" href="./assets/css/110-identity-evolution.css?v=20260826-password-theme-v1">
+<link id="theme-contrast-stage" rel="stylesheet" href="./assets/css/109-theme-contrast.css?v=3.2.43">
+<link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260826-secure-input-v2">
+<link id="sidebar-icons-style" rel="stylesheet" href="./assets/css/106-sidebar-icons.css?v=20261008-validade-neon">
+<link id="adaptive-shell-style" rel="stylesheet" href="./assets/css/107-adaptive-shell.css?v=20261005-menu-touch-v7">
+<link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v1">
+<link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
   <div class="modal" style="max-width:460px">
@@ -2972,7 +3116,7 @@
 </div>
 
 <div class="overlay" id="contaFinanceiraBaixaOverlay">
-  <div class="modal" style="max-width:720px">
+  <div class="modal conta-financeira-baixa-modal">
     <div class="modal-header">
       <div>
         <h3 id="contaFinanceiraBaixaTitle">Selecionar conta financeira</h3>
@@ -2999,6 +3143,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" type="button" onclick="fecharModalContaFinanceiraBaixa()">Cancelar</button>
+      <button class="btn btn-green" id="btnConfirmarContaFinanceiraBaixa" type="button" onclick="confirmarContaFinanceiraBaixaSelecionada()" disabled>Confirmar baixa</button>
     </div>
   </div>
 </div>
@@ -3092,6 +3237,14 @@
   </div>
 </div>
 
+<div class="overlay" id="conferenciaAgendamentoOverlay">
+  <div class="modal conferencia-checklist-modal">
+    <div class="modal-header"><div><h3>Conferir programação</h3><div class="item-detalhe">Revise todas as informações antes de salvar</div></div><button class="btn btn-ghost btn-sm" type="button" onclick="fecharConferenciaAgendamentoChecklist()">×</button></div>
+    <div class="modal-body"><div id="conferenciaAgendamentoConteudo"></div><div class="msg" id="msgConferenciaAgendamento"></div></div>
+    <div class="modal-footer"><button class="btn btn-red" type="button" onclick="fecharConferenciaAgendamentoChecklist()">Cancelar</button><button class="btn btn-ghost" type="button" onclick="fecharConferenciaAgendamentoChecklist()">Editar</button><button class="btn btn-green" type="button" onclick="confirmarAgendamentoChecklist()">Confirmar e salvar</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="ajusteSaldoCofreOverlay">
   <div class="modal ajuste-saldo-modal" style="max-width:560px" onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); salvarAjusteSaldoCofre(); }">
     <div class="modal-header">
@@ -3170,7 +3323,7 @@
         <h3 id="confirmacaoSistemaTitle">Confirmar ação</h3>
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="confirmacaoSistemaSubtitle"></div>
       </div>
-      <button class="btn btn-ghost btn-sm" type="button" onclick="resolverConfirmacaoSistema(false)">X Fechar</button>
+      <button class="btn btn-ghost btn-sm confirmacao-sistema-fechar" type="button" onclick="resolverConfirmacaoSistema(false)" title="Fechar" aria-label="Fechar">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div id="confirmacaoSistemaBody" style="font-size:14px;color:var(--text);line-height:1.5"></div>
@@ -3188,69 +3341,147 @@
   </div>
 </div>
 
-<script src="./assets/js/01-core-supabase.js?v=20260806-raffinato-multiloja"></script>
-<script src="./assets/js/02-core-version.js"></script>
-<script src="./assets/js/03-core-state.js?v=20260720-restaurar-pagina"></script>
-<script src="./assets/js/04-navigation.js?v=20260915-checklist-programacoes"></script>
-<script src="./assets/js/05-shared-helpers.js?v=20261007-permissoes-gerente-v2"></script>
-<script src="./assets/js/10-dashboard.js?v=20260924-persistencia-menu-usuario"></script>
-<script src="./assets/js/20-checklists.js?v=20260923-sem-corte-1000"></script>
-<script src="./assets/js/21-employees.js?v=20260727-sem-filtro-lojas"></script>
-<script src="./assets/js/22-access-requests.js"></script>
+<div class="overlay account-overlay" id="minhaContaOverlay" aria-hidden="true">
+  <div class="modal account-modal" role="dialog" aria-modal="true" aria-labelledby="minhaContaTitulo">
+    <div class="modal-header">
+      <div><h3 id="minhaContaTitulo">Minha conta</h3><div class="account-modal-sub">Conta e preferências visuais</div></div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="fecharMinhaConta()" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body account-modal-body">
+      <nav class="account-tabs" role="tablist" aria-label="Configurações da conta"><button id="minhaContaAbaConta" type="button" role="tab" onclick="selecionarAbaMinhaConta('conta')">Conta</button><button id="minhaContaAbaAparencia" type="button" role="tab" onclick="selecionarAbaMinhaConta('aparencia')">Aparência</button></nav>
+      <section class="account-section account-tab-panel" id="minhaContaSecaoConta" role="tabpanel" aria-labelledby="minhaContaAbaConta">
+        <h4>Conta</h4>
+        <div class="account-identity">
+          <span class="account-avatar account-avatar-large" id="minhaContaAvatar">U</span>
+          <div class="account-avatar-actions">
+            <strong id="minhaContaNome">Usuário</strong>
+            <span>JPG, PNG ou WEBP, até 10 MB. A foto fica salva neste dispositivo.</span>
+            <div><label class="btn btn-ghost btn-sm" id="minhaContaEscolherFoto" for="minhaContaFotoInput">Escolher foto</label><input id="minhaContaFotoInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="previsualizarAvatarMinhaConta(this)" hidden><button class="btn btn-ghost btn-sm" id="minhaContaRemoverFoto" type="button" onclick="removerAvatarMinhaConta()" hidden>Remover foto</button></div>
+          </div>
+        </div>
+        <dl class="account-details"><div><dt>Empresa atual</dt><dd id="minhaContaEmpresa">-</dd></div><div><dt>Loja atual</dt><dd id="minhaContaLoja">-</dd></div></dl>
+      </section>
+      <section class="account-section account-tab-panel" id="minhaContaSecaoAparencia" role="tabpanel" aria-labelledby="minhaContaAbaAparencia" hidden>
+        <h4>Aparência</h4>
+        <p>Esta escolha é salva somente para este usuário nesta loja.</p>
+        <div class="account-theme-options" role="radiogroup" aria-label="Tema">
+          <button type="button" data-account-theme="light" onclick="definirTemaInterface('light')">☀ <strong>Claro</strong></button>
+          <button type="button" data-account-theme="dark" onclick="definirTemaInterface('dark')">🌙 <strong>Escuro</strong></button>
+          <button type="button" data-account-theme="system" onclick="definirTemaInterface('system')">◐ <strong>Sistema</strong></button>
+        </div>
+
+        <div class="overlay" id="baixaMultiplaRecebiveisOverlay">
+          <div class="modal baixa-multipla-recebiveis-modal">
+            <div class="modal-header"><div><h3>Confirmar recebimentos</h3><div id="baixaMultiplaRecebiveisSubtitle" class="item-detalhe"></div></div><button class="btn btn-ghost btn-sm" type="button" onclick="fecharModalBaixaMultiplaRecebiveis()">× Fechar</button></div>
+            <div class="modal-body">
+              <div class="baixa-multipla-resumo"><div><span>Recebíveis</span><strong id="baixaMultiplaRecebiveisQtd">0</strong></div><div><span>Total</span><strong id="baixaMultiplaRecebiveisTotal">R$ 0,00</strong></div></div>
+              <div class="baixa-multipla-toggle"><span>Movimentar saldo da conta financeira?</span><button class="btn btn-ghost" id="btnBaixaMultiplaMovimentarSim" type="button" onclick="definirMovimentacaoBaixaMultiplaRecebiveis(true)">SIM</button><button class="btn btn-ghost" id="btnBaixaMultiplaMovimentarNao" type="button" onclick="definirMovimentacaoBaixaMultiplaRecebiveis(false)">NÃO</button></div>
+              <div><div class="campo-label">Conta financeira</div><div class="conta-financeira-opcoes" id="baixaMultiplaRecebiveisContas"></div></div>
+              <details class="baixa-multipla-detalhes"><summary>Ver recebíveis</summary><div id="baixaMultiplaRecebiveisItens"></div></details>
+              <div class="msg" id="msgBaixaMultiplaRecebiveis"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-ghost" type="button" onclick="fecharModalBaixaMultiplaRecebiveis()">Cancelar</button><button class="btn btn-green" id="btnExecutarBaixaMultiplaRecebiveis" type="button" onclick="confirmarBaixaMultiplaRecebiveis()" disabled>Confirmar recebimentos</button></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary" type="button" onclick="fecharMinhaConta()">Concluir</button></div>
+  </div>
+</div>
+
+<div class="avatar-crop-overlay" id="avatarCropOverlay" aria-hidden="true">
+  <div class="avatar-crop-modal" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitulo">
+    <header class="avatar-crop-header">
+      <div><span class="avatar-crop-kicker">Foto de perfil</span><h3 id="avatarCropTitulo">Ajustar foto</h3><p>Arraste a foto e use o zoom para destacar seu rosto.</p></div>
+      <button class="avatar-crop-close" type="button" onclick="cancelarRecorteAvatar()" aria-label="Fechar editor">×</button>
+    </header>
+    <div class="avatar-crop-body">
+      <div class="avatar-crop-stage"><img id="avatarCropImage" alt="Imagem escolhida para recorte"></div>
+      <div class="avatar-crop-controls">
+        <button class="avatar-crop-icon-btn" type="button" onclick="alterarZoomAvatar(-10)" aria-label="Reduzir zoom">−</button>
+        <label for="avatarCropZoom">Zoom</label>
+        <input id="avatarCropZoom" type="range" min="0" max="100" value="0" step="1" oninput="definirZoomAvatar(this.value)">
+        <button class="avatar-crop-icon-btn" type="button" onclick="alterarZoomAvatar(10)" aria-label="Ampliar zoom">+</button>
+        <button class="btn btn-ghost btn-sm avatar-crop-center" type="button" onclick="centralizarRecorteAvatar()">Centralizar</button>
+      </div>
+      <p class="avatar-crop-help" id="avatarCropStatus" role="status">Carregando imagem...</p>
+    </div>
+    <footer class="avatar-crop-footer"><button class="btn btn-ghost" type="button" onclick="cancelarRecorteAvatar()">Cancelar</button><button class="btn btn-primary" id="avatarCropAplicar" type="button" onclick="aplicarRecorteAvatar()">Aplicar foto</button></footer>
+  </div>
+</div>
+
+<script src="./assets/vendor/cropperjs/cropper.min.js?v=1.6.2"></script>
+<script src="./assets/js/01-core-supabase.js?v=3.2.63-parcelas-pdf-pagamento"></script>
+<script src="./assets/js/02-core-version.js?v=3.2.59-sessao-persistente-windows"></script>
+<script src="./assets/js/03-core-state.js?v=3.2.55-permissoes-edicao-checklist"></script>
+<script src="./assets/js/04-navigation.js?v=3.2.55-permissoes-edicao-checklist"></script>
+<script src="./assets/js/05-shared-helpers.js?v=3.2.64-permissoes-gerente"></script>
+<script src="./assets/js/06-theme-interface.js?v=20260808-avatar-local-v3"></script>
+<script src="./assets/js/10-dashboard.js?v=3.2.63-menu-sync-touch"></script>
+<script src="./assets/js/20-checklists.js?v=3.2.65-sem-corte-1000"></script>
+<script src="./assets/js/21-employees.js?v=3.2.45"></script>
+<script src="./assets/js/22-access-requests.js?v=3.2.46"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20260909-ocr-brl-parcelas"></script>
+<script src="./assets/js/30-finance.js?v=3.2.62-busca-categoria-contas"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
-      <script src="./assets/js/34-raffinato-sangrias.js?v=20260928-cofre-horario"></script>
-<script src="./assets/js/32-image-ocr-importer.js?v=20260909-bradesco-parcelas"></script>
+      <script src="./assets/js/34-raffinato-sangrias.js?v=20260928-cofre-horario-v2"></script>
+      <script src="./assets/js/35-raffinato-billing.js?v=3.2.48"></script>
+      <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260929-faturamento-produtos"></script>
+      <script src="./assets/js/37-raffinato-products.js?v=3.2.48"></script>
+      <script src="./assets/js/93-raffinato-managerial.js?v=20260911-group-close-v2"></script>
+      <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
+      <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=3.2.63-parcelas-pdf-pagamento"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260807-baixa-agrupada-v3"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
-<script src="./assets/js/43-saas-admin.js"></script>
-<script src="./assets/js/44-profiles.js"></script>
-<script src="./assets/js/50-tasks.js?v=20260923-incluir-dia-vencido"></script>
-<script src="./assets/js/51-quick-alerts.js"></script>
-<script src="./assets/js/60-timeclock.js?v=20260805-data-prevista-relatorio"></script>
-<script src="./assets/js/70-reports.js?v=20260921-edicao-programacoes"></script>
+<script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
+<script src="./assets/js/44-profiles.js?v=3.2.55-permissoes-edicao-checklist"></script>
+<script src="./assets/js/50-tasks.js?v=3.2.66-conflitos-edicao"></script>
+<script src="./assets/js/51-quick-alerts.js?v=3.2.49"></script>
+<script src="./assets/js/52-checklist-models.js?v=3.2.55-permissoes-edicao-checklist"></script>
+<script src="./assets/js/60-timeclock.js?v=20260903-intervalo2h"></script>
+<script src="./assets/js/70-reports.js?v=3.2.66-editor-programacao"></script>
 <script src="./assets/js/71-executions.js"></script>
-<script src="./assets/js/72-atendimento-estatisticas.js?v=20260724"></script>
+<script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>
-<script id="sidebar-icons-script" src="./assets/js/93-sidebar-icons.js?v=20260929"></script>
+<script id="sidebar-icons-script" src="./assets/js/93-sidebar-icons.js?v=20261008-validade-neon"></script>
 
 <!-- LOGIN INICIAL -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
 
     <!-- BRAND -->
-    <div class="login-brand">
+    <div class="login-brand" aria-label="CheckDiário — Gestão que organiza. Resultados que crescem.">
       <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxNDQiIGZpbGw9IiMwQTBGMEQiLz4KICA8cmVjdCB4PSI1OCIgeT0iNTgiIHdpZHRoPSIzOTYiIGhlaWdodD0iMzk2IiByeD0iMTA4IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CiAgPHJlY3QgeD0iMTEyIiB5PSI5OCIgd2lkdGg9IjIzMiIgaGVpZ2h0PSIzMTYiIHJ4PSI0MCIgZmlsbD0iI0Y0RkZGNyIgb3BhY2l0eT0iMC4wOCIvPgogIDxyZWN0IHg9IjEzNiIgeT0iMTI2IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI2OCIgcng9IjMyIiBmaWxsPSIjRjRGRkY3Ii8+CiAgPHJlY3QgeD0iMTY4IiB5PSIxNzYiIHdpZHRoPSIxMzIiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI0I2QzhCQSIvPgogIDxyZWN0IHg9IjE2OCIgeT0iMjI2IiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiNCNkM4QkEiLz4KICA8cmVjdCB4PSIxNjgiIHk9IjI3NiIgd2lkdGg9IjExNiIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjQjZDOEJBIi8+CiAgPGNpcmNsZSBjeD0iMzU0IiBjeT0iMzIwIiByPSI3OCIgZmlsbD0iIzIyQzU1RSIvPgogIDxwYXRoIGQ9Ik0zMTkgMzIwLjVMMzQ0IDM0NS41TDM5MSAyOTciIHN0cm9rZT0iIzA0MTEwQSIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTMxMiA5NkgyMDAiIHN0cm9rZT0iIzIyQzU1RSIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXIiIHgxPSI5NCIgeTE9Ijc4IiB4Mj0iNDE4IiB5Mj0iNDMwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIHN0b3AtY29sb3I9IiMxNTM1MjUiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEIxNzExIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KPC9zdmc+Cg==" alt="CHECK DIARIO">
       <div class="login-brand-title">CHECK DIARIO</div>
       <div class="login-brand-sub">ROTINA · CHECKLIST · OPERAÇÃO</div>
-      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.13</div>
+      <div id="loginVersionProtecao" class="login-version-protecao">VERSÃO DE PROTEÇÃO: 3.2.37</div>
     </div>
 
     <!-- FASE 1: FORMULÁRIO DE LOGIN -->
     <div id="loginFase1" class="login-fase">
-      <form id="loginForm" class="login-form" onsubmit="handleLogin(event)" autocomplete="on">
+      <form id="loginForm" class="login-form" method="post" action="./" onsubmit="event.preventDefault(); return handleLogin(event)" autocomplete="on">
         <div class="login-field-group">
           <div class="login-field-label">E-mail de acesso</div>
           <input type="email" id="username" name="username" class="login-input" placeholder="seuemail@empresa.com.br" required autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
         </div>
         <div class="login-field-group">
           <div class="login-field-label">Senha</div>
-          <input type="password" id="password" name="password" class="login-input" placeholder="Digite sua senha de acesso" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <div class="login-password-wrap"><input type="password" id="password" name="password" class="login-input" placeholder="Digite sua senha de acesso" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false"><button class="login-password-toggle" id="loginPasswordToggle" type="button" onclick="alternarVisibilidadeSenhaLogin()" aria-label="Exibir senha" title="Exibir senha"><span class="login-eye-show" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.8"/></svg></span><span class="login-eye-hide" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 4 16 16M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a18 18 0 0 1-2.2 2.8M8.2 8.3C4.7 10 2.5 12 2.5 12s3.5 6 9.5 6c1.2 0 2.3-.2 3.3-.6M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"/></svg></span></button></div>
           <div class="login-field-help">O PIN é usado somente no ponto, tarefas e confirmações internas.</div>
         </div>
         <div class="login-checks">
           <label class="login-check-label" for="savePassword">
             <input type="checkbox" id="savePassword" onchange="sincronizarPreferenciasLoginDaTela()">
-            Lembrar usuário
+            Salvar senha neste computador
           </label>
           <label class="login-check-label" for="keepLoggedIn">
             <input type="checkbox" id="keepLoggedIn" onchange="sincronizarPreferenciasLoginDaTela()">
             Manter conectado
           </label>
         </div>
-        <button type="submit" class="login-btn-primary">Entrar</button>
+        <button type="submit" formmethod="post" class="login-btn-primary">Entrar</button>
         <div id="msgLogin" class="msg" style="margin-top:0; text-align:center;"></div>
         <div class="login-divider">outras opções</div>
         <button type="button" class="login-btn-secondary" onclick="toggleSolicitacaoAcesso()">Solicitar acesso</button>
@@ -3300,14 +3531,14 @@
 
     <!-- FOOTER -->
     <div class="login-footer">
-      Desenvolvido por Patrick Dilhe · Versão 3.2.13<br>
+      Desenvolvido por Patrick Dilhe · Versão 3.2.37<br>
       <a href="mailto:ledilhe@gmail.com" style="color:var(--text-dim); text-decoration:none;">ledilhe@gmail.com</a>
     </div>
 
   </div>
 </div>
 
-<script src="./assets/js/79-runtime-extensions.js?v=20261007-permissoes-gerente-v2"></script>
+<script src="./assets/js/79-runtime-extensions.js?v=3.2.65-sessao-f5"></script>
   <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
     <div class="escala-modal-card">
       <div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>
@@ -3370,8 +3601,8 @@
 <script id="patch-relatorio-escala-administrador-final" src="./assets/js/84-schedule-report-patch.js"></script>
 
 
-<script id="patch-agenda-por-loja-sem-funcionario-obrigatorio" src="./assets/js/90-schedule-store-agenda-patch.js?v=agenda-cadastro-em-branco-20260709"></script>
-<script id="padrao-filtro-data-unico" src="./assets/js/92-date-filter-standardizer.js?v=20260727-periodo-obrigatorio"></script>
+<script id="patch-agenda-por-loja-sem-funcionario-obrigatorio" src="./assets/js/90-schedule-store-agenda-patch.js?v=3.2.45"></script>
+<script id="padrao-filtro-data-unico" src="./assets/js/92-date-filter-standardizer.js?v=20260901-periodo-hoje"></script>
 
 
 <script id="patch-feriados-loja-auto-zuqui" src="./assets/js/85-holidays-auto-patch.js"></script>
@@ -3382,15 +3613,14 @@
 
 <script id="patch-feriados-definitivo-por-loja" src="./assets/js/87-holidays-store-patch.js"></script>
 
-<script id="bloqueio-gerenciador-senhas" src="./assets/js/88-password-manager-guard.js"></script>
+<script id="bloqueio-gerenciador-senhas" src="./assets/js/88-password-manager-guard.js?v=20260922-login-url-v2"></script>
 
 
 <script id="patch-ponto-atualizar-primeiro-clique" src="./assets/js/89-timeclock-refresh-patch.js"></script>
 
-<script id="limpar-url-sensivel-passivo" src="./assets/js/90-sensitive-url-cleanup.js"></script>
 
 
-<script id="patch-ponto-info-botao-3-1-57" src="./assets/js/91-timeclock-info-patch.js"></script>
+<script id="patch-ponto-info-botao-3-1-57" src="./assets/js/91-timeclock-info-patch.js?v=20260903-intervalo2h"></script>
 
 
 
@@ -3406,8 +3636,8 @@
 </html>
 
 
-<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260728-nova-conta-v3"></script>
+<script id="nc-sheet-js" src="./assets/js/31-payable-sheet.js?v=20260809-rateio-manual-v8"></script>
 
 <script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js?v=20260804-ajuda-sequencial"></script>
-<script id="checkia-script" src="./assets/js/94-checkia.js?v=20261008-v2"></script>
-<script id="produtos-vencimento-script" src="./assets/js/95-produtos-vencimento.js?v=20261008-v2"></script>
+<script src="./assets/js/94-checkia.js?v=20261007"></script>
+<script src="./assets/js/95-produtos-vencimento.js?v=20261007"></script>

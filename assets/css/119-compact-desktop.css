@@ -1,0 +1,135 @@
+/* Compact desktop: notebooks de 15 polegadas e janelas entre tablet e desktop. */
+@media (min-width: 901px) and (max-width: 1440px) {
+  :root {
+    --cd-compact-control: 36px;
+    --cd-compact-gap: 8px;
+  }
+
+  .content {
+    padding: 12px 14px 22px !important;
+  }
+  .pagina {
+    gap: 10px !important;
+  }
+  .pagina.ativa > .page-title {
+    margin-bottom: 8px !important;
+    font-size: 12px !important;
+  }
+  .pagina.ativa .card {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+  .pagina.ativa .card + .card {
+    margin-top: 10px !important;
+  }
+  .pagina.ativa .card-title {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+  }
+  .pagina.ativa .form-row,
+  .pagina.ativa [class*="-filters"],
+  .pagina.ativa [class*="-filtros"] {
+    gap: var(--cd-compact-gap) !important;
+  }
+  .pagina.ativa input:not([type="checkbox"]):not([type="radio"]),
+  .pagina.ativa select,
+  .pagina.ativa textarea,
+  .pagina.ativa .btn {
+    min-height: var(--cd-compact-control) !important;
+    padding: 7px 10px !important;
+    border-radius: 9px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+  .pagina.ativa .campo-label,
+  .pagina.ativa label > span:first-child {
+    font-size: 10px !important;
+  }
+
+  /* Checklists: nomes curtos nao precisam ocupar metade do painel. */
+  #cardChecklistsLancados > .form-row:not(.checklist-periodo-filtro) {
+    display: grid !important;
+    grid-template-columns: minmax(170px, 240px) minmax(190px, 280px) auto !important;
+    align-items: center !important;
+    justify-content: start !important;
+  }
+  #cardChecklistsLancados > .form-row:not(.checklist-periodo-filtro) select {
+    width: 100% !important;
+    flex: none !important;
+  }
+  #cardChecklistsLancados .checklist-periodo-filtro {
+    display: grid !important;
+    grid-template-columns: auto 140px auto 140px auto auto !important;
+    align-items: end !important;
+    justify-content: start !important;
+    margin-top: 6px !important;
+  }
+  #cardChecklistsLancados .checklist-periodo-filtro input[type="date"] {
+    width: 140px !important;
+  }
+
+  /* Execucoes: campos de funcionario compactos e quebra previsivel. */
+  #cardFiltrosExecucao > .form-row {
+    display: grid !important;
+    grid-template-columns: 132px 104px 104px repeat(3, minmax(118px, 1fr)) 116px auto auto !important;
+    align-items: center !important;
+  }
+  #cardFiltrosExecucao > .form-row > * {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }
+  #cardFiltrosExecucao > .form-row > .btn {
+    width: auto !important;
+    white-space: nowrap;
+  }
+
+  /* Cadastro de validade: formulario e acao na mesma faixa visual. */
+  #produtos_vencimento .pv-card:first-of-type {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+  }
+  #produtos_vencimento .pv-card:first-of-type > .card-title,
+  #produtos_vencimento .pv-card:first-of-type > .pv-form-grid,
+  #produtos_vencimento .pv-card:first-of-type > .msg {
+    grid-column: 1 / -1;
+  }
+  #produtos_vencimento .pv-form-grid {
+    grid-template-columns: minmax(210px, 2fr) minmax(155px, 1fr) 160px 116px !important;
+    gap: 9px !important;
+  }
+  #produtos_vencimento .pv-alert-row {
+    grid-column: 1;
+    min-height: 48px;
+    padding: 8px 10px !important;
+    gap: 8px 12px !important;
+  }
+  #produtos_vencimento .pv-actions {
+    grid-column: 2;
+    align-self: center;
+    margin: 0 !important;
+  }
+  #produtos_vencimento .pv-actions .btn {
+    white-space: nowrap;
+  }
+  #produtos_vencimento .pv-check,
+  #produtos_vencimento .pv-inline {
+    font-size: 12px !important;
+  }
+  #produtos_vencimento .pv-inline input[type="number"] { width: 64px !important; }
+  #produtos_vencimento .pv-inline input[type="time"] { width: 106px !important; }
+}
+
+@media (min-width: 901px) and (max-width: 1220px) {
+  #cardFiltrosExecucao > .form-row {
+    grid-template-columns: 128px 100px 100px repeat(3, minmax(112px, 1fr)) !important;
+  }
+  #cardFiltrosExecucao > .form-row > :nth-child(n+7) {
+    width: auto !important;
+  }
+  #produtos_vencimento .pv-form-grid {
+    grid-template-columns: minmax(200px, 2fr) minmax(150px, 1fr) 155px 110px !important;
+  }
+}

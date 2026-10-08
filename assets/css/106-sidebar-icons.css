@@ -118,3 +118,130 @@
     transition: none;
   }
 }
+
+/* Final alignment and color layer. This file is intentionally loaded last. */
+.sidebar .nav-btn[data-sidebar-icon] {
+  --nav-icon-color: #38bdf8;
+  --nav-icon-rgb: 56, 189, 248;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.sidebar .nav-btn[data-sidebar-icon] > span:has(.nav-copy) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0;
+  flex: 1;
+}
+
+.sidebar .nav-btn[data-sidebar-icon] .icon.nav-icon-polished {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  flex: 0 0 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--nav-icon-color) !important;
+  border: 1px solid rgba(var(--nav-icon-rgb), .72) !important;
+  border-radius: 10px !important;
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, .36), transparent 27%),
+    linear-gradient(145deg, rgba(var(--nav-icon-rgb), .26), rgba(var(--nav-icon-rgb), .08) 58%, rgba(3, 10, 18, .72)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    inset 0 -1px 0 rgba(var(--nav-icon-rgb), .18),
+    0 0 8px rgba(var(--nav-icon-rgb), .38),
+    0 0 18px rgba(var(--nav-icon-rgb), .18) !important;
+}
+
+.sidebar .nav-btn[data-sidebar-icon] .nav-icon-svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 1.9;
+  filter: drop-shadow(0 0 3px rgba(var(--nav-icon-rgb), .9));
+}
+
+.sidebar .nav-btn[data-sidebar-icon]:hover .icon.nav-icon-polished,
+.sidebar .nav-btn[data-sidebar-icon]:focus-visible .icon.nav-icon-polished,
+.sidebar .nav-btn[data-sidebar-icon].ativo .icon.nav-icon-polished,
+.sidebar .nav-btn[data-sidebar-icon].active .icon.nav-icon-polished {
+  color: #fff !important;
+  border-color: rgba(var(--nav-icon-rgb), .95) !important;
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, .52), transparent 28%),
+    linear-gradient(145deg, rgba(var(--nav-icon-rgb), .58), rgba(var(--nav-icon-rgb), .19) 62%, rgba(3, 10, 18, .72)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .34),
+    0 0 10px rgba(var(--nav-icon-rgb), .7),
+    0 0 24px rgba(var(--nav-icon-rgb), .34) !important;
+}
+
+.sidebar .nav-btn[data-sidebar-icon='escala_plantoes'],
+.sidebar .nav-btn[data-sidebar-icon='relatorios'] { --nav-icon-color: #60a5fa; --nav-icon-rgb: 96, 165, 250; }
+.sidebar .nav-btn[data-sidebar-icon='checklist'],
+.sidebar .nav-btn[data-sidebar-icon='financeiro'],
+.sidebar .nav-btn[data-sidebar-icon='integracoes_financeiras'] { --nav-icon-color: #34d399; --nav-icon-rgb: 52, 211, 153; }
+.sidebar .nav-btn[data-sidebar-icon='tarefas_rapidas'] { --nav-icon-color: #fb7185; --nav-icon-rgb: 251, 113, 133; }
+.sidebar .nav-btn[data-sidebar-icon='dashboard'],
+.sidebar .nav-btn[data-sidebar-icon='meu_painel'] { --nav-icon-color: #a78bfa; --nav-icon-rgb: 167, 139, 250; }
+.sidebar .nav-btn[data-sidebar-icon='estatisticas_atendimento'] { --nav-icon-color: #fbbf24; --nav-icon-rgb: 251, 191, 36; }
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] { --nav-icon-color: #facc15; --nav-icon-rgb: 250, 204, 21; }
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .nav-icon-warning-triangle {
+  fill: rgba(250, 204, 21, .2);
+  stroke-width: 1.8;
+}
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .nav-icon-warning-mark {
+  stroke-width: 2.4;
+}
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .nav-icon-warning-dot {
+  fill: currentColor;
+  stroke: none;
+}
+.sidebar .nav-btn[data-sidebar-icon='produtos_vencimento'] .icon.nav-icon-polished {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .28),
+    inset 0 -1px 0 rgba(250, 204, 21, .26),
+    0 0 10px rgba(250, 204, 21, .58),
+    0 0 23px rgba(245, 158, 11, .28) !important;
+}
+.sidebar .nav-btn[data-sidebar-icon='raffinato'] { --nav-icon-color: #22d3ee; --nav-icon-rgb: 34, 211, 238; }
+.sidebar .nav-btn[data-sidebar-icon='administracao_funcionarios'] { --nav-icon-color: #f472b6; --nav-icon-rgb: 244, 114, 182; }
+.sidebar .nav-btn[data-sidebar-icon='configuracoes'] { --nav-icon-color: #94a3b8; --nav-icon-rgb: 148, 163, 184; }
+.sidebar .nav-btn[data-sidebar-icon='saas'] { --nav-icon-color: #c084fc; --nav-icon-rgb: 192, 132, 252; }
+
+@media (min-width: 901px) {
+  body.sidebar-collapsed .sidebar .nav-btn[data-sidebar-icon] {
+    display: grid !important;
+    place-items: center !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    margin: 4px auto !important;
+    padding: 0 !important;
+  }
+
+  body.sidebar-collapsed .sidebar .nav-btn[data-sidebar-icon]::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  body.sidebar-collapsed .sidebar .nav-btn[data-sidebar-icon] > span:has(.nav-copy) {
+    display: contents !important;
+  }
+
+  body.sidebar-collapsed .sidebar .nav-btn[data-sidebar-icon] .icon.nav-icon-polished {
+    display: inline-flex !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    flex-basis: 36px !important;
+    margin: 0 !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}

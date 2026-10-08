@@ -141,11 +141,14 @@
     
     // Admin global sem loja está no painel SaaS. Ao escolher uma loja, mantém
     // acesso global, mas a topbar deve mostrar a loja selecionada.
-    if (usuarioSistemaLogado.tipo === 'admin' && !usuarioSistemaLogado?.loja_id) {
-      lojaNameEl.textContent = 'PAINEL ADMINISTRATIVO';
+    if (contextoEhAdminGlobal()) {
+      lojaNameEl.textContent = 'ADMINISTRAÇÃO GLOBAL';
+      const lojaLabel = lojaContainer.querySelector('.topbar-user-label');
+      if (lojaLabel) lojaLabel.textContent = 'CHECKDIÁRIO';
       const topbarStoreEl = document.getElementById('topbarStoreInfo');
       if (topbarStoreEl) topbarStoreEl.setAttribute('data-admin-mode', 'true');
-      document.getElementById('topbarStoreSwitchBtn').style.display = 'none';
+      document.getElementById('topbarStoreSwitchBtn').style.display = obterLojasPermitidasSessao().length ? 'block' : 'none';
+      document.getElementById('topbarStoreSwitchBtn').textContent = 'Entrar em loja';
       container.hidden = false;
       lojaContainer.hidden = false;
       container.style.display = 'flex';
@@ -158,6 +161,9 @@
     const topbarStoreEl = document.getElementById('topbarStoreInfo');
     if (topbarStoreEl) topbarStoreEl.removeAttribute('data-admin-mode');
     document.getElementById('topbarStoreSwitchBtn').style.display = 'block';
+    document.getElementById('topbarStoreSwitchBtn').textContent = 'Trocar';
+    const lojaLabel = lojaContainer.querySelector('.topbar-user-label');
+    if (lojaLabel) lojaLabel.textContent = 'Loja logada';
     container.hidden = false;
     lojaContainer.hidden = false;
     container.style.display = 'flex';
@@ -213,6 +219,39 @@ function salvarPreferenciasLogin({ username = '', password = '', salvarSenha = f
     localStorage.setItem(chave, bruto);
     sessionStorage.setItem(chave, bruto);
   });
+  if (salvarSenha && emailNormalizado && password) {
+    salvarCredencialLoginNoGerenciadorSeguro(emailNormalizado, password);
+  }
+}
+
+async function salvarCredencialLoginNoGerenciadorSeguro(username = '', password = '') {
+  const usuario = String(username || '').trim().toLowerCase();
+  const senha = String(password || '');
+  if (!usuario || !senha || !navigator.credentials?.store || typeof window.PasswordCredential !== 'function') return false;
+  try {
+    await navigator.credentials.store(new PasswordCredential({ id: usuario, name: usuario, password: senha }));
+    return true;
+  } catch (error) {
+    console.warn('O gerenciador seguro do navegador não aceitou a credencial:', error);
+    return false;
+  }
+}
+
+async function restaurarCredencialLoginDoGerenciadorSeguro() {
+  const prefs = obterPreferenciasLoginSalvas();
+  if (!prefs.salvarSenha || !navigator.credentials?.get) return false;
+  const user = document.getElementById('username');
+  const pass = document.getElementById('password');
+  if (!user || !pass || pass.value) return false;
+  try {
+    const credencial = await navigator.credentials.get({ password: true, mediation: 'optional' });
+    if (!credencial || !credencial.password) return false;
+    user.value = String(credencial.id || prefs.username || '').trim();
+    pass.value = String(credencial.password || '');
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 function obterSessaoPersistenteLoginSalva() {
@@ -240,6 +279,7 @@ function loginDigitadoConfereComSessaoPersistente(username = '') {
 }
 
 function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
+  if (typeof resetTenantScopedUI === 'function') resetTenantScopedUI('session-or-store-change');
   versaoSessaoSistema += 1;
   tokenRequisicaoChecklists += 1;
   assinaturaRenderChecklists = '';
@@ -250,6 +290,7 @@ function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
   relatorioPontoFuncionarioCache = {};
   window.__relatorioPontoUltimosRows = [];
   window.__relatorioPontoUltimoPeriodo = '';
+  if (typeof limparDashboardFinanceiroTenant === 'function') limparDashboardFinanceiroTenant(mensagem);
 
   const placeholders = {
     listaChecklists: mensagem,
@@ -274,6 +315,7 @@ function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
     notificacoesLista: 'Nenhuma notificação carregada.',
   };
   dashboardHorasRequestSeq += 1;
+  window.__relFinSeq = (window.__relFinSeq || 0) + 1;
   dashboardHorasUltimoResultadoValido = null;
 
   Object.entries(placeholders).forEach(([id, texto]) => {
@@ -288,6 +330,30 @@ function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
   }
   atualizarBadgeTarefasAtraso(0);
 }
+
+registrarResetTenantUI(() => {
+  // Estados de edição dos demais módulos operacionais. Cada limpeza é local e
+  // idempotente; a autoridade final continua sendo a RLS do novo contexto.
+  const cleaners = [
+    'limparFormularioTarefa','limparFormularioPerfil','limparFormularioFornecedorFinanceiro',
+    'limparFormularioFormaPagamentoFinanceiro','limparFormularioContaFinanceira',
+    'limparFormularioRecebivelFinanceiro','limparFormularioContaAPagarFinanceiro',
+    'cancelarEdicaoIntegracaoRaffinato','cancelarConsultaSangriasRaffinato',
+  ];
+  cleaners.forEach(nome => { try { if (typeof window[nome] === 'function') window[nome](); } catch (_) {} });
+  try { if (typeof tarefaEmEdicaoId !== 'undefined') tarefaEmEdicaoId=null; } catch (_) {}
+  try { if (typeof checklistReferenciaEmEdicaoId !== 'undefined') checklistReferenciaEmEdicaoId=null; } catch (_) {}
+  try { if (typeof perfilEmEdicaoId !== 'undefined') perfilEmEdicaoId=null; } catch (_) {}
+  try { if (typeof fornecedorFinanceiroEmEdicaoId !== 'undefined') fornecedorFinanceiroEmEdicaoId=null; } catch (_) {}
+  try { if (typeof formaPagamentoFinanceiroEmEdicaoId !== 'undefined') formaPagamentoFinanceiroEmEdicaoId=null; } catch (_) {}
+  try { if (typeof contaAPagarFinanceiroEmEdicaoId !== 'undefined') contaAPagarFinanceiroEmEdicaoId=null; } catch (_) {}
+  try { if (typeof contaFinanceiraEmEdicaoId !== 'undefined') contaFinanceiraEmEdicaoId=null; } catch (_) {}
+  try { if (typeof recebivelFinanceiroEmEdicaoId !== 'undefined') recebivelFinanceiroEmEdicaoId=null; } catch (_) {}
+  document.querySelectorAll('.overlay.open,[data-tenant-scoped-modal].open').forEach(el=>el.classList.remove('open'));
+  const arraysTenant = ['relatorioLancamentosCache','relatorioRecebimentosCache','raffinatoSangrias','raffinatoItensVisiveis','rbRows','rsSource','rsDocumentDimensions','rpRows','rpSourceRows','rpEvolution','rpContingencies'];
+  arraysTenant.forEach(nome=>{try{if(Array.isArray(window[nome]))window[nome].length=0}catch(_){}});
+  ['rbKpis','rbCharts','rbTableBody','rbMobileList','rsKpis','rsCharts','rsTableBody','rsMobileList','rpKpis','rpCharts','rpTableBody','rpMobileList','rpContingencyBody','rpContingencyMobile','listaRelatorioSangriasRaffinato'].forEach(id=>{const el=document.getElementById(id);if(el)el.replaceChildren()});
+});
 
 function restaurarPreferenciasLogin() {
   const prefs = obterPreferenciasLoginSalvas();
@@ -304,6 +370,7 @@ function restaurarPreferenciasLogin() {
     user.value = String(prefs.username || sessao?.email || sessao?.username || '').trim();
   }
   if (pass) pass.value = '';
+  restaurarCredencialLoginDoGerenciadorSeguro();
 }
 
 function sincronizarPreferenciasLoginDaTela() {
@@ -350,13 +417,20 @@ function configurarPreferenciasLoginTela() {
 }
 
 function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
+  const modo = usuario?.context_mode === 'global_admin' ? 'global_admin' : 'store';
   const usuarioNormalizado = {
     ...usuario,
+    context_mode: modo,
+    ...(modo === 'global_admin' ? { empresa_id:null, loja_id:null, empresa_nome:null, loja_nome:null } : {}),
     perfil: normalizarPerfilUsuario(usuario?.perfil),
   };
   usuarioSistemaLogado = usuarioNormalizado;
   window.usuarioSistemaLogado = usuarioSistemaLogado;
   window.__sessaoSistema = () => usuarioSistemaLogado;
+  window.__authPrincipalId = String(usuarioNormalizado.id || '').trim();
+  window.__authOperationalToken = String(usuarioNormalizado.operational_access_token || '').trim();
+  window.__authGlobalToken = String(usuarioNormalizado.global_admin_token || '').trim();
+  window.__authLojaId = String(usuarioNormalizado.loja_id || '').trim();
   limparDadosVisuaisDaSessao('Carregando dados da loja...');
   redefinirEstadoAvisoCentralTarefas();
   atualizarUsuarioTopbar();
@@ -382,13 +456,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function validarAutoridadeAdminSistemaNoBanco(usuario = null) {
     if (usuario?.tipo !== 'admin') return true;
     const funcionarioId = String(usuario?.id || '').trim();
-    if (!funcionarioId) return false;
+    const token = String(usuario?.global_admin_token || '').trim();
+    if (!funcionarioId || !token) return false;
     try {
-      const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
-        .from('funcionarios')
-        .select('id, ativo, é_administrador')
-        .eq('id', funcionarioId)
-        .maybeSingle());
+      const { data, error } = await sb.rpc('validar_sessao_admin_global', { p_funcionario_id:funcionarioId, p_token:token });
       if (error) {
         console.warn('Não foi possível revalidar o administrador do sistema:', error);
         return null;
@@ -396,8 +467,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       // Ausência temporária por RLS, renovação de sessão ou retomada da aba
       // não significa revogação. Só retorna false quando o banco devolve o
       // cadastro explicitamente inativo ou sem a permissão administrativa.
-      if (!data?.id) return null;
-      return data.ativo !== false && data.é_administrador === true;
+      return data === true;
     } catch (erro) {
       console.warn('Não foi possível revalidar o administrador do sistema:', erro);
       return null;
@@ -463,6 +533,24 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     };
   }
 
+  async function renovarContextoOperacionalPersistido(usuario = null) {
+    if (!usuario || usuario.context_mode === 'global_admin') return true;
+    const principalId = String(usuario.id || '').trim();
+    const token = String(usuario.operational_access_token || '').trim();
+    const empresaId = String(usuario.empresa_id || '').trim();
+    const lojaId = String(usuario.loja_id || '').trim();
+    if (!principalId || !token || !empresaId || !lojaId) return false;
+    const { data, error } = await sb.rpc('renovar_contexto_operacional', {
+      p_principal_id: principalId,
+      p_token: token,
+      p_empresa_id: empresaId,
+      p_loja_id: lojaId,
+      p_global_token: String(usuario.global_admin_token || '').trim() || null,
+    });
+    if (error) throw error;
+    return data === true;
+  }
+
   async function restaurarSessaoSistema() {
     const salvoLocal = localStorage.getItem('zuqui_auth');
     const salvoLocalBackup = localStorage.getItem('check_diario_auth_persistente');
@@ -479,8 +567,20 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return false;
     }
 
+    let usuarioPersistido = null;
     try {
-      let usuario = JSON.parse(salvo);
+      usuarioPersistido = JSON.parse(salvo);
+      let usuario = usuarioPersistido;
+      // O cliente Supabase monta os cabeçalhos de RLS a partir destas variáveis.
+      // Restaure-as antes da primeira RPC/consulta protegida; caso contrário uma
+      // sessão persistida válida é consultada como anônima e parece não ter vínculo.
+      window.__authPrincipalId = String(usuario?.id || '').trim();
+      window.__authOperationalToken = String(usuario?.operational_access_token || '').trim();
+      window.__authGlobalToken = String(usuario?.global_admin_token || '').trim();
+      window.__authLojaId = String(usuario?.loja_id || '').trim();
+      if (usuario?.context_mode !== 'global_admin' && !(await renovarContextoOperacionalPersistido(usuario))) {
+        throw new Error('A sessão operacional salva expirou ou perdeu o vínculo com a loja.');
+      }
       const autoridadeAdmin = await validarAutoridadeAdminSistemaNoBanco(usuario);
       if (usuario?.tipo === 'admin' && autoridadeAdmin === false) {
         throw new Error('A autorização de administrador do sistema foi revogada.');
@@ -488,6 +588,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       usuario = await revalidarSessaoFuncionarioNoBanco(usuario);
       usuarioSistemaLogado = {
         ...usuario,
+        context_mode: usuario.context_mode === 'global_admin' ? 'global_admin' : 'store',
+        global_admin_authorized: usuario.tipo === 'admin' ? autoridadeAdmin === true : false,
+        ...(usuario.context_mode === 'global_admin' ? { empresa_id:null, loja_id:null, empresa_nome:null, loja_nome:null } : {}),
         perfil: normalizarPerfilUsuario(usuario?.perfil),
       };
       window.usuarioSistemaLogado = usuarioSistemaLogado;
@@ -503,7 +606,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       aplicarPermissoesSistema();
       carregarNotificacoes();
       // Carregar ordem do menu ANTES de abrir a primeira página
-      Promise.all([carregarOrdemNavMenu(), carregarTemaUsuario()]).then(() => {
+      Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
         aplicarPermissoesSistema();
         restaurarPaginaAtivaSalvaOuPadrao();
       });
@@ -514,17 +617,60 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       }
       return !!usuario;
     } catch (e) {
-      localStorage.removeItem('zuqui_auth');
-      localStorage.removeItem('check_diario_auth_persistente');
+      const tinhaSessaoPersistente = !!(salvoLocal || salvoLocalBackup);
+      const mensagemFalha = String(e?.message || '').toLowerCase();
+      const falhaDefinitiva = mensagemFalha.includes('revogad')
+        || mensagemFalha.includes('cadastro inativo')
+        || mensagemFalha.includes('está inativo')
+        || mensagemFalha.includes('esta inativo')
+        || mensagemFalha.includes('não existe');
+      // Após reiniciar o Windows, a rede pode ainda não estar pronta quando a
+      // PWA abre. Falhas transitórias não podem destruir uma sessão persistente.
+      if (tinhaSessaoPersistente && !falhaDefinitiva && usuarioPersistido) {
+        usuarioSistemaLogado = {
+          ...usuarioPersistido,
+          perfil: normalizarPerfilUsuario(usuarioPersistido.perfil),
+        };
+        window.usuarioSistemaLogado = usuarioSistemaLogado;
+        window.__sessaoSistema = () => usuarioSistemaLogado;
+        persistirSessaoSistemaAtual(true);
+        limparDadosVisuaisDaSessao('Reconectando dados da loja...');
+        atualizarUsuarioTopbar();
+        habilitarSomNotificacao();
+        setSistemaLogado(true);
+        aplicarPermissoesSistema();
+        carregarNotificacoes();
+        Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
+          aplicarPermissoesSistema();
+          restaurarPaginaAtivaSalvaOuPadrao();
+        });
+        reiniciarAssinaturaRealtimeNotificacoes();
+        aplicarEmpresaRLS();
+        window.setTimeout(revalidarSessaoSistemaAtiva, 1500);
+        document.documentElement.classList.remove('admin-fouc-pendente');
+        console.warn('Sessão persistente restaurada; validação online será repetida:', e);
+        return true;
+      }
+
+      if (!tinhaSessaoPersistente || falhaDefinitiva) {
+        localStorage.removeItem('zuqui_auth');
+        localStorage.removeItem('check_diario_auth_persistente');
+      }
       sessionStorage.removeItem('zuqui_auth');
       sessionStorage.removeItem('check_diario_auth_persistente');
       limparDadosVisuaisDaSessao('Aguardando login...');
       usuarioSistemaLogado = null;
       window.usuarioSistemaLogado = null;
+      window.__authPrincipalId = '';
+      window.__authOperationalToken = '';
+      window.__authGlobalToken = '';
+      window.__authLojaId = '';
       atualizarUsuarioTopbar();
       setSistemaLogado(false);
       document.documentElement.classList.remove('admin-fouc-pendente');
-      console.warn('Sessão encerrada durante a revalidação de segurança:', e);
+      console.warn(tinhaSessaoPersistente && !falhaDefinitiva
+        ? 'Sessão persistente preservada após falha temporária na restauração:'
+        : 'Sessão encerrada durante a revalidação de segurança:', e);
       return false;
     }
   }
@@ -536,14 +682,22 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     try {
       if (usuarioSistemaLogado.tipo === 'admin') {
         const autorizado = await validarAutoridadeAdminSistemaNoBanco(usuarioSistemaLogado);
-        if (autorizado !== false) return;
-        await logout();
-        setMsg('msgLogin', 'A autorização de administrador do sistema foi revogada. Entre novamente.', 'err');
-        return;
+        if (autorizado === false) {
+          await logout();
+          setMsg('msgLogin', 'A autorização de administrador do sistema foi revogada. Entre novamente.', 'err');
+          return;
+        }
+        if (usuarioSistemaLogado.context_mode === 'global_admin') return;
       }
-      if (usuarioSistemaLogado.tipo !== 'funcionario') return;
 
       const manterConectado = !!(localStorage.getItem('zuqui_auth') || localStorage.getItem('check_diario_auth_persistente'));
+      if (!(await renovarContextoOperacionalPersistido(usuarioSistemaLogado))) {
+        throw new Error('A sessão operacional não pôde ser renovada para esta loja.');
+      }
+      if (usuarioSistemaLogado.tipo !== 'funcionario') {
+        persistirSessaoSistemaAtual(manterConectado);
+        return;
+      }
       usuarioSistemaLogado = await revalidarSessaoFuncionarioNoBanco(usuarioSistemaLogado);
       window.usuarioSistemaLogado = usuarioSistemaLogado;
       window.__sessaoSistema = () => usuarioSistemaLogado;
@@ -579,6 +733,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     limparDadosVisuaisDaSessao('Aguardando login...');
     usuarioSistemaLogado = null;
     window.usuarioSistemaLogado = null;
+    window.__authPrincipalId = '';
+    window.__authOperationalToken = '';
+    window.__authGlobalToken = '';
+    window.__authLojaId = '';
     atualizarUsuarioTopbar();
     redefinirEstadoAvisoCentralTarefas();
     const banner = document.getElementById('overdueAlertBanner');
@@ -792,23 +950,15 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       setMsg('msgSolicitacaoAcesso', 'O CNPJ deve ter 14 números.', 'err');
       return;
     }
-
-    const payload = {
-      nome,
-      email,
-      telefone: telefone || null,
-      empresa_informada: empresaInformada,
-      loja_informada: lojaInformada,
-      cnpj: cnpj || null,
-      observacao: observacao || null,
-      empresa_id: null,
-      loja_id: null,
-      status: 'pendente',
-    };
-    const { data: solicitacaoPersistida, error } = await sb.from('solicitacoes_acesso')
-      .insert([payload])
-      .select('id, status, created_at')
-      .single();
+    const { data: resultado, error } = await sb.rpc('solicitar_acesso_pendente', {
+      p_nome: nome,
+      p_email: email,
+      p_telefone: telefone || null,
+      p_empresa_informada: empresaInformada,
+      p_loja_informada: lojaInformada,
+      p_cnpj: cnpj || null,
+      p_observacao: observacao || null,
+    });
 
     if (error) {
       if (isMissingAccessRequestsTableError(error)) {
@@ -823,23 +973,23 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         setMsg('msgSolicitacaoAcesso', 'O banco está bloqueando o envio (política de segurança/RLS na tabela solicitacoes_acesso). Habilite a policy de INSERT público para esta tabela no Supabase.', 'err');
         return;
       }
-      if (detalheLower.includes('null value') || (detalheLower.includes('violates') && detalheLower.includes('not-null')) || String(error.code || '') === '23502') {
-        setMsg('msgSolicitacaoAcesso', `O banco ainda exige um vínculo prévio de empresa/loja${detalhe ? ` (${detalhe})` : ''}. Aplique a migration do fluxo de solicitações.`, 'err');
-        return;
-      }
       setMsg('msgSolicitacaoAcesso', `Não foi possível enviar sua solicitação${detalhe ? `: ${detalhe}` : '.'}`, 'err');
       return;
     }
-    if (!solicitacaoPersistida?.id || solicitacaoPersistida.status !== 'pendente') {
-      setMsg('msgSolicitacaoAcesso', 'Não foi possível confirmar a persistência da solicitação. Tente novamente.', 'err');
+
+    if (!resultado?.ok) {
+      const mensagens = {
+          dados_invalidos: 'Confira os dados informados e tente novamente.',
+      };
+      setMsg('msgSolicitacaoAcesso', mensagens[resultado?.codigo] || 'Não foi possível enviar sua solicitação.', 'err');
       return;
     }
 
-    document.getElementById('solicitacaoNome').value = '';
-    document.getElementById('solicitacaoEmail').value = '';
-    document.getElementById('solicitacaoTelefone').value = '';
-    document.getElementById('solicitacaoEmpresa').value = '';
-    document.getElementById('solicitacaoLoja').value = '';
+      document.getElementById('solicitacaoNome').value = '';
+      document.getElementById('solicitacaoEmail').value = '';
+      document.getElementById('solicitacaoTelefone').value = '';
+      document.getElementById('solicitacaoEmpresa').value = '';
+      document.getElementById('solicitacaoLoja').value = '';
     document.getElementById('solicitacaoCnpj').value = '';
     document.getElementById('solicitacaoObservacao').value = '';
     setMsg('msgSolicitacaoAcesso', 'Solicitação enviada. Aguarde a aprovação de um administrador.', 'ok');
@@ -962,8 +1112,12 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     // Administrador do Sistema não depende de vínculos individuais: possui
     // acesso a todas as lojas ativas, inclusive de empresas diferentes.
     if (funcionario?.é_administrador === true) {
-      const lojasAdminRes = await consultarTabelaSeguroLogin('lojas', q => q.select('*').eq('ativo', true));
-      if (!lojasAdminRes.error && Array.isArray(lojasAdminRes.data)) lojasAdminRes.data.forEach(adicionarLoja);
+      const { data: painelGlobal, error: erroPainelGlobal } = await sb.rpc('obter_painel_admin_global', {
+        p_funcionario_id: funcionarioId,
+        p_token: funcionario.global_admin_token,
+      });
+      if (erroPainelGlobal) throw erroPainelGlobal;
+      (painelGlobal?.lojas || []).filter(loja => loja?.ativo !== false).forEach(adicionarLoja);
       return Array.from(lojasMap.values()).sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
     }
 
@@ -994,6 +1148,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'x-funcionario-id': String(window.__authPrincipalId || ''),
+          'x-operational-token': String(window.__authOperationalToken || ''),
+          'x-global-admin-token': String(window.__authGlobalToken || ''),
           'Accept': 'application/json'
         }
       });
@@ -1017,13 +1174,18 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const ehAdminSistema = funcionario.é_administrador === true;
     return {
       tipo: ehAdminSistema ? 'admin' : 'funcionario',
+      context_mode: 'store',
+      global_admin_authorized: ehAdminSistema && !!funcionario.global_admin_token,
+      global_admin_token: funcionario.global_admin_token || null,
+      operational_access_token: funcionario.operational_access_token || null,
       id: funcionario.id,
       nome: funcionario.nome,
       username: funcionario.nome || funcionario.email || '',
       é_administrador: ehAdminSistema,
-      perfil_id: funcionario.perfil_id,
+      perfil_id: perfilFuncionario?.id || null,
       loja_id: loja?.id || funcionario.loja_id || null,
       empresa_id: loja?.empresa_id || funcionario.empresa_id || null,
+      empresa_nome: loja?.empresa_nome || loja?.nome_empresa || loja?.empresas?.nome || loja?.empresa?.nome || funcionario.empresa_nome || funcionario.nome_empresa || null,
       loja_nome: loja?.nome || funcionario.loja_nome || null,
       perfil: perfilFuncionario,
       lojas_permitidas: Array.isArray(window.__loginLojasPermitidasAtual) ? window.__loginLojasPermitidasAtual : []
@@ -1044,7 +1206,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function obterPerfilFuncionarioParaLoja(funcionario, lojaEscolhida, perfilFallback) {
     const funcionarioId = String(funcionario?.id || '').trim();
     const lojaId = String(lojaEscolhida?.id || lojaEscolhida?.loja_id || '').trim();
-    if (!funcionarioId || !lojaId) return perfilFallback;
+    if (!funcionarioId || !lojaId) return null;
     try {
       const vinculoRes = await executarSemFiltrosTenantTemporario(() => sb.from('funcionario_lojas')
         .select('perfil_id, ativo')
@@ -1052,16 +1214,17 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         .eq('loja_id', lojaId)
         .eq('ativo', true)
         .maybeSingle());
-      const perfilId = vinculoRes.data?.perfil_id || funcionario?.perfil_id || null;
-      if (!perfilId) return perfilFallback;
+      const perfilId = vinculoRes.data?.perfil_id || null;
+      if (!perfilId) return null;
       const perfilRes = await executarSemFiltrosTenantTemporario(() => sb.from('perfis')
         .select('id, nome, codigo, permissoes, loja_id, empresa_id')
         .eq('id', perfilId)
         .maybeSingle());
-      return perfilRes.data ? normalizarPerfilUsuario(perfilRes.data) : perfilFallback;
+      if (!perfilRes.data || String(perfilRes.data.loja_id || '') !== lojaId) return null;
+      return normalizarPerfilUsuario(perfilRes.data);
     } catch (erro) {
       console.warn('Não foi possível carregar o perfil específico da loja:', erro);
-      return perfilFallback;
+      return null;
     }
   }
 
@@ -1071,14 +1234,35 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     if (!preservarPreferenciasLogin) {
       salvarPreferenciasLogin({ username, password, salvarSenha, manterConectado });
     }
-    const perfilDaLoja = await obterPerfilFuncionarioParaLoja(funcionario, lojaEscolhida, perfilFuncionario);
-    salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionario, perfilDaLoja, lojaEscolhida), { manterConectado });
+    const ehAdminSistema = funcionario?.é_administrador === true;
+    let funcionarioContextualizado = funcionario;
+    if (ehAdminSistema) {
+      const { data: contextoOperacional, error: erroContexto } = await sb.rpc('emitir_contexto_operacional_admin_global', {
+        p_funcionario_id: funcionario.id,
+        p_token_global: funcionario.global_admin_token,
+        p_loja_id: lojaEscolhida?.id,
+      });
+      if (erroContexto || !contextoOperacional?.operational_access_token) {
+        setMsg('msgLogin', 'Não foi possível abrir um contexto operacional seguro para esta loja.', 'err');
+        return;
+      }
+      funcionarioContextualizado = { ...funcionario, ...contextoOperacional };
+      window.__authOperationalToken = contextoOperacional.operational_access_token;
+    }
+    const perfilDaLoja = ehAdminSistema
+      ? normalizarPerfilUsuario({ codigo:'ADM', nome:'Administrador do Sistema', permissoes:obterPermissoesBase('ADM') })
+      : await obterPerfilFuncionarioParaLoja(funcionarioContextualizado, lojaEscolhida, perfilFuncionario);
+    if (!ehAdminSistema && !perfilDaLoja?.id) {
+      setMsg('msgLogin', 'Acesso bloqueado: esta loja ainda não possui um perfil explícito vinculado ao usuário.', 'err');
+      return;
+    }
+    salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionarioContextualizado, perfilDaLoja, lojaEscolhida), { manterConectado });
     limparSelecaoLojaLogin();
     setSistemaLogado(true);
     aplicarPermissoesSistema();
     carregarNotificacoes();
     atualizarBotaoTrocarLojaTopbar();
-    Promise.all([carregarOrdemNavMenu(), carregarTemaUsuario()]).then(() => {
+    Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
       aplicarPermissoesSistema();
       restaurarPaginaAtivaSalvaOuPadrao();
     });
@@ -1145,7 +1329,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       const alvo = normalizarTextoComparacao(`${loja.nome || ''} ${loja.codigo || ''} ${loja.id || ''}`);
       return !termo || alvo.includes(termo);
     });
-    if (!lojas.length) {
+    if (!lojas.length && window.__loginContextoPendente?.funcionario?.é_administrador !== true) {
       lista.innerHTML = '<div class="login-store-empty">Nenhuma loja vinculada encontrada para este usuário.</div>';
       return;
     }
@@ -1197,11 +1381,11 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     }
   }
 
-  function abrirPainelAdministrativoLogin() {
+  async function abrirPainelAdministrativoLogin() {
     const contexto = window.__loginContextoPendente || null;
     if (!contexto) return setMsg('msgLogin', 'Sessão não identificada.', 'err');
     // Acesso ao painel restrito exclusivamente a funcionários com é_administrador=true
-    if (contexto.funcionario?.é_administrador !== true) {
+    if (contexto.funcionario?.é_administrador !== true || !(await validarAutoridadeAdminSistemaNoBanco({ ...contexto.funcionario, tipo:'admin' }))) {
       setMsg('msgLogin', 'Acesso ao painel administrativo restrito a administradores.', 'err');
       return;
     }
@@ -1211,19 +1395,25 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     salvarPreferenciasLogin({ username: contexto.username || '', password: contexto.password || '', salvarSenha: contexto.salvarSenha, manterConectado: contexto.manterConectado });
     salvarSessaoSistema({
       tipo: 'admin',
+      context_mode: 'global_admin',
+      global_admin_authorized: true,
+      global_admin_token: contexto.funcionario.global_admin_token,
+      operational_access_token: contexto.funcionario.operational_access_token || null,
       id: contexto.funcionario.id,
       nome: contexto.funcionario.nome,
       username: nomeUsuario,
       email: contexto.funcionario.email || null,
       é_administrador: true,
-      perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador do Sistema', permissoes: obterPermissoesBase('ADM') })
+      perfil: normalizarPerfilUsuario({ codigo: 'ADM', nome: 'Administrador do Sistema', permissoes: obterPermissoesBase('ADM') }),
+      lojas_permitidas: Array.isArray(window.__loginLojasPermitidasAtual) ? window.__loginLojasPermitidasAtual : []
     }, { manterConectado: !!contexto.manterConectado });
     setSistemaLogado(true);
     aplicarPermissoesSistema();
     carregarNotificacoes();
     limparSelecaoLojaLogin();
     // Abrir a página de administração de empresas por padrão
-    abrirPagina('empresas_saas');
+    salvarPaginaAtiva('dashboard_saas');
+    abrirPagina('dashboard_saas', document.querySelector('#navGlobalAdmin [data-page="dashboard_saas"]'));
   }
 
   function obterLojasPermitidasSessao() {
@@ -1243,7 +1433,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     if (!lojaContainer || !usuarioSistemaLogado) return;
 
     const lojas = obterLojasPermitidasSessao();
-    const podeTrocar = lojas.length > 1;
+    const podeTrocar = contextoEhAdminGlobal() ? lojas.length > 0 : (lojas.length > 1 || usuarioSistemaLogado?.global_admin_authorized === true);
     lojaContainer.classList.toggle('is-switchable', podeTrocar);
     lojaContainer.title = podeTrocar ? 'Trocar loja' : 'Loja logada';
     lojaContainer.onclick = podeTrocar ? abrirTrocaLojaTopbar : null;
@@ -1251,7 +1441,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
   function abrirTrocaLojaTopbar() {
     const lojas = obterLojasPermitidasSessao();
-    if (lojas.length <= 1) return;
+    if (contextoEhAdminGlobal() ? lojas.length < 1 : (lojas.length <= 1 && usuarioSistemaLogado?.global_admin_authorized !== true)) return;
     const contexto = {
       funcionario: usuarioSistemaLogado,
       perfilFuncionario: usuarioSistemaLogado.perfil,
@@ -1299,7 +1489,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
 
     // predefinedUsers está vazio (credenciais removidas por segurança). Login exclusivo via Supabase.
 
-    const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('autenticar_funcionario', {
+    const { data: funcionario, error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('autenticar_funcionario_contexto', {
       p_identificador: username,
       p_senha: password,
     }));
@@ -1327,6 +1517,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         }));
         if (erroAdminLogin) console.warn('Falha ao autenticar admin de loja:', erroAdminLogin);
         if (adminLoja) {
+          window.__authPrincipalId = adminLoja.id;
+          window.__authOperationalToken = adminLoja.operational_access_token || '';
           let nomeLojaAdmin = '';
           const lojaIdAdmin = String(adminLoja.loja_id || '').trim();
           let empresaIdAdmin = String(adminLoja.empresa_id || '').trim();
@@ -1369,13 +1561,14 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
             usuario: adminLoja.usuario,
             loja_id: adminLoja.loja_id,
             empresa_id: empresaIdAdmin || null,
+            operational_access_token: adminLoja.operational_access_token || null,
             loja_nome: nomeLojaAdmin || 'Loja vinculada',
             perfil: perfilAdminLoja
           }, { manterConectado });
           setSistemaLogado(true);
           aplicarPermissoesSistema();
           carregarNotificacoes();
-          Promise.all([carregarOrdemNavMenu(), carregarTemaUsuario()]).then(() => {
+          Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
             aplicarPermissoesSistema();
             restaurarPaginaAtivaSalvaOuPadrao();
           });
@@ -1413,15 +1606,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return;
     }
 
-    let perfilFuncionario = normalizarPerfilUsuario(funcionario.perfis);
-    if (!perfilFuncionario || !perfilFuncionario.codigo) {
-      perfilFuncionario = {
-        nome: 'Funcionário',
-        codigo: 'FUNCIONARIO',
-        permissoes: obterPermissoesBase('FUNCIONARIO'),
-      };
-      setMsg('msgLogin', 'Seu perfil não pôde ser carregado agora. Acesso liberado com permissões básicas.', 'ok');
-    }
+    window.__authPrincipalId = funcionario.id;
+    window.__authOperationalToken = funcionario.operational_access_token || '';
+    window.__authGlobalToken = funcionario.global_admin_token || '';
+    const perfilFuncionario = normalizarPerfilUsuario(funcionario.perfis);
 
     const lojasPermitidas = await carregarLojasPermitidasFuncionarioLogin(funcionario);
     window.__loginLojasPermitidasAtual = lojasPermitidas;
@@ -1868,6 +2056,7 @@ carregarResumoPontoHoje = async function(funcionarioId = '') {
 };
 
 async function carregarRelatorioPonto() {
+  const contextoTenantInicio = capturarContextoTenant();
   const lista = document.getElementById('listaRelatorioPonto');
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando⬦</div>';
@@ -1948,6 +2137,7 @@ async function carregarRelatorioPonto() {
   const ajustes = await carregarAjustesAprovadosPontoPorPeriodo(dataInicio, dataFim, funcionarioId);
   const ajustesMapa = montarMapaAjustesPonto(ajustes);
   rows = rows.map(item => ({ ...item, ajustes_admin: ajustesMapa[`${String(item.funcionario_id || '')}|${String(item.data_ponto || '')}`] || [] }));
+  if (!contextoTenantAindaValido(contextoTenantInicio)) return;
   window.__relatorioPontoUltimosRows = rows;
   window.__relatorioPontoUltimoPeriodo = infoPeriodo;
   atualizarPainelRelatorioPonto(rows, infoPeriodo);
@@ -1961,7 +2151,7 @@ async function carregarRelatorioPonto() {
     const resumoJornada = obterResumoJornadaPonto(item, item.intervalos_ponto || []);
     const ajustesHtml = montarHtmlAjustesPonto(item.ajustes_admin || []);
     return `<div class="item${item.ajustes_admin?.length ? ' ponto-ajustado-admin' : ''}">
-        <div class="item-info"><div class="item-nome">${escapeHtmlPonto(nomeFuncionario)} · ${formatarDataPonto(item.data_ponto)}</div><div class="item-detalhe">Entrada: ${formatarHoraPonto(item.entrada_em)} · ${montarResumoIntervalos(item.intervalos_ponto || [])} · Saída: ${formatarHoraPonto(item.saida_em)}</div><div class="item-detalhe">Status: ${resumoJornada.status}</div><div class="item-detalhe">Total trabalhado no dia: ${resumoJornada.totalTexto}</div>${ajustesHtml}</div>
+        <div class="item-info"><div class="item-nome">${escapeHtmlPonto(nomeFuncionario)} · ${formatarDataPonto(item.data_ponto)}</div><div class="item-detalhe">Entrada: ${formatarHoraPonto(item.entrada_em)} · ${montarResumoIntervalos(item.intervalos_ponto || [])} · Saída: ${formatarHoraPonto(resumoJornada.ultimaSaidaEm || item.saida_em)}</div><div class="item-detalhe">Status: ${resumoJornada.status}</div><div class="item-detalhe">Total trabalhado no dia: ${resumoJornada.totalTexto}</div>${ajustesHtml}</div>
         <div class="item-actions">${resumoJornada.proximaAcao === 'Retorno' ? '<span class="tag tag-amber">Fora</span>' : '<span class="tag tag-green">Em jornada</span>'}</div>
       </div>`;
   }).join('') + '</div>';
@@ -1977,7 +2167,7 @@ function montarLinhasExportacaoRelatorioPonto() {
       const tipo = String(aj.motivo || '').includes('[ANULACAO MANUAL ADMIN]') ? 'Anulação manual ADM' : 'Ajuste manual ADM';
       return `${tipo} em ${aj.data_ajuste || '-'} às ${formatarHorarioAjustePonto(aj.horario_ajuste)} por ${aj.aprovado_por_nome || 'Administrador'} (${formatarDataHoraSolicitacaoPonto(aj.aprovado_em || aj.solicitado_em)})`;
     }).join(' | ');
-    return { Funcionario: nome, Data: item.data_ponto || '', Entrada: formatarHoraPonto(item.entrada_em), Intervalos: montarResumoIntervalos(item.intervalos_ponto || []).replace(/<[^>]+>/g, ''), Saida: formatarHoraPonto(item.saida_em), Status: resumo.status, Total: resumo.totalTexto, Ajustes_ADM: ajustes || 'Sem ajuste manual ADM' };
+    return { Funcionario: nome, Data: item.data_ponto || '', Entrada: formatarHoraPonto(item.entrada_em), Intervalos: montarResumoIntervalos(item.intervalos_ponto || []).replace(/<[^>]+>/g, ''), Saida: formatarHoraPonto(resumo.ultimaSaidaEm || item.saida_em), Status: resumo.status, Total: resumo.totalTexto, Ajustes_ADM: ajustes || 'Sem ajuste manual ADM' };
   });
 }
 
@@ -2594,42 +2784,3 @@ async function aplicarAjusteAprovadoNoPonto(solicitacao) {
     return { ok: false, mensagem: mensagemErroSupabase(error, 'erro desconhecido') };
   }
 }
-// Mantem o reset da analise Raffinato independente do estado dos graficos.
-// A tela pode ser carregada por versoes modulares diferentes, por isso a rotina
-// verifica cada controle antes de usa-lo.
-window.limparFiltrosAnaliseVendas = function limparFiltrosAnaliseVendas() {
-  const hoje = typeof rsIso === 'function'
-    ? rsIso()
-    : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const valores = {
-    rsStart: hoje,
-    rsStartTime: '00:00',
-    rsEnd: hoje,
-    rsEndTime: '23:59',
-    rsProductSearch: '',
-    rsGroup: '',
-    rsPayment: '',
-    rsModule: '',
-    rsTableSearch: '',
-  };
-  Object.entries(valores).forEach(([id, valor]) => {
-    const campo = document.getElementById(id);
-    if (campo) campo.value = valor;
-  });
-  if (typeof rsFilters !== 'undefined') rsFilters = { product:[], payment:[], module:[], group:[] };
-  if (typeof rsSearch !== 'undefined') rsSearch = '';
-  if (typeof rsPage !== 'undefined') rsPage = 1;
-  if (typeof rsSource !== 'undefined') rsSource = [];
-  if (typeof rsDocumentDimensions !== 'undefined') rsDocumentDimensions = [];
-  if (typeof rsOpenOperations !== 'undefined') rsOpenOperations = [];
-  if (typeof rsBilledModules !== 'undefined') rsBilledModules = [];
-  ['rsKpis','rsCharts','rsTableCard','rsOpenCard','rsActive','rsDrilldown'].forEach(id => {
-    const bloco = document.getElementById(id);
-    if (bloco) bloco.hidden = true;
-  });
-  const mensagem = document.getElementById('rsMessage');
-  if (mensagem) {
-    mensagem.className = 'msg';
-    mensagem.textContent = 'Consulta limpa. Período restaurado para hoje, das 00:00 às 23:59.';
-  }
-};

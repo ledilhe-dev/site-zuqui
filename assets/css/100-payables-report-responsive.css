@@ -191,7 +191,7 @@
 #relatorio_financeiro .rf-grupo-cabecalho,
 #relatorio_financeiro .rf-grupo-item {
   display: grid !important;
-  grid-template-columns: minmax(230px, 2fr) repeat(3, minmax(130px, 1fr)) minmax(65px, .35fr) !important;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(135px, 1fr) minmax(120px, .9fr) repeat(3, minmax(95px, .75fr)) minmax(55px, .3fr) !important;
   align-items: center !important;
   column-gap: clamp(14px, 1.4vw, 30px) !important;
   padding-inline: clamp(12px, 1vw, 20px) !important;
@@ -214,6 +214,8 @@
   color: var(--text);
   font-size: clamp(13px, .78vw, 16px) !important;
 }
+#relatorio_financeiro .rf-grupo-cadastro { color: var(--text-muted); }
+#relatorio_financeiro .rf-grupo-vencimento { color: #f87171; font-weight: 700; }
 
 #relatorio_financeiro .rf-grupo-pago { color: #93c5fd; }
 #relatorio_financeiro .rf-grupo-aberto { color: #fb923c; font-weight: 700; }
@@ -235,7 +237,7 @@
   }
   #relatorio_financeiro .rf-grupo-cabecalho,
   #relatorio_financeiro .rf-grupo-item {
-    grid-template-columns: minmax(150px, 1.5fr) repeat(3, minmax(90px, .8fr)) 55px !important;
+    grid-template-columns: minmax(115px, 1.2fr) minmax(100px, .9fr) minmax(90px, .8fr) repeat(3, minmax(68px, .62fr)) 38px !important;
     column-gap: 8px !important;
   }
 }
@@ -297,13 +299,21 @@
   #relatorio_financeiro .stat-card .s-label { font-size: 7.5px !important; }
   #relatorio_financeiro .stat-card .s-value { font-size: clamp(18px, 5.4vw, 23px) !important; }
   #relatorio_financeiro .stat-card .s-desc { font-size: 8.5px !important; }
-  #relatorio_financeiro .rf-grupo-cabecalho,
+  #relatorio_financeiro .rf-grupo-cabecalho { display: none !important; }
   #relatorio_financeiro .rf-grupo-item {
-    grid-template-columns: minmax(82px, 1.35fr) repeat(3, minmax(54px, .8fr)) 32px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     column-gap: 4px !important;
+    row-gap: 6px !important;
     padding-inline: 7px !important;
   }
-  #relatorio_financeiro .rf-grupo-cabecalho { min-height: 27px !important; font-size: 6.5px !important; }
+  #relatorio_financeiro .rf-grupo-fornecedor { grid-column: 1 / -1; }
+  #relatorio_financeiro .rf-grupo-item > :not(.rf-grupo-fornecedor)::before { display:block; margin-bottom:2px; color:var(--text-muted); font-size:6px; font-weight:700; text-transform:uppercase; }
+  #relatorio_financeiro .rf-grupo-cadastro::before { content:'Cadastro'; }
+  #relatorio_financeiro .rf-grupo-vencimento::before { content:'Vencimento'; }
+  #relatorio_financeiro .rf-grupo-pago::before { content:'Pago'; }
+  #relatorio_financeiro .rf-grupo-aberto::before { content:'Em aberto'; }
+  #relatorio_financeiro .rf-grupo-total::before { content:'Total'; }
+  #relatorio_financeiro .rf-grupo-qtd::before { content:'Títulos'; }
   #relatorio_financeiro .rf-grupo-item { min-height: 48px !important; }
   #relatorio_financeiro .rf-grupo-item > * { font-size: 8px !important; }
   #relatorio_financeiro .rf-grupo-fornecedor { font-size: 8.5px !important; }
