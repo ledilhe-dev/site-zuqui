@@ -55,7 +55,7 @@
     );
     const topbarActions = document.querySelector(".topbar-actions");
     if (topbarActions) topbarActions.prepend($("checkiaFab"));
-    $("checkiaFab").innerHTML = `<svg class="checkia-vbot" viewBox="0 0 40 40" aria-hidden="true"><path class="checkia-vbot-frame" d="M5 8 20 33 35 8 29 5 20 21 11 5Z"/><path class="checkia-vbot-face" d="M11 11 20 27 29 11 25 9 20 18 15 9Z"/><circle cx="15.5" cy="12.5" r="2"/><circle cx="24.5" cy="12.5" r="2"/><path class="checkia-vbot-antenna" d="M20 7V3m-3 0h6"/></svg><span class="checkia-fab-label">CheckIA</span>`;
+    $("checkiaFab").innerHTML = `<svg class="checkia-vbot" viewBox="0 0 32 32" aria-hidden="true"><path class="checkia-vbot-frame" d="M3 5h7l6 15L22 5h7L19 29a3.2 3.2 0 0 1-6 0Z"/><path class="checkia-vbot-face" d="M9 8h4l3 7 3-7h4l-7 15Z"/><circle cx="11" cy="8" r="1.5"/><circle cx="21" cy="8" r="1.5"/><path class="checkia-vbot-antenna" d="M16 5V2m-2 0h4"/></svg><span class="checkia-fab-label">CheckIA</span>`;
     const logo = document.querySelector(".checkia-logo");
     if (logo) logo.innerHTML = $("checkiaFab").querySelector("svg").outerHTML;
     $("checkiaFab").onclick = open;

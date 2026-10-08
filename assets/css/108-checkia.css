@@ -3,16 +3,17 @@
   z-index: auto;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap:5px;
   border: 1px solid rgba(52, 211, 153, 0.45);
   border-radius: 999px;
   min-height:34px;
-  max-width:92px;
-  padding:6px 8px;
+  width:76px;
+  max-width:76px;
+  padding:5px 6px;
   background: linear-gradient(135deg, #123a2b, #0b211a);
   color: #ecfdf5;
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.38);
-  font:800 10px/1 system-ui;
+  font:800 9px/1 system-ui;
   letter-spacing:-.15px;
   white-space:nowrap;
   flex:0 0 auto;
@@ -27,11 +28,11 @@
   height: 21px;
   fill: #34d399;
 }
-.checkia-fab .checkia-vbot { width:20px; height:20px; overflow:visible; flex:0 0 auto; }
-.checkia-vbot-frame { fill:#34d399; }
-.checkia-vbot-face { fill:#08251d; }
-.checkia-vbot circle { fill:#d1fae5; filter:drop-shadow(0 0 2px #fff); }
-.checkia-vbot-antenna { fill:none; stroke:#6ee7b7; stroke-width:2; stroke-linecap:round; }
+.checkia-fab .checkia-vbot { width:18px; height:18px; overflow:visible; flex:0 0 auto; }
+.checkia-vbot-frame { fill:#34d399; filter:drop-shadow(0 0 3px rgba(52,211,153,.5)); }
+.checkia-vbot-face { fill:#071b15; }
+.checkia-vbot circle { fill:#ecfdf5; }
+.checkia-vbot-antenna { fill:none; stroke:#6ee7b7; stroke-width:1.8; stroke-linecap:round; }
 .checkia-logo .checkia-vbot { width:34px; height:34px; }
 .checkia-fab-dot {
   width: 7px;

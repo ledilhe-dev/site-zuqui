@@ -75,6 +75,35 @@
     align-items: end !important;
     justify-content: start !important;
   }
+
+  /* Topo uniforme: todos os controles compartilham a mesma altura e eixo. */
+  .topbar {
+    display:flex !important;
+    align-items:center !important;
+    min-height:50px !important;
+    height:50px !important;
+    padding:4px 10px !important;
+    gap:5px !important;
+  }
+  .topbar-main { display:flex !important; align-items:center !important; flex:1 1 auto !important; min-width:0 !important; gap:4px !important; }
+  .topbar-main .mobile-menu-btn { width:38px !important; min-width:38px !important; height:38px !important; min-height:38px !important; padding:0 !important; }
+  .topbar-main .theme-switcher { width:126px !important; min-width:112px !important; height:38px !important; }
+  .topbar-main .theme-switcher select { height:38px !important; min-height:38px !important; padding:5px 25px 5px 9px !important; font-size:10px !important; }
+  .topbar-clock,.topbar-business-day { width:86px !important; min-width:86px !important; height:38px !important; min-height:38px !important; padding:4px 6px !important; }
+  .topbar-info-label,.topbar-user-label { font-size:6.5px !important; letter-spacing:.35px !important; }
+  .topbar-clock-time,.topbar-business-day-date { font-size:15px !important; }
+  #topbarVersionBadge { min-height:16px !important; padding:2px 5px !important; font-size:6.5px !important; }
+  .topbar-store { width:210px !important; min-width:180px !important; max-width:220px !important; height:40px !important; min-height:40px !important; padding:3px 5px 3px 9px !important; gap:5px !important; }
+  .topbar-store-name { font-size:11px !important; }
+  .topbar-store-switch { min-height:32px !important; height:32px !important; padding:5px 8px !important; font-size:9px !important; }
+  .topbar-actions { display:flex !important; align-items:center !important; flex:0 0 auto !important; gap:4px !important; min-width:0 !important; }
+  #topbarUserInfo { display:flex !important; width:116px !important; min-width:116px !important; max-width:116px !important; height:40px !important; min-height:40px !important; padding:0 !important; }
+  #topbarUserInfo[hidden] { display:none !important; }
+  .account-menu-trigger { width:100% !important; height:40px !important; min-height:40px !important; padding:3px 6px 3px 4px !important; gap:5px !important; border-radius:10px !important; }
+  .account-avatar { width:32px !important; height:32px !important; flex:0 0 32px !important; font-size:12px !important; }
+  .account-menu-trigger .topbar-user-name { display:block !important; flex:1 1 auto !important; max-width:62px !important; font-size:10px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+  .account-menu-trigger > span[aria-hidden="true"] { font-size:8px !important; }
+  .topbar-actions .notification-btn { width:38px !important; min-width:38px !important; height:38px !important; min-height:38px !important; padding:8px !important; }
   #cardChecklistsLancados > .checklist-filtros-unificados select {
     width: 100% !important;
     flex: none !important;
