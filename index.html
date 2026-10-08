@@ -617,13 +617,13 @@
           </div>
           <div class="form-row checklist-filtros-unificados">
             <select id="filtroChecklistFuncionario" onchange="carregarChecklists()">
-              <option value="">- Todos os funcionarios -</option>
+              <option value="">- Funcionários -</option>
             </select>
             <select id="filtroChecklistTarefa" onchange="carregarChecklists()">
-              <option value="">- Todas as tarefas -</option>
+              <option value="">- Tarefas -</option>
             </select>
-            <label class="checklist-data-campo"><span>Data inicial</span><input id="filtroChecklistDataInicio" type="date" onclick="this.showPicker?.()"></label>
-            <label class="checklist-data-campo"><span>Data final</span><input id="filtroChecklistDataFim" type="date" onclick="this.showPicker?.()"></label>
+            <label class="checklist-data-campo"><span>Data inicial</span><input id="filtroChecklistDataInicio" type="date" data-date-filter-native="true" onclick="this.showPicker?.()"></label>
+            <label class="checklist-data-campo"><span>Data final</span><input id="filtroChecklistDataFim" type="date" data-date-filter-native="true" onclick="this.showPicker?.()"></label>
             <button class="btn btn-green" type="button" onclick="filtrarPeriodoChecklists()">Filtrar</button>
             <button class="btn btn-ghost checklist-limpar-unico" type="button" title="Limpar todos os filtros" onclick="limparFiltrosChecklists(); limparPeriodoChecklists()">× Limpar</button>
           </div>
@@ -3087,7 +3087,7 @@
 <link rel="stylesheet" href="./assets/css/113-mobile-global.css?v=20260826-secure-input-v2">
 <link id="sidebar-icons-style" rel="stylesheet" href="./assets/css/106-sidebar-icons.css?v=20261008-validade-neon">
 <link id="adaptive-shell-style" rel="stylesheet" href="./assets/css/107-adaptive-shell.css?v=20261005-menu-touch-v7">
-<link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v2">
+<link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v3">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">

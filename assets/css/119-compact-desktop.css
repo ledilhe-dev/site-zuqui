@@ -1,7 +1,7 @@
 /* Ajustes pontuais dos filtros, sem alterar a identidade visual vigente. */
 .checklist-filtros-unificados {
   display:grid !important;
-  grid-template-columns:minmax(145px,220px) minmax(165px,250px) 140px 140px auto auto;
+  grid-template-columns:170px 190px 122px 122px 88px 72px;
   align-items:end !important;
   justify-content:start !important;
   gap:8px !important;
@@ -9,7 +9,7 @@
 .checklist-filtros-unificados > select { width:100% !important; min-width:0 !important; }
 .checklist-data-campo { display:flex; min-width:0; flex-direction:column; gap:4px; }
 .checklist-data-campo > span { color:var(--text-muted); font-size:9px; font-weight:800; text-transform:uppercase; }
-.checklist-data-campo input[type="date"] { width:140px !important; min-width:0 !important; }
+.checklist-data-campo input[type="date"] { width:122px !important; min-width:0 !important; padding-inline:8px !important; }
 .checklist-limpar-unico { white-space:nowrap; padding-inline:9px !important; }
 
 @media (max-width:900px) {
@@ -71,7 +71,7 @@
   /* Checklists: nomes curtos nao precisam ocupar metade do painel. */
   #cardChecklistsLancados > .checklist-filtros-unificados {
     display: grid !important;
-    grid-template-columns: minmax(145px,220px) minmax(165px,250px) 140px 140px auto auto !important;
+    grid-template-columns:170px 190px 122px 122px 88px 72px !important;
     align-items: end !important;
     justify-content: start !important;
   }
@@ -82,7 +82,7 @@
   #cardChecklistsLancados .checklist-data-campo { display:flex; min-width:0; flex-direction:column; gap:4px; }
   #cardChecklistsLancados .checklist-data-campo > span { color:var(--text-muted); font-size:9px !important; font-weight:800; text-transform:uppercase; }
   #cardChecklistsLancados .checklist-data-campo input[type="date"] {
-    width: 140px !important;
+    width:122px !important;
   }
   #cardChecklistsLancados .checklist-limpar-unico { padding-inline:9px !important; white-space:nowrap; }
 

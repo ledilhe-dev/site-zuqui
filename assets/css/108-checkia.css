@@ -6,12 +6,16 @@
   gap: 9px;
   border: 1px solid rgba(52, 211, 153, 0.45);
   border-radius: 999px;
-  min-height: 36px;
-  padding: 7px 11px;
+  min-height:34px;
+  max-width:92px;
+  padding:6px 8px;
   background: linear-gradient(135deg, #123a2b, #0b211a);
   color: #ecfdf5;
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.38);
-  font: 800 12px/1 system-ui;
+  font:800 10px/1 system-ui;
+  letter-spacing:-.15px;
+  white-space:nowrap;
+  flex:0 0 auto;
   cursor: pointer;
 }
 .checkia-fab:hover {
@@ -23,7 +27,7 @@
   height: 21px;
   fill: #34d399;
 }
-.checkia-fab .checkia-vbot { width:25px; height:25px; overflow:visible; }
+.checkia-fab .checkia-vbot { width:20px; height:20px; overflow:visible; flex:0 0 auto; }
 .checkia-vbot-frame { fill:#34d399; }
 .checkia-vbot-face { fill:#08251d; }
 .checkia-vbot circle { fill:#d1fae5; filter:drop-shadow(0 0 2px #fff); }
