@@ -8,25 +8,6 @@ body,
   max-inline-size: 100%;
 }
 
-/* Área confortável para reordenar submenus com o dedo no iPad/tablet. */
-@media (max-width: 1180px), (pointer: coarse) {
-  #navContainer .nav-sub-btn { padding-right: 42px !important; }
-  #navContainer .nav-suborder-handle {
-    right: 2px !important;
-    width: 36px !important;
-    height: 36px !important;
-    opacity: .72 !important;
-    touch-action: none !important;
-    -webkit-user-select: none !important;
-    user-select: none !important;
-  }
-  #navContainer .nav-sub-btn.nav-subitem-moving {
-    outline: 2px solid var(--accent, #655df5) !important;
-    outline-offset: -2px !important;
-    opacity: .8;
-  }
-}
-
 .main {
   flex: 1 1 0;
 }
@@ -52,57 +33,46 @@ body,
   word-break: normal !important;
 }
 
-/* Contexto permanente e discreto: a pagina atual fica identificada mesmo
-   quando o titulo do topbar e ocultado para ganhar espaco. */
-.active-page-name {
-  display: flex;
-  align-items: center;
-  min-height: 20px;
-  margin: 0 0 7px;
-  padding: 2px 7px;
-  border-left: 2px solid color-mix(in srgb, var(--accent, #6366f1) 72%, transparent);
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: .035em;
+/* Filtros do checklist em uma unica barra compacta. */
+.checklist-filtros-barra {
+  display:grid !important;
+  grid-template-columns:minmax(145px,.9fr) minmax(165px,1fr) 145px 145px auto auto;
+  align-items:end !important;
+  gap:8px !important;
+  margin-top:10px;
 }
+.checklist-filtros-barra > select,
+.checklist-filtros-barra input { width:100% !important; min-width:0 !important; min-height:38px !important; padding-block:7px !important; }
+.checklist-data-campo { display:flex; min-width:0; flex-direction:column; gap:4px; }
+.checklist-data-campo > span { color:var(--text-muted); font-size:9px; font-weight:800; line-height:1; text-transform:uppercase; }
+.checklist-filtrar-btn,
+.checklist-limpar-btn { min-height:38px !important; padding:7px 11px !important; font-size:11px !important; white-space:nowrap; }
 
-.active-page-name[hidden] {
-  display: none !important;
+/* Cabecalho enxuto com a CheckIA integrada aos controles. */
+@media (min-width:1181px) {
+  .topbar { padding:7px 14px !important; gap:8px !important; }
+  .topbar-main { gap:8px !important; }
+  .topbar-clock,.topbar-business-day { width:132px !important; min-width:118px !important; min-height:36px !important; padding:5px 9px !important; }
+  .topbar-info-label,.topbar-user-label { font-size:8px !important; }
+  .topbar-clock-time,.topbar-business-day-date { font-size:18px !important; }
+  .topbar-store { width:220px !important; min-width:190px !important; min-height:36px !important; padding:5px 9px !important; }
+  .topbar-store-name,.topbar-user-name { font-size:13px !important; }
+  #topbarUserInfo { width:130px !important; min-width:110px !important; }
+  #topbarVersionBadge { padding:3px 7px !important; font-size:9px !important; }
+  .topbar-actions { gap:6px !important; }
+  .topbar-actions .btn { font-size:11px; }
 }
-
-/* A versao e secundaria: texto menor dentro da caixa existente. */
-#topbarVersionBadge {
-  min-width: 0 !important;
-  max-width: 52px !important;
-  padding: 2px 3px !important;
-  overflow: hidden !important;
-  border-radius: 6px !important;
-  font-size: 6px !important;
-  line-height: 1 !important;
-  letter-spacing: 0 !important;
-  text-overflow: clip !important;
+@media (max-width:900px) {
+  .checklist-filtros-barra { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:560px) {
+  .checklist-filtros-barra { grid-template-columns:1fr; }
+  .checklist-filtrar-btn,.checklist-limpar-btn { width:100%; }
 }
 
 /* iPad em paisagem possui ate 1180 CSS px. Nessa faixa o menu vira gaveta,
    liberando toda a largura para qualquer relatorio. */
 @media (max-width: 1180px) {
-  /* A navegacao esta fora do fluxo nesta faixa. O shell deixa de reservar
-     qualquer coluna fantasma, inclusive depois de girar o aparelho. */
-  .shell {
-    display: block !important;
-    inline-size: 100% !important;
-  }
-
-  .main {
-    display: flex !important;
-    inline-size: 100% !important;
-    min-inline-size: 0 !important;
-    max-inline-size: none !important;
-    margin: 0 !important;
-  }
-
   .sidebar {
     position: fixed !important;
     inset: 0 auto 0 0 !important;
@@ -146,46 +116,7 @@ body,
   .content {
     inline-size: 100% !important;
     max-inline-size: 100% !important;
-    margin: 0 !important;
     overflow-x: hidden !important;
-  }
-
-  .content > .pagina.ativa {
-    inline-size: 100% !important;
-    min-inline-size: 0 !important;
-    max-inline-size: none !important;
-    margin-inline: 0 !important;
-  }
-
-  .content > .pagina.ativa > * {
-    max-inline-size: 100% !important;
-  }
-
-  /* Uma unica linha de enquadramento para cabecalho, filtros, alertas,
-     indicadores e resultados. */
-  .pagina.ativa > .card,
-  .pagina.ativa > [class*="-active"],
-  .pagina.ativa > [class*="-content"],
-  .pagina.ativa > [class*="-kpis"],
-  .pagina.ativa > [class*="-grid"],
-  .rm-head,
-  .rm-filter-card,
-  .rm-active,
-  .rm-content,
-  .rm-kpis,
-  .rm-bi-grid {
-    inline-size: 100% !important;
-    min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
-    margin-inline: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  .rm-filter-card,
-  .raffinato-filter-card,
-  .rs-filters,
-  .rb-filters {
-    overflow: hidden !important;
   }
 
   /* Safari/iPad aplica largura intrinseca a date/time. A grade e cada campo
@@ -194,22 +125,11 @@ body,
   .pagina.ativa input[type="time"],
   .pagina.ativa input[type="datetime-local"] {
     display: block !important;
-    inline-size: calc(100% - 6px) !important;
-    width: calc(100% - 6px) !important;
+    inline-size: 100% !important;
     min-inline-size: 0 !important;
-    max-inline-size: calc(100% - 6px) !important;
+    max-inline-size: 100% !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
-    min-height: 30px !important;
-    height: 30px !important;
-    padding: 4px 6px 2px !important;
-    border-radius: 8px !important;
-    font-size: 10px !important;
-    line-height: 22px !important;
-    text-align: center !important;
-    justify-self: start !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
+    overflow: hidden !important;
   }
 
   .pagina.ativa input[type="date"]::-webkit-date-and-time-value,
@@ -218,84 +138,7 @@ body,
   .pagina.ativa input[type="date"]::-webkit-datetime-edit,
   .pagina.ativa input[type="time"]::-webkit-datetime-edit {
     min-width: 0 !important;
-    min-height: 22px !important;
-    height: 22px !important;
-    padding: 1px 0 0 !important;
-    line-height: 22px !important;
-    text-align: center !important;
-    transform: translateY(1px);
-  }
-
-  /* Relatorios gerenciais e demais filtros dinamicos compartilham a mesma
-     regra. Evita a largura intrinseca dos controles nativos do Safari. */
-  .rm-filters,
-  .raffinato-filter-grid,
-  .rs-filter-grid,
-  .rb-filter-grid,
-  .iop-filters,
-  .date-filter-standard,
-  .financeiro-filtros-row,
-  .financeiro-filtros-flex,
-  .report-filter-grid {
-    inline-size: 100% !important;
-    min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
-  }
-
-  .rm-filters > *,
-  .raffinato-filter-grid > *,
-  .rs-filter-grid > *,
-  .rb-filter-grid > *,
-  .iop-filters > *,
-  .date-filter-standard > *,
-  .financeiro-filtros-row > *,
-  .financeiro-filtros-flex > *,
-  .report-filter-grid > * {
-    min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
-  }
-
-  .rm-filters :is(input, select, button),
-  .raffinato-filter-grid :is(input, select, button),
-  .rs-filter-grid :is(input, select, button),
-  .rb-filter-grid :is(input, select, button),
-  .iop-filters :is(input, select, button) {
-    inline-size: 100% !important;
-    min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
-  }
-
-  .rm-filters label,
-  .raffinato-filter-grid .raffinato-field,
-  .rs-filter-grid label,
-  .rb-filter-grid label,
-  .iop-filters label,
-  .date-filter-standard label {
-    min-inline-size: 0 !important;
-    max-inline-size: 100% !important;
-    overflow: visible !important;
-  }
-
-  .rm-filters input[type="date"],
-  .rm-filters input[type="time"],
-  .raffinato-filter-grid input[type="date"],
-  .raffinato-filter-grid input[type="time"],
-  .rs-filter-grid input[type="date"],
-  .rs-filter-grid input[type="time"],
-  .rb-filter-grid input[type="date"],
-  .rb-filter-grid input[type="time"],
-  .iop-filters input[type="date"],
-  .iop-filters input[type="time"] {
-    /* O controle fica menor que a coluna: o Safari nao alcanca nem recorta
-       o arredondamento direito do campo vizinho. */
-    inline-size: calc(100% - 6px) !important;
-    width: calc(100% - 6px) !important;
-    min-inline-size: 0 !important;
-    max-inline-size: calc(100% - 6px) !important;
-    justify-self: start !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    clip-path: none !important;
+    padding: 0 !important;
   }
 
   .raffinato-filter-grid {
@@ -335,66 +178,6 @@ body,
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-  }
-
-  /* Quatro colunas equilibradas no iPad em paisagem. A segunda linha recebe
-     grupo, origem, produto e as duas acoes, sem sobreposicao. */
-  .rm-filters,
-  .raffinato-filter-grid,
-  .rb-filter-grid,
-  .rs-filter-grid,
-  .iop-filters {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    column-gap: 8px !important;
-    row-gap: 7px !important;
-  }
-
-  .rm-filter-card,
-  .raffinato-filter-card,
-  .rb-filters,
-  .rs-filters,
-  .iop-panel {
-    padding: 10px 12px !important;
-  }
-
-  .rs-query,
-  .rb-payment-filter {
-    grid-column: auto !important;
-  }
-
-  .rm-actions {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-  }
-
-  .rm-actions .btn {
-    width: 100% !important;
-    min-width: 0 !important;
-    padding-inline: 8px !important;
-    white-space: nowrap !important;
-  }
-}
-
-@media (min-width: 701px) and (max-width: 900px) {
-  .rm-filters,
-  .raffinato-filter-grid,
-  .rb-filter-grid,
-  .rs-filter-grid,
-  .iop-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    column-gap: 8px !important;
-    row-gap: 7px !important;
-  }
-
-  .rm-actions {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  .rs-query,
-  .rb-payment-filter {
-    grid-column: auto !important;
   }
 }
 

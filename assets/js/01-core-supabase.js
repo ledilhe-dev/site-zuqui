@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.63';
-const APP_VERSION_LABEL = '3.2.63-parcelas-pdf-pagamento';
+const APP_VERSION = '3.2.13';
+const APP_VERSION_LABEL = '3.2.13-restaurar-vencimento-mobile';
 function aplicarVersaoVisivelSistema() {
   const texto = `INDEX ${APP_VERSION}`;
   const badge = document.getElementById('appVersionBadge');
@@ -21,56 +21,7 @@ const EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).emailFunctionName || 'noti
 const AUTH_EMAIL_FUNCTION_NAME = (window.APP_CONFIG || {}).authEmailFunctionName || 'autenticacao-email';
 const AUTH_REDIRECT_URL = (window.APP_CONFIG || {}).authRedirectUrl || 'https://checkdiario.com.br/';
 
-window.__tenantContextVersion = Number(window.__tenantContextVersion || 0);
-window.__tenantScopedResetHandlers = window.__tenantScopedResetHandlers || new Set();
-window.__tenantScopedModules = window.__tenantScopedModules || new Map();
-function capturarContextoTenant() {
-  const sessao = (typeof usuarioSistemaLogado !== 'undefined' && usuarioSistemaLogado) || window.usuarioSistemaLogado || {};
-  return Object.freeze({ version:Number(window.__tenantContextVersion || 0), empresaId:String(sessao.empresa_id || '').trim(), lojaId:String(sessao.loja_id || '').trim() });
-}
-function contextoTenantAindaValido(contexto) {
-  if (!contexto) return false;
-  const atual = capturarContextoTenant();
-  return contexto.version === atual.version && contexto.empresaId === atual.empresaId && contexto.lojaId === atual.lojaId;
-}
-function registrarModuloTenantScoped(nome, reset) {
-  if (!nome || typeof reset !== 'function') throw new Error('Módulo tenant-scoped precisa registrar uma rotina de limpeza.');
-  const anterior = window.__tenantScopedModules.get(nome);
-  if (anterior) window.__tenantScopedResetHandlers.delete(anterior);
-  window.__tenantScopedModules.set(nome, reset);
-  window.__tenantScopedResetHandlers.add(reset);
-  return () => { window.__tenantScopedModules.delete(nome); window.__tenantScopedResetHandlers.delete(reset); };
-}
-function registrarResetTenantUI(handler) {
-  if (typeof handler === 'function') window.__tenantScopedResetHandlers.add(handler);
-  return () => window.__tenantScopedResetHandlers.delete(handler);
-}
-function resetTenantScopedUI(motivo = 'tenant-change') {
-  window.__tenantContextVersion += 1;
-  for (const handler of [...window.__tenantScopedResetHandlers]) {
-    try { handler({ motivo, version:window.__tenantContextVersion }); } catch (error) { console.warn('Falha ao limpar estado do tenant:', error); }
-  }
-  try { window.dispatchEvent(new CustomEvent('tenant:reset', { detail:{ motivo,version:window.__tenantContextVersion } })); } catch (_) {}
-  document.querySelectorAll('[data-tenant-result]').forEach(el => {
-    el.replaceChildren();
-    el.setAttribute('data-tenant-invalidated', 'true');
-  });
-}
-
-const fetchComContextoSeguro = async (input, init = {}) => {
-  const sessao = (typeof usuarioSistemaLogado !== 'undefined' && usuarioSistemaLogado) || window.usuarioSistemaLogado || {};
-  const headers = new Headers(init.headers || {});
-  const funcionarioId = String(sessao.id || window.__authPrincipalId || '').trim();
-  const lojaId = String(sessao.loja_id || window.__authLojaId || '').trim();
-  const tokenOperacional = String(sessao.operational_access_token || window.__authOperationalToken || '').trim();
-  const tokenGlobal = String(sessao.global_admin_token || window.__authGlobalToken || '').trim();
-  if (funcionarioId) headers.set('x-funcionario-id', funcionarioId);
-  if (lojaId) headers.set('x-loja-id', lojaId);
-  if (tokenOperacional) headers.set('x-operational-token', tokenOperacional);
-  if (tokenGlobal) headers.set('x-global-admin-token', tokenGlobal);
-  return fetch(input, { ...init, headers });
-};
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { fetch: fetchComContextoSeguro } });
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.sb = sb; // compatibilidade para módulos seguros de agenda
 const AGENDA_TABLE = 'agenda';
 window.AGENDA_TABLE = AGENDA_TABLE;
@@ -130,20 +81,8 @@ const TABELAS_COM_LOJA_ID = new Set([
 let filtroLojaSuspensoTemporariamente = false;
 let filtroEmpresaSuspensoTemporariamente = false;
 
-function obterModoContexto() {
-  const modo = String(usuarioSistemaLogado?.context_mode || '').trim();
-  if (modo === 'global_admin' || modo === 'store') return modo;
-  return usuarioSistemaLogado?.tipo === 'admin' && !String(usuarioSistemaLogado?.loja_id || '').trim()
-    ? 'global_admin' : 'store';
-}
-
-function contextoEhAdminGlobal() {
-  return obterModoContexto() === 'global_admin';
-}
-
 function obterEmpresaIdSessao() {
   if (filtroEmpresaSuspensoTemporariamente) return null;
-  if (contextoEhAdminGlobal()) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s) return null;
   return s.empresa_id || null;
@@ -151,7 +90,6 @@ function obterEmpresaIdSessao() {
 
 function obterLojaIdSessao() {
   if (filtroLojaSuspensoTemporariamente) return null;
-  if (contextoEhAdminGlobal()) return null;
   const s = typeof usuarioSistemaLogado !== 'undefined' ? usuarioSistemaLogado : null;
   if (!s) return null;
   return s.loja_id || null;
@@ -175,7 +113,6 @@ function aplicarFiltroLojaFuncionariosQuery(query) {
 function obterLojaAtualParaIsolamento() {
   try {
     if (filtroLojaSuspensoTemporariamente) return '';
-    if (contextoEhAdminGlobal()) return '';
     const direta = String(
       (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : '')
       || usuarioSistemaLogado?.loja_id

@@ -5,11 +5,14 @@
 }
 .pv-form-grid {
   display: grid;
-  grid-template-columns:
-    minmax(220px, 2fr) minmax(180px, 1fr) minmax(160px, 0.8fr)
-    minmax(130px, 0.65fr);
+  grid-template-columns: minmax(220px, 2fr) minmax(180px, 1fr) minmax(
+      160px,
+      0.8fr
+    ) minmax(130px, 0.65fr);
   gap: 12px;
 }
+.pv-quantity { max-width:120px; }
+.pv-observation { grid-column:1 / -1; }
 .pv-field {
   display: flex;
   flex-direction: column;
@@ -61,6 +64,12 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  margin-left: auto;
+}
+.pv-actions .btn {
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 12px;
 }
 .pv-list-head {
   display: flex;
@@ -81,9 +90,10 @@
 }
 .pv-item {
   display: grid;
-  grid-template-columns:
-    minmax(180px, 1.5fr) minmax(120px, 0.7fr) minmax(130px, 0.7fr)
-    minmax(140px, 0.8fr) auto;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(120px, 0.7fr) minmax(
+      130px,
+      0.7fr
+    ) minmax(140px, 0.8fr) auto;
   align-items: center;
   gap: 12px;
   padding: 13px;
@@ -160,5 +170,9 @@
   .pv-alert-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .pv-actions {
+    width: 100%;
+    margin-left: 0;
   }
 }

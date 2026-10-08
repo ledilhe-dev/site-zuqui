@@ -1,12 +1,58 @@
 // DASHBOARD
 // 
 
+// ══════════════════════════════════════════════════════════════════
+// MEU PAINEL — DASHBOARD PERSONALIZADO
+// ══════════════════════════════════════════════════════════════════
+const MEU_PAINEL_WIDGETS_DISPONIVEIS = [
+  // ── Indicadores financeiros ──────────────────────────────────────
+  { id: 'saldo_cofre',        tipo: 'indicador', ico: '🏦', label: 'Saldo do cofre',             grupo: 'financeiro' },
+  { id: 'falta_quitar',       tipo: 'indicador', ico: '⚠️', label: 'Falta para quitar',           grupo: 'financeiro' },
+  { id: 'recebiveis_futuros', tipo: 'indicador', ico: '📅', label: 'Recebíveis futuros',          grupo: 'financeiro' },
+  { id: 'contas_vencer_7',    tipo: 'indicador', ico: '🔴', label: 'Contas a vencer 7 dias',      grupo: 'financeiro' },
+  { id: 'contas_vencer_30',   tipo: 'indicador', ico: '🟡', label: 'Contas a vencer 30 dias',     grupo: 'financeiro' },
+  { id: 'total_recebido_mes', tipo: 'indicador', ico: '💚', label: 'Recebido no mês',             grupo: 'financeiro' },
+  // ── Atalhos — Financeiro ─────────────────────────────────────────
+  { id: 'atalho_cofre',               tipo: 'atalho', ico: '🏦', label: 'Cofre',                          grupo: 'fin', pagina: 'financeiro_cofre' },
+  { id: 'atalho_rel_contas_pagar',    tipo: 'atalho', ico: '📊', label: 'Relatório contas a pagar',       grupo: 'fin', pagina: 'relatorio_financeiro' },
+  { id: 'atalho_cad_contas_pagar',    tipo: 'atalho', ico: '➕', label: 'Cadastro contas a pagar',        grupo: 'fin', pagina: 'financeiro_contasapagar' },
+  { id: 'atalho_baixar_contas',       tipo: 'atalho', ico: '✅', label: 'Baixar contas',                  grupo: 'fin', pagina: 'financeiro_baixar_contas' },
+  { id: 'atalho_rel_recebimentos',    tipo: 'atalho', ico: '📊', label: 'Relatório recebimentos',         grupo: 'fin', pagina: 'relatorio_recebimentos' },
+  { id: 'atalho_cad_recebiveis',      tipo: 'atalho', ico: '💰', label: 'Cadastro recebíveis',            grupo: 'fin', pagina: 'financeiro_recebiveis' },
+  { id: 'atalho_rec_futuros',         tipo: 'atalho', ico: '📅', label: 'Recebimentos futuros',           grupo: 'fin', pagina: 'financeiro_recebiveis' },
+  { id: 'atalho_conta_financeira',    tipo: 'atalho', ico: '🏧', label: 'Conta financeira',               grupo: 'fin', pagina: 'financeiro_conta_financeira' },
+  { id: 'atalho_fornecedores',        tipo: 'atalho', ico: '🏪', label: 'Cadastro fornecedores',          grupo: 'fin', pagina: 'financeiro_fornecedores' },
+  { id: 'atalho_grupos_forn',         tipo: 'atalho', ico: '🏢', label: 'Grupos de fornecedor',           grupo: 'fin', pagina: 'financeiro_grupo_fornecedor' },
+  { id: 'atalho_categorias',          tipo: 'atalho', ico: '🏷️', label: 'Categorias de compra',           grupo: 'fin', pagina: 'financeiro_categorias_compra' },
+  { id: 'atalho_formas_pagamento',    tipo: 'atalho', ico: '💳', label: 'Formas de pagamento',            grupo: 'fin', pagina: 'financeiro_formas_pagamento' },
+  { id: 'atalho_rel_ajuste_saldo',    tipo: 'atalho', ico: '📊', label: 'Relatório ajuste de saldo',      grupo: 'fin', pagina: 'relatorio_ajuste_saldo' },
+  // ── Atalhos — Operação ───────────────────────────────────────────
+  { id: 'atalho_ponto',               tipo: 'atalho', ico: '⏱️', label: 'Bater ponto',                    grupo: 'op', pagina: 'bater_ponto' },
+  { id: 'atalho_rel_ponto',           tipo: 'atalho', ico: '📊', label: 'Relatório ponto',                grupo: 'op', pagina: 'relatorio_ponto' },
+  { id: 'atalho_alertas',             tipo: 'atalho', ico: '⚡', label: 'Alertas rápidos',                grupo: 'op', pagina: 'tarefas_rapidas' },
+  { id: 'atalho_checklist',           tipo: 'atalho', ico: '✅', label: 'Iniciar checklist',              grupo: 'op', pagina: 'checklists' },
+  { id: 'atalho_cad_checklist',       tipo: 'atalho', ico: '📝', label: 'Cadastro checklist',             grupo: 'op', pagina: 'tarefas' },
+  { id: 'atalho_escalas',             tipo: 'atalho', ico: '📆', label: 'Agenda',                         grupo: 'op', pagina: 'escala_plantoes' },
+  { id: 'atalho_rel_escalas',         tipo: 'atalho', ico: '📊', label: 'Relatório escala/plantões',      grupo: 'op', pagina: 'relatorio_plantao' },
+  { id: 'atalho_rel_tarefas',         tipo: 'atalho', ico: '📊', label: 'Relatório tarefas',              grupo: 'op', pagina: 'relatorio_lancamentos' },
+  // ── Atalhos — Administração ──────────────────────────────────────
+  { id: 'atalho_funcionarios',        tipo: 'atalho', ico: '👥', label: 'Cadastro funcionários',          grupo: 'adm', pagina: 'funcionarios' },
+  { id: 'atalho_perfis',              tipo: 'atalho', ico: '🔐', label: 'Perfis de acesso',               grupo: 'adm', pagina: 'perfis' },
+  { id: 'atalho_solicitacoes_ponto',  tipo: 'atalho', ico: '🕐', label: 'Solicitações ajuste ponto',      grupo: 'adm', pagina: 'ponto_ajustes' },
+  { id: 'atalho_dashboard',           tipo: 'atalho', ico: '📊', label: 'Dashboard completo',             grupo: 'adm', pagina: 'dashboard' },
+  { id: 'atalho_meu_painel',          tipo: 'atalho', ico: '🎛️', label: 'Meu Painel',                     grupo: 'adm', pagina: 'meu_painel' },
+];
+
+let _meuPainelConfig = []; // IDs dos widgets ativos
+
 function chaveLocalPreferenciaUsuario(chave) {
   const funcId = String(usuarioSistemaLogado?.id || '').trim();
   return funcId ? `checkdiario:preferencia:${funcId}:${chave}` : '';
 }
 
-async function salvarPreferenciaUsuario(chave, valor) {
+async function salvarPreferenciaMeuPainel(chave, valor) {
+  // Cópia local por usuário: a personalização continua disponível mesmo se a
+  // gravação remota estiver momentaneamente indisponível ou bloqueada por RLS.
   const chaveLocal = chaveLocalPreferenciaUsuario(chave);
   if (chaveLocal) {
     try { localStorage.setItem(chaveLocal, JSON.stringify(valor)); } catch (_) {}
@@ -28,40 +74,37 @@ async function salvarPreferenciaUsuario(chave, valor) {
   } catch(e) { console.warn('Erro ao salvar preferência:', e); }
 }
 
-async function carregarPreferenciaUsuario(chave, fallback = null) {
+async function carregarPreferenciaMeuPainel(chave, fallback = null) {
   const chaveLocal = chaveLocalPreferenciaUsuario(chave);
-  let valorLocal = null;
-  let temValorLocal = false;
-  if (chaveLocal) {
-    try {
-      const salvoLocal = localStorage.getItem(chaveLocal);
-      if (salvoLocal != null) {
-        valorLocal = JSON.parse(salvoLocal);
-        temValorLocal = true;
-      }
-    } catch (_) {}
-  }
   try {
     const funcId = usuarioSistemaLogado?.id;
-    if (!funcId) return temValorLocal ? valorLocal : fallback;
+    if (!funcId) return fallback;
+    // Esta é a última ordenação confirmada neste aparelho e pode ser aplicada
+    // antes mesmo de a consulta remota terminar.
+    if (chaveLocal) {
+      const salvoLocal = localStorage.getItem(chaveLocal);
+      if (salvoLocal != null) return JSON.parse(salvoLocal);
+    }
     const { data, error } = await executarSemFiltroLojaTemporario(() =>
       sb.from('preferencias_usuario').select('valor').eq('funcionario_id', funcId).eq('chave', chave).maybeSingle()
     );
     if (error) throw error;
     if (data?.valor != null) {
       const valor = typeof data.valor === 'string' ? JSON.parse(data.valor) : data.valor;
-      const chaveLocal = chaveLocalPreferenciaUsuario(chave);
       if (chaveLocal) {
         try { localStorage.setItem(chaveLocal, JSON.stringify(valor)); } catch (_) {}
       }
       return valor;
     }
-    if (temValorLocal) {
-      salvarPreferenciaUsuario(chave, valorLocal);
-      return valorLocal;
-    }
-  } catch(e) { console.warn('Erro ao carregar preferência:', e); }
-  if (temValorLocal) return valorLocal;
+  } catch(e) {
+    console.warn('Erro ao carregar preferência:', e);
+  }
+  if (chaveLocal) {
+    try {
+      const salvoLocal = localStorage.getItem(chaveLocal);
+      if (salvoLocal != null) return JSON.parse(salvoLocal);
+    } catch (_) {}
+  }
   return fallback;
 }
 
@@ -123,54 +166,12 @@ async function salvarOrdemNavItens() {
     id: el.dataset.navItemId,
     grupo: el.parentElement?.id || 'navgrp_operacao'
   }));
-  await salvarPreferenciaUsuario('nav_ordem_itens_v2', ordem);
-}
-
-let _layoutInicialPatrickVerificado = false;
-const ORDEM_INICIAL_PATRICK = [
-  { id: 'financeiro', grupo: 'navgrp_operacao' },
-  { id: 'relatorios', grupo: 'navgrp_operacao' },
-  { id: 'bater_ponto', grupo: 'navgrp_operacao' },
-  { id: 'escala_plantoes', grupo: 'navgrp_operacao' },
-  { id: 'checklist', grupo: 'navgrp_operacao' },
-  { id: 'tarefas_rapidas', grupo: 'navgrp_operacao' },
-  { id: 'dashboard', grupo: 'navgrp_operacao' },
-  { id: 'estatisticas_atendimento', grupo: 'navgrp_operacao' },
-  { id: 'raffinato', grupo: 'navgrp_integracoes' },
-  { id: 'administracao_funcionarios', grupo: 'navgrp_administracao' }
-];
-const ORDEM_FINANCEIRO_PATRICK = [
-  'financeiro_contasapagar', 'financeiro_fornecedores', 'financeiro_formas_pagamento',
-  'financeiro_baixar_contas', 'financeiro_conta_financeira', 'financeiro_recebiveis',
-  'financeiro_grupo_fornecedor', 'financeiro_categorias_compra', 'financeiro_cofre',
-  'integracoes_financeiras_conciliacao'
-];
-
-function usuarioAtualEhPatrick() {
-  const identificacao = [usuarioSistemaLogado?.nome, usuarioSistemaLogado?.username, usuarioSistemaLogado?.email]
-    .filter(Boolean).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  return /\bpatrick\b/.test(identificacao);
-}
-
-async function aplicarLayoutInicialPatrick() {
-  if (_layoutInicialPatrickVerificado || !usuarioAtualEhPatrick()) return;
-  _layoutInicialPatrickVerificado = true;
-  const chaveMigracao = 'nav_layout_patrick_v1_aplicado';
-  if (await carregarPreferenciaUsuario(chaveMigracao, false)) return;
-  const subitensAtuais = await carregarPreferenciaUsuario('nav_ordem_subitens_v1', {});
-  const novaOrdemSubitens = subitensAtuais && typeof subitensAtuais === 'object' && !Array.isArray(subitensAtuais)
-    ? { ...subitensAtuais }
-    : {};
-  novaOrdemSubitens.menuFinanceiroGroup = ORDEM_FINANCEIRO_PATRICK;
-  await salvarPreferenciaUsuario('nav_ordem_itens_v2', ORDEM_INICIAL_PATRICK);
-  await salvarPreferenciaUsuario('nav_ordem_subitens_v1', novaOrdemSubitens);
-  await salvarPreferenciaUsuario(chaveMigracao, true);
+  await salvarPreferenciaMeuPainel('nav_ordem_itens_v2', ordem);
 }
 
 async function carregarOrdemNavMenu() {
-  await aplicarLayoutInicialPatrick();
   try {
-    let ordem = await carregarPreferenciaUsuario('nav_ordem_itens_v2', null);
+    let ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens_v2', null);
     const mapa = {};
     document.querySelectorAll('#navContainer .nav-group > [data-nav-item-id]').forEach(el => {
       mapa[el.dataset.navItemId] = el;
@@ -182,43 +183,13 @@ async function carregarOrdemNavMenu() {
         if (el && grupo?.classList.contains('nav-group')) grupo.appendChild(el);
       });
     } else {
-      ordem = await carregarPreferenciaUsuario('nav_ordem_itens', null);
+      ordem = await carregarPreferenciaMeuPainel('nav_ordem_itens', null);
       const grupo = document.querySelector('#navContainer .nav-group.featured');
       if (Array.isArray(ordem) && grupo) ordem.forEach(id => mapa[id] && grupo.appendChild(mapa[id]));
     }
   } catch(e) { console.warn('Erro ao carregar ordem nav:', e); }
-  await carregarOrdemSubitensNav();
   inicializarControlesOrdemNav();
-  inicializarControlesOrdemSubitensNav();
   atualizarGruposVaziosNav();
-  inicializarSincronizacaoOrdemNav();
-}
-
-let _navSyncTimer = null;
-let _navSyncEmAndamento = false;
-async function sincronizarOrdemNavEntreDispositivos() {
-  if (_navSyncEmAndamento || document.hidden || _navItemDragSrc || _navSubitemDragSrc || !usuarioSistemaLogado?.id) return;
-  _navSyncEmAndamento = true;
-  try {
-    const ordem = await carregarPreferenciaUsuario('nav_ordem_itens_v2', null);
-    if (Array.isArray(ordem)) ordem.forEach(item => {
-      const seletorId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(String(item.id || '')) : String(item.id || '').replace(/"/g, '\\"');
-      const el = document.querySelector(`#navContainer [data-nav-item-id="${seletorId}"]`);
-      const grupo = document.getElementById(item.grupo);
-      if (el && grupo?.classList.contains('nav-group')) grupo.appendChild(el);
-    });
-    await carregarOrdemSubitensNav();
-    atualizarGruposVaziosNav();
-  } finally {
-    _navSyncEmAndamento = false;
-  }
-}
-
-function inicializarSincronizacaoOrdemNav() {
-  if (_navSyncTimer) return;
-  window.addEventListener('focus', sincronizarOrdemNavEntreDispositivos);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) sincronizarOrdemNavEntreDispositivos(); });
-  _navSyncTimer = setInterval(sincronizarOrdemNavEntreDispositivos, 15000);
 }
 
 function atualizarGruposVaziosNav() {
@@ -257,124 +228,403 @@ function inicializarControlesOrdemNav() {
     item.appendChild(handle);
   });
 }
+// ══════════════════════════════════════════════════════════════════
 
-let _navSubitemDragSrc = null;
+// ══════════════════════════════════════════════════════════════════
+// TEMAS PERSONALIZADOS
+// ══════════════════════════════════════════════════════════════════
+const TEMAS_PREDEFINIDOS = [
+  {
+    id: 'padrao',
+    nome: 'Padrão (Obsidian)',
+    preview: ['#09090f','#f0a500'],
+    vars: { '--bg':'#09090f','--bg-alt':'#0c0c14','--surface':'#0f0f1a','--surface2':'#14141f','--surface3':'#1a1a28','--surface4':'#20202e','--border':'#1e1e2e','--border-mid':'#252535','--border-bright':'#30304a','--accent':'#f0a500','--accent-bright':'#ffbe1a','--accent-dim':'#c27f00','--accent-subtle':'rgba(240,165,0,0.08)','--accent-glow':'rgba(240,165,0,0.18)','--accent-glow-lg':'rgba(240,165,0,0.30)','--text':'#ffffff','--text-soft':'#eaeaf2','--text-muted':'#cdcdde','--text-dim':'#ababc2' }
+  },
+  {
+    id: 'midnight_blue',
+    nome: 'Midnight Blue',
+    preview: ['#060d1a','#3b82f6'],
+    vars: { '--bg':'#060d1a','--bg-alt':'#091220','--surface':'#0d1b2a','--surface2':'#122235','--surface3':'#172a40','--surface4':'#1c3250','--border':'#1a2e45','--border-mid':'#213a55','--border-bright':'#2a4a6e','--accent':'#3b82f6','--accent-bright':'#60a5fa','--accent-dim':'#2563eb','--accent-subtle':'rgba(59,130,246,0.08)','--accent-glow':'rgba(59,130,246,0.18)','--accent-glow-lg':'rgba(59,130,246,0.30)','--text':'#ffffff','--text-soft':'#e2ecfa','--text-muted':'#c2d2ea','--text-dim':'#9fb4d4' }
+  },
+  {
+    id: 'forest',
+    nome: 'Forest Dark',
+    preview: ['#061410','#22c55e'],
+    vars: { '--bg':'#061410','--bg-alt':'#091a14','--surface':'#0d2018','--surface2':'#122820','--surface3':'#173028','--surface4':'#1c3830','--border':'#1a3028','--border-mid':'#213d33','--border-bright':'#2a5040','--accent':'#22c55e','--accent-bright':'#4ade80','--accent-dim':'#16a34a','--accent-subtle':'rgba(34,197,94,0.08)','--accent-glow':'rgba(34,197,94,0.18)','--accent-glow-lg':'rgba(34,197,94,0.30)','--text':'#ffffff','--text-soft':'#def4e8','--text-muted':'#bcdecb','--text-dim':'#99c2ab' }
+  },
+  {
+    id: 'crimson',
+    nome: 'Crimson Night',
+    preview: ['#120608','#f03e5a'],
+    vars: { '--bg':'#120608','--bg-alt':'#180a0c','--surface':'#1e0e10','--surface2':'#251216','--surface3':'#2c161a','--surface4':'#341a1e','--border':'#2e1418','--border-mid':'#3a1a1e','--border-bright':'#4a2228','--accent':'#f03e5a','--accent-bright':'#ff6b82','--accent-dim':'#c01030','--accent-subtle':'rgba(240,62,90,0.08)','--accent-glow':'rgba(240,62,90,0.18)','--accent-glow-lg':'rgba(240,62,90,0.30)','--text':'#ffffff','--text-soft':'#f8e2e7','--text-muted':'#e9c2cb','--text-dim':'#d3a0ac' }
+  },
+  {
+    id: 'purple_haze',
+    nome: 'Purple Haze',
+    preview: ['#0d0914','#a855f7'],
+    vars: { '--bg':'#0d0914','--bg-alt':'#110c1a','--surface':'#160f20','--surface2':'#1b1228','--surface3':'#201530','--surface4':'#261838','--border':'#221630','--border-mid':'#2c1e3d','--border-bright':'#3a284e','--accent':'#a855f7','--accent-bright':'#c084fc','--accent-dim':'#7c3aed','--accent-subtle':'rgba(168,85,247,0.08)','--accent-glow':'rgba(168,85,247,0.18)','--accent-glow-lg':'rgba(168,85,247,0.30)','--text':'#ffffff','--text-soft':'#eee2fb','--text-muted':'#d8c3ef','--text-dim':'#bda2dd' }
+  },
+  {
+    id: 'branco_contraste',
+    nome: 'Branco (Alto Contraste)',
+    preview: ['#ffffff','#000000'],
+    vars: { '--bg':'#ffffff','--bg-alt':'#ffffff','--surface':'#ffffff','--surface2':'#fafafa','--surface3':'#f1f1f1','--surface4':'#e7e7e7','--border':'#c9c9c9','--border-mid':'#a8a8a8','--border-bright':'#6e6e6e','--accent':'#111111','--accent-bright':'#2e2e2e','--accent-dim':'#000000','--accent-subtle':'rgba(0,0,0,0.05)','--accent-glow':'rgba(0,0,0,0.10)','--accent-glow-lg':'rgba(0,0,0,0.18)','--text':'#000000','--text-soft':'#161616','--text-muted':'#2e2e2e','--text-dim':'#474747','--green':'#0a6b32','--green-dim':'#085528','--green-glow':'rgba(10,107,50,0.12)','--red':'#a40e26','--red-dim':'#84091d','--red-glow':'rgba(164,14,38,0.10)','--amber':'#8a4b00','--blue':'#0d3fb3','--blue-dim':'#0a2f86','--shadow-sm':'0 1px 3px rgba(0,0,0,0.12)','--shadow':'0 4px 14px rgba(0,0,0,0.12)','--shadow-lg':'0 16px 40px rgba(0,0,0,0.16)' }
+  },
+  {
+    id: 'slate_light',
+    nome: 'Slate (Claro)',
+    preview: ['#f8fafc','#2563eb'],
+    vars: { '--bg':'#f8fafc','--bg-alt':'#f1f5f9','--surface':'#ffffff','--surface2':'#f8fafc','--surface3':'#f1f5f9','--surface4':'#e2e8f0','--border':'#e2e8f0','--border-mid':'#cbd5e1','--border-bright':'#94a3b8','--accent':'#2563eb','--accent-bright':'#3b82f6','--accent-dim':'#1d4ed8','--accent-subtle':'rgba(37,99,235,0.08)','--accent-glow':'rgba(37,99,235,0.15)','--accent-glow-lg':'rgba(37,99,235,0.25)','--text':'#0a0f1a','--text-soft':'#1f2a3d','--text-muted':'#3c4a60','--text-dim':'#5a6880','--green':'#15803d','--green-dim':'#166534','--green-glow':'rgba(21,128,61,0.12)','--red':'#b91c1c','--red-dim':'#991b1b','--red-glow':'rgba(185,28,28,0.10)','--amber':'#b45309','--blue':'#1d4ed8','--blue-dim':'#1e40af','--shadow-sm':'0 1px 3px rgba(15,23,42,0.10)','--shadow':'0 4px 14px rgba(15,23,42,0.10)','--shadow-lg':'0 16px 40px rgba(15,23,42,0.14)' }
+  },
+];
 
-function chaveContainerSubmenuNav(container) {
-  const grupo = container?.closest('[id^="menu"]');
-  if (!grupo?.id) return '';
-  const submenu = grupo.querySelector(':scope > .nav-submenu');
-  if (container === submenu) return grupo.id;
-  const secoes = [...(submenu?.querySelectorAll(':scope > .nav-report-section') || [])];
-  const indice = secoes.indexOf(container);
-  return indice >= 0 ? `${grupo.id}:secao:${indice}` : '';
-}
-
-function containersOrdenaveisSubmenuNav() {
-  const containers = [];
-  document.querySelectorAll('#navContainer [id^="menu"] > .nav-submenu').forEach(submenu => {
-    if (submenu.querySelector(':scope > .nav-sub-btn')) containers.push(submenu);
-    submenu.querySelectorAll(':scope > .nav-report-section').forEach(secao => {
-      if (secao.querySelector(':scope > .nav-sub-btn')) containers.push(secao);
-    });
+function trocarAbaEditor(aba) {
+  const abas = { widgets: 'abaConteudoWidgets', tema: 'abaConteudoTema' };
+  const btns = { widgets: 'abaEditorWidgets', tema: 'abaEditorTema' };
+  Object.entries(abas).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = k === aba ? '' : 'none';
   });
-  return containers;
-}
-
-async function salvarOrdemSubitensNav() {
-  const ordem = {};
-  containersOrdenaveisSubmenuNav().forEach(container => {
-    const chave = chaveContainerSubmenuNav(container);
-    if (chave) ordem[chave] = [...container.querySelectorAll(':scope > .nav-sub-btn[data-page]')].map(item => item.dataset.page);
-  });
-  await salvarPreferenciaUsuario('nav_ordem_subitens_v1', ordem);
-}
-
-async function carregarOrdemSubitensNav() {
-  const ordem = await carregarPreferenciaUsuario('nav_ordem_subitens_v1', null);
-  if (!ordem || typeof ordem !== 'object' || Array.isArray(ordem)) return;
-  containersOrdenaveisSubmenuNav().forEach(container => {
-    const ids = ordem[chaveContainerSubmenuNav(container)];
-    if (!Array.isArray(ids)) return;
-    const mapa = {};
-    container.querySelectorAll(':scope > .nav-sub-btn[data-page]').forEach(item => { mapa[item.dataset.page] = item; });
-    ids.forEach(id => mapa[id] && container.appendChild(mapa[id]));
-  });
-}
-
-function inicializarControlesOrdemSubitensNav() {
-  containersOrdenaveisSubmenuNav().forEach(container => {
-    if (container.dataset.navSuborderBound !== '1') {
-      container.dataset.navSuborderBound = '1';
-      container.addEventListener('dragover', e => {
-        if (!_navSubitemDragSrc || _navSubitemDragSrc.parentElement !== container) return;
-        e.preventDefault();
-        e.stopPropagation();
-        const alvo = e.target.closest('.nav-sub-btn[data-page]');
-        if (!alvo || alvo === _navSubitemDragSrc || alvo.parentElement !== container) return;
-        const rect = alvo.getBoundingClientRect();
-        container.insertBefore(_navSubitemDragSrc, e.clientY < rect.top + rect.height / 2 ? alvo : alvo.nextSibling);
-      });
-      container.addEventListener('drop', e => {
-        if (!_navSubitemDragSrc) return;
-        e.preventDefault();
-        e.stopPropagation();
-        salvarOrdemSubitensNav();
-      });
+  Object.entries(btns).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (k === aba) {
+      el.style.color = 'var(--accent)';
+      el.style.borderBottom = '2px solid var(--accent)';
+    } else {
+      el.style.color = 'var(--text-muted)';
+      el.style.borderBottom = '2px solid transparent';
     }
-    container.querySelectorAll(':scope > .nav-sub-btn[data-page]').forEach(item => {
-      if (item.dataset.navSuborderBound === '1') return;
-      item.dataset.navSuborderBound = '1';
-      item.draggable = true;
-      item.addEventListener('dragstart', e => {
-        _navSubitemDragSrc = item;
-        item.classList.add('nav-subitem-moving');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', item.dataset.page || '');
-        e.stopPropagation();
-      });
-      item.addEventListener('dragend', e => {
-        item.classList.remove('nav-subitem-moving');
-        _navSubitemDragSrc = null;
-        e.stopPropagation();
-      });
-      const handle = document.createElement('span');
-      handle.className = 'nav-suborder-handle';
-      handle.textContent = '⠿';
-      handle.title = 'Arraste para ordenar esta função';
-      handle.setAttribute('aria-label', 'Arraste para ordenar esta função');
-      handle.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); });
-      handle.addEventListener('touchstart', e => {
-        _navSubitemDragSrc = item;
-        item.classList.add('nav-subitem-moving');
-        e.stopPropagation();
-      }, { passive: true });
-      handle.addEventListener('touchmove', e => {
-        if (_navSubitemDragSrc !== item) return;
-        const toque = e.touches[0];
-        const alvo = document.elementFromPoint(toque.clientX, toque.clientY)?.closest('.nav-sub-btn[data-page]');
-        if (alvo && alvo !== item && alvo.parentElement === item.parentElement) {
-          const rect = alvo.getBoundingClientRect();
-          item.parentElement.insertBefore(item, toque.clientY < rect.top + rect.height / 2 ? alvo : alvo.nextSibling);
-        }
-        e.preventDefault();
-        e.stopPropagation();
-      }, { passive: false });
-      const finalizarToqueSubitem = e => {
-        if (_navSubitemDragSrc !== item) return;
-        item.classList.remove('nav-subitem-moving');
-        _navSubitemDragSrc = null;
-        salvarOrdemSubitensNav();
-        e.preventDefault();
-        e.stopPropagation();
-      };
-      handle.addEventListener('touchend', finalizarToqueSubitem, { passive: false });
-      handle.addEventListener('touchcancel', finalizarToqueSubitem, { passive: false });
-      item.appendChild(handle);
-    });
   });
+  if (aba === 'tema') renderizarTemasEditor();
+}
+
+function renderizarTemasEditor() {
+  const grid = document.getElementById('gridTemasPredefinidos');
+  if (!grid) return;
+  const temaAtual = _temaAtual?.id || 'padrao';
+  grid.innerHTML = TEMAS_PREDEFINIDOS.map(t => {
+    const ativo = t.id === temaAtual;
+    return `<div onclick="aplicarTema('${t.id}')" style="cursor:pointer;border:2px solid ${ativo ? 'var(--accent)' : 'var(--border-mid)'};border-radius:10px;overflow:hidden;transition:border-color .2s;" title="${t.nome}">
+      <div style="height:36px;background:${t.preview[0]};display:flex;align-items:center;justify-content:center;gap:6px;">
+        <div style="width:12px;height:12px;border-radius:50%;background:${t.preview[1]};"></div>
+        <div style="width:20px;height:4px;border-radius:2px;background:${t.preview[1]};opacity:.7;"></div>
+      </div>
+      <div style="padding:6px 8px;background:var(--surface2);">
+        <div style="font-size:11px;font-weight:600;color:var(--text);">${t.nome}</div>
+        ${ativo ? '<div style="font-size:10px;color:var(--accent);">✓ Ativo</div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Preencher cor de acento atual
+  const corInput = document.getElementById('corAcentoPersonalizado');
+  if (corInput && _temaAtual?.vars?.['--accent']) {
+    corInput.value = _temaAtual.vars['--accent'];
+  }
+}
+
+let _temaAtual = null;
+
+function aplicarVariaveisCSS(vars) {
+  const root = document.documentElement;
+  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+}
+
+function aplicarTema(idTema) {
+  const tema = TEMAS_PREDEFINIDOS.find(t => t.id === idTema);
+  if (!tema) return;
+  _temaAtual = tema;
+  aplicarVariaveisCSS(tema.vars);
+  renderizarTemasEditor();
+}
+
+function aplicarCorAcentoPersonalizado() {
+  const cor = document.getElementById('corAcentoPersonalizado')?.value;
+  if (!cor) return;
+  // Converter hex para rgb para calcular variações
+  const r = parseInt(cor.slice(1,3),16);
+  const g = parseInt(cor.slice(3,5),16);
+  const b = parseInt(cor.slice(5,7),16);
+  const vars = {
+    '--accent': cor,
+    '--accent-bright': ajustarBrilho(r,g,b,30),
+    '--accent-dim': ajustarBrilho(r,g,b,-30),
+    '--accent-subtle': `rgba(${r},${g},${b},0.08)`,
+    '--accent-glow': `rgba(${r},${g},${b},0.18)`,
+    '--accent-glow-lg': `rgba(${r},${g},${b},0.30)`,
+  };
+  aplicarVariaveisCSS(vars);
+  if (_temaAtual) {
+    _temaAtual = { ..._temaAtual, id: 'custom', nome: 'Personalizado', vars: { ..._temaAtual.vars, ...vars } };
+  }
+}
+
+function ajustarBrilho(r, g, b, delta) {
+  const clamp = v => Math.max(0, Math.min(255, v + delta));
+  return `#${[clamp(r),clamp(g),clamp(b)].map(v => v.toString(16).padStart(2,'0')).join('')}`;
+}
+
+function resetarTema() {
+  aplicarTema('padrao');
+  const corInput = document.getElementById('corAcentoPersonalizado');
+  if (corInput) corInput.value = '#f0a500';
+}
+
+function chaveTemaPorLoja() {
+  const lojaId = obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || 'global';
+  return 'tema_interface_' + lojaId;
+}
+
+async function salvarTema() {
+  if (!_temaAtual) return;
+  await salvarPreferenciaMeuPainel(chaveTemaPorLoja(), _temaAtual);
+}
+
+async function carregarTemaUsuario() {
+  try {
+    // Tentar carregar tema específico da loja atual
+    const chave = chaveTemaPorLoja();
+    let tema = await carregarPreferenciaMeuPainel(chave, null);
+    // Fallback: tema global (compatibilidade com dados antigos)
+    if (!tema) tema = await carregarPreferenciaMeuPainel('tema_interface', null);
+    if (!tema) return;
+    _temaAtual = tema;
+    if (tema.vars) aplicarVariaveisCSS(tema.vars);
+  } catch(e) { console.warn('Erro ao carregar tema:', e); }
 }
 // ══════════════════════════════════════════════════════════════════
+async function carregarMeuPainel() {
+  const grid = document.getElementById('meuPainelGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">Carregando⬦</div>';
+
+  // Carregar config salva
+  const config = await carregarPreferenciaMeuPainel('meu_painel_widgets');
+  _meuPainelConfig = Array.isArray(config) ? config : ['saldo_cofre', 'falta_quitar', 'recebiveis_futuros', 'atalho_cofre', 'atalho_contas_pagar', 'atalho_checklist'];
+
+  await renderizarMeuPainel();
+}
+
+async function renderizarMeuPainel() {
+  const grid = document.getElementById('meuPainelGrid');
+  if (!grid) return;
+
+  if (!_meuPainelConfig.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:40px;text-align:center;">Seu painel está vazio.<br><button class="btn btn-green" style="margin-top:12px;" onclick="abrirEditorMeuPainel()">+ Adicionar widgets</button></div>';
+    return;
+  }
+
+  // Renderizar esqueleto com drag & drop
+  const DA = 'draggable="true" ondragstart="widgetDragStart(event)" ondragover="widgetDragOver(event)" ondrop="widgetDrop(event)" ondragend="widgetDragEnd(event)"';
+  grid.innerHTML = _meuPainelConfig.map(wid => {
+    const def = MEU_PAINEL_WIDGETS_DISPONIVEIS.find(w => w.id === wid);
+    if (!def) return '';
+    if (def.tipo === 'atalho') {
+      return `<div class="meu-painel-widget meu-painel-atalho" data-wid="${wid}" ${DA}
+        onclick="abrirPaginaAtalhoMeuPainel('${def.pagina}')" title="Ir para ${def.label}">
+        <button class="meu-painel-widget-remover" onclick="event.stopPropagation();removerWidgetMeuPainel('${wid}')" title="Remover">✕</button>
+        <div style="font-size:28px;margin-bottom:6px;">${def.ico}</div>
+        <div class="meu-painel-widget-label">Atalho</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">${escaparHtmlBasico(def.label)}</div>
+      </div>`;
+    }
+    return `<div class="meu-painel-widget" id="widget_${wid}" data-wid="${wid}" ${DA}>
+      <button class="meu-painel-widget-remover" onclick="event.stopPropagation();removerWidgetMeuPainel('${wid}')" title="Remover">✕</button>
+      <div class="meu-painel-widget-label">${def.ico} ${escaparHtmlBasico(def.label)}</div>
+      <div class="meu-painel-widget-valor" id="wval_${wid}">⬦</div>
+      <div class="meu-painel-widget-desc" id="wdesc_${wid}"></div>
+    </div>`;
+  }).join('');
+
+  // Carregar dados dos indicadores em paralelo
+  const indicadores = _meuPainelConfig.filter(wid => {
+    const def = MEU_PAINEL_WIDGETS_DISPONIVEIS.find(w => w.id === wid);
+    return def?.tipo === 'indicador';
+  });
+  await Promise.allSettled(indicadores.map(wid => carregarDadosWidgetMeuPainel(wid)));
+}
+
+// Navegação a partir dos cards de atalho do Meu Painel.
+// Resolve o botão da navegação lateral (se existir) e abre a página.
+function abrirPaginaAtalhoMeuPainel(pagina) {
+  if (!pagina) return;
+  const botaoNav = document.querySelector('.nav-btn[data-page="' + pagina + '"]');
+  abrirPagina(pagina, botaoNav || null);
+}
+
+function aplicarLojaAtualDashboardQuery(query) {
+  const lojaId = (typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || '';
+  return lojaId && query && typeof query.eq === 'function' ? query.eq('loja_id', lojaId) : query;
+}
+
+async function carregarDadosWidgetMeuPainel(wid) {
+  const elVal = document.getElementById('wval_' + wid);
+  const elDesc = document.getElementById('wdesc_' + wid);
+  if (!elVal) return;
+
+  try {
+    switch(wid) {
+      case 'saldo_cofre': {
+        const { data: contas } = await aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true));
+        const total = (contas || []).reduce((s, c) => s + Number(c.saldo_atual || 0), 0);
+        elVal.textContent = formatarMoedaBRFinanceiro(total);
+        elVal.style.color = total >= 0 ? 'var(--green,#22c55e)' : 'var(--red,#ef4444)';
+        if (elDesc) elDesc.textContent = `${(contas||[]).length} conta(s) financeira(s)`;
+        break;
+      }
+      case 'falta_quitar': {
+        const hoje = new Date().toISOString().slice(0,10);
+        const [{ data: contas }, { data: capagar }] = await Promise.all([
+          aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras').select('saldo_atual').eq('ativo', true)),
+          aplicarLojaAtualDashboardQuery(sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).lte('data_vencimento', hoje)),
+        ]);
+        const saldo = (contas||[]).reduce((s,c) => s + Number(c.saldo_atual||0), 0);
+        const devendo = (capagar||[]).reduce((s,c) => s + Number(c.valor_compra||0), 0);
+        const falta = Math.max(0, devendo - saldo);
+        elVal.textContent = formatarMoedaBRFinanceiro(falta);
+        elVal.style.color = falta > 0 ? 'var(--red,#ef4444)' : 'var(--green,#22c55e)';
+        if (elDesc) elDesc.textContent = falta === 0 ? 'Saldo cobre as contas' : `Devendo: ${formatarMoedaBRFinanceiro(devendo)}`;
+        break;
+      }
+      case 'recebiveis_futuros': {
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('recebiveis_futuros').select('valor').eq('ativo', true).is('confirmado_em', null));
+        const total = (data||[]).reduce((s,f) => s + Number(f.valor||0), 0);
+        elVal.textContent = formatarMoedaBRFinanceiro(total);
+        elVal.style.color = 'var(--amber,#f59e0b)';
+        if (elDesc) elDesc.textContent = `${(data||[]).length} recebimento(s) pendente(s)`;
+        break;
+      }
+      case 'contas_vencer_7':
+      case 'contas_vencer_30': {
+        const dias = wid === 'contas_vencer_7' ? 7 : 30;
+        const hoje = new Date().toISOString().slice(0,10);
+        const ate = new Date(Date.now() + dias * 86400000).toISOString().slice(0,10);
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('contasapagar').select('valor_compra').is('data_pagamento', null).is('excluido_em', null).gte('data_vencimento', hoje).lte('data_vencimento', ate));
+        const total = (data||[]).reduce((s,c) => s + Number(c.valor_compra||0), 0);
+        elVal.textContent = formatarMoedaBRFinanceiro(total);
+        elVal.style.color = dias === 7 ? 'var(--red,#ef4444)' : 'var(--amber,#f59e0b)';
+        if (elDesc) elDesc.textContent = `${(data||[]).length} título(s) nos próximos ${dias} dias`;
+        break;
+      }
+      case 'total_recebido_mes': {
+        const ini = new Date(); ini.setDate(1);
+        const inicio = ini.toISOString().slice(0,10);
+        const fim = new Date().toISOString().slice(0,10);
+        const { data } = await aplicarLojaAtualDashboardQuery(sb.from('contas_financeiras_movimentacoes').select('valor').eq('tipo','entrada').gte('created_at', inicio).lte('created_at', fim + 'T23:59:59Z'));
+        const total = (data||[]).reduce((s,m) => s + Number(m.valor||0), 0);
+        elVal.textContent = formatarMoedaBRFinanceiro(total);
+        elVal.style.color = 'var(--green,#22c55e)';
+        if (elDesc) elDesc.textContent = `Entradas em ${ini.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}`;
+        break;
+      }
+    }
+  } catch(e) {
+    if (elVal) elVal.textContent = 'Erro';
+    console.warn('Erro widget', wid, e);
+  }
+}
+
+function abrirEditorMeuPainel() {
+  const modal = document.getElementById('modalMeuPainel');
+  if (!modal) return;
+
+  const renderGrupo = (containerId, grupo) => {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = MEU_PAINEL_WIDGETS_DISPONIVEIS.filter(w => w.grupo === grupo).map(w => {
+      const ativo = _meuPainelConfig.includes(w.id);
+      return `<div class="meu-painel-editor-item${ativo ? ' ativo' : ''}" id="editor_${w.id}" onclick="toggleWidgetEditor('${w.id}')" style="font-size:11px;padding:6px 8px;">
+        <span style="font-size:14px;width:20px;text-align:center;flex-shrink:0;">${w.ico}</span>
+        <span style="flex:1;line-height:1.3;">${escaparHtmlBasico(w.label)}</span>
+        ${ativo ? '<span style="flex-shrink:0;color:var(--green,#22c55e);font-size:11px;">✓</span>' : ''}
+      </div>`;
+    }).join('');
+  };
+
+  renderGrupo('editorWidgetsFinanceiro', 'financeiro');
+  renderGrupo('editorWidgetsAtalhosFinanceiro', 'fin');
+  renderGrupo('editorWidgetsAtalhosOp', 'op');
+  renderGrupo('editorWidgetsAtalhosAdm', 'adm');
+  modal.style.display = 'flex';
+}
+
+function toggleWidgetEditor(wid) {
+  const el = document.getElementById('editor_' + wid);
+  const idx = _meuPainelConfig.indexOf(wid);
+  if (idx === -1) {
+    _meuPainelConfig.push(wid);
+    if (el) {
+      el.classList.add('ativo');
+      el.innerHTML = el.innerHTML.replace(/<\/div>$/, '') + '<span style="margin-left:auto;color:var(--green,#22c55e);font-size:12px;">✓</span></div>';
+    }
+  } else {
+    _meuPainelConfig.splice(idx, 1);
+    if (el) {
+      el.classList.remove('ativo');
+      // remover o ✓
+      el.querySelector('span[style*="green"]')?.remove();
+    }
+  }
+}
+
+function fecharEditorMeuPainel() {
+  const modal = document.getElementById('modalMeuPainel');
+  if (modal) modal.style.display = 'none';
+}
+
+async function salvarMeuPainel() {
+  fecharEditorMeuPainel();
+  await salvarPreferenciaMeuPainel('meu_painel_widgets', _meuPainelConfig);
+  await salvarTema();
+  setMsg('msgMeuPainel', 'Painel e aparência salvos.', 'ok');
+  await renderizarMeuPainel();
+  setTimeout(() => setMsg('msgMeuPainel', '', ''), 3000);
+}
+
+
+// ── Drag & Drop nos widgets do Meu Painel ────────────────────────
+let _widgetDragSrc = null;
+
+function widgetDragStart(e) {
+  _widgetDragSrc = e.currentTarget.closest('[data-wid]');
+  setTimeout(() => { if (_widgetDragSrc) _widgetDragSrc.classList.add('dragging-widget'); }, 0);
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', _widgetDragSrc?.dataset?.wid || '');
+  e.stopPropagation();
+}
+
+function widgetDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const alvo = e.currentTarget.closest('[data-wid]');
+  if (alvo && alvo !== _widgetDragSrc) {
+    document.querySelectorAll('[data-wid]').forEach(el => el.classList.remove('drag-over-widget'));
+    alvo.classList.add('drag-over-widget');
+  }
+}
+
+function widgetDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const alvo = e.currentTarget.closest('[data-wid]');
+  document.querySelectorAll('[data-wid]').forEach(el => {
+    el.classList.remove('drag-over-widget');
+    el.classList.remove('dragging-widget');
+  });
+  if (!_widgetDragSrc || !alvo || alvo === _widgetDragSrc) return;
+  const widSrc = _widgetDragSrc.dataset.wid;
+  const widAlvo = alvo.dataset.wid;
+  const iSrc = _meuPainelConfig.indexOf(widSrc);
+  const iAlvo = _meuPainelConfig.indexOf(widAlvo);
+  if (iSrc === -1 || iAlvo === -1) return;
+  // Reordenar
+  _meuPainelConfig.splice(iSrc, 1);
+  _meuPainelConfig.splice(iAlvo, 0, widSrc);
+  // Salvar e re-renderizar
+  salvarPreferenciaMeuPainel('meu_painel_widgets', _meuPainelConfig);
+  renderizarMeuPainel();
+}
 
 // ── Gráficos financeiros do Dashboard (modo B.I. com filtros cruzados) ──
 let _dashGfAno = new Date().getFullYear();
@@ -388,28 +638,6 @@ let _dashGfOpcoesCategorias = [];
 let _dashGfConsultaDropdown = { forn: '', cat: '' };
 let _dashGfOrdenacaoDetalhe = 'valor';
 let _dashGfDirecaoDetalhe = 'desc';
-let _dashGfRequestSeq = 0;
-function _dashGfContextoAtual() {
-  return {
-    empresaId: String(usuarioSistemaLogado?.empresa_id || '').trim(),
-    lojaId: String((typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || usuarioSistemaLogado?.loja_id || '').trim(),
-  };
-}
-function limparDashboardFinanceiroTenant(mensagem = 'Carregando dados da loja...') {
-  _dashGfRequestSeq += 1;
-  _dashGfDados = [];
-  _dashGfCarregadoAno = null;
-  _dashGfCategoriasMapa = {};
-  _dashGfOpcoesFornecedores = [];
-  _dashGfOpcoesCategorias = [];
-  _dashGfFiltro = { mes: null, status: 'todos', fornecedorIds: new Set(), categoriaIds: new Set() };
-  const titulo = document.getElementById('dashGfCurvaTitulo');
-  if (titulo) titulo.textContent = 'Curva mensal da categoria líder';
-  ['dashGfBarras','dashGfRosca','dashGfRoscaCategoria','dashGfTopCategorias','dashGfCurvaCategoria','dashGfDetalhe'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = `<div class="empty" style="padding:20px;">${escaparHtmlBasico(mensagem)}</div>`;
-  });
-}
 // Modo de data dos gráficos: 'vencimento' (padrão — espelha a fatura) ou 'compra'.
 let _dashGfModoData = (() => {
   try { return localStorage.getItem('dashGfModoData') === 'compra' ? 'compra' : 'vencimento'; }
@@ -439,16 +667,6 @@ const _dashGfNomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','
 function _dashGfSanitizarChave(v) { return String(v ?? '').replace(/[^a-zA-Z0-9_-]/g, ''); }
 
 async function carregarGraficosFinanceirosDashboard() {
-  const contextoInicial = _dashGfContextoAtual();
-  const requestSeq = ++_dashGfRequestSeq;
-  const contextoAindaValido = () => {
-    const atual = _dashGfContextoAtual();
-    return requestSeq === _dashGfRequestSeq && contextoInicial.empresaId === atual.empresaId && contextoInicial.lojaId === atual.lojaId;
-  };
-  if (!contextoInicial.empresaId || !contextoInicial.lojaId) {
-    limparDashboardFinanceiroTenant('Selecione uma loja para carregar o dashboard.');
-    return;
-  }
   const ano = _dashGfAno;
   const inicio = `${ano}-01-01`;
   const fim = `${ano}-12-31`;
@@ -475,7 +693,6 @@ async function carregarGraficosFinanceirosDashboard() {
       console.warn('fornecedores.cor ausente no banco — carregando dashboard sem cores personalizadas. Rode: ALTER TABLE fornecedores ADD COLUMN cor text;');
       resContas = await consultarContasDash(false);
     }
-    if (!contextoAindaValido()) return;
     if (resContas.error) throw resContas.error;
     _dashGfDados = resContas.data || [];
     _dashGfCarregadoAno = ano;
@@ -509,7 +726,6 @@ async function carregarGraficosFinanceirosDashboard() {
       }
     }
 
-    if (!contextoAindaValido()) return;
     _dashGfCategoriasMapa = {};
     categoriasDash.forEach(c => {
       _dashGfCategoriasMapa[String(c.id)] = { nome: c.nome || 'Categoria', cor: c.cor || null, icone: c.icone || null };
@@ -531,11 +747,9 @@ async function carregarGraficosFinanceirosDashboard() {
       .map(id => [id, _dashGfCategoriasMapa[id]?.nome || 'Categoria'])
       .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
     if (categoriasAno.has('sem')) _dashGfOpcoesCategorias.push(['sem', '— Sem categoria —']);
-    if (!contextoAindaValido()) return;
     dashGfRenderDropdowns();
     renderizarGraficosFinanceirosDashboard();
   } catch (e) {
-    if (!contextoAindaValido()) return;
     console.warn('Falha ao carregar gráficos financeiros:', e?.message || e);
     if (msg) { msg.textContent = 'Não foi possível carregar os dados financeiros.'; msg.className = 'msg err'; }
   }
@@ -985,11 +1199,11 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
       const maior = Math.max(1, ...topCategorias.map(([, item]) => Number(item.valor || 0)));
       elTopCategorias.innerHTML = topCategorias.map(([chave, item], indice) => {
         const percentual = Math.max(3, (item.valor / maior) * 100);
-        return `<button type="button" class="dash-gf-category-rank${F.categoriaIds.has(chave) ? ' is-selected' : ''}" onclick="dashGfToggleCategoria('${_dashGfSanitizarChave(chave)}')" title="Filtrar por ${escaparHtmlBasico(item.nome)}">
-          <strong class="dash-gf-category-position${indice < 3 ? ' is-top' : ''}">${indice + 1}º</strong>
-          <span class="dash-gf-category-name">${htmlIconeCategoriaCompra(item.icone, 28)}<span>${escaparHtmlBasico(item.nome)}</span></span>
-          <span class="dash-gf-category-track"><span style="width:${percentual.toFixed(1)}%;background:linear-gradient(90deg,${item.cor || '#3b82f6'},#22c55e);"></span></span>
-          <strong class="dash-gf-category-value">${fmt(item.valor)}</strong>
+        return `<button type="button" onclick="dashGfToggleCategoria('${_dashGfSanitizarChave(chave)}')" title="Filtrar por ${escaparHtmlBasico(item.nome)}" style="display:grid;grid-template-columns:24px minmax(120px,1.5fr) minmax(60px,.8fr) auto;align-items:center;gap:8px;width:100%;padding:7px 8px;margin-bottom:5px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:${F.categoriaIds.has(chave) ? 'rgba(59,130,246,.16)' : 'rgba(255,255,255,.025)'};color:var(--text);cursor:pointer;text-align:left;">
+          <strong style="color:${indice < 3 ? '#fbbf24' : 'var(--text-muted)'};">${indice + 1}º</strong>
+          <span style="display:flex;align-items:center;gap:7px;min-width:0;">${htmlIconeCategoriaCompra(item.icone, 28)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escaparHtmlBasico(item.nome)}</span></span>
+          <span style="height:9px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;"><span style="display:block;width:${percentual.toFixed(1)}%;height:100%;border-radius:99px;background:linear-gradient(90deg,${item.cor || '#3b82f6'},#22c55e);"></span></span>
+          <strong style="white-space:nowrap;">${fmt(item.valor)}</strong>
         </button>`;
       }).join('');
     }
@@ -999,7 +1213,6 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
   const elCurvaTitulo = document.getElementById('dashGfCurvaTitulo');
   if (elCurva) {
     if (!topCategorias.length) {
-      if (elCurvaTitulo) elCurvaTitulo.textContent = 'Curva mensal da categoria líder';
       elCurva.innerHTML = '<div class="empty" style="padding:20px;">Sem dados para desenhar a curva.</div>';
     } else {
       const [categoriaLiderId, categoriaLider] = topCategorias[0];
@@ -1131,10 +1344,51 @@ window.addEventListener('resize', () => {
   }, 180);
 }, { passive: true });
 
+function widgetDragEnd(e) {
+  document.querySelectorAll('[data-wid]').forEach(el => {
+    el.classList.remove('dragging-widget');
+    el.classList.remove('drag-over-widget');
+  });
+  _widgetDragSrc = null;
+}
+// ─────────────────────────────────────────────────────────────────
+async function removerWidgetMeuPainel(wid) {
+  _meuPainelConfig = _meuPainelConfig.filter(w => w !== wid);
+  await salvarPreferenciaMeuPainel('meu_painel_widgets', _meuPainelConfig);
+  await renderizarMeuPainel();
+}
+// ══════════════════════════════════════════════════════════════════
 
 async function carregarDashboard() {
   carregarNotificacoes();
   carregarGraficosFinanceirosDashboard();
+
+  const el = document.getElementById('dash-execucoes');
+  if (!el) return;
+  el.innerHTML = '<div class="empty">Carregando...</div>';
+  const [funcionariosRes, execucoesRecentesRes] = await Promise.all([
+    sb.from('funcionarios').select('id, nome').eq('ativo', true),
+    sb.from('checklist_execucoes')
+      .select('id, status, funcionario_id, iniciado_em, inicio_confirmado_em, finalizado_em, finalizacao_confirmada_em, tarefas(nome, descricao, horario_limite), checklists(nome)')
+      .order('iniciado_em', { ascending: false })
+      .limit(12),
+  ]);
+  const funcionariosMap = Object.fromEntries((funcionariosRes?.data || []).map(item => [String(item.id), item.nome || 'Funcionário']));
+  const execucoesRecentes = execucoesRecentesRes?.data || [];
+  if (execucoesRecentesRes?.error || !execucoesRecentes.length) {
+    el.innerHTML = '<div class="empty">Nenhuma execução encontrada</div>';
+    return;
+  }
+  el.innerHTML = `<table class="recent-table">
+    <thead><tr><th>Tarefa</th><th>Funcionário</th><th>Início</th><th>Fim</th><th>Status</th><th></th></tr></thead>
+    <tbody>${execucoesRecentes.map(e => {
+      const inicio = e.inicio_confirmado_em || e.iniciado_em || null;
+      const fim = e.finalizacao_confirmada_em || e.finalizado_em || null;
+      const nomeTarefa = e.tarefas?.nome ?? e.checklists?.nome ?? '-';
+      const nomeFuncionario = funcionariosMap[String(e.funcionario_id)] ?? '-';
+      return `<tr><td>${nomeTarefa}</td><td>${nomeFuncionario}</td><td>${fmtDate(inicio)}</td><td>${fmtDate(fim)}</td><td>${tagStatus(e.status)}</td><td>${e.status === 'aberto' || e.status === 'pausado' ? `<button class="btn btn-amber btn-sm" onclick="abrirModal('${e.id}')">Abrir</button>` : ''}</td></tr>`;
+    }).join('')}</tbody>
+  </table>`;
 }
 
 function trocarPeriodoProdutividade(periodo, botao = null) {

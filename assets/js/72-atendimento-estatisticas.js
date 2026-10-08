@@ -25,24 +25,6 @@ async function invocarGoogleBusiness(action, payload = {}) {
   return data || {};
 }
 
-function mensagemGoogleBusiness(erro, operacao = 'operacao') {
-  const detalhe = String(erro?.message || erro || '');
-  console.error('Google Business:', erro);
-  if (/AUTH_REQUIRED|ACCESS_DENIED|INVALID_CONTEXT|401|403/i.test(detalhe)) return 'Sua sessão não está autorizada para esta loja. Entre novamente e tente outra vez.';
-  if (/GOOGLE_AUTH_EXPIRED|refresh_token|invalid_grant|token/i.test(detalhe)) return 'A autorização do Google expirou ou foi revogada. Reconecte a conta Google.';
-  if (/NO_BUSINESS_ACCOUNT|Nenhuma conta|Business Profile/i.test(detalhe)) return 'Esta conta Google não possui um Perfil da Empresa disponível.';
-  if (/GOOGLE_LOCATION_ERROR|location|localiza/i.test(detalhe)) return 'A localização do Google vinculada à loja não foi encontrada.';
-  if (/Failed to send|FunctionsHttpError|fetch/i.test(detalhe)) return 'Não foi possível comunicar com a integração do Google agora. Tente novamente.';
-  const mensagens = {
-    dashboard: 'Não foi possível carregar os dados do Google Business.',
-    conexao: 'Não foi possível iniciar a conexão com o Google.',
-    sincronizacao: 'Não foi possível sincronizar as avaliações.',
-    resposta: 'Não foi possível enviar a resposta ao Google.',
-    vinculo: 'Não foi possível vincular a localização do Google.',
-  };
-  return mensagens[operacao] || 'Não foi possível concluir a operação com o Google Business. Tente novamente.';
-}
-
 function mostrarAvisoAtendimento(texto = '', erro = false) {
   const box = document.getElementById('atendimentoAviso');
   if (!box) return;
@@ -58,7 +40,7 @@ async function conectarGoogleAtendimento() {
     if (!retorno.url) throw new Error('A função não retornou a URL de autorização.');
     location.href = retorno.url;
   } catch (erro) {
-    mostrarAvisoAtendimento(mensagemGoogleBusiness(erro, 'conexao'), true);
+    mostrarAvisoAtendimento(`Não foi possível iniciar a conexão: ${erro.message}`, true);
   }
 }
 
@@ -69,7 +51,7 @@ async function sincronizarGoogleAtendimento() {
     mostrarAvisoAtendimento('Sincronização concluída.');
     await carregarEstatisticasAtendimento();
   } catch (erro) {
-    mostrarAvisoAtendimento(mensagemGoogleBusiness(erro, 'sincronizacao'), true);
+    mostrarAvisoAtendimento(`Falha na sincronização: ${erro.message}`, true);
   }
 }
 
@@ -99,11 +81,6 @@ async function carregarEstatisticasAtendimento() {
 
     renderizarStatusAtendimento(painel.conexao || null);
     renderizarAtendimento(avaliacoes);
-    const locaisDisponiveis = Array.isArray(painel.locais_disponiveis) ? painel.locais_disponiveis : [];
-    if (locaisDisponiveis.length) {
-      renderizarSelecaoLocalGoogle(locaisDisponiveis);
-      return;
-    }
     if (atendimentoModoSimulado) {
       mostrarAvisoAtendimento('Modo de demonstração: avaliações simuladas. Nenhuma consulta está sendo feita à API do Google.');
     }
@@ -114,34 +91,10 @@ async function carregarEstatisticasAtendimento() {
     }
   } catch (erro) {
     console.warn('Falha ao carregar estatísticas de atendimento:', erro);
-    mostrarAvisoAtendimento(mensagemGoogleBusiness(erro, 'dashboard'), true);
+    mostrarAvisoAtendimento('A estrutura da integração ainda não foi aplicada no Supabase. Execute a migration 202607240001_google_business_atendimento.sql.', true);
     renderizarAtendimento([]);
   } finally {
     atendimentoCarregando = false;
-  }
-}
-
-function renderizarSelecaoLocalGoogle(locais) {
-  const box = document.getElementById('atendimentoAviso');
-  if (!box) return;
-  box.hidden = false;
-  box.classList.remove('erro');
-  box.innerHTML = `<strong>Selecione o estabelecimento Google desta loja</strong>
-    <select id="atendimentoLocalGoogle">${locais.map(local =>
-      `<option value="${atendimentoEscape(local.id)}">${atendimentoEscape(local.nome || 'Local Google')}${local.endereco ? ` — ${atendimentoEscape(local.endereco)}` : ''}</option>`
-    ).join('')}</select>
-    <button class="btn btn-green btn-sm" type="button" onclick="vincularLocalGoogleAtendimento()">Vincular localização</button>`;
-}
-
-async function vincularLocalGoogleAtendimento() {
-  const localId = document.getElementById('atendimentoLocalGoogle')?.value;
-  if (!localId) return mostrarAvisoAtendimento('Selecione uma localização do Google.', true);
-  try {
-    await invocarGoogleBusiness('link-location', { local_id: localId });
-    mostrarAvisoAtendimento('Localização vinculada. Sincronizando avaliações…');
-    await sincronizarGoogleAtendimento();
-  } catch (erro) {
-    mostrarAvisoAtendimento(mensagemGoogleBusiness(erro, 'vinculo'), true);
   }
 }
 
@@ -275,6 +228,6 @@ async function responderAvaliacaoGoogle(id) {
     await carregarEstatisticasAtendimento();
   } catch (erro) {
     campo.disabled = false;
-    mostrarAvisoAtendimento(mensagemGoogleBusiness(erro, 'resposta'), true);
+    mostrarAvisoAtendimento(`Não foi possível responder: ${erro.message}`, true);
   }
 }

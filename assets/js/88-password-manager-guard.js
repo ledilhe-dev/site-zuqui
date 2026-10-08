@@ -27,13 +27,6 @@
     input.setAttribute('data-form-type', 'other');
     input.setAttribute('data-no-password-manager', 'true');
 
-    // A senha SQL do Raffinato possui controle próprio de Mostrar/Ocultar.
-    // Não converta o tipo nem aplique a máscara CSS global neste campo.
-    if (input.id === 'raffinatoDbPassword') {
-      input.classList.remove('pin-secure-input');
-      return;
-    }
-
     // Campos de PIN/senha dentro do sistema não podem ser reconhecidos pelo navegador como senha real.
     // Mantemos o valor normal para o JS, mas mascaramos visualmente com CSS.
     if (input.type === 'password') {
@@ -70,12 +63,6 @@
     try {
       document.querySelectorAll('form').forEach(function(form) {
         if (form.id === 'loginForm') {
-          form.method = 'post';
-          form.action = './';
-          if (form.dataset.nativeSubmitBlocked !== 'true') {
-            form.addEventListener('submit', function(event) { event.preventDefault(); }, true);
-            form.dataset.nativeSubmitBlocked = 'true';
-          }
           form.setAttribute('autocomplete', 'on');
           form.removeAttribute('data-lpignore');
           form.removeAttribute('data-1p-ignore');

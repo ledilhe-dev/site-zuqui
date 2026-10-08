@@ -1,17 +1,4 @@
 // FUNCIONÁRIOS
-let funcionarioEdicaoRequestSeq = 0;
-let funcionarioEdicaoContexto = null;
-function contextoEdicaoFuncionarioAtual() {
-  return {
-    empresaId:String(usuarioSistemaLogado?.empresa_id || '').trim(),
-    lojaId:String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim(),
-    version:Number(window.__tenantContextVersion || 0),
-  };
-}
-function contextoEdicaoFuncionarioValido(contexto) {
-  const atual=contextoEdicaoFuncionarioAtual();
-  return !!contexto && contexto.empresaId===atual.empresaId && contexto.lojaId===atual.lojaId && contexto.version===atual.version;
-}
 // 
 async function carregarFuncionarios() {
   if (!usuarioPodeAcaoFuncionarios('visualizar')) {
@@ -47,8 +34,7 @@ async function carregarFuncionarios() {
       return;
     }
 
-    // Identidades globais são geridas somente no Painel Administrativo.
-    let funcionariosVisiveis = (data || []).filter(f => f?.é_administrador !== true);
+    let funcionariosVisiveis = data || [];
     const ehAdminSistema = usuarioEhAdministrador();
     const lojaSessaoId = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     const exibindoPainelAdminGlobal = ehAdminSistema && !lojaSessaoId;
@@ -105,6 +91,7 @@ async function carregarFuncionarios() {
         if ([...lojas].some(lojaId => idsLojasFiltro.includes(lojaId))) idsVinculadosFiltro.add(funcionarioId);
       });
       funcionariosVisiveis = funcionariosVisiveis.filter(f => {
+        if (f?.é_administrador === true) return true;
         const funcionarioId = String(f?.id || '');
         const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
         const possuiVinculoAtivo = (vinculosPorFuncionario.get(funcionarioId)?.size || 0) > 0;
@@ -144,10 +131,14 @@ async function carregarFuncionarios() {
       const teveVinculos = funcionariosComHistoricoVinculos.has(funcionarioId);
       const nomesLojasAtivas = lojasAtivas.map(id => nomesLojasVinculos.get(id) || 'Loja').filter(Boolean);
       const semAcessoAtivo = f?.é_administrador !== true && !lojasAtivas.length && (teveVinculos || !f?.loja_id);
-      const nomeLoja = (nomesLojasAtivas.join(', ')
+      const nomeLoja = f?.é_administrador === true
+        ? 'Todas as lojas (Administrador do Sistema)'
+        : (nomesLojasAtivas.join(', ')
           || (!teveVinculos && obterNomeLojaFiltroMultiLoja(f.loja_id))
           || 'Sem loja vinculada');
-      const tipoAcesso = f?.email ? 'Gerencial (e-mail e senha)' : 'Operacional (PIN)';
+      const tipoAcesso = f?.é_administrador === true
+        ? 'Administrador global'
+        : (f?.email ? 'Gerencial (e-mail e senha)' : 'Operacional (PIN)');
       // Admin global pode editar qualquer funcionário (não tem loja_id vinculada).
       const dentroDoEscopoDaLoja = ehAdminGlobal || (
         f?.é_administrador !== true
@@ -946,14 +937,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
 
   async function criarFuncionario() {
   try {
-    const contextoOperacao = contextoEdicaoFuncionarioAtual();
-    const requestSeqOperacao = funcionarioEdicaoRequestSeq;
-    const operacaoAindaValida = () => requestSeqOperacao === funcionarioEdicaoRequestSeq && contextoEdicaoFuncionarioValido(contextoOperacao);
-    if (funcionarioEmEdicaoId && (!funcionarioEdicaoContexto || !contextoEdicaoFuncionarioValido(funcionarioEdicaoContexto))) {
-      limparFormularioFuncionario();
-      setMsg('msgFuncionarios', 'A edição foi cancelada porque a loja foi alterada.', 'info');
-      return;
-    }
     const acaoFuncionario = funcionarioEmEdicaoId ? 'editar' : 'criar';
     if (!usuarioPodeAcaoFuncionarios(acaoFuncionario)) {
       setMsg('msgFuncionarios', `Seu perfil não permite ${acaoFuncionario === 'editar' ? 'editar' : 'cadastrar'} funcionários.`, 'err');
@@ -961,7 +944,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     }
     if (funcionarioEmEdicaoId && !usuarioEhAdministrador()) {
       const escopoEdicao = await validarEscopoGestaoFuncionario(funcionarioEmEdicaoId, { exigirTodasLojas: true });
-      if (!operacaoAindaValida()) return;
       if (!escopoEdicao.ok) { setMsg('msgFuncionarios', escopoEdicao.motivo, 'err'); return; }
     }
     const nome = document.getElementById('nomeFuncionario').value.trim();
@@ -998,14 +980,22 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       senhaAtualGestor = confirmacao.pin;
     }
 
-    // A tela operacional nunca cria nem altera Administrador do Sistema.
-    const funcionarioAdmin = false;
+    const chkAdmin = document.getElementById('funcionarioAdmin');
+    // Se a checkbox está desabilitada (usuário sem permissão), preservar o valor atual do banco
+    // para não sobrescrever acidentalmente com false
+    const funcionarioAdmin = chkAdmin?.disabled
+      ? chkAdmin?.checked === true  // mantém o valor que foi carregado do banco
+      : !!chkAdmin?.checked;
+    if (funcionarioAdmin && !usuarioEhAdministrador()) {
+      setMsg('msgFuncionarios', 'Somente um Administrador do Sistema pode conceder acesso global.', 'err');
+      return;
+    }
     if (!editandoAgora && !usuarioPodeAtribuirPerfilFuncionario(perfilId)) {
       setMsg('msgFuncionarios', 'Você não pode atribuir um perfil com permissões superiores às suas.', 'err');
       return;
     }
     // lojaId agora é gerenciado via vínculos — não bloqueia mais o cadastro
-    if (!perfilId) { setMsg('msgFuncionarios', 'Selecione um perfil ativo desta loja.', 'err'); return; }
+    if (!perfilId && !funcionarioAdmin) { setMsg('msgFuncionarios', 'Selecione o perfil ou marque Funcionário admin para usar o perfil ADM padrão.', 'err'); return; }
     const mensagemDuplicidade = await validarDuplicidadeCadastro({
       nome,
       email: emailInformado ? email : null,
@@ -1037,14 +1027,24 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       return;
     }
     const perfilIdParaSalvar = await (async () => {
+      if (funcionarioAdmin) {
+        const perfilAdmin = await buscarPerfilAdminPadraoParaFuncionario();
+        return perfilAdmin?.id || perfilId;
+      }
       if (editandoAgora && !usuarioEhAdministrador()) return funcionarioPerfilOriginalEdicao || perfilId;
       return perfilId;
     })();
+
+    if (funcionarioAdmin && !perfilIdParaSalvar) {
+      setMsg('msgFuncionarios', 'Nenhum perfil ADM encontrado para salvar o funcionário como admin. Cadastre um perfil ADM primeiro.', 'err');
+      return;
+    }
 
     const payload = editandoAgora
       ? {
           nome,
           email: emailInformado ? email : null,
+          é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,
@@ -1057,6 +1057,7 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
           email: emailInformado ? email : null,
           loja_id: lojaLogadaParaVinculo || null,
           empresa_id: lojaParaSalvar.empresa_id,
+          é_administrador: funcionarioAdmin,
           perfil_id: perfilIdParaSalvar,
           horario_trabalho_inicio: horarioInicio,
           horario_trabalho_fim: horarioFim,
@@ -1071,18 +1072,14 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     const executarSalvamentoFuncionario = usuarioSistemaLogado?.tipo === 'admin'
       ? executarSemFiltrosTenantTemporario
       : executarSemFiltroLojaTemporario;
-    if (!operacaoAindaValida()) return;
     let { data: funcionarioSalvo, error } = await executarSalvamentoFuncionario(() => salvarFuncionarioPayload(payload));
-    if (!operacaoAindaValida()) return;
     if (error && String(error.message || '').toLowerCase().includes('tempo_intervalo_minutos') && tempoIntervaloMinutos === null) {
       const { tempo_intervalo_minutos, intervalos_semana, ...payloadSemTempoIntervalo } = payload;
       ({ data: funcionarioSalvo, error } = await executarSalvamentoFuncionario(() => salvarFuncionarioPayload(payloadSemTempoIntervalo)));
-      if (!operacaoAindaValida()) return;
     }
     if (error && String(error.message || '').toLowerCase().includes('intervalos_semana') && !temIntervalosSemanaPreenchidos) {
       const { intervalos_semana, ...payloadSemTempoIntervalo } = payload;
       ({ data: funcionarioSalvo, error } = await executarSalvamentoFuncionario(() => salvarFuncionarioPayload(payloadSemTempoIntervalo)));
-      if (!operacaoAindaValida()) return;
     }
     if (error) {
       if (isMissingWorkShiftColumnsError(error)) {
@@ -1231,8 +1228,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
 }
 
 function limparFormularioFuncionario() {
-  funcionarioEdicaoRequestSeq += 1;
-  funcionarioEdicaoContexto = null;
   funcionarioEmEdicaoId = null;
   funcionarioNomeOriginalEdicao = '';
   funcionarioEmailOriginalEdicao = '';
@@ -1254,15 +1249,8 @@ function limparFormularioFuncionario() {
   const btnCancelar = document.getElementById('btnCancelarEdicaoFuncionario');
   if (btnCancelar) btnCancelar.style.display = 'none';
   cadastroFuncionarioAberto = false;
-  _vinculosFuncionarioAtual = [];
-  const modalVinculos = document.getElementById('modalSeletorLojas');
-  if (modalVinculos) modalVinculos.style.display = 'none';
-  atualizarAvisoVerificacaoFuncionarioEmail({ visivel:false });
-  setMsg('msgFuncionarios', '', '');
   atualizarEstadoCadastroFuncionarioUI();
 }
-
-registrarResetTenantUI(() => limparFormularioFuncionario());
 
 async function editarFuncionario(id) {
   if (!usuarioPodeAcaoFuncionarios('editar')) {
@@ -1270,9 +1258,6 @@ async function editarFuncionario(id) {
     return;
   }
   atualizarAvisoVerificacaoFuncionarioEmail({ visivel: false });
-  const contextoInicial = contextoEdicaoFuncionarioAtual();
-  const requestSeq = ++funcionarioEdicaoRequestSeq;
-  const requisicaoAindaValida = () => requestSeq === funcionarioEdicaoRequestSeq && contextoEdicaoFuncionarioValido(contextoInicial);
   let funcionario = null;
   let error = null;
 
@@ -1282,14 +1267,12 @@ async function editarFuncionario(id) {
   const respostaSingle = await executarEdicaoFuncionario(() => sb.from('funcionarios').select('*').eq('id', id).single());
   funcionario = respostaSingle.data;
   error = respostaSingle.error;
-  if (!requisicaoAindaValida()) return;
 
   // Fallback para evitar quebra quando o .single() falha por ambiguidade/ausência.
   if (error || !funcionario) {
     const respostaFallback = await executarEdicaoFuncionario(() => sb.from('funcionarios').select('*').eq('id', id).limit(1));
     funcionario = (respostaFallback.data || [])[0] || null;
     error = funcionario ? null : (respostaFallback.error || error);
-    if (!requisicaoAindaValida()) return;
   }
 
   if (error || !funcionario) {
@@ -1300,12 +1283,10 @@ async function editarFuncionario(id) {
 
   if (!usuarioEhAdministrador()) {
     const escopo = await validarEscopoGestaoFuncionario(id, { exigirTodasLojas: true });
-    if (!requisicaoAindaValida()) return;
     if (!escopo.ok) { setMsg('msgFuncionarios', escopo.motivo, 'err'); return; }
   }
 
   funcionarioEmEdicaoId = id;
-  funcionarioEdicaoContexto = contextoInicial;
   funcionarioNomeOriginalEdicao = funcionario.nome || '';
   funcionarioEmailOriginalEdicao = funcionario.email || '';
   funcionarioPerfilOriginalEdicao = funcionario.perfil_id || '';
@@ -1330,7 +1311,6 @@ async function editarFuncionario(id) {
   setMsg('msgFuncionarios', `Editando funcionário: ${funcionario.nome}.`, 'ok');
   // Carregar vínculos de empresa/lojas
   await carregarVinculosFuncionario(id);
-  if (!requisicaoAindaValida()) return;
 
   window.setTimeout(() => {
     document.getElementById('pinFuncionario')?.focus();

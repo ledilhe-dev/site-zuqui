@@ -44,10 +44,7 @@ function limparDias() {
 
 function preencherDiasSelecionados(diasStr) {
   limparDias();
-  if (!diasStr || diasStr === 'todos') {
-    marcarTodosDias();
-    return;
-  }
+  if (!diasStr || diasStr === 'todos') return;
 
   const dias = diasStr.split(',').map(d => d.trim());
   document.getElementById('diasSeg').checked = dias.includes('seg');
@@ -66,7 +63,7 @@ function preencherDiasSelecionados(diasStr) {
 async function carregarSelectFuncionariosTarefa() {
   const sel = document.getElementById('funcionarioTarefa');
   if (!sel) return;
-  sel.innerHTML = '<option value="">Selecione o funcionário</option>';
+  sel.innerHTML = '<option value=""></option>';
   let queryFuncionariosTarefa = sb.from('funcionarios').select('id, nome, loja_id, empresa_id').eq('ativo', true);
   queryFuncionariosTarefa = aplicarFiltroLojaFuncionariosQuery(queryFuncionariosTarefa).order('nome');
   const { data } = await queryFuncionariosTarefa;
@@ -1530,12 +1527,7 @@ async function criarTarefa() {
   if (!nome) { setMsg('msgTarefas', 'Digite o nome da tarefa.', 'err'); return; }
   if (!descricao) { setMsg('msgTarefas', 'Digite a observação da tarefa.', 'err'); return; }
 
-  const diasSelecionadosCadastro = obterDiasSelecionados();
-  if (!diasSelecionadosCadastro.length) {
-    setMsg('msgTarefas', 'Selecione ao menos um dia padrão da semana.', 'err');
-    return;
-  }
-  const diasStr = diasSelecionadosCadastro.length === 7 ? 'todos' : diasSelecionadosCadastro.join(',');
+  const diasStr = 'todos';
   const editandoAgora = !!tarefaEmEdicaoId;
   let checklistRefEdicao = checklistReferenciaEmEdicaoId || null;
   let checklistCriadoAntesDaTarefa = null;
@@ -1599,6 +1591,9 @@ async function criarTarefa() {
     setMsg('msgTarefas', 'Tarefa salva, mas sem retorno de ID. Tente novamente.', 'err');
     return;
   }
+  const tarefaSalvaId = String(tarefaSalva.id);
+  tarefasConfigLancamentoAbertasIds.add(tarefaSalvaId);
+
   let checklistReferencia = null;
   try {
     checklistReferencia = await garantirChecklistReferenciaDaTarefa({
@@ -1638,8 +1633,10 @@ async function criarTarefa() {
 
   limparFormularioTarefa();
   setMsg('msgTarefas', editandoAgora
-    ? 'Checklist atualizado. As alterações já estão disponíveis na listagem.'
-    : 'Checklist cadastrado com sucesso. Consulte, edite ou exclua na aba Listagem de checklist.', 'ok');
+    ? 'Tarefa atualizada.'
+    : 'Tarefa cadastrada. Agora clique em "Lançar tarefa" para aparecer em Checklists lançados.', 'ok');
+  carregarTarefas();
+  carregarChecklistsTarefas();
 }
 
 function limparFormularioTarefa() {
@@ -1647,13 +1644,11 @@ function limparFormularioTarefa() {
   checklistReferenciaEmEdicaoId = null;
   document.getElementById('nomeTarefa').value = '';
   document.getElementById('descTarefa').value = '';
+  document.getElementById('descTarefa').setAttribute('readonly', 'readonly');
   document.getElementById('funcionarioTarefa').value = '';
-  marcarTodosDias();
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
-  const titulo = document.getElementById('tituloCadastroChecklist');
-  if (btnSalvar) btnSalvar.textContent = 'Cadastrar checklist';
-  if (titulo) titulo.textContent = 'Cadastrar novo checklist';
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'none';
 }
 
@@ -1674,17 +1669,14 @@ async function editarTarefa(id) {
   checklistReferenciaEmEdicaoId = tarefa.checklist_id || null;
   document.getElementById('nomeTarefa').value = tarefa.nome || '';
   document.getElementById('descTarefa').value = tarefa.descricao || '';
+  document.getElementById('descTarefa').removeAttribute('readonly');
   document.getElementById('funcionarioTarefa').value = tarefa.funcionario_id || '';
-  preencherDiasSelecionados(tarefa.dias_semana || 'todos');
 
   const btnSalvar = document.getElementById('btnSalvarTarefa');
   const btnCancelar = document.getElementById('btnCancelarEdicaoTarefa');
-  const titulo = document.getElementById('tituloCadastroChecklist');
-  if (btnSalvar) btnSalvar.textContent = 'Salvar alterações';
-  if (titulo) titulo.textContent = 'Editar checklist cadastrado';
+  if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
   setMsg('msgTarefas', `Editando tarefa: ${tarefa.nome}.`, 'ok');
-  document.getElementById('nomeTarefa')?.focus();
 }
 
 function cancelarEdicaoTarefa() {
@@ -1700,25 +1692,21 @@ function fecharConfigLancamentoTarefa(id = '') {
   renderizarListaTarefas();
 }
 
-async function localizarConflitosLancamentoManual({ funcionarioId = '', lancamentosParaCriar = [], ignorarAgendamentoId = '' } = {}) {
+async function localizarConflitosLancamentoManual({ funcionarioId = '', lancamentosParaCriar = [] } = {}) {
   const funcionario = String(funcionarioId || '').trim();
   const datas = [...new Set((lancamentosParaCriar || []).map(item => String(item.data_programada || '').trim()).filter(Boolean))];
   if (!funcionario || !datas.length) return [];
 
   const { data, error } = await sb
     .from('checklist_lancamentos')
-    .select('id, nome, horario_limite, data_programada, lancado_em, created_at, status, agendamento_id')
+    .select('id, nome, horario_limite, data_programada, lancado_em, created_at, status')
     .eq('funcionario_id', funcionario)
     .in('data_programada', datas)
     .limit(500);
 
   if (error) throw error;
 
-  const agendaIgnorada = String(ignorarAgendamentoId || '').trim();
-  const existentes = (data || []).filter(item =>
-    lancamentoContaComoExistenteParaAgenda(item)
-    && (!agendaIgnorada || String(item.agendamento_id || '') !== agendaIgnorada)
-  );
+  const existentes = (data || []).filter(item => lancamentoContaComoExistenteParaAgenda(item));
   const conflitos = [];
 
   lancamentosParaCriar.forEach(novo => {
@@ -1866,8 +1854,10 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
 
   const hojeData = new Date();
   hojeData.setHours(0, 0, 0, 0);
+  // O turno do cadastro do funcionário não interfere na programação de tarefas.
+  // A disponibilidade é definida exclusivamente pelos dias, período e horários da tarefa.
   // A ocorrência do dia deve ser criada mesmo quando o horário previsto já passou.
-  // Ela permanece pendente/atrasada até conclusão ou cancelamento explícito.
+  // Ela permanecerá pendente/atrasada até ser concluída ou cancelada explicitamente.
   const agoraIso = new Date().toISOString();
   const agendamentoId = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const atorAuditoria = obterAtorAuditoriaAtual();
@@ -2021,19 +2011,7 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
     return;
   }
 
-  // O PostgREST pode limitar mutações grandes. Divide a programação para que
-  // todos os dias solicitados sejam persistidos, inclusive horizontes de 365 dias.
-  const lancamentosCriados = [];
-  let error = null;
-  for (let inicioLote = 0; inicioLote < lancamentosParaCriar.length; inicioLote += 100) {
-    const lote = lancamentosParaCriar.slice(inicioLote, inicioLote + 100);
-    const respostaLote = await sb.from('checklist_lancamentos').insert(lote).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite, horario_inicio, horario_fim');
-    if (respostaLote.error) {
-      error = respostaLote.error;
-      break;
-    }
-    lancamentosCriados.push(...(respostaLote.data || []));
-  }
+  const { data: lancamentosCriados, error } = await sb.from('checklist_lancamentos').insert(lancamentosParaCriar).select('id, tarefa_id, checklist_id, funcionario_id, data_programada, horario_limite, horario_inicio, horario_fim');
 
   if (error) {
     if (isMissingLancamentosTableError(error)) {
@@ -2074,7 +2052,6 @@ async function lancarTarefa(id, funcionarioIdOverride = '', horarioOverride = ''
   carregarChecklistsTarefas();
   carregarChecklists();
   carregarNotificacoes();
-  return true;
   } finally {
     lancamentosManuaisEmAndamento.delete(tarefaIdChave);
   }

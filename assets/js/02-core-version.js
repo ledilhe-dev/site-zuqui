@@ -25,10 +25,9 @@ function atualizarBotaoForcarAtualizacaoGeral() {
 }
 
 function limparSessaoParaAtualizacaoObrigatoria() {
-  const preferenciasLogin = new Set(['zuqui_login_prefs', 'check_diario_login_prefs']);
   try {
     Object.keys(localStorage || {}).forEach(chave => {
-      if (!preferenciasLogin.has(chave) && (String(chave).toLowerCase().includes('zuqui') || String(chave).toLowerCase().includes('checkdiario'))) {
+      if (String(chave).toLowerCase().includes('zuqui') || String(chave).toLowerCase().includes('checkdiario')) {
         localStorage.removeItem(chave);
       }
     });
@@ -38,7 +37,7 @@ function limparSessaoParaAtualizacaoObrigatoria() {
 
   try {
     Object.keys(sessionStorage || {}).forEach(chave => {
-      if (!preferenciasLogin.has(chave) && (String(chave).toLowerCase().includes('zuqui') || String(chave).toLowerCase().includes('checkdiario'))) {
+      if (String(chave).toLowerCase().includes('zuqui') || String(chave).toLowerCase().includes('checkdiario')) {
         sessionStorage.removeItem(chave);
       }
     });

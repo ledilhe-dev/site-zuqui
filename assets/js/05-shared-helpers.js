@@ -93,58 +93,26 @@ async function limparTempoAvisoManualPonto() {
   }
 }
 
-const LIMITE_INTERVALO_ABERTO_PONTO_MS = 2 * 60 * 60 * 1000;
-
-function interpretarIntervaloPonto(intervalo = {}, agoraReferencia = Date.now()) {
-  const inicioMs = new Date(intervalo?.inicio_em || 0).getTime();
-  const retornoMs = intervalo?.retorno_em ? new Date(intervalo.retorno_em).getTime() : null;
-  const agoraMs = agoraReferencia instanceof Date ? agoraReferencia.getTime() : Number(agoraReferencia);
-  if (!Number.isFinite(inicioMs) || inicioMs <= 0) {
-    return { valido: false, abertoProvisorio: false, expirado: false, contabilizar: false, inicioMs: null, fimMs: null };
-  }
-  if (Number.isFinite(retornoMs) && retornoMs > inicioMs) {
-    return { valido: true, abertoProvisorio: false, expirado: false, contabilizar: true, inicioMs, fimMs: retornoMs };
-  }
-
-  const inicio = new Date(inicioMs);
-  const agora = new Date(agoraMs);
-  const mesmoDia = inicio.getFullYear() === agora.getFullYear()
-    && inicio.getMonth() === agora.getMonth()
-    && inicio.getDate() === agora.getDate();
-  const decorridoMs = agoraMs - inicioMs;
-  const abertoProvisorio = Number.isFinite(agoraMs)
-    && decorridoMs >= 0
-    && decorridoMs <= LIMITE_INTERVALO_ABERTO_PONTO_MS
-    && mesmoDia;
-
-  return {
-    valido: true,
-    abertoProvisorio,
-    expirado: !abertoProvisorio,
-    contabilizar: abertoProvisorio,
-    inicioMs,
-    fimMs: abertoProvisorio ? agoraMs : null,
-    saidaFinalEm: !abertoProvisorio ? intervalo.inicio_em : null,
-  };
-}
-
-function calcularTotalIntervalosPonto(intervalos = [], saidaIntervaloSemRegistro = null, agoraReferencia = Date.now()) {
+function calcularTotalIntervalosPonto(intervalos = [], saidaIntervaloSemRegistro = null) {
   // Evita dobrar intervalo quando o mesmo descanso aparece em mais de uma origem
   // (ex.: ponto_intervalos + campos principais do ponto).
   // A regra correta é contar cada janela de intervalo uma única vez.
   const faixas = [];
 
   (intervalos || []).forEach(intervalo => {
-    const interpretacao = interpretarIntervaloPonto(intervalo, agoraReferencia);
-    if (interpretacao.contabilizar && interpretacao.fimMs > interpretacao.inicioMs) {
-      faixas.push([interpretacao.inicioMs, interpretacao.fimMs]);
+    if (!intervalo?.inicio_em) return;
+    const inicioMs = new Date(intervalo.inicio_em).getTime();
+    const fimMs = intervalo.retorno_em ? new Date(intervalo.retorno_em).getTime() : Date.now();
+    if (!Number.isNaN(inicioMs) && !Number.isNaN(fimMs) && fimMs > inicioMs) {
+      faixas.push([inicioMs, fimMs]);
     }
   });
 
   if (saidaIntervaloSemRegistro) {
-    const interpretacao = interpretarIntervaloPonto({ inicio_em: saidaIntervaloSemRegistro }, agoraReferencia);
-    if (interpretacao.contabilizar && interpretacao.fimMs > interpretacao.inicioMs) {
-      faixas.push([interpretacao.inicioMs, interpretacao.fimMs]);
+    const inicioMs = new Date(saidaIntervaloSemRegistro).getTime();
+    const fimMs = Date.now();
+    if (!Number.isNaN(inicioMs) && fimMs > inicioMs) {
+      faixas.push([inicioMs, fimMs]);
     }
   }
 
@@ -435,22 +403,6 @@ function escaparValorLike(valor) {
   return String(valor || '').replace(/[%,]/g, ' ').trim();
 }
 
-async function gerenciarSolicitacoesAcesso(acao, { id = null, email = null } = {}) {
-  const funcionarioId = String(usuarioSistemaLogado?.id || '').trim();
-  const token = String(usuarioSistemaLogado?.global_admin_token || '').trim();
-  if (!funcionarioId || !token) {
-    return { data: null, error: new Error('Sessão administrativa inválida.') };
-  }
-  const { data: resultado, error } = await sb.rpc('gerenciar_solicitacoes_acesso', {
-    p_funcionario_id: funcionarioId,
-    p_token: token,
-    p_acao: acao,
-    p_id: id,
-    p_email: email,
-  });
-  return { data: resultado?.data ?? resultado, error: error || (resultado?.ok ? null : new Error('Operação não autorizada.')) };
-}
-
 async function validarDuplicidadeCadastro({
   nome,
   email,
@@ -558,7 +510,7 @@ async function excluirCadastroCompletoPorEmail(email, opcoes = {}) {
 
   const resultados = await executarSemFiltrosTenantTemporario(() => Promise.allSettled([
     sb.from('email_tokens_auth').delete().eq('email', emailNormalizado),
-    gerenciarSolicitacoesAcesso('excluir_email', { email: emailNormalizado }),
+    sb.from('solicitacoes_acesso').delete().eq('email', emailNormalizado),
     sb.from('funcionarios').delete().eq('email', emailNormalizado),
   ]));
   const falha = resultados.find(resultado => resultado.status === 'fulfilled' && resultado.value?.error && !isMissingAccessRequestsTableError(resultado.value.error) && !isMissingTableError(resultado.value.error));
@@ -910,26 +862,14 @@ function obterPermissoesUsuario() {
 
 function usuarioPodeAcessar(pageId) {
   if (!usuarioSistemaLogado) return false;
-  const paginasAdminGlobal = new Set([
-    'dashboard_saas','empresas_saas','lojas_saas','usuarios_saas','conectores_saas',
-    'perfis','solicitacoes','emails','forcar_atualizacao_geral'
-  ]);
-  if (contextoEhAdminGlobal()) {
-    return usuarioSistemaLogado?.tipo === 'admin'
-      && usuarioSistemaLogado?.global_admin_authorized === true
-      && paginasAdminGlobal.has(pageId);
-  }
   // Autoridade global e contexto SaaS são coisas diferentes. Mesmo um usuário
   // administrador, quando está dentro de uma loja, não vê páginas do painel SaaS.
   const apenasAdminGlobal = ['solicitacoes', 'emails', 'forcar_atualizacao_geral', 'tela_preferida_login', 'empresas_saas', 'lojas_saas', 'configuracoes'];
   if (apenasAdminGlobal.includes(pageId)) {
-    return false;
+    return usuarioSistemaLogado?.tipo === 'admin' && !String(usuarioSistemaLogado?.loja_id || '').trim();
   }
   if (usuarioEhAdministrador()) return true;
   const permissoes = obterPermissoesUsuario();
-  if (pageId === 'checklist_modelos') return permissoes.tarefas === true;
-  if (pageId === 'relatorio_tarefas_cadastradas') return permissoes.checklists_cadastrados === true;
-  if (pageId === 'relatorio_item_obrigatorio_pizza') return permissoes.raffinato_itens_obrigatorios_v2 === true || permissoes.relatorio_produtos_raffinato === true || usuarioEhAdminOuPerfilAdmin();
   if (String(pageId || '').startsWith('integracoes_financeiras_')) return permissoes.integracoes_financeiras === true;
   if (pageId === 'tarefas_rapidas') {
     return usuarioPodeAcessarAlertasRapidos();
@@ -1307,10 +1247,6 @@ async function atualizarSessaoAdminLojaComPerfilCorreto(manterConectado = false)
 function aplicarPermissoesSistema() {
   if (!usuarioSistemaLogado) return;
 
-  // A sessão pode ser retomada diretamente do storage após um F5. Nesse fluxo,
-  // garante que o menu corresponda ao contexto antes de filtrar seus itens.
-  renderizarMenuContextual();
-
   document.querySelectorAll('.nav-btn[data-page]').forEach(btn => {
     const page = btn.dataset.page;
     const permitido = usuarioPodeAcessar(page);
@@ -1380,7 +1316,7 @@ function aplicarPermissoesSistema() {
   atualizarVisibilidadeCheckboxAdmin();
   // Ordem do menu é carregada explicitamente antes de restaurarPaginaAtivaSalvaOuPadrao
   // Recarregar tema da loja atual sempre que as permissões são reaplicadas
-  if (usuarioSistemaLogado) carregarTemaInterface();
+  if (usuarioSistemaLogado) carregarTemaUsuario();
   document.documentElement.classList.remove('admin-fouc-pendente');
 }
 
@@ -2002,10 +1938,6 @@ function atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa() {
   const btnNao = document.getElementById('btnContaFinanceiraMovimentarNao');
   if (btnSim) btnSim.classList.toggle('ativo', modalContaFinanceiraMovimentarSaldo === true);
   if (btnNao) btnNao.classList.toggle('ativo', modalContaFinanceiraMovimentarSaldo === false);
-  if (btnSim) btnSim.setAttribute('aria-pressed', String(modalContaFinanceiraMovimentarSaldo === true));
-  if (btnNao) btnNao.setAttribute('aria-pressed', String(modalContaFinanceiraMovimentarSaldo === false));
-  if (btnSim) btnSim.textContent = modalContaFinanceiraMovimentarSaldo === true ? '✓ SIM' : 'SIM';
-  if (btnNao) btnNao.textContent = modalContaFinanceiraMovimentarSaldo === false ? '✓ NÃO' : 'NÃO';
 }
 
 function definirMovimentacaoSaldoContaFinanceiraBaixa(movimentar = true) {
@@ -2031,7 +1963,6 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   if (!opcoes.length) return Promise.resolve(null);
   contasModalContaFinanceiraBaixa = opcoes;
   modalContaFinanceiraMovimentarSaldo = movimentarSaldo !== false;
-  modalContaFinanceiraSelecionadaId = opcoes.some(item => String(item.id) === String(contaAtualId)) ? String(contaAtualId) : '';
   atualizarEstadoMovimentacaoSaldoContaFinanceiraBaixa();
   overlay.dataset.modo = modo;
   if (valorWrap) valorWrap.style.display = modo === 'baixa' ? 'grid' : 'none';
@@ -2050,10 +1981,10 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   opcoesEl.innerHTML = opcoes.map((item, idx) => {
     const selecionada = String(item.id) === String(contaAtualId || '');
     return `
-      <button class="conta-financeira-opcao conta-financeira-cor-${idx % 6}${selecionada ? ' selecionada' : ''}" data-conta-id="${item.id}" type="button" aria-pressed="${selecionada}" onclick="selecionarContaFinanceiraBaixa('${item.id}')">
+      <button class="conta-financeira-opcao conta-financeira-cor-${idx % 6}" type="button" onclick="selecionarContaFinanceiraBaixa('${item.id}')">
         <span class="nome">${escaparHtmlBasico(item.nome || '-')}</span>
         <span class="saldo">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.saldo_atual || 0))}</span>
-        <span class="hint">${selecionada ? '✓ Conta selecionada' : (modo === 'estorno' ? 'Devolver nesta conta' : 'Toque para selecionar')}</span>
+        <span class="hint">${selecionada ? (modo === 'estorno' ? 'Conta de onde saiu o pagamento' : 'Conta vinculada atualmente') : (modo === 'estorno' ? 'Devolver nesta conta' : 'Clique para usar esta conta')}</span>
       </button>
     `;
   }).join('');
@@ -2061,11 +1992,6 @@ function abrirModalContaFinanceiraBaixaFinanceiro({ contas = [], contaAtualId = 
   msg.textContent = '';
   msg.className = 'msg';
   overlay.classList.add('show');
-  const btnConfirmar = document.getElementById('btnConfirmarContaFinanceiraBaixa');
-  if (btnConfirmar) {
-    btnConfirmar.disabled = !modalContaFinanceiraSelecionadaId;
-    btnConfirmar.textContent = modo === 'estorno' ? 'Confirmar devolução' : 'Confirmar baixa';
-  }
 
   return new Promise(resolve => {
     resolverModalContaFinanceiraBaixaPendente = resolve;
@@ -2080,28 +2006,6 @@ function selecionarContaFinanceiraBaixa(id) {
       msg.textContent = 'Conta selecionada inválida. Tente novamente.';
       msg.className = 'msg err';
     }
-    return;
-  }
-  modalContaFinanceiraSelecionadaId = String(conta.id);
-  document.querySelectorAll('#contaFinanceiraBaixaOpcoes .conta-financeira-opcao').forEach(botao => {
-    const selecionada = String(botao.dataset.contaId) === modalContaFinanceiraSelecionadaId;
-    botao.classList.toggle('selecionada', selecionada);
-    botao.setAttribute('aria-pressed', String(selecionada));
-    const hint = botao.querySelector('.hint');
-    if (hint) hint.textContent = selecionada ? '✓ Conta selecionada' : 'Toque para selecionar';
-  });
-  renderizarMenuContextual();
-  const btnConfirmar = document.getElementById('btnConfirmarContaFinanceiraBaixa');
-  if (btnConfirmar) btnConfirmar.disabled = false;
-  const msg = document.getElementById('contaFinanceiraBaixaMsg');
-  if (msg) { msg.textContent = ''; msg.className = 'msg'; }
-}
-
-function confirmarContaFinanceiraBaixaSelecionada() {
-  const conta = contasModalContaFinanceiraBaixa.find(item => String(item.id) === String(modalContaFinanceiraSelecionadaId)) || null;
-  if (!conta) {
-    const msg = document.getElementById('contaFinanceiraBaixaMsg');
-    if (msg) { msg.textContent = 'Selecione uma conta financeira para continuar.'; msg.className = 'msg err'; }
     return;
   }
   const overlay = document.getElementById('contaFinanceiraBaixaOverlay');
@@ -2137,7 +2041,6 @@ function fecharModalContaFinanceiraBaixa(resultado = null) {
 
   contasModalContaFinanceiraBaixa = [];
   modalContaFinanceiraMovimentarSaldo = true;
-  modalContaFinanceiraSelecionadaId = '';
   const resolver = resolverModalContaFinanceiraBaixaPendente;
   resolverModalContaFinanceiraBaixaPendente = null;
   if (resolver) resolver(resultado);
@@ -3883,8 +3786,11 @@ async function carregarNotificacoes() {
   const alertasEmail = [];
 
   try {
-    const { data: todasSolicitacoes, error: errSolicitacoes } = await gerenciarSolicitacoesAcesso('listar');
-    const solicitacoes = (todasSolicitacoes || []).filter(item => item.status === 'pendente');
+    const { data: solicitacoes, error: errSolicitacoes } = await sb
+      .from('solicitacoes_acesso')
+      .select('id, nome, email, created_at, status')
+      .eq('status', 'pendente')
+      .order('created_at', { ascending: false });
 
     if (usuarioPodeVerNotificacaoSolicitacao() && !errSolicitacoes && solicitacoes?.length) {
       const solicitacoesVisiveis = [];

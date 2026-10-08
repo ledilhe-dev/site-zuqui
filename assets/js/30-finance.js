@@ -186,6 +186,8 @@ function formatarMoedaBRFinanceiro(valor = 0) {
 
 function parseBRLCurrency(valor = '') {
   if (valor === null || valor === undefined || valor === '') return NaN;
+  // Valores que ja estao no modelo/banco nao podem voltar ao parser textual:
+  // Number(288.60) vira "288.6" e remover esse ponto produziria 2886.
   if (typeof valor === 'number') return Number.isFinite(valor) ? valor : NaN;
 
   let texto = String(valor).trim()
@@ -198,8 +200,11 @@ function parseBRLCurrency(valor = '') {
     texto = texto.replace(/\./g, '').replace(',', '.');
   } else {
     const pontos = (texto.match(/\./g) || []).length;
-    if (pontos > 1 || (pontos === 1 && /^-?\d{1,3}\.\d{3}$/.test(texto))) texto = texto.replace(/\./g, '');
+    if (pontos > 1 || (pontos === 1 && /^-?\d{1,3}\.\d{3}$/.test(texto))) {
+      texto = texto.replace(/\./g, '');
+    }
   }
+
   const numero = Number(texto);
   return Number.isFinite(numero) ? numero : NaN;
 }
@@ -235,11 +240,6 @@ function prepararValorCampoMoedaParaEdicao(valor = '') {
   const numero = lerValorMonetarioFinanceiro(valor);
   if (!Number.isFinite(numero)) return '';
   return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function faturaMascararValorImportado(campo) {
-  if (!campo) return;
-  campo.value = formatarEntradaMoedaFinanceiro(campo.value);
 }
 
 function prepararCampoMoedaFinanceiro(campo) {
@@ -795,7 +795,6 @@ function obterIdsLojasFinanceiroDaSessao() {
 
 function limparFormularioContaFinanceira() {
   contaFinanceiraEmEdicaoId = null;
-  fornecedorCartaoContaFinanceiraEmEdicaoId = null;
   const campoNome = document.getElementById('contaFinanceiraNome');
   if (campoNome) campoNome.value = '';
   configurarCampoSaldoContaFinanceira(true);
@@ -803,71 +802,6 @@ function limparFormularioContaFinanceira() {
   const btnCancelar = document.getElementById('btnCancelarContaFinanceira');
   if (btnSalvar) btnSalvar.textContent = 'Cadastrar';
   if (btnCancelar) btnCancelar.style.display = 'none';
-  const config = document.getElementById('contaFinanceiraCartaoConfig');
-  const check = document.getElementById('contaFinanceiraIsCartao');
-  if (config) config.hidden = true;
-  if (check) check.checked = false;
-  ['contaFinanceiraDiaFechamento','contaFinanceiraDiaVencimento'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-}
-
-function alternarCamposCartaoContaFinanceira() {
-  const marcado = !!document.getElementById('contaFinanceiraIsCartao')?.checked;
-  const campos = document.getElementById('contaFinanceiraCartaoCampos');
-  if (campos) campos.hidden = !marcado;
-}
-
-async function carregarConfiguracoesCartaoContaFinanceira() {
-  const lista = document.getElementById('listaConfiguracoesCartaoContaFinanceira');
-  if (!lista) return;
-  const lojas = obterIdsLojasFinanceiroDaSessao();
-  const { data, error } = await executarSemFiltroLojaTemporario(() => {
-    let query = sb.from('fornecedores').select('id,nome,is_cartao,dia_fechamento,dia_vencimento,loja_id,empresa_id').order('nome');
-    if (lojas.length) query = query.in('loja_id', lojas);
-    return query;
-  });
-  if (error) { lista.innerHTML='<div class="empty">Não foi possível carregar cartões e reembolsos.</div>'; return; }
-  configuracoesCartaoContaFinanceiraCache = data || [];
-  const visiveis = configuracoesCartaoContaFinanceiraCache.filter(item => item.is_cartao || /reembolso/i.test(String(item.nome || '')));
-  if (!visiveis.length) { lista.innerHTML='<div class="empty">Nenhum cartão ou reembolso cadastrado nesta loja.</div>'; return; }
-  lista.innerHTML='<div class="lista">'+visiveis.map(item=>`<div class="item"><div class="item-info"><div class="item-nome">${escaparHtmlBasico(item.nome||'-')}</div><div class="item-detalhe">${item.is_cartao?'Cartão':'Reembolso'}${item.dia_fechamento?` · Fecha dia ${item.dia_fechamento}`:''}${item.dia_vencimento?` · Vence dia ${item.dia_vencimento}`:''}</div></div><div class="item-actions"><button class="btn btn-ghost btn-sm" onclick="abrirEdicaoFornecedorPelaConta('${item.id}')">Editar configuração</button></div></div>`).join('')+'</div>';
-}
-
-function abrirEdicaoFornecedorPelaConta(id) {
-  abrirPagina('financeiro_fornecedores');
-  if (!(fornecedoresFinanceiroCache || []).some(item => String(item.id) === String(id))) {
-    carregarFornecedoresFinanceiro().then(() => editarFornecedorFinanceiro(id));
-  } else editarFornecedorFinanceiro(id);
-}
-
-function carregarVinculoCartaoContaFinanceira(conta) {
-  const config=document.getElementById('contaFinanceiraCartaoConfig'),vinculo=document.getElementById('contaFinanceiraCartaoVinculo');
-  const chave=textoFinanceiroNormalizado(conta?.nome||'');
-  const fornecedor=(fornecedoresFinanceiroCache||[]).find(item=>textoFinanceiroNormalizado(item.nome||'')===chave)
-    || configuracoesCartaoContaFinanceiraCache.find(item=>textoFinanceiroNormalizado(item.nome||'')===chave);
-  if (config) config.hidden=false;
-  fornecedorCartaoContaFinanceiraEmEdicaoId=fornecedor?.id||null;
-  const check=document.getElementById('contaFinanceiraIsCartao'); if(check) check.checked=!!fornecedor?.is_cartao;
-  const fechamento=document.getElementById('contaFinanceiraDiaFechamento'); if(fechamento) fechamento.value=fornecedor?.dia_fechamento??'';
-  const vencimento=document.getElementById('contaFinanceiraDiaVencimento'); if(vencimento) vencimento.value=fornecedor?.dia_vencimento??'';
-  if (vinculo) vinculo.textContent=fornecedor?`Vinculado ao fornecedor existente “${fornecedor.nome}”.`:'Não há fornecedor de mesmo nome. Cadastre ou vincule primeiro em Cadastro de fornecedor; nenhum registro será criado automaticamente.';
-  if (check) check.disabled=!fornecedor;
-  alternarCamposCartaoContaFinanceira();
-}
-
-function validarDiaCartaoContaFinanceira(id, rotulo) {
-  const texto=String(document.getElementById(id)?.value||'').trim();
-  if(!texto) return null;
-  const dia=Number.parseInt(texto,10);
-  if(!Number.isFinite(dia)||dia<1||dia>31) throw new Error(`${rotulo} deve ser entre 1 e 31.`);
-  return dia;
-}
-
-async function salvarVinculoCartaoContaFinanceira() {
-  if (!fornecedorCartaoContaFinanceiraEmEdicaoId) return;
-  const isCartao=!!document.getElementById('contaFinanceiraIsCartao')?.checked;
-  const payload={is_cartao:isCartao,dia_fechamento:isCartao?validarDiaCartaoContaFinanceira('contaFinanceiraDiaFechamento','Dia de fechamento'):null,dia_vencimento:isCartao?validarDiaCartaoContaFinanceira('contaFinanceiraDiaVencimento','Dia de vencimento'):null};
-  const { error }=await sb.from('fornecedores').update(payload).eq('id',fornecedorCartaoContaFinanceiraEmEdicaoId);
-  if(error) throw error;
 }
 
 async function carregarContasFinanceiras({ render = true, silencioso = false } = {}) {
@@ -927,8 +861,6 @@ async function carregarContasFinanceiras({ render = true, silencioso = false } =
     }
   }
 
-  if (render) await carregarConfiguracoesCartaoContaFinanceira();
-
   return contasFinanceirasCache;
 }
 
@@ -970,10 +902,6 @@ async function salvarContaFinanceira() {
     query = sb.from('contas_financeiras').insert([{ ...payload, ativo: true, loja_id: tenant.loja_id, empresa_id: tenant.empresa_id }]);
   }
 
-  if (contaFinanceiraEmEdicaoId && fornecedorCartaoContaFinanceiraEmEdicaoId) {
-    try { validarDiaCartaoContaFinanceira('contaFinanceiraDiaFechamento','Dia de fechamento'); validarDiaCartaoContaFinanceira('contaFinanceiraDiaVencimento','Dia de vencimento'); }
-    catch (validationError) { setMsg('msgContaFinanceira',validationError.message,'err'); return; }
-  }
   const { error } = await query;
   if (error) {
     if (isMissingContasFinanceirasTableError(error) || isMissingColumnError(error)) {
@@ -984,8 +912,6 @@ async function salvarContaFinanceira() {
     return;
   }
 
-  try { await salvarVinculoCartaoContaFinanceira(); }
-  catch (cardError) { setMsg('msgContaFinanceira',`Conta salva, mas a configuração do cartão não foi atualizada: ${mensagemErroSupabase(cardError,'erro desconhecido')}`,'err'); return; }
   limparFormularioContaFinanceira();
   setMsg('msgContaFinanceira', editando ? 'Conta financeira atualizada.' : 'Conta financeira cadastrada.', 'ok');
   await carregarContasFinanceiras();
@@ -1006,7 +932,6 @@ function editarContaFinanceira(id) {
   const btnCancelar = document.getElementById('btnCancelarContaFinanceira');
   if (btnSalvar) btnSalvar.textContent = 'Salvar';
   if (btnCancelar) btnCancelar.style.display = 'inline-flex';
-  carregarVinculoCartaoContaFinanceira(item);
   setMsg('msgContaFinanceira', `Editando conta: ${item.nome || '-'}.`, 'ok');
 }
 
@@ -1926,6 +1851,11 @@ function cancelarEdicaoRecFuturo() {
   fecharModalConfirmarRecFuturo();
 }
 
+function faturaMascararValorImportado(campo) {
+  if (!campo) return;
+  campo.value = formatarEntradaMoedaFinanceiro(campo.value);
+}
+
 function aplicarAtalhoPeriodoRecFuturo(tipo) {
   const inicioEl = document.getElementById('filtroRecFuturoInicio');
   const fimEl = document.getElementById('filtroRecFuturoFim');
@@ -2182,37 +2112,12 @@ async function excluirRecFuturo(id) {
   } catch(e) { alert('Erro ao excluir: ' + (e?.message || '')); }
 }
 
-function posicionarModalRecebiveisNaViewport(modal) {
-  if (!modal) return null;
-  if (modal.parentElement !== document.body) document.body.appendChild(modal);
-  return modal;
-}
-
-function definirMovimentacaoRecebimentoIndividual(valor = true) {
-  modalConfirmarRecFuturoMovimentarSaldo = valor === true;
-  const sim = document.getElementById('btnModalConfirmarMovimentarSim');
-  const nao = document.getElementById('btnModalConfirmarMovimentarNao');
-  sim?.classList.toggle('ativo', modalConfirmarRecFuturoMovimentarSaldo);
-  nao?.classList.toggle('ativo', !modalConfirmarRecFuturoMovimentarSaldo);
-  sim?.setAttribute('aria-pressed', String(modalConfirmarRecFuturoMovimentarSaldo));
-  nao?.setAttribute('aria-pressed', String(!modalConfirmarRecFuturoMovimentarSaldo));
-  if (sim) sim.textContent = modalConfirmarRecFuturoMovimentarSaldo ? '✓ SIM' : 'SIM';
-  if (nao) nao.textContent = modalConfirmarRecFuturoMovimentarSaldo ? 'NÃO' : '✓ NÃO';
-  const resumo = document.getElementById('modalConfirmarMovimentacaoResumo');
-  if (resumo) resumo.textContent = modalConfirmarRecFuturoMovimentarSaldo ? 'SIM — adicionar o valor ao saldo' : 'NÃO — salvar sem alterar o saldo';
-}
-
-async function abrirModalConfirmarRecFuturo(id) {
+function abrirModalConfirmarRecFuturo(id) {
   const item = recFuturosCache.find(i => String(i.id) === String(id));
   if (!item) return;
-  const modal = posicionarModalRecebiveisNaViewport(document.getElementById('modalConfirmarRecFuturo'));
+  const modal = document.getElementById('modalConfirmarRecFuturo');
   if (!modal) return;
-  modal.style.display = 'flex';
-  setMsg('msgModalConfirmarRecFuturo', 'Carregando contas financeiras...', '');
-  try { await carregarContasFinanceiras({ render:false, silencioso:true }); }
-  catch (erro) { setMsg('msgModalConfirmarRecFuturo', `Não foi possível carregar as contas: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`, 'err'); return; }
   document.getElementById('modalConfirmarRecFuturoId').value = id;
-  definirMovimentacaoRecebimentoIndividual(true);
   // Pr?-preencher com valores previstos
   const hoje = new Date().toISOString().slice(0, 10);
   document.getElementById('modalConfirmarData').value = item.confirmado_em ? String(item.confirmado_em).slice(0, 10) : hoje;
@@ -2228,6 +2133,7 @@ async function abrirModalConfirmarRecFuturo(id) {
   }
   document.getElementById('modalConfirmarObs').value = '';
   setMsg('msgModalConfirmarRecFuturo', '', '');
+  modal.style.display = 'flex';
 }
 
 function fecharModalConfirmarRecFuturo() {
@@ -2255,7 +2161,7 @@ async function confirmarRecebimentoFuturo() {
   const confirmacaoPin = await confirmarAcaoComPin({
     funcionario: obterFuncionarioOperadorAtual(),
     titulo: item.confirmado_em ? 'Confirmar alteração do recebimento' : 'Confirmar baixa do recebimento',
-    subtitulo: modalConfirmarRecFuturoMovimentarSaldo ? `Confirme sua senha para lançar ${formatarMoedaBRFinanceiro(valorConfirmado)} na conta selecionada.` : `Confirme sua senha para registrar ${formatarMoedaBRFinanceiro(valorConfirmado)} sem alterar o saldo da conta.`,
+    subtitulo: `Confirme sua senha para lançar ${formatarMoedaBRFinanceiro(valorConfirmado)} na conta selecionada.`,
     textoAcao: item.confirmado_em ? 'Salvar alteração' : 'Confirmar recebimento',
     escopo: 'empresa',
   });
@@ -2279,10 +2185,9 @@ async function confirmarRecebimentoFuturo() {
       const { error: erroEditar } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').update({
         conta_financeira_id: contaId,
         valor: valorConfirmado,
-        movimentar_saldo: modalConfirmarRecFuturoMovimentarSaldo,
       }).eq('id', recebivelAnterior.id));
       if (erroEditar) throw erroEditar;
-      if (!saldoGerenciadoNoBanco && modalConfirmarRecFuturoMovimentarSaldo) {
+      if (!saldoGerenciadoNoBanco) {
         const { error: erroEstorno } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: recebivelAnterior.conta_financeira_id, recebivelId: recebivelAnterior.id, tipo: 'estorno', valor: recebivelAnterior.valor, descricao: 'Estorno por edição de recebimento' });
         if (erroEstorno) throw erroEstorno;
         const { error: erroEntrada } = await registrarMovimentacaoContaFinanceira({ contaFinanceiraId: contaId, recebivelId: recebivelAnterior.id, tipo: 'entrada', valor: valorConfirmado, descricao: 'Entrada atualizada de recebimento' });
@@ -2311,19 +2216,17 @@ async function confirmarRecebimentoFuturo() {
       valor_confirmado: valorConfirmado,
       conta_financeira_confirmada_id: contaId,
     };
-    let { data: futuroTravado, error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
-      sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id).is('confirmado_em', null).select('id').maybeSingle()
+    let { error: erroUpdate } = await executarSemFiltroLojaTemporario(() =>
+      sb.from('recebiveis_futuros').update(payloadConfirmacao).eq('id', id)
     );
     // Fallback para bancos sem as colunas de auditoria da confirma·o
     if (erroUpdate && isMissingColumnError(erroUpdate)) {
       const tentativaMinima = await executarSemFiltroLojaTemporario(() =>
-        sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id).is('confirmado_em', null).select('id').maybeSingle()
+        sb.from('recebiveis_futuros').update({ confirmado_em: confirmadoEmISO }).eq('id', id)
       );
-      futuroTravado = tentativaMinima.data;
       erroUpdate = tentativaMinima.error;
     }
     if (erroUpdate) throw erroUpdate;
-    if (!futuroTravado?.id) throw new Error('Este recebimento já foi confirmado. Atualize a lista.');
 
     // 2. Criar o receb?vel real para aparecer na tela de Recebíveis
     const pagadorNome = item?.fornecedores?.nome || 'pagador';
@@ -2333,8 +2236,6 @@ async function confirmarRecebimentoFuturo() {
       forma_pagamento_id: item.forma_pagamento_id,
       conta_financeira_id: contaId,
       valor: valorConfirmado,
-      recebivel_futuro_id: item.id,
-      movimentar_saldo: modalConfirmarRecFuturoMovimentarSaldo,
       empresa_id: empresaId,
       loja_id: lojaId,
     };
@@ -2371,7 +2272,7 @@ async function confirmarRecebimentoFuturo() {
     // 3. Somar no saldo da conta (apenas se o banco n?o gerencia o saldo via trigger,
     //    para n?o somar em duplicidade ? mesma regra do cadastro manual de receb?veis)
     const saldoGerenciadoNoBanco = await recebiveisSaldoGerenciadoNoBanco();
-    if (!saldoGerenciadoNoBanco && modalConfirmarRecFuturoMovimentarSaldo) {
+    if (!saldoGerenciadoNoBanco) {
       const descricao = `Recebível futuro confirmado: ${pagadorNome} via ${formaNome}${obs ? ' - ' + obs : ''}`;
       const { error: erroMov } = await registrarMovimentacaoContaFinanceira({
         contaFinanceiraId: contaId,
@@ -2518,7 +2419,6 @@ function atualizarResumoSelecaoRecFuturos() {
   const qtdSelecionados = selecionadosVisiveis.length;
   const btnSelecionar = document.getElementById('btnSelecionarTodosRecFuturos');
   const btnExcluir = document.getElementById('btnExcluirRecFuturosSelecionados');
-  const btnConfirmar = document.getElementById('btnConfirmarRecFuturosSelecionados');
   const resumo = document.getElementById('resumoSelecaoRecFuturos');
   const acoes = document.getElementById('acoesSelecaoRecFuturos');
   const valorSelecionado = (recFuturosCache || [])
@@ -2535,128 +2435,11 @@ function atualizarResumoSelecaoRecFuturos() {
     btnExcluir.disabled = !qtdSelecionados;
     btnExcluir.style.display = qtdSelecionados ? '' : 'none';
   }
-  if (btnConfirmar) btnConfirmar.disabled = !qtdSelecionados || baixaMultiplaRecebiveisProcessando;
   if (resumo) {
     resumo.textContent = qtdSelecionados
       ? `${qtdSelecionados} selecionada(s): ${formatarMoedaBRFinanceiro(valorSelecionado)}`
       : (totalVisiveis ? `${totalVisiveis} recebimento(s) no filtro.` : 'Nenhum recebimento selecionado.');
   }
-}
-
-function obterRecFuturosSelecionadosPendentes() {
-  return (recFuturosCache || []).filter(item => recFuturosSelecionadosIds.has(String(item.id)) && !item.confirmado_em);
-}
-
-function atualizarEstadoModalBaixaMultiplaRecebiveis() {
-  const sim = document.getElementById('btnBaixaMultiplaMovimentarSim');
-  const nao = document.getElementById('btnBaixaMultiplaMovimentarNao');
-  [sim, nao].forEach((btn, indice) => {
-    const ativo = indice === 0 ? baixaMultiplaRecebiveisMovimentarSaldo : !baixaMultiplaRecebiveisMovimentarSaldo;
-    btn?.classList.toggle('ativo', ativo); btn?.setAttribute('aria-pressed', String(ativo));
-    if (btn) btn.textContent = ativo ? `✓ ${indice === 0 ? 'SIM' : 'NÃO'}` : (indice === 0 ? 'SIM' : 'NÃO');
-  });
-  document.querySelectorAll('#baixaMultiplaRecebiveisContas .conta-financeira-opcao').forEach(btn => {
-    const ativo = String(btn.dataset.contaId) === String(baixaMultiplaRecebiveisContaId);
-    btn.classList.toggle('selecionada', ativo); btn.setAttribute('aria-pressed', String(ativo));
-    const hint = btn.querySelector('.hint'); if (hint) hint.textContent = ativo ? '✓ Conta selecionada' : 'Toque para selecionar';
-  });
-  const confirmar = document.getElementById('btnExecutarBaixaMultiplaRecebiveis');
-  if (confirmar) confirmar.disabled = !baixaMultiplaRecebiveisContaId || baixaMultiplaRecebiveisProcessando;
-}
-
-function definirMovimentacaoBaixaMultiplaRecebiveis(valor) { baixaMultiplaRecebiveisMovimentarSaldo = valor === true; atualizarEstadoModalBaixaMultiplaRecebiveis(); }
-function selecionarContaBaixaMultiplaRecebiveis(id) { baixaMultiplaRecebiveisContaId = String(id || ''); atualizarEstadoModalBaixaMultiplaRecebiveis(); }
-
-async function abrirModalBaixaMultiplaRecebiveis() {
-  const itens = obterRecFuturosSelecionadosPendentes();
-  if (!itens.length) { setMsg('msgRecFuturosLista', 'Selecione ao menos um recebimento pendente.', 'err'); return; }
-  const overlay = posicionarModalRecebiveisNaViewport(document.getElementById('baixaMultiplaRecebiveisOverlay'));
-  if (!overlay) { setMsg('msgRecFuturosLista', 'O modal de confirmação não foi carregado. Atualize a página com Ctrl+F5.', 'err'); return; }
-  overlay.classList.add('show');
-  setMsg('msgBaixaMultiplaRecebiveis', 'Carregando contas financeiras...', '');
-  try { await carregarContasFinanceiras({ render:false, silencioso:true }); }
-  catch (erro) { setMsg('msgBaixaMultiplaRecebiveis', `Não foi possível carregar as contas: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`, 'err'); return; }
-  const contas = (contasFinanceirasCache || []).filter(c => c?.ativo !== false);
-  if (!contas.length) { setMsg('msgBaixaMultiplaRecebiveis', 'Cadastre e ative uma conta financeira antes de confirmar.', 'err'); return; }
-  baixaMultiplaRecebiveisContaId = '';
-  baixaMultiplaRecebiveisMovimentarSaldo = true;
-  const total = itens.reduce((s, item) => s + Number(item.valor || 0), 0);
-  document.getElementById('baixaMultiplaRecebiveisQtd').textContent = String(itens.length);
-  document.getElementById('baixaMultiplaRecebiveisTotal').textContent = formatarMoedaBRFinanceiro(total);
-  document.getElementById('baixaMultiplaRecebiveisSubtitle').textContent = `${itens.length} recebível(is) selecionado(s)`;
-  document.getElementById('baixaMultiplaRecebiveisItens').innerHTML = itens.map(item => `<div class="baixa-multipla-item"><span><strong>${escaparHtmlBasico(item.fornecedores?.nome || 'Pagador')}</strong><small>${formatarDataBRFinanceiro(item.data_prevista)}</small></span><strong>${formatarMoedaBRFinanceiro(item.valor || 0)}</strong></div>`).join('');
-  document.getElementById('baixaMultiplaRecebiveisContas').innerHTML = contas.map((conta, i) => `<button class="conta-financeira-opcao conta-financeira-cor-${i % 6}" data-conta-id="${conta.id}" aria-pressed="false" type="button" onclick="selecionarContaBaixaMultiplaRecebiveis('${conta.id}')"><span class="nome">${escaparHtmlBasico(conta.nome || '-')}</span><span class="saldo">${formatarMoedaBRFinanceiro(conta.saldo_atual || 0)}</span><span class="hint">Toque para selecionar</span></button>`).join('');
-  document.getElementById('btnExecutarBaixaMultiplaRecebiveis').textContent = `Confirmar ${itens.length} recebimento(s)`;
-  setMsg('msgBaixaMultiplaRecebiveis', '', '');
-  atualizarEstadoModalBaixaMultiplaRecebiveis();
-}
-
-function configurarBotaoBaixaMultiplaRecebiveis() {
-  const botao = document.getElementById('btnConfirmarRecFuturosSelecionados');
-  const overlay = document.getElementById('baixaMultiplaRecebiveisOverlay');
-  if (overlay) posicionarModalRecebiveisNaViewport(overlay);
-  if (!botao || botao.dataset.cliqueConfigurado === 'true') return;
-  botao.dataset.cliqueConfigurado = 'true';
-  botao.removeAttribute('onclick');
-  botao.addEventListener('click', evento => {
-    evento.preventDefault();
-    evento.stopPropagation();
-    Promise.resolve(abrirModalBaixaMultiplaRecebiveis()).catch(erro => {
-      const mensagem = `Não foi possível abrir a confirmação múltipla: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`;
-      setMsg('msgRecFuturosLista', mensagem, 'err');
-      const modal = posicionarModalRecebiveisNaViewport(document.getElementById('baixaMultiplaRecebiveisOverlay'));
-      modal?.classList.add('show');
-      setMsg('msgBaixaMultiplaRecebiveis', mensagem, 'err');
-    });
-  });
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', configurarBotaoBaixaMultiplaRecebiveis);
-else configurarBotaoBaixaMultiplaRecebiveis();
-
-function fecharModalBaixaMultiplaRecebiveis() { if (baixaMultiplaRecebiveisProcessando) return; document.getElementById('baixaMultiplaRecebiveisOverlay')?.classList.remove('show'); }
-
-async function confirmarRecFuturoEmLote(item, conta, movimentarSaldo, confirmadoPorNome) {
-  const valor = Number(Number(item.valor || 0).toFixed(2));
-  if (!Number.isFinite(valor) || valor <= 0) throw new Error('Valor pendente inválido.');
-  const confirmadoEm = new Date().toISOString();
-  const { data: travado, error: erroTrava } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({ confirmado_em:confirmadoEm, confirmado_por_nome:confirmadoPorNome, valor_confirmado:valor, conta_financeira_confirmada_id:conta.id }).eq('id', item.id).is('confirmado_em', null).select('id').maybeSingle());
-  if (erroTrava) throw erroTrava;
-  if (!travado?.id) throw new Error('O recebimento já foi confirmado por outro usuário.');
-  const payload = { pagador_id:item.pagador_id, forma_pagamento_id:item.forma_pagamento_id, conta_financeira_id:conta.id, valor, empresa_id:conta.empresa_id || item.empresa_id || null, loja_id:conta.loja_id || item.loja_id || null, criado_por_id:obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null, criado_por_nome:confirmadoPorNome, recebivel_futuro_id:item.id, data_prevista_original:item.data_prevista || null, movimentar_saldo:movimentarSaldo };
-  const { error: erroRecebivel } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis').insert([payload]));
-  if (erroRecebivel) {
-    await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').update({ confirmado_em:null, confirmado_por_nome:null, valor_confirmado:null, conta_financeira_confirmada_id:null }).eq('id', item.id).eq('confirmado_em', confirmadoEm));
-    throw erroRecebivel;
-  }
-  return valor;
-}
-
-async function confirmarBaixaMultiplaRecebiveis() {
-  if (baixaMultiplaRecebiveisProcessando) return;
-  const itens = obterRecFuturosSelecionadosPendentes();
-  const conta = (contasFinanceirasCache || []).find(c => String(c.id) === String(baixaMultiplaRecebiveisContaId));
-  if (!itens.length || !conta) { setMsg('msgBaixaMultiplaRecebiveis', 'Selecione os recebíveis e uma conta financeira.', 'err'); return; }
-  const total = itens.reduce((s, item) => s + Number(item.valor || 0), 0);
-  const pin = await confirmarAcaoComPin({ funcionario:obterFuncionarioOperadorAtual(), titulo:'Baixa múltipla de recebíveis', subtitulo:`Confirme ${itens.length} recebimento(s), total ${formatarMoedaBRFinanceiro(total)}${baixaMultiplaRecebiveisMovimentarSaldo ? `, movimentando a conta ${conta.nome}.` : ', sem movimentar o saldo.'}`, textoAcao:'Confirmar recebimentos', escopo:'empresa' });
-  if (!pin) return;
-  baixaMultiplaRecebiveisProcessando = true;
-  const btn = document.getElementById('btnExecutarBaixaMultiplaRecebiveis');
-  if (btn) { btn.disabled = true; btn.textContent = 'Processando recebimentos...'; }
-  let confirmados = 0, totalConfirmado = 0; const falhas = [];
-  for (const item of itens) {
-    try { totalConfirmado += await confirmarRecFuturoEmLote(item, conta, baixaMultiplaRecebiveisMovimentarSaldo, pin.nomeFuncionario || usuarioSistemaLogado?.nome || 'Usuário'); confirmados++; recFuturosSelecionadosIds.delete(String(item.id)); }
-    catch (erro) { falhas.push(`${item.fornecedores?.nome || 'Recebível'}: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`); }
-  }
-  baixaMultiplaRecebiveisProcessando = false;
-  document.getElementById('baixaMultiplaRecebiveisOverlay')?.classList.remove('show');
-  await carregarContasFinanceiras({ render:false, silencioso:true });
-  await carregarRecFuturos();
-  recebiveisFinanceiroListaVisivel = true; await carregarRecebiveisFinanceiro();
-  if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
-  const mensagem = falhas.length ? `${confirmados} recebimento(s) confirmado(s). ${falhas.length} não pôde/puderam ser confirmado(s): ${falhas.join(' | ')}` : `${confirmados} recebimento(s) confirmado(s) com sucesso — ${formatarMoedaBRFinanceiro(totalConfirmado)}`;
-  setMsg('msgRecFuturosLista', mensagem, falhas.length ? 'err' : 'ok');
-  atualizarResumoSelecaoRecFuturos();
 }
 
 async function excluirRecFuturosSelecionados() {
@@ -3176,36 +2959,6 @@ function faturaCalcularVencimentoPorDia(dataCompraISO, diaVencimento, diaFechame
     : `${anoV}-${mm}-${dd}`;
 }
 
-// A primeira parcela preserva a fatura ja determinada para a compra. As demais
-// avancam a competencia e voltam ao dia-base configurado no cartao.
-function faturaCalcularVencimentoParcela(vencimentoPrimeiraISO, indiceParcela, diaVencimentoCartao) {
-  const primeiro = String(vencimentoPrimeiraISO || '').slice(0, 10);
-  const indice = Math.max(0, Number.parseInt(indiceParcela, 10) || 0);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(primeiro) || indice === 0) return primeiro || null;
-  const diaConfigurado = Number.parseInt(diaVencimentoCartao, 10);
-  const diaPrimeiroVencimento = Number.parseInt(primeiro.slice(8, 10), 10);
-  const diaBase = Number.isFinite(diaConfigurado) && diaConfigurado >= 1 && diaConfigurado <= 31
-    ? diaConfigurado
-    : diaPrimeiroVencimento;
-  const [anoPrimeiro, mesPrimeiro] = primeiro.split('-').map(Number);
-  const ultimoDiaPrimeiraCompetencia = new Date(anoPrimeiro, mesPrimeiro, 0).getDate();
-  const ancoraCompetencia = `${anoPrimeiro}-${String(mesPrimeiro).padStart(2, '0')}-${String(Math.min(diaBase, ultimoDiaPrimeiraCompetencia)).padStart(2, '0')}`;
-  return calcularVencimentoParcelaFinanceiro(ancoraCompetencia, indice, 30);
-}
-
-function faturaGerarParcelasCompra(valorTotal, quantidade, vencimentoPrimeiraISO, diaVencimentoCartao) {
-  const qtd = Math.max(1, Number.parseInt(quantidade, 10) || 1);
-  const totalCentavos = Math.round(Number(valorTotal || 0) * 100);
-  const baseCentavos = Math.floor(totalCentavos / qtd);
-  const centavosRestantes = totalCentavos % qtd;
-  return Array.from({ length: qtd }, (_, indice) => ({
-    numero: indice + 1,
-    totalParcelas: qtd,
-    valor: (baseCentavos + (indice < centavosRestantes ? 1 : 0)) / 100,
-    vencimento: faturaCalcularVencimentoParcela(vencimentoPrimeiraISO, indice, diaVencimentoCartao),
-  }));
-}
-
 function faturaObterCategoriaItem(item) {
   const id = String(item?.categoria_id || '').trim();
   return id ? (categoriasCompraCache || []).find(c => String(c.id) === id) || null : null;
@@ -3238,11 +2991,6 @@ function faturaAtualizarCardSelecoes(itemId) {
   if (catBtn) {
     catBtn.innerHTML = faturaHtmlCategoriaBotao(item);
     catBtn.classList.toggle('selecionado', !!item.categoria_id);
-    catBtn.classList.remove('erro');
-  }
-  if (item.categoria_id) {
-    card.style.border = '';
-    card.style.boxShadow = '';
   }
   const fornBtn = card.querySelector('[data-fatura-forn-btn]');
   if (fornBtn) {
@@ -3275,7 +3023,7 @@ function faturaCriarEscolhaOverlay({ titulo = '', subtitulo = '', body = '' } = 
           <div class="fatura-choice-title">${escaparHtmlBasico(titulo)}</div>
           <div class="fatura-choice-subtitle">${escaparHtmlBasico(subtitulo || '')}</div>
         </div>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="faturaFecharEscolhaOverlay()" aria-label="Voltar">← Voltar</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="faturaFecharEscolhaOverlay()">?</button>
       </div>
       <div class="fatura-choice-body">${body}</div>
     </div>
@@ -3288,12 +3036,12 @@ function faturaAbrirCategoriasItem(itemId) {
   const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
   if (!item) return;
   const cards = [
-    `<button type="button" class="fatura-cat-card ${!item.categoria_id ? 'selecionado' : ''}" data-fatura-cat-nome="sem categoria" onclick="faturaEscolherCategoriaItem('${itemId}', '')">
+    `<button type="button" class="fatura-cat-card ${!item.categoria_id ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '')">
       <span class="fatura-cat-icone vazio">+</span>
       <strong>Sem categoria</strong>
     </button>`,
     ...(categoriasCompraCache || []).map(cat => `
-      <button type="button" class="fatura-cat-card ${String(cat.id) === String(item.categoria_id || '') ? 'selecionado' : ''}" data-fatura-cat-nome="${escaparHtmlBasico(String(cat.nome || '').toLowerCase())}" onclick="faturaEscolherCategoriaItem('${itemId}', '${cat.id}')">
+      <button type="button" class="fatura-cat-card ${String(cat.id) === String(item.categoria_id || '') ? 'selecionado' : ''}" onclick="faturaEscolherCategoriaItem('${itemId}', '${cat.id}')">
         <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(cat.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(cat.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(cat.icone, 30)}</span>
         <strong>${escaparHtmlBasico(cat.nome || 'Categoria')}</strong>
       </button>
@@ -3302,17 +3050,7 @@ function faturaAbrirCategoriasItem(itemId) {
   faturaCriarEscolhaOverlay({
     titulo: 'Categoria',
     subtitulo: item.descricao || '',
-    body: `<input class="fatura-choice-search fatura-category-search" type="search" autocomplete="off" placeholder="Buscar categoria" aria-label="Buscar categoria pelo nome" oninput="faturaFiltrarCategoriasEscolha(this.value)">
-      <div class="fatura-cat-grid">${cards}</div>`,
-  });
-  setTimeout(() => document.querySelector('#faturaEscolhaOverlay .fatura-category-search')?.focus(), 0);
-}
-
-function faturaFiltrarCategoriasEscolha(valor) {
-  const normalizar = texto => String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const busca = normalizar(valor).trim();
-  document.querySelectorAll('#faturaEscolhaOverlay [data-fatura-cat-nome]').forEach(card => {
-    card.style.display = !busca || normalizar(card.getAttribute('data-fatura-cat-nome')).includes(busca) ? '' : 'none';
+    body: `<div class="fatura-cat-grid">${cards}</div>`,
   });
 }
 
@@ -4535,13 +4273,6 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
   const total = (selecionados || []).reduce((s, i) => s + Number(i.valor || 0), 0);
   const totalDestinos = (selecionados || []).reduce((s, item) =>
     s + (item._divisoesAplicadas ? Math.max(1, item._divisoes?.length || 0) : 1), 0);
-  const totalTitulos = (selecionados || []).reduce((s, item) => {
-    const qtd = item.total_parcelas && item.parcela_atual
-      ? item.total_parcelas - item.parcela_atual + 1
-      : Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
-    const destinos = item._divisoesAplicadas ? Math.max(1, item._divisoes?.length || 0) : 1;
-    return s + (qtd * destinos);
-  }, 0);
   const itemSemCategoria = item => item._divisoesAplicadas
     ? !Array.isArray(item._divisoes) || item._divisoes.some(parte => !parte.categoria_id)
     : !item.categoria_id;
@@ -4564,15 +4295,6 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     const fornecedor = faturaObterFornecedorItem(item);
     const categoria = faturaObterCategoriaItem(item);
     const vencimento = formatarDataBRFinanceiro(String(item.vencimento_fatura || item.data || '').slice(0, 10));
-    const ehParceladoOFX = item.total_parcelas && item.parcela_atual;
-    const qtdParcelas = ehParceladoOFX
-      ? item.total_parcelas - item.parcela_atual + 1
-      : Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
-    const parcelas = !ehParceladoOFX && qtdParcelas > 1
-      ? faturaGerarParcelasCompra(Number(item.valorTotalCompra ?? item.valor ?? 0), qtdParcelas,
-          String(item.vencimento_fatura || item.data || '').slice(0, 10), fornecedor?.dia_vencimento)
-      : [];
-    const resumoParcelas = parcelas.length > 1 ? `<span class="fatura-confirm-parcelas"><b>${qtdParcelas} títulos · 1ª de ${formatarMoedaBRFinanceiro(parcelas[0].valor)}</b><small>Total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra ?? item.valor)}</small><small>1ª parcela: ${formatarDataBRFinanceiro(parcelas[0].vencimento)} · Próxima: ${formatarDataBRFinanceiro(parcelas[1].vencimento)}</small></span>` : '';
     const observacao = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
     const divisoes = item._divisoesAplicadas ? (item._divisoes || []) : [];
     const detalheCategorias = divisoes.length
@@ -4587,7 +4309,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
     return `
       <div class="nc-confirm-line fatura-confirm-line">
         <span>${escaparHtmlBasico(item.descricao || 'Compra')}</span>
-        <strong>${parcelas.length > 1 ? resumoParcelas : `${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small>`}<em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
+        <strong>${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small><em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
         ${detalheCategorias}
       </div>
     `;
@@ -4601,7 +4323,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
   ].filter(Boolean).join(' ');
   const body = `
     <div class="nc-confirm-lines">
-      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} compra(s) · ${totalTitulos} título(s) · ${totalDestinos} categoria(s)<small>${formatarMoedaBRFinanceiro(total)}</small></strong></div>
+      <div class="nc-confirm-line"><span>TOTAL</span><strong>${selecionados.length} compra(s) · ${totalDestinos} categoria(s)<small>${formatarMoedaBRFinanceiro(total)}</small></strong></div>
       ${linhas}
       ${extras}
     </div>
@@ -4625,22 +4347,6 @@ async function faturaLancarSelecionados() {
   const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
   if (semFornecedorObrigatorio.length) {
     alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.`);
-    return;
-  }
-  const categoriaValida = categoriaId => String(categoriaId || '').trim()
-    && (categoriasCompraCache || []).some(categoria => String(categoria.id) === String(categoriaId));
-  const semCategoria = selecionados.filter(item => item._divisoesAplicadas
-    ? !Array.isArray(item._divisoes) || item._divisoes.some(parte => !categoriaValida(parte.categoria_id))
-    : !categoriaValida(item.categoria_id));
-  if (semCategoria.length) {
-    const card = document.getElementById('faturaItem_' + semCategoria[0].id);
-    if (card) {
-      card.style.border = '1px solid var(--red)';
-      card.style.boxShadow = '0 0 0 2px var(--red-glow)';
-      card.querySelector('[data-fatura-cat-btn]')?.classList.add('erro');
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    alert('Selecione uma categoria para todos os lançamentos antes de continuar.');
     return;
   }
   const divisoesInvalidas = selecionados.filter(item => item._divisoesAplicadas && (
@@ -4816,9 +4522,9 @@ async function faturaLancarSelecionados() {
       // parcela e calendário da compra original.
       const linhas = partesCompra.flatMap((parte, indiceParte) => {
         const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
-        const parcelasCompra = dividirValorTotal
-          ? faturaGerarParcelasCompra(parte.valor, qtdParcelas, vencimentoBase, diaVencForn)
-          : null;
+        const valorTotalCentavos = Math.round(Number(parte.valor || 0) * 100);
+        const valorBaseCentavos = dividirValorTotal ? Math.floor(valorTotalCentavos / qtdParcelas) : valorTotalCentavos;
+        const centavosRestantes = dividirValorTotal ? valorTotalCentavos % qtdParcelas : 0;
         return Array.from({ length: qtdParcelas }, (_, i) => {
         // Vencimentos:
         //  - Parcela ATUAL do OFX (i=0): respeita o vencimento definido na revis?o.
@@ -4826,9 +4532,7 @@ async function faturaLancarSelecionados() {
         //    dia de vencimento configurado, avan?a m?s a m?s mantendo esse dia;
         //    sen?o, soma 30 dias (comportamento antigo).
         let venc;
-        if (parcelasCompra) {
-          venc = parcelasCompra[i].vencimento;
-        } else if (ehParceladoOFX && i === 0) {
+        if (ehParceladoOFX && i === 0) {
           venc = ehDataValida(vencimentoBase) ? vencimentoBase : dataCompra;
         } else if (diaVencForn) {
           const baseISO = ehDataValida(vencimentoBase) ? vencimentoBase : dataCompra;
@@ -4858,7 +4562,7 @@ async function faturaLancarSelecionados() {
           // Distribui eventual diferenca de centavos nas primeiras parcelas,
           // garantindo que a soma final seja exatamente o valor informado.
           valor_compra: dividirValorTotal
-            ? parcelasCompra[i].valor
+            ? (valorBaseCentavos + (i < centavosRestantes ? 1 : 0)) / 100
             : Number(Number(parte.valor || 0).toFixed(2)),
           observacao: (() => {
             const obsItem = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
@@ -5270,9 +4974,8 @@ function filtrarCategoriasCompraCadastradas() {
 
 async function carregarCategoriasCompra() {
   const lista = document.getElementById('listaCategorias');
-  if (lista) {
-    lista.innerHTML = '<div class="empty">Carregando...</div>';
-  }
+  if (!lista) return;
+  lista.innerHTML = '<div class="empty">Carregando...</div>';
   try {
     const lojaSessao = String(obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || '').trim();
     let query = sb.from('categorias_compra').select('*').eq('ativo', true).order('nome');
@@ -5281,15 +4984,9 @@ async function carregarCategoriasCompra() {
     if (error) throw error;
     categoriasCompraCache = data || [];
     preencherSelectCategoriasCompra();
-    if (lista) {
-      renderizarListaCategoriasCompra();
-    }
+    renderizarListaCategoriasCompra();
   } catch(e) {
-    if (lista) {
-      lista.innerHTML = `<div class="empty">Erro: ${mensagemErroSupabase(e, e?.message||'')}</div>`;
-    } else {
-      console.warn('Não foi possível carregar categorias de compra:', e);
-    }
+    lista.innerHTML = `<div class="empty">Erro: ${mensagemErroSupabase(e, e?.message||'')}</div>`;
   }
 }
 

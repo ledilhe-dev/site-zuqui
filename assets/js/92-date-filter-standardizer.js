@@ -43,24 +43,6 @@
     return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
-  function hojeLocalISO() {
-    const agora = new Date();
-    const local = new Date(agora.getTime() - agora.getTimezoneOffset() * 60000);
-    return local.toISOString().slice(0, 10);
-  }
-
-  function preencherPeriodosVaziosComHoje() {
-    const hoje = hojeLocalISO();
-    document.querySelectorAll('input[type="date"]').forEach(campo => {
-      if (campo.value) return;
-      const label = campo.closest('label')?.textContent || document.querySelector(`label[for="${campo.id}"]`)?.textContent || '';
-      const referencia = normalizar(`${campo.id || ''} ${campo.name || ''} ${campo.title || ''} ${campo.getAttribute('aria-label') || ''} ${label}`);
-      const idPeriodo = /(?:inicio|fim|start|end)$/.test(normalizar(campo.id || campo.name || ''));
-      const rotuloPeriodo = /data\s+(?:inicial|final)/.test(referencia);
-      if (idPeriodo || rotuloPeriodo) campo.value = hoje;
-    });
-  }
-
   function rotuloDoPar(base, inicio) {
     const label = document.querySelector(`label[for="${inicio.id}"]`)?.textContent || inicio.closest('label')?.textContent || '';
     const fonte = normalizar(`${base} ${inicio.title || ''} ${inicio.getAttribute('aria-label') || ''} ${label}`);
@@ -177,28 +159,13 @@
   }
 
   function executar() {
-    preencherPeriodosVaziosComHoje();
     rotularFiltros();
-
-    // Baixar contas já possui o par de datas e o critério nativos. Impede que o
-    // padronizador genérico crie um segundo conjunto e comprima o grid da tela.
-    const paginaBaixarContas = document.getElementById('financeiro_baixar_contas');
-    if (paginaBaixarContas) {
-      paginaBaixarContas.querySelectorAll('.date-filter-standard').forEach(wrapper => wrapper.remove());
-      paginaBaixarContas.querySelectorAll('input[type="date"]').forEach(input => {
-        input.dataset.dateFilterNative = 'true';
-        delete input.dataset.dateFilterEnhanced;
-        input.classList.remove('date-filter-original-hidden');
-        input.closest('.financeiro-filtro-compacto, .campo-com-label, label')?.classList.remove('date-filter-original-hidden');
-      });
-    }
     document.querySelectorAll('.date-filter-standard').forEach((wrapper, indice, todos) => {
       const bloco = blocoDo(wrapper);
-      const primeiro = [...todos].find(item => item !== wrapper && blocoDo(item) === bloco);
+      const primeiro = todos.find(item => item !== wrapper && blocoDo(item) === bloco);
       if (primeiro) wrapper.remove();
     });
     const inicios = [...document.querySelectorAll('input[type="date"][id^="filtro"][id$="Inicio"]')]
-      .filter(input => !input.closest('#financeiro_baixar_contas'))
       .filter(input => input.dataset.dateFilterEnhanced !== 'true' && input.dataset.dateFilterNative !== 'true');
     const porBloco = new Map();
     inicios.forEach(inicio => {
