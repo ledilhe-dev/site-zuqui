@@ -830,19 +830,15 @@ async function desvincularFuncionarioParaExclusao(funcionarioId) {
   const id = String(funcionarioId || '').trim();
   if (!id) return { success: false, message: 'Funcionário inválido para exclusão.' };
 
-  const operacoes = [
-    sb.from('tarefas').update({ funcionario_id: null }).eq('funcionario_id', id),
-    sb.from('checklist_lancamentos').update({ funcionario_id: null }).eq('funcionario_id', id),
-    sb.from('checklist_execucoes').update({ funcionario_id: null }).eq('funcionario_id', id),
-    sb.from('checklist_execucoes').update({ usuario_inicio_id: null }).eq('usuario_inicio_id', id),
-    sb.from('checklist_execucoes').update({ usuario_fim_id: null }).eq('usuario_fim_id', id),
-    sb.from('checklist_lancamento_eventos').update({ funcionario_responsavel_id: null }).eq('funcionario_responsavel_id', id),
-    sb.from('checklist_lancamento_eventos').update({ funcionario_ator_id: null }).eq('funcionario_ator_id', id),
-    // Remove os vínculos de loja (multi-loja) para permitir a exclusão sem violar FK.
-    executarSemFiltroLojaTemporario(() => sb.from('funcionario_lojas').delete().eq('funcionario_id', id)),
+  const verificacoes = [
+    ['ponto', sb.from('ponto_registros').select('id', { count: 'exact', head: true }).eq('funcionario_id', id)],
+    ['tarefas', sb.from('tarefas').select('id', { count: 'exact', head: true }).eq('funcionario_id', id)],
+    ['programações', sb.from('checklist_lancamentos').select('id', { count: 'exact', head: true }).eq('funcionario_id', id)],
+    ['execuções', sb.from('checklist_execucoes').select('id', { count: 'exact', head: true })
+      .or(`funcionario_id.eq.${id},usuario_inicio_id.eq.${id},usuario_fim_id.eq.${id}`)],
   ];
 
-  const resultados = await Promise.allSettled(operacoes);
+  const resultados = await Promise.allSettled(verificacoes.map(([, consulta]) => consulta));
   const falha = resultados.find(resultado => {
     if (resultado.status !== 'fulfilled') return true;
     const erro = resultado.value?.error;
@@ -861,6 +857,24 @@ async function desvincularFuncionarioParaExclusao(funcionarioId) {
       return { success: false, message: mensagemErroSupabase(falha.value?.error, 'Erro ao desvincular registros do funcionário.') };
     }
     return { success: false, message: 'Erro ao preparar a exclusão do funcionário.' };
+  }
+
+  const vinculos = resultados.map((resultado, indice) => ({
+    nome: verificacoes[indice][0],
+    total: resultado.status === 'fulfilled' ? Number(resultado.value?.count || 0) : 0,
+  })).filter(item => item.total > 0);
+  if (vinculos.length) {
+    return {
+      success: false,
+      message: `Funcionário preservado: existem vínculos com ${vinculos.map(item => `${item.nome} (${item.total})`).join(', ')}. Desative o acesso em vez de excluir.`,
+    };
+  }
+
+  const { error: erroVinculosLoja } = await executarSemFiltroLojaTemporario(() =>
+    sb.from('funcionario_lojas').delete().eq('funcionario_id', id)
+  );
+  if (erroVinculosLoja && !isMissingTableError(erroVinculosLoja)) {
+    return { success: false, message: mensagemErroSupabase(erroVinculosLoja, 'Erro ao remover o vínculo de loja do funcionário.') };
   }
 
   return { success: true };

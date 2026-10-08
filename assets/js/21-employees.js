@@ -1351,7 +1351,7 @@ async function excluirFuncionario(id) {
   const confirmacao = await abrirConfirmacaoSistema({
     title: 'Excluir funcionário',
     subtitle: 'Esta ação remove o acesso do usuário.',
-    body: 'Confirma a exclusão deste funcionário? Os registros históricos serão preservados sempre que houver vínculos obrigatórios.',
+    body: 'A exclusão só será permitida se não houver ponto, tarefas, programações ou execuções vinculadas. Se houver histórico, desative o acesso.',
     confirmText: 'Excluir funcionário',
     confirmClass: 'btn-red',
     cancelText: 'Cancelar',

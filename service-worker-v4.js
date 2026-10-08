@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v221-filtros-checklist';
+const CACHE_NAME = 'check-diario-pwa-v222-funcionario-seguro';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
