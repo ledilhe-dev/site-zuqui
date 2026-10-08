@@ -399,6 +399,16 @@ async function salvarEdicaoProgramacaoChecklist() {
     });
     if (error) throw error;
 
+    const { error: erroConfirmacao } = await sb.rpc('registrar_confirmacao_programacao_checklist', {
+      p_agendamento_id: item.agendamento_id,
+      p_nome: nome,
+      p_funcionario_id: funcionarioId,
+      p_horario_inicio: horaInicio,
+      p_horario_fim: horaFim,
+      p_dias_semana: diasTexto,
+    });
+    if (erroConfirmacao) console.warn('Programação salva, mas o aviso de conferência não foi atualizado:', erroConfirmacao);
+
     fecharEdicaoProgramacaoChecklist();
     const resumo = resultado || {};
     setMsg('msgRelatorioTarefasCad', `Programação recalculada: ${Number(resumo.incluidos || 0)} incluída(s), ${Number(resumo.excluidos || 0)} removida(s) e ${Number(resumo.atualizados || 0)} atualizada(s). Execuções existentes foram preservadas.`, 'ok');

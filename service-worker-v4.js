@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v223-aviso-programacao';
+const CACHE_NAME = 'check-diario-pwa-v224-confirmacao-programacao';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
