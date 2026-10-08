@@ -65,7 +65,7 @@ async function carregarRelatorioTarefasCadastradas() {
     for (let pagina = 0; pagina < 100; pagina++) {
       const inicioPagina = pagina * tamanhoPaginaLancamentos;
       let queryLanc = sb.from('checklist_lancamentos')
-        .select('id, tarefa_id, nome, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, horario_inicio, horario_fim, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias')
+        .select('id, tarefa_id, nome, descricao, funcionario_id, dias_semana, data_programada, lancado_em, criado_por_id, criado_por_nome, horario_limite, horario_inicio, horario_fim, status, agendamento_id, repeticao_intervalo_dias, repeticao_duracao_dias, programacao_alterada_em, programacao_alteracao_valida_desde, programacao_alteracao_resumo')
         .order('data_programada', { ascending: true })
         .order('id', { ascending: true })
         .range(inicioPagina, inicioPagina + tamanhoPaginaLancamentos - 1);
@@ -107,19 +107,28 @@ async function carregarRelatorioTarefasCadastradas() {
       const datasUnicas = [...new Set(datas)].sort();
       const primeiroLanc = lancs.slice().sort((a, b) =>
         new Date(a.lancado_em || 0) - new Date(b.lancado_em || 0))[0] || null;
+      const hoje = dataLocalISO();
+      const lancConfiguracao = lancs.find(l =>
+        String(l.status || 'pendente').toLowerCase() === 'pendente' && String(l.data_programada || '').slice(0, 10) >= hoje)
+        || lancs.slice().reverse().find(l => String(l.status || 'pendente').toLowerCase() === 'pendente')
+        || lancs[lancs.length - 1] || primeiroLanc;
+      const ultimaAlteracao = lancs.filter(l => l.programacao_alterada_em).sort((a, b) =>
+        new Date(b.programacao_alterada_em) - new Date(a.programacao_alterada_em))[0] || null;
 
       const cadastradoEm = (primeiroLanc?.lancado_em || t?.created_at || '') || '';
       const cadastradoPor = primeiroLanc?.criado_por_nome || t?.criado_por_nome || '';
       const inicio = datasUnicas[0] || '';
       const fim = datasUnicas[datasUnicas.length - 1] || '';
-      const intervalo = Number(primeiroLanc?.repeticao_intervalo_dias || 0) || detectarIntervaloDias(datasUnicas);
+      const intervalo = Number(lancConfiguracao?.repeticao_intervalo_dias || 0) || detectarIntervaloDias(datasUnicas);
       const totalDias = (inicio && fim)
         ? (Math.round((new Date(fim + 'T00:00:00') - new Date(inicio + 'T00:00:00')) / (1000 * 60 * 60 * 24)) + 1)
         : 0;
-      const diasSemana = lancs[0]?.dias_semana || t?.dias_semana || 'todos';
-      const duracaoConfigurada = Number(primeiroLanc?.repeticao_duracao_dias || 0) || totalDias;
-      const hoje = dataLocalISO();
-      const proximaOcorrencia = datasUnicas.find(data => data >= hoje) || '';
+      const diasSemana = lancConfiguracao?.dias_semana || t?.dias_semana || 'todos';
+      const duracaoConfigurada = Number(lancConfiguracao?.repeticao_duracao_dias || 0) || totalDias;
+      const responsavelId = String(lancConfiguracao?.funcionario_id || t?.funcionario_id || '');
+      const proximaOcorrencia = lancs.find(l => String(l.status || 'pendente').toLowerCase() === 'pendente'
+        && String(l.data_programada || '').slice(0, 10) >= hoje)?.data_programada || '';
+      const alteracaoValidaDesde = String(ultimaAlteracao?.programacao_alteracao_valida_desde || '').slice(0, 10);
 
       const repeticaoTexto = lancs.length
         ? `${formatarDias(diasSemana)} · a cada ${intervalo || 1} dia(s) · por ${duracaoConfigurada || totalDias} dia(s)`
@@ -129,11 +138,11 @@ async function carregarRelatorioTarefasCadastradas() {
         tarefa_id: tid,
         agendamento_id: agendamentoId,
         lancamento_ids: lancs.map(item => item.id),
-        nomeTarefa: t?.nome || lancs[0]?.nome || 'Tarefa',
-        descricao: t?.descricao || '',
-        responsavel_id: String(primeiroLanc?.funcionario_id || t?.funcionario_id || ''),
-        responsavel: funcMap[String(primeiroLanc?.funcionario_id || t?.funcionario_id || '')] || 'Sem responsável',
-        responsavelAtivo: (funcsData || []).find(f => String(f.id) === String(primeiroLanc?.funcionario_id || t?.funcionario_id || ''))?.ativo !== false,
+        nomeTarefa: lancConfiguracao?.nome || t?.nome || 'Tarefa',
+        descricao: lancConfiguracao?.descricao || t?.descricao || '',
+        responsavel_id: responsavelId,
+        responsavel: funcMap[responsavelId] || 'Sem responsável',
+        responsavelAtivo: (funcsData || []).find(f => String(f.id) === responsavelId)?.ativo !== false,
         cadastradoPor: cadastradoPor || (primeiroLanc ? 'Sistema' : '—'),
         cadastradoEm,
         inicio,
@@ -145,8 +154,11 @@ async function carregarRelatorioTarefasCadastradas() {
         totalDias: duracaoConfigurada,
         qtdLancamentos: lancs.length,
         repeticaoTexto,
-        horarioInicio: primeiroLanc?.horario_inicio || primeiroLanc?.horario_limite || '',
-        horarioFim: primeiroLanc?.horario_fim || '',
+        horarioInicio: lancConfiguracao?.horario_inicio || lancConfiguracao?.horario_limite || '',
+        horarioFim: lancConfiguracao?.horario_fim || '',
+        alteracaoValidaDesde,
+        alteracaoResumo: ultimaAlteracao?.programacao_alteracao_resumo || '',
+        mostrarAvisoAlteracao: Boolean(alteracaoValidaDesde && hoje <= alteracaoValidaDesde),
       };
     };
 
@@ -195,7 +207,7 @@ async function carregarRelatorioTarefasCadastradas() {
     lista.innerHTML = '<div class="lista">' + filtradas.map(l => `
       <div class="item">
         <div class="item-info">
-          <div class="item-nome">${escaparHtmlBasico(l.nomeTarefa)}</div>
+          <div class="item-nome">${escaparHtmlBasico(l.nomeTarefa)}${l.mostrarAvisoAlteracao ? ` <button class="programacao-alteracao-aviso" type="button" title="Ver quando as alterações entrarão em vigor" aria-label="Atenção: ver alterações programadas" onclick="abrirAvisoAlteracaoProgramacao('${escaparHtmlBasico(l.agendamento_id)}')">!</button>` : ''}</div>
           ${l.descricao ? `<div class="item-detalhe">${escaparHtmlBasico(l.descricao)}</div>` : ''}
           <div class="item-detalhe">Funcionário: ${escaparHtmlBasico(l.responsavel)}${l.responsavelAtivo ? '' : ' (desativado — escolha um substituto)'}</div>
           <div class="item-detalhe">Cadastrado por: ${escaparHtmlBasico(l.cadastradoPor)} · ${l.cadastradoEm ? fmtDate(l.cadastradoEm) : '—'}</div>
@@ -413,13 +425,10 @@ async function alterarFuncionarioProgramacaoChecklist(agendamentoId, funcionario
   const agenda = String(agendamentoId || '').trim();
   const funcionario = String(funcionarioId || '').trim();
   if (!agenda || !funcionario) return;
-  let query = sb.from('checklist_lancamentos')
-    .update({ funcionario_id: funcionario })
-    .eq('agendamento_id', agenda)
-    .eq('status', 'pendente');
-  const lojaEdicao = obterLojaAtualParaIsolamento();
-  if (lojaEdicao) query = query.eq('loja_id', lojaEdicao);
-  const { error } = await query;
+  const { error } = await sb.rpc('alterar_funcionario_programacao_checklist', {
+    p_agendamento_id: agenda,
+    p_funcionario_id: funcionario,
+  });
   if (error) {
     setMsg('msgRelatorioTarefasCad', `Não foi possível trocar o funcionário: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
     if (selectEl) selectEl.value = '';
@@ -428,6 +437,21 @@ async function alterarFuncionarioProgramacaoChecklist(agendamentoId, funcionario
   setMsg('msgRelatorioTarefasCad', 'Funcionário alterado em todas as repetições pendentes da programação.', 'ok');
   await carregarRelatorioTarefasCadastradas();
   carregarChecklists();
+}
+
+function abrirAvisoAlteracaoProgramacao(agendamentoId) {
+  const linha = (_relatorioTarefasCadCache || []).find(item => String(item.agendamento_id || '') === String(agendamentoId || ''));
+  if (!linha?.alteracaoValidaDesde) return;
+  const detalhes = String(linha.alteracaoResumo || 'As ocorrências futuras foram atualizadas.')
+    .split('|').map(item => item.trim()).filter(Boolean)
+    .map(item => `<div class="programacao-alteracao-item">${escaparHtmlBasico(item)}</div>`).join('');
+  abrirConfirmacaoSistema({
+    title: 'Atenção',
+    subtitle: 'Alterações programadas',
+    body: `<div class="programacao-alteracao-dialogo"><p>As alterações feitas começarão a valer a partir de <strong>${formatarDataProgramadaBr(linha.alteracaoValidaDesde)}</strong>.</p><p>Ocorrências que já foram iniciadas ou concluídas permanecem com os dados anteriores.</p>${detalhes}</div>`,
+    confirmText: 'Entendi',
+    cancelText: 'Fechar',
+  });
 }
 
 async function excluirProgramacaoChecklist(agendamentoId) {

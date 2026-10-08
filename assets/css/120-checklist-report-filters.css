@@ -25,3 +25,12 @@
   #relatorio_tarefas_cadastradas .tarefas-cad-filtros {grid-template-columns:1fr}
   #relatorio_tarefas_cadastradas .tarefas-cad-busca {grid-column:auto}
 }
+.programacao-alteracao-aviso {
+  display:inline-grid;place-items:center;width:24px;height:24px;margin-left:7px;padding:0;
+  border:1px solid #f59e0b;border-radius:50%;background:#f59e0b;color:#1b1302;
+  font-size:15px;font-weight:900;line-height:1;cursor:pointer;vertical-align:middle;
+  box-shadow:0 0 0 3px rgba(245,158,11,.13);
+}
+.programacao-alteracao-aviso:hover,.programacao-alteracao-aviso:focus-visible {background:#fbbf24;transform:scale(1.06)}
+.programacao-alteracao-dialogo p {margin:0 0 12px;color:var(--text-primary,#e5edf8);line-height:1.5}
+.programacao-alteracao-item {margin-top:7px;padding:9px 11px;border-left:3px solid #f59e0b;border-radius:5px;background:rgba(245,158,11,.1);color:var(--text-primary,#e5edf8)}
