@@ -7,10 +7,19 @@ const checklists = readFileSync(new URL('../assets/js/51-quick-alerts.js', impor
 const pointMigration = readFileSync(new URL('../supabase/migrations/202609030001_preservar_tenant_ponto_multiloja.sql', import.meta.url), 'utf8');
 
 test('restaura cabeçalhos RLS antes de renovar e consultar a sessão persistida', () => {
-  const parse = runtime.indexOf('let usuario = JSON.parse(salvo);');
+  const parse = runtime.indexOf('usuarioPersistido = JSON.parse(salvo);');
   const restoreToken = runtime.indexOf("window.__authOperationalToken = String(usuario?.operational_access_token", parse);
   const renew = runtime.indexOf('await renovarContextoOperacionalPersistido(usuario)', parse);
   assert.ok(parse >= 0 && restoreToken > parse && renew > restoreToken);
+});
+
+test('F5 preserva sessao persistente e restaura a pagina ativa em falha transitoria', () => {
+  const restore = runtime.slice(runtime.indexOf('async function restaurarSessaoSistema()'), runtime.indexOf('let revalidacaoSessaoSistemaEmAndamento'));
+  assert.match(restore, /tinhaSessaoPersistente\s*&&\s*!falhaDefinitiva\s*&&\s*usuarioPersistido/);
+  assert.match(restore, /setSistemaLogado\(true\)/);
+  assert.match(restore, /restaurarPaginaAtivaSalvaOuPadrao\(\)/);
+  assert.match(restore, /return true/);
+  assert.doesNotMatch(restore, /mensagemFalha\.includes\('perdeu o vínculo'\)/);
 });
 
 test('limpa todos os cabeçalhos opacos no logout', () => {

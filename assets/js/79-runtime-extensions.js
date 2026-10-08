@@ -567,8 +567,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       return false;
     }
 
+    let usuarioPersistido = null;
     try {
-      let usuario = JSON.parse(salvo);
+      usuarioPersistido = JSON.parse(salvo);
+      let usuario = usuarioPersistido;
       // O cliente Supabase monta os cabeçalhos de RLS a partir destas variáveis.
       // Restaure-as antes da primeira RPC/consulta protegida; caso contrário uma
       // sessão persistida válida é consultada como anônima e parece não ter vínculo.
@@ -618,10 +620,38 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       const tinhaSessaoPersistente = !!(salvoLocal || salvoLocalBackup);
       const mensagemFalha = String(e?.message || '').toLowerCase();
       const falhaDefinitiva = mensagemFalha.includes('revogad')
-        || mensagemFalha.includes('perdeu o vínculo')
-        || mensagemFalha.includes('cadastro inativo');
+        || mensagemFalha.includes('cadastro inativo')
+        || mensagemFalha.includes('está inativo')
+        || mensagemFalha.includes('esta inativo')
+        || mensagemFalha.includes('não existe');
       // Após reiniciar o Windows, a rede pode ainda não estar pronta quando a
       // PWA abre. Falhas transitórias não podem destruir uma sessão persistente.
+      if (tinhaSessaoPersistente && !falhaDefinitiva && usuarioPersistido) {
+        usuarioSistemaLogado = {
+          ...usuarioPersistido,
+          perfil: normalizarPerfilUsuario(usuarioPersistido.perfil),
+        };
+        window.usuarioSistemaLogado = usuarioSistemaLogado;
+        window.__sessaoSistema = () => usuarioSistemaLogado;
+        persistirSessaoSistemaAtual(true);
+        limparDadosVisuaisDaSessao('Reconectando dados da loja...');
+        atualizarUsuarioTopbar();
+        habilitarSomNotificacao();
+        setSistemaLogado(true);
+        aplicarPermissoesSistema();
+        carregarNotificacoes();
+        Promise.all([carregarOrdemNavMenu(), carregarTemaInterface()]).then(() => {
+          aplicarPermissoesSistema();
+          restaurarPaginaAtivaSalvaOuPadrao();
+        });
+        reiniciarAssinaturaRealtimeNotificacoes();
+        aplicarEmpresaRLS();
+        window.setTimeout(revalidarSessaoSistemaAtiva, 1500);
+        document.documentElement.classList.remove('admin-fouc-pendente');
+        console.warn('Sessão persistente restaurada; validação online será repetida:', e);
+        return true;
+      }
+
       if (!tinhaSessaoPersistente || falhaDefinitiva) {
         localStorage.removeItem('zuqui_auth');
         localStorage.removeItem('check_diario_auth_persistente');
