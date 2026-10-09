@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+﻿import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { aggregatePizzaMandatoryV1 } from "./pizza-mandatory-v1.mjs";
 
 const cors = {
@@ -6,6 +6,7 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-funcionario-id, x-loja-id, x-operational-token, x-global-admin-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+const MIN_INCREMENTAL_SYNC_MS = 10 * 60 * 1000;
 
 Deno.serve(async (request) => {
   const requestId = crypto.randomUUID();
@@ -65,6 +66,13 @@ Deno.serve(async (request) => {
       const inicio = validateDate(body.inicio, "inicio");
       const fim = validateDate(body.fim, "fim");
       if (fim < inicio) throw new Error("Periodo invalido.");
+      const agoraBrasil = Date.now() - 3 * 60 * 60 * 1000;
+      const hoje = new Date(agoraBrasil).toISOString().slice(0, 10);
+      const ontem = new Date(agoraBrasil - 86400000).toISOString().slice(0, 10);
+      const ultimaSyncMs = integration.ultima_sincronizacao_em ? new Date(integration.ultima_sincronizacao_em).getTime() : 0;
+      if (inicio >= ontem && fim >= hoje && ultimaSyncMs > 0 && Date.now() - ultimaSyncMs < MIN_INCREMENTAL_SYNC_MS) {
+        return json({ok:true,ignorada:true,motivo:"janela_minima_10_minutos",ultima_sincronizacao_em:integration.ultima_sincronizacao_em});
+      }
       const items = Array.isArray(body.items) ? body.items.slice(0, 10000) : [];
       const { error: deleteError } = await admin.from("raffinato_sangrias_cache").delete()
         .eq("empresa_id", integration.empresa_id).eq("loja_id", integration.loja_id)
@@ -513,12 +521,12 @@ async function integrationForToken(admin: any, token: string, body:any={}, requi
   if(body.connector_instance_id){
     const instance=await connectorForCredential(admin,body.connector_instance_id,token);
     validateUuid(body.loja_id,"loja");
-    const {data,error}=await admin.from("raffinato_integracoes").select("id,empresa_id,loja_id,connector_instance_id,connection_profile_id,raffinato_filial_id").eq("connector_instance_id",instance.id).eq("empresa_id",instance.empresa_id).eq("loja_id",body.loja_id).maybeSingle();
+    const {data,error}=await admin.from("raffinato_integracoes").select("id,empresa_id,loja_id,connector_instance_id,connection_profile_id,raffinato_filial_id,ultima_sincronizacao_em").eq("connector_instance_id",instance.id).eq("empresa_id",instance.empresa_id).eq("loja_id",body.loja_id).maybeSingle();
     if(error||!data)throw error||new Error("Loja nao vinculada a esta instalacao.");
     if(requireMapping&&(!data.connection_profile_id||!Number.isInteger(Number(data.raffinato_filial_id))||Number(data.raffinato_filial_id)<=0))throw new Error("Esta loja não possui uma filial Raffinato vinculada.");
     return data;
   }
-  const { data, error } = await admin.from("raffinato_integracoes").select("id,empresa_id,loja_id")
+  const { data, error } = await admin.from("raffinato_integracoes").select("id,empresa_id,loja_id,ultima_sincronizacao_em")
     .eq("conector_token_hash", await sha256(token)).maybeSingle();
   if (error || !data) throw error || new Error("Conector nao pareado.");
   return data;
