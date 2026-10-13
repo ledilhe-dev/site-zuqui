@@ -1032,7 +1032,30 @@ async function alterarVinculoInstalacaoRaffinato(instanceId, lojaId, vincular, l
     if (error) throw error;
     painelAdminGlobalCache = null;
     await carregarConectoresSaas();
+    mostrarRetornoVinculoRaffinato(
+      vincular ? 'Replicação reativada' : 'Replicação pausada',
+      vincular
+        ? `${lojaNome} voltou a aceitar dados desta instalação.`
+        : `${lojaNome} foi desvinculada. Todos os dados e configurações foram preservados.`,
+      'sucesso',
+    );
   } catch (error) {
-    window.alert(mensagemErroSupabase(error, 'Nao foi possivel alterar o vinculo da filial.'));
+    mostrarRetornoVinculoRaffinato(
+      'Não foi possível alterar o vínculo',
+      mensagemErroSupabase(error, 'Tente novamente em alguns instantes.'),
+      'erro',
+    );
   }
+}
+
+function mostrarRetornoVinculoRaffinato(titulo, mensagem, tipo = 'sucesso') {
+  document.querySelector('.connector-feedback')?.remove();
+  const aviso = document.createElement('section');
+  aviso.className = `connector-feedback connector-feedback-${tipo}`;
+  aviso.setAttribute('role', tipo === 'erro' ? 'alert' : 'status');
+  aviso.innerHTML = `<div class="connector-feedback-icon">${tipo === 'erro' ? '!' : '✓'}</div><div><strong>${escaparHtmlBasico(titulo)}</strong><span>${escaparHtmlBasico(mensagem)}</span></div><button type="button" aria-label="Fechar mensagem">×</button>`;
+  aviso.querySelector('button').onclick = () => aviso.remove();
+  document.body.append(aviso);
+  requestAnimationFrame(() => aviso.classList.add('show'));
+  window.setTimeout(() => aviso.remove(), tipo === 'erro' ? 12000 : 6500);
 }

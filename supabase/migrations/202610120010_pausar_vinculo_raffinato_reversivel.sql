@@ -23,7 +23,7 @@ begin
     update public.raffinato_integracoes set connector_instance_id=p_connector_instance_id,
       status='ativa',ultimo_erro=null,atualizado_em=now() where id=v_integracao_id;
   else
-    update public.raffinato_integracoes set connector_instance_id=null,status='pausada',
+    update public.raffinato_integracoes set connector_instance_id=null,status='inativa',
       ultimo_erro='Replicacao pausada pelo painel administrativo.',atualizado_em=now()
       where id=v_integracao_id;
   end if;
