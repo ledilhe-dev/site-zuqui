@@ -31,6 +31,16 @@ jobs:
       - name: Validar projeto modular
         run: python tools/verify_modularization.py
 
+      - name: Validar versão única do conector
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(python -c "import json; print(json.load(open('assets/connector-version.json', encoding='utf-8'))['latest_version'])")
+          test "$(find downloads -maxdepth 1 -type f -name 'Conector-Raffinato-v*.exe' | wc -l)" -eq 1
+          test -f "downloads/Conector-Raffinato-v${version}.exe"
+          test -f "downloads/Conector-Raffinato-v${version}.sha256.txt"
+          (cd downloads && sha256sum -c "Conector-Raffinato-v${version}.sha256.txt")
+
       - name: Montar artefato público
         shell: bash
         run: |
@@ -50,22 +60,8 @@ jobs:
           cp -R media _site/
           cp -R zuqui _site/
           mkdir -p _site/downloads
-          cp tools/raffinato-bridge/download-v1711-final/Conector-Raffinato-v1.7.11.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1712-final/Conector-Raffinato-v1.7.12.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1713-final/Conector-Raffinato-v1.7.13.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1714-final/Conector-Raffinato-v1.7.14.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1716-final/Conector-Raffinato-v1.7.16.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1717-final/Conector-Raffinato-v1.7.17.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1718-final/Conector-Raffinato-v1.7.18.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1719-final/Conector-Raffinato-v1.7.19.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1720-final/Conector-Raffinato-v1.7.20.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1721-final/Conector-Raffinato-v1.7.21.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1722-final/Conector-Raffinato-v1.7.22.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1723-final/Conector-Raffinato-v1.7.23.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v1724-final/Conector-Raffinato-v1.7.24.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v200-final/Conector-Raffinato-v2.0.0.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v201-final/Conector-Raffinato-v2.0.1.exe _site/downloads/
-          cp tools/raffinato-bridge/download-v202-final/Conector-Raffinato-v2.0.2.exe _site/downloads/
+          cp downloads/Conector-Raffinato-v2.0.12.exe _site/downloads/
+          cp downloads/Conector-Raffinato-v2.0.12.sha256.txt _site/downloads/
 
           touch _site/.nojekyll
 
