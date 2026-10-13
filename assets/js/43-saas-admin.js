@@ -978,3 +978,61 @@ async function copiarDadosEntreLojasSaas() {
     }
   }
 }
+
+// Controle reversivel por filial. Desvincular pausa somente a entrada de dados;
+// o historico e toda a configuracao Raffinato permanecem no banco.
+const carregarConectoresSaasAntesDoControleDeVinculo = carregarConectoresSaas;
+carregarConectoresSaas = async function carregarConectoresSaasComControleDeVinculo() {
+  await carregarConectoresSaasAntesDoControleDeVinculo();
+  const dados = painelAdminGlobalCache || {};
+  const instances = dados.connector_instances || [];
+  const stores = dados.lojas || [];
+  const links = dados.conectores || [];
+  const cards = document.querySelectorAll('#listaConectoresSaas > .lista > .item.connector-company');
+  cards.forEach((card, instanceIndex) => {
+    const instance = instances[instanceIndex];
+    if (!instance) return;
+    const companyStores = stores.filter(store => String(store.empresa_id) === String(instance.empresa_id));
+    const instanceLinks = new Map(links
+      .filter(link => String(link.connector_instance_id || '') === String(instance.id))
+      .map(link => [String(link.loja_id), link]));
+    card.querySelectorAll('.connector-company-detail li').forEach((row, storeIndex) => {
+      const store = companyStores[storeIndex];
+      if (!store || row.querySelector('.connector-link-toggle')) return;
+      const linked = instanceLinks.has(String(store.id));
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `btn btn-sm connector-link-toggle ${linked ? 'btn-amber' : 'btn-ghost'}`;
+      button.textContent = linked ? 'Desvincular' : 'Vincular nesta instalacao';
+      button.onclick = () => alterarVinculoInstalacaoRaffinato(
+        instance.id, store.id, !linked, nomeLojaSaas(store) || 'Filial',
+      );
+      row.append(button);
+    });
+  });
+};
+
+async function alterarVinculoInstalacaoRaffinato(instanceId, lojaId, vincular, lojaNome) {
+  const verbo = vincular ? 'Reativar' : 'Pausar';
+  const detalhe = vincular
+    ? `A replicacao de ${lojaNome} voltara a ser aceita por esta instalacao.`
+    : `Somente a replicacao de ${lojaNome} sera pausada. Dados e configuracoes existentes serao preservados.`;
+  const resposta = typeof abrirConfirmacaoSistema === 'function'
+    ? await abrirConfirmacaoSistema({ title: `${verbo} replicacao?`, subtitle: detalhe, confirmText: verbo })
+    : { confirmado: window.confirm(detalhe) };
+  if (!resposta?.confirmado) return;
+  try {
+    const { error } = await sb.rpc('definir_vinculo_instalacao_raffinato_admin', {
+      p_funcionario_id: usuarioSistemaLogado.id,
+      p_token: usuarioSistemaLogado.global_admin_token,
+      p_connector_instance_id: instanceId,
+      p_loja_id: lojaId,
+      p_vincular: Boolean(vincular),
+    });
+    if (error) throw error;
+    painelAdminGlobalCache = null;
+    await carregarConectoresSaas();
+  } catch (error) {
+    window.alert(mensagemErroSupabase(error, 'Nao foi possivel alterar o vinculo da filial.'));
+  }
+}
