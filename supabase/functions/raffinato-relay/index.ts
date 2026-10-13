@@ -38,7 +38,7 @@ Deno.serve(async (request) => {
         perfis_cadastrados:Math.max(0,Number(body.profiles || 0)), filiais_vinculadas:Math.max(0,Number(body.mappings || 0)),
       }).eq("id",instance.id);
       if (error) throw error;
-      return json({ok:true,empresa_id:instance.empresa_id});
+      return json({ok:true,empresa_id:instance.empresa_id,operations_paused:instance.operacoes_pausadas===true});
     }
 
     if (body.action === "connector_link_store") {
@@ -513,7 +513,7 @@ async function authorizeStore(admin: any, userId: string, empresaId: string, loj
 }
 async function connectorForCredential(admin:any,instanceId:any,credential:string){
   validateUuid(instanceId,"instalacao");
-  const {data,error}=await admin.from("raffinato_connector_instances").select("id,empresa_id,status").eq("id",instanceId).eq("credencial_hash",await sha256(credential)).maybeSingle();
+  const {data,error}=await admin.from("raffinato_connector_instances").select("id,empresa_id,status,operacoes_pausadas").eq("id",instanceId).eq("credencial_hash",await sha256(credential)).maybeSingle();
   if(error||!data||data.status==="revogado")throw error||new Error("Credencial da instalacao invalida.");
   return data;
 }

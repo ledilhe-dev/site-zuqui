@@ -105,12 +105,27 @@ carregarConectoresSaas=async function(){
     const rows=filiais.map(store=>{const link=byStore.get(String(store.id));return `<li><strong>${escaparHtmlBasico(nomeLojaSaas(store)||'Filial')}</strong><span>${link?`Raffinato ${Number(link.raffinato_filial_id)} · ${escaparHtmlBasico(link.status||'ativa')} · atualização ${escaparHtmlBasico(link.ultima_sincronizacao_em?new Date(link.ultima_sincronizacao_em).toLocaleString('pt-BR'):'nunca')}`:'Não vinculada nesta instalação'}</span></li>`}).join('');
     const detail=document.createElement('div');detail.className='connector-company-detail';detail.hidden=true;detail.innerHTML=`<div><strong>${escaparHtmlBasico(empresas.get(String(instance.empresa_id))||'Empresa')}</strong><small>Esta é uma empresa com ${filiais.length} filial(is).<br>connector_instance_id: ${escaparHtmlBasico(instance.id)}</small></div><ul>${rows||'<li>Nenhuma filial cadastrada.</li>'}</ul>`;
     const button=document.createElement('button');button.type='button';button.className='btn btn-ghost btn-sm connector-detail-button';button.textContent='Detalhar empresa';button.onclick=()=>{detail.hidden=!detail.hidden;button.textContent=detail.hidden?'Detalhar empresa':'Ocultar detalhes'};
+    const paused=instance.operacoes_pausadas===true;
+    const operationButton=document.createElement('button');operationButton.type='button';operationButton.className=`btn ${paused?'btn-green':'btn-amber'} btn-sm connector-operation-button`;operationButton.textContent=paused?'Reativar conector':'Pausar conector';operationButton.title=paused?'Permitir novamente pedidos e sincronizações desta instalação.':'Interromper remotamente pedidos e sincronizações, preservando todos os dados e vínculos.';operationButton.onclick=()=>definirOperacaoConectorSaas(instance.id,!paused,empresas.get(String(instance.empresa_id))||'empresa');
     const deleteButton=document.createElement('button');deleteButton.type='button';deleteButton.className='btn btn-red btn-sm connector-delete-button';deleteButton.textContent='Excluir instalação';deleteButton.disabled=links.length>0;deleteButton.title=links.length?'Esta instalação ainda possui filiais vinculadas.':'Excluir somente este registro de instalação.';deleteButton.onclick=()=>excluirInstalacaoConectorSaas(instance.id,empresas.get(String(instance.empresa_id))||'empresa');
-    const actions=document.createElement('div');actions.className='connector-instance-actions';actions.append(button,deleteButton);
+    const actions=document.createElement('div');actions.className='connector-instance-actions';actions.append(button,operationButton,deleteButton);
     node.classList.add('connector-company');node.querySelector('.item-info')?.append(actions);node.append(detail);
     if(instance.status==='offline'){detail.hidden=false;button.textContent='Ocultar detalhes';}
   }
 };
+
+async function definirOperacaoConectorSaas(instanceId,pausar,empresaNome){
+  const resposta=typeof abrirConfirmacaoSistema==='function'?await abrirConfirmacaoSistema({title:pausar?'Pausar conector remotamente?':'Reativar conector?',subtitle:pausar?`Pedidos e sincronizações de ${empresaNome} serão interrompidos. Dados, configurações e vínculos serão preservados.`:`Pedidos e sincronizações de ${empresaNome} voltarão a funcionar.`,confirmText:pausar?'Pausar conector':'Reativar conector'}):{confirmado:window.confirm(pausar?'Pausar o conector?':'Reativar o conector?')};
+  if(!resposta?.confirmado)return;
+  try{
+    const {error}=await sb.rpc('definir_operacao_conector_raffinato_admin',{p_funcionario_id:usuarioSistemaLogado.id,p_token:usuarioSistemaLogado.global_admin_token,p_connector_instance_id:instanceId,p_pausar:pausar});
+    if(error)throw error;
+    painelAdminGlobalCache=null;await carregarConectoresSaas();
+    if(typeof mostrarRetornoVinculoRaffinato==='function')mostrarRetornoVinculoRaffinato(pausar?'Conector pausado com segurança. Nenhum dado foi removido.':'Conector reativado. Pedidos e sincronizações voltarão no próximo contato.','ok');
+  }catch(error){
+    if(typeof mostrarRetornoVinculoRaffinato==='function')mostrarRetornoVinculoRaffinato(mensagemErroSupabase(error,'Não foi possível alterar o conector.'),'erro');
+  }
+}
 
 async function excluirInstalacaoConectorSaas(instanceId,empresaNome){
   const resposta=typeof abrirConfirmacaoSistema==='function'?await abrirConfirmacaoSistema({title:'Excluir instalação do conector?',subtitle:`Será removido somente o registro antigo de ${empresaNome}. A empresa e suas filiais serão preservadas.`,confirmText:'Excluir instalação'}):{confirmado:window.confirm('Excluir somente esta instalação antiga?')};if(!resposta?.confirmado)return;

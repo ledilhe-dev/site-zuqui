@@ -77,8 +77,8 @@ test('renderiza opções reais no DOM do seletor',()=>{
 });
 
 test('conector 1.7.14 ou posterior entrega todos os agrupamentos configurados da filial',()=>{
-  const version=connector.match(/CONNECTOR_VERSION = "1\.7\.(\d+)"/)?.[1];
-  assert.ok(Number(version)>=14);
+  const version=connector.match(/CONNECTOR_VERSION = "(\d+)\.(\d+)\.(\d+)"/)?.slice(1).map(Number)||[];
+  assert.ok(version[0]>1||(version[0]===1&&version[1]===7&&version[2]>=14));
   const sql=connector.match(/SQL_AGRUPAMENTOS = """([\s\S]*?)"""/)?.[1]||'';
   assert.match(sql,/CA\.IdFilial=\?/);
   assert.doesNotMatch(sql,/BloqueiaVenda/);

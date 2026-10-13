@@ -15,9 +15,11 @@ import base64
 import ctypes
 import hashlib
 import hmac
+import importlib.util
 import secrets
 import shutil
 import sqlite3
+import subprocess
 import threading
 import time
 import webbrowser
@@ -25,6 +27,7 @@ from contextlib import closing
 import urllib.request
 import urllib.error
 import winreg
+import requests
 from urllib.parse import parse_qs, urlparse
 from ctypes import wintypes
 from datetime import date, datetime, time as datetime_time, timedelta
@@ -40,7 +43,8 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.2"
+CONNECTOR_VERSION = "2.0.13"
+CARDAPIO_API_URL = "https://pcmqxbwxpzskkyjmtmrv.supabase.co/functions/v1/cardapio-api"
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -74,10 +78,244 @@ logging.basicConfig(
 )
 logger = logging.getLogger("raffinato_bridge")
 MUTEX_HANDLE = None
+CARDAPIO_MUTEX_HANDLE = None
+REMOTE_OPERATIONS_PAUSED = threading.Event()
+CARDAPIO_ACTIVE_UNTIL = 0.0
 ADMIN_SESSIONS: dict[str, float] = {}
 ADMIN_SESSION_SECONDS = 15 * 60
 DELETE_TOKENS: dict[str, tuple[str, float]] = {}
 DELETE_TOKEN_SECONDS = 5 * 60
+
+
+def update_zuqui_cardapio_component() -> None:
+    """Atualiza o componente do cardápio sem alterar sua configuração DPAPI."""
+    if not getattr(sys, "frozen", False):
+        return
+    bundled = Path(getattr(sys, "_MEIPASS", BASE_DIR)) / "catalog_sync.py"
+    if not bundled.exists():
+        logger.warning("Componente do cardápio não foi incluído no executável")
+        return
+    query = (
+        "$rows=@();Get-ScheduledTask -ErrorAction SilentlyContinue|ForEach-Object{"
+        "$t=$_;foreach($a in $t.Actions){$command=@($a.Execute,$a.Arguments,$a.WorkingDirectory)-join \"`n\";"
+        "if($t.TaskName -like '*Zuqui*' -or $command -match 'catalog[_-]?sync|raffinato-catalog-sync'){"
+        "$rows+=[pscustomobject]@{TaskName=$t.TaskName;TaskPath=$t.TaskPath;Command=$command}}}};"
+        "$rows|ConvertTo-Json -Compress"
+    )
+    result = subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", query],
+        capture_output=True, text=True, timeout=15,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    try:
+        records = json.loads(result.stdout or "[]")
+    except Exception:
+        records = []
+    if isinstance(records, dict):
+        records = [records]
+    targets = []
+    for record in records:
+        command = str(record.get("Command") or "")
+        match = __import__('re').search(
+            r'(?:"([^\"]*catalog_sync\.py)"|((?:[A-Za-z]:\\)[^\r\n]*?catalog_sync\.py))',
+            command, __import__('re').IGNORECASE,
+        )
+        if match:
+            targets.append((str(record.get("TaskName") or ""), str(record.get("TaskPath") or "\\"), Path(match.group(1) or match.group(2)).resolve()))
+    if not targets:
+        logger.info("Componente legado do cardápio não encontrado; nenhuma configuração foi alterada")
+        return
+    bundled_ps = str(bundled).replace("'", "''")
+    for task_name, task_path, installed in targets:
+        if not installed.parent.exists():
+            raise RuntimeError(f"Pasta do componente do cardápio não encontrada: {installed.parent}")
+        installed_ps = str(installed).replace("'", "''")
+        task_name_ps = task_name.replace("'", "''")
+        task_path_ps = task_path.replace("'", "''")
+        command = (
+            "$ErrorActionPreference='Stop';"
+            f"Stop-ScheduledTask -TaskName '{task_name_ps}' -TaskPath '{task_path_ps}' -ErrorAction SilentlyContinue;"
+            f"Copy-Item -LiteralPath '{bundled_ps}' -Destination '{installed_ps}' -Force;"
+            f"Start-ScheduledTask -TaskName '{task_name_ps}' -TaskPath '{task_path_ps}'"
+        )
+        subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+            check=True, timeout=30, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        logger.info("Componente do cardápio atualizado em %s pela tarefa %s%s", installed, task_path, task_name)
+    logger.info("Componente do cardápio atualizado para %s e reiniciado", CONNECTOR_VERSION)
+
+
+def find_cardapio_config() -> Path | None:
+    direct = [BASE_DIR / "catalog-sync.dat", BASE_DIR.parent / "catalog-sync.dat"]
+    for candidate in direct:
+        if candidate.is_file():
+            return candidate
+    roots = [
+        Path(os.environ["LOCALAPPDATA"]) if os.environ.get("LOCALAPPDATA") else None,
+        Path(os.environ["APPDATA"]) if os.environ.get("APPDATA") else None,
+        Path(r"C:\Raffinato"),
+        Path.home(),
+    ]
+    try:
+        drive_mask = ctypes.windll.kernel32.GetLogicalDrives()
+        for index in range(26):
+            if drive_mask & (1 << index):
+                drive = Path(f"{chr(65 + index)}:\\")
+                if ctypes.windll.kernel32.GetDriveTypeW(str(drive)) == 3:
+                    roots.append(drive)
+    except Exception:
+        logger.exception("Nao foi possivel enumerar os discos para localizar a configuracao")
+    seen: set[str] = set()
+    for root in roots:
+        if root is None or not root.exists():
+            continue
+        for folder, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if d.lower() not in {"node_modules", ".git", "windowsapps", "$recycle.bin", "system volume information"}]
+            if "catalog-sync.dat" in files:
+                candidate = Path(folder) / "catalog-sync.dat"
+                key = str(candidate).lower()
+                if key not in seen:
+                    return candidate
+                seen.add(key)
+    return None
+
+
+def merge_cardapio_dispatcher_config(catalog_config: dict[str, Any], local_api: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(catalog_config)
+    for key in ("raffinato_api_url", "raffinato_api_auth", "raffinato_api_identifier"):
+        if local_api.get(key):
+            merged[key] = local_api[key]
+    return merged
+
+
+def bootstrap_cardapio_dispatcher_config() -> dict[str, Any]:
+    """Autoriza esta instalação sem depender do catalog-sync.dat legado."""
+    state = load_profile_state()
+    cached = dict(state.get("zuqui_dispatcher") or {})
+    if all(cached.get(key) for key in ("backend_url", "sync_token", "id_filial")):
+        return cached
+    instance_id = str(state.get("connector_instance_id") or "").strip()
+    credential = str(state.get("connector_credential") or "").strip()
+    if not instance_id or not credential:
+        raise RuntimeError("Conector ainda nao esta pareado; conclua o vinculo no CheckDiario.")
+    response = requests.post(
+        CARDAPIO_API_URL,
+        json={
+            "action": "connector_dispatch_bootstrap",
+            "connector_instance_id": instance_id,
+            "credential": credential,
+            "connector_version": CONNECTOR_VERSION,
+        },
+        timeout=20,
+    )
+    try:
+        payload = response.json()
+    except Exception as exc:
+        raise RuntimeError(f"Servidor do cardapio respondeu HTTP {response.status_code}.") from exc
+    if not response.ok:
+        raise RuntimeError(str(payload.get("error") or f"HTTP {response.status_code}"))
+    config = {
+        "backend_url": str(payload["backend_url"]),
+        "sync_token": str(payload["sync_token"]),
+        "id_filial": int(payload["id_filial"]),
+        "store_key": str(payload.get("store_key") or "zuqui-filial-1"),
+    }
+    state["zuqui_dispatcher"] = config
+    save_profile_state(state)
+    logger.info("Despachante do cardapio autorizado automaticamente para a filial %s", config["id_filial"])
+    return config
+
+
+def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, Any]:
+    """Combina a autorização do cardápio com o perfil SQL local da filial."""
+    branch_id = int(dispatcher_config["id_filial"])
+    candidates = list(load_mapped_store_configs().values())
+    selected = next(
+        (config for config in candidates if int(config.get("id_filial") or 0) == branch_id),
+        candidates[0] if len(candidates) == 1 else None,
+    )
+    if not selected:
+        raise RuntimeError(f"Perfil SQL da filial {branch_id} nao encontrado no conector.")
+    missing = [key for key in ("server", "database", "uid", "pwd") if not selected.get(key)]
+    if missing:
+        raise RuntimeError("Perfil SQL incompleto para sincronizar o cardapio.")
+    return {**selected, **dispatcher_config, "id_filial": branch_id}
+
+
+def start_cardapio_dispatcher() -> threading.Thread | None:
+    global CARDAPIO_MUTEX_HANDLE
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcher")
+    if ctypes.windll.kernel32.GetLastError() == 183:
+        return None
+    config_path = find_cardapio_config()
+    bundled = Path(getattr(sys, "_MEIPASS", BASE_DIR)) / "catalog_sync.py"
+    if not bundled.is_file():
+        logger.error("Componente do cardapio %s nao encontrado", CONNECTOR_VERSION)
+        return None
+    spec = importlib.util.spec_from_file_location("zuqui_catalog_sync_212", bundled)
+    if not spec or not spec.loader:
+        raise RuntimeError("Nao foi possivel carregar o despachante do cardapio")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    if config_path:
+        module.CONFIG = config_path
+    def loop() -> None:
+        logger.info("Despachante %s iniciando; configuracao legada=%s", CONNECTOR_VERSION, config_path or "ausente")
+        while True:
+            try:
+                if REMOTE_OPERATIONS_PAUSED.is_set():
+                    time.sleep(30)
+                    continue
+                if time.monotonic() >= CARDAPIO_ACTIVE_UNTIL:
+                    time.sleep(5)
+                    continue
+                try:
+                    dispatcher_config = module.load() if config_path else {}
+                except Exception:
+                    logger.warning("Configuracao legada do cardapio nao pode ser lida; usando identidade da instalacao")
+                    dispatcher_config = {}
+                if not all(dispatcher_config.get(key) for key in ("backend_url", "sync_token", "id_filial")):
+                    dispatcher_config = bootstrap_cardapio_dispatcher_config()
+                # A configuração do catálogo contém o token da fila; a tela
+                # local do conector guarda a credencial Raffinato em outro cofre
+                # DPAPI. O despachante precisa das duas fontes.
+                dispatcher_config = merge_cardapio_dispatcher_config(
+                    dispatcher_config, zuqui_integration_config()
+                )
+                module.dispatch_order(dispatcher_config)
+            except Exception:
+                logger.exception("Falha no despacho %s", CONNECTOR_VERSION)
+            # Durante uma janela aberta pelo cliente, quinze segundos mantém o
+            # envio responsivo sem consultar a nuvem a cada segundo.
+            time.sleep(15)
+    def catalog_loop() -> None:
+        global CARDAPIO_ACTIVE_UNTIL
+        logger.info("Sincronizacao manual do cardapio %s ativa", CONNECTOR_VERSION)
+        while True:
+            try:
+                if REMOTE_OPERATIONS_PAUSED.is_set():
+                    time.sleep(60)
+                    continue
+                dispatcher_config = bootstrap_cardapio_dispatcher_config()
+                catalog_config = cardapio_catalog_sql_config(dispatcher_config)
+                pending = module.post(dispatcher_config, "catalog_sync_pending")
+                request_id = pending.get("request_id")
+                if pending.get("work_requested"):
+                    CARDAPIO_ACTIVE_UNTIL = time.monotonic() + 45
+                if request_id:
+                    logger.info("Sincronizacao manual do cardapio iniciada: %s", request_id)
+                    module.sync(catalog_config, mode="full", request_id=request_id)
+                    logger.info("Sincronizacao manual do cardapio concluida: %s", request_id)
+            except Exception:
+                logger.exception("Falha ao consultar sincronizacao manual do cardapio %s", CONNECTOR_VERSION)
+            # Única consulta leve enquanto ocioso. A abertura do cardápio marca
+            # demanda no servidor e ativa o despacho no próximo ciclo.
+            time.sleep(30)
+    thread = threading.Thread(target=loop, name="zuqui-cardapio-212", daemon=False)
+    thread.start()
+    threading.Thread(target=catalog_loop, name="zuqui-catalogo-212", daemon=True).start()
+    return thread
 # PBKDF2 da senha inicial fornecida para a primeira instalacao. A senha em si
 # nunca e armazenada nem incorporada ao executavel.
 INITIAL_MASTER_SALT = "7f2d9c4e18a6b035d1c85693fa2b470d"
@@ -1127,6 +1365,9 @@ def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
 def relay_sync_loop(stop_event: threading.Event) -> None:
     full_synced: set[str] = set()
     while not stop_event.is_set():
+        if REMOTE_OPERATIONS_PAUSED.is_set():
+            stop_event.wait(60)
+            continue
         try:
             configs = load_mapped_store_configs()
         except Exception:
@@ -1172,7 +1413,10 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
             finally:
                 if acquired:
                     CACHE_SYNC_LOCK.release()
-        stop_event.wait(60)
+        # Os caches de relatório não precisam ser regravados a cada minuto.
+        # Quinze minutos preserva atualização operacional e reduz drasticamente
+        # invocações, tráfego e churn do PostgreSQL.
+        stop_event.wait(15 * 60)
 
 
 def heartbeat_loop(stop_event: threading.Event) -> None:
@@ -1181,14 +1425,20 @@ def heartbeat_loop(stop_event: threading.Event) -> None:
             state = load_profile_state()
             credential = str(state.get("connector_credential") or "")
             if credential:
-                relay_post({
+                heartbeat = relay_post({
                     "action":"connector_heartbeat", "credential":credential,
                     "connector_instance_id":state["connector_instance_id"], "version":CONNECTOR_VERSION,
                     "profiles":len(state.get("profiles", {})), "mappings":len(state.get("mappings", {})),
                 })
+                paused = bool((heartbeat or {}).get("operations_paused"))
+                if paused and not REMOTE_OPERATIONS_PAUSED.is_set():
+                    logger.warning("Operacoes pausadas remotamente pelo painel do CheckDiario")
+                elif not paused and REMOTE_OPERATIONS_PAUSED.is_set():
+                    logger.info("Operacoes reativadas remotamente pelo painel do CheckDiario")
+                REMOTE_OPERATIONS_PAUSED.set() if paused else REMOTE_OPERATIONS_PAUSED.clear()
         except Exception:
             logger.exception("Heartbeat da instalacao falhou")
-        stop_event.wait(60)
+        stop_event.wait(2 * 60)
 
 
 def get_store_config(store_id: str) -> dict[str, Any]:
@@ -2730,13 +2980,34 @@ def run_tray(server: ThreadingHTTPServer) -> None:
 
 
 def main() -> int:
+    if "--version" in sys.argv:
+        print(CONNECTOR_VERSION)
+        return 0
     if "--self-test" in sys.argv:
         migrate_legacy_configuration()
         state = load_profile_state()
         instance_id = str(state.get("connector_instance_id") or "")
         UUID(instance_id)
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
+    try:
+        # Atualiza o despachante mesmo quando uma versao anterior do conector
+        # unificado ainda esta aberta e possui o mutex da bandeja.
+        update_zuqui_cardapio_component()
+    except Exception as exc:
+        logger.exception("Atualizacao do componente do cardapio falhou")
+        show_windows_message("Conector Raffinato", f"Nao foi possivel atualizar o componente do cardapio.\n\n{exc}", True)
+        return 1
+    try:
+        cardapio_thread = start_cardapio_dispatcher()
+    except Exception:
+        logger.exception("Nao foi possivel iniciar o despachante interno %s", CONNECTOR_VERSION)
+        cardapio_thread = None
     if not acquire_single_instance():
+        if cardapio_thread:
+            show_windows_message("Conector Raffinato", f"Despachante de pedidos {CONNECTOR_VERSION} ativado. O catalogo sincroniza somente quando solicitado.")
+            cardapio_thread.join()
+        else:
+            show_windows_message("Conector Raffinato", f"A versao {CONNECTOR_VERSION} ja esta ativa.")
         return 0
     ensure_browser_loopback_policy()
     try:
