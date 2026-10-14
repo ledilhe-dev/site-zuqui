@@ -1,2 +1,5 @@
 artifacts/
 tools/__pycache__/
+supabase/.temp/
+config.hostinger.js
+*.pre-hostinger

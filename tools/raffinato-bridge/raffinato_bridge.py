@@ -44,7 +44,10 @@ BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
 CONNECTOR_VERSION = "2.0.13"
-CARDAPIO_API_URL = "https://pcmqxbwxpzskkyjmtmrv.supabase.co/functions/v1/cardapio-api"
+CARDAPIO_API_URL = os.environ.get(
+    "CHECKDIARIO_CARDAPIO_API_URL",
+    "https://pcmqxbwxpzskkyjmtmrv.supabase.co/functions/v1/cardapio-api",
+).rstrip("/")
 CACHE_SCHEMA_VERSION = 2
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
@@ -66,9 +69,9 @@ DEFAULT_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8766",
     "http://localhost:8766",
 ]
-SUPABASE_URL = "https://tqfoxqbmslxoynrasltl.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88"
-RELAY_URL = f"{SUPABASE_URL}/functions/v1/raffinato-relay"
+SUPABASE_URL = os.environ.get("CHECKDIARIO_API_URL", "https://tqfoxqbmslxoynrasltl.supabase.co").rstrip("/")
+SUPABASE_ANON_KEY = os.environ.get("CHECKDIARIO_PUBLIC_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxZm94cWJtc2x4b3lucmFzbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1OTU0NDgsImV4cCI6MjA5MjE3MTQ0OH0.2pFQGzMKyYe6P30txCFLCVcNO-Nwjk-zEWknZwNXz88")
+RELAY_URL = os.environ.get("CHECKDIARIO_RELAY_URL", f"{SUPABASE_URL}/functions/v1/raffinato-relay").rstrip("/")
 
 logging.basicConfig(
     filename=BASE_DIR / "raffinato-bridge.log",

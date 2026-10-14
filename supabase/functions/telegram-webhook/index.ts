@@ -12,7 +12,7 @@ type TelegramUpdate = {
 type TelegramAlert = {
   id: string;
   tipo: "tarefa_iniciada" | "tarefa_nao_iniciada" | "tarefa_finalizada" | "tarefa_nao_finalizada"
-    | "financeiro_vencimento" | "financeiro_saldo" | "financeiro_ajuste" | "produto_cadastrado" | "produto_vencimento"
+    | "financeiro_vencimento" | "financeiro_saldo" | "financeiro_ajuste" | "financeiro_recebimento" | "produto_cadastrado" | "produto_vencimento"
     | "agenda_cadastrada" | "agenda_dia";
   empresa_id: string;
   loja_id: string;
@@ -29,6 +29,15 @@ type TelegramAlert = {
 };
 
 Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") {
+    return new Response("ok", {
+      headers: {
+        "Access-Control-Allow-Origin": "https://checkdiario.com.br",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-checkdiario-internal-secret, x-telegram-bot-api-secret-token",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+      },
+    });
+  }
   if (request.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
   }
@@ -43,7 +52,7 @@ Deno.serve(async (request) => {
   if (isTelegramUpdate(payload)) {
     const configuredSecret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") || "";
     const receivedSecret = request.headers.get("x-telegram-bot-api-secret-token") || "";
-    if (configuredSecret && receivedSecret !== configuredSecret) {
+    if (!configuredSecret || receivedSecret !== configuredSecret) {
       return json({ error: "Invalid webhook secret" }, 401);
     }
 
@@ -64,6 +73,11 @@ Deno.serve(async (request) => {
   }
 
   if (payload.origem !== "cron") return json({ ok: true });
+
+  const configuredInternalSecret = Deno.env.get("TELEGRAM_INTERNAL_SECRET") || "";
+  const receivedInternalSecret = request.headers.get("x-checkdiario-internal-secret") || "";
+  if (!configuredInternalSecret) return json({ error: "Missing TELEGRAM_INTERNAL_SECRET" }, 500);
+  if (receivedInternalSecret !== configuredInternalSecret) return json({ error: "Invalid internal secret" }, 401);
 
   return processQueue();
 });
@@ -323,6 +337,7 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
     financeiro_vencimento: "notificar_financeiro",
     financeiro_saldo: "notificar_financeiro",
     financeiro_ajuste: "notificar_financeiro",
+    financeiro_recebimento: "notificar_financeiro",
     produto_cadastrado: "notificar_produtos_vencimento",
     produto_vencimento: "notificar_produtos_vencimento",
     agenda_cadastrada: "notificar_tarefa_iniciada",
@@ -333,6 +348,7 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
 
 function buildMessage(alert: TelegramAlert) {
   if (alert.tipo === "financeiro_vencimento" || alert.tipo === "financeiro_saldo" || alert.tipo === "financeiro_ajuste"
+    || alert.tipo === "financeiro_recebimento"
     || alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento"
     || alert.tipo === "agenda_cadastrada" || alert.tipo === "agenda_dia") {
     return alert.descricao;
@@ -377,7 +393,8 @@ function buildMessage(alert: TelegramAlert) {
 }
 
 function isFinancialAlert(tipo: TelegramAlert["tipo"]) {
-  return tipo === "financeiro_vencimento" || tipo === "financeiro_saldo" || tipo === "financeiro_ajuste";
+  return tipo === "financeiro_vencimento" || tipo === "financeiro_saldo" || tipo === "financeiro_ajuste"
+    || tipo === "financeiro_recebimento";
 }
 
 function formatDateTime(value: string) {
