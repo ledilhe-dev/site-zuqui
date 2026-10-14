@@ -60,8 +60,8 @@ jobs:
           cp -R media _site/
           cp -R zuqui _site/
           mkdir -p _site/downloads
-          cp downloads/Conector-Raffinato-v2.0.13.exe _site/downloads/
-          cp downloads/Conector-Raffinato-v2.0.13.sha256.txt _site/downloads/
+          cp "downloads/Conector-Raffinato-v${version}.exe" _site/downloads/
+          cp "downloads/Conector-Raffinato-v${version}.sha256.txt" _site/downloads/
 
           touch _site/.nojekyll
 
