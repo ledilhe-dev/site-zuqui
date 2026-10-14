@@ -1459,6 +1459,29 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   }
 
   async function handleLogin(event) {
+    event?.preventDefault();
+    const button = document.getElementById('loginSubmitButton');
+    if (button?.disabled) return;
+    const originalLabel = button?.textContent || 'Entrar';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Entrando...';
+    }
+    setMsg('msgLogin', 'Validando acesso...', '');
+    try {
+      return await executarLogin(event);
+    } catch (error) {
+      console.error('Falha inesperada no login:', error);
+      setMsg('msgLogin', `Nao foi possivel entrar: ${mensagemErroSupabase(error, 'tente novamente')}`, 'err');
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+  }
+
+  async function executarLogin(event) {
     event.preventDefault();
     habilitarSomNotificacao();
     const username = document.getElementById('username').value.trim();
