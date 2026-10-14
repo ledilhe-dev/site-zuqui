@@ -45,6 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          version=$(python -c "import json; print(json.load(open('assets/connector-version.json', encoding='utf-8'))['latest_version'])")
           mkdir -p _site
 
           cp index.html _site/
