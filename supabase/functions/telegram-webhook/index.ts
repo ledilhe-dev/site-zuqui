@@ -13,7 +13,7 @@ type TelegramAlert = {
   id: string;
   tipo: "tarefa_iniciada" | "tarefa_nao_iniciada" | "tarefa_finalizada" | "tarefa_nao_finalizada"
     | "financeiro_vencimento" | "financeiro_saldo" | "financeiro_ajuste" | "financeiro_recebimento" | "produto_cadastrado" | "produto_vencimento"
-    | "agenda_cadastrada" | "agenda_dia";
+    | "agenda_cadastrada" | "agenda_dia" | "ponto_entrada";
   empresa_id: string;
   loja_id: string;
   descricao: string;
@@ -135,6 +135,7 @@ async function registerZuquiDestination(chatId: number, chatTitle = "") {
     notificar_tarefa_nao_iniciada: true,
     notificar_tarefa_finalizada: true,
     notificar_tarefa_nao_finalizada: true,
+    notificar_ponto: true,
     ...route,
     atualizado_em: new Date().toISOString(),
   };
@@ -160,17 +161,17 @@ function destinationRoute(title: string) {
   if (value.includes("financeiro")) return {
     notificar_tarefa_iniciada: false, notificar_tarefa_nao_iniciada: false,
     notificar_tarefa_finalizada: false, notificar_tarefa_nao_finalizada: false,
-    notificar_financeiro: true, notificar_produtos_vencimento: false,
+    notificar_financeiro: true, notificar_produtos_vencimento: false, notificar_ponto: false,
   };
   if (value.includes("tarefa") || value.includes("padaria")) return {
     notificar_tarefa_iniciada: true, notificar_tarefa_nao_iniciada: true,
     notificar_tarefa_finalizada: true, notificar_tarefa_nao_finalizada: true,
-    notificar_financeiro: false, notificar_produtos_vencimento: true,
+    notificar_financeiro: false, notificar_produtos_vencimento: true, notificar_ponto: true,
   };
   return {
     notificar_tarefa_iniciada: false, notificar_tarefa_nao_iniciada: false,
     notificar_tarefa_finalizada: false, notificar_tarefa_nao_finalizada: false,
-    notificar_financeiro: false, notificar_produtos_vencimento: false,
+    notificar_financeiro: false, notificar_produtos_vencimento: false, notificar_ponto: true,
   };
 }
 
@@ -342,6 +343,7 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
     produto_vencimento: "notificar_produtos_vencimento",
     agenda_cadastrada: "notificar_tarefa_iniciada",
     agenda_dia: "notificar_tarefa_iniciada",
+    ponto_entrada: "notificar_ponto",
   } as const;
   return flags[tipo];
 }
@@ -350,7 +352,8 @@ function buildMessage(alert: TelegramAlert) {
   if (alert.tipo === "financeiro_vencimento" || alert.tipo === "financeiro_saldo" || alert.tipo === "financeiro_ajuste"
     || alert.tipo === "financeiro_recebimento"
     || alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento"
-    || alert.tipo === "agenda_cadastrada" || alert.tipo === "agenda_dia") {
+    || alert.tipo === "agenda_cadastrada" || alert.tipo === "agenda_dia"
+    || alert.tipo === "ponto_entrada") {
     return alert.descricao;
   }
   const titles = {
