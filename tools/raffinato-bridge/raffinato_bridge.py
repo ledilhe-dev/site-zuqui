@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.15"
+CONNECTOR_VERSION = "2.0.16"
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -150,37 +150,19 @@ def update_zuqui_cardapio_component() -> None:
 
 
 def find_cardapio_config() -> Path | None:
+    """Localiza apenas instalações legadas conhecidas, sem varrer discos inteiros."""
     direct = [BASE_DIR / "catalog-sync.dat", BASE_DIR.parent / "catalog-sync.dat"]
     for candidate in direct:
         if candidate.is_file():
             return candidate
-    roots = [
-        Path(os.environ["LOCALAPPDATA"]) if os.environ.get("LOCALAPPDATA") else None,
-        Path(os.environ["APPDATA"]) if os.environ.get("APPDATA") else None,
-        Path(r"C:\Raffinato"),
-        Path.home(),
-    ]
-    try:
-        drive_mask = ctypes.windll.kernel32.GetLogicalDrives()
-        for index in range(26):
-            if drive_mask & (1 << index):
-                drive = Path(f"{chr(65 + index)}:\\")
-                if ctypes.windll.kernel32.GetDriveTypeW(str(drive)) == 3:
-                    roots.append(drive)
-    except Exception:
-        logger.exception("Nao foi possivel enumerar os discos para localizar a configuracao")
-    seen: set[str] = set()
-    for root in roots:
-        if root is None or not root.exists():
-            continue
-        for folder, dirs, files in os.walk(root):
-            dirs[:] = [d for d in dirs if d.lower() not in {"node_modules", ".git", "windowsapps", "$recycle.bin", "system volume information"}]
-            if "catalog-sync.dat" in files:
-                candidate = Path(folder) / "catalog-sync.dat"
-                key = str(candidate).lower()
-                if key not in seen:
-                    return candidate
-                seen.add(key)
+    for variable in ("LOCALAPPDATA", "APPDATA"):
+        if os.environ.get(variable):
+            candidate = Path(os.environ[variable]) / "Zuqui" / "catalog-sync.dat"
+            if candidate.is_file():
+                return candidate
+    candidate = Path(r"C:\Raffinato\catalog-sync.dat")
+    if candidate.is_file():
+        return candidate
     return None
 
 
@@ -196,7 +178,9 @@ def bootstrap_cardapio_dispatcher_config() -> dict[str, Any]:
     """Autoriza esta instalação sem depender do catalog-sync.dat legado."""
     state = load_profile_state()
     cached = dict(state.get("zuqui_dispatcher") or {})
-    if all(cached.get(key) for key in ("backend_url", "sync_token", "id_filial")):
+    if cached.get("connector_version") == CONNECTOR_VERSION and all(
+        cached.get(key) for key in ("backend_url", "sync_token", "id_filial")
+    ):
         return cached
     instance_id = str(state.get("connector_instance_id") or "").strip()
     credential = str(state.get("connector_credential") or "").strip()
@@ -223,6 +207,7 @@ def bootstrap_cardapio_dispatcher_config() -> dict[str, Any]:
         "sync_token": str(payload["sync_token"]),
         "id_filial": int(payload["id_filial"]),
         "store_key": str(payload.get("store_key") or "zuqui-filial-1"),
+        "connector_version": CONNECTOR_VERSION,
     }
     state["zuqui_dispatcher"] = config
     save_profile_state(state)
@@ -249,9 +234,9 @@ def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, 
 def start_cardapio_dispatcher() -> threading.Thread | None:
     global CARDAPIO_MUTEX_HANDLE
     # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
-    # atualização do executável. Um nome versionado permite que o 2.0.15
+    # atualização do executável. Um nome versionado permite que o 2.0.16
     # assuma a fila imediatamente, mantendo instância única desta versão.
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV215")
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV216")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
@@ -2996,14 +2981,6 @@ def main() -> int:
         UUID(instance_id)
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
     try:
-        # Atualiza o despachante mesmo quando uma versao anterior do conector
-        # unificado ainda esta aberta e possui o mutex da bandeja.
-        update_zuqui_cardapio_component()
-    except Exception as exc:
-        logger.exception("Atualizacao do componente do cardapio falhou")
-        show_windows_message("Conector Raffinato", f"Nao foi possivel atualizar o componente do cardapio.\n\n{exc}", True)
-        return 1
-    try:
         cardapio_thread = start_cardapio_dispatcher()
     except Exception:
         logger.exception("Nao foi possivel iniciar o despachante interno %s", CONNECTOR_VERSION)
@@ -3039,6 +3016,9 @@ def main() -> int:
     sync_thread.start()
     heartbeat_thread = threading.Thread(target=heartbeat_loop, args=(sync_stop_event,), name="raffinato-heartbeat", daemon=True)
     heartbeat_thread.start()
+    # A manutenção do componente legado não deve atrasar HTTP, heartbeat ou
+    # o ícone da bandeja. O despachante interno já está ativo neste ponto.
+    threading.Thread(target=update_zuqui_cardapio_component, name="zuqui-legacy-update", daemon=True).start()
     if not connector_is_paired():
         webbrowser.open(f"http://127.0.0.1:{PORT}/")
     try:
