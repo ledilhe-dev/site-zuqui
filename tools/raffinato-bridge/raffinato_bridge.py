@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.17"
+CONNECTOR_VERSION = "2.0.18"
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -208,6 +208,8 @@ def bootstrap_cardapio_dispatcher_config() -> dict[str, Any]:
         "id_filial": int(payload["id_filial"]),
         "store_key": str(payload.get("store_key") or "zuqui-filial-1"),
         "connector_version": CONNECTOR_VERSION,
+        "connection_profile_id": str(payload.get("connection_profile_id") or ""),
+        "checkdiario_store_id": str(payload.get("checkdiario_store_id") or ""),
     }
     state["zuqui_dispatcher"] = config
     save_profile_state(state)
@@ -219,10 +221,15 @@ def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, 
     """Combina a autorização do cardápio com o perfil SQL local da filial."""
     branch_id = int(dispatcher_config["id_filial"])
     candidates = list(load_mapped_store_configs().values())
+    expected_profile = str(dispatcher_config.get("connection_profile_id") or "").strip()
     selected = next(
-        (config for config in candidates if int(config.get("id_filial") or 0) == branch_id),
-        candidates[0] if len(candidates) == 1 else None,
+        (config for config in candidates
+         if expected_profile and str(config.get("connection_profile_id") or config.get("id") or "") == expected_profile),
+        None,
     )
+    if not selected and not expected_profile:
+        matching = [config for config in candidates if int(config.get("id_filial") or 0) == branch_id]
+        selected = matching[0] if len(matching) == 1 else None
     if not selected:
         raise RuntimeError(f"Perfil SQL da filial {branch_id} nao encontrado no conector.")
     missing = [key for key in ("server", "database", "uid", "pwd") if not selected.get(key)]
@@ -234,9 +241,9 @@ def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, 
 def start_cardapio_dispatcher() -> threading.Thread | None:
     global CARDAPIO_MUTEX_HANDLE
     # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
-    # atualização do executável. Um nome versionado permite que o 2.0.17
+    # atualização do executável. Um nome versionado permite que o 2.0.18
     # assuma a fila imediatamente, mantendo instância única desta versão.
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV217")
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV218")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
