@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.20"
+CONNECTOR_VERSION = "2.0.21"
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -247,7 +247,7 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
     # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
     # atualização do executável. Um nome versionado permite que o 2.0.19
     # assuma a fila imediatamente, mantendo instância única desta versão.
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV220")
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV221")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
@@ -2940,6 +2940,23 @@ def show_windows_message(title: str, message: str, error: bool = False) -> None:
     ctypes.windll.user32.MessageBoxW(None, message, title, flags)
 
 
+def retire_legacy_connectors() -> None:
+    """Encerra executáveis antigos que disputam a credencial e a fila do cardápio."""
+    for patch in range(0, 21):
+        image = f"Conector-Raffinato-v2.0.{patch}.exe"
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/IM", image],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=8,
+                check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+        except Exception:
+            logger.exception("Nao foi possivel encerrar o conector legado %s", image)
+
+
 def acquire_single_instance() -> bool:
     """Impede mais de um conector por sessão do Windows."""
     global MUTEX_HANDLE
@@ -3004,6 +3021,8 @@ def main() -> int:
         instance_id = str(state.get("connector_instance_id") or "")
         UUID(instance_id)
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
+    retire_legacy_connectors()
+    time.sleep(1)
     try:
         cardapio_thread = start_cardapio_dispatcher()
     except Exception:
