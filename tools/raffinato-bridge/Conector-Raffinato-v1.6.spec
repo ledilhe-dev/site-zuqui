@@ -2,7 +2,10 @@
 
 a = Analysis(
     ['raffinato_bridge.py'],
-    pathex=[], binaries=[], datas=[],
+    pathex=[], binaries=[],
+    # O despachante do cardápio precisa estar dentro do executável. Sem este
+    # arquivo o conector principal fica online, mas nunca consulta a fila.
+    datas=[('../../../cardapio-digital/tools/raffinato-catalog-sync/catalog_sync.py', '.')],
     hiddenimports=['pystray', 'pystray._win32', 'PIL.Image', 'PIL.ImageDraw'], hookspath=[],
     hooksconfig={}, runtime_hooks=[], excludes=[], noarchive=False, optimize=0,
 )

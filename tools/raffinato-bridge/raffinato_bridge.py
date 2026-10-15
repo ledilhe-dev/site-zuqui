@@ -248,7 +248,10 @@ def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, 
 
 def start_cardapio_dispatcher() -> threading.Thread | None:
     global CARDAPIO_MUTEX_HANDLE
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcher")
+    # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
+    # atualização do executável. Um nome versionado permite que o 2.0.14
+    # assuma a fila imediatamente, mantendo instância única desta versão.
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV214")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
