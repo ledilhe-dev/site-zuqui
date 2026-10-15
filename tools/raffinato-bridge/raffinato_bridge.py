@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.19"
+CONNECTOR_VERSION = "2.0.20"
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -221,13 +221,17 @@ def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, 
     """Combina a autorização do cardápio com o perfil SQL local da filial."""
     branch_id = int(dispatcher_config["id_filial"])
     candidates = list(load_mapped_store_configs().values())
+    mapped_candidates = load_mapped_store_configs()
     expected_profile = str(dispatcher_config.get("connection_profile_id") or "").strip()
-    selected = next(
+    expected_store = str(dispatcher_config.get("checkdiario_store_id") or "").strip()
+    selected = mapped_candidates.get(expected_store)
+    if not selected:
+        selected = next(
         (config for config in candidates
          if expected_profile and str(config.get("connection_profile_id") or config.get("id") or "") == expected_profile),
         None,
-    )
-    if not selected and not expected_profile:
+        )
+    if not selected:
         matching = [config for config in candidates if int(config.get("id_filial") or 0) == branch_id]
         selected = matching[0] if len(matching) == 1 else None
     if not selected:
@@ -243,7 +247,7 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
     # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
     # atualização do executável. Um nome versionado permite que o 2.0.19
     # assuma a fila imediatamente, mantendo instância única desta versão.
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV219")
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV220")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
@@ -298,7 +302,6 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
                     time.sleep(60)
                     continue
                 dispatcher_config = bootstrap_cardapio_dispatcher_config()
-                catalog_config = cardapio_catalog_sql_config(dispatcher_config)
                 pending = module.post(dispatcher_config, "catalog_sync_pending")
                 request_id = pending.get("request_id")
                 if pending.get("work_requested"):
@@ -306,6 +309,7 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
                 if request_id:
                     logger.info("Sincronizacao manual do cardapio iniciada: %s", request_id)
                     try:
+                        catalog_config = cardapio_catalog_sql_config(dispatcher_config)
                         module.sync(catalog_config, mode="full", request_id=request_id)
                     except Exception as sync_error:
                         try:
