@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v228-auth-grants-hostinger';
+const CACHE_NAME = 'check-diario-pwa-v229-session-identity-hostinger';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

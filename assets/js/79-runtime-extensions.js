@@ -267,8 +267,7 @@ function obterSessaoPersistenteLoginSalva() {
   return null;
 }
 
-function loginDigitadoConfereComSessaoPersistente(username = '') {
-  const sessao = obterSessaoPersistenteLoginSalva();
+function loginDigitadoConfereComSessao(username = '', sessao = null) {
   if (!sessao) return false;
   const digitado = String(username || '').trim().toLowerCase();
   if (!digitado) return true;
@@ -276,6 +275,10 @@ function loginDigitadoConfereComSessaoPersistente(username = '') {
     .map(v => String(v || '').trim().toLowerCase())
     .filter(Boolean);
   return candidatos.includes(digitado);
+}
+
+function loginDigitadoConfereComSessaoPersistente(username = '') {
+  return loginDigitadoConfereComSessao(username, obterSessaoPersistenteLoginSalva());
 }
 
 function limparDadosVisuaisDaSessao(mensagem = 'Carregando dados da loja...') {
@@ -570,6 +573,10 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     let usuarioPersistido = null;
     try {
       usuarioPersistido = JSON.parse(salvo);
+      const loginVisivel = String(document.getElementById('username')?.value || '').trim();
+      if (loginVisivel && !loginDigitadoConfereComSessao(loginVisivel, usuarioPersistido)) {
+        throw new Error('A sessao salva pertence a outro usuario.');
+      }
       let usuario = usuarioPersistido;
       // O cliente Supabase monta os cabeçalhos de RLS a partir destas variáveis.
       // Restaure-as antes da primeira RPC/consulta protegida; caso contrário uma
@@ -623,7 +630,8 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         || mensagemFalha.includes('cadastro inativo')
         || mensagemFalha.includes('está inativo')
         || mensagemFalha.includes('esta inativo')
-        || mensagemFalha.includes('não existe');
+        || mensagemFalha.includes('não existe')
+        || mensagemFalha.includes('outro usuario');
       // Após reiniciar o Windows, a rede pode ainda não estar pronta quando a
       // PWA abre. Falhas transitórias não podem destruir uma sessão persistente.
       if (tinhaSessaoPersistente && !falhaDefinitiva && usuarioPersistido) {
@@ -667,6 +675,9 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       window.__authLojaId = '';
       atualizarUsuarioTopbar();
       setSistemaLogado(false);
+      if (mensagemFalha.includes('outro usuario')) {
+        setMsg('msgLogin', 'A sessão anterior era de outro usuário e foi encerrada. Digite a senha para continuar.', 'err');
+      }
       document.documentElement.classList.remove('admin-fouc-pendente');
       console.warn(tinhaSessaoPersistente && !falhaDefinitiva
         ? 'Sessão persistente preservada após falha temporária na restauração:'
