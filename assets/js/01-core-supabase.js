@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.67';
-const APP_VERSION_LABEL = '3.2.67-topo-uniforme-telegram';
+const APP_VERSION = '3.2.68';
+const APP_VERSION_LABEL = '3.2.68-auth-hostinger';
 function aplicarVersaoVisivelSistema() {
   const loginBadge = document.getElementById('loginVersionProtecao');
   if (loginBadge) loginBadge.textContent = `VERSÃO DE PROTEÇÃO: ${APP_VERSION}`;
