@@ -998,25 +998,15 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function recuperarSenha() {
     const login = document.getElementById('username')?.value.trim();
     if (!login) {
-      setMsg('msgLogin', 'Informe o nome ou e-mail para iniciar a recuperação de senha.', 'err');
+      setMsg('msgLogin', 'Informe o e-mail para iniciar a recuperação de senha.', 'err');
+      return;
+    }
+    const emailFuncionario = String(login || '').trim().toLowerCase();
+    if (!emailPareceValido(emailFuncionario)) {
+      setMsg('msgLogin', 'Informe o e-mail cadastrado, em vez do nome do usuário.', 'err');
       return;
     }
     try {
-      const { funcionario, erro, motivo } = await localizarFuncionarioPorLoginParaEmail(login);
-      if (erro) throw erro;
-      if (motivo === 'ambiguo') {
-        setMsg('msgLogin', 'Encontramos mais de um funcionário com esse nome. Informe o e-mail cadastrado.', 'err');
-        return;
-      }
-      if (!funcionario) {
-        setMsg('msgLogin', 'Não localizamos funcionário ativo com esse nome ou e-mail.', 'err');
-        return;
-      }
-      const emailFuncionario = String(funcionario.email || '').trim().toLowerCase();
-      if (!emailFuncionario || !emailPareceValido(emailFuncionario)) {
-        setMsg('msgLogin', 'Não existe e-mail cadastrado. Cadastre um e-mail ou, caso já possua cadastro, solicite ao administrador.', 'err');
-        return;
-      }
       await chamarFuncaoAutenticacao({
         action: 'send_password_reset',
         email: emailFuncionario,
@@ -1031,25 +1021,15 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
   async function reenviarVerificacaoEmail() {
     const login = document.getElementById('username')?.value.trim();
     if (!login) {
-      setMsg('msgLogin', 'Informe o nome ou e-mail para reenviar a verificação.', 'err');
+      setMsg('msgLogin', 'Informe o e-mail para reenviar a verificação.', 'err');
+      return;
+    }
+    const emailFuncionario = String(login || '').trim().toLowerCase();
+    if (!emailPareceValido(emailFuncionario)) {
+      setMsg('msgLogin', 'Informe o e-mail cadastrado, em vez do nome do usuário.', 'err');
       return;
     }
     try {
-      const { funcionario, erro, motivo } = await localizarFuncionarioPorLoginParaEmail(login);
-      if (erro) throw erro;
-      if (motivo === 'ambiguo') {
-        setMsg('msgLogin', 'Encontramos mais de um funcionário com esse nome. Informe o e-mail cadastrado.', 'err');
-        return;
-      }
-      if (!funcionario) {
-        setMsg('msgLogin', 'Não localizamos funcionário ativo com esse nome ou e-mail.', 'err');
-        return;
-      }
-      const emailFuncionario = String(funcionario.email || '').trim().toLowerCase();
-      if (!emailFuncionario || !emailPareceValido(emailFuncionario)) {
-        setMsg('msgLogin', 'Usuário localizado, mas não há e-mail válido cadastrado para reenviar a verificação.', 'err');
-        return;
-      }
       await enviarVerificacaoEmailFuncionario(emailFuncionario);
       setMsg('msgLogin', `Enviamos um novo link de verificação para ${emailFuncionario}.`, 'ok');
     } catch (error) {
