@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.21"
+CONNECTOR_VERSION = "2.0.22"
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -203,7 +203,9 @@ def bootstrap_cardapio_dispatcher_config() -> dict[str, Any]:
     if not response.ok:
         raise RuntimeError(str(payload.get("error") or f"HTTP {response.status_code}"))
     config = {
-        "backend_url": str(payload["backend_url"]),
+        # Nunca persista o hostname interno retornado pelo Supabase self-hosted
+        # (ex.: api-gw:8000). O conector da loja sempre usa a URL pública.
+        "backend_url": CARDAPIO_API_URL,
         "sync_token": str(payload["sync_token"]),
         "id_filial": int(payload["id_filial"]),
         "store_key": str(payload.get("store_key") or "zuqui-filial-1"),
@@ -242,12 +244,91 @@ def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, 
     return {**selected, **dispatcher_config, "id_filial": branch_id}
 
 
+def run_cardapio_acceptance_once(dispatcher_config: dict[str, Any], module: Any) -> None:
+    """Executa uma única bateria real após o catálogo concluir com sucesso."""
+    state = load_profile_state()
+    marker = dict(state.get("cardapio_acceptance") or {})
+    if marker.get("version") == CONNECTOR_VERSION:
+        return
+    state["cardapio_acceptance"] = {
+        "version": CONNECTOR_VERSION,
+        "status": "running",
+        "started_at": datetime.now().isoformat(),
+    }
+    save_profile_state(state)
+    try:
+        api_config = zuqui_integration_config(state)
+        if not api_config.get("raffinato_api_auth"):
+            raise RuntimeError("Credencial local da API Raffinato nao configurada.")
+        diagnostic = diagnose_raffinato_api(api_config)
+        required = ("mesas", "cartao_3", "pontos_referencia", "produtos", "garcons")
+        failed = [name for name in required if not diagnostic.get("rotas", {}).get(name, {}).get("ok")]
+        if failed:
+            raise RuntimeError("Rotas Raffinato reprovadas: " + ", ".join(failed))
+        identifier, order_identifier = str(uuid4()), str(uuid4())
+        params = {
+            "identificador": identifier,
+            "identificador_pedido": order_identifier,
+            "idproduto": 2777,
+            "codigovirtual": "3",
+            "nomereferencia": "MESA 01",
+            "setorimpressao": "0",
+            "idgarcom": int(api_config.get("idgarcom") or 20),
+        }
+        preview = prepare_raffinato_test_order(api_config, params)
+        state = load_profile_state()
+        integration = zuqui_integration_config(state)
+        integration["raffinato_test_order_preview"] = {
+            "identificador": identifier,
+            "identificadorpedidointegracao": order_identifier,
+            "parametros": params,
+            "payload": preview["payload"],
+            "enviado": False,
+        }
+        state["zuqui_integration"] = integration
+        save_profile_state(state)
+        sent = send_raffinato_test_order(integration, {"confirmation": "ENVIAR PEDIDO TESTE"})
+        result = sent.get("resultado") or {}
+        if result.get("gravado") is not True:
+            raise RuntimeError("Pedido de aceite nao confirmou gravado=true.")
+        state = load_profile_state()
+        state["cardapio_acceptance"] = {
+            "version": CONNECTOR_VERSION,
+            "status": "passed",
+            "finished_at": datetime.now().isoformat(),
+            "idvenda": result.get("idvenda"),
+            "numeropedido": result.get("numeropedido"),
+        }
+        save_profile_state(state)
+        module.post(dispatcher_config, "catalog_sync_acceptance_result", passed=True,
+                    checks={"catalog": True, "reference": True, "table": True,
+                            "command": True, "order": True},
+                    idvenda=result.get("idvenda"), numeropedido=result.get("numeropedido"))
+        logger.info("Aceite completo do cardapio aprovado | idvenda=%s pedido=%s",
+                    result.get("idvenda"), result.get("numeropedido"))
+    except Exception as exc:
+        state = load_profile_state()
+        state["cardapio_acceptance"] = {
+            "version": CONNECTOR_VERSION,
+            "status": "failed",
+            "finished_at": datetime.now().isoformat(),
+            "error": str(exc)[:500],
+        }
+        save_profile_state(state)
+        try:
+            module.post(dispatcher_config, "catalog_sync_acceptance_result", passed=False,
+                        error=str(exc)[:1000])
+        except Exception:
+            logger.exception("Falha ao registrar o aceite reprovado do cardapio")
+        logger.exception("Aceite completo do cardapio reprovado")
+
+
 def start_cardapio_dispatcher() -> threading.Thread | None:
     global CARDAPIO_MUTEX_HANDLE
     # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
     # atualização do executável. Um nome versionado permite que o 2.0.19
     # assuma a fila imediatamente, mantendo instância única desta versão.
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV221")
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV222")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
@@ -319,6 +400,7 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
                             logger.exception("Falha ao registrar erro da sincronizacao %s", request_id)
                         raise
                     logger.info("Sincronizacao manual do cardapio concluida: %s", request_id)
+                    run_cardapio_acceptance_once(dispatcher_config, module)
             except Exception:
                 logger.exception("Falha ao consultar sincronizacao manual do cardapio %s", CONNECTOR_VERSION)
             # Única consulta leve enquanto ocioso. A abertura do cardápio marca
@@ -2942,7 +3024,7 @@ def show_windows_message(title: str, message: str, error: bool = False) -> None:
 
 def retire_legacy_connectors() -> None:
     """Encerra executáveis antigos que disputam a credencial e a fila do cardápio."""
-    for patch in range(0, 21):
+    for patch in range(0, 22):
         image = f"Conector-Raffinato-v2.0.{patch}.exe"
         try:
             subprocess.run(
