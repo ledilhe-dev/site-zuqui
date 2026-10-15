@@ -2948,8 +2948,11 @@ def create_tray_image():
     from PIL import Image, ImageDraw
     image = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((3, 3, 61, 61), radius=15, fill=(255, 255, 255, 255), outline=(34, 197, 94, 255), width=6)
-    draw.line((16, 32, 27, 43, 49, 20), fill=(15, 23, 42, 255), width=7, joint="curve")
+    # Fundo escuro sólido e traço branco continuam legíveis quando o Windows
+    # reduz o ícone para 16 px, ao contrário do antigo quadrado quase branco.
+    draw.rounded_rectangle((2, 2, 62, 62), radius=15,
+                           fill=(15, 52, 43, 255), outline=(24, 207, 153, 255), width=5)
+    draw.line((15, 32, 27, 44, 50, 19), fill=(255, 255, 255, 255), width=8, joint="curve")
     return image
 
 
