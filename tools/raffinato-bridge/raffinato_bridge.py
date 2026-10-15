@@ -43,7 +43,8 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.22"
+CONNECTOR_VERSION = "2.0.23"
+CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -328,7 +329,7 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
     # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
     # atualização do executável. Um nome versionado permite que o 2.0.19
     # assuma a fila imediatamente, mantendo instância única desta versão.
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV222")
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV223")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
@@ -369,9 +370,7 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
                 module.dispatch_order(dispatcher_config)
             except Exception:
                 logger.exception("Falha no despacho %s", CONNECTOR_VERSION)
-            # Durante uma janela aberta pelo cliente, quinze segundos mantém o
-            # envio responsivo sem consultar a nuvem a cada segundo.
-            time.sleep(15)
+            # A fila de pedidos usa intervalo curto somente durante a janela ativa.\r\n            # A sincronizacao do catalogo continua exclusivamente manual.\r\n            time.sleep(CARDAPIO_ORDER_POLL_SECONDS)
     def catalog_loop() -> None:
         global CARDAPIO_ACTIVE_UNTIL
         logger.info("Sincronizacao manual do cardapio %s ativa", CONNECTOR_VERSION)
