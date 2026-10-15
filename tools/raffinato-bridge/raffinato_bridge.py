@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.14"
+CONNECTOR_VERSION = "2.0.15"
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -249,9 +249,9 @@ def cardapio_catalog_sql_config(dispatcher_config: dict[str, Any]) -> dict[str, 
 def start_cardapio_dispatcher() -> threading.Thread | None:
     global CARDAPIO_MUTEX_HANDLE
     # O mutex legado pode continuar preso ao despachante 2.0.13 depois da
-    # atualização do executável. Um nome versionado permite que o 2.0.14
+    # atualização do executável. Um nome versionado permite que o 2.0.15
     # assuma a fila imediatamente, mantendo instância única desta versão.
-    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV214")
+    CARDAPIO_MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\ZuquiCardapioDispatcherV215")
     if ctypes.windll.kernel32.GetLastError() == 183:
         return None
     config_path = find_cardapio_config()
