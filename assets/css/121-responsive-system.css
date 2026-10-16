@@ -1,0 +1,358 @@
+/*
+ * Sistema responsivo final.
+ * Esta folha deve ser carregada por ultimo: ela unifica a casca da aplicacao
+ * e impede que patches antigos escondam simultaneamente a lateral e seu botao.
+ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { max-width: 100%; }
+body { overflow-x: clip; }
+
+.shell {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.main,
+.content,
+.pagina,
+.pagina.ativa,
+.pagina.ativa > *,
+.topbar,
+.topbar-main,
+.topbar-store,
+.topbar-actions {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.main { flex: 1 1 0; width: auto; }
+.content { width: 100%; overflow-x: clip; }
+
+.pagina.ativa img,
+.pagina.ativa video,
+.pagina.ativa canvas,
+.pagina.ativa svg { max-width: 100%; }
+
+.pagina.ativa .card,
+.pagina.ativa [class*="-card"],
+.pagina.ativa [class*="-panel"],
+.pagina.ativa [class*="-painel"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pagina.ativa .raffinato-hero { overflow: hidden !important; }
+
+.pagina.ativa .form-row,
+.pagina.ativa .filters,
+.pagina.ativa .toolbar,
+.pagina.ativa [class*="-filters"],
+.pagina.ativa [class*="-filtros"],
+.pagina.ativa [class*="-toolbar"] {
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.pagina.ativa input:not([type="checkbox"]):not([type="radio"]),
+.pagina.ativa select,
+.pagina.ativa textarea,
+.pagina.ativa button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.table-wrap,
+.table-responsive,
+.financeiro-table-wrap,
+.relatorio-table-wrap,
+.lista-tabela-wrap,
+[class*="-table-wrap"],
+[class*="-tabela-wrap"] {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.overlay .modal,
+.overlay [class*="-modal"],
+[role="dialog"] {
+  max-width: min(920px, calc(100vw - 24px)) !important;
+  max-height: calc(100dvh - 24px) !important;
+  overflow: auto;
+}
+
+@media (min-width: 1181px) {
+  .mobile-menu-btn { display: none !important; }
+}
+
+/* Tablet, iPad em ambas orientacoes e janelas compactas. */
+@media (max-width: 1180px) {
+  .sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 10020 !important;
+    display: flex !important;
+    width: min(340px, 88vw) !important;
+    max-width: 88vw !important;
+    height: 100dvh !important;
+    padding: max(14px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    transform: translate3d(-105%, 0, 0) !important;
+    visibility: hidden;
+    transition: transform .22s ease, visibility 0s linear .22s !important;
+  }
+
+  .sidebar.open {
+    transform: translate3d(0, 0, 0) !important;
+    visibility: visible;
+    transition: transform .22s ease !important;
+  }
+
+  body.sidebar-collapsed .sidebar {
+    width: min(340px, 88vw) !important;
+    padding: max(14px, env(safe-area-inset-top)) 12px max(18px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .mobile-nav-overlay { z-index: 10010 !important; }
+  body.mobile-nav-open { overflow: hidden !important; }
+  body.mobile-nav-open .mobile-nav-overlay {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .sidebar-collapse-toggle { display: none !important; }
+
+  .topbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: max(8px, env(safe-area-inset-top)) 10px 8px !important;
+    overflow: visible !important;
+  }
+
+  .topbar-main {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: 44px minmax(116px, 1fr) minmax(116px, 1fr) auto !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .topbar-main .mobile-menu-btn {
+    display: inline-flex !important;
+    grid-column: 1 !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  #topbarTitleWrap { display: none !important; }
+
+  .topbar-clock,
+  .topbar-business-day {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 5px 8px !important;
+  }
+
+  .topbar-info-label { font-size: 8px !important; }
+  .topbar-clock-time,
+  .topbar-business-day-date { font-size: clamp(16px, 2.2vw, 20px) !important; }
+
+  #topbarVersionBadge {
+    display: flex !important;
+    align-self: center !important;
+    min-width: 0 !important;
+    padding: 3px 6px !important;
+    font-size: 8px !important;
+  }
+
+  .topbar-store {
+    grid-column: 1 !important;
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 44px !important;
+    padding: 6px 9px !important;
+  }
+
+  .topbar-store[hidden],
+  #topbarUserInfo[hidden] { display: none !important; }
+
+  .topbar-actions {
+    grid-column: 2 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 42px auto !important;
+    align-items: stretch !important;
+    gap: 7px !important;
+    width: 100% !important;
+  }
+
+  #topbarUserInfo {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 44px !important;
+    padding: 5px 8px !important;
+  }
+
+  .topbar-actions .notification-btn {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 44px !important;
+  }
+
+  .topbar-actions > .btn-red {
+    min-width: 72px !important;
+    min-height: 44px !important;
+    padding-inline: 10px !important;
+  }
+
+  .topbar-store-name,
+  .topbar-user-name { font-size: 12px !important; }
+
+  .content { padding: 10px !important; }
+
+  .pagina.ativa .stats-grid,
+  .pagina.ativa [class*="-stats"],
+  .pagina.ativa [class*="-metrics"],
+  .pagina.ativa [class*="-kpis"] {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  }
+
+  .pagina.ativa .form-row > *,
+  .pagina.ativa .filters > *,
+  .pagina.ativa .toolbar > * {
+    min-width: 0 !important;
+  }
+
+  .raffinato-page,
+  .raffinato-page > *,
+  .raffinato-config-grid,
+  .raffinato-config-grid > *,
+  .raffinato-integration-head,
+  .raffinato-config-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .raffinato-config-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .raffinato-config-grid input,
+  .raffinato-config-grid select { width: 100% !important; min-width: 0 !important; }
+}
+
+/* Celulares e tablets estreitos: cabecalho em tres blocos completos. */
+@media (max-width: 700px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+    padding: max(7px, env(safe-area-inset-top)) 8px 7px !important;
+  }
+
+  .topbar-main,
+  .topbar-store,
+  .topbar-actions { grid-column: 1 !important; }
+
+  .topbar-main {
+    grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  #topbarVersionBadge { display: none !important; }
+
+  .topbar-store,
+  .topbar-actions { min-height: 44px !important; }
+
+  .topbar-actions {
+    grid-template-columns: minmax(0, 1fr) 42px minmax(68px, auto) !important;
+  }
+
+  .content { padding: 8px !important; }
+
+  .pagina.ativa .card,
+  .pagina.ativa [class*="-card"] { padding: 10px !important; }
+
+  .pagina.ativa .form-row,
+  .pagina.ativa .filters,
+  .pagina.ativa .toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .pagina.ativa .stats-grid,
+  .pagina.ativa [class*="-stats"],
+  .pagina.ativa [class*="-metrics"],
+  .pagina.ativa [class*="-kpis"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .pagina.ativa h1 { font-size: clamp(18px, 6vw, 24px); }
+  .pagina.ativa h2 { font-size: clamp(16px, 5vw, 21px); }
+  .pagina.ativa h3 { font-size: clamp(14px, 4.5vw, 18px); }
+
+  .raffinato-config-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .raffinato-integration-head,
+  .raffinato-config-actions { align-items: stretch !important; flex-direction: column !important; }
+}
+
+@media (max-width: 420px) {
+  .topbar-main { grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) !important; }
+  .topbar-main .mobile-menu-btn { width: 40px !important; min-width: 40px !important; }
+  .topbar-clock-time,
+  .topbar-business-day-date { font-size: clamp(14px, 4.5vw, 18px) !important; }
+  .pagina.ativa .stats-grid,
+  .pagina.ativa [class*="-stats"],
+  .pagina.ativa [class*="-metrics"],
+  .pagina.ativa [class*="-kpis"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1180px) {
+  .topbar { padding-block: 5px !important; gap: 5px !important; }
+  .topbar-main { grid-template-columns: 40px minmax(100px, 1fr) minmax(100px, 1fr) auto !important; }
+  .topbar-main .mobile-menu-btn,
+  .topbar-clock,
+  .topbar-business-day { height: 38px !important; min-height: 38px !important; }
+  .topbar-store,
+  .topbar-actions { min-height: 38px !important; }
+  #topbarUserInfo,
+  .topbar-actions .notification-btn,
+  .topbar-actions > .btn-red { height: 38px !important; min-height: 38px !important; }
+  .content { padding-block: 7px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none !important; }
+}

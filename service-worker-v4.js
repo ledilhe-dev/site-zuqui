@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v231-session-preferences';
+const CACHE_NAME = 'check-diario-pwa-v232-responsive-system';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
