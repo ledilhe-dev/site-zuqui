@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.68';
-const APP_VERSION_LABEL = '3.2.68-auth-hostinger';
+const APP_VERSION = '3.2.69';
+const APP_VERSION_LABEL = '3.2.69-session-preferences';
 function aplicarVersaoVisivelSistema() {
   const loginBadge = document.getElementById('loginVersionProtecao');
   if (loginBadge) loginBadge.textContent = `VERSÃO DE PROTEÇÃO: ${APP_VERSION}`;

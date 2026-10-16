@@ -218,7 +218,7 @@ function inicializarSincronizacaoOrdemNav() {
   if (_navSyncTimer) return;
   window.addEventListener('focus', sincronizarOrdemNavEntreDispositivos);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sincronizarOrdemNavEntreDispositivos(); });
-  _navSyncTimer = setInterval(sincronizarOrdemNavEntreDispositivos, 15000);
+  _navSyncTimer = setInterval(sincronizarOrdemNavEntreDispositivos, 60000);
 }
 
 function atualizarGruposVaziosNav() {

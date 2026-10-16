@@ -166,7 +166,7 @@ function iniciarPollingControleVersaoSistema() {
     verificarControleVersaoSistema(true).catch((erro) => {
       console.warn('Falha ao verificar controle de versão por intervalo:', erro);
     });
-  }, 5000);
+  }, 30000);
 }
 
 function configurarControleVersaoSistema() {

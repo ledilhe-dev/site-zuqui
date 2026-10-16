@@ -573,10 +573,6 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     let usuarioPersistido = null;
     try {
       usuarioPersistido = JSON.parse(salvo);
-      const loginVisivel = String(document.getElementById('username')?.value || '').trim();
-      if (loginVisivel && !loginDigitadoConfereComSessao(loginVisivel, usuarioPersistido)) {
-        throw new Error('A sessao salva pertence a outro usuario.');
-      }
       let usuario = usuarioPersistido;
       // O cliente Supabase monta os cabeçalhos de RLS a partir destas variáveis.
       // Restaure-as antes da primeira RPC/consulta protegida; caso contrário uma
