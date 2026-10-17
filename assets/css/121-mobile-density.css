@@ -106,10 +106,14 @@
 
   /* Topo compacto: informações úteis sem consumir metade da tela. */
   .topbar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
     gap: 5px !important;
     padding: max(5px, env(safe-area-inset-top)) 7px 6px !important;
   }
   .topbar-main {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
     grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1fr) !important;
     gap: 5px !important;
   }
@@ -128,17 +132,52 @@
   .topbar-business-day-date { font-size: clamp(13px, 4vw, 16px) !important; }
   .topbar-store,
   .topbar-actions { min-height: 36px !important; }
-  .topbar-store { padding: 4px 7px !important; }
+  .topbar-store {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 4px 7px !important;
+  }
+  .topbar-actions {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: grid !important;
+    grid-template-columns: 38px 36px 52px !important;
+    width: 136px !important;
+    min-width: 136px !important;
+    gap: 5px !important;
+  }
   .topbar-store-name,
   .topbar-user-name { font-size: 10px !important; }
   .topbar-user-label { font-size: 6.5px !important; }
+  #topbarUserInfo {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    padding: 2px !important;
+  }
+  #topbarUserInfo .account-menu-trigger {
+    width: 34px !important;
+    min-width: 34px !important;
+    padding: 1px !important;
+    justify-content: center !important;
+  }
+  #topbarUserInfo .account-avatar {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+  }
+  #topbarUserInfo .topbar-user-name,
+  #topbarUserInfo .account-menu-trigger > span[aria-hidden="true"] { display: none !important; }
   #topbarUserInfo,
   .topbar-actions .notification-btn,
   .topbar-actions > .btn-red {
     height: 36px !important; min-height: 36px !important;
   }
   .topbar-actions .notification-btn { width: 36px !important; min-width: 36px !important; }
-  .topbar-actions > .btn-red { min-width: 58px !important; padding-inline: 6px !important; }
+  .topbar-actions > .btn-red { width: 52px !important; min-width: 52px !important; padding-inline: 4px !important; }
 
   /* Relatório financeiro: todas as funções compactas, sem linhas vazias. */
   #relatorio_financeiro { --rf-control: 32px; --rf-gap: 5px; --rf-text: 8.5px; --rf-small: 7px; }

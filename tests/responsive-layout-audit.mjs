@@ -105,6 +105,13 @@ for (const [name, width, height] of viewports) {
       const menuStyle = menu ? getComputedStyle(menu) : null;
       const menuRect = menu?.getBoundingClientRect();
       const topRect = topbar?.getBoundingClientRect();
+      const storeRect = document.querySelector('.topbar-store')?.getBoundingClientRect();
+      const actionElements = [...document.querySelectorAll('.topbar-actions > #topbarUserInfo, .topbar-actions > .notification-btn, .topbar-actions > .btn-red')];
+      const actionRects = actionElements.map(element => element.getBoundingClientRect());
+      const overlap = (a, b) => !!a && !!b && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+      const topbarControlsOverlap = actionRects.some((rect, index) => actionRects.slice(index + 1).some(other => overlap(rect, other)));
+      const storeActionsOverlap = actionRects.some(rect => overlap(storeRect, rect));
+      const topbarControlsInside = actionRects.every(rect => rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1);
       const closedSidebar = sidebar ? getComputedStyle(sidebar) : null;
       let openSidebarRect = null;
       if (sidebar) {
@@ -149,6 +156,9 @@ for (const [name, width, height] of viewports) {
         viewport: [innerWidth, innerHeight],
         documentOverflow: Math.max(document.documentElement.scrollWidth - innerWidth, document.body.scrollWidth - innerWidth),
         topbarInside: !!topRect && topRect.left >= -1 && topRect.right <= innerWidth + 1,
+        topbarControlsOverlap,
+        storeActionsOverlap,
+        topbarControlsInside,
         menuVisible: !!menuStyle && menuStyle.display !== 'none' && menuStyle.visibility !== 'hidden' && menuRect.width >= 38,
         menuHiddenOnDesktop: !!menuStyle && menuStyle.display === 'none',
         sidebarClosedOffCanvas: !closedSidebar || innerWidth > 1180 || closedSidebar.visibility === 'hidden' || closedSidebar.transform !== 'none',
@@ -162,6 +172,9 @@ for (const [name, width, height] of viewports) {
   const failures = [];
   if (data.documentOverflow > 2) failures.push(`document overflow ${data.documentOverflow}px`);
   if (!data.topbarInside) failures.push('topbar fora da viewport');
+  if (!data.topbarControlsInside) failures.push('controle do topbar fora da viewport');
+  if (data.topbarControlsOverlap) failures.push('controles do topbar sobrepostos');
+  if (data.storeActionsOverlap) failures.push('loja e acoes do topbar sobrepostas');
   if (compact && !data.menuVisible) failures.push('botão de menu invisível');
   if (!compact && !data.menuHiddenOnDesktop) failures.push('botão móvel visível no desktop');
   if (compact && !data.sidebarOpenInside) failures.push('gaveta lateral fora da viewport');
