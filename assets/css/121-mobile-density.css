@@ -214,6 +214,9 @@
     overflow: visible !important;
   }
   #topbarUserInfo .account-menu[hidden] { display: none !important; }
+  /* Contingência para o Safari/iPhone: o toque sempre foca o botão, então o
+     menu abre mesmo quando o navegador não dispara o onclick inline. */
+  #topbarUserInfo:focus-within .account-menu[hidden] { display: grid !important; }
   #topbarUserInfo .account-menu button {
     width: 100% !important;
     min-height: 36px !important;
