@@ -175,16 +175,22 @@
   .topbar-user-label { font-size: 6.5px !important; }
   #topbarUserInfo {
     grid-column: 2 !important;
+    position: relative !important;
+    z-index: 7060 !important;
     width: 32px !important;
     min-width: 32px !important;
     max-width: 32px !important;
     padding: 2px !important;
+    overflow: visible !important;
   }
   #topbarUserInfo .account-menu-trigger {
+    position: relative !important;
+    z-index: 1 !important;
     width: 28px !important;
     min-width: 28px !important;
     padding: 1px !important;
     justify-content: center !important;
+    touch-action: manipulation !important;
   }
   #topbarUserInfo .account-avatar {
     width: 27px !important;
@@ -194,6 +200,26 @@
   }
   #topbarUserInfo .topbar-user-name,
   #topbarUserInfo .account-menu-trigger > span[aria-hidden="true"] { display: none !important; }
+  #topbarUserInfo .account-menu {
+    position: absolute !important;
+    z-index: 7070 !important;
+    top: calc(100% + 7px) !important;
+    right: -36px !important;
+    left: auto !important;
+    display: grid;
+    width: 178px !important;
+    min-width: 178px !important;
+    max-width: calc(100vw - 14px) !important;
+    padding: 5px !important;
+    overflow: visible !important;
+  }
+  #topbarUserInfo .account-menu[hidden] { display: none !important; }
+  #topbarUserInfo .account-menu button {
+    width: 100% !important;
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    font-size: 11px !important;
+  }
   .topbar-actions > .checkia-fab,
   #topbarUserInfo,
   .topbar-actions .notification-btn,

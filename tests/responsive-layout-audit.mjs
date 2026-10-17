@@ -105,6 +105,16 @@ for (const [name, width, height] of viewports) {
       const menuStyle = menu ? getComputedStyle(menu) : null;
       const menuRect = menu?.getBoundingClientRect();
       const topRect = topbar?.getBoundingClientRect();
+      const loginScreenRect = document.querySelector('#loginScreen')?.getBoundingClientRect();
+      const loginShowcaseRect = document.querySelector('.login-showcase')?.getBoundingClientRect();
+      const loginCardRect = document.querySelector('#loginScreen > .login-card')?.getBoundingClientRect();
+      const accountMenu = document.querySelector('#accountMenu');
+      const accountMenuWasHidden = accountMenu?.hasAttribute('hidden');
+      const accountMenuTrigger = document.querySelector('.account-menu-trigger');
+      if (accountMenuWasHidden) accountMenuTrigger?.click();
+      const accountMenuDisplayed = accountMenu ? getComputedStyle(accountMenu).display !== 'none' : false;
+      const accountMenuRect = accountMenu?.getBoundingClientRect();
+      if (accountMenuWasHidden && !accountMenu?.hasAttribute('hidden')) accountMenuTrigger?.click();
       const storeRect = document.querySelector('.topbar-store')?.getBoundingClientRect();
       const actionElements = [...document.querySelectorAll('.topbar-actions > .checkia-fab, .topbar-actions > #topbarUserInfo, .topbar-actions > .notification-btn, .topbar-actions > .btn-red')]
         .filter(element => getComputedStyle(element).display !== 'none');
@@ -113,7 +123,10 @@ for (const [name, width, height] of viewports) {
       const topbarControlsOverlap = actionRects.some((rect, index) => actionRects.slice(index + 1).some(other => overlap(rect, other)));
       const storeActionsOverlap = actionRects.some(rect => overlap(storeRect, rect));
       const topbarControlsInside = actionRects.every(rect => rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1);
-      const compactHeaderAligned = innerWidth > 700 || (!!storeRect && actionRects.length === 3 && actionRects.every(rect => Math.abs(rect.height - storeRect.height) <= 1 && Math.abs(rect.top - storeRect.top) <= 1));
+      const compactHeaderAligned = innerWidth > 700 || actionRects.length < 3 || (!!storeRect && actionRects.every(rect => Math.abs(rect.height - storeRect.height) <= 1 && Math.abs(rect.top - storeRect.top) <= 1));
+      const loginInside = [loginShowcaseRect, loginCardRect].every(rect => !!rect && rect.left >= -1 && rect.right <= innerWidth + 1);
+      const loginOrderCorrect = !loginShowcaseRect || !loginCardRect || (innerWidth <= 900 ? loginShowcaseRect.bottom <= loginCardRect.top + 1 : loginShowcaseRect.right <= loginCardRect.left + 1);
+      const accountMenuInside = innerWidth > 700 || (!!accountMenuRect && accountMenuDisplayed && accountMenuRect.width >= 160 && accountMenuRect.left >= -1 && accountMenuRect.right <= innerWidth + 1);
       const closedSidebar = sidebar ? getComputedStyle(sidebar) : null;
       let openSidebarRect = null;
       if (sidebar) {
@@ -162,6 +175,11 @@ for (const [name, width, height] of viewports) {
         storeActionsOverlap,
         topbarControlsInside,
         compactHeaderAligned,
+        loginInside,
+        loginOrderCorrect,
+        loginRects: { showcase: loginShowcaseRect?.toJSON(), card: loginCardRect?.toJSON() },
+        accountMenuInside,
+        accountMenuRect: accountMenuRect?.toJSON(),
         menuVisible: !!menuStyle && menuStyle.display !== 'none' && menuStyle.visibility !== 'hidden' && menuRect.width >= 38,
         menuHiddenOnDesktop: !!menuStyle && menuStyle.display === 'none',
         sidebarClosedOffCanvas: !closedSidebar || innerWidth > 1180 || closedSidebar.visibility === 'hidden' || closedSidebar.transform !== 'none',
@@ -179,6 +197,9 @@ for (const [name, width, height] of viewports) {
   if (data.topbarControlsOverlap) failures.push('controles do topbar sobrepostos');
   if (data.storeActionsOverlap) failures.push('loja e acoes do topbar sobrepostas');
   if (!data.compactHeaderAligned) failures.push('loja e icones do topbar desalinhados');
+  if (!data.loginInside) failures.push('conteudo do login fora da viewport');
+  if (!data.loginOrderCorrect) failures.push('vitrine e formulario do login sobrepostos');
+  if (!data.accountMenuInside) failures.push('menu do perfil fora da viewport ou invisivel');
   if (compact && !data.menuVisible) failures.push('botão de menu invisível');
   if (!compact && !data.menuHiddenOnDesktop) failures.push('botão móvel visível no desktop');
   if (compact && !data.sidebarOpenInside) failures.push('gaveta lateral fora da viewport');

@@ -92,5 +92,6 @@
   "./assets/js/94-checkia.js",
   "./assets/js/95-produtos-vencimento.js",
   "./assets/css/119-compact-desktop.css",
-  "./assets/css/121-mobile-density.css"
+  "./assets/css/121-mobile-density.css",
+  "./assets/css/122-login-showcase.css"
 ]

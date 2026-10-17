@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v236-mobile-topbar';
+const CACHE_NAME = 'check-diario-pwa-v238-login-showcase-account-menu';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
@@ -10,6 +10,7 @@ const CORE_ASSETS = [
   './assets/brand/logo-checkdiario-horizontal-dark.svg',
   './assets/brand/logo-checkdiario-icon.svg',
   './assets/brand/favicon.svg',
+  './assets/images/login-business-operations-v1.png',
   './assets/vendor/cropperjs/cropper.min.css',
   './assets/vendor/cropperjs/cropper.min.js',
   './icon-192.png',
