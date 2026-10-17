@@ -113,6 +113,7 @@ for (const [name, width, height] of viewports) {
       const topbarControlsOverlap = actionRects.some((rect, index) => actionRects.slice(index + 1).some(other => overlap(rect, other)));
       const storeActionsOverlap = actionRects.some(rect => overlap(storeRect, rect));
       const topbarControlsInside = actionRects.every(rect => rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1);
+      const compactHeaderAligned = innerWidth > 700 || (!!storeRect && actionRects.length === 3 && actionRects.every(rect => Math.abs(rect.height - storeRect.height) <= 1 && Math.abs(rect.top - storeRect.top) <= 1));
       const closedSidebar = sidebar ? getComputedStyle(sidebar) : null;
       let openSidebarRect = null;
       if (sidebar) {
@@ -160,6 +161,7 @@ for (const [name, width, height] of viewports) {
         topbarControlsOverlap,
         storeActionsOverlap,
         topbarControlsInside,
+        compactHeaderAligned,
         menuVisible: !!menuStyle && menuStyle.display !== 'none' && menuStyle.visibility !== 'hidden' && menuRect.width >= 38,
         menuHiddenOnDesktop: !!menuStyle && menuStyle.display === 'none',
         sidebarClosedOffCanvas: !closedSidebar || innerWidth > 1180 || closedSidebar.visibility === 'hidden' || closedSidebar.transform !== 'none',
@@ -176,6 +178,7 @@ for (const [name, width, height] of viewports) {
   if (!data.topbarControlsInside) failures.push('controle do topbar fora da viewport');
   if (data.topbarControlsOverlap) failures.push('controles do topbar sobrepostos');
   if (data.storeActionsOverlap) failures.push('loja e acoes do topbar sobrepostas');
+  if (!data.compactHeaderAligned) failures.push('loja e icones do topbar desalinhados');
   if (compact && !data.menuVisible) failures.push('botão de menu invisível');
   if (!compact && !data.menuHiddenOnDesktop) failures.push('botão móvel visível no desktop');
   if (compact && !data.sidebarOpenInside) failures.push('gaveta lateral fora da viewport');

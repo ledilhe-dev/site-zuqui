@@ -135,9 +135,31 @@
   .topbar-store {
     grid-column: 1 !important;
     grid-row: 2 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    column-gap: 4px !important;
     width: 100% !important;
     min-width: 0 !important;
-    padding: 4px 7px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 2px 5px !important;
+    border-radius: 8px !important;
+  }
+  .topbar-store-main {
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    line-height: 1 !important;
+  }
+  .topbar-store .topbar-user-label { display: none !important; }
+  .topbar-store-name {
+    overflow: hidden !important;
+    font-size: 9px !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
   .topbar-actions {
     grid-column: 2 !important;
@@ -202,10 +224,24 @@
   /* Sair permanece dentro do menu do perfil; evita um quinto controle duplicado. */
   .topbar-actions > .btn-red { display: none !important; }
   .topbar-store-switch {
-    height: 30px !important;
-    min-height: 30px !important;
-    padding: 4px 8px !important;
-    font-size: 9px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    padding: 2px 3px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-muted) !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+  }
+  .topbar-store-switch::after {
+    content: '(trocar loja)';
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap;
   }
 
   /* Relatório financeiro: todas as funções compactas, sem linhas vazias. */

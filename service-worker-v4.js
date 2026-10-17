@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v235-mobile-topbar';
+const CACHE_NAME = 'check-diario-pwa-v236-mobile-topbar';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
