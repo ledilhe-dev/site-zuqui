@@ -106,7 +106,8 @@ for (const [name, width, height] of viewports) {
       const menuRect = menu?.getBoundingClientRect();
       const topRect = topbar?.getBoundingClientRect();
       const storeRect = document.querySelector('.topbar-store')?.getBoundingClientRect();
-      const actionElements = [...document.querySelectorAll('.topbar-actions > #topbarUserInfo, .topbar-actions > .notification-btn, .topbar-actions > .btn-red')];
+      const actionElements = [...document.querySelectorAll('.topbar-actions > .checkia-fab, .topbar-actions > #topbarUserInfo, .topbar-actions > .notification-btn, .topbar-actions > .btn-red')]
+        .filter(element => getComputedStyle(element).display !== 'none');
       const actionRects = actionElements.map(element => element.getBoundingClientRect());
       const overlap = (a, b) => !!a && !!b && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
       const topbarControlsOverlap = actionRects.some((rect, index) => actionRects.slice(index + 1).some(other => overlap(rect, other)));

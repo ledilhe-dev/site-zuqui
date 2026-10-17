@@ -143,41 +143,70 @@
     grid-column: 2 !important;
     grid-row: 2 !important;
     display: grid !important;
-    grid-template-columns: 38px 36px 52px !important;
-    width: 136px !important;
-    min-width: 136px !important;
-    gap: 5px !important;
+    grid-template-columns: 32px 32px 32px !important;
+    width: 104px !important;
+    min-width: 104px !important;
+    gap: 4px !important;
   }
   .topbar-store-name,
   .topbar-user-name { font-size: 10px !important; }
   .topbar-user-label { font-size: 6.5px !important; }
   #topbarUserInfo {
-    width: 38px !important;
-    min-width: 38px !important;
-    max-width: 38px !important;
+    grid-column: 2 !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
     padding: 2px !important;
   }
   #topbarUserInfo .account-menu-trigger {
-    width: 34px !important;
-    min-width: 34px !important;
+    width: 28px !important;
+    min-width: 28px !important;
     padding: 1px !important;
     justify-content: center !important;
   }
   #topbarUserInfo .account-avatar {
-    width: 30px !important;
-    min-width: 30px !important;
-    height: 30px !important;
-    flex-basis: 30px !important;
+    width: 27px !important;
+    min-width: 27px !important;
+    height: 27px !important;
+    flex-basis: 27px !important;
   }
   #topbarUserInfo .topbar-user-name,
   #topbarUserInfo .account-menu-trigger > span[aria-hidden="true"] { display: none !important; }
+  .topbar-actions > .checkia-fab,
   #topbarUserInfo,
   .topbar-actions .notification-btn,
   .topbar-actions > .btn-red {
-    height: 36px !important; min-height: 36px !important;
+    height: 32px !important; min-height: 32px !important;
   }
-  .topbar-actions .notification-btn { width: 36px !important; min-width: 36px !important; }
-  .topbar-actions > .btn-red { width: 52px !important; min-width: 52px !important; padding-inline: 4px !important; }
+  .topbar-actions > .checkia-fab {
+    grid-column: 1 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    padding: 4px !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+  }
+  .topbar-actions > .checkia-fab .checkia-vbot { width: 18px !important; height: 18px !important; }
+  .topbar-actions > .checkia-fab .checkia-fab-label,
+  .topbar-actions > .checkia-fab .checkia-fab-dot { display: none !important; }
+  .topbar-actions .notification-btn {
+    grid-column: 3 !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    padding: 6px !important;
+  }
+  .topbar-actions .notification-btn svg { width: 15px !important; height: 15px !important; }
+  /* Sair permanece dentro do menu do perfil; evita um quinto controle duplicado. */
+  .topbar-actions > .btn-red { display: none !important; }
+  .topbar-store-switch {
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 4px 8px !important;
+    font-size: 9px !important;
+  }
 
   /* Relatório financeiro: todas as funções compactas, sem linhas vazias. */
   #relatorio_financeiro { --rf-control: 32px; --rf-gap: 5px; --rf-text: 8.5px; --rf-small: 7px; }
