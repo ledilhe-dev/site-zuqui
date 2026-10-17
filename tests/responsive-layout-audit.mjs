@@ -111,16 +111,21 @@ for (const [name, width, height] of viewports) {
       const accountMenu = document.querySelector('#accountMenu');
       const accountMenuWasHidden = accountMenu?.hasAttribute('hidden');
       const accountMenuTrigger = document.querySelector('.account-menu-trigger');
-      if (accountMenuWasHidden) accountMenuTrigger?.click();
+      if (accountMenuWasHidden && innerWidth > 700) accountMenuTrigger?.click();
       const accountMenuDisplayed = accountMenu ? getComputedStyle(accountMenu).display !== 'none' : false;
       const accountMenuRect = accountMenu?.getBoundingClientRect();
-      if (accountMenuWasHidden && !accountMenu?.hasAttribute('hidden')) accountMenuTrigger?.click();
+      if (accountMenuWasHidden && innerWidth > 700 && !accountMenu?.hasAttribute('hidden')) accountMenuTrigger?.click();
       accountMenuTrigger?.blur();
       accountMenuTrigger?.focus();
       const accountMenuFocusFallback = innerWidth > 700 || (accountMenu?.hasAttribute('hidden') && getComputedStyle(accountMenu).display !== 'none');
       accountMenuTrigger?.blur();
       accountMenuTrigger?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
-      const accountMenuTouchOpens = !accountMenu?.hasAttribute('hidden') && getComputedStyle(accountMenu).display !== 'none';
+      const mobileAccountSheet = document.querySelector('#mobileAccountSheet');
+      const mobileAccountLogout = mobileAccountSheet?.querySelector('[data-mobile-account="logout"]');
+      const mobileAccountSheetRect = mobileAccountSheet?.querySelector('section')?.getBoundingClientRect();
+      const accountMenuTouchOpens = innerWidth > 700
+        ? (!accountMenu?.hasAttribute('hidden') && getComputedStyle(accountMenu).display !== 'none')
+        : (!!mobileAccountSheet && !!mobileAccountLogout && !!mobileAccountSheetRect && mobileAccountSheetRect.left >= -1 && mobileAccountSheetRect.right <= innerWidth + 1 && mobileAccountSheetRect.bottom <= innerHeight + 1);
       accountMenuTrigger?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
       const storeRect = document.querySelector('.topbar-store')?.getBoundingClientRect();
       const actionElements = [...document.querySelectorAll('.topbar-actions > .checkia-fab, .topbar-actions > #topbarUserInfo, .topbar-actions > .notification-btn, .topbar-actions > .btn-red')]
@@ -138,7 +143,9 @@ for (const [name, width, height] of viewports) {
       if (loginElement) loginElement.style.display = 'none';
       const loginCanHide = !!loginElement && getComputedStyle(loginElement).display === 'none';
       if (loginElement) loginElement.style.display = originalLoginDisplay;
-      const accountMenuInside = innerWidth > 700 || (!!accountMenuRect && accountMenuDisplayed && accountMenuRect.width >= 160 && accountMenuRect.left >= -1 && accountMenuRect.right <= innerWidth + 1);
+      const accountMenuInside = innerWidth > 700
+        ? (!!accountMenuRect && accountMenuDisplayed && accountMenuRect.width >= 160 && accountMenuRect.left >= -1 && accountMenuRect.right <= innerWidth + 1)
+        : accountMenuTouchOpens;
       const closedSidebar = sidebar ? getComputedStyle(sidebar) : null;
       let openSidebarRect = null;
       if (sidebar) {

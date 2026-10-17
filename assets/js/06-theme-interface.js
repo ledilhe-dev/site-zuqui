@@ -82,6 +82,17 @@ function iniciaisUsuarioMinhaConta() {
   return ((partes[0]?.[0] || 'U') + (partes.length > 1 ? partes.at(-1)[0] : '')).toUpperCase();
 }
 
+function iniciaisMinhaConta(nome) {
+  const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+  return ((partes[0]?.[0] || 'U') + (partes.length > 1 ? partes.at(-1)[0] : '')).toUpperCase();
+}
+
+function escapeHtmlMinhaConta(valor) {
+  return String(valor ?? '').replace(/[&<>"]/g, caractere => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
+  })[caractere]);
+}
+
 function aplicarAvatarMinhaConta() {
   const iniciais = iniciaisUsuarioMinhaConta();
   document.querySelectorAll('#topbarAccountAvatar,#minhaContaAvatar').forEach((avatar) => {
@@ -140,11 +151,47 @@ function atualizarMinhaContaInterface() {
 
 function toggleMenuMinhaConta(event) {
   event?.stopPropagation();
+  if (window.matchMedia('(max-width: 700px)').matches) {
+    toggleMenuMinhaContaMobile();
+    return;
+  }
   const menu = document.getElementById('accountMenu');
   const trigger = document.querySelector('.account-menu-trigger');
   if (!menu) return;
   menu.hidden = !menu.hidden;
   trigger?.setAttribute('aria-expanded', String(!menu.hidden));
+}
+
+function fecharMenuMinhaContaMobile() {
+  const painel = document.getElementById('mobileAccountSheet');
+  if (painel) painel.remove();
+  document.querySelector('.account-menu-trigger')?.setAttribute('aria-expanded', 'false');
+}
+
+function toggleMenuMinhaContaMobile() {
+  if (document.getElementById('mobileAccountSheet')) {
+    fecharMenuMinhaContaMobile();
+    return;
+  }
+  const nome = String(document.getElementById('topbar-user-name')?.textContent || 'Usuário').trim();
+  const painel = document.createElement('div');
+  painel.id = 'mobileAccountSheet';
+  painel.className = 'mobile-account-sheet';
+  painel.setAttribute('role', 'dialog');
+  painel.setAttribute('aria-label', 'Opções do usuário');
+  painel.innerHTML = `<button class="mobile-account-sheet-backdrop" type="button" aria-label="Fechar menu"></button><section><div><span class="account-avatar">${escapeHtmlMinhaConta(iniciaisMinhaConta(nome))}</span><p><small>USUÁRIO LOGADO</small><strong>${escapeHtmlMinhaConta(nome)}</strong></p></div><button class="mobile-account-action" type="button" data-mobile-account="account">Minha conta</button><button class="mobile-account-action mobile-account-logout" type="button" data-mobile-account="logout">Sair do sistema</button><button class="mobile-account-cancel" type="button" data-mobile-account="close">Cancelar</button></section>`;
+  document.body.appendChild(painel);
+  document.querySelector('.account-menu-trigger')?.setAttribute('aria-expanded', 'true');
+  painel.querySelector('.mobile-account-sheet-backdrop')?.addEventListener('click', fecharMenuMinhaContaMobile);
+  painel.querySelector('[data-mobile-account="close"]')?.addEventListener('click', fecharMenuMinhaContaMobile);
+  painel.querySelector('[data-mobile-account="account"]')?.addEventListener('click', () => {
+    fecharMenuMinhaContaMobile();
+    abrirMinhaConta('conta');
+  });
+  painel.querySelector('[data-mobile-account="logout"]')?.addEventListener('click', () => {
+    fecharMenuMinhaContaMobile();
+    logout();
+  });
 }
 
 let ultimoToqueMenuMinhaConta = 0;
@@ -402,6 +449,7 @@ document.addEventListener('click', (event) => {
       document.querySelector('.account-menu-trigger')?.setAttribute('aria-expanded', 'false');
     }
   }
+  if (!event.target.closest?.('#mobileAccountSheet')) fecharMenuMinhaContaMobile();
 });
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
