@@ -6,7 +6,7 @@
     const shell = document.querySelector('.shell');
     if (!loginScreen || !shell) return;
     if (!logado) resetarTelaLoginParaEntrada();
-    loginScreen.style.display = logado ? 'none' : 'flex';
+    loginScreen.style.display = logado ? 'none' : 'grid';
     shell.style.display = logado ? 'flex' : 'none';
   }
 
@@ -1441,7 +1441,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const loginScreen = document.getElementById('loginScreen');
     const shell = document.querySelector('.shell');
     if (shell) shell.style.display = 'none';
-    if (loginScreen) loginScreen.style.display = 'flex';
+    if (loginScreen) loginScreen.style.display = 'grid';
     mostrarSelecaoLojaLogin(contexto, lojas);
   }
 

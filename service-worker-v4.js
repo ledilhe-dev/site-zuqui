@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v238-login-showcase-account-menu';
+const CACHE_NAME = 'check-diario-pwa-v239-login-transition';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

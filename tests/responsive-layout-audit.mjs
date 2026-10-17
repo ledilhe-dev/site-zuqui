@@ -126,6 +126,11 @@ for (const [name, width, height] of viewports) {
       const compactHeaderAligned = innerWidth > 700 || actionRects.length < 3 || (!!storeRect && actionRects.every(rect => Math.abs(rect.height - storeRect.height) <= 1 && Math.abs(rect.top - storeRect.top) <= 1));
       const loginInside = [loginShowcaseRect, loginCardRect].every(rect => !!rect && rect.left >= -1 && rect.right <= innerWidth + 1);
       const loginOrderCorrect = !loginShowcaseRect || !loginCardRect || (innerWidth <= 900 ? loginShowcaseRect.bottom <= loginCardRect.top + 1 : loginShowcaseRect.right <= loginCardRect.left + 1);
+      const loginElement = document.querySelector('#loginScreen');
+      const originalLoginDisplay = loginElement?.style.display || '';
+      if (loginElement) loginElement.style.display = 'none';
+      const loginCanHide = !!loginElement && getComputedStyle(loginElement).display === 'none';
+      if (loginElement) loginElement.style.display = originalLoginDisplay;
       const accountMenuInside = innerWidth > 700 || (!!accountMenuRect && accountMenuDisplayed && accountMenuRect.width >= 160 && accountMenuRect.left >= -1 && accountMenuRect.right <= innerWidth + 1);
       const closedSidebar = sidebar ? getComputedStyle(sidebar) : null;
       let openSidebarRect = null;
@@ -177,6 +182,7 @@ for (const [name, width, height] of viewports) {
         compactHeaderAligned,
         loginInside,
         loginOrderCorrect,
+        loginCanHide,
         loginRects: { showcase: loginShowcaseRect?.toJSON(), card: loginCardRect?.toJSON() },
         accountMenuInside,
         accountMenuRect: accountMenuRect?.toJSON(),
@@ -199,6 +205,7 @@ for (const [name, width, height] of viewports) {
   if (!data.compactHeaderAligned) failures.push('loja e icones do topbar desalinhados');
   if (!data.loginInside) failures.push('conteudo do login fora da viewport');
   if (!data.loginOrderCorrect) failures.push('vitrine e formulario do login sobrepostos');
+  if (!data.loginCanHide) failures.push('tela de login nao fecha depois da autenticacao');
   if (!data.accountMenuInside) failures.push('menu do perfil fora da viewport ou invisivel');
   if (compact && !data.menuVisible) failures.push('botão de menu invisível');
   if (!compact && !data.menuHiddenOnDesktop) failures.push('botão móvel visível no desktop');
