@@ -119,6 +119,9 @@ for (const [name, width, height] of viewports) {
       accountMenuTrigger?.focus();
       const accountMenuFocusFallback = innerWidth > 700 || (accountMenu?.hasAttribute('hidden') && getComputedStyle(accountMenu).display !== 'none');
       accountMenuTrigger?.blur();
+      accountMenuTrigger?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
+      const accountMenuTouchOpens = !accountMenu?.hasAttribute('hidden') && getComputedStyle(accountMenu).display !== 'none';
+      accountMenuTrigger?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
       const storeRect = document.querySelector('.topbar-store')?.getBoundingClientRect();
       const actionElements = [...document.querySelectorAll('.topbar-actions > .checkia-fab, .topbar-actions > #topbarUserInfo, .topbar-actions > .notification-btn, .topbar-actions > .btn-red')]
         .filter(element => getComputedStyle(element).display !== 'none');
@@ -190,6 +193,7 @@ for (const [name, width, height] of viewports) {
         loginRects: { showcase: loginShowcaseRect?.toJSON(), card: loginCardRect?.toJSON() },
         accountMenuInside,
         accountMenuFocusFallback,
+        accountMenuTouchOpens,
         accountMenuRect: accountMenuRect?.toJSON(),
         menuVisible: !!menuStyle && menuStyle.display !== 'none' && menuStyle.visibility !== 'hidden' && menuRect.width >= 38,
         menuHiddenOnDesktop: !!menuStyle && menuStyle.display === 'none',
@@ -212,7 +216,7 @@ for (const [name, width, height] of viewports) {
   if (!data.loginOrderCorrect) failures.push('vitrine e formulario do login sobrepostos');
   if (!data.loginCanHide) failures.push('tela de login nao fecha depois da autenticacao');
   if (!data.accountMenuInside) failures.push('menu do perfil fora da viewport ou invisivel');
-  if (!data.accountMenuFocusFallback) failures.push('menu do perfil sem contingencia de toque no iPhone');
+  if (!data.accountMenuTouchOpens) failures.push('toque no perfil nao abre o menu no iPhone');
   if (compact && !data.menuVisible) failures.push('botão de menu invisível');
   if (!compact && !data.menuHiddenOnDesktop) failures.push('botão móvel visível no desktop');
   if (compact && !data.sidebarOpenInside) failures.push('gaveta lateral fora da viewport');

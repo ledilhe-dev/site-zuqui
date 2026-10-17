@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v240-ios-account-menu';
+const CACHE_NAME = 'check-diario-pwa-v241-ios-account-touch';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

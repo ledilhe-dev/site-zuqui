@@ -147,6 +147,19 @@ function toggleMenuMinhaConta(event) {
   trigger?.setAttribute('aria-expanded', String(!menu.hidden));
 }
 
+let ultimoToqueMenuMinhaConta = 0;
+
+// No Safari móvel, o clique sintético posterior ao toque podia executar o
+// acionamento duas vezes e fechar o menu imediatamente. Toque e clique de
+// mouse/teclado são tratados separadamente para manter ambos confiáveis.
+document.addEventListener('pointerup', (event) => {
+  const trigger = event.target.closest?.('.account-menu-trigger');
+  if (!trigger || event.pointerType === 'mouse') return;
+  event.preventDefault();
+  ultimoToqueMenuMinhaConta = Date.now();
+  toggleMenuMinhaConta(event);
+}, true);
+
 function selecionarAbaMinhaConta(secao = 'conta') {
   const abaAtiva = secao === 'aparencia' ? 'aparencia' : 'conta';
   const secoes = {
@@ -376,9 +389,18 @@ temaSistemaMedia.addEventListener?.('change', () => {
   if (obterPreferenciaTemaAtual() === 'system') aplicarTemaInterface('system', false);
 });
 document.addEventListener('click', (event) => {
+  const trigger = event.target.closest?.('.account-menu-trigger');
+  if (trigger) {
+    event.preventDefault();
+    if (Date.now() - ultimoToqueMenuMinhaConta > 800) toggleMenuMinhaConta(event);
+    return;
+  }
   if (!event.target.closest('.account-menu-wrap')) {
     const menu = document.getElementById('accountMenu');
-    if (menu) menu.hidden = true;
+    if (menu) {
+      menu.hidden = true;
+      document.querySelector('.account-menu-trigger')?.setAttribute('aria-expanded', 'false');
+    }
   }
 });
 document.addEventListener('keydown', (event) => {
