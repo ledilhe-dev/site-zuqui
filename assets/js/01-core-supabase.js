@@ -1,6 +1,6 @@
 // ---- SUPABASE CLIENT ----
-const APP_VERSION = '3.2.69';
-const APP_VERSION_LABEL = '3.2.69-session-preferences';
+const APP_VERSION = '3.2.70';
+const APP_VERSION_LABEL = '3.2.70-permissoes-relatorios-raffinato';
 function aplicarVersaoVisivelSistema() {
   const loginBadge = document.getElementById('loginVersionProtecao');
   if (loginBadge) loginBadge.textContent = `VERSÃO DE PROTEÇÃO: ${APP_VERSION}`;
