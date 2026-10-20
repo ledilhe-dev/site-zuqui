@@ -4699,7 +4699,7 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
         </div>`
       : `<div class="fatura-confirm-categoria-unica">Categoria: <b>${escaparHtmlBasico(categoria?.nome || 'Sem categoria')}</b></div>`;
     return `
-      <div class="nc-confirm-line fatura-confirm-line">
+      <div class="nc-confirm-line fatura-confirm-line${parcelas.length > 1 ? ' fatura-confirm-line-parcelada' : ''}">
         <span>${escaparHtmlBasico(item.descricao || 'Compra')}</span>
         <strong>${parcelas.length > 1 ? resumoParcelas : `${formatarMoedaBRFinanceiro(item.valor)} <small>Venc: ${escaparHtmlBasico(vencimento || '-')}</small>`}<em>${escaparHtmlBasico(fornecedor?.nome || 'Novo fornecedor')}</em><em class="fatura-confirm-observacao">Obs.: ${escaparHtmlBasico(observacao || '-')}</em></strong>
         ${detalheCategorias}

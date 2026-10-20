@@ -2517,3 +2517,66 @@
 .fatura-confirm-calendario summary{cursor:pointer;color:var(--text);font-size:12px;font-weight:800;text-align:left;margin-bottom:6px}
 .fatura-confirm-calendario>span{display:grid;grid-template-columns:42px 1fr auto;gap:8px;align-items:center;padding:5px 2px;border-top:1px solid rgba(148,163,184,.13);font-size:12px}
 .fatura-confirm-calendario>span em{color:var(--text-muted);font-style:normal}.fatura-confirm-calendario>span strong{color:var(--text);text-align:left}.fatura-confirm-calendario>span b{color:var(--text);white-space:nowrap}
+
+/* O resumo parcelado usa toda a largura do modal. Evita que datas quebrem
+   caractere a caractere na coluna estreita, especialmente no Safari/iPhone. */
+.fatura-confirm-line-parcelada{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+.fatura-confirm-line-parcelada>span{
+  width:100%;
+  white-space:normal;
+}
+.fatura-confirm-line-parcelada>strong{
+  width:100%;
+  max-width:none;
+  min-width:0;
+  align-items:stretch;
+}
+.fatura-confirm-line-parcelada>.fatura-confirm-categoria-unica,
+.fatura-confirm-line-parcelada>.fatura-confirm-divisoes{
+  width:100%;
+  grid-column:1;
+}
+.fatura-confirm-line-parcelada .fatura-confirm-parcelas{
+  width:100%;
+  max-width:none;
+  align-items:stretch;
+}
+.fatura-confirm-line-parcelada .fatura-confirm-parcelas>small,
+.fatura-confirm-line-parcelada .fatura-confirm-parcelas>b{
+  text-align:right;
+}
+.fatura-confirm-line-parcelada .fatura-confirm-calendario{
+  box-sizing:border-box;
+  width:100%;
+}
+.fatura-confirm-line-parcelada .fatura-confirm-calendario>span{
+  grid-template-columns:38px minmax(92px,1fr) minmax(92px,auto);
+  gap:6px;
+  min-height:30px;
+  padding:5px 4px;
+  font-size:11px;
+  line-height:1.15;
+}
+.fatura-confirm-line-parcelada .fatura-confirm-calendario>span strong{
+  min-width:92px;
+  white-space:nowrap;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+.fatura-confirm-line-parcelada .fatura-confirm-calendario>span b{
+  text-align:right;
+  font-size:11px;
+}
+@media(max-width:520px){
+  .fatura-confirm-line-parcelada .fatura-confirm-calendario{padding:6px}
+  .fatura-confirm-line-parcelada .fatura-confirm-calendario summary{font-size:11px}
+  .fatura-confirm-line-parcelada .fatura-confirm-calendario>span{
+    grid-template-columns:34px minmax(84px,1fr) minmax(86px,auto);
+    gap:4px;
+    font-size:10px;
+  }
+  .fatura-confirm-line-parcelada .fatura-confirm-calendario>span strong{min-width:84px;font-size:10px}
+  .fatura-confirm-line-parcelada .fatura-confirm-calendario>span b{font-size:10px}
+}
