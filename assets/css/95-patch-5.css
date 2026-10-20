@@ -170,6 +170,17 @@
   font-size: 22px;
 }
 
+.categoria-icone-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+}
+
 .fatura-cat-card strong {
   width: 100%;
   font-size: 10px;
@@ -382,6 +393,29 @@
 
   .fatura-cat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* iPhone: controles menores que 16px acionam o zoom automatico do Safari. */
+@media (max-width: 767px) {
+  .fatura-choice-overlay input,
+  .fatura-choice-overlay select,
+  #faturaListaItens input,
+  #faturaListaItens select,
+  #faturaListaItens textarea {
+    font-size: 16px !important;
+  }
+
+  .fatura-choice-overlay {
+    width: 100vw;
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  .fatura-choice-sheet {
+    width: calc(100vw - 20px);
+    max-width: 480px;
+    margin: 0 auto;
   }
 }
 

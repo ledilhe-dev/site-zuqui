@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v248-categoria-imagem-larga';
+const CACHE_NAME = 'check-diario-pwa-v249-mobile-ocr-duplicidade';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

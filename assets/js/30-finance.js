@@ -3260,6 +3260,7 @@ function faturaAtualizarCardSelecoes(itemId) {
 }
 
 function faturaFecharEscolhaOverlay() {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   document.getElementById('faturaEscolhaOverlay')?.remove();
 }
 
@@ -3524,8 +3525,8 @@ async function faturaExibirRevisao(resultado) {
   const concil = await faturaConciliarComBanco(_faturaItensExtraidos);
 
   const optsCategoria = (selId, auto) =>
-    '<option value=""' + (selId ? '' : ' selected') + '>Sem categoria</option>' +
-    (categoriasCompraCache||[]).map(c =>
+    '<option value="" disabled' + (selId ? '' : ' selected') + '>Selecione uma categoria</option>' +
+    (categoriasCompraCache||[]).filter(c => !categoriaCompraEhReservada(c?.nome)).map(c =>
       `<option value="${c.id}" ${String(c.id) === String(selId) ? 'selected' : ''}>${escaparHtmlBasico(c.nome)}</option>`
     ).join('');
   const optsFornecedor = (selId) =>
@@ -3656,6 +3657,7 @@ async function faturaExibirRevisao(resultado) {
   footer.style.display = 'flex';
   faturaAplicarInterfaceMobileRevisao();
   faturaAtualizarFooter();
+  await faturaVerificarDuplicidadeInicialOCR();
 }
 
 async function faturaAoSelecionarFornecedor(itemId, fornecedorId) {
@@ -4090,7 +4092,7 @@ function faturaAbrirCategoriaDivisao(itemId, parteId) {
   const parte = item?._divisoes?.find(p => String(p.id) === String(parteId));
   if (!item || !parte) return;
   document.querySelector('.fatura-divisao-categorias-layer')?.remove();
-  const cards = (categoriasCompraCache || []).map(categoria => `
+  const cards = (categoriasCompraCache || []).filter(categoria => !categoriaCompraEhReservada(categoria?.nome)).map(categoria => `
     <button type="button" class="fatura-cat-card ${String(categoria.id) === String(parte.categoria_id || '') ? 'selecionado' : ''}"
       onclick="faturaEscolherCategoriaDivisao('${itemId}', '${parteId}', '${categoria.id}')">
       <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(categoria.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(categoria.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(categoria.icone, 30)}</span>
@@ -4470,7 +4472,6 @@ async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ig
         .eq('loja_id', lojaId)
         .eq('fornecedor_id', linha.fornecedor_id)
         .eq('data_compra', linha.data_compra)
-        .eq('data_vencimento', linha.data_vencimento)
         .eq('valor_compra', Number(Number(linha.valor_compra || 0).toFixed(2)))
         .is('excluido_em', null)
         .limit(5);
@@ -4479,16 +4480,107 @@ async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ig
         : await consultar();
       if (error) {
         console.warn('Nao foi possivel verificar duplicidade de conta:', error);
-        continue;
+        throw new Error('Nao foi possivel confirmar se a conta ja existe. Lancamento bloqueado por seguranca.');
       }
       (data || [])
         .filter(row => !ignorar.has(String(row.id)))
         .forEach(row => duplicados.push({ linha, existente: row }));
     } catch (e) {
       console.warn('Falha ao verificar duplicidade de conta:', e?.message || e);
+      throw e;
     }
   }
   return duplicados;
+}
+
+async function faturaVerificarDuplicidadeInicialOCR() {
+  const itensOCR = (_faturaItensExtraidos || []).filter(item => item?._origemImagem && item?.fornecedor_id);
+  if (!itensOCR.length) return true;
+
+  let tenant;
+  try {
+    tenant = await resolverTenantFornecedorFinanceiro();
+  } catch (_) {
+    return true;
+  }
+  const lojaId = String(tenant?.loja_id || '').trim();
+  if (!lojaId) return true;
+
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const dataValida = valor => /^\d{4}-\d{2}-\d{2}$/.test(String(valor || ''));
+  const linhas = itensOCR.flatMap(item => {
+    const dataCompra = dataValida(item.data) ? item.data : hojeISO;
+    const vencimentoBase = dataValida(item.vencimento_fatura) ? item.vencimento_fatura : dataCompra;
+    const quantidade = Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
+    const total = Number(item.valorTotalCompra ?? item.valor ?? 0);
+    const fornecedor = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(item.fornecedor_id));
+    const parcelas = quantidade > 1
+      ? faturaGerarParcelasCompra(total, quantidade, vencimentoBase, fornecedor?.dia_vencimento)
+      : [{ valor: total, vencimento: vencimentoBase }];
+    return parcelas.map(parcela => ({
+      fornecedor_id: item.fornecedor_id,
+      data_compra: dataCompra,
+      data_vencimento: parcela.vencimento,
+      valor_compra: Number(Number(parcela.valor || 0).toFixed(2)),
+      _itemOCR: item,
+    }));
+  });
+
+  let duplicados;
+  try {
+    duplicados = await financeiroBuscarDuplicidadesContas(linhas, { lojaId });
+  } catch (erro) {
+    setMsg('msgImportarFatura', erro?.message || 'Nao foi possivel verificar duplicidade. Lancamento bloqueado.', 'err');
+    return false;
+  }
+  if (!duplicados.length) return true;
+
+  const itensAfetados = new Set(duplicados.map(({ linha }) => linha?._itemOCR).filter(Boolean));
+  itensAfetados.forEach(item => {
+    item._duplicidadeDetectadaNoOCR = true;
+    const card = document.getElementById('faturaItem_' + item.id);
+    if (card) {
+      card.style.border = '2px solid var(--red)';
+      card.style.boxShadow = '0 0 0 2px var(--red-glow)';
+    }
+  });
+  setMsg('msgImportarFatura', 'CONTA POSSIVELMENTE JA CADASTRADA. Confira antes de continuar.', 'err');
+
+  const primeira = duplicados[0];
+  const fornecedorNome = primeira?.existente?.fornecedores?.nome || 'Fornecedor';
+  const decisao = typeof abrirConfirmacaoSistema === 'function'
+    ? await abrirConfirmacaoSistema({
+        title: 'Conta possivelmente ja cadastrada',
+        subtitle: 'Encontramos no banco o mesmo fornecedor, valor e data da compra.',
+        body: `<div class="msg err" style="font-weight:800;">${escaparHtmlBasico(fornecedorNome)} · ${formatarMoedaBRFinanceiro(primeira?.linha?.valor_compra)} · compra em ${formatarDataBRFinanceiro(primeira?.linha?.data_compra)}</div><div class="item-detalhe" style="margin-top:10px;">Deseja lancar mesmo assim?</div>`,
+        cancelText: 'Nao, cancelar',
+        cancelClass: 'btn-red',
+        confirmText: 'Sim, continuar',
+        confirmClass: 'btn-green',
+      })
+    : { confirmado: window.confirm('Conta possivelmente ja cadastrada. Deseja lancar mesmo assim?') };
+
+  if (!decisao?.confirmado) {
+    fecharImportadorFatura();
+    if (typeof abrirPagina === 'function') {
+      abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));
+    }
+    return false;
+  }
+  itensAfetados.forEach(item => {
+    item._duplicidadeAutorizada = true;
+    item._jaLancado = false;
+    item.selecionado = true;
+    const card = document.getElementById('faturaItem_' + item.id);
+    if (card) {
+      card.style.opacity = '1';
+      const checkbox = card.querySelector('input[type="checkbox"]');
+      if (checkbox) checkbox.checked = true;
+    }
+  });
+  faturaAtualizarFooter();
+  setMsg('msgImportarFatura', 'Possivel duplicidade confirmada. O fluxo foi liberado para revisao.', 'err');
+  return true;
 }
 
 async function financeiroDecidirDuplicidadeContas(duplicados = [], { titulo = 'Conta possivelmente duplicada' } = {}) {
@@ -4878,7 +4970,7 @@ async function faturaLancarSelecionados() {
       });
 
       const duplicadosConta = await financeiroBuscarDuplicidadesContas(linhas, { lojaId });
-      if (duplicadosConta.length) {
+      if (duplicadosConta.length && !item._duplicidadeAutorizada) {
         const decisaoDuplicado = await financeiroDecidirDuplicidadeContas(duplicadosConta, {
           titulo: 'Conta possivelmente duplicada',
         });
@@ -5150,11 +5242,23 @@ function ehImagemCategoriaCompra(valor = '') {
 function htmlIconeCategoriaCompra(valor = '', tamanho = 24) {
   const icone = String(valor || '').trim();
   const px = Math.max(14, Math.min(64, Number(tamanho) || 24));
-  if (!icone) return '<span aria-hidden="true">·?</span>';
+  if (!icone) return '<span class="categoria-icone-fallback" aria-label="Categoria sem imagem">?</span>';
   if (ehImagemCategoriaCompra(icone)) {
-    return `<img src="${escaparHtmlBasico(icone)}" alt="" style="width:${px}px;height:${px}px;object-fit:cover;border-radius:5px;flex:0 0 ${px}px;" onerror="this.style.display='none'">`;
+    return `<img src="${escaparHtmlBasico(icone)}" alt="" style="width:${px}px;height:${px}px;object-fit:cover;border-radius:5px;flex:0 0 ${px}px;" onerror="categoriaIconeImagemFalhou(this)">`;
   }
   return `<span aria-hidden="true" style="font-size:${px}px;line-height:1;">${escaparHtmlBasico(icone)}</span>`;
+}
+
+function categoriaIconeImagemFalhou(imagem) {
+  if (!imagem?.parentElement) return;
+  const fallback = document.createElement('span');
+  fallback.className = 'categoria-icone-fallback';
+  fallback.setAttribute('aria-label', 'Imagem indisponivel');
+  const nomeCategoria = imagem.closest('.fatura-cat-card')?.querySelector('strong')?.textContent
+    || imagem.closest('.item')?.querySelector('strong, .item-titulo')?.textContent
+    || '';
+  fallback.textContent = String(nomeCategoria || '?').trim().charAt(0).toUpperCase() || '?';
+  imagem.replaceWith(fallback);
 }
 
 function carregarImagemCategoriaCompra(input) {
