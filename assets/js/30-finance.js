@@ -4449,7 +4449,7 @@ function financeiroChaveDuplicidadeConta(linha = {}) {
   ].join('|');
 }
 
-async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ignorarIds = [] } = {}) {
+async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ignorarIds = [], toleranciaDias = 0 } = {}) {
   const itens = (linhas || []).filter(l =>
     l?.fornecedor_id &&
     /^\d{4}-\d{2}-\d{2}$/.test(String(l.data_compra || '')) &&
@@ -4466,15 +4466,26 @@ async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ig
     if (vistos.has(chaveLinha)) continue;
     vistos.add(chaveLinha);
     try {
-      const consultar = () => sb
+      const dataCompra = new Date(`${linha.data_compra}T12:00:00`);
+      const dataInicio = new Date(dataCompra);
+      const dataFim = new Date(dataCompra);
+      dataInicio.setDate(dataInicio.getDate() - Math.max(0, toleranciaDias));
+      dataFim.setDate(dataFim.getDate() + Math.max(0, toleranciaDias));
+      const inicioISO = dataInicio.toISOString().slice(0, 10);
+      const fimISO = dataFim.toISOString().slice(0, 10);
+      const consultar = () => {
+        let query = sb
         .from('contasapagar')
         .select('id, fornecedor_id, valor_compra, data_compra, data_vencimento, observacao, criado_por_nome, created_at, loja_id, fornecedores(nome)')
         .eq('loja_id', lojaId)
         .eq('fornecedor_id', linha.fornecedor_id)
-        .eq('data_compra', linha.data_compra)
         .eq('valor_compra', Number(Number(linha.valor_compra || 0).toFixed(2)))
-        .is('excluido_em', null)
-        .limit(5);
+        .is('excluido_em', null);
+        query = toleranciaDias > 0
+          ? query.gte('data_compra', inicioISO).lte('data_compra', fimISO)
+          : query.eq('data_compra', linha.data_compra);
+        return query.limit(10);
+      };
       const { data, error } = typeof executarSemFiltrosTenantTemporario === 'function'
         ? await executarSemFiltrosTenantTemporario(consultar)
         : await consultar();
@@ -4528,7 +4539,7 @@ async function faturaVerificarDuplicidadeInicialOCR() {
 
   let duplicados;
   try {
-    duplicados = await financeiroBuscarDuplicidadesContas(linhas, { lojaId });
+    duplicados = await financeiroBuscarDuplicidadesContas(linhas, { lojaId, toleranciaDias: 2 });
   } catch (erro) {
     setMsg('msgImportarFatura', erro?.message || 'Nao foi possivel verificar duplicidade. Lancamento bloqueado.', 'err');
     return false;

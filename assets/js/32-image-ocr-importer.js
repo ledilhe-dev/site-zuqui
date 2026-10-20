@@ -195,20 +195,49 @@
 
     const item = itens[0];
     const atual = Number(item.valorTotalCompra ?? item.valor ?? 0);
-    const centavosAtuais = Math.round(atual * 100) % 100;
+    const digitosAtuais = String(Math.round(atual * 100));
     const melhores = candidatos.filter(valor =>
       valor > atual
       && valor <= atual * 100
-      && Math.round(valor * 100) % 100 === centavosAtuais
+      // Se o OCR textual leu 133,88, o valor reparado precisa terminar em
+      // 13388. Isso aceita 7.133,88 e rejeita a falsa leitura 7.153,88.
+      && String(Math.round(valor * 100)).endsWith(digitosAtuais)
     );
-    const corrigido = melhores.length ? Math.max(...melhores) : atual;
-    const parcelasLidas = [...textosBrutos, ...textos]
+    const corrigido = melhores.length ? melhores[0] : atual;
+    let parcelasLidas = [...textosBrutos, ...textos]
       .map(texto => imagemCompraParseParcelas(texto))
       .filter(quantidade => quantidade > 1);
+    if (!parcelasLidas.length) {
+      parcelasLidas = textosBrutos.flatMap(texto => {
+        const limpo = String(texto || '')
+          .replace(/\b\d{1,2}[\/.-]\d{1,2}[\/.-]20\d{2}\b/g, ' ')
+          .replace(/\b\d{1,2}:\d{2}\b/g, ' ')
+          .replace(/\b\d{5,8}\b/g, ' ')
+          .replace(/\d{1,3}(?:\.\d{3})*[,.]\d{2}/g, ' ');
+        const candidatosParcela = [...limpo.matchAll(/\b([2-9]|[12]\d|3[0-6])\b/g)]
+          .map(match => Number.parseInt(match[1], 10));
+        return candidatosParcela.length ? [candidatosParcela[candidatosParcela.length - 1]] : [];
+      });
+    }
     const quantidadeParcelas = parcelasLidas.length
-      ? Math.max(...parcelasLidas)
+      ? parcelasLidas[parcelasLidas.length - 1]
       : Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
-    if (corrigido <= atual && quantidadeParcelas <= 1) return itens;
+    const datasLidas = textosBrutos.flatMap(texto => {
+      const encontradas = [];
+      for (const match of String(texto || '').matchAll(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2})\b/g)) {
+        encontradas.push(`${match[3]}-${String(Number(match[2])).padStart(2, '0')}-${String(Number(match[1])).padStart(2, '0')}`);
+      }
+      for (const match of String(texto || '').matchAll(/\b(\d{2})(\d{2})(20\d{2})\b/g)) {
+        encontradas.push(`${match[3]}-${match[2]}-${match[1]}`);
+      }
+      return encontradas.filter(data => {
+        const [ano, mes, dia] = data.split('-').map(Number);
+        const teste = new Date(`${data}T12:00:00`);
+        return teste.getFullYear() === ano && teste.getMonth() + 1 === mes && teste.getDate() === dia;
+      });
+    });
+    const dataCompraLida = datasLidas[0] || null;
+    if (corrigido <= atual && quantidadeParcelas <= 1 && !dataCompraLida) return itens;
 
     item.valor = corrigido;
     item.valorTotalCompra = corrigido;
@@ -218,6 +247,11 @@
     item._parcelasAuto = quantidadeParcelas > 1;
     item._modoValorParcelas = 'total';
     item._valorReforcadoPorOCRNumerico = corrigido > atual;
+    if (dataCompraLida) {
+      item.data = dataCompraLida;
+      item.vencimento_fatura = dataCompraLida;
+      item._dataReforcadaPorOCRNumerico = true;
+    }
     return itens;
   }
 
@@ -839,7 +873,7 @@
       const leiturasNumericas = [];
       for (let indiceFonte = 0; indiceFonte < fontesNumericas.length; indiceFonte += 1) {
         const resultadoNumerico = await reconhecer(fontesNumericas[indiceFonte], indiceFonte === 0 ? 11 : 6, null, {
-          tessedit_char_whitelist: 'R$S0123456789.,Xx ',
+          tessedit_char_whitelist: 'R$S0123456789.,/:-Xx ',
         });
         const textoNumerico = resultadoNumerico?.data?.text || '';
         if (textoNumerico) leiturasNumericas.push(textoNumerico);
