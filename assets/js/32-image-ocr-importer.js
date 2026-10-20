@@ -493,7 +493,9 @@
       const img = new Image();
       img.onload = () => {
         try {
-          const limite = 1800;
+          // 2400 px ainda e leve para celulares atuais e preserva caracteres
+          // pequenos de comprovantes, que se perdiam no limite anterior de 1800.
+          const limite = 2400;
           const escala = Math.min(2, limite / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
           const largura = Math.max(1, Math.round((img.naturalWidth || 1) * escala));
           const altura = Math.max(1, Math.round((img.naturalHeight || 1) * escala));
@@ -502,14 +504,66 @@
           canvas.height = altura;
           const ctx = canvas.getContext('2d', { willReadFrequently: true });
           ctx.drawImage(img, 0, 0, largura, altura);
-          const imageData = ctx.getImageData(0, 0, largura, altura);
-          const data = imageData.data;
-          for (let i = 0; i < data.length; i += 4) {
-            const cinza = Math.round(data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-            const altoContraste = cinza > 165 ? 255 : Math.max(0, cinza - 20);
-            data[i] = data[i + 1] = data[i + 2] = altoContraste;
+          const original = ctx.getImageData(0, 0, largura, altura);
+          const tonsCinza = new Uint8ClampedArray(original.data.length);
+          const histograma = new Uint32Array(256);
+          for (let i = 0; i < original.data.length; i += 4) {
+            const cinza = Math.round(original.data[i] * 0.299 + original.data[i + 1] * 0.587 + original.data[i + 2] * 0.114);
+            histograma[cinza] += 1;
           }
-          ctx.putImageData(imageData, 0, 0);
+          const totalPixels = largura * altura;
+          const percentil = alvo => {
+            let acumulado = 0;
+            for (let nivel = 0; nivel < 256; nivel += 1) {
+              acumulado += histograma[nivel];
+              if (acumulado >= totalPixels * alvo) return nivel;
+            }
+            return alvo < 0.5 ? 0 : 255;
+          };
+          const preto = percentil(0.02);
+          const branco = Math.max(preto + 24, percentil(0.98));
+          for (let i = 0; i < original.data.length; i += 4) {
+            const cinza = Math.round(original.data[i] * 0.299 + original.data[i + 1] * 0.587 + original.data[i + 2] * 0.114);
+            const ajustado = Math.max(0, Math.min(255, Math.round((cinza - preto) * 255 / (branco - preto))));
+            tonsCinza[i] = tonsCinza[i + 1] = tonsCinza[i + 2] = ajustado;
+            tonsCinza[i + 3] = 255;
+          }
+          const canvasCinza = document.createElement('canvas');
+          canvasCinza.width = largura;
+          canvasCinza.height = altura;
+          canvasCinza.getContext('2d').putImageData(new ImageData(tonsCinza, largura, altura), 0, 0);
+
+          // Limiar de Otsu: escolhe automaticamente o corte preto/branco de
+          // acordo com a iluminacao da foto, sem depender de um numero fixo.
+          let somaTotal = 0;
+          for (let nivel = 0; nivel < 256; nivel += 1) somaTotal += nivel * histograma[nivel];
+          let pesoFundo = 0;
+          let somaFundo = 0;
+          let melhorVariancia = -1;
+          let limiar = 165;
+          for (let nivel = 0; nivel < 256; nivel += 1) {
+            pesoFundo += histograma[nivel];
+            if (!pesoFundo) continue;
+            const pesoFrente = totalPixels - pesoFundo;
+            if (!pesoFrente) break;
+            somaFundo += nivel * histograma[nivel];
+            const mediaFundo = somaFundo / pesoFundo;
+            const mediaFrente = (somaTotal - somaFundo) / pesoFrente;
+            const variancia = pesoFundo * pesoFrente * (mediaFundo - mediaFrente) ** 2;
+            if (variancia > melhorVariancia) {
+              melhorVariancia = variancia;
+              limiar = nivel;
+            }
+          }
+          const binario = new Uint8ClampedArray(tonsCinza);
+          for (let i = 0; i < binario.length; i += 4) {
+            const valor = tonsCinza[i] > limiar ? 255 : 0;
+            binario[i] = binario[i + 1] = binario[i + 2] = valor;
+          }
+          const canvasBinario = document.createElement('canvas');
+          canvasBinario.width = largura;
+          canvasBinario.height = altura;
+          canvasBinario.getContext('2d').putImageData(new ImageData(binario, largura, altura), 0, 0);
           const criarBlob = (origem, y, h, x = 0, w = origem.width) => new Promise(resolveBlob => {
             const recorte = document.createElement('canvas');
             recorte.width = Math.max(1, Math.round(w));
@@ -522,19 +576,21 @@
             recorte.toBlob(blob => resolveBlob(blob), 'image/png');
           });
           Promise.all([
-            criarBlob(canvas, 0, altura),
-            criarBlob(canvas, 0, altura * 0.55),
-            criarBlob(canvas, altura * 0.45, altura * 0.55),
+            criarBlob(canvasCinza, 0, altura),
+            criarBlob(canvasBinario, 0, altura),
+            criarBlob(canvasCinza, 0, altura * 0.55),
+            criarBlob(canvasCinza, altura * 0.45, altura * 0.55),
             // Faixas centrais dos cartões: isolam os valores e excluem o
             // relógio à direita e o ícone à esquerda.
-            criarBlob(canvas, altura * 0.08, altura * 0.30, largura * 0.27, largura * 0.55),
-            criarBlob(canvas, altura * 0.55, altura * 0.30, largura * 0.27, largura * 0.55),
-            criarBlob(canvas, altura * 0.25, altura * 0.18, largura * 0.14, largura * 0.76),
-            criarBlob(canvas, altura * 0.72, altura * 0.18, largura * 0.14, largura * 0.76),
-          ]).then(([principal, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior]) => {
+            criarBlob(canvasCinza, altura * 0.08, altura * 0.30, largura * 0.27, largura * 0.55),
+            criarBlob(canvasCinza, altura * 0.55, altura * 0.30, largura * 0.27, largura * 0.55),
+            criarBlob(canvasCinza, altura * 0.25, altura * 0.18, largura * 0.14, largura * 0.76),
+            criarBlob(canvasCinza, altura * 0.72, altura * 0.18, largura * 0.14, largura * 0.76),
+          ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior]) => {
             URL.revokeObjectURL(url);
             resolve({
               principal: principal || file,
+              alternativas: [alternativaBinaria].filter(Boolean),
               faixas: [
                 { cartao: faixaSuperior, valor: valorSuperior, descricao: descricaoSuperior },
                 { cartao: faixaInferior, valor: valorInferior, descricao: descricaoInferior },
@@ -660,6 +716,20 @@
       });
       let textosReconhecidos = [resultado?.data?.text || ''];
       let itensReconhecidos = imagemCompraExtrairItens(textosReconhecidos[0]);
+      const confiancaPrincipal = Number(resultado?.data?.confidence || 0);
+
+      // Fotos de papel, telas com tema escuro e cupons desbotados respondem de
+      // formas diferentes ao contraste. So fazemos a segunda leitura quando a
+      // primeira parece fraca, evitando dobrar o tempo em imagens boas.
+      if ((confiancaPrincipal < 72 || !itensReconhecidos.length) && imagens.alternativas?.length) {
+        faturaSetProgress(72, 'Reforcando a leitura de textos pouco nitidos...');
+        const resultadoAlternativo = await reconhecer(imagens.alternativas[0], 6, null);
+        const textoAlternativo = resultadoAlternativo?.data?.text || '';
+        if (textoAlternativo) textosReconhecidos.push(textoAlternativo);
+        itensReconhecidos = imagemCompraDeduplicar(
+          textosReconhecidos.flatMap(textoLido => imagemCompraExtrairItens(textoLido))
+        );
+      }
 
       // Em prints com várias notificações, o modo de texto esparso do
       // Tesseract pode enxergar apenas o primeiro cartão. Se isso ocorrer,

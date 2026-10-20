@@ -3280,6 +3280,9 @@ function faturaCriarEscolhaOverlay({ titulo = '', subtitulo = '', body = '' } = 
       <div class="fatura-choice-body">${body}</div>
     </div>
   `;
+  overlay.addEventListener('click', evento => {
+    if (evento.target === overlay) faturaFecharEscolhaOverlay();
+  });
   document.body.appendChild(overlay);
   return overlay;
 }
@@ -3287,23 +3290,19 @@ function faturaCriarEscolhaOverlay({ titulo = '', subtitulo = '', body = '' } = 
 function faturaAbrirCategoriasItem(itemId) {
   const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
   if (!item) return;
-  const cards = [
-    `<button type="button" class="fatura-cat-card ${!item.categoria_id ? 'selecionado' : ''}" data-fatura-cat-nome="sem categoria" onclick="faturaEscolherCategoriaItem('${itemId}', '')">
-      <span class="fatura-cat-icone vazio">+</span>
-      <strong>Sem categoria</strong>
-    </button>`,
-    ...(categoriasCompraCache || []).map(cat => `
+  const cards = (categoriasCompraCache || [])
+    .filter(cat => !categoriaCompraEhReservada(cat?.nome))
+    .map(cat => `
       <button type="button" class="fatura-cat-card ${String(cat.id) === String(item.categoria_id || '') ? 'selecionado' : ''}" data-fatura-cat-nome="${escaparHtmlBasico(String(cat.nome || '').toLowerCase())}" onclick="faturaEscolherCategoriaItem('${itemId}', '${cat.id}')">
         <span class="fatura-cat-icone" style="background:${escaparHtmlBasico(cat.cor || '#3b82f6')}22;border-color:${escaparHtmlBasico(cat.cor || '#3b82f6')}66">${htmlIconeCategoriaCompra(cat.icone, 30)}</span>
         <strong>${escaparHtmlBasico(cat.nome || 'Categoria')}</strong>
       </button>
-    `),
-  ].join('');
+    `).join('');
   faturaCriarEscolhaOverlay({
     titulo: 'Categoria',
     subtitulo: item.descricao || '',
     body: `<input class="fatura-choice-search fatura-category-search" type="search" autocomplete="off" placeholder="Buscar categoria" aria-label="Buscar categoria pelo nome" oninput="faturaFiltrarCategoriasEscolha(this.value)">
-      <div class="fatura-cat-grid">${cards}</div>`,
+      <div class="fatura-cat-grid">${cards || '<div class="empty">Nenhuma categoria cadastrada.</div>'}</div>`,
   });
   setTimeout(() => document.querySelector('#faturaEscolhaOverlay .fatura-category-search')?.focus(), 0);
 }
@@ -5112,6 +5111,19 @@ async function excluirGrupoFornecedor(id) {
 let categoriaEmEdicaoId = null;
 let categoriasCompraCache = [];
 let categoriaInlineEmEdicaoId = null;
+let categoriaImagemDestino = { campoId: 'categoriaIcone', inputId: 'categoriaImagemArquivo', inlineId: null };
+
+function abrirSeletorImagemCategoria(inlineId = null) {
+  categoriaImagemDestino = inlineId ? { campoId:`categoriaInlineIcone_${inlineId}`,inputId:`categoriaInlineArquivo_${inlineId}`,inlineId:String(inlineId) } : { campoId:'categoriaIcone',inputId:'categoriaImagemArquivo',inlineId:null };
+  document.getElementById('categoriaImagemModal')?.remove();
+  const valorAtual=String(document.getElementById(categoriaImagemDestino.campoId)?.value||'').trim();
+  const modal=document.createElement('div'); modal.id='categoriaImagemModal'; modal.className='categoria-image-modal';
+  modal.innerHTML=`<section class="categoria-image-dialog" role="dialog" aria-modal="true" aria-labelledby="categoriaImageTitle"><header><div><span class="categoria-image-kicker">IMAGEM DA CATEGORIA</span><h2 id="categoriaImageTitle">Adicionar uma imagem</h2></div><button type="button" aria-label="Fechar" onclick="fecharSeletorImagemCategoria()">&times;</button></header><div class="categoria-image-guide"><div class="categoria-image-size">512<small>×</small>512</div><div><strong>Formato recomendado</strong><p>Use uma imagem quadrada em PNG ou WebP, com fundo transparente e até 5 MB.</p></div></div><div class="categoria-image-drop" ondragover="event.preventDefault();this.classList.add('arrastando')" ondragleave="this.classList.remove('arrastando')" ondrop="categoriaImagemModalDrop(event)"><div class="categoria-image-preview">${ehImagemCategoriaCompra(valorAtual)?`<img src="${escaparHtmlBasico(valorAtual)}" alt="Prévia">`:'<span>＋</span>'}</div><strong>Arraste a imagem para esta área</strong><span>ou escolha uma imagem salva no dispositivo</span><button class="btn btn-green" type="button" onclick="document.getElementById(categoriaImagemDestino.inputId)?.click()">Selecionar da galeria</button><small>PNG, JPG ou WebP · enquadramento e fundo claro serão tratados automaticamente</small></div><footer><button class="btn btn-ghost" type="button" onclick="fecharSeletorImagemCategoria()">Cancelar</button></footer></section>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)fecharSeletorImagemCategoria();}); document.body.appendChild(modal);
+}
+function fecharSeletorImagemCategoria(){document.getElementById('categoriaImagemModal')?.remove();}
+function categoriaImagemModalArquivoEscolhido(input){if(categoriaImagemDestino.inlineId)carregarImagemCategoriaCompraInline(categoriaImagemDestino.inlineId,input);else carregarImagemCategoriaCompra(input);fecharSeletorImagemCategoria();}
+function categoriaImagemModalDrop(evento){evento.preventDefault();const arquivo=evento.dataTransfer?.files?.[0],input=document.getElementById(categoriaImagemDestino.inputId);if(!arquivo||!input)return;try{const dt=new DataTransfer();dt.items.add(arquivo);input.files=dt.files;categoriaImagemModalArquivoEscolhido(input);}catch(_){setMsg('msgCategoriaCompra','Use o botão Selecionar da galeria para enviar esta imagem.','err');}}
 
 function chaveCategoriaCompraEquivalente(nome = '') {
   const normalizado = String(nome || '')
@@ -5122,6 +5134,11 @@ function chaveCategoriaCompraEquivalente(nome = '') {
   const ultima = partes.length - 1;
   if (partes[ultima].length > 3 && partes[ultima].endsWith('S')) partes[ultima] = partes[ultima].slice(0, -1);
   return partes.join(' ');
+}
+
+function categoriaCompraEhReservada(nome = '') {
+  const chave = chaveCategoriaCompraEquivalente(nome);
+  return chave === 'A CLASSIFICAR' || chave === 'SEM CATEGORIA';
 }
 
 function ehImagemCategoriaCompra(valor = '') {
@@ -5160,24 +5177,58 @@ function carregarImagemCategoriaCompra(input) {
     const imagem = new Image();
     imagem.onerror = () => setMsg('msgCategoriaCompra', 'O arquivo escolhido n?o ? uma imagem v?lida.', 'err');
     imagem.onload = () => {
-      const limite = 128;
-      const escala = Math.min(1, limite / Math.max(imagem.naturalWidth || 1, imagem.naturalHeight || 1));
+      const limite = 256;
+      const margem = 18;
+      const escala = Math.min(1, (limite - margem * 2) / Math.max(imagem.naturalWidth || 1, imagem.naturalHeight || 1));
       const largura = Math.max(1, Math.round((imagem.naturalWidth || 1) * escala));
       const altura = Math.max(1, Math.round((imagem.naturalHeight || 1) * escala));
       const canvas = document.createElement('canvas');
-      canvas.width = largura;
-      canvas.height = altura;
-      const contexto = canvas.getContext('2d');
-      contexto.drawImage(imagem, 0, 0, largura, altura);
-      const imagemComprimida = canvas.toDataURL('image/webp', 0.82);
+      canvas.width = limite;
+      canvas.height = limite;
+      const contexto = canvas.getContext('2d', { willReadFrequently: true });
+      const x = Math.round((limite - largura) / 2);
+      const y = Math.round((limite - altura) / 2);
+      contexto.drawImage(imagem, x, y, largura, altura);
+      const pixels = contexto.getImageData(0, 0, limite, limite);
+      const amostras = [[x,y],[x+largura-1,y],[x,y+altura-1],[x+largura-1,y+altura-1]].map(([px,py]) => {
+        const i = (Math.max(0,Math.min(limite-1,py))*limite + Math.max(0,Math.min(limite-1,px)))*4;
+        return [pixels.data[i],pixels.data[i+1],pixels.data[i+2]];
+      });
+      const fundo = [0,1,2].map(c => Math.round(amostras.reduce((s,cor) => s+cor[c],0)/amostras.length));
+      const variacao = Math.max(...amostras.flatMap(cor => cor.map((v,c) => Math.abs(v-fundo[c]))));
+      if (variacao < 24 && Math.min(...fundo) > 205) {
+        for (let i=0;i<pixels.data.length;i+=4) {
+          const distancia = Math.max(Math.abs(pixels.data[i]-fundo[0]),Math.abs(pixels.data[i+1]-fundo[1]),Math.abs(pixels.data[i+2]-fundo[2]));
+          if (distancia < 28) pixels.data[i+3]=0;
+          else if (distancia < 52) pixels.data[i+3]=Math.round(255*(distancia-28)/24);
+        }
+        contexto.putImageData(pixels,0,0);
+      }
+      const imagemComprimida = canvas.toDataURL('image/webp', 0.86);
       const campo = document.getElementById('categoriaIcone');
       if (campo) campo.value = imagemComprimida;
-      setMsg('msgCategoriaCompra', 'Imagem preparada. Clique em Salvar para gravar a categoria.', 'ok');
+      setMsg('msgCategoriaCompra', 'Imagem tratada e armazenada no CheckDiario. Clique em Salvar.', 'ok');
       input.value = '';
     };
     imagem.src = String(leitor.result || '');
   };
   leitor.readAsDataURL(arquivo);
+}
+
+function soltarImagemCategoriaCompra(evento) {
+  evento.preventDefault();
+  evento.currentTarget?.classList.remove('arrastando');
+  const arquivo = evento.dataTransfer?.files?.[0];
+  const input = document.getElementById('categoriaImagemArquivo');
+  if (!arquivo || !input) return;
+  try {
+    const transferencia = new DataTransfer();
+    transferencia.items.add(arquivo);
+    input.files = transferencia.files;
+    carregarImagemCategoriaCompra(input);
+  } catch (_) {
+    setMsg('msgCategoriaCompra', 'Toque em escolher foto para enviar esta imagem.', 'err');
+  }
 }
 
 function renderizarListaCategoriasCompra() {
@@ -5242,10 +5293,8 @@ function renderizarFormularioInlineCategoriaCompra(categoria) {
           <label class="campo-label" for="categoriaInlineIcone_${id}">Icone, imagem ou URL</label>
           <div class="categoria-compra-inline-icon-row">
             <input id="categoriaInlineIcone_${id}" type="text" value="${icone}" placeholder="Emoji ou URL direta">
-            <label class="btn btn-ghost btn-sm categoria-compra-inline-file" title="Escolher uma imagem do computador">
-              Imagem
-              <input id="categoriaInlineArquivo_${id}" type="file" accept="image/png,image/jpeg,image/webp" onchange="carregarImagemCategoriaCompraInline('${id}', this)" style="display:none;">
-            </label>
+            <button class="btn btn-ghost btn-sm categoria-compra-inline-file" type="button" onclick="abrirSeletorImagemCategoria('${id}')">Selecionar imagem</button>
+            <input id="categoriaInlineArquivo_${id}" type="file" accept="image/png,image/jpeg,image/webp" onchange="categoriaImagemModalArquivoEscolhido(this)" hidden>
           </div>
         </div>
         <div class="campo-com-label categoria-compra-inline-cor">
@@ -5279,7 +5328,7 @@ async function carregarCategoriasCompra() {
     if (lojaSessao) query = query.eq('loja_id', lojaSessao);
     const { data, error } = await query;
     if (error) throw error;
-    categoriasCompraCache = data || [];
+    categoriasCompraCache = (data || []).filter(categoria => !categoriaCompraEhReservada(categoria?.nome));
     preencherSelectCategoriasCompra();
     if (lista) {
       renderizarListaCategoriasCompra();
@@ -5320,6 +5369,7 @@ async function salvarCategoriaCompra() {
   const cor = String(document.getElementById('categoriaCor')?.value || '#3b82f6').trim();
   const desc = String(document.getElementById('categoriaDesc')?.value || '').trim();
   if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
+  if (categoriaCompraEhReservada(nome)) { setMsg('msgCategoriaCompra', 'Use uma categoria real para a compra.', 'err'); return; }
   const categoriaEquivalente = (categoriasCompraCache || []).find(categoria =>
     String(categoria.id) !== String(categoriaEmEdicaoId || '')
       && chaveCategoriaCompraEquivalente(categoria.nome) === chaveCategoriaCompraEquivalente(nome)
@@ -5420,6 +5470,7 @@ async function salvarCategoriaCompraInline(id) {
   const cor = String(document.getElementById(`categoriaInlineCor_${id}`)?.value || '#3b82f6').trim();
   const desc = String(document.getElementById(`categoriaInlineDesc_${id}`)?.value || '').trim();
   if (!nome) { setMsg('msgCategoriaCompra', 'Informe o nome.', 'err'); return; }
+  if (categoriaCompraEhReservada(nome)) { setMsg('msgCategoriaCompra', 'Use uma categoria real para a compra.', 'err'); return; }
   const categoriaEquivalente = (categoriasCompraCache || []).find(categoria =>
     String(categoria.id) !== String(id)
       && chaveCategoriaCompraEquivalente(categoria.nome) === chaveCategoriaCompraEquivalente(nome)

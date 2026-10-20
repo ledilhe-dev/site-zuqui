@@ -36,7 +36,7 @@
   <script src="./config.js"></script>
 <script id="configurar-mascara-cep-loja" src="./assets/js/00-cep-mask.js"></script>
 
-  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.66-editor-programacao">
+  <link rel="stylesheet" href="./assets/css/00-base.css?v=3.2.70-sem-flash-login">
 
   <link id="design-enhancement-v2" rel="stylesheet" href="./assets/css/10-design-enhancements.css">
 
@@ -2208,13 +2208,11 @@
               <input id="categoriaNome" type="text" placeholder="Ex: Alimentação, Tecnologia...">
             </div>
             <div class="campo-com-label">
-              <label class="campo-label" for="categoriaIcone">Ícone, imagem ou URL</label>
-              <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-                <input id="categoriaIcone" type="text" placeholder="Emoji ou URL direta" style="width:180px;min-width:0;">
-                <label class="btn btn-ghost btn-sm" title="Escolher uma imagem do computador" style="height:36px;display:inline-flex;align-items:center;cursor:pointer;white-space:nowrap;">
-                  Imagem
-                  <input id="categoriaImagemArquivo" type="file" accept="image/png,image/jpeg,image/webp" onchange="carregarImagemCategoriaCompra(this)" style="display:none;">
-                </label>
+              <label class="campo-label" for="categoriaIcone">Imagem da categoria</label>
+              <div class="categoria-imagem-cadastro">
+                <input id="categoriaIcone" type="text" placeholder="Cole uma URL ou use um emoji">
+                <button class="btn btn-ghost categoria-imagem-open" type="button" onclick="abrirSeletorImagemCategoria()">Selecionar imagem</button>
+                <input id="categoriaImagemArquivo" type="file" accept="image/png,image/jpeg,image/webp" onchange="categoriaImagemModalArquivoEscolhido(this)" hidden>
               </div>
             </div>
             <div class="campo-com-label">
@@ -3057,7 +3055,7 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=3.2.63-parcelas-pdf-pagamento">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=3.2.65-categorias-imagem">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260804-sequencial-dias-corridos">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260826-payable-sheet-v1">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
@@ -3415,7 +3413,7 @@
 <script src="./assets/js/21-employees.js?v=3.2.45"></script>
 <script src="./assets/js/22-access-requests.js?v=3.2.46"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=3.2.62-busca-categoria-contas"></script>
+<script src="./assets/js/30-finance.js?v=3.2.65-categorias-imagem"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260928-cofre-horario-v2"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=3.2.48"></script>
@@ -3424,7 +3422,7 @@
       <script src="./assets/js/93-raffinato-managerial.js?v=20260911-group-close-v2"></script>
       <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
-<script src="./assets/js/32-image-ocr-importer.js?v=3.2.63-parcelas-pdf-pagamento"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=3.2.64-ocr-adaptativo"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>

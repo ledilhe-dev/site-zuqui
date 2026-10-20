@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v243-permissoes-relatorios-raffinato';
+const CACHE_NAME = 'check-diario-pwa-v247-categorias-ocr-sessao';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

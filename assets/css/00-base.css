@@ -1,3 +1,10 @@
+/* Oculta login e painel enquanto a sessao persistida do F5 e restaurada. */
+html.admin-fouc-pendente body > .shell,
+html.admin-fouc-pendente #loginScreen {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
     :root {
       /* ════════════════════════════════════════════
          OBSIDIAN PRECISION — Sistema de Design v3
