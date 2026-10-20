@@ -332,6 +332,50 @@
     return itens;
   }
 
+  function imagemCompraExtrairResumoParcelado(texto, dataPadrao) {
+    const normalizado = imagemCompraNormalizarTexto(texto);
+    const compacto = normalizado.replace(/\n+/g, ' ');
+    const regexParcela = /\b0*(\d{1,2})\s*[xX]\s*(?:de\s*)?(?:R\s*\$|R[S5]|S)?\s*(\d{1,3}(?:\.\d{3})*[,.]\d{2})/gi;
+    const itens = [];
+    let parcelaMatch;
+    while ((parcelaMatch = regexParcela.exec(compacto)) !== null) {
+      const quantidade = Number.parseInt(parcelaMatch[1], 10);
+      const valorParcela = imagemCompraParseValor(parcelaMatch[2]);
+      if (quantidade < 2 || quantidade > 99 || !valorParcela) continue;
+      const totalCalculado = Number((quantidade * valorParcela).toFixed(2));
+      const contextoAnterior = compacto.slice(Math.max(0, parcelaMatch.index - 260), parcelaMatch.index);
+      const valoresAnteriores = [...contextoAnterior.matchAll(/(?:R\s*\$|R[S5]|S)\s*(\d{1,3}(?:\.\d{3})*[,.]\d{2})/gi)]
+        .map(match => imagemCompraParseValor(match[1]))
+        .filter(Boolean);
+      const valorTotalLido = [...valoresAnteriores].reverse().find(valor =>
+        Math.abs(valor - totalCalculado) <= Math.max(0.02, totalCalculado * 0.001)
+      );
+      const valorTotal = valorTotalLido || totalCalculado;
+      const data = imagemCompraParseData(contextoAnterior, dataPadrao);
+      const linhasDescricao = normalizado.split('\n').map(linha => linha.trim()).filter(Boolean);
+      const linhaDescricao = linhasDescricao.find(linha =>
+        /[A-Za-zÀ-ÿ]{3,}/.test(linha)
+        && !/(?:R\s*\$|\b\d{1,2}\s*[xX]\b)/i.test(linha)
+        && !/^\s*\d{1,2}[\/.-]\d{1,2}/.test(linha)
+      ) || contextoAnterior;
+      const descricao = imagemCompraLimparDescricao(
+        String(linhaDescricao)
+          .replace(/^\s*\d+\s+(?=[A-Za-zÀ-ÿ])/, '')
+          .replace(/(?:R\s*\$|R[S5]|S)\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}.*$/i, '')
+      );
+      if (!descricao) continue;
+      itens.push({
+        data, descricao, valor: valorTotal, valorTotalCompra: valorTotal,
+        quantidadeParcelas: quantidade, valorParcela, fitid: null,
+        vencimento_fatura: data, selecionado: true, _obsManual: descricao,
+        _origemImagem: true, _exigeFornecedorManual: true,
+        _parcelasManuais: quantidade, _parcelasAuto: true,
+        _modoValorParcelas: 'total', _resumoParceladoImagem: true,
+      });
+    }
+    return imagemCompraDeduplicar(itens);
+  }
+
   function imagemCompraExtrairCarteiraNubank(texto, dataPadrao) {
     const linhas = imagemCompraNormalizarTexto(texto).split('\n').map(linha => linha.trim()).filter(Boolean);
     const itens = [];
@@ -488,20 +532,26 @@
 
   function imagemCompraExtrairItens(texto) {
     const dataPadrao = imagemCompraHojeISO();
+    const resumosParcelados = imagemCompraExtrairResumoParcelado(texto, dataPadrao);
     const notificacoes = imagemCompraExtrairNotificacoesCartao(texto, dataPadrao);
     const carteira = imagemCompraExtrairCarteiraNubank(texto, dataPadrao);
     const genericos = imagemCompraExtrairGenerico(texto, dataPadrao);
     const valoresAncorados = new Set(
       [...notificacoes, ...carteira].map(item => Math.round(Number(item.valor || 0) * 100))
     );
-    const genericosNovos = genericos.filter(item =>
-      !valoresAncorados.has(Math.round(Number(item.valor || 0) * 100))
-    );
+    const valoresResumos = new Set(resumosParcelados.flatMap(item => [
+      Math.round(Number(item.valorTotalCompra || item.valor || 0) * 100),
+      Math.round(Number(item.valorParcela || 0) * 100),
+    ]));
+    const genericosNovos = genericos.filter(item => {
+      const centavos = Math.round(Number(item.valor || 0) * 100);
+      return !valoresAncorados.has(centavos) && !valoresResumos.has(centavos);
+    });
     // Um bloco pode ser lido perfeitamente e outro perder palavras como
     // "Compra de". Antes, a existência do primeiro bloco específico fazia o
     // parser descartar todos os achados genéricos — exatamente o caso de dois
     // avisos no mesmo print. Agora as fontes são sempre combinadas.
-    return imagemCompraDeduplicar([...notificacoes, ...carteira, ...genericosNovos]);
+    return imagemCompraDeduplicar([...resumosParcelados, ...notificacoes, ...carteira, ...genericosNovos]);
   }
 
   async function imagemCompraCarregarTesseract() {
