@@ -31,3 +31,12 @@
 @media(max-width:480px){#loginScreen.login-screen{padding-inline:8px!important}.login-showcase{padding:14px}.login-showcase h1{font-size:clamp(23px,7.5vw,31px)}.login-showcase-copy{font-size:11px}.login-showcase-features li{font-size:9px}}
 @media(max-height:760px) and (min-width:901px){#loginScreen.login-screen{padding-block:18px!important}.login-showcase{padding-block:24px}.login-showcase h1{font-size:clamp(34px,4vw,50px)}.login-showcase-copy{margin-block:12px 15px}}
 @media(prefers-reduced-motion:reduce){#loginScreen.login-screen{background-attachment:scroll!important}}
+/* Evita o zoom automatico do iOS ao focar controles abaixo de 16px.
+   Exclusivo para a largura de telefones; nao interfere no iPad ou desktop. */
+@media (max-width: 600px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea { font-size: 16px !important; }
+
+  html, body { max-width: 100%; overflow-x: hidden; }
+}

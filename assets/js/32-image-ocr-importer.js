@@ -19,6 +19,9 @@
   function imagemCompraNormalizarTexto(texto) {
     return String(texto || '')
       .replace(/\r/g, '\n')
+      // O OCR pode separar o milhar: "7. 133,88" ou "7 133,88".
+      .replace(/(\d)\.\s+(?=\d{3}(?:[,.]\d{2})\b)/g, '$1.')
+      .replace(/(\d)[ \u00a0]+(?=\d{3}(?:[,.]\d{2})\b)/g, '$1.')
       .replace(/[ \t]+/g, ' ')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
@@ -193,6 +196,25 @@
   function imagemCompraExtrairNotificacoesCartao(texto, dataPadrao) {
     const itens = [];
     const compacto = imagemCompraNormalizarTexto(texto).replace(/\n+/g, ' ');
+    const regexValorNotificacao = /no\s+valor\s+de\s+(?:R\s*\$|R[S5]|S)?\s*([\d.]+[,.]\d{2})\s+em\s+0*(\d{1,2})\s*[xX]\s+(.+?)(?=\s+(?:hoje\b|ontem\b|compra\s+(?:aprovada|de)\b)|$)/gi;
+    let notificacaoValor;
+    while ((notificacaoValor = regexValorNotificacao.exec(compacto)) !== null) {
+      const valor = imagemCompraParseValor(notificacaoValor[1]);
+      const quantidadeParcelas = Math.max(1, Number.parseInt(notificacaoValor[2], 10) || 1);
+      const descricao = imagemCompraLimparDescricao(notificacaoValor[3]);
+      if (!valor || !descricao) continue;
+      const contextoData = compacto.slice(Math.max(0, notificacaoValor.index - 240), notificacaoValor.index);
+      itens.push({
+        data: imagemCompraParseData(contextoData, dataPadrao), descricao, valor,
+        valorTotalCompra: valor, quantidadeParcelas,
+        valorParcela: Number((valor / quantidadeParcelas).toFixed(2)), fitid: null,
+        vencimento_fatura: imagemCompraParseData(contextoData, dataPadrao), selecionado: true,
+        _obsManual: descricao, _origemImagem: true,
+        _bancoImagem: imagemCompraDetectarBanco(contextoData),
+        _parcelasManuais: quantidadeParcelas, _parcelasAuto: quantidadeParcelas > 1,
+        _modoValorParcelas: 'total',
+      });
+    }
     const regex = /Compra\s+de\s+(?:R\s*\$|R[S5]|S)?\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+(?:R\s*\$|R[S5]|S)?|hoje\b|ontem\b)|$)/gi;
     let m;
     while ((m = regex.exec(compacto)) !== null) {

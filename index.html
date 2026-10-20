@@ -2775,7 +2775,7 @@
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div style="font-size:13px;color:var(--text-muted)" id="pinActionUserName"></div>
-      <input id="pinActionInput" class="login-input pin-secure-input" type="text" placeholder="Digite seu PIN" maxlength="20" onkeydown="if (event.key === 'Enter') confirmarModalPin()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
+      <input id="pinActionInput" class="login-input pin-secure-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Digite seu PIN" maxlength="20" onkeydown="if (event.key === 'Enter') confirmarModalPin()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-no-password-manager="true">
       <div class="msg" id="pinActionMsg" style="margin-top:0"></div>
     </div>
     <div class="modal-footer">
@@ -3083,7 +3083,7 @@
 <link id="compact-desktop-style" rel="stylesheet" href="./assets/css/119-compact-desktop.css?v=20261008-notebook-v5">
 <link id="responsive-system-style" rel="stylesheet" href="./assets/css/121-responsive-system.css?v=20261016-v1">
 <link id="mobile-density-style" rel="stylesheet" href="./assets/css/121-mobile-density.css?v=20261017-v7">
-<link id="login-showcase-style" rel="stylesheet" href="./assets/css/122-login-showcase.css?v=20261017-v3">
+<link id="login-showcase-style" rel="stylesheet" href="./assets/css/122-login-showcase.css?v=20261019-v4">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3413,7 +3413,7 @@
 <script src="./assets/js/21-employees.js?v=3.2.45"></script>
 <script src="./assets/js/22-access-requests.js?v=3.2.46"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=3.2.73-seletor-imagem-categoria"></script>
+<script src="./assets/js/30-finance.js?v=3.2.74-ocr-mobile-imagens"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260928-cofre-horario-v2"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=3.2.48"></script>
@@ -3422,7 +3422,7 @@
       <script src="./assets/js/93-raffinato-managerial.js?v=20260911-group-close-v2"></script>
       <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
-<script src="./assets/js/32-image-ocr-importer.js?v=3.2.64-ocr-adaptativo"></script>
+<script src="./assets/js/32-image-ocr-importer.js?v=3.2.74-valor-bradesco"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>

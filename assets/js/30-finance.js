@@ -5244,13 +5244,20 @@ function htmlIconeCategoriaCompra(valor = '', tamanho = 24) {
   const px = Math.max(14, Math.min(64, Number(tamanho) || 24));
   if (!icone) return '<span class="categoria-icone-fallback" aria-label="Categoria sem imagem">?</span>';
   if (ehImagemCategoriaCompra(icone)) {
-    return `<img src="${escaparHtmlBasico(icone)}" alt="" style="width:${px}px;height:${px}px;object-fit:cover;border-radius:5px;flex:0 0 ${px}px;" onerror="categoriaIconeImagemFalhou(this)">`;
+    return `<img src="${escaparHtmlBasico(icone)}" alt="" referrerpolicy="no-referrer" decoding="async" style="width:${px}px;height:${px}px;object-fit:cover;border-radius:5px;flex:0 0 ${px}px;" onerror="categoriaIconeImagemFalhou(this)">`;
   }
   return `<span aria-hidden="true" style="font-size:${px}px;line-height:1;">${escaparHtmlBasico(icone)}</span>`;
 }
 
 function categoriaIconeImagemFalhou(imagem) {
   if (!imagem?.parentElement) return;
+  if (!imagem.dataset.categoriaTentativa) {
+    imagem.dataset.categoriaTentativa = '1';
+    const fonte = imagem.currentSrc || imagem.src;
+    imagem.removeAttribute('src');
+    requestAnimationFrame(() => { imagem.src = fonte; });
+    return;
+  }
   const fallback = document.createElement('span');
   fallback.className = 'categoria-icone-fallback';
   fallback.setAttribute('aria-label', 'Imagem indisponivel');
