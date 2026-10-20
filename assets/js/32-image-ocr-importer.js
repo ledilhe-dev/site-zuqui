@@ -178,6 +178,49 @@
     return unicos;
   }
 
+  function imagemCompraCorrigirPorLeituraNumerica(itens, leiturasNumericas = []) {
+    if (!Array.isArray(itens) || itens.length !== 1) return itens;
+    const textosBrutos = (leiturasNumericas || []).map(texto => String(texto || ''));
+    const textos = textosBrutos.map(imagemCompraNormalizarValoresSemSeparador);
+    const candidatosSemSeparador = textosBrutos.flatMap(texto =>
+      (texto.match(/\b\d{5,8}\b/g) || []).map(digitos => Number(digitos) / 100)
+    );
+    const candidatos = [...candidatosSemSeparador, ...textos.flatMap(texto => {
+      const normalizado = imagemCompraNormalizarTexto(texto);
+      return (normalizado.match(/(?:R\s*\$\s*)?\d{1,3}(?:[.\s]\d{3})*[,.]\d{2}|(?:R\s*\$\s*)?\d{4,8}[,.]\d{2}/gi) || [])
+        .map(imagemCompraParseValor)
+        .filter(valor => Number.isFinite(valor) && valor > 0);
+    })];
+    if (!candidatos.length) return itens;
+
+    const item = itens[0];
+    const atual = Number(item.valorTotalCompra ?? item.valor ?? 0);
+    const centavosAtuais = Math.round(atual * 100) % 100;
+    const melhores = candidatos.filter(valor =>
+      valor > atual
+      && valor <= atual * 100
+      && Math.round(valor * 100) % 100 === centavosAtuais
+    );
+    const corrigido = melhores.length ? Math.max(...melhores) : atual;
+    const parcelasLidas = [...textosBrutos, ...textos]
+      .map(texto => imagemCompraParseParcelas(texto))
+      .filter(quantidade => quantidade > 1);
+    const quantidadeParcelas = parcelasLidas.length
+      ? Math.max(...parcelasLidas)
+      : Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
+    if (corrigido <= atual && quantidadeParcelas <= 1) return itens;
+
+    item.valor = corrigido;
+    item.valorTotalCompra = corrigido;
+    item.quantidadeParcelas = quantidadeParcelas;
+    item.valorParcela = Number((corrigido / quantidadeParcelas).toFixed(2));
+    item._parcelasManuais = quantidadeParcelas;
+    item._parcelasAuto = quantidadeParcelas > 1;
+    item._modoValorParcelas = 'total';
+    item._valorReforcadoPorOCRNumerico = corrigido > atual;
+    return itens;
+  }
+
   function imagemCompraDetectarBanco(contexto) {
     const normalizado = imagemCompraRemoverAcentos(contexto).toLowerCase();
     const bancos = [
@@ -786,6 +829,23 @@
           textosReconhecidos.flatMap(textoFaixa => imagemCompraExtrairItens(textoFaixa))
         );
       }
+      // Uma leitura somente numérica é indispensável em notificações grandes:
+      // no modo textual o Tesseract pode ignorar o primeiro algarismo de
+      // "7.133,88" e devolver "133,88". O passe numérico lê a imagem inteira
+      // em cinza e binário, reconcilia valores pelo mesmo final de centavos e
+      // recupera também o marcador "12 X".
+      faturaSetProgress(84, 'Conferindo valor e parcelas...');
+      const fontesNumericas = [imagens.principal, ...(imagens.alternativas || []).slice(0, 1)].filter(Boolean);
+      const leiturasNumericas = [];
+      for (let indiceFonte = 0; indiceFonte < fontesNumericas.length; indiceFonte += 1) {
+        const resultadoNumerico = await reconhecer(fontesNumericas[indiceFonte], indiceFonte === 0 ? 11 : 6, null, {
+          tessedit_char_whitelist: 'R$S0123456789.,Xx ',
+        });
+        const textoNumerico = resultadoNumerico?.data?.text || '';
+        if (textoNumerico) leiturasNumericas.push(textoNumerico);
+      }
+      itensReconhecidos = imagemCompraCorrigirPorLeituraNumerica(itensReconhecidos, leiturasNumericas);
+      textosReconhecidos.push(...leiturasNumericas);
       const texto = textosReconhecidos.filter(Boolean).join('\n\n');
       faturaSetProgress(88, 'Interpretando compras...');
       concluirImportacao(itensReconhecidos, texto, 'Imagem/OCR');
@@ -800,4 +860,5 @@
 
   window.imagemCompraExtrairItens = imagemCompraExtrairItens;
   window.imagemCompraNormalizarValoresSemSeparador = imagemCompraNormalizarValoresSemSeparador;
+  window.imagemCompraCorrigirPorLeituraNumerica = imagemCompraCorrigirPorLeituraNumerica;
 })();
