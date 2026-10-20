@@ -178,6 +178,38 @@
     return unicos;
   }
 
+  function imagemCompraConsolidarResumosParcelados(itens) {
+    const lista = Array.isArray(itens) ? itens : [];
+    const resumos = lista.filter(item => item?._resumoParceladoImagem);
+    if (!resumos.length) return imagemCompraDeduplicar(lista);
+    const grupos = new Map();
+    resumos.forEach(item => {
+      const chave = `${Math.round(Number(item.valorTotalCompra ?? item.valor ?? 0) * 100)}|${Number(item._parcelasManuais || 1)}`;
+      if (!grupos.has(chave)) grupos.set(chave, []);
+      grupos.get(chave).push(item);
+    });
+    const escolhidos = [...grupos.values()].map(grupo => [...grupo].sort((a, b) => {
+      const pontuar = item => {
+        const descricao = String(item.descricao || '');
+        let pontos = item._dataEncontradaResumo ? 100 : 0;
+        pontos += Math.min(40, descricao.length);
+        if (/^[A-Za-zÀ-ÿ]/.test(descricao)) pontos += 30;
+        if (/\b(?:INF|NAN)\b|["&]|^\d+\s/i.test(descricao)) pontos -= 100;
+        return pontos;
+      };
+      return pontuar(b) - pontuar(a);
+    })[0]);
+    const valoresProtegidos = new Set(escolhidos.flatMap(item => [
+      Math.round(Number(item.valorTotalCompra ?? item.valor ?? 0) * 100),
+      Math.round(Number(item.valorParcela || 0) * 100),
+    ]));
+    const restantes = lista.filter(item => {
+      if (item?._resumoParceladoImagem) return false;
+      return !valoresProtegidos.has(Math.round(Number(item.valor || 0) * 100));
+    });
+    return imagemCompraDeduplicar([...escolhidos, ...restantes]);
+  }
+
   function imagemCompraCorrigirPorLeituraNumerica(itens, leiturasNumericas = []) {
     if (!Array.isArray(itens) || itens.length !== 1) return itens;
     const textosBrutos = (leiturasNumericas || []).map(texto => String(texto || ''));
@@ -352,6 +384,7 @@
       );
       const valorTotal = valorTotalLido || totalCalculado;
       const data = imagemCompraParseData(contextoAnterior, dataPadrao);
+      const dataEncontrada = /\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/.test(contextoAnterior);
       const linhasDescricao = normalizado.split('\n').map(linha => linha.trim()).filter(Boolean);
       const linhaDescricao = linhasDescricao.find(linha =>
         /[A-Za-zÀ-ÿ]{3,}/.test(linha)
@@ -371,6 +404,7 @@
         _origemImagem: true, _exigeFornecedorManual: true,
         _parcelasManuais: quantidade, _parcelasAuto: true,
         _modoValorParcelas: 'total', _resumoParceladoImagem: true,
+        _dataEncontradaResumo: dataEncontrada,
       });
     }
     return imagemCompraDeduplicar(itens);
@@ -551,7 +585,7 @@
     // "Compra de". Antes, a existência do primeiro bloco específico fazia o
     // parser descartar todos os achados genéricos — exatamente o caso de dois
     // avisos no mesmo print. Agora as fontes são sempre combinadas.
-    return imagemCompraDeduplicar([...resumosParcelados, ...notificacoes, ...carteira, ...genericosNovos]);
+    return imagemCompraConsolidarResumosParcelados([...resumosParcelados, ...notificacoes, ...carteira, ...genericosNovos]);
   }
 
   async function imagemCompraCarregarTesseract() {
@@ -893,7 +927,7 @@
         const resultadoAlternativo = await reconhecer(imagens.alternativas[0], 6, null);
         const textoAlternativo = resultadoAlternativo?.data?.text || '';
         if (textoAlternativo) textosReconhecidos.push(textoAlternativo);
-        itensReconhecidos = imagemCompraDeduplicar(
+        itensReconhecidos = imagemCompraConsolidarResumosParcelados(
           textosReconhecidos.flatMap(textoLido => imagemCompraExtrairItens(textoLido))
         );
       }
@@ -927,7 +961,7 @@
           ...textosReconhecidos,
           ...resultadosFaixas.map(item => item.texto || ''),
         ];
-        itensReconhecidos = imagemCompraDeduplicar(
+        itensReconhecidos = imagemCompraConsolidarResumosParcelados(
           textosReconhecidos.flatMap(textoFaixa => imagemCompraExtrairItens(textoFaixa))
         );
       }
@@ -946,6 +980,7 @@
         const textoNumerico = resultadoNumerico?.data?.text || '';
         if (textoNumerico) leiturasNumericas.push(textoNumerico);
       }
+      itensReconhecidos = imagemCompraConsolidarResumosParcelados(itensReconhecidos);
       itensReconhecidos = imagemCompraCorrigirPorLeituraNumerica(itensReconhecidos, leiturasNumericas);
       textosReconhecidos.push(...leiturasNumericas);
       const texto = textosReconhecidos.filter(Boolean).join('\n\n');
@@ -963,6 +998,7 @@
   window.imagemCompraExtrairItens = imagemCompraExtrairItens;
   window.imagemCompraNormalizarValoresSemSeparador = imagemCompraNormalizarValoresSemSeparador;
   window.imagemCompraCorrigirPorLeituraNumerica = imagemCompraCorrigirPorLeituraNumerica;
+  window.imagemCompraConsolidarResumosParcelados = imagemCompraConsolidarResumosParcelados;
   window.imagemCompraPrepararArquivo = imagemCompraPrepararArquivo;
   window.imagemCompraCarregarTesseract = imagemCompraCarregarTesseract;
 })();
