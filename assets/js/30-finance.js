@@ -5393,7 +5393,7 @@ function renderizarFormularioInlineCategoriaCompra(categoria) {
           <label class="campo-label" for="categoriaInlineNome_${id}">Nome</label>
           <input id="categoriaInlineNome_${id}" type="text" value="${nome}" placeholder="Nome da categoria">
         </div>
-        <div class="campo-com-label">
+        <div class="campo-com-label categoria-compra-inline-imagem">
           <label class="campo-label" for="categoriaInlineIcone_${id}">Icone, imagem ou URL</label>
           <div class="categoria-compra-inline-icon-row">
             <input id="categoriaInlineIcone_${id}" type="text" value="${icone}" placeholder="Emoji ou URL direta">

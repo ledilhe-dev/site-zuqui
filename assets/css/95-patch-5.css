@@ -1190,6 +1190,8 @@
 }
 
 .categoria-compra-inline-edit {
+  display: grid !important;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: flex-start;
   gap: 12px;
 }
@@ -1205,7 +1207,8 @@
 }
 
 .categoria-compra-inline-grid {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  width: 100%;
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(480px, 2.2fr) 64px minmax(180px, .9fr);
@@ -1618,19 +1621,31 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+.categoria-compra-inline-imagem {
+  width: 100%;
+  max-width: none !important;
+  min-width: 0;
 }
 
 .categoria-compra-inline-icon-row input[type="text"] {
   flex: 1 1 auto;
-  min-width: 260px;
+  min-width: 0;
 }
 
 .categoria-compra-inline-file {
+  flex: 0 0 auto;
+  min-width: 142px;
   height: 34px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
   white-space: nowrap;
+  overflow: visible;
 }
 
 .categoria-compra-inline-cor input[type="color"] {
@@ -1646,9 +1661,6 @@
 }
 
 @media (max-width: 1280px) {
-  .categoria-compra-inline-edit {
-    flex-wrap: wrap;
-  }
   .categoria-compra-inline-grid {
     grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.6fr);
   }
@@ -1657,6 +1669,11 @@
   }
   .categoria-compra-inline-desc {
     min-width: 0;
+  }
+  .categoria-compra-inline-actions {
+    grid-column: 2 / -1;
+    justify-content: flex-end;
+    padding-top: 0;
   }
 }
 
@@ -1667,9 +1684,19 @@
   .categoria-compra-inline-icon-row input[type="text"] {
     min-width: 0;
   }
+  .categoria-compra-inline-icon-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .categoria-compra-inline-file {
+    width: 100%;
+  }
 }
 
 @media (max-width: 560px) {
+  .categoria-compra-inline-edit {
+    grid-template-columns: 1fr;
+  }
   .categoria-compra-inline-preview {
     display: none;
   }
@@ -1677,6 +1704,7 @@
     grid-template-columns: 1fr;
   }
   .categoria-compra-inline-actions {
+    grid-column: 1;
     width: 100%;
     justify-content: flex-start;
     padding-top: 0;
