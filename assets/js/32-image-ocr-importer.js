@@ -208,7 +208,7 @@
       .map(texto => imagemCompraParseParcelas(texto))
       .filter(quantidade => quantidade > 1);
     if (!parcelasLidas.length) {
-      parcelasLidas = textosBrutos.flatMap(texto => {
+      const candidatosSemX = textosBrutos.flatMap(texto => {
         const limpo = String(texto || '')
           .replace(/\b\d{1,2}[\/.-]\d{1,2}[\/.-]20\d{2}\b/g, ' ')
           .replace(/\b\d{1,2}:\d{2}\b/g, ' ')
@@ -218,6 +218,16 @@
           .map(match => Number.parseInt(match[1], 10));
         return candidatosParcela.length ? [candidatosParcela[candidatosParcela.length - 1]] : [];
       });
+      // Sem a letra X, só aceitamos o número se duas leituras independentes
+      // concordarem. Isso impede que 20:26, bateria ou data virem "2 parcelas".
+      const frequencias = candidatosSemX.reduce((mapa, numero) => {
+        mapa.set(numero, (mapa.get(numero) || 0) + 1);
+        return mapa;
+      }, new Map());
+      parcelasLidas = [...frequencias.entries()]
+        .filter(([, ocorrencias]) => ocorrencias >= 2)
+        .sort((a, b) => b[1] - a[1])
+        .map(([numero]) => numero);
     }
     const quantidadeParcelas = parcelasLidas.length
       ? parcelasLidas[parcelasLidas.length - 1]
@@ -663,10 +673,12 @@
           canvasBinario.width = largura;
           canvasBinario.height = altura;
           canvasBinario.getContext('2d').putImageData(new ImageData(binario, largura, altura), 0, 0);
-          const criarBlob = (origem, y, h, x = 0, w = origem.width) => new Promise(resolveBlob => {
+          const criarBlob = (origem, y, h, x = 0, w = origem.width, ampliacao = 1) => new Promise(resolveBlob => {
             const recorte = document.createElement('canvas');
-            recorte.width = Math.max(1, Math.round(w));
-            recorte.height = Math.max(1, Math.round(h));
+            recorte.width = Math.max(1, Math.round(w * ampliacao));
+            recorte.height = Math.max(1, Math.round(h * ampliacao));
+            const contextoRecorte = recorte.getContext('2d');
+            contextoRecorte.imageSmoothingEnabled = false;
             recorte.getContext('2d').drawImage(
               origem,
               Math.round(x), Math.round(y), Math.round(w), Math.round(h),
@@ -685,7 +697,12 @@
             criarBlob(canvasCinza, altura * 0.55, altura * 0.30, largura * 0.27, largura * 0.55),
             criarBlob(canvasCinza, altura * 0.25, altura * 0.18, largura * 0.14, largura * 0.76),
             criarBlob(canvasCinza, altura * 0.72, altura * 0.18, largura * 0.14, largura * 0.76),
-          ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior]) => {
+            // Tres faixas largas e sobrepostas, ampliadas, garantem que a
+            // linha "R$ 7.133,88 EM 12 X" seja lida sem o restante da tela.
+            criarBlob(canvasCinza, 0, altura * 0.42, 0, largura, 1.6),
+            criarBlob(canvasCinza, altura * 0.29, altura * 0.42, 0, largura, 1.6),
+            criarBlob(canvasCinza, altura * 0.58, altura * 0.42, 0, largura, 1.6),
+          ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior, bandaNumerica1, bandaNumerica2, bandaNumerica3]) => {
             URL.revokeObjectURL(url);
             resolve({
               principal: principal || file,
@@ -694,6 +711,7 @@
                 { cartao: faixaSuperior, valor: valorSuperior, descricao: descricaoSuperior },
                 { cartao: faixaInferior, valor: valorInferior, descricao: descricaoInferior },
               ].filter(faixa => faixa.cartao),
+              bandasNumericas: [bandaNumerica1, bandaNumerica2, bandaNumerica3].filter(Boolean),
             });
           }).catch(reject);
         } catch (e) {
@@ -869,7 +887,7 @@
       // em cinza e binário, reconcilia valores pelo mesmo final de centavos e
       // recupera também o marcador "12 X".
       faturaSetProgress(84, 'Conferindo valor e parcelas...');
-      const fontesNumericas = [imagens.principal, ...(imagens.alternativas || []).slice(0, 1)].filter(Boolean);
+      const fontesNumericas = [imagens.principal, ...(imagens.bandasNumericas || [])].filter(Boolean);
       const leiturasNumericas = [];
       for (let indiceFonte = 0; indiceFonte < fontesNumericas.length; indiceFonte += 1) {
         const resultadoNumerico = await reconhecer(fontesNumericas[indiceFonte], indiceFonte === 0 ? 11 : 6, null, {
@@ -895,4 +913,6 @@
   window.imagemCompraExtrairItens = imagemCompraExtrairItens;
   window.imagemCompraNormalizarValoresSemSeparador = imagemCompraNormalizarValoresSemSeparador;
   window.imagemCompraCorrigirPorLeituraNumerica = imagemCompraCorrigirPorLeituraNumerica;
+  window.imagemCompraPrepararArquivo = imagemCompraPrepararArquivo;
+  window.imagemCompraCarregarTesseract = imagemCompraCarregarTesseract;
 })();
