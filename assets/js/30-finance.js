@@ -3206,6 +3206,19 @@ function faturaGerarParcelasCompra(valorTotal, quantidade, vencimentoPrimeiraISO
   }));
 }
 
+function faturaGerarParcelasDoItem(valorTotal, quantidade, item, fornecedor) {
+  const dataCompra = String(item?.data || '').slice(0, 10);
+  const vencimentoInformado = String(item?.vencimento_fatura || dataCompra).slice(0, 10);
+  const diaCartao = fornecedor?.is_cartao === true
+    ? Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10)
+    : NaN;
+  const usaRegraCartao = Number.isFinite(diaCartao) && diaCartao >= 1 && diaCartao <= 31;
+  const primeiroVencimento = usaRegraCartao
+    ? faturaCalcularVencimentoPorDia(dataCompra, diaCartao, fornecedor?.dia_fechamento)
+    : vencimentoInformado;
+  return faturaGerarParcelasCompra(valorTotal, quantidade, primeiroVencimento || vencimentoInformado, usaRegraCartao ? diaCartao : null);
+}
+
 function faturaObterCategoriaItem(item) {
   const id = String(item?.categoria_id || '').trim();
   return id ? (categoriasCompraCache || []).find(c => String(c.id) === id) || null : null;
@@ -3251,7 +3264,7 @@ function faturaAtualizarCardSelecoes(itemId) {
   }
   const venceBtn = card.querySelector('[data-fatura-venc-fornecedor]');
   const fornecedor = faturaObterFornecedorItem(item);
-  const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+  const dia = fornecedor?.is_cartao === true ? Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10) : NaN;
   if (venceBtn) {
     const pode = Number.isFinite(dia) && dia >= 1 && dia <= 31;
     venceBtn.style.display = pode ? '' : 'none';
@@ -3363,7 +3376,7 @@ function faturaUsarVencimentoFornecedor(itemId) {
   const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
   if (!item) return;
   const fornecedor = faturaObterFornecedorItem(item);
-  const dia = Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10);
+  const dia = fornecedor?.is_cartao === true ? Number.parseInt(String(fornecedor?.dia_vencimento || ''), 10) : NaN;
   if (!fornecedor || !Number.isFinite(dia) || dia < 1 || dia > 31) return;
   const venc = faturaCalcularVencimentoPorDia(item.data, dia, fornecedor?.dia_fechamento);
   if (!venc) return;
@@ -3490,7 +3503,7 @@ async function faturaExibirRevisao(resultado) {
     }
     // Vencimento pelo dia configurado no fornecedor (se houver), com base na data da compra.
     const fornObj = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornDoItem)) || null;
-    const diaVenc = fornObj?.dia_vencimento;
+    const diaVenc = fornObj?.is_cartao === true ? fornObj?.dia_vencimento : null;
     if (diaVenc) {
       const venc = faturaCalcularVencimentoPorDia(item.data, diaVenc, fornObj?.dia_fechamento);
       if (venc) { item.vencimento_fatura = venc; item._vencAuto = true; qtdVencAuto++; }
@@ -3670,7 +3683,7 @@ async function faturaAoSelecionarFornecedor(itemId, fornecedorId) {
   // mas s? se o usu?rio ainda n?o tiver editado o vencimento manualmente.
   if (!item._vencEditadoManual) {
     const fornObj = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
-    const diaVenc = fornObj?.dia_vencimento;
+    const diaVenc = fornObj?.is_cartao === true ? fornObj?.dia_vencimento : null;
     if (diaVenc) {
       const venc = faturaCalcularVencimentoPorDia(item.data, diaVenc, fornObj?.dia_fechamento);
       if (venc) {
@@ -4526,7 +4539,7 @@ async function faturaVerificarDuplicidadeInicialOCR() {
     const total = Number(item.valorTotalCompra ?? item.valor ?? 0);
     const fornecedor = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(item.fornecedor_id));
     const parcelas = quantidade > 1
-      ? faturaGerarParcelasCompra(total, quantidade, vencimentoBase, fornecedor?.dia_vencimento)
+      ? faturaGerarParcelasDoItem(total, quantidade, item, fornecedor)
       : [{ valor: total, vencimento: vencimentoBase }];
     return parcelas.map(parcela => ({
       fornecedor_id: item.fornecedor_id,
@@ -4671,10 +4684,9 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
       ? item.total_parcelas - item.parcela_atual + 1
       : Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
     const parcelas = !ehParceladoOFX && qtdParcelas > 1
-      ? faturaGerarParcelasCompra(Number(item.valorTotalCompra ?? item.valor ?? 0), qtdParcelas,
-          String(item.vencimento_fatura || item.data || '').slice(0, 10), fornecedor?.dia_vencimento)
+      ? faturaGerarParcelasDoItem(Number(item.valorTotalCompra ?? item.valor ?? 0), qtdParcelas, item, fornecedor)
       : [];
-    const resumoParcelas = parcelas.length > 1 ? `<span class="fatura-confirm-parcelas"><b>${qtdParcelas} títulos · 1ª de ${formatarMoedaBRFinanceiro(parcelas[0].valor)}</b><small>Total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra ?? item.valor)}</small><small>1ª parcela: ${formatarDataBRFinanceiro(parcelas[0].vencimento)} · Próxima: ${formatarDataBRFinanceiro(parcelas[1].vencimento)}</small></span>` : '';
+    const resumoParcelas = parcelas.length > 1 ? `<span class="fatura-confirm-parcelas"><b>${qtdParcelas} títulos · 1ª de ${formatarMoedaBRFinanceiro(parcelas[0].valor)}</b><small>Total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra ?? item.valor)}</small><small>1ª parcela: ${formatarDataBRFinanceiro(parcelas[0].vencimento)} · Próxima: ${formatarDataBRFinanceiro(parcelas[1].vencimento)}</small><details class="fatura-confirm-calendario" open><summary>Conferir as ${qtdParcelas} parcelas</summary>${parcelas.map(parcela => `<span><em>${parcela.numero}/${parcela.totalParcelas}</em><strong>${formatarDataBRFinanceiro(parcela.vencimento)}</strong><b>${formatarMoedaBRFinanceiro(parcela.valor)}</b></span>`).join('')}</details></span>` : '';
     const observacao = String(item._obsManual != null ? item._obsManual : (item.descricao || '')).trim();
     const divisoes = item._divisoesAplicadas ? (item._divisoes || []) : [];
     const detalheCategorias = divisoes.length
@@ -4905,7 +4917,7 @@ async function faturaLancarSelecionados() {
       const intervaloDias = 30;
       // Dia de vencimento do fornecedor, para provisionamento mensal "calend?rio".
       const fornObjLanc = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornecedorId)) || null;
-      const diaVencForn = fornObjLanc?.dia_vencimento;
+      const diaVencForn = fornObjLanc?.is_cartao === true ? fornObjLanc?.dia_vencimento : null;
       const dividirValorTotal = !ehParceladoOFX
         && (item._origemImagem || item._modoValorParcelas !== 'parcela')
         && qtdParcelas > 1;
@@ -4919,7 +4931,7 @@ async function faturaLancarSelecionados() {
       const linhas = partesCompra.flatMap((parte, indiceParte) => {
         const grupoId = gerarGrupoParcelasIdFinanceiro?.() || crypto.randomUUID();
         const parcelasCompra = dividirValorTotal
-          ? faturaGerarParcelasCompra(parte.valor, qtdParcelas, vencimentoBase, diaVencForn)
+          ? faturaGerarParcelasDoItem(parte.valor, qtdParcelas, item, fornObjLanc)
           : null;
         return Array.from({ length: qtdParcelas }, (_, i) => {
         // Vencimentos:

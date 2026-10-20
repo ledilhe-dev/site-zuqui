@@ -2513,3 +2513,7 @@
 #navContainer .nav-subitem-moving{opacity:.4!important;outline:2px solid var(--accent);outline-offset:-2px}
 .fatura-payment-warning{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;padding:10px 12px;border:1px solid rgba(239,68,68,.7);border-radius:10px;background:rgba(239,68,68,.12);color:var(--red)}
 .fatura-payment-warning strong{font-size:12px}.fatura-payment-warning span{font-size:11px;color:var(--text)}
+.fatura-confirm-calendario{display:block;width:100%;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:10px;background:rgba(15,23,42,.35)}
+.fatura-confirm-calendario summary{cursor:pointer;color:var(--text);font-size:12px;font-weight:800;text-align:left;margin-bottom:6px}
+.fatura-confirm-calendario>span{display:grid;grid-template-columns:42px 1fr auto;gap:8px;align-items:center;padding:5px 2px;border-top:1px solid rgba(148,163,184,.13);font-size:12px}
+.fatura-confirm-calendario>span em{color:var(--text-muted);font-style:normal}.fatura-confirm-calendario>span strong{color:var(--text);text-align:left}.fatura-confirm-calendario>span b{color:var(--text);white-space:nowrap}
