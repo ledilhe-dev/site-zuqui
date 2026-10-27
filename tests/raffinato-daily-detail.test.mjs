@@ -28,3 +28,13 @@ test('filtros extensos ficam recolhidos e o layout possui breakpoints de tablet 
   assert.match(css,/@media\(max-width:460px\)/);
   assert.match(css,/max-height:48dvh/);
 });
+
+test('seletores usam multisselecao recolhivel, busca contem e todos por padrao',()=>{
+  assert.match(js,/rddMakeSelector\(id,label\)/);
+  assert.match(js,/placeholder="Buscar por contém"/);
+  assert.match(js,/Selecionar todos/);
+  assert.match(js,/Desmarcar todos/);
+  assert.match(js,/<option value="999999" selected>Todos<\/option>/);
+  assert.match(js,/selected\.length===all\.length\)return\[\]/);
+  assert.doesNotMatch(js,/onchange="consultarRelatorioDetalhadoVendaDiariaRaffinato/);
+});
