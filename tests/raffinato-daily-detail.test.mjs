@@ -61,3 +61,10 @@ test('api escolhe uma unica fonte por consulta e bloqueia detalhe historico indi
   assert.match(js,/FILTROS APLICADOS/);
   assert.match(js,/TOTALIZADORES/);
 });
+
+test('impede datas futuras e normaliza o periodo antes da consulta',()=>{
+  assert.match(js,/input\.max=today/);
+  assert.match(js,/function rddClampFutureDates\(\)/);
+  assert.match(js,/const adjusted=rddClampFutureDates\(\)/);
+  assert.match(js,/Data final ajustada para/);
+});

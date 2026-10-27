@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v257-relatorio-venda-diaria-modo-unico';
+const CACHE_NAME = 'check-diario-pwa-v258-relatorio-venda-diaria-limite-data';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
