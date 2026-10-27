@@ -51,3 +51,13 @@ test('anos selecionados prevalecem sobre datas e atalhos reativam o intervalo',(
   assert.match(js,/end\.disabled=usingYears/);
   assert.match(js,/o intervalo acima será ignorado/);
 });
+
+test('historico mensal completa os anos anteriores sem duplicar o detalhe recente',()=>{
+  assert.match(relay,/from\("raffinato_anual_cache"\)/);
+  assert.match(relay,/eq\("modulo_venda","TODOS"\)/);
+  assert.match(relay,/tailDocs=annualLast\?docs\.filter/);
+  assert.match(relay,/reportRevenue=annualRevenue\+tailRevenue/);
+  assert.match(relay,/cache_historico_mensal_mais_detalhe/);
+  assert.match(js,/Histórico completo:/);
+  assert.match(js,/Detalhes de dias, produtos e agrupamentos disponíveis/);
+});
