@@ -42,3 +42,12 @@ test('seletores usam multisselecao recolhivel, busca contem e todos por padrao',
   assert.match(js,/selected\.length===all\.length\)return\[\]/);
   assert.doesNotMatch(js,/onchange="consultarRelatorioDetalhadoVendaDiariaRaffinato/);
 });
+
+test('anos selecionados prevalecem sobre datas e atalhos reativam o intervalo',()=>{
+  assert.match(js,/anos=rddSelected\('#rddYears input'\)\.map\(Number\)/);
+  assert.match(js,/inicio,fim,anos,meses:/);
+  assert.match(js,/function rddActivateDateRange\(\)\{document\.querySelectorAll\('#rddYears input'\)\.forEach\(x=>x\.checked=false\)/);
+  assert.match(js,/start\.disabled=usingYears/);
+  assert.match(js,/end\.disabled=usingYears/);
+  assert.match(js,/o intervalo acima será ignorado/);
+});
