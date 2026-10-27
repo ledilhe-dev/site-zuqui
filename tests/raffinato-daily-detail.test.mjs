@@ -17,10 +17,8 @@ test('menu, permissao e backend estao ligados',()=>{
   assert.match(html,/data-page="relatorio_detalhado_venda_diaria_raffinato"/);
   assert.match(relay,/authorizeReportPermission\(admin,body\.usuario_id,body\.loja_id,"relatorio_detalhado_venda_diaria_raffinato"/);
   assert.match(relay,/body\.action === "detailed_daily_sales_report"/);
-  assert.match(relay,/totalizadores:\{[^}]*dias:days,/);
-  assert.doesNotMatch(relay,/totalizadores:\{[^}]*[,\{]dias,/);
+  assert.match(relay,/totalizadores:detailedTotals\(dailyRows,saleIds\.size,productMap\.size\)/);
   assert.match(relay,/linhas:lines,/);
-  assert.match(relay,/vendas:saleIds\.size,dias:days/);
 });
 
 test('filtros extensos ficam recolhidos e o layout possui breakpoints de tablet e celular',()=>{
@@ -52,12 +50,14 @@ test('anos selecionados prevalecem sobre datas e atalhos reativam o intervalo',(
   assert.match(js,/o intervalo acima será ignorado/);
 });
 
-test('historico mensal completa os anos anteriores sem duplicar o detalhe recente',()=>{
+test('api escolhe uma unica fonte por consulta e bloqueia detalhe historico indisponivel',()=>{
   assert.match(relay,/from\("raffinato_anual_cache"\)/);
   assert.match(relay,/eq\("modulo_venda","TODOS"\)/);
-  assert.match(relay,/tailDocs=annualLast\?docs\.filter/);
-  assert.match(relay,/reportRevenue=annualRevenue\+tailRevenue/);
-  assert.match(relay,/cache_historico_mensal_mais_detalhe/);
-  assert.match(js,/Histórico completo:/);
-  assert.match(js,/Detalhes de dias, produtos e agrupamentos disponíveis/);
+  assert.match(relay,/mode=requestedYears\.length\?"historico_mensal":"intervalo_detalhado"/);
+  assert.match(relay,/O histórico mensal não possui detalhe confiável/);
+  assert.match(relay,/não será executada parcialmente/);
+  assert.doesNotMatch(relay,/tailDocs=|annualRevenue\+tailRevenue|cache_historico_mensal_mais_detalhe/);
+  assert.match(js,/Modo histórico mensal/);
+  assert.match(js,/FILTROS APLICADOS/);
+  assert.match(js,/TOTALIZADORES/);
 });
