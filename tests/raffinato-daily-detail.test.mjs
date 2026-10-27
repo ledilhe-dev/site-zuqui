@@ -18,3 +18,13 @@ test('menu, permissao e backend estao ligados',()=>{
   assert.match(relay,/authorizeReportPermission\(admin,body\.usuario_id,body\.loja_id,"relatorio_detalhado_venda_diaria_raffinato"/);
   assert.match(relay,/body\.action === "detailed_daily_sales_report"/);
 });
+
+test('filtros extensos ficam recolhidos e o layout possui breakpoints de tablet e celular',()=>{
+  const css=fs.readFileSync(new URL('../assets/css/123-raffinato-daily-detail.css',import.meta.url),'utf8');
+  assert.match(js,/<details class="rdd-advanced">/);
+  assert.match(js,/id="rddGroupPanel" class="rdd-group-panel" hidden/);
+  assert.match(css,/@media\(max-width:1100px\)/);
+  assert.match(css,/@media\(max-width:720px\)/);
+  assert.match(css,/@media\(max-width:460px\)/);
+  assert.match(css,/max-height:48dvh/);
+});
