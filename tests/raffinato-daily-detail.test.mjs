@@ -17,6 +17,10 @@ test('menu, permissao e backend estao ligados',()=>{
   assert.match(html,/data-page="relatorio_detalhado_venda_diaria_raffinato"/);
   assert.match(relay,/authorizeReportPermission\(admin,body\.usuario_id,body\.loja_id,"relatorio_detalhado_venda_diaria_raffinato"/);
   assert.match(relay,/body\.action === "detailed_daily_sales_report"/);
+  assert.match(relay,/totalizadores:\{[^}]*dias:days,/);
+  assert.doesNotMatch(relay,/totalizadores:\{[^}]*[,\{]dias,/);
+  assert.match(relay,/linhas:lines,/);
+  assert.match(relay,/vendas:saleIds\.size,dias:days/);
 });
 
 test('filtros extensos ficam recolhidos e o layout possui breakpoints de tablet e celular',()=>{
