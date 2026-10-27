@@ -68,3 +68,13 @@ test('impede datas futuras e normaliza o periodo antes da consulta',()=>{
   assert.match(js,/const adjusted=rddClampFutureDates\(\)/);
   assert.match(js,/Data final ajustada para/);
 });
+
+test('faturamento por canal usa os mesmos documentos e integra interface e exportacoes',()=>{
+  assert.match(relay,/canais:channelRows/);
+  assert.match(relay,/reconciliacao_canais:/);
+  assert.match(relay,/media_por_ocorrencia:/);
+  assert.match(js,/Faturamento por Canal de Venda/);
+  assert.match(js,/Delivery não identifica necessariamente iFood/);
+  assert.match(js,/Faturamento por Canal'\)/);
+  assert.match(js,/FATURAMENTO POR CANAL/);
+});
