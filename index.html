@@ -197,6 +197,7 @@
               </span>
             </button>
             <button class="nav-btn nav-sub-btn" data-page="relatorio_vendas_raffinato" onclick="abrirPagina('relatorio_vendas_raffinato', this)"><span class="nav-copy"><span class="nav-title">Análise de vendas Raffinato</span></span></button>
+            <button class="nav-btn nav-sub-btn" data-page="relatorio_detalhado_venda_diaria_raffinato" onclick="abrirPagina('relatorio_detalhado_venda_diaria_raffinato', this)"><span class="nav-copy"><span class="nav-title">Venda diária detalhada</span></span></button>
             <button class="nav-btn nav-sub-btn" data-page="relatorio_comparativo_anual" onclick="abrirPagina('relatorio_comparativo_anual', this)"><span class="nav-copy"><span class="nav-title">Comparativo Anual</span></span></button>
             <button class="nav-btn nav-sub-btn" data-page="relatorio_curva_abc_raffinato" onclick="abrirPagina('relatorio_curva_abc_raffinato', this)"><span class="nav-copy"><span class="nav-title">Curva ABC Raffinato</span></span></button>
             <button class="nav-btn nav-sub-btn" data-page="relatorio_item_obrigatorio_pizza" onclick="abrirPagina('relatorio_item_obrigatorio_pizza', this)"><span class="nav-copy"><span class="nav-title">Raffinato – Venda de Item Obrigatório</span></span></button>
@@ -2565,6 +2566,7 @@
       </section>
 
       <section id="relatorio_curva_abc_raffinato" class="pagina"></section>
+      <section id="relatorio_detalhado_venda_diaria_raffinato" class="pagina"></section>
       <section id="relatorio_item_obrigatorio_pizza" class="pagina"></section>
 
       <!-- Paginas declarativas do modulo. O conteudo e montado por 33-financial-integrations.js para evitar duplicacao. -->
@@ -3067,6 +3069,7 @@
 <link rel="stylesheet" href="./assets/css/111-raffinato-billing.css?v=20260810-clear-v2">
 <link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20260810-crossfilter-v2">
 <link rel="stylesheet" href="./assets/css/115-raffinato-managerial.css?v=20260911-group-close-v2">
+<link rel="stylesheet" href="./assets/css/123-raffinato-daily-detail.css?v=20261027-v1">
 <link rel="stylesheet" href="./assets/css/117-raffinato-item-obrigatorio-pizza.css?v=20260911-filtros-excel-v6">
 <link rel="stylesheet" href="./assets/css/118-raffinato-item-obrigatorio-filters.css?v=20260911-valores-modulo-v7">
 <link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260922-v10">
@@ -3420,6 +3423,8 @@
       <script src="./assets/js/36-raffinato-sales-analysis.js?v=20260929-faturamento-produtos"></script>
       <script src="./assets/js/37-raffinato-products.js?v=3.2.48"></script>
       <script src="./assets/js/93-raffinato-managerial.js?v=20260911-group-close-v2"></script>
+      <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+      <script src="./assets/js/97-raffinato-daily-detail.js?v=20261027-v1"></script>
       <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=3.2.79-consolidar-ocr-parcelado"></script>

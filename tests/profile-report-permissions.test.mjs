@@ -7,6 +7,7 @@ const state = fs.readFileSync(new URL('../assets/js/03-core-state.js', import.me
 const reports = [
   ['relatorio_sangrias_raffinato', 'Relatório de sangrias Raffinato', 'Sangrias Raffinato'],
   ['relatorio_vendas_raffinato', 'Análise de vendas Raffinato', 'Análise de vendas Raffinato'],
+  ['relatorio_detalhado_venda_diaria_raffinato', 'Relatório detalhado venda diária Raffinato', 'Venda diária detalhada Raffinato'],
   ['relatorio_comparativo_anual', 'Comparativo Anual', 'Comparativo Anual'],
   ['relatorio_curva_abc_raffinato', 'Curva ABC Raffinato', 'Curva ABC Raffinato'],
   ['relatorio_item_obrigatorio_pizza', 'Raffinato – Venda de Item Obrigatório', 'Raffinato – Venda de Item Obrigatório'],

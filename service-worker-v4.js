@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v250-seletor-imagem-categoria';
+const CACHE_NAME = 'check-diario-pwa-v251-relatorio-venda-diaria-raffinato';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

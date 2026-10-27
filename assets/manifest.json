@@ -52,6 +52,7 @@
   "./assets/js/36-raffinato-sales-analysis.js",
   "./assets/js/37-raffinato-products.js",
   "./assets/js/93-raffinato-managerial.js",
+  "./assets/js/97-raffinato-daily-detail.js",
   "./assets/js/96-raffinato-item-obrigatorio-pizza.js",
   "./assets/js/38-annual-comparison.js",
   "./assets/js/40-login-preferences.js",
@@ -94,4 +95,5 @@
   "./assets/css/119-compact-desktop.css",
   "./assets/css/121-mobile-density.css",
   "./assets/css/122-login-showcase.css"
+  ,"./assets/css/123-raffinato-daily-detail.css"
 ]

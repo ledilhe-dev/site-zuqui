@@ -18,6 +18,7 @@ const topTitles = {
   relatorio_faturamento_raffinato: ['Faturamento Raffinato', 'Análise de vendas por forma de pagamento'],
   relatorio_produtos_raffinato: ['Produtos faturados Raffinato', 'Produtos vendidos, quantidades e faturamento'],
   relatorio_vendas_raffinato: ['Análise de Vendas Raffinato', 'Produtos × formas de pagamento'],
+  relatorio_detalhado_venda_diaria_raffinato: ['Venda Diária Raffinato', 'Análise detalhada e comparativa de vendas'],
   relatorio_comparativo_anual: ['Comparativo Anual', 'Comparação histórica de faturamento, vendas e produtos'],
   relatorio_curva_abc_raffinato: ['Curva ABC Raffinato', 'Classificação por faturamento, giro e lucro'],
   relatorio_item_obrigatorio_pizza: ['Raffinato – Venda de Item Obrigatório', 'Produtos pais, agrupamentos e itens obrigatórios vendidos'],
@@ -60,7 +61,7 @@ function paginaPertenceMenuChecklist(pageId = '') {
 }
 
 function paginaPertenceMenuRelatorios(pageId = '') {
-  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato', 'relatorio_vendas_raffinato', 'relatorio_comparativo_anual', 'relatorio_curva_abc_raffinato', 'relatorio_item_obrigatorio_pizza'].includes(String(pageId || ''));
+  return ['relatorio_ponto', 'relatorio_plantao', 'relatorio_lancamentos', 'relatorio_financeiro', 'relatorio_recebimentos', 'relatorio_ajuste_saldo', 'relatorio_sangrias_raffinato', 'relatorio_vendas_raffinato', 'relatorio_detalhado_venda_diaria_raffinato', 'relatorio_comparativo_anual', 'relatorio_curva_abc_raffinato', 'relatorio_item_obrigatorio_pizza'].includes(String(pageId || ''));
 }
 
 function paginaPertenceMenuFinanceiro(pageId = '') {
@@ -704,6 +705,7 @@ function abrirPagina(id, botao) {
   if (id === 'relatorio_faturamento_raffinato' && typeof iniciarTelaFaturamentoRaffinato === 'function') { iniciarTelaFaturamentoRaffinato(); }
   if (id === 'relatorio_produtos_raffinato' && typeof iniciarTelaProdutosRaffinato === 'function') { iniciarTelaProdutosRaffinato(); }
   if (id === 'relatorio_vendas_raffinato' && typeof iniciarTelaAnaliseVendasRaffinato === 'function') { iniciarTelaAnaliseVendasRaffinato(); }
+  if (id === 'relatorio_detalhado_venda_diaria_raffinato' && typeof iniciarRelatorioDetalhadoVendaDiariaRaffinato === 'function') { iniciarRelatorioDetalhadoVendaDiariaRaffinato(); }
   if (id === 'relatorio_curva_abc_raffinato' && typeof iniciarTelaCurvaAbcRaffinato === 'function') { iniciarTelaCurvaAbcRaffinato(); }
   if (id === 'relatorio_item_obrigatorio_pizza' && window.ItemObrigatorioPizza) { window.ItemObrigatorioPizza.mount(); }
   if (id === 'relatorio_comparativo_anual' && typeof iniciarComparativoAnual === 'function') { iniciarComparativoAnual(); }
