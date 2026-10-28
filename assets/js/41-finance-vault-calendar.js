@@ -2479,6 +2479,46 @@ async function confirmarBaixaFinanceiraUmaVez(opcoes) {
   return confirmacao;
 }
 
+let resolverBaixaParcialFinanceiro = null;
+
+function preencherModalBaixaParcialFinanceiro({ item, valorPago, saldo, concluida = false } = {}) {
+  const overlay = document.getElementById('baixaParcialOverlay');
+  if (!overlay) return;
+  const fornecedor = item?.fornecedores?.nome || 'Fornecedor';
+  document.getElementById('baixaParcialEtapa').textContent = concluida ? 'Baixa concluída' : 'Pagamento parcial';
+  document.getElementById('baixaParcialTitulo').textContent = concluida ? 'Pagamento parcial registrado' : 'Deseja baixar parcialmente esta conta?';
+  document.getElementById('baixaParcialTexto').textContent = concluida
+    ? 'O pagamento foi baixado e o título original permaneceu aberto somente com o saldo residual.'
+    : `${fornecedor}: o valor informado é menor que o saldo atual.`;
+  document.getElementById('baixaParcialResumo').innerHTML = `
+    <article><span>Saldo atual</span><strong>${escaparHtmlBasico(formatarMoedaBRFinanceiro(item?.valor_compra || 0))}</strong></article>
+    <article><span>Valor pago</span><strong>${escaparHtmlBasico(formatarMoedaBRFinanceiro(valorPago))}</strong></article>
+    <article class="saldo"><span>Novo saldo</span><strong>${escaparHtmlBasico(formatarMoedaBRFinanceiro(saldo))}</strong></article>`;
+  document.getElementById('baixaParcialObservacao').textContent = `Vencimento original: ${formatarDataBRFinanceiro(item?.data_vencimento)}. O pagamento e o título residual ficarão vinculados, com data, hora e valor visíveis na observação e nos relatórios.`;
+  const nao = document.getElementById('btnBaixaParcialNao');
+  const sim = document.getElementById('btnBaixaParcialSim');
+  nao.style.display = concluida ? 'none' : '';
+  sim.textContent = concluida ? 'OK, voltar para contas' : 'Sim, baixar parcialmente';
+  overlay.classList.add('show');
+}
+
+function responderBaixaParcialFinanceiro(resposta) {
+  document.getElementById('baixaParcialOverlay')?.classList.remove('show');
+  const resolver = resolverBaixaParcialFinanceiro;
+  resolverBaixaParcialFinanceiro = null;
+  if (resolver) resolver(resposta === true);
+}
+
+function confirmarBaixaParcialFinanceiro(dados) {
+  preencherModalBaixaParcialFinanceiro(dados);
+  return new Promise(resolve => { resolverBaixaParcialFinanceiro = resolve; });
+}
+
+function informarBaixaParcialConcluida(dados) {
+  preencherModalBaixaParcialFinanceiro({ ...dados, concluida: true });
+  return new Promise(resolve => { resolverBaixaParcialFinanceiro = resolve; });
+}
+
 async function confirmarPagamentoContaFinanceiro(id) {
   const item = contasBaixarFinanceiroCache.find(conta => String(conta.id) === String(id));
   if (!item) {
@@ -2503,18 +2543,34 @@ async function confirmarPagamentoContaFinanceiro(id) {
     formaSelecionada = await solicitarFormaPagamentoObrigatoriaFinanceiro(formaBase);
     if (!formaSelecionada) return;
   }
-  const valorBase = Number(item.valor_pago ?? item.valor_compra ?? 0);
-  const valorSugerido = Number((Number.isFinite(valorBase) ? valorBase : 0).toFixed(2));
-  const contaSelecionada = await solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(item.conta_financeira_id || '', {
-    valor: valorSugerido,
-    titulo: item.fornecedores?.nome || 'fornecedor',
-    movimentarSaldo: !contaBaixadaSemMovimentacaoSaldo(item),
-  });
-  if (!contaSelecionada) return;
-  const valorPagoFinal = Number(contaSelecionada.valorPago);
-  if (!Number.isFinite(valorPagoFinal) || valorPagoFinal <= 0) {
-    setMsg('msgBaixarContasFinanceiro', 'Informe um valor efetivamente pago válido.', 'err');
-    return;
+  const valorTitulo = Number(item.valor_compra || 0);
+  let valorSugerido = Number((Number.isFinite(Number(item.valor_pago ?? valorTitulo)) ? Number(item.valor_pago ?? valorTitulo) : 0).toFixed(2));
+  let contaSelecionada = null;
+  let valorPagoFinal = 0;
+  let baixaParcial = false;
+  while (true) {
+    contaSelecionada = await solicitarContaFinanceiraObrigatoriaBaixaFinanceiro(item.conta_financeira_id || '', {
+      valor: valorSugerido,
+      titulo: item.fornecedores?.nome || 'fornecedor',
+      movimentarSaldo: !contaBaixadaSemMovimentacaoSaldo(item),
+    });
+    if (!contaSelecionada) return;
+    valorPagoFinal = Number(contaSelecionada.valorPago);
+    if (!Number.isFinite(valorPagoFinal) || valorPagoFinal <= 0) {
+      setMsg('msgBaixarContasFinanceiro', 'Informe um valor efetivamente pago válido.', 'err');
+      return;
+    }
+    if (valorPagoFinal > valorTitulo) {
+      setMsg('msgBaixarContasFinanceiro', 'O valor pago não pode ser maior que o saldo atual do título.', 'err');
+      valorSugerido = valorPagoFinal;
+      continue;
+    }
+    baixaParcial = valorPagoFinal < valorTitulo;
+    if (!baixaParcial) break;
+    const saldo = Number((valorTitulo - valorPagoFinal).toFixed(2));
+    const confirmado = await confirmarBaixaParcialFinanceiro({ item, valorPago: valorPagoFinal, saldo });
+    if (confirmado) break;
+    valorSugerido = valorPagoFinal;
   }
   const movimentarSaldo = contaSelecionada.movimentarSaldo === true;
 
@@ -2529,6 +2585,31 @@ async function confirmarPagamentoContaFinanceiro(id) {
     escopo: 'empresa',
   });
   if (!confirmacaoPin) return;
+
+  if (baixaParcial) {
+    const saldoResidual = Number((valorTitulo - valorPagoFinal).toFixed(2));
+    const { error: erroParcial } = await sb.rpc('baixar_conta_parcial', {
+      p_conta_apagar_id: id,
+      p_valor_pago: valorPagoFinal,
+      p_forma_pagamento_id: formaSelecionada.id,
+      p_forma_pagamento: formaSelecionada.nome,
+      p_conta_financeira_id: contaSelecionada.id,
+      p_movimentar_saldo: movimentarSaldo,
+      p_data_pagamento: hoje(),
+    });
+    if (erroParcial) {
+      setMsg('msgBaixarContasFinanceiro', `Não foi possível registrar a baixa parcial: ${mensagemErroSupabase(erroParcial, 'erro desconhecido')}`, 'err');
+      return;
+    }
+    await carregarContasFinanceiras({ render: false, silencioso: true });
+    if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+    if (document.getElementById('relatorio_financeiro')?.classList.contains('ativa')) await carregarRelatorioFinanceiro();
+    await carregarBaixarContasFinanceiro();
+    carregarContasAPagarFinanceiro();
+    await informarBaixaParcialConcluida({ item, valorPago: valorPagoFinal, saldo: saldoResidual });
+    setMsg('msgBaixarContasFinanceiro', `Pagamento parcial confirmado. Saldo pendente: ${formatarMoedaBRFinanceiro(saldoResidual)}.`, 'ok');
+    return;
+  }
 
   const payload = {
     data_pagamento: item.data_pagamento || hoje(),

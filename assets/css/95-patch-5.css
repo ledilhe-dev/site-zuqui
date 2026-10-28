@@ -2580,3 +2580,10 @@
   .fatura-confirm-line-parcelada .fatura-confirm-calendario>span strong{min-width:84px;font-size:10px}
   .fatura-confirm-line-parcelada .fatura-confirm-calendario>span b{font-size:10px}
 }
+.baixa-parcial-modal{max-width:560px;overflow:hidden;border:1px solid rgba(99,102,241,.35);box-shadow:0 28px 80px rgba(0,0,0,.48)}
+.baixa-parcial-icone{width:64px;height:64px;margin:26px auto 0;border-radius:20px;display:grid;place-items:center;font-size:20px;font-weight:900;color:#fff;background:linear-gradient(135deg,#6366f1,#22c55e);box-shadow:0 14px 34px rgba(34,197,94,.22)}
+.baixa-parcial-corpo{text-align:center;padding-top:16px!important}.baixa-parcial-etapa{display:inline-flex;padding:5px 10px;border-radius:999px;background:rgba(99,102,241,.12);color:#a5b4fc;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.baixa-parcial-corpo h3{font-size:22px;margin:12px 0 7px}.baixa-parcial-corpo>p{margin:0;color:var(--text-muted);line-height:1.5}
+.baixa-parcial-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:20px;text-align:left}.baixa-parcial-resumo article{padding:13px;border-radius:12px;background:rgba(15,23,42,.52);border:1px solid var(--border)}.baixa-parcial-resumo span{display:block;color:var(--text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.baixa-parcial-resumo strong{display:block;margin-top:5px;font-size:15px}.baixa-parcial-resumo article.saldo strong{color:#fbbf24}
+.baixa-parcial-observacao{margin-top:12px;padding:12px;border-radius:10px;background:rgba(34,197,94,.08);color:#86efac;font-size:12px;line-height:1.5;text-align:left}.baixa-parcial-acoes{gap:10px}.baixa-parcial-acoes .btn{min-height:42px}
+@media(max-width:600px){.baixa-parcial-modal{width:calc(100% - 24px)}.baixa-parcial-resumo{grid-template-columns:1fr}.baixa-parcial-acoes{flex-direction:column-reverse}.baixa-parcial-acoes .btn{width:100%}}

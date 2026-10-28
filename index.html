@@ -3057,7 +3057,7 @@
 </div>
 </div>
 
-<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=3.2.81-resumo-parcelas-mobile">
+<link rel="stylesheet" href="./assets/css/95-patch-5.css?v=20261028-baixa-parcial-v1">
 <link rel="stylesheet" href="./assets/css/96-recebiveis.css?v=20260804-sequencial-dias-corridos">
 <link rel="stylesheet" href="./assets/css/99-responsive-foundation.css?v=20260826-payable-sheet-v1">
 <link rel="stylesheet" href="./assets/css/100-payables-report-responsive.css?v=20260727-fornecedor-v3">
@@ -3138,6 +3138,23 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" type="button" onclick="fecharModalContaFinanceiraBaixa()">Cancelar</button>
       <button class="btn btn-green" id="btnConfirmarContaFinanceiraBaixa" type="button" onclick="confirmarContaFinanceiraBaixaSelecionada()" disabled>Confirmar baixa</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="baixaParcialOverlay">
+  <div class="modal baixa-parcial-modal">
+    <div class="baixa-parcial-icone" aria-hidden="true">R$</div>
+    <div class="modal-body baixa-parcial-corpo">
+      <span class="baixa-parcial-etapa" id="baixaParcialEtapa">Pagamento parcial</span>
+      <h3 id="baixaParcialTitulo">Deseja baixar parcialmente esta conta?</h3>
+      <p id="baixaParcialTexto"></p>
+      <div class="baixa-parcial-resumo" id="baixaParcialResumo"></div>
+      <div class="baixa-parcial-observacao" id="baixaParcialObservacao"></div>
+    </div>
+    <div class="modal-footer baixa-parcial-acoes">
+      <button class="btn btn-ghost" id="btnBaixaParcialNao" type="button" onclick="responderBaixaParcialFinanceiro(false)">Não, editar valor</button>
+      <button class="btn btn-green" id="btnBaixaParcialSim" type="button" onclick="responderBaixaParcialFinanceiro(true)">Sim, baixar parcialmente</button>
     </div>
   </div>
 </div>
@@ -3429,7 +3446,7 @@
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
 <script src="./assets/js/32-image-ocr-importer.js?v=3.2.79-consolidar-ocr-parcelado"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20260811-baixa-contas-v2"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20261028-baixa-parcial-v1"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js?v=3.2.55-permissoes-edicao-checklist"></script>
