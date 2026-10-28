@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v265-fluxo-baixa-parcial';
+const CACHE_NAME = 'check-diario-pwa-v266-origem-multipla-vendas';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
