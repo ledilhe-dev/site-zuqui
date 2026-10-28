@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v267-filtro-horario-vendas';
+const CACHE_NAME = 'check-diario-pwa-v268-painel-raffinato';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

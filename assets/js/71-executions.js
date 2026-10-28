@@ -1153,11 +1153,14 @@ function atualizarQuintoDiaUtilTopbar() {
 function registrarServiceWorkerPwa() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker-v4.js?v=3.2.70-filtros-raffinato', { scope: './', updateViaCache: 'none' })
+      navigator.serviceWorker.register('./service-worker-v4.js?v=3.2.71-painel-raffinato', { scope: './', updateViaCache: 'none' })
+      .then(registration => registration.update())
       .catch(error => {
         console.warn('Falha ao registrar Service Worker do PWA:', error);
       });
   });
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(refreshing)return;refreshing=true;window.location.reload()});
 }
 
 ['click', 'keydown', 'touchstart'].forEach(eventName => {

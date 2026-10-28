@@ -96,3 +96,21 @@ test('painel de agrupamentos nao e cortado pelo card de filtros',()=>{
   assert.match(styles,/\.raffinato-sales-page \.rm-filter-card\{[^}]*overflow:visible/);
 });
 test('seletor de grupos fecha pelo botao OK e ao clicar fora',()=>{assert.match(source,/class="rm-group-footer"/);assert.match(source,/onclick="rmCloseGroupPicker\(\)"/);assert.match(source,/addEventListener\?\.\('pointerdown'/);assert.match(source,/!event\.target\.closest\('\.rm-group-field'\)/)});
+
+test('painel gerencial ordena datas antes dos horarios e envia janela diaria explicita',()=>{
+  const finalFilters=source.lastIndexOf('function rmFilters');
+  const block=source.slice(finalFilters,source.indexOf('async function rmLoadGroups',finalFilters));
+  const positions=['Start" type="date','End" type="date','StartTime" type="time','EndTime" type="time'].map(value=>block.indexOf(value));
+  assert.deepEqual(positions,[...positions].sort((a,b)=>a-b));
+  assert.match(source,/hora_inicio:`\$\{startTime\}:00`/);
+  assert.match(source,/hora_fim:`\$\{endTime\}:59`/);
+  assert.match(source,/fim_exclusivo:`\$\{rmIso\(exclusive\)\}T00:00:00`/);
+});
+
+test('painel gerencial usa checkbox de origens e backend aceita uma ou duas',()=>{
+  assert.match(source,/class="rm-origin-option" type="checkbox"/);
+  assert.match(source,/function rmSelectedOrigins/);
+  assert.match(source,/origens:origins,origem:null/);
+  assert.match(relay,/Array\.isArray\(body\.origens\)/);
+  assert.match(relay,/moduleSet\.has\(String\(d\.modulo_venda\)\)/);
+});
