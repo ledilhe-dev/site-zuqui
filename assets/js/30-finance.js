@@ -5286,6 +5286,7 @@ function categoriaIconeImagemFalhou(imagem) {
   fallback.setAttribute('aria-label', 'Imagem indisponivel');
   const nomeCategoria = imagem.closest('.fatura-cat-card')?.querySelector('strong')?.textContent
     || imagem.closest('.item')?.querySelector('strong, .item-titulo')?.textContent
+    || imagem.closest('.dash-gf-category-rank')?.querySelector('.dash-gf-category-name span:last-child')?.textContent
     || '';
   fallback.textContent = String(nomeCategoria || '?').trim().charAt(0).toUpperCase() || '?';
   imagem.replaceWith(fallback);

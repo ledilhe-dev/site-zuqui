@@ -381,6 +381,7 @@ let _dashGfAno = new Date().getFullYear();
 let _dashGfDados = [];          // contas do ano carregadas
 let _dashGfCarregadoAno = null; // ano já carregado no cache
 let _dashGfCategoriasMapa = {}; // id -> { nome, cor, icone }
+let _dashGfCategoriaAlias = {}; // id historico duplicado -> id canonico ativo
 // Filtros ativos (cross-filter estilo B.I.): clique nos gráficos liga/desliga.
 let _dashGfFiltro = { mes: null, status: 'todos', fornecedorIds: new Set(), categoriaIds: new Set() };
 let _dashGfOpcoesFornecedores = []; // [[id, nome], ...] do ano carregado
@@ -400,6 +401,7 @@ function limparDashboardFinanceiroTenant(mensagem = 'Carregando dados da loja...
   _dashGfDados = [];
   _dashGfCarregadoAno = null;
   _dashGfCategoriasMapa = {};
+  _dashGfCategoriaAlias = {};
   _dashGfOpcoesFornecedores = [];
   _dashGfOpcoesCategorias = [];
   _dashGfFiltro = { mes: null, status: 'todos', fornecedorIds: new Set(), categoriaIds: new Set() };
@@ -489,7 +491,7 @@ async function carregarGraficosFinanceirosDashboard() {
     let categoriasDash = [];
     if (categoriaIdsDash.length) {
       const consultaNormal = await sb.from('categorias_compra')
-        .select('id, nome, cor, icone')
+        .select('id, nome, cor, icone, ativo')
         .in('id', categoriaIdsDash);
       categoriasDash = consultaNormal.data || [];
 
@@ -498,7 +500,7 @@ async function carregarGraficosFinanceirosDashboard() {
       if (consultaNormal.error || idsFaltantes.length) {
         const consultaHistorica = await executarSemFiltrosTenantTemporario(() => sb
           .from('categorias_compra')
-          .select('id, nome, cor, icone')
+          .select('id, nome, cor, icone, ativo')
           .in('id', idsFaltantes.length ? idsFaltantes : categoriaIdsDash));
         if (consultaHistorica.error) {
           console.warn('Não foi possível recuperar categorias históricas do dashboard:', consultaHistorica.error);
@@ -511,14 +513,24 @@ async function carregarGraficosFinanceirosDashboard() {
 
     if (!contextoAindaValido()) return;
     _dashGfCategoriasMapa = {};
+    _dashGfCategoriaAlias = {};
+    const normalizarCategoriaDash = nome => String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+    const categoriasPorNome = new Map();
     categoriasDash.forEach(c => {
-      _dashGfCategoriasMapa[String(c.id)] = { nome: c.nome || 'Categoria', cor: c.cor || null, icone: c.icone || null };
+      const chaveNome = normalizarCategoriaDash(c.nome) || `ID:${c.id}`;
+      const atual = categoriasPorNome.get(chaveNome);
+      if (!atual || (!atual.ativo && c.ativo)) categoriasPorNome.set(chaveNome, c);
+    });
+    categoriasDash.forEach(c => {
+      const canonica = categoriasPorNome.get(normalizarCategoriaDash(c.nome) || `ID:${c.id}`) || c;
+      _dashGfCategoriaAlias[String(c.id)] = String(canonica.id);
+      _dashGfCategoriasMapa[String(canonica.id)] = { nome: canonica.nome || 'Categoria', cor: canonica.cor || null, icone: canonica.icone || null };
     });
 
     // Ao trocar de ano, limpa filtro de mês mas preserva fornecedores/categorias que ainda existirem.
     const fornecedoresAno = new Set(_dashGfDados.map(c => c.fornecedor_id ? String(c.fornecedor_id) : 'sem'));
     _dashGfFiltro.fornecedorIds = new Set([..._dashGfFiltro.fornecedorIds].filter(id => fornecedoresAno.has(id)));
-    const categoriasAno = new Set(_dashGfDados.map(c => c.categoria_id ? String(c.categoria_id) : 'sem'));
+    const categoriasAno = new Set(_dashGfDados.map(_dashGfChaveCategoria));
     _dashGfFiltro.categoriaIds = new Set([..._dashGfFiltro.categoriaIds].filter(id => categoriasAno.has(id)));
 
     // Opções dos dropdowns: fornecedores e categorias que aparecem no ano.
@@ -728,7 +740,7 @@ function dashGfLimparCategorias() {
 
 // ── Helpers de agregação ──────────────────────────────────────────
 function _dashGfChaveFornecedor(c) { return c.fornecedor_id ? String(c.fornecedor_id) : 'sem'; }
-function _dashGfChaveCategoria(c) { return c.categoria_id ? String(c.categoria_id) : 'sem'; }
+function _dashGfChaveCategoria(c) { const id=c.categoria_id?String(c.categoria_id):'';return id?(_dashGfCategoriaAlias[id]||id):'sem'; }
 function _dashGfMesDe(c) { return parseInt(String(c[_dashGfCampoData()] || '').slice(5, 7), 10) - 1; }
 function _dashGfEhPago(c) { return !!c.pago_confirmado_em || !!c.data_pagamento; }
 function _dashGfValorDe(c) { return Number(c.valor_pago ?? c.valor_compra ?? 0) || Number(c.valor_compra || 0); }
@@ -1049,7 +1061,7 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
       const LIMITE = 60;
       const textoOrdenacao = (c, chave) => {
         if (chave === 'fornecedor') return c.fornecedores?.nome || '';
-        if (chave === 'categoria') return c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)]?.nome || '' : 'Sem categoria';
+        if (chave === 'categoria') return c.categoria_id ? _dashGfCategoriasMapa[_dashGfChaveCategoria(c)]?.nome || '' : 'Sem categoria';
         if (chave === 'observacao') return c.observacao || '';
         if (chave === 'status') return _dashGfEhPago(c) ? 'Pago' : 'Pendente';
         return '';
@@ -1072,7 +1084,7 @@ const topCategorias = ordCat.filter(([, item]) => Number(item.valor || 0) > 0);
       };
       const linhas = ordenadas.slice(0, LIMITE).map(c => {
         const pago = _dashGfEhPago(c);
-        const cat = c.categoria_id ? _dashGfCategoriasMapa[String(c.categoria_id)] : null;
+        const cat = c.categoria_id ? _dashGfCategoriasMapa[_dashGfChaveCategoria(c)] : null;
         const dv = String(c.data_vencimento || '').slice(0, 10).split('-').reverse().join('/');
         const dc = String(c.data_compra || '').slice(0, 10).split('-').reverse().join('/');
         let dlanca = '—';

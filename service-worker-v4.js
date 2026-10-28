@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v269-horario-venda-diaria';
+const CACHE_NAME = 'check-diario-pwa-v270-categorias-dashboard';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
