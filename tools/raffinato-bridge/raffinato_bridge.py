@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.23"
+CONNECTOR_VERSION = "2.0.24"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -1452,7 +1452,7 @@ def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
     first=int(first_date[:4]);last=int(last_date[:4]);summary=query_annual_summary_sql(config,{"id_filial":filial,"loja_id":store_id},first,last)
     rows=[{**x,"modulo_venda":"TODOS","id_filial":filial,"primeira_data":first_date,"ultima_data":last_date} for x in summary.get("meses",[])]
     rows.extend({**x,"vendas":0,"quantidade":0,"id_filial":filial,"primeira_data":first_date,"ultima_data":last_date} for x in summary.get("modulos",[]))
-    relay_post({"action":"annual_sync","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"items":rows},timeout=180)
+    relay_post({"action":"annual_sync","token":config["relay_token"],"loja_id":store_id,"id_filial":filial,"items":rows,"daily":summary.get("diarios",[])},timeout=300)
 
 
 def relay_sync_loop(stop_event: threading.Event) -> None:
@@ -2483,6 +2483,7 @@ def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,l
       SELECT YEAR(data) ano,MONTH(data) mes,SUM(faturamento) faturamento,COUNT(*) vendas,SUM(CASE WHEN eh_contingencia=1 THEN faturamento ELSE 0 END) faturamento_contingencia,SUM(CASE WHEN eh_contingencia=0 THEN faturamento ELSE 0 END) faturamento_sem_contingencia,SUM(CASE WHEN eh_contingencia=1 THEN 1 ELSE 0 END) vendas_contingencia,SUM(CASE WHEN eh_contingencia=0 THEN 1 ELSE 0 END) vendas_sem_contingencia FROM #ARDocs WHERE (?='' OR modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY YEAR(data),MONTH(data) ORDER BY ano,mes;
       SELECT X.modulo_venda,YEAR(X.data) ano,MONTH(X.data) mes,SUM(X.faturamento) faturamento FROM #ARDocs X WHERE (?='' OR X.modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY X.modulo_venda,YEAR(X.data),MONTH(X.data) ORDER BY ano,mes,X.modulo_venda;
       SELECT YEAR(X.data) ano,MONTH(X.data) mes,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade FROM #ARDocs X JOIN dbo.ItemDocumentoFiscal I WITH(NOLOCK) ON I.IdDocumentoFiscal=X.Id WHERE (?='' OR X.modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY YEAR(X.data),MONTH(X.data);
+      SELECT CONVERT(date,X.data) data,X.modulo_venda,SUM(X.faturamento) faturamento,COUNT(*) vendas FROM #ARDocs X WHERE (?='' OR X.modulo_venda=?) AND (?='TODOS' OR (?='CONTINGENCIA' AND eh_contingencia=1) OR (?='SEM_CONTINGENCIA' AND eh_contingencia=0)) GROUP BY CONVERT(date,X.data),X.modulo_venda ORDER BY data,X.modulo_venda;
       DROP TABLE IF EXISTS #ARDocs;"""
     if len(selected_modules)>1:
         sql=sql.replace("SELECT YEAR(data) ano",f"DELETE FROM #ARDocs WHERE modulo_venda NOT IN ({','.join('?' for _ in selected_modules)});SELECT YEAR(data) ano",1)
@@ -2494,11 +2495,13 @@ def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,l
         connection.timeout=90;cursor=connection.cursor();params=[start,end,filial]
         if len(selected_modules)>1:params.extend(selected_modules)
         if groups or product:params.extend([*groups,product,product,f"%{product}%"])
-        params.extend([module,module,emission,emission,emission,module,module,emission,emission,emission,module,module,emission,emission,emission]);cursor.execute(sql,*params);monthly=rows_as_dicts(cursor);module_rows=[];quantities=[]
+        params.extend([module,module,emission,emission,emission,module,module,emission,emission,emission,module,module,emission,emission,emission,module,module,emission,emission,emission]);cursor.execute(sql,*params);monthly=rows_as_dicts(cursor);module_rows=[];quantities=[];daily_rows=[]
         while cursor.nextset():
             if cursor.description:module_rows=rows_as_dicts(cursor);break
         while cursor.nextset():
             if cursor.description:quantities=rows_as_dicts(cursor);break
+        while cursor.nextset():
+            if cursor.description:daily_rows=rows_as_dicts(cursor);break
     qty={(int(x["ano"]),int(x["mes"])):float(x.get("quantidade") or 0) for x in quantities}
     for x in monthly:x["quantidade"]=qty.get((int(x["ano"]),int(x["mes"])),0);x["ticket_medio"]=float(x.get("faturamento") or 0)/int(x.get("vendas") or 1)
     if emission=="TODOS" and (not selected_modules or "DELIVERY" in selected_modules):
@@ -2512,7 +2515,7 @@ def query_annual_summary_sql(config:dict[str,Any],body:dict[str,Any],first:int,l
         for x in monthly:x["ticket_medio"]=float(x.get("faturamento") or 0)/int(x.get("vendas") or 1)
     totals=[{"modulo_venda":name,"faturamento":sum(float(x.get("faturamento") or 0) for x in module_rows if x.get("modulo_venda")==name)} for name in ("VENDA_RAPIDA","DELIVERY","CARTAO_MESA")]
     logger.info("TEMPO SQL: COMPARATIVO RESUMO %.3fs | meses=%s",time.perf_counter()-started,len(monthly))
-    return {"schema_version":2,"meses":monthly,"modulos":module_rows,"modulos_totais":totals,"agrupamentos":cache_status(validate_store_id(body.get("loja_id"))).get("agrupamentos",[]),"tempo_ms":round((time.perf_counter()-started)*1000)}
+    return {"schema_version":3,"meses":monthly,"modulos":module_rows,"modulos_totais":totals,"diarios":daily_rows,"agrupamentos":cache_status(validate_store_id(body.get("loja_id"))).get("agrupamentos",[]),"tempo_ms":round((time.perf_counter()-started)*1000)}
 
 
 def query_annual_detail_sql(config:dict[str,Any],body:dict[str,Any],first:int,last:int) -> dict[str,Any]:

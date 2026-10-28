@@ -100,3 +100,11 @@ test('ano completo consulta detalhe local e cruza modulo por dia da semana',()=>
   assert.match(js,/origem_consulta:'raffinato_local_detalhado'/);
   assert.match(js,/if\(!RDD\.data\)RDD\.data=await raffinatoRelay\(body\)/);
 });
+
+test('historico diario remoto sustenta graficos anuais sem loopback',()=>{
+  assert.match(relay,/raffinato_historico_diario_cache/);
+  assert.match(relay,/modo:"historico_diario"/);
+  assert.match(relay,/canais_dias_semana:channelWeek/);
+  assert.match(relay,/origem_consulta:"cache_historico_diario"/);
+  assert.match(relay,/O conector ainda precisa sincronizar o detalhamento diário desta loja/);
+});
