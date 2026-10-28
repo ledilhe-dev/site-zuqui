@@ -2094,7 +2094,6 @@ async function carregarBaixarContasFinanceiro() {
     const nomeFornecedor = item.fornecedores?.nome || 'Fornecedor não encontrado';
     const status = obterStatusContaBaixaFinanceiro(item);
     const valorPago = Number(item.valor_pago || 0);
-    const existePagamento = !!item.data_pagamento;
     const alertaVencimento = obterAlertaVencimentoBaixarConta(item);
     const podeSelecionar = status !== 'pago';
     const marcado = _baixaSelecionadasIds.includes(item.id);
@@ -2124,9 +2123,8 @@ async function carregarBaixarContasFinanceiro() {
         <div class="item-actions">
           <span class="tag ${alertaVencimento.classe}">${escaparHtmlBasico(alertaVencimento.texto)}</span>
           ${status === 'pago' ? '<span class="tag tag-green">Pago confirmado</span>' : '<span class="tag tag-amber">Pendente</span>'}
-          <button class="btn btn-ghost btn-sm" onclick="editarPagamentoContaFinanceiro('${item.id}')">Editar pagamento</button>
           ${status !== 'pago'
-            ? `<button class="btn btn-green btn-sm" onclick="confirmarPagamentoContaFinanceiro('${item.id}')">${existePagamento ? 'Confirmar' : 'Pagar e confirmar'}</button>`
+            ? `<button class="btn btn-green btn-sm" onclick="confirmarPagamentoContaFinanceiro('${item.id}')">Pagar e confirmar</button>`
             : '<button class="btn btn-ghost btn-sm" onclick="desconfirmarPagamentoContaFinanceiro(\'' + item.id + '\')">Reabrir</button>'
           }
         </div>
