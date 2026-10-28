@@ -41,15 +41,16 @@ test('seletores usam multisselecao recolhivel, busca contem e todos por padrao',
   assert.doesNotMatch(js,/onchange="consultarRelatorioDetalhadoVendaDiariaRaffinato/);
 });
 
-test('anos selecionados prevalecem sobre datas e atalhos reativam o intervalo',()=>{
+test('anos selecionados viram intervalo detalhado e atalhos reativam as datas',()=>{
   assert.match(js,/selectedYears=rddSelected\('#rddYears input'\)\.map\(Number\)/);
-  assert.match(js,/wholeYear=!selectedYears\.length/);
-  assert.match(js,/anos=wholeYear\?\[Number\(inicio\.slice\(0,4\)\)\]:selectedYears/);
+  assert.match(js,/inicio=selectedYears\.length\?`\$\{selectedYears\[0\]\}-01-01`/);
+  assert.match(js,/fim=selectedYears\.length\?\(selectedYears\.at\(-1\)===new Date\(\)\.getFullYear\(\)\?today/);
+  assert.match(js,/anos=\[\]/);
   assert.match(js,/inicio,fim,anos,meses:/);
   assert.match(js,/function rddActivateDateRange\(\)\{document\.querySelectorAll\('#rddYears input'\)\.forEach\(x=>x\.checked=false\)/);
   assert.match(js,/start\.disabled=usingYears/);
   assert.match(js,/end\.disabled=usingYears/);
-  assert.match(js,/o intervalo acima será ignorado/);
+  assert.match(js,/consulta detalhada pelo período exibido/);
 });
 
 test('api escolhe uma unica fonte por consulta e bloqueia detalhe historico indisponivel',()=>{

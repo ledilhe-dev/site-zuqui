@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v263-baixa-parcial';
+const CACHE_NAME = 'check-diario-pwa-v264-ano-como-intervalo';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -75,3 +75,24 @@ test('frontend envia setembro no modo por datas e nenhum ano selecionado',()=>{
   assert.deepEqual([...body.origens],[]);
   assert.equal(body.agrupar_por,'dia_semana');
 });
+
+test('selecionar 2026 envia o mesmo intervalo detalhado de 01/01 ate hoje e nenhum ano agregado',()=>{
+  const source=fs.readFileSync(new URL('../assets/js/97-raffinato-daily-detail.js',import.meta.url),'utf8');
+  const elements={rddStart:{value:'2026-09-29'},rddEnd:{value:'2026-10-28'},rddGroupBy:{value:'data'},rddTop:{value:'999999'}};
+  const checked=value=>({checked:true,value}),unchecked=value=>({checked:false,value});
+  const selectorMap={
+    '#rddYears input':[unchecked('2025'),checked('2026')],
+    '#rddMonths input':Array.from({length:12},(_,i)=>checked(String(i+1))),
+    '.rdd-weekday':Array.from({length:7},(_,i)=>checked(String(i))),
+    '#rddGroups input':[checked('1')],
+    '#rddOrigins input':[checked('VENDA_RAPIDA')],
+  };
+  const RealDate=Date;
+  class FixedDate extends RealDate { constructor(...args){super(...(args.length?args:['2026-10-28T12:00:00']));} static now(){return new RealDate('2026-10-28T12:00:00').getTime();} }
+  const context={Intl,console,Date:FixedDate,usuarioSistemaLogado:{id:'principal'},contextoRaffinato:()=>({empresaId:'empresa',lojaId:'loja'}),document:{getElementById:id=>elements[id],querySelectorAll:selector=>selectorMap[selector]||[]}};
+  vm.runInNewContext(`${source}\nglobalThis.__body=rddBody;`,context);
+  const body=context.__body();
+  assert.equal(body.inicio,'2026-01-01');
+  assert.equal(body.fim,'2026-10-28');
+  assert.deepEqual([...body.anos],[]);
+});
