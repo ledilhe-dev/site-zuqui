@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v259-relatorio-venda-diaria-canais';
+const CACHE_NAME = 'check-diario-pwa-v260-relatorio-anual-filtros';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

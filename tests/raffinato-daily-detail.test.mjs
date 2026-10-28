@@ -42,7 +42,9 @@ test('seletores usam multisselecao recolhivel, busca contem e todos por padrao',
 });
 
 test('anos selecionados prevalecem sobre datas e atalhos reativam o intervalo',()=>{
-  assert.match(js,/anos=rddSelected\('#rddYears input'\)\.map\(Number\)/);
+  assert.match(js,/selectedYears=rddSelected\('#rddYears input'\)\.map\(Number\)/);
+  assert.match(js,/wholeYear=!selectedYears\.length/);
+  assert.match(js,/anos=wholeYear\?\[Number\(inicio\.slice\(0,4\)\)\]:selectedYears/);
   assert.match(js,/inicio,fim,anos,meses:/);
   assert.match(js,/function rddActivateDateRange\(\)\{document\.querySelectorAll\('#rddYears input'\)\.forEach\(x=>x\.checked=false\)/);
   assert.match(js,/start\.disabled=usingYears/);
@@ -52,7 +54,8 @@ test('anos selecionados prevalecem sobre datas e atalhos reativam o intervalo',(
 
 test('api escolhe uma unica fonte por consulta e bloqueia detalhe historico indisponivel',()=>{
   assert.match(relay,/from\("raffinato_anual_cache"\)/);
-  assert.match(relay,/eq\("modulo_venda","TODOS"\)/);
+  assert.match(relay,/String\(x\.modulo_venda\)==="TODOS"/);
+  assert.match(relay,/String\(x\.modulo_venda\)!=="TODOS"/);
   assert.match(relay,/mode=requestedYears\.length\?"historico_mensal":"intervalo_detalhado"/);
   assert.match(relay,/O histórico mensal não possui detalhe confiável/);
   assert.match(relay,/não será executada parcialmente/);
@@ -60,6 +63,15 @@ test('api escolhe uma unica fonte por consulta e bloqueia detalhe historico indi
   assert.match(js,/Modo histórico mensal/);
   assert.match(js,/FILTROS APLICADOS/);
   assert.match(js,/TOTALIZADORES/);
+});
+
+test('limpar filtros restaura intervalo e estado visual sem selecionar anos',()=>{
+  const clear=js.match(/function limparRelatorioDetalhadoVendaDiariaRaffinato\(\)[\s\S]*?\n(?=function rddBars)/)?.[0]||'';
+  assert.match(clear,/rddPeriod\(30\)/);
+  assert.match(clear,/RDD\.data=null/);
+  assert.match(clear,/#rddYears input'\)\.forEach\(x=>x\.checked=false\)/);
+  assert.match(clear,/#rddGroups input'\)\.forEach\(x=>x\.checked=true\)/);
+  assert.match(clear,/Nenhuma consulta realizada/);
 });
 
 test('impede datas futuras e normaliza o periodo antes da consulta',()=>{
