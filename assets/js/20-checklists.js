@@ -243,7 +243,7 @@ async function carregarChecklists(opcoes = {}) {
 
   const htmlFiltrosFuturos = (totalFiltrado, totalGeral) => `
     <div class="checklists-futuros-filtros checklists-futuros-filtros-compacto">
-      <input id="filtroProximaTarefaData" class="filtro-compacto-data" type="date" value="${escaparHtmlBasico(filtroProximaData)}" onclick="this.showPicker?.()" onchange="carregarChecklists({ forcarRender: true })" title="Data programada">
+      <input id="filtroProximaTarefaData" class="filtro-compacto-data" type="date" value="${escaparHtmlBasico(filtroProximaData)}" onchange="carregarChecklists({ forcarRender: true })" title="Data programada">
       <input id="filtroProximaTarefaHoraInicio" class="filtro-compacto-hora" type="time" value="${escaparHtmlBasico(filtroProximaHoraInicio)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário inicial">
       <input id="filtroProximaTarefaHoraFim" class="filtro-compacto-hora" type="time" value="${escaparHtmlBasico(filtroProximaHoraFim)}" onchange="carregarChecklists({ forcarRender: true })" title="Horário final">
       <input id="filtroProximaTarefaFuncionario" class="filtro-compacto-func" type="text" value="${escaparHtmlBasico(campoProximaFuncionario?.value || '')}" placeholder="Funcionário" oninput="debounceConsumo('filtro_checklist_funcionario', () => carregarChecklists({ forcarRender: true }), 500)">

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v260-relatorio-anual-filtros';
+const CACHE_NAME = 'check-diario-pwa-v261-calendarios-nativos';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -621,8 +621,8 @@
             <select id="filtroChecklistTarefa" onchange="carregarChecklists()">
               <option value="">- Tarefas -</option>
             </select>
-            <label class="checklist-data-campo"><span>Data inicial</span><input id="filtroChecklistDataInicio" type="date" data-date-filter-native="true" onclick="this.showPicker?.()"></label>
-            <label class="checklist-data-campo"><span>Data final</span><input id="filtroChecklistDataFim" type="date" data-date-filter-native="true" onclick="this.showPicker?.()"></label>
+            <label class="checklist-data-campo"><span>Data inicial</span><input id="filtroChecklistDataInicio" type="date" data-date-filter-native="true"></label>
+            <label class="checklist-data-campo"><span>Data final</span><input id="filtroChecklistDataFim" type="date" data-date-filter-native="true"></label>
             <button class="btn btn-green" type="button" onclick="filtrarPeriodoChecklists()">Filtrar</button>
             <button class="btn btn-ghost checklist-limpar-unico" type="button" title="Limpar todos os filtros" onclick="limparFiltrosChecklists(); limparPeriodoChecklists()">× Limpar</button>
           </div>
@@ -3408,11 +3408,11 @@
 <script src="./assets/js/01-core-supabase.js?v=3.2.67-topo-uniforme"></script>
 <script src="./assets/js/02-core-version.js?v=3.2.59-sessao-persistente-windows"></script>
 <script src="./assets/js/03-core-state.js?v=20261027-venda-diaria-v2"></script>
-<script src="./assets/js/04-navigation.js?v=20261027-venda-diaria-v2"></script>
+<script src="./assets/js/04-navigation.js?v=20261028-date-native-v3"></script>
 <script src="./assets/js/05-shared-helpers.js?v=3.2.70-permissoes-relatorios-raffinato"></script>
 <script src="./assets/js/06-theme-interface.js?v=20261017-ios-sheet-v2"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.63-menu-sync-touch"></script>
-<script src="./assets/js/20-checklists.js?v=3.2.65-sem-corte-1000"></script>
+<script src="./assets/js/20-checklists.js?v=20261028-date-native-v3"></script>
 <script src="./assets/js/21-employees.js?v=3.2.45"></script>
 <script src="./assets/js/22-access-requests.js?v=3.2.46"></script>
 <script src="./assets/js/23-email.js"></script>

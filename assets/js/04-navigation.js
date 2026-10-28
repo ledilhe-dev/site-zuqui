@@ -178,15 +178,9 @@ function fecharMenusLaterais() {
 
 function configurarAberturaAutomaticaDatePicker() {
   document.querySelectorAll('input[type="date"]').forEach((input) => {
-    if (input.dataset.pickerAuto === '1') return;
-    input.dataset.pickerAuto = '1';
-    const abrir = () => {
-      try {
-        if (typeof input.showPicker === 'function') input.showPicker();
-      } catch (e) {}
-    };
-    input.addEventListener('click', abrir);
-    input.addEventListener('focus', abrir);
+    // Mantém o comportamento nativo: digita dia, avança para mês e depois ano.
+    // O calendário continua acessível pelo ícone do próprio navegador.
+    input.dataset.pickerAuto = 'native';
   });
 }
 
