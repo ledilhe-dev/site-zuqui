@@ -51,7 +51,7 @@ test('frontend apresenta exatamente os totalizadores da resposta mais recente',(
 test('frontend envia setembro no modo por datas e nenhum ano selecionado',()=>{
   const source=fs.readFileSync(new URL('../assets/js/97-raffinato-daily-detail.js',import.meta.url),'utf8');
   const elements={
-    rddStart:{value:'2026-09-01'},rddEnd:{value:'2026-09-30'},rddGroupBy:{value:'dia_semana'},
+    rddStart:{value:'2026-09-01'},rddEnd:{value:'2026-09-30'},rddStartTime:{value:'06:00'},rddEndTime:{value:'20:00'},rddGroupBy:{value:'dia_semana'},
     rddTop:{value:'999999'},
   };
   const checked=value=>({checked:true,value}),unchecked=value=>({checked:false,value});
@@ -68,6 +68,8 @@ test('frontend envia setembro no modo por datas e nenhum ano selecionado',()=>{
   const body=context.__body();
   assert.equal(body.inicio,'2026-09-01');
   assert.equal(body.fim,'2026-09-30');
+  assert.equal(body.hora_inicio,'06:00:00');
+  assert.equal(body.hora_fim,'20:00:59');
   assert.deepEqual([...body.anos],[]);
   assert.deepEqual([...body.meses],[]);
   assert.deepEqual([...body.dias_semana],[]);
@@ -78,7 +80,7 @@ test('frontend envia setembro no modo por datas e nenhum ano selecionado',()=>{
 
 test('selecionar 2026 envia o mesmo intervalo detalhado de 01/01 ate hoje e nenhum ano agregado',()=>{
   const source=fs.readFileSync(new URL('../assets/js/97-raffinato-daily-detail.js',import.meta.url),'utf8');
-  const elements={rddStart:{value:'2026-09-29'},rddEnd:{value:'2026-10-28'},rddGroupBy:{value:'data'},rddTop:{value:'999999'}};
+  const elements={rddStart:{value:'2026-09-29'},rddEnd:{value:'2026-10-28'},rddStartTime:{value:'00:00'},rddEndTime:{value:'23:59'},rddGroupBy:{value:'data'},rddTop:{value:'999999'}};
   const checked=value=>({checked:true,value}),unchecked=value=>({checked:false,value});
   const selectorMap={
     '#rddYears input':[unchecked('2025'),checked('2026')],

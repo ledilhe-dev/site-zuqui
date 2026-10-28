@@ -46,7 +46,7 @@ test('anos selecionados viram intervalo detalhado e atalhos reativam as datas',(
   assert.match(js,/inicio=selectedYears\.length\?`\$\{selectedYears\[0\]\}-01-01`/);
   assert.match(js,/fim=selectedYears\.length\?\(selectedYears\.at\(-1\)===new Date\(\)\.getFullYear\(\)\?today/);
   assert.match(js,/anos=\[\]/);
-  assert.match(js,/inicio,fim,anos,meses:/);
+  assert.match(js,/inicio,fim,hora_inicio:`\$\{horaInicio\}:00`,hora_fim:`\$\{horaFim\}:59`,anos,meses:/);
   assert.match(js,/function rddActivateDateRange\(\)\{document\.querySelectorAll\('#rddYears input'\)\.forEach\(x=>x\.checked=false\)/);
   assert.match(js,/start\.disabled=usingYears/);
   assert.match(js,/end\.disabled=usingYears/);
@@ -108,4 +108,20 @@ test('historico diario remoto sustenta graficos anuais sem loopback',()=>{
   assert.match(relay,/canais_dias_semana:channelWeek/);
   assert.match(relay,/origem_consulta:"cache_historico_diario"/);
   assert.match(relay,/O conector ainda precisa sincronizar o detalhamento diário desta loja/);
+});
+
+test('relatorio detalhado possui datas compactas e filtros de hora na ordem correta',()=>{
+  const markup=js.match(/function rddMarkup\(\)\{[\s\S]*?\n(?=async function iniciarRelatorio)/)?.[0]||'';
+  const positions=['id="rddStart"','id="rddEnd"','id="rddStartTime"','id="rddEndTime"'].map(value=>markup.indexOf(value));
+  assert.ok(positions.every(value=>value>=0));
+  assert.deepEqual(positions,[...positions].sort((a,b)=>a-b));
+  const css=fs.readFileSync(new URL('../assets/css/123-raffinato-daily-detail.css',import.meta.url),'utf8');
+  assert.match(css,/grid-template-columns:minmax\(145px,\.72fr\).*minmax\(105px,\.48fr\)/);
+});
+
+test('backend filtra documentos e itens pela mesma janela diaria de horas',()=>{
+  assert.match(relay,/dailyStart=normalizeTime\(body\.hora_inicio,"00:00:00"\)/);
+  assert.match(relay,/dailyEnd=normalizeTime\(body\.hora_fim,"23:59:59"\)/);
+  assert.match(relay,/matchesDailyPeriod\(x,periodStart,periodEnd,dailyStart,dailyEnd\)/);
+  assert.match(relay,/hora_inicio:dailyStart,hora_fim:dailyEnd/);
 });
