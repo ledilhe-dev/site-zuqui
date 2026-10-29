@@ -3681,7 +3681,7 @@ async function faturaExibirRevisao(resultado) {
     return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface2);${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
       <div style="display:flex;align-items:flex-start;gap:8px;">
         <input type="checkbox" ${item.selecionado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;"
-          onchange="_faturaItensExtraidos.find(i=>i.id==='${item.id}').selecionado=this.checked;faturaAtualizarFooter()">
+          onchange="faturaAlternarSelecaoItem('${item.id}', this.checked)">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span style="font-size:12px;font-weight:600;color:var(--text);">${escaparHtmlBasico(item.descricao)}</span>
@@ -4373,6 +4373,11 @@ function faturaAtualizarFooter() {
   const total = sel.reduce((s,i) => s + Number(i.valor||0), 0);
   const info = document.getElementById('faturaFooterInfo');
   if (info) info.textContent = `${sel.length} de ${_faturaItensExtraidos.length} selecionados ? ${formatarMoedaBRFinanceiro(total)}`;
+  const selecionarTodos = document.getElementById('faturaSelecionarTodos');
+  if (selecionarTodos) {
+    selecionarTodos.checked = _faturaItensExtraidos.length > 0 && sel.length === _faturaItensExtraidos.length;
+    selecionarTodos.indeterminate = sel.length > 0 && sel.length < _faturaItensExtraidos.length;
+  }
 }
 
 // · Parser OFX ·························
@@ -4526,8 +4531,23 @@ const FATURA_BANCO_APELIDOS = {
 // ································?
 
 function faturaSelecionarTodas(checked) {
-  _faturaItensExtraidos.forEach(i => i.selecionado = checked);
-  document.querySelectorAll('#faturaListaItens input[type=checkbox]').forEach(cb => cb.checked = checked);
+  _faturaItensExtraidos.forEach(i => {
+    i.selecionado = checked && !i._duplicidadeDetectadaNoOCR;
+  });
+  document.querySelectorAll('#faturaListaItens input[type=checkbox]').forEach(cb => {
+    const item = _faturaItensExtraidos.find(i => document.getElementById('faturaItem_' + i.id)?.contains(cb));
+    cb.checked = !!item?.selecionado;
+  });
+  faturaAtualizarFooter();
+}
+
+function faturaAlternarSelecaoItem(itemId, marcado) {
+  const item = _faturaItensExtraidos.find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  item.selecionado = marcado === true;
+  // Uma conta suspeita só pode seguir quando o usuário marcar especificamente
+  // o checkbox dela depois de conferir os dados na revisão em lote.
+  if (item._duplicidadeDetectadaNoOCR) item._duplicidadeAutorizada = marcado === true;
   faturaAtualizarFooter();
 }
 
@@ -4540,7 +4560,7 @@ function financeiroChaveDuplicidadeConta(linha = {}) {
   ].join('|');
 }
 
-async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ignorarIds = [], toleranciaDias = 0 } = {}) {
+async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ignorarIds = [], toleranciaDias = 0, compararDescricao = false } = {}) {
   const itens = (linhas || []).filter(l =>
     l?.fornecedor_id &&
     /^\d{4}-\d{2}-\d{2}$/.test(String(l.data_compra || '')) &&
@@ -4569,9 +4589,9 @@ async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ig
         .from('contasapagar')
         .select('id, fornecedor_id, valor_compra, data_compra, data_vencimento, observacao, criado_por_nome, created_at, loja_id, fornecedores(nome)')
         .eq('loja_id', lojaId)
-        .eq('fornecedor_id', linha.fornecedor_id)
         .eq('valor_compra', Number(Number(linha.valor_compra || 0).toFixed(2)))
         .is('excluido_em', null);
+        if (!compararDescricao) query = query.eq('fornecedor_id', linha.fornecedor_id);
         query = toleranciaDias > 0
           ? query.gte('data_compra', inicioISO).lte('data_compra', fimISO)
           : query.eq('data_compra', linha.data_compra);
@@ -4586,6 +4606,16 @@ async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ig
       }
       (data || [])
         .filter(row => !ignorar.has(String(row.id)))
+        .filter(row => {
+          if (String(row.fornecedor_id || '') === String(linha.fornecedor_id || '')) return true;
+          if (!compararDescricao) return false;
+          const textoOCR = `${linha.descricao_ocr || ''} ${linha.observacao_ocr || ''}`.trim();
+          const textoExistente = `${row.observacao || ''} ${row.fornecedores?.nome || ''}`.trim();
+          const tokensOCR = new Set(faturaNormalizarDescricaoInteligente(textoOCR).split(' ').filter(token => token.length >= 5));
+          const tokensExistente = new Set(faturaNormalizarDescricaoInteligente(textoExistente).split(' ').filter(token => token.length >= 5));
+          const estabelecimentoEmComum = [...tokensOCR].some(token => tokensExistente.has(token));
+          return estabelecimentoEmComum || faturaSimilaridadeDescricao(textoOCR, textoExistente) >= .55;
+        })
         .forEach(row => duplicados.push({ linha, existente: row }));
     } catch (e) {
       console.warn('Falha ao verificar duplicidade de conta:', e?.message || e);
@@ -4624,13 +4654,15 @@ async function faturaVerificarDuplicidadeInicialOCR() {
       data_compra: dataCompra,
       data_vencimento: parcela.vencimento,
       valor_compra: Number(Number(parcela.valor || 0).toFixed(2)),
+      descricao_ocr: item.descricao || '',
+      observacao_ocr: item._obsManual || '',
       _itemOCR: item,
     }));
   });
 
   let duplicados;
   try {
-    duplicados = await financeiroBuscarDuplicidadesContas(linhas, { lojaId, toleranciaDias: 2 });
+    duplicados = await financeiroBuscarDuplicidadesContas(linhas, { lojaId, toleranciaDias: 3, compararDescricao: true });
   } catch (erro) {
     setMsg('msgImportarFatura', erro?.message || 'Nao foi possivel verificar duplicidade. Lancamento bloqueado.', 'err');
     return false;
@@ -4640,48 +4672,27 @@ async function faturaVerificarDuplicidadeInicialOCR() {
   const itensAfetados = new Set(duplicados.map(({ linha }) => linha?._itemOCR).filter(Boolean));
   itensAfetados.forEach(item => {
     item._duplicidadeDetectadaNoOCR = true;
+    item._duplicidadeAutorizada = false;
+    item.selecionado = false;
     const card = document.getElementById('faturaItem_' + item.id);
     if (card) {
       card.style.border = '2px solid var(--red)';
       card.style.boxShadow = '0 0 0 2px var(--red-glow)';
-    }
-  });
-  setMsg('msgImportarFatura', 'CONTA POSSIVELMENTE JA CADASTRADA. Confira antes de continuar.', 'err');
-
-  const primeira = duplicados[0];
-  const fornecedorNome = primeira?.existente?.fornecedores?.nome || 'Fornecedor';
-  const decisao = typeof abrirConfirmacaoSistema === 'function'
-    ? await abrirConfirmacaoSistema({
-        title: 'Conta possivelmente ja cadastrada',
-        subtitle: 'Encontramos no banco o mesmo fornecedor, valor e data da compra.',
-        body: `<div class="msg err" style="font-weight:800;">${escaparHtmlBasico(fornecedorNome)} · ${formatarMoedaBRFinanceiro(primeira?.linha?.valor_compra)} · compra em ${formatarDataBRFinanceiro(primeira?.linha?.data_compra)}</div><div class="item-detalhe" style="margin-top:10px;">Deseja lancar mesmo assim?</div>`,
-        cancelText: 'Nao, cancelar',
-        cancelClass: 'btn-red',
-        confirmText: 'Sim, continuar',
-        confirmClass: 'btn-green',
-      })
-    : { confirmado: window.confirm('Conta possivelmente ja cadastrada. Deseja lancar mesmo assim?') };
-
-  if (!decisao?.confirmado) {
-    fecharImportadorFatura();
-    if (typeof abrirPagina === 'function') {
-      abrirPagina('financeiro_contasapagar', document.querySelector('.nav-btn[data-page="financeiro_contasapagar"]'));
-    }
-    return false;
-  }
-  itensAfetados.forEach(item => {
-    item._duplicidadeAutorizada = true;
-    item._jaLancado = false;
-    item.selecionado = true;
-    const card = document.getElementById('faturaItem_' + item.id);
-    if (card) {
+      card.style.background = 'rgba(239,68,68,.08)';
       card.style.opacity = '1';
       const checkbox = card.querySelector('input[type="checkbox"]');
-      if (checkbox) checkbox.checked = true;
+      if (checkbox) checkbox.checked = false;
+      if (!card.querySelector('.fatura-aviso-duplicidade')) {
+        const aviso = document.createElement('div');
+        aviso.className = 'fatura-aviso-duplicidade';
+        aviso.style.cssText = 'margin:8px 0 2px;padding:7px 9px;border:1px solid var(--red);border-radius:8px;background:var(--red-glow);color:var(--red);font-size:11px;font-weight:800;';
+        aviso.textContent = '⚠ Conta possivelmente já lançada — confira os dados. Marque o checkbox somente se desejar lançar mesmo assim.';
+        card.prepend(aviso);
+      }
     }
   });
   faturaAtualizarFooter();
-  setMsg('msgImportarFatura', 'Possivel duplicidade confirmada. O fluxo foi liberado para revisao.', 'err');
+  setMsg('msgImportarFatura', `${itensAfetados.size} conta(s) possivelmente já lançada(s), destacada(s) em vermelho e desmarcada(s). Confira a listagem; marque individualmente somente se quiser lançar.`, 'err');
   return true;
 }
 
