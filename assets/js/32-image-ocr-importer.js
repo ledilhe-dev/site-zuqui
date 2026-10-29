@@ -468,15 +468,13 @@
     const combinado = imagemCompraNormalizarTexto(`${texto || ''}\n${imagemCompraNormalizarValoresSemSeparador(textoNumerico || '')}`);
     const valorTexto = combinado.match(/(?:(?:R\s*\$|R[S5])\s*)?\d{1,3}(?:\.\d{3})*[,.]\d{2}/i)?.[0] || '';
     const valor = imagemCompraParseValor(valorTexto) || 0;
-    const linhas = combinado.split('\n').map(linha => linha.trim()).filter(Boolean);
-    const candidata = linhas.map(linha => linha
-      .replace(/\b(?:bradesco|cartoes?)\b/gi, ' ')
-      .replace(/(?:R\s*\$|R[S5])?\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/gi, ' ')
-      .replace(/\b(?:compra|de|aprov\S*|em|no|cartao|final)\b/gi, ' ')
-      .replace(/\b\d{3,6}\b/g, ' ')
-      .replace(/\s{2,}/g, ' ').trim()
-    ).filter(linha => /[A-Za-zÀ-ÿ]{3}/.test(linha)).sort((a, b) => b.length - a.length)[0] || '';
-    const descricao = imagemCompraLimparDescricao(candidata) || `Compra do cartao ${indice + 1} - revise os dados`;
+    // So aceite o estabelecimento quando estiver depois da estrutura explicita
+    // "APROVADA em". Cabecalho corrompido nunca vira nome de compra.
+    const trechoEstabelecimento = combinado.match(/aprov\S*\s+(?:em|en)\s+(.+?)(?=\s*,?\s*(?:no\s+)?cart(?:ao|a0)|$)/i)?.[1] || '';
+    const descricaoLida = imagemCompraNormalizarEstabelecimentoNotificacao(trechoEstabelecimento);
+    const descricao = /[A-Za-zÀ-ÿ]{3}/.test(descricaoLida)
+      ? descricaoLida
+      : `Compra ${indice + 1} - preencher observacao`;
     const data = imagemCompraParseData(combinado, dataPadrao);
     return {
       data, descricao, valor, valorTotalCompra: valor, quantidadeParcelas: 1,

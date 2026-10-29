@@ -24,3 +24,15 @@ test('seleção geral ignora suspeitas e marcação individual autoriza conscien
   assert.match(js, /function faturaAlternarSelecaoItem/);
   assert.match(js, /item\._duplicidadeAutorizada = marcado === true/);
 });
+
+test('valor editado no iPhone e sincronizado antes da validacao', () => {
+  assert.match(js, /function faturaSincronizarValorDigitado/);
+  assert.match(js, /oninput="faturaMascararValorImportado\(this\); faturaSincronizarValorDigitado/);
+  assert.match(js, /document\.querySelectorAll\('\[data-fatura-valor-item\]'\)/);
+  assert.match(js, /item\.valorTotalCompra = novoValor/);
+});
+
+test('rascunho OCR incompleto nao aprende categoria de texto corrompido', () => {
+  assert.match(js, /!item\.categoria_id && !item\._ocrRevisaoObrigatoria/);
+  assert.match(js, /item\._ocrRevisaoObrigatoria \? null : faturaSugerirPorHistorico/);
+});

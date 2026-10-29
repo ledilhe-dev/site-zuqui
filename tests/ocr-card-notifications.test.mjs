@@ -119,7 +119,16 @@ test('regiao totalmente ilegivel permanece na conferencia para correcao manual',
   assert.equal(item._ocrRegiao, 5);
   assert.equal(item._ocrRevisaoObrigatoria, true);
   assert.equal(item.selecionado, false);
-  assert.match(item.descricao, /revise os dados/i);
+  assert.match(item.descricao, /preencher observacao/i);
+});
+
+test('rascunho nao transforma cabecalho corrompido em nome de fornecedor', () => {
+  const item = context.window.imagemCompraCriarRascunhoNotificacao(
+    '| — BRAD 8 SARTOES Y', '24,00', 3, '2026-10-29'
+  );
+  assert.equal(item.descricao, 'Compra 4 - preencher observacao');
+  assert.equal(item.valor, 24);
+  assert.doesNotMatch(item.descricao, /BRAD|SARTOES/i);
 });
 
 test('cinco faixas fisicas nao passam novamente pela deduplicacao global', () => {

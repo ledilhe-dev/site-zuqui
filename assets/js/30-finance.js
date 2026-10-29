@@ -3566,7 +3566,7 @@ async function faturaExibirRevisao(resultado) {
   let qtdObsAuto = 0;
   const fornAutoObj = fornAuto ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornAuto)) : null;
   _faturaItensExtraidos.forEach(item => {
-    const sugestaoHistorico = faturaSugerirPorHistorico(item.descricao);
+    const sugestaoHistorico = item._ocrRevisaoObrigatoria ? null : faturaSugerirPorHistorico(item.descricao);
     item._sugestaoConfianca = sugestaoHistorico?.confianca || 0;
     let fornDoItem = item.fornecedor_id;
     // O banco reconhecido no bloco individual vence qualquer leitura do texto
@@ -3574,14 +3574,16 @@ async function faturaExibirRevisao(resultado) {
     const fornCartaoDoItem = item._bancoImagem
       ? faturaEncontrarFornecedorPorBanco(item._bancoImagem)
       : null;
-    const fornSugerido = fornCartaoDoItem
-      || fornAutoCartao
-      || (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
-      || faturaEncontrarFornecedorInteligente(item.descricao)
-      || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
-      || fornAuto;
+    const fornSugerido = item._ocrRevisaoObrigatoria
+      ? (fornCartaoDoItem || fornAutoCartao || fornAuto)
+      : (fornCartaoDoItem
+        || fornAutoCartao
+        || (sugestaoHistorico?.confianca >= .64 ? sugestaoHistorico.fornecedor_id : null)
+        || faturaEncontrarFornecedorInteligente(item.descricao)
+        || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
+        || fornAuto);
     if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
-    if (!item.categoria_id) {
+    if (!item.categoria_id && !item._ocrRevisaoObrigatoria) {
       const chave = faturaChaveEstabelecimento(item.descricao);
       const categoriaSimilar = Object.entries(_faturaMemoriaCategorias || {})
         .map(([chaveMemoria, categoriaId]) => ({
@@ -3728,9 +3730,9 @@ async function faturaExibirRevisao(resultado) {
             ${campoParcelasManuais}
             ${campoObs}
             <label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Valor:
-              <input type="text" inputmode="decimal" autocomplete="off" value="${formatarMoedaBRFinanceiro(item.valorTotalCompra)}"
+              <input type="text" inputmode="decimal" autocomplete="off" data-fatura-valor-item="${item.id}" value="${formatarMoedaBRFinanceiro(item.valorTotalCompra)}"
                 style="width:92px;font-size:13px;font-weight:700;height:28px;padding:0 7px;text-align:right;"
-                oninput="faturaMascararValorImportado(this)"
+                oninput="faturaMascararValorImportado(this); faturaSincronizarValorDigitado('${item.id}', this.value)"
                 onchange="faturaAoAlterarValor('${item.id}', this.value, this)"
                 onfocus="this.select()" aria-label="Valor da compra ${escaparHtmlBasico(item.descricao || '')}">
             </label>
@@ -3851,6 +3853,21 @@ function faturaAoAlterarValor(itemId, valor, campo) {
     const vencimento = resumoValor.dataset.vencimento || '';
     resumoValor.textContent = `Total: ${formatarMoedaBRFinanceiro(total)} · Venc: ${formatarDataBRFinanceiro(vencimento)}`;
   }
+  faturaAtualizarFooter();
+}
+
+function faturaSincronizarValorDigitado(itemId, valor) {
+  const item = (_faturaItensExtraidos || []).find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const numero = lerValorMonetarioFinanceiro(valor);
+  if (!Number.isFinite(numero) || numero <= 0) return;
+  const novoValor = Number(numero.toFixed(2));
+  item.valor = novoValor;
+  item.valorTotalCompra = novoValor;
+  item.quantidadeParcelas = Math.max(1, Number(item._parcelasManuais || 1));
+  item.valorParcela = Number((novoValor / item.quantidadeParcelas).toFixed(2));
+  item._valorEditadoManual = true;
+  faturaAtualizarResumoParcelamento(item);
   faturaAtualizarFooter();
 }
 
@@ -4851,6 +4868,11 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
 }
 
 async function faturaLancarSelecionados() {
+  // No Safari/iPhone, o botao fixo pode receber o clique antes do change/blur.
+  // Sincroniza diretamente todos os valores visiveis antes de validar.
+  document.querySelectorAll('[data-fatura-valor-item]').forEach(campo => {
+    faturaSincronizarValorDigitado(campo.getAttribute('data-fatura-valor-item'), campo.value);
+  });
   const selecionados = _faturaItensExtraidos.filter(i => i.selecionado);
   if (!selecionados.length) { alert('Selecione pelo menos um item.'); return; }
   const valoresInvalidos = selecionados.filter(item => !(Number(item.valorTotalCompra ?? item.valor) > 0));

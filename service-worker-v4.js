@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v287-ocr-nunca-descarta';
+const CACHE_NAME = 'check-diario-pwa-v288-ocr-rascunho-editavel';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
