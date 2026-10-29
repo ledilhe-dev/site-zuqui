@@ -42,7 +42,7 @@ test('aceita pequenas falhas do OCR em APROVADA sem liberar números soltos', ()
   const texto = `BRADESCO CARTÕES
 Compra de R$ 56,74 APROVRIDA em SUPERMERCADOS K, no Cartão final 1018.
 Compra de R$ 24,00 APROVAD4 em CHAVEIRO CARLIN, no Cartão final 1018.
-R$ 130,00 APROVRDA em J D S COMERCIO, no Cartão final 1018.
+R$ 130,00 APROV RDA ! em J D S COMERCIO, no Cartão finaI 1018.
 Compra de R$ 566,72 WPROJERA`;
   const itens = context.window.imagemCompraExtrairItens(texto);
   assert.deepEqual(Array.from(itens, item => item.valor), [56.74, 24, 130]);
@@ -61,6 +61,8 @@ Compra de R$ 130,00 APROVADA em J D S COMERCIO, no Cartão final 1018.`;
 });
 
 test('telas de notificação sempre relêem as faixas e usam somente o parser estruturado', () => {
+  assert.match(source, /faixasNotificacao/);
+  assert.match(source, /Lendo cada notificacao separadamente/);
   assert.match(source, /telaNotificacoesCartao \|\| itensReconhecidos\.length < 2/);
   assert.match(source, /imagemCompraExtrairNotificacoesCartao\(item\.textoCartao/);
   assert.match(source, /const genericos = telaNotificacoes \? \[\] : imagemCompraExtrairGenerico/);

@@ -353,7 +353,7 @@
     // valor, aprovação, "em", estabelecimento e "Cartão final". "Compra de"
     // é opcional porque às vezes some na borda esquerda durante o recorte. Uma
     // leitura solta como "WPROJERA 566,72" nunca se transforma em lançamento.
-    const regex = /(?:Compra\s+de\s+)?(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+APRO[A-ZÀ-ÿ0-9]{2,14}\s+(?:em|e[mn])\s+(.+?)\s*,?\s+no\s+cart[aã]o\s+final\s+\d{3,6}\b/gi;
+    const regex = /(?:Compra\s+de\s+)?(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+APRO.{2,32}?\b(?:em|e[mn])\b\s+(.+?)\s*,?\s+no\s+cart[aã]o\s+fina[lI1]\s+\d{3,6}\b/gi;
     let m;
     while ((m = regex.exec(compacto)) !== null) {
       const valor = imagemCompraParseValor(m[1]);
@@ -810,7 +810,14 @@
             criarBlob(canvasCinza, 0, altura * 0.42, 0, largura, 1.6),
             criarBlob(canvasCinza, altura * 0.29, altura * 0.42, 0, largura, 1.6),
             criarBlob(canvasCinza, altura * 0.58, altura * 0.42, 0, largura, 1.6),
-          ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior, bandaNumerica1, bandaNumerica2, bandaNumerica3]) => {
+            // Notificações empilhadas são relidas em bandas curtas. Isso evita
+            // que o OCR misture o valor de um cartão com o texto do seguinte.
+            criarBlob(canvasCinza, 0, altura * 0.28, 0, largura, 1.45),
+            criarBlob(canvasCinza, altura * 0.18, altura * 0.28, 0, largura, 1.45),
+            criarBlob(canvasCinza, altura * 0.36, altura * 0.28, 0, largura, 1.45),
+            criarBlob(canvasCinza, altura * 0.54, altura * 0.28, 0, largura, 1.45),
+            criarBlob(canvasCinza, altura * 0.72, altura * 0.28, 0, largura, 1.45),
+          ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior, bandaNumerica1, bandaNumerica2, bandaNumerica3, notificacao1, notificacao2, notificacao3, notificacao4, notificacao5]) => {
             URL.revokeObjectURL(url);
             resolve({
               principal: principal || file,
@@ -820,6 +827,7 @@
                 { cartao: faixaInferior, valor: valorInferior, descricao: descricaoInferior },
               ].filter(faixa => faixa.cartao),
               bandasNumericas: [bandaNumerica1, bandaNumerica2, bandaNumerica3].filter(Boolean),
+              faixasNotificacao: [notificacao1, notificacao2, notificacao3, notificacao4, notificacao5].filter(Boolean),
             });
           }).catch(reject);
         } catch (e) {
@@ -941,7 +949,7 @@
       });
       let textosReconhecidos = [resultado?.data?.text || ''];
       let itensReconhecidos = imagemCompraExtrairItens(textosReconhecidos[0]);
-      const telaNotificacoesCartao = imagemCompraEhTelaNotificacoesCartao(textosReconhecidos[0]);
+      let telaNotificacoesCartao = imagemCompraEhTelaNotificacoesCartao(textosReconhecidos[0]);
       const confiancaPrincipal = Number(resultado?.data?.confidence || 0);
 
       // Fotos de papel, telas com tema escuro e cupons desbotados respondem de
@@ -955,6 +963,27 @@
         itensReconhecidos = imagemCompraConsolidarResumosParcelados(
           textosReconhecidos.flatMap(textoLido => imagemCompraExtrairItens(textoLido))
         );
+        telaNotificacoesCartao = textosReconhecidos.some(imagemCompraEhTelaNotificacoesCartao);
+      }
+
+      // A leitura integral pode quebrar uma linha de notificação ou fundir
+      // cartões vizinhos. As bandas curtas preservam a relação espacial entre
+      // R$, valor, estabelecimento e final do cartão.
+      if ((telaNotificacoesCartao || !itensReconhecidos.length) && imagens.faixasNotificacao?.length) {
+        faturaSetProgress(74, 'Lendo cada notificacao separadamente...');
+        const leiturasNotificacao = [];
+        for (const faixaNotificacao of imagens.faixasNotificacao) {
+          const leitura = await reconhecer(faixaNotificacao, 6, null);
+          const textoFaixa = leitura?.data?.text || '';
+          if (textoFaixa) leiturasNotificacao.push(textoFaixa);
+        }
+        textosReconhecidos.push(...leiturasNotificacao);
+        telaNotificacoesCartao = telaNotificacoesCartao
+          || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao);
+        itensReconhecidos = imagemCompraConsolidarResumosParcelados([
+          ...itensReconhecidos,
+          ...leiturasNotificacao.flatMap(textoFaixa => imagemCompraExtrairNotificacoesCartao(textoFaixa, imagemCompraHojeISO())),
+        ]);
       }
 
       // Em prints com várias notificações, o modo de texto esparso do
