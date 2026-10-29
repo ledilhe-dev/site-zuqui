@@ -4,16 +4,16 @@ import { chromium } from 'playwright';
 
 const importer = fs.readFileSync(new URL('../assets/js/32-image-ocr-importer.js', import.meta.url), 'utf8');
 const browser = await chromium.launch({ headless: true, channel: 'msedge' });
-const page = await browser.newPage({ viewport: { width: 1320, height: 1320 }, deviceScaleFactor: 1 });
+const page = await browser.newPage({ viewport: { width: 480, height: 456 }, deviceScaleFactor: 1 });
 
 try {
   await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>
-    *{box-sizing:border-box} body{margin:0;width:1320px;height:1320px;overflow:hidden;background:#8f8178;font-family:Arial,sans-serif;color:#fff}
-    #shot{width:1320px;height:1320px;padding:15px 42px;background:linear-gradient(115deg,#85756b,#b4a59c 55%,#756860)}
-    .card{position:relative;height:242px;margin:0 0 17px;border-radius:55px;border:2px solid rgba(255,255,255,.32);background:rgba(54,54,54,.56);padding:28px 38px 20px 188px;box-shadow:0 2px 4px rgba(0,0,0,.25)}
-    .icon{position:absolute;left:45px;top:60px;width:112px;height:112px;border-radius:25px;background:#d31567}
-    .bank{font-size:43px;font-weight:700;line-height:1.1;letter-spacing:.3px}.time{position:absolute;right:35px;top:29px;font-size:38px;color:#e5ded9}
-    .msg{font-size:43px;line-height:1.22;margin-top:5px;letter-spacing:.4px}
+    *{box-sizing:border-box} body{margin:0;width:480px;height:456px;overflow:hidden;background:#8f8178;font-family:Arial,sans-serif;color:#fff}
+    #shot{width:480px;height:456px;padding:4px 2px;background:linear-gradient(115deg,#85756b,#b4a59c 55%,#756860)}
+    .card{position:relative;height:81px;margin:0 0 10px;border-radius:20px;border:1px solid rgba(255,255,255,.32);background:rgba(54,54,54,.56);padding:4px 8px 3px 77px;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+    .icon{position:absolute;left:21px;top:17px;width:42px;height:42px;border-radius:10px;background:#d31567}
+    .bank{font-size:16px;font-weight:700;line-height:1.05}.time{position:absolute;right:31px;top:5px;font-size:14px;color:#e5ded9}
+    .msg{font-size:16px;line-height:1.2;margin-top:2px;letter-spacing:0}
   </style></head><body><main id="shot">
     <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">11:36</div><div class="msg">Compra de R$ 56,74 APROVADA em<br>SUPERMERCADOS K, no Cartão final 1018.</div></section>
     <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">08:11</div><div class="msg">Compra de R$ 124,42 APROVADA em<br>SUPERMERCADOS K, no Cartão final 1018.</div></section>
@@ -30,14 +30,20 @@ try {
   const imagemBase64 = (await page.locator('#shot').screenshot({ type: 'png' })).toString('base64');
   const resultado = await page.evaluate(async base64 => {
     const bytes = Uint8Array.from(atob(base64), caractere => caractere.charCodeAt(0));
-    const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+    const bitmapOriginal = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+    // Mesmo pre-processamento do importador: imagens pequenas sao ampliadas 2x.
+    const preparado = document.createElement('canvas');
+    preparado.width = 960;
+    preparado.height = 912;
+    preparado.getContext('2d').drawImage(bitmapOriginal, 0, 0, preparado.width, preparado.height);
+    const bitmap = await createImageBitmap(preparado);
     const worker = await Tesseract.createWorker('por+eng');
     const textos = [];
     for (const inicio of [0, .18, .36, .54, .72]) {
       const canvas = document.createElement('canvas');
-      canvas.width = 1320;
-      canvas.height = Math.round(Math.min(1320 * .28, 1320 * (1 - inicio)));
-      canvas.getContext('2d').drawImage(bitmap, 0, Math.round(1320 * inicio), 1320, canvas.height, 0, 0, 1320, canvas.height);
+      canvas.width = 960;
+      canvas.height = Math.round(Math.min(912 * .28, 912 * (1 - inicio)));
+      canvas.getContext('2d').drawImage(bitmap, 0, Math.round(912 * inicio), 960, canvas.height, 0, 0, 960, canvas.height);
       const leitura = await worker.recognize(canvas, { tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
       textos.push(leitura.data.text || '');
     }

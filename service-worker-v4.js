@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v283-ocr-cinco-contas-real';
+const CACHE_NAME = 'check-diario-pwa-v284-ocr-parser-refeito';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

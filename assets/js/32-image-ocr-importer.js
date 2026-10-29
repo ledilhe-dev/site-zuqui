@@ -362,21 +362,38 @@
         _modoValorParcelas: 'total',
       });
     }
-    // O Tesseract costuma trocar uma ou duas letras de "APROVADA"
-    // (ex.: APROVRIDA). O marcador pode variar, mas a compra somente existe
-    // quando toda a estrutura da notificação está presente: marcador R$,
-    // valor, aprovação, "em", estabelecimento e "Cartão final". "Compra de"
-    // é opcional porque às vezes some na borda esquerda durante o recorte. Uma
-    // leitura solta como "WPROJERA 566,72" nunca se transforma em lançamento.
-    const regex = /(?:Compra\s+de\s+)?(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+APRO.{2,32}?\b(?:em|e[mn])\b\s+(.+?)\s*,?\s+no\s+cart[aã]o\s+fina[lI1]\s+\d{3,6}\b/gi;
-    let m;
-    while ((m = regex.exec(compacto)) !== null) {
-      const valor = imagemCompraParseValor(m[1]);
-      const quantidadeParcelas = imagemCompraParseParcelas(m[2]);
-      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(String(m[2]).replace(/^\s*0*\d{1,2}\s*[xX]\s*(?:em\s+)?/i, ''));
-      if (!valor || !descricao) continue;
-      const contextoData = imagemCompraContextoCabecalhoNotificacao(compacto, m.index);
-      const banco = imagemCompraDetectarBanco(contextoData);
+    // Parser novo para cartoes: APROVADA nao e uma ancora, pois foi justamente
+    // a palavra que o OCR destruiu nas tres contas descartadas. Uma transacao
+    // exige apenas moeda+valor e "Cartao final" no mesmo bloco visual.
+    const marcadoresValor = [...compacto.matchAll(/(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})/gi)];
+    marcadoresValor.forEach((marcador, indiceMarcador) => {
+      const inicio = marcador.index || 0;
+      const proximoInicio = marcadoresValor[indiceMarcador + 1]?.index ?? compacto.length;
+      const fim = Math.min(proximoInicio, inicio + 340);
+      const trecho = compacto.slice(inicio + marcador[0].length, fim);
+      const finalCartao = trecho.match(/\b(?:no\s+)?cart[aã]o\s+fina[lI1]\s+\d{3,6}\b/i);
+      if (!finalCartao) return;
+
+      const valor = imagemCompraParseValor(marcador[1]);
+      if (!valor) return;
+      let miolo = trecho.slice(0, finalCartao.index).replace(/[,.;:]+\s*$/, '').trim();
+      const quantidadeParcelas = imagemCompraParseParcelas(miolo);
+      miolo = miolo.replace(/^\s*0*\d{1,2}\s*[xX]\s*/i, '');
+
+      // Remove somente palavras estruturais. O restante nunca e completado,
+      // traduzido ou substituido por memoria/historico.
+      const depoisDeEm = [...miolo.matchAll(/\b(?:em|en)\b\s*/gi)].pop();
+      if (depoisDeEm) {
+        miolo = miolo.slice((depoisDeEm.index || 0) + depoisDeEm[0].length);
+      } else {
+        miolo = miolo
+          .replace(/^\s*APRO[A-Z0-9]{2,18}\s*/i, '')
+          .replace(/^\s*e\s+["'@~|*\-]*\s*/i, '');
+      }
+      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(miolo);
+      if (!descricao || !/[A-Za-zÀ-ÿ]{2}/.test(descricao)) return;
+
+      const contextoData = imagemCompraContextoCabecalhoNotificacao(compacto, inicio);
       itens.push({
         data: imagemCompraParseData(contextoData, dataPadrao),
         descricao,
@@ -389,49 +406,14 @@
         selecionado: true,
         _obsManual: descricao,
         _origemImagem: true,
-        _bancoImagem: banco,
+        _bancoImagem: imagemCompraDetectarBanco(contextoData),
         _notificacaoCartao: true,
-        _ocrIndex: m.index,
+        _ocrIndex: inicio,
         _parcelasManuais: quantidadeParcelas,
         _parcelasAuto: quantidadeParcelas > 1,
         _modoValorParcelas: 'total',
       });
-    }
-
-    // Segunda passagem: nas capturas de tela o OCR às vezes destrói somente a
-    // palavra APROVADA, embora preserve R$, o valor e "Cartão final". Esses
-    // três marcos pertencem ao mesmo cartão e são suficientes para recuperar
-    // a compra sem aceitar números soltos de horário, bateria ou cartão.
-    const regexEstrutura = /(?:Compra\s+de\s+)?(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+(.{2,140}?)\s*,?\s+no\s+cart[aã]o\s+fina[lI1]\s+\d{3,6}\b/gi;
-    let estrutura;
-    while ((estrutura = regexEstrutura.exec(compacto)) !== null) {
-      const bloco = String(estrutura[2] || '').trim();
-      if (!/\bAPRO/i.test(bloco)) continue;
-      const valor = imagemCompraParseValor(estrutura[1]);
-      const trechoDepoisDeEm = bloco.match(/\b(?:em|e[mn])\b\s+(.+)$/i)?.[1];
-      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(trechoDepoisDeEm || bloco);
-      if (!valor || !descricao) continue;
-      const contextoData = imagemCompraContextoCabecalhoNotificacao(compacto, estrutura.index);
-      itens.push({
-        data: imagemCompraParseData(contextoData, dataPadrao),
-        descricao,
-        valor,
-        valorTotalCompra: valor,
-        quantidadeParcelas: 1,
-        valorParcela: valor,
-        fitid: null,
-        vencimento_fatura: imagemCompraParseData(contextoData, dataPadrao),
-        selecionado: true,
-        _obsManual: descricao,
-        _origemImagem: true,
-        _bancoImagem: imagemCompraDetectarBanco(contextoData),
-        _notificacaoCartao: true,
-        _ocrIndex: estrutura.index,
-        _parcelasManuais: 1,
-        _parcelasAuto: false,
-        _modoValorParcelas: 'total',
-      });
-    }
+    });
     return imagemCompraDeduplicar(itens.sort((a, b) => Number(a._ocrIndex || 0) - Number(b._ocrIndex || 0)));
   }
 
