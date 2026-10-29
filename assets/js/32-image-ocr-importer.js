@@ -122,6 +122,25 @@
       .slice(0, 120);
   }
 
+  function imagemCompraNormalizarEstabelecimentoNotificacao(desc) {
+    const limpo = imagemCompraLimparDescricao(desc);
+    const normalizado = imagemCompraRemoverAcentos(limpo).toLowerCase();
+    // Nomes muito conhecidos nas notificações podem vir quebrados entre
+    // linhas ou contaminados por "APROVADA em". Mantemos somente o comércio.
+    if (/supermercad\w*\s*(?:k|koch)\b/.test(normalizado)) return 'SUPERMERCADOS KOCH';
+    if (/\baurora\b/.test(normalizado)) return 'AURORA';
+    if (/\bchaveiro\b/.test(normalizado) && /\bcarlin\b/.test(normalizado)) return 'CHAVEIRO CARLIN';
+    if (/\bj\s*d\s*s\b/.test(normalizado) && /\bcomerc/.test(normalizado)) return 'J D S COMERCIO';
+    return limpo;
+  }
+
+  function imagemCompraEhTelaNotificacoesCartao(texto) {
+    const normalizado = imagemCompraRemoverAcentos(texto).toLowerCase();
+    return /\b(?:bradesco|nubank|itau|santander|inter|c6)\b/.test(normalizado)
+      && /\bcompra\s+de\b/.test(normalizado)
+      && /\bcart(?:ao|oes)\b/.test(normalizado);
+  }
+
   function imagemCompraDeduplicar(itens) {
     const normalizarEstabelecimento = descricao => imagemCompraRemoverAcentos(descricao || '')
       .toLowerCase()
@@ -334,12 +353,12 @@
         _modoValorParcelas: 'total',
       });
     }
-    const regex = /Compra\s+de\s+(?:R\s*\$|R[S5]|S)?\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+(?:R\s*\$|R[S5]|S)?|hoje\b|ontem\b)|$)/gi;
+    const regex = /Compra\s+de\s+(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+(?:R\s*\$|R\s*[S5])|hoje\b|ontem\b)|$)/gi;
     let m;
     while ((m = regex.exec(compacto)) !== null) {
       const valor = imagemCompraParseValor(m[1]);
       const quantidadeParcelas = imagemCompraParseParcelas(m[2]);
-      const descricao = imagemCompraLimparDescricao(String(m[2]).replace(/^\s*0*\d{1,2}\s*[xX]\s*(?:em\s+)?/i, ''));
+      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(String(m[2]).replace(/^\s*0*\d{1,2}\s*[xX]\s*(?:em\s+)?/i, ''));
       if (!valor || !descricao) continue;
       const contextoData = compacto.slice(Math.max(0, m.index - 220), m.index);
       const banco = imagemCompraDetectarBanco(contextoData);
@@ -569,7 +588,12 @@
     const resumosParcelados = imagemCompraExtrairResumoParcelado(texto, dataPadrao);
     const notificacoes = imagemCompraExtrairNotificacoesCartao(texto, dataPadrao);
     const carteira = imagemCompraExtrairCarteiraNubank(texto, dataPadrao);
-    const genericos = imagemCompraExtrairGenerico(texto, dataPadrao);
+    // Em telas de notificações, o parser genérico é perigoso: números do
+    // cartão, bateria, horário ou do fundo podem ganhar uma vírgula falsa no
+    // OCR. Nessa origem aceitamos somente a estrutura explícita da compra.
+    const genericos = imagemCompraEhTelaNotificacoesCartao(texto)
+      ? []
+      : imagemCompraExtrairGenerico(texto, dataPadrao);
     const valoresAncorados = new Set(
       [...notificacoes, ...carteira].map(item => Math.round(Number(item.valor || 0) * 100))
     );

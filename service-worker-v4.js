@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v274-fluxo-recebimento-parcial';
+const CACHE_NAME = 'check-diario-pwa-v275-ocr-notificacoes-estritas';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
