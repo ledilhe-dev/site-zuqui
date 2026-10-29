@@ -131,23 +131,40 @@ test('rascunho nao transforma cabecalho corrompido em nome de fornecedor', () =>
   assert.doesNotMatch(item.descricao, /BRAD|SARTOES/i);
 });
 
-test('cinco faixas fisicas nao passam novamente pela deduplicacao global', () => {
-  assert.match(source, /itensFaixa = itensFaixa\.map\(item => \(\{ \.\.\.item, _ocrRegiao: indiceFaixa \+ 1 \}\)\)/);
-  assert.match(source, /notificacoesDasFaixas\.length === imagens\.faixasNotificacao\.length/);
-  assert.match(source, /itensReconhecidos = notificacoesDasFaixas/);
+test('notificacao Nubank identifica valor observacao e fornecedor sem incluir o rodape', () => {
+  const texto = `Compra no crédito aprovada Ontem, 18:58
+Compra de R$ 53,90 APROVADA em Google
+YouTubePremium para o cartão com final 1842.`;
+  const item = context.window.imagemCompraInterpretarCartaoV2([texto], 0, null, '2026-10-29');
+  assert.ok(item);
+  assert.equal(item.valor, 53.90);
+  assert.equal(item.descricao, 'Google YouTubePremium');
+  assert.equal(item._obsManual, 'Google YouTubePremium');
+  assert.equal(item._bancoImagem, 'Nubank');
+});
+
+test('parser geral tambem aceita rodape Nubank para imagens com um unico cartao', () => {
+  const texto = `Compra no crédito aprovada Ontem, 18:58
+Compra de R$ 53,90 APROVADA em Google YouTubePremium para o cartão com final 1842.`;
+  const itens = context.window.imagemCompraExtrairItens(texto);
+  assert.equal(itens.length, 1);
+  assert.equal(itens[0].valor, 53.90);
+  assert.equal(itens[0].descricao, 'Google YouTubePremium');
+  assert.equal(itens[0]._bancoImagem, 'Nubank');
+});
+
+test('cartoes fisicos independentes nao passam novamente pela deduplicacao global', () => {
+  assert.match(source, /criarFaixasNotificacaoV2/);
+  assert.match(source, /itemCartao = imagemCompraInterpretarCartaoV2/);
+  assert.match(source, /concluirImportacao\(itensV2/);
   assert.match(source, /itensReconhecidos\.every\(item => item\?\._ocrRegiao\)/);
 });
 
-test('telas de notificação sempre relêem as faixas e usam somente o parser estruturado', () => {
-  assert.match(source, /faixasNotificacao/);
-  assert.match(source, /Lendo cada notificacao separadamente/);
-  assert.match(source, /if \(!telaNotificacoesCartao\)/);
-  assert.match(source, /telaNotificacoesCartao && itensReconhecidos\.length < 5/);
-  assert.match(source, /telaNotificacoesCartao \? imagens\.principal : imagens\.alternativas\[0\]/);
-  assert.match(source, /if \(imagens\.faixasNotificacao\?\.length\)/);
-  assert.match(source, /for \(let indiceFaixa = 0; indiceFaixa < imagens\.faixasNotificacao\.length/);
-  assert.doesNotMatch(source, /Promise\.all\(\s*imagens\.faixasNotificacao\.map/);
-  assert.match(source, /itensReconhecidos = imagemCompraDeduplicar/);
-  assert.match(source, /imagemCompraExtrairNotificacoesCartao\(item\.textoCartao/);
+test('pipeline V2 nunca conclui notificacao com valor ou observacao vazios', () => {
+  assert.match(source, /if \(!\(valor > 0\) \|\| !descricao\) return null/);
+  assert.match(source, /A importacao foi interrompida para nao criar dados em branco ou inventados/);
+  assert.match(source, /frequenciaValores/);
+  assert.match(source, /frequenciaDescricoes/);
+  assert.doesNotMatch(source, /Lendo cada notificacao separadamente/);
   assert.match(source, /const genericos = telaNotificacoes \? \[\] : imagemCompraExtrairGenerico/);
 });

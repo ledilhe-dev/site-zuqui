@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v288-ocr-rascunho-editavel';
+const CACHE_NAME = 'check-diario-pwa-v289-ocr-v2-cartoes';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

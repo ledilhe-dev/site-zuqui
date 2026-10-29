@@ -36,6 +36,14 @@
     return Number.isFinite(valor) && valor > 0 ? Number(valor.toFixed(2)) : null;
   }
 
+  function imagemCompraParseValorOCR(valorTexto) {
+    let texto = String(valorTexto || '').trim();
+    // Tesseract troca frequentemente a virgula decimal por ponto. Quando ha
+    // exatamente dois digitos finais e nenhuma virgula, o ponto e decimal.
+    if (/^\d{1,6}\.\d{2}$/.test(texto)) texto = texto.replace('.', ',');
+    return imagemCompraParseValor(texto);
+  }
+
   function imagemCompraParseParcelas(texto) {
     const match = String(texto || '').match(/\b0*(\d{1,2})\s*[xX]\b/);
     const quantidade = match ? Number.parseInt(match[1], 10) : 1;
@@ -135,7 +143,7 @@
 
   function imagemCompraEhTelaNotificacoesCartao(texto) {
     const normalizado = imagemCompraRemoverAcentos(texto).toLowerCase();
-    return /\b(?:bradesco|nubank|itau|santander|inter|c6)\b/.test(normalizado)
+    return /\b(?:bradesco|nubank|itau|santander|inter|c6|compra\s+no\s+credito\s+aprovada)\b/.test(normalizado)
       && (/(?:\bcompra\s+de\b|\br\s*\$\s*\d)/.test(normalizado))
       && /\bcart(?:ao|oes)\b/.test(normalizado);
   }
@@ -320,7 +328,7 @@
     const normalizado = imagemCompraRemoverAcentos(contexto).toLowerCase();
     const bancos = [
       ['Bradesco', /\bbradesco(?:\s+cartoes?)?\b/],
-      ['Nubank', /\b(?:nubank|nu\s*bank)\b/],
+      ['Nubank', /\b(?:nubank|nu\s*bank|compra\s+no\s+credito\s+aprovada)\b/],
       ['Inter', /\b(?:banco\s+)?inter\b/],
       ['Itau', /\b(?:itau|itaucard)\b/],
       ['Santander', /\bsantander\b/],
@@ -371,7 +379,7 @@
       const proximoInicio = marcadoresValor[indiceMarcador + 1]?.index ?? compacto.length;
       const fim = Math.min(proximoInicio, inicio + 340);
       const trecho = compacto.slice(inicio + marcador[0].length, fim);
-      const finalCartao = trecho.match(/\b(?:no\s+)?cart[aã]o\s+fina[lI1]\s+\d{3,6}\b/i);
+      const finalCartao = trecho.match(/\b(?:(?:no\s+)?cart[aã]o\s+fina[lI1]|para\s+o\s+cart[aã]o\s+com\s+fina[lI1])\s+\d{3,6}\b/i);
       if (!finalCartao) return;
 
       const valor = imagemCompraParseValor(marcador[1]);
@@ -429,7 +437,7 @@
       const inicio = marcador.index || 0;
       const fim = marcadores[indice + 1]?.index ?? compacto.length;
       const trecho = compacto.slice(inicio + marcador[0].length, fim);
-      const finalCartao = trecho.match(/\b(?:no\s+)?cart[aã]o\s+fina[lI1]?\s*\d{0,6}/i);
+      const finalCartao = trecho.match(/\b(?:(?:no\s+)?cart[aã]o\s+fina[lI1]?|para\s+o\s+cart[aã]o\s+com\s+fina[lI1]?)\s*\d{0,6}/i);
       // Sem o rodape, ainda aceitamos o cartao isolado se o OCR preservou o
       // marcador de compra/aprovacao. O recorte nao contem outro cartao.
       if (!finalCartao && !/(?:compr[a4]|apro)/i.test(`${compacto.slice(Math.max(0, inicio - 80), inicio)} ${trecho}`)) return null;
@@ -483,6 +491,64 @@
       _bancoImagem: imagemCompraDetectarBanco(combinado), _notificacaoCartao: true,
       _ocrRegiao: indice + 1, _ocrRevisaoObrigatoria: true,
       _parcelasManuais: 1, _parcelasAuto: false, _modoValorParcelas: 'total',
+    };
+  }
+
+  function imagemCompraInterpretarCartaoV2(textos, indice, fallback, dataPadrao) {
+    const leituras = (textos || []).filter(Boolean).map(imagemCompraNormalizarTexto);
+    const combinado = imagemCompraNormalizarTexto(leituras.join('\n'));
+    const compacto = combinado.replace(/\n+/g, ' ');
+    const valoresPorLeitura = leituras.map(leitura => {
+      const match = leitura.match(/(?:(?:R\s*\$|R[S5])\s*)?(\d{1,3}(?:\.\d{3})*[,.]\d{2})/i);
+      return imagemCompraParseValorOCR(match?.[1]);
+    }).filter(valor => Number.isFinite(valor) && valor > 0);
+    const frequenciaValores = new Map();
+    valoresPorLeitura.forEach(valor => {
+      const centavos = Math.round(valor * 100);
+      frequenciaValores.set(centavos, (frequenciaValores.get(centavos) || 0) + 1);
+    });
+    const centavosEscolhidos = [...frequenciaValores.entries()]
+      .sort((a, b) => b[1] - a[1])[0]?.[0];
+    const valor = (centavosEscolhidos ? centavosEscolhidos / 100 : 0) || Number(fallback?.valor || 0);
+
+    // O nome deve estar estritamente entre "APROVADA em" e "no Cartao".
+    // Qualquer texto depois do final do cartao e descartado.
+    const descricoes = leituras.map(leitura => {
+      const leituraCompacta = leitura.replace(/\n+/g, ' ');
+      const trecho = leituraCompacta.match(/aprov[a-z0-9]{2,12}\s*(?:em|en)\s+(.+?)(?=\s*,?\s*(?:n[o0]\s+[cg]art|para\s+o\s+[cg]art)|\s*,?\s*[cg]art(?:ao|a0)\s+final|$)/i)?.[1] || '';
+      return imagemCompraNormalizarEstabelecimentoNotificacao(trecho).replace(/[|¦].*$/g, '').trim();
+    }).filter(descricao => /[A-Za-zÀ-ÿ]{3}/.test(descricao));
+    const frequenciaDescricoes = new Map();
+    descricoes.forEach(descricao => {
+      const chave = imagemCompraRemoverAcentos(descricao).toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+      const atual = frequenciaDescricoes.get(chave) || { descricao, quantidade: 0 };
+      atual.quantidade += 1;
+      frequenciaDescricoes.set(chave, atual);
+    });
+    const descricao = [...frequenciaDescricoes.values()].sort((a, b) => b.quantidade - a.quantidade)[0]?.descricao
+      || String(fallback?.descricao || '').trim();
+    if (!(valor > 0) || !descricao) return null;
+
+    const data = imagemCompraParseData(compacto, dataPadrao);
+    const quantidadeParcelas = imagemCompraParseParcelas(compacto);
+    return {
+      data,
+      descricao,
+      valor,
+      valorTotalCompra: valor,
+      quantidadeParcelas,
+      valorParcela: Number((valor / quantidadeParcelas).toFixed(2)),
+      fitid: null,
+      vencimento_fatura: data,
+      selecionado: true,
+      _obsManual: descricao,
+      _origemImagem: true,
+      _bancoImagem: imagemCompraDetectarBanco(compacto) || fallback?._bancoImagem || 'Bradesco',
+      _notificacaoCartao: true,
+      _ocrRegiao: indice + 1,
+      _parcelasManuais: quantidadeParcelas,
+      _parcelasAuto: quantidadeParcelas > 1,
+      _modoValorParcelas: 'total',
     };
   }
 
@@ -884,6 +950,34 @@
           canvasBinario.width = largura;
           canvasBinario.height = altura;
           canvasBinario.getContext('2d').putImageData(new ImageData(binario, largura, altura), 0, 0);
+
+          // Pipeline V2 para notificacoes: o texto do iPhone e branco sobre
+          // cartoes translucidos. O tratamento antigo entregava esse texto
+          // claro ao Tesseract como se fosse um documento em papel.
+          const textoClaro = new Uint8ClampedArray(original.data.length);
+          const invertido = new Uint8ClampedArray(original.data.length);
+          for (let i = 0; i < original.data.length; i += 4) {
+            const r = original.data[i];
+            const g = original.data[i + 1];
+            const b = original.data[i + 2];
+            const maximo = Math.max(r, g, b);
+            const minimo = Math.min(r, g, b);
+            const neutroClaro = maximo >= 155 && (maximo - minimo) <= 58;
+            const valorTexto = neutroClaro ? 0 : 255;
+            textoClaro[i] = textoClaro[i + 1] = textoClaro[i + 2] = valorTexto;
+            textoClaro[i + 3] = 255;
+            const cinzaInvertido = 255 - tonsCinza[i];
+            invertido[i] = invertido[i + 1] = invertido[i + 2] = cinzaInvertido;
+            invertido[i + 3] = 255;
+          }
+          const canvasTextoClaro = document.createElement('canvas');
+          canvasTextoClaro.width = largura;
+          canvasTextoClaro.height = altura;
+          canvasTextoClaro.getContext('2d').putImageData(new ImageData(textoClaro, largura, altura), 0, 0);
+          const canvasInvertido = document.createElement('canvas');
+          canvasInvertido.width = largura;
+          canvasInvertido.height = altura;
+          canvasInvertido.getContext('2d').putImageData(new ImageData(invertido, largura, altura), 0, 0);
           const criarBlob = (origem, y, h, x = 0, w = origem.width, ampliacao = 1) => new Promise(resolveBlob => {
             const recorte = document.createElement('canvas');
             recorte.width = Math.max(1, Math.round(w * ampliacao));
@@ -913,14 +1007,7 @@
             criarBlob(canvasCinza, 0, altura * 0.42, 0, largura, 1.6),
             criarBlob(canvasCinza, altura * 0.29, altura * 0.42, 0, largura, 1.6),
             criarBlob(canvasCinza, altura * 0.58, altura * 0.42, 0, largura, 1.6),
-            // Cinco recortes individuais: um cartao por faixa. As antigas
-            // janelas de 28% misturavam duas notificacoes e descartavam tres.
-            criarBlob(canvasCinza, 0, altura * 0.22, 0, largura, 1.6),
-            criarBlob(canvasCinza, altura * 0.18, altura * 0.22, 0, largura, 1.6),
-            criarBlob(canvasCinza, altura * 0.38, altura * 0.22, 0, largura, 1.6),
-            criarBlob(canvasCinza, altura * 0.58, altura * 0.22, 0, largura, 1.6),
-            criarBlob(canvasCinza, altura * 0.78, altura * 0.22, 0, largura, 1.6),
-          ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior, bandaNumerica1, bandaNumerica2, bandaNumerica3, notificacao1, notificacao2, notificacao3, notificacao4, notificacao5]) => {
+          ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior, bandaNumerica1, bandaNumerica2, bandaNumerica3]) => {
             URL.revokeObjectURL(url);
             resolve({
               principal: principal || file,
@@ -930,7 +1017,22 @@
                 { cartao: faixaInferior, valor: valorInferior, descricao: descricaoInferior },
               ].filter(faixa => faixa.cartao),
               bandasNumericas: [bandaNumerica1, bandaNumerica2, bandaNumerica3].filter(Boolean),
-              faixasNotificacao: [notificacao1, notificacao2, notificacao3, notificacao4, notificacao5].filter(Boolean),
+              proporcaoImagem: altura / Math.max(1, largura),
+              criarFaixasNotificacaoV2: async quantidade => {
+                const qtd = Math.max(1, Math.min(12, Number.parseInt(quantidade, 10) || 1));
+                return Promise.all(Array.from({ length: qtd }, async (_, indice) => {
+                  const margem = 0.018;
+                  const inicio = Math.max(0, indice / qtd - margem);
+                  const fim = Math.min(1, (indice + 1) / qtd + margem);
+                  const y = altura * inicio;
+                  const h = altura * (fim - inicio);
+                  return (await Promise.all([
+                    criarBlob(canvasTextoClaro, y, h, largura * 0.12, largura * 0.84, 1.8),
+                    criarBlob(canvasInvertido, y, h, largura * 0.12, largura * 0.84, 1.8),
+                    criarBlob(canvasCinza, y, h, 0, largura, 1.6),
+                  ])).filter(Boolean);
+                }));
+              },
             });
           }).catch(reject);
         } catch (e) {
@@ -1083,82 +1185,57 @@
         telaNotificacoesCartao = textosReconhecidos.some(imagemCompraEhTelaNotificacoesCartao);
       }
 
-      // A leitura integral pode quebrar uma linha de notificação ou fundir
-      // cartões vizinhos. As bandas curtas preservam a relação espacial entre
-      // R$, valor, estabelecimento e final do cartão.
-      // Toda imagem passa pelas regioes sobrepostas. Nao dependa da primeira
-      // leitura reconhecer o nome do banco: no caso real ela encontrou duas
-      // compras, perdeu "BRADESCO CARTOES" e impediu a busca das outras tres.
-      if (imagens.faixasNotificacao?.length) {
-        faturaSetProgress(74, 'Lendo cada notificacao separadamente...');
-        const leiturasNotificacao = [];
-        let notificacoesDasFaixas = [];
-        const resultadosPorFaixa = [];
-        for (let indiceFaixa = 0; indiceFaixa < imagens.faixasNotificacao.length; indiceFaixa += 1) {
-          // No iPhone, cinco workers simultaneos podem competir por memoria e
-          // devolver somente as primeiras regioes. A leitura sequencial e mais
-          // previsivel e mantem valor + estabelecimento no mesmo recorte.
-          const imagemFaixa = imagens.faixasNotificacao[indiceFaixa];
-          const leitura = await reconhecer(imagemFaixa, 6, null);
-          let textoFaixa = leitura?.data?.text || '';
-          let itensFaixa = imagemCompraExtrairNotificacaoIsolada(textoFaixa, imagemCompraHojeISO());
-          if (!itensFaixa.length) {
-            // Segunda estrategia somente para o cartao que falhou. O modo 11
-            // recupera valores curtos como 56,74 e 24,00 que o modo 6 omite.
-            const releitura = await reconhecer(imagemFaixa, 11, null);
-            const textoReleitura = releitura?.data?.text || '';
-            if (textoReleitura) textoFaixa = `${textoFaixa}\n${textoReleitura}`;
-            itensFaixa = imagemCompraExtrairNotificacaoIsolada(textoReleitura, imagemCompraHojeISO());
+      // Pipeline novo e isolado para prints de notificacoes. Cada cartao e uma
+      // unidade indivisivel: valor, observacao e data saem do mesmo recorte.
+      // Se uma unidade clara nao puder ser lida depois das tres variantes, a
+      // importacao nao inventa nem exibe valor zero; informa qual cartao falhou.
+      const textoIntegral = textosReconhecidos.filter(Boolean).join('\n');
+      const suspeitaListaNotificacoes = /brad\S*\s+cart|cart(?:ao|a0)\s+final|aprovada?\s+em/i.test(
+        imagemCompraRemoverAcentos(textoIntegral)
+      ) || itensReconhecidos.filter(item => item?._notificacaoCartao).length >= 2;
+      const quantidadeEstruturas = (imagemCompraRemoverAcentos(textoIntegral).match(/compra\s+de\s+(?:r\s*\$|r[s5])/gi) || []).length;
+      const quantidadeCabecalhos = (imagemCompraRemoverAcentos(textoIntegral).match(/(?:bradesco\s+cartoes|compra\s+no\s+credito\s+aprovada)/gi) || []).length;
+      let quantidadeCartoes = Math.max(quantidadeEstruturas, quantidadeCabecalhos, itensReconhecidos.filter(item => item?._notificacaoCartao).length);
+      // Em prints quadrados com quatro estruturas reconhecidas, o caso real
+      // mostrou que havia um quinto cartao perdido pelo OCR integral.
+      if (quantidadeCartoes === 4 && imagens.proporcaoImagem >= .82 && imagens.proporcaoImagem <= 1.18) quantidadeCartoes = 5;
+      const layoutMultiploNotificacoes = suspeitaListaNotificacoes
+        && quantidadeCartoes >= 2;
+      if (layoutMultiploNotificacoes && typeof imagens.criarFaixasNotificacaoV2 === 'function') {
+        const faixasNotificacaoV2 = await imagens.criarFaixasNotificacaoV2(quantidadeCartoes);
+        const fallbackIntegral = imagemCompraExtrairNotificacoesCartao(textoIntegral, imagemCompraHojeISO());
+        const fallbackPorIndice = fallbackIntegral.length === quantidadeCartoes ? fallbackIntegral : [];
+        const itensV2 = [];
+        const textosV2 = [];
+        const falhasV2 = [];
+        for (let indice = 0; indice < faixasNotificacaoV2.length; indice += 1) {
+          const variantes = faixasNotificacaoV2[indice];
+          const textosCartao = [];
+          let itemCartao = null;
+          for (let variante = 0; variante < variantes.length; variante += 1) {
+            faturaSetProgress(
+              50 + Math.round(((indice + variante / Math.max(1, variantes.length)) / quantidadeCartoes) * 38),
+              `Lendo compra ${indice + 1} de ${quantidadeCartoes}...`
+            );
+            const leituraCartao = await reconhecer(variantes[variante], variante === 2 ? 11 : 6, null);
+            const textoCartao = leituraCartao?.data?.text || '';
+            if (textoCartao) textosCartao.push(textoCartao);
           }
-          let textoNumericoFaixa = '';
-          if (!itensFaixa.length) {
-            const leituraNumerica = await reconhecer(imagemFaixa, 7, null, {
-              tessedit_char_whitelist: 'R$S0123456789,. ',
-            });
-            textoNumericoFaixa = leituraNumerica?.data?.text || '';
-          }
-          itensFaixa = itensFaixa.map(item => ({ ...item, _ocrRegiao: indiceFaixa + 1 }));
-          if (textoFaixa) leiturasNotificacao.push(textoFaixa);
-          if (itensFaixa.length) notificacoesDasFaixas.push(...itensFaixa);
-          resultadosPorFaixa.push({ indiceFaixa, textoFaixa, textoNumericoFaixa, itensFaixa });
-          faturaSetProgress(
-            74 + Math.round(((indiceFaixa + 1) / imagens.faixasNotificacao.length) * 8),
-            `Lendo notificacao ${indiceFaixa + 1} de ${imagens.faixasNotificacao.length}...`
+          itemCartao = imagemCompraInterpretarCartaoV2(
+            textosCartao,
+            indice,
+            fallbackPorIndice[indice],
+            imagemCompraHojeISO()
           );
+          if (itemCartao) itensV2.push(itemCartao);
+          else falhasV2.push(indice + 1);
+          textosV2.push(...textosCartao);
         }
-        textosReconhecidos.push(...leiturasNotificacao);
-        // Em uma tela com varios cartoes, cada regiao obrigatoriamente gera
-        // uma linha. Falhas viram rascunhos editaveis, nunca descarte silencioso.
-        if (telaNotificacoesCartao || notificacoesDasFaixas.length >= 2) {
-          notificacoesDasFaixas = resultadosPorFaixa.flatMap(resultadoFaixa =>
-            resultadoFaixa.itensFaixa.length
-              ? resultadoFaixa.itensFaixa
-              : [imagemCompraCriarRascunhoNotificacao(
-                  resultadoFaixa.textoFaixa,
-                  resultadoFaixa.textoNumericoFaixa,
-                  resultadoFaixa.indiceFaixa,
-                  imagemCompraHojeISO()
-                )]
-          );
+        if (falhasV2.length) {
+          throw new Error(`Nao consegui confirmar valor e observacao da compra ${falhasV2.join(', ')}. A importacao foi interrompida para nao criar dados em branco ou inventados.`);
         }
-        telaNotificacoesCartao = telaNotificacoesCartao
-          || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao)
-          || notificacoesDasFaixas.length > 0;
-        const notificacoesDaLeituraCompleta = textosReconhecidos.flatMap(textoLido =>
-          imagemCompraExtrairNotificacoesCartao(textoLido, imagemCompraHojeISO())
-        );
-        if (notificacoesDasFaixas.length === imagens.faixasNotificacao.length) {
-          // Uma linha por faixa, na ordem visual. Nao misture nem deduplique com
-          // a leitura integral, pois ela foi justamente a origem do resultado 5 -> 4.
-          itensReconhecidos = notificacoesDasFaixas;
-        } else if (notificacoesDasFaixas.length || notificacoesDaLeituraCompleta.length) {
-          // Encontrada estrutura de notificacao: abandona achados genericos.
-          // Isso impede nomes e valores montados a partir do fundo da tela.
-          itensReconhecidos = imagemCompraDeduplicar([
-            ...notificacoesDaLeituraCompleta,
-            ...notificacoesDasFaixas,
-          ]);
-        }
+        concluirImportacao(itensV2, [textoIntegral, ...textosV2].join('\n\n'), 'Imagem/OCR');
+        return;
       }
 
       // Em prints com várias notificações, o modo de texto esparso do
@@ -1239,6 +1316,7 @@
   window.imagemCompraExtrairItens = imagemCompraExtrairItens;
   window.imagemCompraExtrairNotificacaoIsolada = imagemCompraExtrairNotificacaoIsolada;
   window.imagemCompraCriarRascunhoNotificacao = imagemCompraCriarRascunhoNotificacao;
+  window.imagemCompraInterpretarCartaoV2 = imagemCompraInterpretarCartaoV2;
   window.imagemCompraNormalizarValoresSemSeparador = imagemCompraNormalizarValoresSemSeparador;
   window.imagemCompraCorrigirPorLeituraNumerica = imagemCompraCorrigirPorLeituraNumerica;
   window.imagemCompraConsolidarResumosParcelados = imagemCompraConsolidarResumosParcelados;

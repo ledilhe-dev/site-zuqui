@@ -15,11 +15,11 @@ try {
     .bank{font-size:16px;font-weight:700;line-height:1.05}.time{position:absolute;right:31px;top:5px;font-size:14px;color:#e5ded9}
     .msg{font-size:16px;line-height:1.2;margin-top:2px;letter-spacing:0}
   </style></head><body><main id="shot">
-    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">11:36</div><div class="msg">Compra de R$ 56,74 APROVADA em<br>SUPERMERCADOS K, no Cartão final 1018.</div></section>
-    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">08:11</div><div class="msg">Compra de R$ 124,42 APROVADA em<br>SUPERMERCADOS K, no Cartão final 1018.</div></section>
-    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">Ontem, 21:26</div><div class="msg">Compra de R$ 1.072,24 APROVADA em<br>AURORA ALIME*AU, no Cartão final 6546.</div></section>
-    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">seg., 11:17</div><div class="msg">Compra de R$ 24,00 APROVADA em CHAVEIRO<br>CARLIN, no Cartão final 1018.</div></section>
-    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">seg., 10:20</div><div class="msg">Compra de R$ 130,00 APROVADA em J&nbsp; D&nbsp; S<br>COMERCIO, no Cartão final 1018.</div></section>
+    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">há 43m</div><div class="msg">Compra de R$ 38,31 APROVADA em<br>SUPERMERCADOS K, no Cartão final 1018.</div></section>
+    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">10:54</div><div class="msg">Compra de R$ 917,46 APROVADA em<br>KOMPRAO KOCH AT, no Cartão final 1018.</div></section>
+    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">10:49</div><div class="msg">Compra de R$ 586,83 APROVADA em<br>KOMPRAO KOCH AT, no Cartão final 1018.</div></section>
+    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">Ontem, 11:36</div><div class="msg">Compra de R$ 56,74 APROVADA em<br>SUPERMERCADOS K, no Cartão final 1018.</div></section>
+    <section class="card"><i class="icon"></i><div class="bank">BRADESCO CARTÕES</div><div class="time">Ontem, 08:11</div><div class="msg">Compra de R$ 124,42 APROVADA em<br>SUPERMERCADOS K, no Cartão final 1018.</div></section>
   </main></body></html>`);
   await page.addScriptTag({ url: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js' });
   await page.evaluate(code => {
@@ -30,37 +30,58 @@ try {
   const imagemBase64 = (await page.locator('#shot').screenshot({ type: 'png' })).toString('base64');
   const resultado = await page.evaluate(async base64 => {
     const bytes = Uint8Array.from(atob(base64), caractere => caractere.charCodeAt(0));
-    const bitmapOriginal = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
-    // Mesmo pre-processamento do importador: imagens pequenas sao ampliadas 2x.
-    const preparado = document.createElement('canvas');
-    preparado.width = 960;
-    preparado.height = 912;
-    preparado.getContext('2d').drawImage(bitmapOriginal, 0, 0, preparado.width, preparado.height);
-    const bitmap = await createImageBitmap(preparado);
+    const arquivo = new File([bytes], 'notificacoes.png', { type: 'image/png' });
+    const preparado = await window.imagemCompraPrepararArquivo(arquivo);
+    const faixas = await preparado.criarFaixasNotificacaoV2(5);
     const worker = await Tesseract.createWorker('por+eng');
     const textos = [];
-    for (const inicio of [0, .18, .38, .58, .78]) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 960;
-      canvas.height = Math.round(Math.min(912 * .22, 912 * (1 - inicio)));
-      canvas.getContext('2d').drawImage(bitmap, 0, Math.round(912 * inicio), 960, canvas.height, 0, 0, 960, canvas.height);
-      const leitura = await worker.recognize(canvas, { tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
-      textos.push(leitura.data.text || '');
+    const itens = [];
+    for (let indice = 0; indice < faixas.length; indice += 1) {
+      const textosCartao = [];
+      let item = null;
+      for (const variante of faixas[indice]) {
+        const leitura = await worker.recognize(variante, { tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+        textosCartao.push(leitura.data.text || '');
+        item = window.imagemCompraInterpretarCartaoV2(textosCartao, indice, null, '2026-10-29');
+        // Le todas as variantes para validar a reconciliacao de valores.
+      }
+      textos.push(textosCartao.join('\n'));
+      if (item) itens.push({ valor: item.valor, descricao: item.descricao, observacao: item._obsManual, banco: item._bancoImagem });
     }
     await worker.terminate();
-    // Reproduz a falha observada no celular: nos valores curtos o Tesseract
-    // pode preservar os digitos e perder somente o marcador monetario.
-    const textosComMoedaPerdida = textos.map(texto => texto
-      .replace(/R\s*\$\s*(?=56,74)/gi, '')
-      .replace(/R\s*\$\s*(?=24,00)/gi, '')
-    );
-    const itens = textosComMoedaPerdida.flatMap(texto => window.imagemCompraExtrairNotificacaoIsolada(texto));
-    return { textos, itens: itens.map(({ valor, descricao }) => ({ valor, descricao })) };
+    return { textos, itens };
   }, imagemBase64);
 
   assert.equal(resultado.itens.length, 5, `OCR real deveria achar 5 contas. Texto:\n${resultado.textos.join('\n---\n')}`);
-  assert.deepEqual(resultado.itens.map(item => item.valor), [56.74, 124.42, 1072.24, 24, 130]);
-  assert.deepEqual(resultado.itens.map(item => item.descricao), ['SUPERMERCADOS K', 'SUPERMERCADOS K', 'AURORA ALIME*AU', 'CHAVEIRO CARLIN', 'J D S COMERCIO']);
+  assert.deepEqual(resultado.itens.map(item => item.valor), [38.31, 917.46, 586.83, 56.74, 124.42]);
+  assert.deepEqual(resultado.itens.map(item => item.descricao), ['SUPERMERCADOS K', 'KOMPRAO KOCH AT', 'KOMPRAO KOCH AT', 'SUPERMERCADOS K', 'SUPERMERCADOS K']);
+  assert.deepEqual(resultado.itens.map(item => item.observacao), resultado.itens.map(item => item.descricao));
+  assert.ok(resultado.itens.every(item => /bradesco/i.test(item.banco)), 'fornecedor/banco deve ser Bradesco');
+
+  await page.locator('#shot').evaluate(elemento => {
+    elemento.innerHTML = `<section class="card"><i class="icon" style="background:#7200d9"></i><div class="bank">Compra no crédito aprovada</div><div class="time">Ontem, 18:58</div><div class="msg">Compra de R$ 53,90 APROVADA em Google<br>YouTubePremium para o cartão com final 1842.</div></section>`;
+  });
+  const nubankBase64 = (await page.locator('#shot').screenshot({ type: 'png' })).toString('base64');
+  const nubank = await page.evaluate(async base64 => {
+    const bytes = Uint8Array.from(atob(base64), caractere => caractere.charCodeAt(0));
+    const preparado = await window.imagemCompraPrepararArquivo(new File([bytes], 'nubank.png', { type: 'image/png' }));
+    const [faixa] = await preparado.criarFaixasNotificacaoV2(1);
+    const worker = await Tesseract.createWorker('por+eng');
+    const textos = [];
+    for (const variante of faixa) {
+      const leitura = await worker.recognize(variante, { tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+      textos.push(leitura.data.text || '');
+    }
+    await worker.terminate();
+    const item = window.imagemCompraInterpretarCartaoV2(textos, 0, null, '2026-10-29');
+    return item ? { valor: item.valor, descricao: item.descricao, observacao: item._obsManual, banco: item._bancoImagem } : null;
+  }, nubankBase64);
+  assert.deepEqual(nubank, {
+    valor: 53.90,
+    descricao: 'Google YouTubePremium',
+    observacao: 'Google YouTubePremium',
+    banco: 'Nubank',
+  });
   console.log('ocr-real-image-regression: 5 contas reconhecidas corretamente');
 } finally {
   await browser.close();
