@@ -125,7 +125,12 @@
   function imagemCompraNormalizarEstabelecimentoNotificacao(desc) {
     // Não completa, traduz ou adivinha o estabelecimento. Apenas remove as
     // partes estruturais da própria notificação; o texto restante vem da foto.
-    return imagemCompraLimparDescricao(desc);
+    return imagemCompraLimparDescricao(String(desc || '')
+      // O OCR frequentemente cola o marcador: "APROVADAem LOJA". Ele nao
+      // pertence ao fornecedor e pode ser removido sem inferir nenhuma letra
+      // do nome que vem depois.
+      .replace(/^\s*APRO[A-Z0-9]{2,12}?(?:em|e[mn])\s*/i, '')
+    );
   }
 
   function imagemCompraEhTelaNotificacoesCartao(texto) {
@@ -1023,18 +1028,42 @@
       // A leitura integral pode quebrar uma linha de notificação ou fundir
       // cartões vizinhos. As bandas curtas preservam a relação espacial entre
       // R$, valor, estabelecimento e final do cartão.
-      if ((telaNotificacoesCartao || !itensReconhecidos.length) && imagens.faixasNotificacao?.length) {
+      // Toda imagem passa pelas regioes sobrepostas. Nao dependa da primeira
+      // leitura reconhecer o nome do banco: no caso real ela encontrou duas
+      // compras, perdeu "BRADESCO CARTOES" e impediu a busca das outras tres.
+      if (imagens.faixasNotificacao?.length) {
         faturaSetProgress(74, 'Lendo cada notificacao separadamente...');
-        const leiturasNotificacao = (await Promise.all(
-          imagens.faixasNotificacao.map(faixaNotificacao => reconhecer(faixaNotificacao, 6, null))
-        )).map(leitura => leitura?.data?.text || '').filter(Boolean);
+        const leiturasNotificacao = [];
+        for (let indiceFaixa = 0; indiceFaixa < imagens.faixasNotificacao.length; indiceFaixa += 1) {
+          // No iPhone, cinco workers simultaneos podem competir por memoria e
+          // devolver somente as primeiras regioes. A leitura sequencial e mais
+          // previsivel e mantem valor + estabelecimento no mesmo recorte.
+          const leitura = await reconhecer(imagens.faixasNotificacao[indiceFaixa], 6, null);
+          const textoFaixa = leitura?.data?.text || '';
+          if (textoFaixa) leiturasNotificacao.push(textoFaixa);
+          faturaSetProgress(
+            74 + Math.round(((indiceFaixa + 1) / imagens.faixasNotificacao.length) * 8),
+            `Lendo notificacao ${indiceFaixa + 1} de ${imagens.faixasNotificacao.length}...`
+          );
+        }
         textosReconhecidos.push(...leiturasNotificacao);
+        const notificacoesDasFaixas = leiturasNotificacao.flatMap(textoFaixa =>
+          imagemCompraExtrairNotificacoesCartao(textoFaixa, imagemCompraHojeISO())
+        );
         telaNotificacoesCartao = telaNotificacoesCartao
-          || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao);
-        itensReconhecidos = imagemCompraConsolidarResumosParcelados([
-          ...itensReconhecidos,
-          ...leiturasNotificacao.flatMap(textoFaixa => imagemCompraExtrairNotificacoesCartao(textoFaixa, imagemCompraHojeISO())),
-        ]);
+          || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao)
+          || notificacoesDasFaixas.length > 0;
+        const notificacoesDaLeituraCompleta = textosReconhecidos.flatMap(textoLido =>
+          imagemCompraExtrairNotificacoesCartao(textoLido, imagemCompraHojeISO())
+        );
+        if (notificacoesDasFaixas.length || notificacoesDaLeituraCompleta.length) {
+          // Encontrada estrutura de notificacao: abandona achados genericos.
+          // Isso impede nomes e valores montados a partir do fundo da tela.
+          itensReconhecidos = imagemCompraDeduplicar([
+            ...notificacoesDaLeituraCompleta,
+            ...notificacoesDasFaixas,
+          ]);
+        }
       }
 
       // Em prints com várias notificações, o modo de texto esparso do

@@ -74,13 +74,29 @@ Compra de R$ 130,00 APROVADA em J D S COMERCIO, no Cartão final 1018.`;
   assert.deepEqual(descricoes, ['SUPERMERCADOS K', 'AURORA ALIME*AU', 'CHAVEIRO CARLIN', 'J D S COMERCIO']);
 });
 
+test('compra parcelada mantem total, quantidade e valor de cada parcela', () => {
+  const texto = `BRADESCO CARTÕES
+Compra no valor de R$ 3.000,00 em 10x LOJA TESTE hoje`;
+  const [item] = context.window.imagemCompraExtrairItens(texto);
+  assert.ok(item);
+  assert.equal(item.descricao, 'LOJA TESTE');
+  assert.equal(item.valorTotalCompra, 3000);
+  assert.equal(item.quantidadeParcelas, 10);
+  assert.equal(item._parcelasManuais, 10);
+  assert.equal(item.valorParcela, 300);
+  assert.equal(item._modoValorParcelas, 'total');
+});
+
 test('telas de notificação sempre relêem as faixas e usam somente o parser estruturado', () => {
   assert.match(source, /faixasNotificacao/);
   assert.match(source, /Lendo cada notificacao separadamente/);
   assert.match(source, /if \(!telaNotificacoesCartao\)/);
   assert.match(source, /telaNotificacoesCartao && itensReconhecidos\.length < 5/);
   assert.match(source, /telaNotificacoesCartao \? imagens\.principal : imagens\.alternativas\[0\]/);
-  assert.match(source, /if \(\(telaNotificacoesCartao \|\| !itensReconhecidos\.length\) && imagens\.faixasNotificacao/);
+  assert.match(source, /if \(imagens\.faixasNotificacao\?\.length\)/);
+  assert.match(source, /for \(let indiceFaixa = 0; indiceFaixa < imagens\.faixasNotificacao\.length/);
+  assert.doesNotMatch(source, /Promise\.all\(\s*imagens\.faixasNotificacao\.map/);
+  assert.match(source, /itensReconhecidos = imagemCompraDeduplicar/);
   assert.match(source, /imagemCompraExtrairNotificacoesCartao\(item\.textoCartao/);
   assert.match(source, /const genericos = telaNotificacoes \? \[\] : imagemCompraExtrairGenerico/);
 });
