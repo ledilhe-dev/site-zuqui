@@ -87,6 +87,17 @@ Compra no valor de R$ 3.000,00 em 10x LOJA TESTE hoje`;
   assert.equal(item._modoValorParcelas, 'total');
 });
 
+test('cartao isolado preserva compras curtas quando o OCR perde o simbolo R$', () => {
+  const primeira = context.window.imagemCompraExtrairNotificacaoIsolada(
+    'BRADESCO CARTOES Compra de 56,74 APROVADA em SUPERMERCADOS K, no Cartao final 1018.'
+  );
+  const quarta = context.window.imagemCompraExtrairNotificacaoIsolada(
+    'BRADESCO CARTOES Compra de 24,00 APROVADA em CHAVEIRO CARLIN, no Cartao final 1018.'
+  );
+  assert.deepEqual(Array.from([...primeira, ...quarta], item => item.valor), [56.74, 24]);
+  assert.deepEqual(Array.from([...primeira, ...quarta], item => item.descricao), ['SUPERMERCADOS K', 'CHAVEIRO CARLIN']);
+});
+
 test('telas de notificação sempre relêem as faixas e usam somente o parser estruturado', () => {
   assert.match(source, /faixasNotificacao/);
   assert.match(source, /Lendo cada notificacao separadamente/);

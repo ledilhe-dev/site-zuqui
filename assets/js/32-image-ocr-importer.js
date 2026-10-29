@@ -420,7 +420,11 @@
   function imagemCompraExtrairNotificacaoIsolada(texto, dataPadrao) {
     const compacto = imagemCompraNormalizarTexto(texto).replace(/\n+/g, ' ');
     const banco = imagemCompraDetectarBanco(compacto);
-    const marcadores = [...compacto.matchAll(/(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})/gi)];
+    const temEstruturaCompra = /(?:compr[a4]|apro)/i.test(compacto);
+    const regexValorIsolado = temEstruturaCompra
+      ? /(?:(?:R\s*\$|R\s*[S5])\s*)?([\d.]+[,.]\d{2})/gi
+      : /(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})/gi;
+    const marcadores = [...compacto.matchAll(regexValorIsolado)];
     const candidatos = marcadores.map((marcador, indice) => {
       const inicio = marcador.index || 0;
       const fim = marcadores[indice + 1]?.index ?? compacto.length;
@@ -441,7 +445,10 @@
       else miolo = miolo
         .replace(/^\s*APRO[A-Z0-9]{2,18}\s*/i, '')
         .replace(/^\s*e\s+["'@~|*\-]*\s*/i, '');
-      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(miolo);
+      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(miolo)
+        .replace(/^[^A-Za-z0-9À-ÿ]*/g, '')
+        .replace(/^[A-Za-zÀ-ÿ]\s*[^A-Za-z0-9À-ÿ]+\s*(?=[A-Za-zÀ-ÿ]{3})/, '')
+        .trim();
       if (!descricao || !/[A-Za-zÀ-ÿ]{2}/.test(descricao)) return null;
       const data = imagemCompraParseData(compacto, dataPadrao);
       return {
@@ -1056,22 +1063,31 @@
       if (imagens.faixasNotificacao?.length) {
         faturaSetProgress(74, 'Lendo cada notificacao separadamente...');
         const leiturasNotificacao = [];
+        const notificacoesDasFaixas = [];
         for (let indiceFaixa = 0; indiceFaixa < imagens.faixasNotificacao.length; indiceFaixa += 1) {
           // No iPhone, cinco workers simultaneos podem competir por memoria e
           // devolver somente as primeiras regioes. A leitura sequencial e mais
           // previsivel e mantem valor + estabelecimento no mesmo recorte.
-          const leitura = await reconhecer(imagens.faixasNotificacao[indiceFaixa], 6, null);
-          const textoFaixa = leitura?.data?.text || '';
+          const imagemFaixa = imagens.faixasNotificacao[indiceFaixa];
+          const leitura = await reconhecer(imagemFaixa, 6, null);
+          let textoFaixa = leitura?.data?.text || '';
+          let itensFaixa = imagemCompraExtrairNotificacaoIsolada(textoFaixa, imagemCompraHojeISO());
+          if (!itensFaixa.length) {
+            // Segunda estrategia somente para o cartao que falhou. O modo 11
+            // recupera valores curtos como 56,74 e 24,00 que o modo 6 omite.
+            const releitura = await reconhecer(imagemFaixa, 11, null);
+            const textoReleitura = releitura?.data?.text || '';
+            if (textoReleitura) textoFaixa = `${textoFaixa}\n${textoReleitura}`;
+            itensFaixa = imagemCompraExtrairNotificacaoIsolada(textoReleitura, imagemCompraHojeISO());
+          }
           if (textoFaixa) leiturasNotificacao.push(textoFaixa);
+          if (itensFaixa.length) notificacoesDasFaixas.push(...itensFaixa);
           faturaSetProgress(
             74 + Math.round(((indiceFaixa + 1) / imagens.faixasNotificacao.length) * 8),
             `Lendo notificacao ${indiceFaixa + 1} de ${imagens.faixasNotificacao.length}...`
           );
         }
         textosReconhecidos.push(...leiturasNotificacao);
-        const notificacoesDasFaixas = leiturasNotificacao.flatMap(textoFaixa =>
-          imagemCompraExtrairNotificacaoIsolada(textoFaixa, imagemCompraHojeISO())
-        );
         telaNotificacoesCartao = telaNotificacoesCartao
           || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao)
           || notificacoesDasFaixas.length > 0;

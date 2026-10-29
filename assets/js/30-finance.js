@@ -3590,9 +3590,14 @@ async function faturaExibirRevisao(resultado) {
         }))
         .filter(candidato => candidato.confianca >= .72)
         .sort((a, b) => b.confianca - a.confianca)[0]?.categoriaId;
-      const catMem = (sugestaoHistorico?.confianca >= .62 ? sugestaoHistorico.categoria_id : null)
-        || _faturaMemoriaCategorias[chave]
-        || categoriaSimilar;
+      // Em OCR, somente uma chave exata pode preencher categoria. A
+      // similaridade aproximada associou SUPERMERCADOS K a uma categoria de
+      // carnes sem qualquer evidencia no texto reconhecido.
+      const catMem = item._origemImagem
+        ? _faturaMemoriaCategorias[chave]
+        : ((sugestaoHistorico?.confianca >= .62 ? sugestaoHistorico.categoria_id : null)
+          || _faturaMemoriaCategorias[chave]
+          || categoriaSimilar);
       if (catMem) { item.categoria_id = catMem; item._catAuto = true; qtdCatAuto++; }
     }
     // Vencimento pelo dia configurado no fornecedor (se houver), com base na data da compra.

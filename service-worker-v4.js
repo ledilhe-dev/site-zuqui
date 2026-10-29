@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v285-ocr-cartoes-isolados';
+const CACHE_NAME = 'check-diario-pwa-v286-ocr-recupera-duas-restantes';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

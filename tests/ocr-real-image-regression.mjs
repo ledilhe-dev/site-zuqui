@@ -48,7 +48,13 @@ try {
       textos.push(leitura.data.text || '');
     }
     await worker.terminate();
-    const itens = textos.flatMap(texto => window.imagemCompraExtrairNotificacaoIsolada(texto));
+    // Reproduz a falha observada no celular: nos valores curtos o Tesseract
+    // pode preservar os digitos e perder somente o marcador monetario.
+    const textosComMoedaPerdida = textos.map(texto => texto
+      .replace(/R\s*\$\s*(?=56,74)/gi, '')
+      .replace(/R\s*\$\s*(?=24,00)/gi, '')
+    );
+    const itens = textosComMoedaPerdida.flatMap(texto => window.imagemCompraExtrairNotificacaoIsolada(texto));
     return { textos, itens: itens.map(({ valor, descricao }) => ({ valor, descricao })) };
   }, imagemBase64);
 
