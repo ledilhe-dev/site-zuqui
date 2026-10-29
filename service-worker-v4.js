@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v276-ocr-e-telegram-financeiro';
+const CACHE_NAME = 'check-diario-pwa-v277-ocr-sem-inferencia';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -123,15 +123,9 @@
   }
 
   function imagemCompraNormalizarEstabelecimentoNotificacao(desc) {
-    const limpo = imagemCompraLimparDescricao(desc);
-    const normalizado = imagemCompraRemoverAcentos(limpo).toLowerCase();
-    // Nomes muito conhecidos nas notificações podem vir quebrados entre
-    // linhas ou contaminados por "APROVADA em". Mantemos somente o comércio.
-    if (/supermercad\w*\s*(?:k|koch)\b/.test(normalizado)) return 'SUPERMERCADOS KOCH';
-    if (/\baurora\b/.test(normalizado)) return 'AURORA';
-    if (/\bchaveiro\b/.test(normalizado) && /\bcarlin\b/.test(normalizado)) return 'CHAVEIRO CARLIN';
-    if (/\bj\s*d\s*s\b/.test(normalizado) && /\bcomerc/.test(normalizado)) return 'J D S COMERCIO';
-    return limpo;
+    // Não completa, traduz ou adivinha o estabelecimento. Apenas remove as
+    // partes estruturais da própria notificação; o texto restante vem da foto.
+    return imagemCompraLimparDescricao(desc);
   }
 
   function imagemCompraEhTelaNotificacoesCartao(texto) {
@@ -353,7 +347,7 @@
         _modoValorParcelas: 'total',
       });
     }
-    const regex = /Compra\s+de\s+(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+(?:APROVAD[AO]\s+)?(?:em\s+)?(.+?)(?=\s+(?:para\s+(?:o\s+)?cart[aã]o|no\s+cart[aã]o|Compra\s+no\s+cr[eé]dito|Compra\s+de\s+(?:R\s*\$|R\s*[S5])|hoje\b|ontem\b)|$)/gi;
+    const regex = /Compra\s+de\s+(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+APROVAD[AO]\s+em\s+(.+?)\s*,?\s+no\s+cart[aã]o\s+final\s+\d{3,6}\b/gi;
     let m;
     while ((m = regex.exec(compacto)) !== null) {
       const valor = imagemCompraParseValor(m[1]);
@@ -593,7 +587,7 @@
     // cartão, bateria, horário ou do fundo podem ganhar uma vírgula falsa no
     // OCR. Nessa origem aceitamos somente a estrutura explícita da compra.
     const telaNotificacoes = imagemCompraEhTelaNotificacoesCartao(texto);
-    const genericos = imagemCompraExtrairGenerico(texto, dataPadrao, telaNotificacoes);
+    const genericos = telaNotificacoes ? [] : imagemCompraExtrairGenerico(texto, dataPadrao);
     const valoresAncorados = new Set(
       [...notificacoes, ...carteira].map(item => Math.round(Number(item.valor || 0) * 100))
     );
@@ -609,18 +603,7 @@
     // "Compra de". Antes, a existência do primeiro bloco específico fazia o
     // parser descartar todos os achados genéricos — exatamente o caso de dois
     // avisos no mesmo print. Agora as fontes são sempre combinadas.
-    const consolidados = imagemCompraConsolidarResumosParcelados([...resumosParcelados, ...notificacoes, ...carteira, ...genericosNovos]);
-    if (!telaNotificacoes) return consolidados;
-    const existeKochConfiavel = consolidados.some(item => imagemCompraNormalizarEstabelecimentoNotificacao(item.descricao) === 'SUPERMERCADOS KOCH');
-    return consolidados.map(item => {
-      const descricaoNormalizada = imagemCompraNormalizarEstabelecimentoNotificacao(item.descricao);
-      const textoDescricao = imagemCompraRemoverAcentos(item.descricao || '').toLowerCase();
-      const descricaoSuspeitaKoch = existeKochConfiavel
-        && /(?:^|\s)k(?:$|\s)/.test(textoDescricao)
-        && /\b(?:apro|aprov|ma|os)\b/.test(textoDescricao);
-      const descricao = descricaoSuspeitaKoch ? 'SUPERMERCADOS KOCH' : descricaoNormalizada;
-      return { ...item, descricao, _obsManual: descricao };
-    });
+    return imagemCompraConsolidarResumosParcelados([...resumosParcelados, ...notificacoes, ...carteira, ...genericosNovos]);
   }
 
   async function imagemCompraCarregarTesseract() {
@@ -952,6 +935,7 @@
       });
       let textosReconhecidos = [resultado?.data?.text || ''];
       let itensReconhecidos = imagemCompraExtrairItens(textosReconhecidos[0]);
+      const telaNotificacoesCartao = imagemCompraEhTelaNotificacoesCartao(textosReconhecidos[0]);
       const confiancaPrincipal = Number(resultado?.data?.confidence || 0);
 
       // Fotos de papel, telas com tema escuro e cupons desbotados respondem de
@@ -971,7 +955,7 @@
       // Tesseract pode enxergar apenas o primeiro cartão. Se isso ocorrer,
       // relê duas faixas sobrepostas em modo de bloco e une compras realmente
       // distintas (mesmo fornecedor/data continuam válidas se o valor mudar).
-      if (itensReconhecidos.length < 2 && imagens.faixas?.length) {
+      if ((telaNotificacoesCartao || itensReconhecidos.length < 2) && imagens.faixas?.length) {
         faturaSetProgress(76, 'Procurando outros lançamentos na imagem...');
         const resultadosFaixas = [];
         for (const faixa of imagens.faixas) {
@@ -985,6 +969,7 @@
             ? await reconhecer(faixa.descricao, 7, null)
             : null;
           resultadosFaixas.push({
+            textoCartao: resultadoCartao?.data?.text || '',
             texto: [
               resultadoCartao?.data?.text || '',
               resultadoDescricao?.data?.text || '',
@@ -996,9 +981,14 @@
           ...textosReconhecidos,
           ...resultadosFaixas.map(item => item.texto || ''),
         ];
-        itensReconhecidos = imagemCompraConsolidarResumosParcelados(
-          textosReconhecidos.flatMap(textoFaixa => imagemCompraExtrairItens(textoFaixa))
-        );
+        itensReconhecidos = telaNotificacoesCartao
+          ? imagemCompraConsolidarResumosParcelados([
+              ...itensReconhecidos,
+              ...resultadosFaixas.flatMap(item => imagemCompraExtrairNotificacoesCartao(item.textoCartao || '', imagemCompraHojeISO())),
+            ])
+          : imagemCompraConsolidarResumosParcelados(
+              textosReconhecidos.flatMap(textoFaixa => imagemCompraExtrairItens(textoFaixa))
+            );
       }
       // Uma leitura somente numérica é indispensável em notificações grandes:
       // no modo textual o Tesseract pode ignorar o primeiro algarismo de
