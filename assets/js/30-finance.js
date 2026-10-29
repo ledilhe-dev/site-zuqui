@@ -3618,7 +3618,9 @@ async function faturaExibirRevisao(resultado) {
     if (!item._modoValorParcelas) item._modoValorParcelas = 'total';
     // Obs edit?vel: pr?-preenchida com o nome da compra (memo limpo do OFX).
     if (item._obsManual == null) item._obsManual = String(item.descricao || '').trim();
-    if (sugestaoHistorico?.observacao && sugestaoHistorico.confianca >= .68) {
+    // Em imagem, preserve exatamente o estabelecimento reconhecido. O
+    // historico nao deve trocar a observacao e aparentar uma invencao do OCR.
+    if (!item._origemImagem && sugestaoHistorico?.observacao && sugestaoHistorico.confianca >= .68) {
       const observacaoSugerida = String(sugestaoHistorico.observacao).trim().slice(0, 200);
       if (observacaoSugerida && observacaoSugerida !== item._obsManual) {
         item._obsManual = observacaoSugerida;

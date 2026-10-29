@@ -173,9 +173,10 @@
       const indiceRepetido = unicos.findIndex(existente => {
         if (String(existente.data || '').slice(0, 10) !== data
           || Math.round(Number(existente.valor || 0) * 100) !== centavos) return false;
-        return similares(normalizarEstabelecimento(existente.descricao), estabelecimento)
-          || descricaoFraca(existente.descricao)
-          || descricaoFraca(item.descricao);
+        // Duas compras reais podem ter o mesmo valor no mesmo dia. Uma
+        // descricao fraca nao e prova de duplicidade; so una estabelecimentos
+        // que efetivamente correspondem.
+        return similares(normalizarEstabelecimento(existente.descricao), estabelecimento);
       });
       if (indiceRepetido < 0) {
         unicos.push(item);
@@ -325,6 +326,15 @@
     return bancos.find(([, regex]) => regex.test(normalizado))?.[0] || null;
   }
 
+  function imagemCompraContextoCabecalhoNotificacao(compacto, indice, limite = 120) {
+    const prefixo = String(compacto || '').slice(0, Math.max(0, indice));
+    const cabecalhos = [...prefixo.matchAll(/\b(?:bradesco|nubank|nu\s*bank|itau(?:card)?|santander|banco\s+inter|c6\s*bank|banco\s+do\s+brasil)(?:\s+cartoes?)?\b/gi)];
+    const inicio = cabecalhos.length
+      ? cabecalhos[cabecalhos.length - 1].index
+      : Math.max(0, prefixo.length - limite);
+    return prefixo.slice(inicio);
+  }
+
   function imagemCompraExtrairNotificacoesCartao(texto, dataPadrao) {
     const itens = [];
     const compacto = imagemCompraNormalizarTexto(texto).replace(/\n+/g, ' ');
@@ -335,7 +345,7 @@
       const quantidadeParcelas = Math.max(1, Number.parseInt(notificacaoValor[2], 10) || 1);
       const descricao = imagemCompraLimparDescricao(notificacaoValor[3]);
       if (!valor || !descricao) continue;
-      const contextoData = compacto.slice(Math.max(0, notificacaoValor.index - 240), notificacaoValor.index);
+      const contextoData = imagemCompraContextoCabecalhoNotificacao(compacto, notificacaoValor.index);
       itens.push({
         data: imagemCompraParseData(contextoData, dataPadrao), descricao, valor,
         valorTotalCompra: valor, quantidadeParcelas,
@@ -360,7 +370,7 @@
       const quantidadeParcelas = imagemCompraParseParcelas(m[2]);
       const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(String(m[2]).replace(/^\s*0*\d{1,2}\s*[xX]\s*(?:em\s+)?/i, ''));
       if (!valor || !descricao) continue;
-      const contextoData = compacto.slice(Math.max(0, m.index - 220), m.index);
+      const contextoData = imagemCompraContextoCabecalhoNotificacao(compacto, m.index);
       const banco = imagemCompraDetectarBanco(contextoData);
       itens.push({
         data: imagemCompraParseData(contextoData, dataPadrao),
@@ -396,7 +406,7 @@
       const trechoDepoisDeEm = bloco.match(/\b(?:em|e[mn])\b\s+(.+)$/i)?.[1];
       const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(trechoDepoisDeEm || bloco);
       if (!valor || !descricao) continue;
-      const contextoData = compacto.slice(Math.max(0, estrutura.index - 220), estrutura.index);
+      const contextoData = imagemCompraContextoCabecalhoNotificacao(compacto, estrutura.index);
       itens.push({
         data: imagemCompraParseData(contextoData, dataPadrao),
         descricao,
@@ -1013,7 +1023,7 @@
       // A leitura integral pode quebrar uma linha de notificação ou fundir
       // cartões vizinhos. As bandas curtas preservam a relação espacial entre
       // R$, valor, estabelecimento e final do cartão.
-      if (!itensReconhecidos.length && imagens.faixasNotificacao?.length) {
+      if ((telaNotificacoesCartao || !itensReconhecidos.length) && imagens.faixasNotificacao?.length) {
         faturaSetProgress(74, 'Lendo cada notificacao separadamente...');
         const leiturasNotificacao = (await Promise.all(
           imagens.faixasNotificacao.map(faixaNotificacao => reconhecer(faixaNotificacao, 6, null))
