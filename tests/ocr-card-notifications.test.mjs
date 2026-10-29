@@ -78,6 +78,8 @@ test('telas de notificação sempre relêem as faixas e usam somente o parser es
   assert.match(source, /faixasNotificacao/);
   assert.match(source, /Lendo cada notificacao separadamente/);
   assert.match(source, /if \(!telaNotificacoesCartao\)/);
+  assert.match(source, /telaNotificacoesCartao && itensReconhecidos\.length < 5/);
+  assert.match(source, /telaNotificacoesCartao \? imagens\.principal : imagens\.alternativas\[0\]/);
   assert.match(source, /if \(!itensReconhecidos\.length && imagens\.faixasNotificacao/);
   assert.match(source, /imagemCompraExtrairNotificacoesCartao\(item\.textoCartao/);
   assert.match(source, /const genericos = telaNotificacoes \? \[\] : imagemCompraExtrairGenerico/);

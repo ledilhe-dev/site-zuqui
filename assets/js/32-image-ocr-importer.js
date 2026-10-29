@@ -992,9 +992,16 @@
       // Fotos de papel, telas com tema escuro e cupons desbotados respondem de
       // formas diferentes ao contraste. So fazemos a segunda leitura quando a
       // primeira parece fraca, evitando dobrar o tempo em imagens boas.
-      if ((confiancaPrincipal < 72 || !itensReconhecidos.length) && imagens.alternativas?.length) {
+      if ((confiancaPrincipal < 72 || !itensReconhecidos.length || (telaNotificacoesCartao && itensReconhecidos.length < 5)) && imagens.alternativas?.length) {
         faturaSetProgress(72, 'Reforcando a leitura de textos pouco nitidos...');
-        const resultadoAlternativo = await reconhecer(imagens.alternativas[0], 6, null);
+        // O modo esparso inicial pode pular notificações inteiras. Uma única
+        // passagem em bloco na imagem cinza recupera as linhas ausentes sem as
+        // cinco releituras demoradas usadas anteriormente.
+        const resultadoAlternativo = await reconhecer(
+          telaNotificacoesCartao ? imagens.principal : imagens.alternativas[0],
+          6,
+          null
+        );
         const textoAlternativo = resultadoAlternativo?.data?.text || '';
         if (textoAlternativo) textosReconhecidos.push(textoAlternativo);
         itensReconhecidos = imagemCompraConsolidarResumosParcelados(

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v280-ocr-notificacao-rapida';
+const CACHE_NAME = 'check-diario-pwa-v281-ocr-segunda-leitura-completa';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

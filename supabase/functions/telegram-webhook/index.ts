@@ -377,9 +377,10 @@ function destinationFlag(tipo: TelegramAlert["tipo"]) {
 }
 
 function buildMessage(alert: TelegramAlert) {
-  if (alert.tipo === "financeiro_vencimento" || alert.tipo === "financeiro_saldo" || alert.tipo === "financeiro_ajuste"
-    || alert.tipo === "financeiro_recebimento"
-    || alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento"
+  if (isFinancialAlert(alert.tipo)) {
+    return normalizeFinancialMessage(alert.descricao);
+  }
+  if (alert.tipo === "produto_cadastrado" || alert.tipo === "produto_vencimento"
     || alert.tipo === "agenda_cadastrada" || alert.tipo === "agenda_dia"
     || alert.tipo === "ponto_entrada") {
     return alert.descricao;
@@ -421,6 +422,19 @@ function buildMessage(alert: TelegramAlert) {
   lines.push(`Fim previsto: ${formatDateTime(alert.fim_previsto || alert.horario_previsto)}`);
   lines.push("Finalização real: não registrada");
   return lines.join("\n");
+}
+
+function normalizeFinancialMessage(value: string) {
+  // Escapes Unicode mantêm o deploy independente da codificação do terminal.
+  // Nenhuma mensagem financeira deve chegar ao Telegram com "??".
+  const money = "\u{1F4B0}";
+  const warning = "\u26A0\uFE0F";
+  return String(value || "")
+    .replace(/^\?{2}\s*SALDO EM CONTAS/im, `${money} SALDO EM CONTAS`)
+    .replace(/^\?{2}\s*CONTAS EM ABERTO(?:\s*\?{2})?/im, `${warning} CONTAS EM ABERTO`)
+    .replace(/^\?{2}\s*FALTA PAGAR/im, `${warning} FALTA PAGAR`)
+    .replace(/Per\?odo/gi, "Per\u00EDodo")
+    .replace(/\?{2,}/g, warning);
 }
 
 function isFinancialAlert(tipo: TelegramAlert["tipo"]) {
