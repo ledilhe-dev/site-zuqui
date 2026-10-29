@@ -2235,6 +2235,51 @@ function fecharModalConfirmarRecFuturo() {
   if (modal) modal.style.display = 'none';
 }
 
+let resolverRecebimentoParcialFinanceiro = null;
+
+function preencherModalRecebimentoParcialFinanceiro({ item, valorRecebido, saldo, concluida = false } = {}) {
+  const overlay = posicionarModalRecebiveisNaViewport(document.getElementById('recebimentoParcialOverlay'));
+  if (!overlay) return false;
+  const pagador = item?.fornecedores?.nome || 'Pagador não informado';
+  const previsao = formatarDataBRFinanceiro(item?.data_prevista);
+  const etapa = document.getElementById('recebimentoParcialEtapa');
+  const titulo = document.getElementById('recebimentoParcialTitulo');
+  const texto = document.getElementById('recebimentoParcialTexto');
+  const resumo = document.getElementById('recebimentoParcialResumo');
+  const observacao = document.getElementById('recebimentoParcialObservacao');
+  const btnNao = document.getElementById('btnRecebimentoParcialNao');
+  const btnSim = document.getElementById('btnRecebimentoParcialSim');
+  if (etapa) etapa.textContent = concluida ? 'Recebimento concluído' : 'Recebimento parcial';
+  if (titulo) titulo.textContent = concluida ? 'Recebimento parcial registrado' : 'Deseja receber parcialmente este título?';
+  if (texto) texto.textContent = concluida
+    ? 'A parte recebida foi baixada e o saldo restante continua pendente no título original.'
+    : 'O valor informado é menor que o saldo atual. Confirme para baixar somente a parte recebida.';
+  if (resumo) resumo.innerHTML = `
+    <div><span>Saldo atual</span><strong>${formatarMoedaBRFinanceiro(item?.valor || 0)}</strong></div>
+    <div><span>Valor recebido</span><strong>${formatarMoedaBRFinanceiro(valorRecebido || 0)}</strong></div>
+    <div><span>Novo saldo</span><strong>${formatarMoedaBRFinanceiro(saldo || 0)}</strong></div>`;
+  if (observacao) observacao.innerHTML = `<strong>${escaparHtmlBasico(pagador)}</strong><br>Vencimento original: ${escaparHtmlBasico(previsao || '-')}<br>O histórico manterá o vínculo, a data, o horário e o valor deste recebimento parcial.`;
+  if (btnNao) btnNao.style.display = concluida ? 'none' : '';
+  if (btnSim) btnSim.textContent = concluida ? 'OK, voltar para recebíveis' : 'Sim, receber parcialmente';
+  overlay.classList.add('show');
+  overlay.style.display = 'flex';
+  return true;
+}
+
+function responderRecebimentoParcialFinanceiro(resposta) {
+  const overlay = document.getElementById('recebimentoParcialOverlay');
+  overlay?.classList.remove('show');
+  if (overlay) overlay.style.display = 'none';
+  const resolver = resolverRecebimentoParcialFinanceiro;
+  resolverRecebimentoParcialFinanceiro = null;
+  resolver?.(resposta === true);
+}
+
+function abrirConfirmacaoRecebimentoParcialFinanceiro(dados, concluida = false) {
+  if (!preencherModalRecebimentoParcialFinanceiro({ ...dados, concluida })) return Promise.resolve(false);
+  return new Promise(resolve => { resolverRecebimentoParcialFinanceiro = resolve; });
+}
+
 async function confirmarRecebimentoFuturo() {
   const id = String(document.getElementById('modalConfirmarRecFuturoId')?.value || '').trim();
   const dataConfirmacao = String(document.getElementById('modalConfirmarData')?.value || '').trim();
@@ -2252,6 +2297,17 @@ async function confirmarRecebimentoFuturo() {
 
   const confirmadoPorNome = usuarioSistemaLogado?.nome || usuarioSistemaLogado?.username || 'Usuário';
   const valorConfirmado = Number(valor.toFixed(2));
+  const valorTitulo = Number(Number(item.valor || 0).toFixed(2));
+  if (!item.confirmado_em && valorConfirmado > valorTitulo) {
+    setMsg('msgModalConfirmarRecFuturo', 'O valor recebido não pode ser maior que o saldo atual do título.', 'err');
+    return;
+  }
+  const baixaParcial = !item.confirmado_em && valorConfirmado < valorTitulo;
+  const saldoResidual = baixaParcial ? Number((valorTitulo - valorConfirmado).toFixed(2)) : 0;
+  if (baixaParcial) {
+    const confirmouParcial = await abrirConfirmacaoRecebimentoParcialFinanceiro({ item, valorRecebido: valorConfirmado, saldo: saldoResidual });
+    if (!confirmouParcial) return;
+  }
   const confirmacaoPin = await confirmarAcaoComPin({
     funcionario: obterFuncionarioOperadorAtual(),
     titulo: item.confirmado_em ? 'Confirmar alteração do recebimento' : 'Confirmar baixa do recebimento',
@@ -2269,6 +2325,28 @@ async function confirmarRecebimentoFuturo() {
   const lojaId = contaSelecionada?.loja_id || item.loja_id || obterLojaIdSessao?.() || usuarioSistemaLogado?.loja_id || null;
 
   try {
+    if (baixaParcial) {
+      const { error: erroParcial } = await sb.rpc('baixar_recebivel_parcial', {
+        p_recebivel_futuro_id: id,
+        p_valor_recebido: valorConfirmado,
+        p_conta_financeira_id: contaId,
+        p_movimentar_saldo: modalConfirmarRecFuturoMovimentarSaldo,
+        p_data_recebimento: dataConfirmacao,
+        p_confirmado_por_nome: confirmadoPorNome,
+        p_observacao: obs || null,
+      });
+      if (erroParcial) throw erroParcial;
+      fecharModalConfirmarRecFuturo();
+      await carregarRecFuturos();
+      await carregarContasFinanceiras({ render: false, silencioso: true });
+      recebiveisFinanceiroListaVisivel = true;
+      await carregarRecebiveisFinanceiro();
+      if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+      if (document.getElementById('relatorio_recebimentos')?.classList.contains('ativa')) await carregarRelatorioRecebimentos();
+      await abrirConfirmacaoRecebimentoParcialFinanceiro({ item, valorRecebido: valorConfirmado, saldo: saldoResidual }, true);
+      setMsg('msgRecFuturosLista', `Recebimento parcial confirmado. Saldo pendente: ${formatarMoedaBRFinanceiro(saldoResidual)}.`, 'ok');
+      return;
+    }
     // Se já estava confirmado, editar o recebível real em vez de criar outro.
     // O trigger do banco ajusta apenas a diferença/transferência; em bancos
     // antigos fazemos o estorno e a nova entrada explicitamente.

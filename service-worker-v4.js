@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v270-categorias-dashboard';
+const CACHE_NAME = 'check-diario-pwa-v271-baixa-parcial-recebiveis';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

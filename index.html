@@ -3159,6 +3159,23 @@
   </div>
 </div>
 
+<div class="overlay" id="recebimentoParcialOverlay">
+  <div class="modal baixa-parcial-modal">
+    <div class="baixa-parcial-icone" aria-hidden="true">R$</div>
+    <div class="modal-body baixa-parcial-corpo">
+      <span class="baixa-parcial-etapa" id="recebimentoParcialEtapa">Recebimento parcial</span>
+      <h3 id="recebimentoParcialTitulo">Deseja receber parcialmente este título?</h3>
+      <p id="recebimentoParcialTexto"></p>
+      <div class="baixa-parcial-resumo" id="recebimentoParcialResumo"></div>
+      <div class="baixa-parcial-observacao" id="recebimentoParcialObservacao"></div>
+    </div>
+    <div class="modal-footer baixa-parcial-acoes">
+      <button class="btn btn-ghost" id="btnRecebimentoParcialNao" type="button" onclick="responderRecebimentoParcialFinanceiro(false)">Não, editar valor</button>
+      <button class="btn btn-green" id="btnRecebimentoParcialSim" type="button" onclick="responderRecebimentoParcialFinanceiro(true)">Sim, receber parcialmente</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="editarTituloFinanceiroOverlay">
   <div class="modal editar-titulo-modal">
     <div class="modal-header">
@@ -3433,7 +3450,7 @@
 <script src="./assets/js/21-employees.js?v=3.2.45"></script>
 <script src="./assets/js/22-access-requests.js?v=3.2.46"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=3.2.82-category-image-fallback"></script>
+<script src="./assets/js/30-finance.js?v=3.2.83-baixa-parcial-recebiveis"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260928-cofre-horario-v2"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=3.2.48"></script>
