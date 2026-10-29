@@ -417,6 +417,46 @@
     return imagemCompraDeduplicar(itens.sort((a, b) => Number(a._ocrIndex || 0) - Number(b._ocrIndex || 0)));
   }
 
+  function imagemCompraExtrairNotificacaoIsolada(texto, dataPadrao) {
+    const compacto = imagemCompraNormalizarTexto(texto).replace(/\n+/g, ' ');
+    const banco = imagemCompraDetectarBanco(compacto);
+    const marcadores = [...compacto.matchAll(/(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})/gi)];
+    const candidatos = marcadores.map((marcador, indice) => {
+      const inicio = marcador.index || 0;
+      const fim = marcadores[indice + 1]?.index ?? compacto.length;
+      const trecho = compacto.slice(inicio + marcador[0].length, fim);
+      const finalCartao = trecho.match(/\b(?:no\s+)?cart[aã]o\s+fina[lI1]?\s*\d{0,6}/i);
+      // Sem o rodape, ainda aceitamos o cartao isolado se o OCR preservou o
+      // marcador de compra/aprovacao. O recorte nao contem outro cartao.
+      if (!finalCartao && !/(?:compr[a4]|apro)/i.test(`${compacto.slice(Math.max(0, inicio - 80), inicio)} ${trecho}`)) return null;
+      const valor = imagemCompraParseValor(marcador[1]);
+      if (!valor) return null;
+      let miolo = trecho.slice(0, finalCartao?.index ?? trecho.length)
+        .replace(/[,.;:]+\s*$/, '')
+        .trim();
+      const quantidadeParcelas = imagemCompraParseParcelas(miolo);
+      miolo = miolo.replace(/^\s*0*\d{1,2}\s*[xX]\s*/i, '');
+      const depoisDeEm = [...miolo.matchAll(/\b(?:em|en)\b\s*/gi)].pop();
+      if (depoisDeEm) miolo = miolo.slice((depoisDeEm.index || 0) + depoisDeEm[0].length);
+      else miolo = miolo
+        .replace(/^\s*APRO[A-Z0-9]{2,18}\s*/i, '')
+        .replace(/^\s*e\s+["'@~|*\-]*\s*/i, '');
+      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(miolo);
+      if (!descricao || !/[A-Za-zÀ-ÿ]{2}/.test(descricao)) return null;
+      const data = imagemCompraParseData(compacto, dataPadrao);
+      return {
+        data, descricao, valor, valorTotalCompra: valor, quantidadeParcelas,
+        valorParcela: Number((valor / quantidadeParcelas).toFixed(2)), fitid: null,
+        vencimento_fatura: data, selecionado: true, _obsManual: descricao,
+        _origemImagem: true, _bancoImagem: banco, _notificacaoCartao: true,
+        _ocrIndex: inicio, _parcelasManuais: quantidadeParcelas,
+        _parcelasAuto: quantidadeParcelas > 1, _modoValorParcelas: 'total',
+        _ocrPontuacao: (finalCartao ? 50 : 0) + (/apro/i.test(trecho) ? 20 : 0) + Math.min(20, descricao.length),
+      };
+    }).filter(Boolean).sort((a, b) => b._ocrPontuacao - a._ocrPontuacao);
+    return candidatos.length ? [candidatos[0]] : [];
+  }
+
   function imagemCompraExtrairResumoParcelado(texto, dataPadrao) {
     const normalizado = imagemCompraNormalizarTexto(texto);
     const compacto = normalizado.replace(/\n+/g, ' ');
@@ -844,13 +884,13 @@
             criarBlob(canvasCinza, 0, altura * 0.42, 0, largura, 1.6),
             criarBlob(canvasCinza, altura * 0.29, altura * 0.42, 0, largura, 1.6),
             criarBlob(canvasCinza, altura * 0.58, altura * 0.42, 0, largura, 1.6),
-            // Notificações empilhadas são relidas em bandas curtas. Isso evita
-            // que o OCR misture o valor de um cartão com o texto do seguinte.
-            criarBlob(canvasCinza, 0, altura * 0.28, 0, largura, 1.45),
-            criarBlob(canvasCinza, altura * 0.18, altura * 0.28, 0, largura, 1.45),
-            criarBlob(canvasCinza, altura * 0.36, altura * 0.28, 0, largura, 1.45),
-            criarBlob(canvasCinza, altura * 0.54, altura * 0.28, 0, largura, 1.45),
-            criarBlob(canvasCinza, altura * 0.72, altura * 0.28, 0, largura, 1.45),
+            // Cinco recortes individuais: um cartao por faixa. As antigas
+            // janelas de 28% misturavam duas notificacoes e descartavam tres.
+            criarBlob(canvasCinza, 0, altura * 0.22, 0, largura, 1.6),
+            criarBlob(canvasCinza, altura * 0.18, altura * 0.22, 0, largura, 1.6),
+            criarBlob(canvasCinza, altura * 0.38, altura * 0.22, 0, largura, 1.6),
+            criarBlob(canvasCinza, altura * 0.58, altura * 0.22, 0, largura, 1.6),
+            criarBlob(canvasCinza, altura * 0.78, altura * 0.22, 0, largura, 1.6),
           ]).then(([principal, alternativaBinaria, faixaSuperior, faixaInferior, valorSuperior, valorInferior, descricaoSuperior, descricaoInferior, bandaNumerica1, bandaNumerica2, bandaNumerica3, notificacao1, notificacao2, notificacao3, notificacao4, notificacao5]) => {
             URL.revokeObjectURL(url);
             resolve({
@@ -1030,7 +1070,7 @@
         }
         textosReconhecidos.push(...leiturasNotificacao);
         const notificacoesDasFaixas = leiturasNotificacao.flatMap(textoFaixa =>
-          imagemCompraExtrairNotificacoesCartao(textoFaixa, imagemCompraHojeISO())
+          imagemCompraExtrairNotificacaoIsolada(textoFaixa, imagemCompraHojeISO())
         );
         telaNotificacoesCartao = telaNotificacoesCartao
           || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao)
@@ -1120,6 +1160,7 @@
   };
 
   window.imagemCompraExtrairItens = imagemCompraExtrairItens;
+  window.imagemCompraExtrairNotificacaoIsolada = imagemCompraExtrairNotificacaoIsolada;
   window.imagemCompraNormalizarValoresSemSeparador = imagemCompraNormalizarValoresSemSeparador;
   window.imagemCompraCorrigirPorLeituraNumerica = imagemCompraCorrigirPorLeituraNumerica;
   window.imagemCompraConsolidarResumosParcelados = imagemCompraConsolidarResumosParcelados;

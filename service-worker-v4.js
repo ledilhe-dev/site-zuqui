@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v284-ocr-parser-refeito';
+const CACHE_NAME = 'check-diario-pwa-v285-ocr-cartoes-isolados';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

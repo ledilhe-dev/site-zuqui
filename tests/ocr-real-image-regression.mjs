@@ -39,16 +39,16 @@ try {
     const bitmap = await createImageBitmap(preparado);
     const worker = await Tesseract.createWorker('por+eng');
     const textos = [];
-    for (const inicio of [0, .18, .36, .54, .72]) {
+    for (const inicio of [0, .18, .38, .58, .78]) {
       const canvas = document.createElement('canvas');
       canvas.width = 960;
-      canvas.height = Math.round(Math.min(912 * .28, 912 * (1 - inicio)));
+      canvas.height = Math.round(Math.min(912 * .22, 912 * (1 - inicio)));
       canvas.getContext('2d').drawImage(bitmap, 0, Math.round(912 * inicio), 960, canvas.height, 0, 0, 960, canvas.height);
       const leitura = await worker.recognize(canvas, { tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
       textos.push(leitura.data.text || '');
     }
     await worker.terminate();
-    const itens = window.imagemCompraExtrairItens(textos.join('\n'));
+    const itens = textos.flatMap(texto => window.imagemCompraExtrairNotificacaoIsolada(texto));
     return { textos, itens: itens.map(({ valor, descricao }) => ({ valor, descricao })) };
   }, imagemBase64);
 
