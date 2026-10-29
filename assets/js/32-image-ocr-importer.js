@@ -464,6 +464,30 @@
     return candidatos.length ? [candidatos[0]] : [];
   }
 
+  function imagemCompraCriarRascunhoNotificacao(texto, textoNumerico, indice, dataPadrao) {
+    const combinado = imagemCompraNormalizarTexto(`${texto || ''}\n${imagemCompraNormalizarValoresSemSeparador(textoNumerico || '')}`);
+    const valorTexto = combinado.match(/(?:(?:R\s*\$|R[S5])\s*)?\d{1,3}(?:\.\d{3})*[,.]\d{2}/i)?.[0] || '';
+    const valor = imagemCompraParseValor(valorTexto) || 0;
+    const linhas = combinado.split('\n').map(linha => linha.trim()).filter(Boolean);
+    const candidata = linhas.map(linha => linha
+      .replace(/\b(?:bradesco|cartoes?)\b/gi, ' ')
+      .replace(/(?:R\s*\$|R[S5])?\s*\d{1,3}(?:\.\d{3})*[,.]\d{2}/gi, ' ')
+      .replace(/\b(?:compra|de|aprov\S*|em|no|cartao|final)\b/gi, ' ')
+      .replace(/\b\d{3,6}\b/g, ' ')
+      .replace(/\s{2,}/g, ' ').trim()
+    ).filter(linha => /[A-Za-zÀ-ÿ]{3}/.test(linha)).sort((a, b) => b.length - a.length)[0] || '';
+    const descricao = imagemCompraLimparDescricao(candidata) || `Compra do cartao ${indice + 1} - revise os dados`;
+    const data = imagemCompraParseData(combinado, dataPadrao);
+    return {
+      data, descricao, valor, valorTotalCompra: valor, quantidadeParcelas: 1,
+      valorParcela: valor, fitid: null, vencimento_fatura: data,
+      selecionado: valor > 0, _obsManual: descricao, _origemImagem: true,
+      _bancoImagem: imagemCompraDetectarBanco(combinado), _notificacaoCartao: true,
+      _ocrRegiao: indice + 1, _ocrRevisaoObrigatoria: true,
+      _parcelasManuais: 1, _parcelasAuto: false, _modoValorParcelas: 'total',
+    };
+  }
+
   function imagemCompraExtrairResumoParcelado(texto, dataPadrao) {
     const normalizado = imagemCompraNormalizarTexto(texto);
     const compacto = normalizado.replace(/\n+/g, ' ');
@@ -950,7 +974,14 @@
 
     const concluirImportacao = (itensReconhecidos, texto, origem = 'Imagem/OCR') => {
       const pagamentosFatura = imagemCompraExtrairPagamentosFatura(texto);
-      const itens = imagemCompraDeduplicar(itensReconhecidos).map((item, idx) => ({
+      // Regioes fisicas diferentes da imagem representam linhas distintas.
+      // Nao as deduplique aqui: duas compras podem ter o mesmo valor/fornecedor,
+      // e cada uma precisa chegar a conferencia. A conciliacao com o banco ocorre
+      // depois e apenas desmarca o que possivelmente ja foi lancado.
+      const itensBase = (itensReconhecidos || []).every(item => item?._ocrRegiao)
+        ? itensReconhecidos
+        : imagemCompraDeduplicar(itensReconhecidos);
+      const itens = itensBase.map((item, idx) => ({
         id: `img_${Date.now()}_${idx}`,
         ...item,
         fornecedor_id: null,
@@ -1063,7 +1094,8 @@
       if (imagens.faixasNotificacao?.length) {
         faturaSetProgress(74, 'Lendo cada notificacao separadamente...');
         const leiturasNotificacao = [];
-        const notificacoesDasFaixas = [];
+        let notificacoesDasFaixas = [];
+        const resultadosPorFaixa = [];
         for (let indiceFaixa = 0; indiceFaixa < imagens.faixasNotificacao.length; indiceFaixa += 1) {
           // No iPhone, cinco workers simultaneos podem competir por memoria e
           // devolver somente as primeiras regioes. A leitura sequencial e mais
@@ -1080,21 +1112,48 @@
             if (textoReleitura) textoFaixa = `${textoFaixa}\n${textoReleitura}`;
             itensFaixa = imagemCompraExtrairNotificacaoIsolada(textoReleitura, imagemCompraHojeISO());
           }
+          let textoNumericoFaixa = '';
+          if (!itensFaixa.length) {
+            const leituraNumerica = await reconhecer(imagemFaixa, 7, null, {
+              tessedit_char_whitelist: 'R$S0123456789,. ',
+            });
+            textoNumericoFaixa = leituraNumerica?.data?.text || '';
+          }
+          itensFaixa = itensFaixa.map(item => ({ ...item, _ocrRegiao: indiceFaixa + 1 }));
           if (textoFaixa) leiturasNotificacao.push(textoFaixa);
           if (itensFaixa.length) notificacoesDasFaixas.push(...itensFaixa);
+          resultadosPorFaixa.push({ indiceFaixa, textoFaixa, textoNumericoFaixa, itensFaixa });
           faturaSetProgress(
             74 + Math.round(((indiceFaixa + 1) / imagens.faixasNotificacao.length) * 8),
             `Lendo notificacao ${indiceFaixa + 1} de ${imagens.faixasNotificacao.length}...`
           );
         }
         textosReconhecidos.push(...leiturasNotificacao);
+        // Em uma tela com varios cartoes, cada regiao obrigatoriamente gera
+        // uma linha. Falhas viram rascunhos editaveis, nunca descarte silencioso.
+        if (telaNotificacoesCartao || notificacoesDasFaixas.length >= 2) {
+          notificacoesDasFaixas = resultadosPorFaixa.flatMap(resultadoFaixa =>
+            resultadoFaixa.itensFaixa.length
+              ? resultadoFaixa.itensFaixa
+              : [imagemCompraCriarRascunhoNotificacao(
+                  resultadoFaixa.textoFaixa,
+                  resultadoFaixa.textoNumericoFaixa,
+                  resultadoFaixa.indiceFaixa,
+                  imagemCompraHojeISO()
+                )]
+          );
+        }
         telaNotificacoesCartao = telaNotificacoesCartao
           || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao)
           || notificacoesDasFaixas.length > 0;
         const notificacoesDaLeituraCompleta = textosReconhecidos.flatMap(textoLido =>
           imagemCompraExtrairNotificacoesCartao(textoLido, imagemCompraHojeISO())
         );
-        if (notificacoesDasFaixas.length || notificacoesDaLeituraCompleta.length) {
+        if (notificacoesDasFaixas.length === imagens.faixasNotificacao.length) {
+          // Uma linha por faixa, na ordem visual. Nao misture nem deduplique com
+          // a leitura integral, pois ela foi justamente a origem do resultado 5 -> 4.
+          itensReconhecidos = notificacoesDasFaixas;
+        } else if (notificacoesDasFaixas.length || notificacoesDaLeituraCompleta.length) {
           // Encontrada estrutura de notificacao: abandona achados genericos.
           // Isso impede nomes e valores montados a partir do fundo da tela.
           itensReconhecidos = imagemCompraDeduplicar([
@@ -1160,8 +1219,12 @@
           if (textoNumerico) leiturasNumericas.push(textoNumerico);
         }
       }
-      itensReconhecidos = imagemCompraConsolidarResumosParcelados(itensReconhecidos);
-      itensReconhecidos = imagemCompraCorrigirPorLeituraNumerica(itensReconhecidos, leiturasNumericas);
+      const itensSaoRegioesIndependentes = itensReconhecidos.length > 0
+        && itensReconhecidos.every(item => item?._ocrRegiao);
+      if (!itensSaoRegioesIndependentes) {
+        itensReconhecidos = imagemCompraConsolidarResumosParcelados(itensReconhecidos);
+        itensReconhecidos = imagemCompraCorrigirPorLeituraNumerica(itensReconhecidos, leiturasNumericas);
+      }
       textosReconhecidos.push(...leiturasNumericas);
       const texto = textosReconhecidos.filter(Boolean).join('\n\n');
       faturaSetProgress(88, 'Interpretando compras...');
@@ -1177,6 +1240,7 @@
 
   window.imagemCompraExtrairItens = imagemCompraExtrairItens;
   window.imagemCompraExtrairNotificacaoIsolada = imagemCompraExtrairNotificacaoIsolada;
+  window.imagemCompraCriarRascunhoNotificacao = imagemCompraCriarRascunhoNotificacao;
   window.imagemCompraNormalizarValoresSemSeparador = imagemCompraNormalizarValoresSemSeparador;
   window.imagemCompraCorrigirPorLeituraNumerica = imagemCompraCorrigirPorLeituraNumerica;
   window.imagemCompraConsolidarResumosParcelados = imagemCompraConsolidarResumosParcelados;

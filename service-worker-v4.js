@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v286-ocr-recupera-duas-restantes';
+const CACHE_NAME = 'check-diario-pwa-v287-ocr-nunca-descarta';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -3665,6 +3665,10 @@ async function faturaExibirRevisao(resultado) {
       ? `<span data-badge-parcelas style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">${qtdLancar} parcelas</span>`
       : '';
     const jaLancado = !!item._jaLancado;
+    const revisaoOCR = !!item._ocrRevisaoObrigatoria;
+    const avisoRevisaoOCR = revisaoOCR
+      ? `<div style="margin:0 0 8px;padding:7px 9px;border:1px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.12);color:#fbbf24;font-size:11px;font-weight:800;">⚠ OCR incompleto nesta região. Confira e corrija os campos antes de lançar.</div>`
+      : '';
     const rotuloConcil = item._motivoConciliacao === 'fitid' ? 'OFX'
       : item._motivoConciliacao === 'parcela' ? 'parcela já provisionada'
       : 'manual';
@@ -3701,7 +3705,8 @@ async function faturaExibirRevisao(resultado) {
         <span data-valor-total style="font-size:9px;color:var(--red);">Valor total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra)}</span>
       </span>` : '';
     void campoObs; // usado no template abaixo
-    return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--surface2);${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
+    return `<div style="border:${revisaoOCR ? '2px solid #f59e0b' : '1px solid var(--border)'};border-radius:var(--radius-sm);padding:8px 10px;background:${revisaoOCR ? 'rgba(245,158,11,.06)' : 'var(--surface2)'};${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
+      ${avisoRevisaoOCR}
       <div style="display:flex;align-items:flex-start;gap:8px;">
         <input type="checkbox" ${item.selecionado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;"
           onchange="faturaAlternarSelecaoItem('${item.id}', this.checked)">
@@ -4848,6 +4853,11 @@ async function faturaConfirmarLancamentoSelecionados(selecionados) {
 async function faturaLancarSelecionados() {
   const selecionados = _faturaItensExtraidos.filter(i => i.selecionado);
   if (!selecionados.length) { alert('Selecione pelo menos um item.'); return; }
+  const valoresInvalidos = selecionados.filter(item => !(Number(item.valorTotalCompra ?? item.valor) > 0));
+  if (valoresInvalidos.length) {
+    alert(`Corrija o valor de ${valoresInvalidos.length} compra(s) destacada(s) antes de lançar.`);
+    return;
+  }
   const semFornecedorObrigatorio = selecionados.filter(i => i._exigeFornecedorManual && !i.fornecedor_id);
   if (semFornecedorObrigatorio.length) {
     alert(`Selecione o fornecedor de ${semFornecedorObrigatorio.length} compra(s) antes de lan\u00e7ar.`);

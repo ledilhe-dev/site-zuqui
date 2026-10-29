@@ -98,6 +98,37 @@ test('cartao isolado preserva compras curtas quando o OCR perde o simbolo R$', (
   assert.deepEqual(Array.from([...primeira, ...quarta], item => item.descricao), ['SUPERMERCADOS K', 'CHAVEIRO CARLIN']);
 });
 
+test('regiao parcialmente ilegivel vira rascunho editavel em vez de desaparecer', () => {
+  const item = context.window.imagemCompraCriarRascunhoNotificacao(
+    'BRADESCO CARTOES Compra aprovada em CHAVEIRO CARLIN no Cartao final 1018',
+    '24,00',
+    3,
+    '2026-10-29'
+  );
+  assert.equal(item.valor, 24);
+  assert.equal(item.valorTotalCompra, 24);
+  assert.equal(item._ocrRegiao, 4);
+  assert.equal(item._ocrRevisaoObrigatoria, true);
+  assert.equal(item.selecionado, true);
+  assert.match(item.descricao, /CHAVEIRO CARLIN/i);
+});
+
+test('regiao totalmente ilegivel permanece na conferencia para correcao manual', () => {
+  const item = context.window.imagemCompraCriarRascunhoNotificacao('', '', 4, '2026-10-29');
+  assert.equal(item.valor, 0);
+  assert.equal(item._ocrRegiao, 5);
+  assert.equal(item._ocrRevisaoObrigatoria, true);
+  assert.equal(item.selecionado, false);
+  assert.match(item.descricao, /revise os dados/i);
+});
+
+test('cinco faixas fisicas nao passam novamente pela deduplicacao global', () => {
+  assert.match(source, /itensFaixa = itensFaixa\.map\(item => \(\{ \.\.\.item, _ocrRegiao: indiceFaixa \+ 1 \}\)\)/);
+  assert.match(source, /notificacoesDasFaixas\.length === imagens\.faixasNotificacao\.length/);
+  assert.match(source, /itensReconhecidos = notificacoesDasFaixas/);
+  assert.match(source, /itensReconhecidos\.every\(item => item\?\._ocrRegiao\)/);
+});
+
 test('telas de notificação sempre relêem as faixas e usam somente o parser estruturado', () => {
   assert.match(source, /faixasNotificacao/);
   assert.match(source, /Lendo cada notificacao separadamente/);
