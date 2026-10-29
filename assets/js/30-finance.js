@@ -2238,6 +2238,11 @@ function fecharModalConfirmarRecFuturo() {
   if (modal) modal.style.display = 'none';
 }
 
+function reabrirModalConfirmarRecFuturoPreservandoDados() {
+  const modal = posicionarModalRecebiveisNaViewport(document.getElementById('modalConfirmarRecFuturo'));
+  if (modal) modal.style.display = 'flex';
+}
+
 let resolverRecebimentoParcialFinanceiro = null;
 
 function preencherModalRecebimentoParcialFinanceiro({ item, valorRecebido, saldo, concluida = false } = {}) {
@@ -2308,8 +2313,12 @@ async function confirmarRecebimentoFuturo() {
   const baixaParcial = !item.confirmado_em && valorConfirmado < valorTitulo;
   const saldoResidual = baixaParcial ? Number((valorTitulo - valorConfirmado).toFixed(2)) : 0;
   if (baixaParcial) {
+    fecharModalConfirmarRecFuturo();
     const confirmouParcial = await abrirConfirmacaoRecebimentoParcialFinanceiro({ item, valorRecebido: valorConfirmado, saldo: saldoResidual });
-    if (!confirmouParcial) return;
+    if (!confirmouParcial) {
+      reabrirModalConfirmarRecFuturoPreservandoDados();
+      return;
+    }
   }
   const confirmacaoPin = await confirmarAcaoComPin({
     funcionario: obterFuncionarioOperadorAtual(),
@@ -2318,7 +2327,10 @@ async function confirmarRecebimentoFuturo() {
     textoAcao: item.confirmado_em ? 'Salvar alteração' : 'Confirmar recebimento',
     escopo: 'empresa',
   });
-  if (!confirmacaoPin) return;
+  if (!confirmacaoPin) {
+    if (baixaParcial) reabrirModalConfirmarRecFuturoPreservandoDados();
+    return;
+  }
   // Usa a data informada no modal (meio-dia para evitar problemas de fuso hor?rio)
   const confirmadoEmISO = new Date(`${dataConfirmacao}T12:00:00`).toISOString();
 
@@ -2477,6 +2489,7 @@ async function confirmarRecebimentoFuturo() {
     if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
     if (document.getElementById('relatorio_recebimentos')?.classList.contains('ativa')) await carregarRelatorioRecebimentos();
   } catch(e) {
+    if (baixaParcial) reabrirModalConfirmarRecFuturoPreservandoDados();
     setMsg('msgModalConfirmarRecFuturo', 'Erro ao confirmar: ' + (mensagemErroSupabase(e, e?.message || 'erro desconhecido')), 'err');
   }
 }

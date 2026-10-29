@@ -22,6 +22,9 @@ test('modal permite voltar para editar ou confirmar e informa o saldo residual',
   assert.match(js, /Vencimento original/);
   assert.match(js, /saldo restante continua pendente/);
   assert.match(js, /document\.body\.appendChild\(modal\)/);
+  assert.match(js, /fecharModalConfirmarRecFuturo\(\);\s*const confirmouParcial/);
+  assert.match(js, /if \(!confirmouParcial\) \{\s*reabrirModalConfirmarRecFuturoPreservandoDados\(\)/);
+  assert.match(js, /if \(!confirmacaoPin\) \{\s*if \(baixaParcial\) reabrirModalConfirmarRecFuturoPreservandoDados\(\)/);
 });
 
 test('função transacional preserva título original, cria parte recebida e mantém vínculo', () => {
