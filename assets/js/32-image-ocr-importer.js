@@ -375,12 +375,49 @@
         _obsManual: descricao,
         _origemImagem: true,
         _bancoImagem: banco,
+        _notificacaoCartao: true,
+        _ocrIndex: m.index,
         _parcelasManuais: quantidadeParcelas,
         _parcelasAuto: quantidadeParcelas > 1,
         _modoValorParcelas: 'total',
       });
     }
-    return itens;
+
+    // Segunda passagem: nas capturas de tela o OCR às vezes destrói somente a
+    // palavra APROVADA, embora preserve R$, o valor e "Cartão final". Esses
+    // três marcos pertencem ao mesmo cartão e são suficientes para recuperar
+    // a compra sem aceitar números soltos de horário, bateria ou cartão.
+    const regexEstrutura = /(?:Compra\s+de\s+)?(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+(.{2,140}?)\s*,?\s+no\s+cart[aã]o\s+fina[lI1]\s+\d{3,6}\b/gi;
+    let estrutura;
+    while ((estrutura = regexEstrutura.exec(compacto)) !== null) {
+      const bloco = String(estrutura[2] || '').trim();
+      if (!/\bAPRO/i.test(bloco)) continue;
+      const valor = imagemCompraParseValor(estrutura[1]);
+      const trechoDepoisDeEm = bloco.match(/\b(?:em|e[mn])\b\s+(.+)$/i)?.[1];
+      const descricao = imagemCompraNormalizarEstabelecimentoNotificacao(trechoDepoisDeEm || bloco);
+      if (!valor || !descricao) continue;
+      const contextoData = compacto.slice(Math.max(0, estrutura.index - 220), estrutura.index);
+      itens.push({
+        data: imagemCompraParseData(contextoData, dataPadrao),
+        descricao,
+        valor,
+        valorTotalCompra: valor,
+        quantidadeParcelas: 1,
+        valorParcela: valor,
+        fitid: null,
+        vencimento_fatura: imagemCompraParseData(contextoData, dataPadrao),
+        selecionado: true,
+        _obsManual: descricao,
+        _origemImagem: true,
+        _bancoImagem: imagemCompraDetectarBanco(contextoData),
+        _notificacaoCartao: true,
+        _ocrIndex: estrutura.index,
+        _parcelasManuais: 1,
+        _parcelasAuto: false,
+        _modoValorParcelas: 'total',
+      });
+    }
+    return imagemCompraDeduplicar(itens.sort((a, b) => Number(a._ocrIndex || 0) - Number(b._ocrIndex || 0)));
   }
 
   function imagemCompraExtrairResumoParcelado(texto, dataPadrao) {
@@ -969,14 +1006,11 @@
       // A leitura integral pode quebrar uma linha de notificação ou fundir
       // cartões vizinhos. As bandas curtas preservam a relação espacial entre
       // R$, valor, estabelecimento e final do cartão.
-      if ((telaNotificacoesCartao || !itensReconhecidos.length) && imagens.faixasNotificacao?.length) {
+      if (!itensReconhecidos.length && imagens.faixasNotificacao?.length) {
         faturaSetProgress(74, 'Lendo cada notificacao separadamente...');
-        const leiturasNotificacao = [];
-        for (const faixaNotificacao of imagens.faixasNotificacao) {
-          const leitura = await reconhecer(faixaNotificacao, 6, null);
-          const textoFaixa = leitura?.data?.text || '';
-          if (textoFaixa) leiturasNotificacao.push(textoFaixa);
-        }
+        const leiturasNotificacao = (await Promise.all(
+          imagens.faixasNotificacao.map(faixaNotificacao => reconhecer(faixaNotificacao, 6, null))
+        )).map(leitura => leitura?.data?.text || '').filter(Boolean);
         textosReconhecidos.push(...leiturasNotificacao);
         telaNotificacoesCartao = telaNotificacoesCartao
           || leiturasNotificacao.some(imagemCompraEhTelaNotificacoesCartao);
@@ -990,7 +1024,7 @@
       // Tesseract pode enxergar apenas o primeiro cartão. Se isso ocorrer,
       // relê duas faixas sobrepostas em modo de bloco e une compras realmente
       // distintas (mesmo fornecedor/data continuam válidas se o valor mudar).
-      if ((telaNotificacoesCartao || itensReconhecidos.length < 2) && imagens.faixas?.length) {
+      if (itensReconhecidos.length < 2 && imagens.faixas?.length) {
         faturaSetProgress(76, 'Procurando outros lançamentos na imagem...');
         const resultadosFaixas = [];
         for (const faixa of imagens.faixas) {
@@ -1030,15 +1064,17 @@
       // "7.133,88" e devolver "133,88". O passe numérico lê a imagem inteira
       // em cinza e binário, reconcilia valores pelo mesmo final de centavos e
       // recupera também o marcador "12 X".
-      faturaSetProgress(84, 'Conferindo valor e parcelas...');
-      const fontesNumericas = [imagens.principal, ...(imagens.bandasNumericas || [])].filter(Boolean);
       const leiturasNumericas = [];
-      for (let indiceFonte = 0; indiceFonte < fontesNumericas.length; indiceFonte += 1) {
-        const resultadoNumerico = await reconhecer(fontesNumericas[indiceFonte], indiceFonte === 0 ? 11 : 6, null, {
-          tessedit_char_whitelist: 'R$S0123456789.,/:-Xx ',
-        });
-        const textoNumerico = resultadoNumerico?.data?.text || '';
-        if (textoNumerico) leiturasNumericas.push(textoNumerico);
+      if (!telaNotificacoesCartao) {
+        faturaSetProgress(84, 'Conferindo valor e parcelas...');
+        const fontesNumericas = [imagens.principal, ...(imagens.bandasNumericas || [])].filter(Boolean);
+        for (let indiceFonte = 0; indiceFonte < fontesNumericas.length; indiceFonte += 1) {
+          const resultadoNumerico = await reconhecer(fontesNumericas[indiceFonte], indiceFonte === 0 ? 11 : 6, null, {
+            tessedit_char_whitelist: 'R$S0123456789.,/:-Xx ',
+          });
+          const textoNumerico = resultadoNumerico?.data?.text || '';
+          if (textoNumerico) leiturasNumericas.push(textoNumerico);
+        }
       }
       itensReconhecidos = imagemCompraConsolidarResumosParcelados(itensReconhecidos);
       itensReconhecidos = imagemCompraCorrigirPorLeituraNumerica(itensReconhecidos, leiturasNumericas);

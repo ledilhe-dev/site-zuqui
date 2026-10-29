@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v279-ocr-bandas-notificacao';
+const CACHE_NAME = 'check-diario-pwa-v280-ocr-notificacao-rapida';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
