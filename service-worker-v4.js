@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v272-ocr-duplicidades-em-lote';
+const CACHE_NAME = 'check-diario-pwa-v273-ocr-e-recebimento-parcial';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

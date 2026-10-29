@@ -21,6 +21,7 @@ test('modal permite voltar para editar ou confirmar e informa o saldo residual',
   assert.match(js, /Novo saldo/);
   assert.match(js, /Vencimento original/);
   assert.match(js, /saldo restante continua pendente/);
+  assert.match(js, /document\.body\.appendChild\(modal\)/);
 });
 
 test('função transacional preserva título original, cria parte recebida e mantém vínculo', () => {

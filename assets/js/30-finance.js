@@ -2184,7 +2184,10 @@ async function excluirRecFuturo(id) {
 
 function posicionarModalRecebiveisNaViewport(modal) {
   if (!modal) return null;
-  if (modal.parentElement !== document.body) document.body.appendChild(modal);
+  // appendChild também reposiciona um nó que já está no body. Isso garante
+  // que o próximo modal aberto fique acima do anterior quando ambos usam o
+  // mesmo z-index (ex.: confirmação da baixa parcial sobre o formulário).
+  document.body.appendChild(modal);
   return modal;
 }
 
