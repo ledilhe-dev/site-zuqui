@@ -38,6 +38,18 @@ WPROJERA 566,72`;
   assert.ok(!itens.some(item => item.valor === 566.72));
 });
 
+test('aceita pequenas falhas do OCR em APROVADA sem liberar números soltos', () => {
+  const texto = `BRADESCO CARTÕES
+Compra de R$ 56,74 APROVRIDA em SUPERMERCADOS K, no Cartão final 1018.
+Compra de R$ 24,00 APROVAD4 em CHAVEIRO CARLIN, no Cartão final 1018.
+R$ 130,00 APROVRDA em J D S COMERCIO, no Cartão final 1018.
+Compra de R$ 566,72 WPROJERA`;
+  const itens = context.window.imagemCompraExtrairItens(texto);
+  assert.deepEqual(Array.from(itens, item => item.valor), [56.74, 24, 130]);
+  assert.deepEqual(Array.from(itens, item => item.descricao), ['SUPERMERCADOS K', 'CHAVEIRO CARLIN', 'J D S COMERCIO']);
+  assert.ok(!itens.some(item => item.valor === 566.72));
+});
+
 test('nomes dos estabelecimentos são preservados como aparecem na notificação', () => {
   const texto = `BRADESCO CARTÕES
 Compra de R$ 56,74 APROVADA em SUPERMERCADOS K, no Cartão final 1018.

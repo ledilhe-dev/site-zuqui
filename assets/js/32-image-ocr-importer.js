@@ -131,7 +131,7 @@
   function imagemCompraEhTelaNotificacoesCartao(texto) {
     const normalizado = imagemCompraRemoverAcentos(texto).toLowerCase();
     return /\b(?:bradesco|nubank|itau|santander|inter|c6)\b/.test(normalizado)
-      && /\bcompra\s+de\b/.test(normalizado)
+      && (/(?:\bcompra\s+de\b|\br\s*\$\s*\d)/.test(normalizado))
       && /\bcart(?:ao|oes)\b/.test(normalizado);
   }
 
@@ -347,7 +347,13 @@
         _modoValorParcelas: 'total',
       });
     }
-    const regex = /Compra\s+de\s+(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+APROVAD[AO]\s+em\s+(.+?)\s*,?\s+no\s+cart[aã]o\s+final\s+\d{3,6}\b/gi;
+    // O Tesseract costuma trocar uma ou duas letras de "APROVADA"
+    // (ex.: APROVRIDA). O marcador pode variar, mas a compra somente existe
+    // quando toda a estrutura da notificação está presente: marcador R$,
+    // valor, aprovação, "em", estabelecimento e "Cartão final". "Compra de"
+    // é opcional porque às vezes some na borda esquerda durante o recorte. Uma
+    // leitura solta como "WPROJERA 566,72" nunca se transforma em lançamento.
+    const regex = /(?:Compra\s+de\s+)?(?:R\s*\$|R\s*[S5])\s*([\d.]+[,.]\d{2})\s+APRO[A-ZÀ-ÿ0-9]{2,14}\s+(?:em|e[mn])\s+(.+?)\s*,?\s+no\s+cart[aã]o\s+final\s+\d{3,6}\b/gi;
     let m;
     while ((m = regex.exec(compacto)) !== null) {
       const valor = imagemCompraParseValor(m[1]);
