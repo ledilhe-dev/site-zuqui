@@ -11,6 +11,7 @@ type TelegramUpdate = {
 
 type TelegramAlert = {
   id: string;
+  chave_unica?: string;
   tipo: "tarefa_iniciada" | "tarefa_nao_iniciada" | "tarefa_finalizada" | "tarefa_nao_finalizada"
     | "financeiro_vencimento" | "financeiro_saldo" | "financeiro_ajuste" | "financeiro_recebimento" | "produto_cadastrado" | "produto_vencimento"
     | "agenda_cadastrada" | "agenda_dia" | "ponto_entrada";
@@ -228,6 +229,13 @@ async function processQueue() {
       }).eq("id", alert.id).eq("status", "processando");
       continue;
     }
+    try {
+      await refreshFinancialSnapshot(admin, alert);
+    } catch (cause) {
+      failed += 1;
+      await markError(admin, alert.id, cause instanceof Error ? cause.message : "Falha ao atualizar resumo financeiro.");
+      continue;
+    }
     const flag = destinationFlag(alert.tipo);
     let destinationsQuery = admin
       .from("telegram_destinos")
@@ -299,6 +307,26 @@ async function processQueue() {
   }
 
   return json({ processed: (data || []).length, sent, failed, routes });
+}
+
+async function refreshFinancialSnapshot(admin: ReturnType<typeof createClient>, alert: TelegramAlert) {
+  if (alert.tipo !== "financeiro_saldo" || !String(alert.chave_unica || "").startsWith("financeiro:saldos:")) return;
+  const { data: contas, error } = await admin.from("contas_financeiras")
+    .select("nome,saldo_atual")
+    .eq("loja_id", alert.loja_id)
+    .eq("ativo", true)
+    .order("nome");
+  if (error) throw new Error(`Falha ao atualizar saldos antes do Telegram: ${error.message}`);
+  const formatar = (valor: unknown) => new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(valor || 0));
+  const linhas = (contas || []).map((conta) => `${conta.nome} - R$ ${formatar(conta.saldo_atual)}`);
+  const total = (contas || []).reduce((soma, conta) => soma + Number(conta.saldo_atual || 0), 0);
+  const horario = String(alert.chave_unica || "").includes(":16:") ? "16:00" : "08:00";
+  alert.descricao = `💰 SALDO EM CONTAS - ${horario}\n\n${linhas.join("\n----------------------\n")}\n\nTotal no cofre = R$ ${formatar(total)}`;
+  // Persiste exatamente o texto calculado no instante do envio para auditoria.
+  await admin.from("telegram_alertas").update({ descricao: alert.descricao }).eq("id", alert.id);
 }
 
 async function syncDestinationRoutes(admin: ReturnType<typeof createClient>, botToken: string) {

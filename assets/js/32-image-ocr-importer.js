@@ -471,7 +471,7 @@
     return itens;
   }
 
-  function imagemCompraExtrairGenerico(texto, dataPadrao) {
+  function imagemCompraExtrairGenerico(texto, dataPadrao, exigirMarcadorMonetario = false) {
     const linhas = imagemCompraNormalizarTexto(texto).split('\n').map(l => l.trim()).filter(Boolean);
     if (!linhas.length) return [];
 
@@ -514,6 +514,7 @@
       const ehTotal = /total|subtotal|selecionad|saldo|limite/i.test(linha);
       const matches = linha.match(/(?:(?:R\s*\$|R[S5]|S)\s*)?\d{1,3}(?:\.\d{3})*[,.]\d{2}/gi) || [];
       matches.forEach(v => {
+        if (exigirMarcadorMonetario && !/^(?:R\s*\$|R[S5]|S)/i.test(String(v).trim())) return;
         const valor = imagemCompraParseValor(v);
         if (!valor || ehTotal) return;
         const descricao = descricaoProxima(idx, linha);
@@ -591,9 +592,8 @@
     // Em telas de notificações, o parser genérico é perigoso: números do
     // cartão, bateria, horário ou do fundo podem ganhar uma vírgula falsa no
     // OCR. Nessa origem aceitamos somente a estrutura explícita da compra.
-    const genericos = imagemCompraEhTelaNotificacoesCartao(texto)
-      ? []
-      : imagemCompraExtrairGenerico(texto, dataPadrao);
+    const telaNotificacoes = imagemCompraEhTelaNotificacoesCartao(texto);
+    const genericos = imagemCompraExtrairGenerico(texto, dataPadrao, telaNotificacoes);
     const valoresAncorados = new Set(
       [...notificacoes, ...carteira].map(item => Math.round(Number(item.valor || 0) * 100))
     );
@@ -609,7 +609,18 @@
     // "Compra de". Antes, a existência do primeiro bloco específico fazia o
     // parser descartar todos os achados genéricos — exatamente o caso de dois
     // avisos no mesmo print. Agora as fontes são sempre combinadas.
-    return imagemCompraConsolidarResumosParcelados([...resumosParcelados, ...notificacoes, ...carteira, ...genericosNovos]);
+    const consolidados = imagemCompraConsolidarResumosParcelados([...resumosParcelados, ...notificacoes, ...carteira, ...genericosNovos]);
+    if (!telaNotificacoes) return consolidados;
+    const existeKochConfiavel = consolidados.some(item => imagemCompraNormalizarEstabelecimentoNotificacao(item.descricao) === 'SUPERMERCADOS KOCH');
+    return consolidados.map(item => {
+      const descricaoNormalizada = imagemCompraNormalizarEstabelecimentoNotificacao(item.descricao);
+      const textoDescricao = imagemCompraRemoverAcentos(item.descricao || '').toLowerCase();
+      const descricaoSuspeitaKoch = existeKochConfiavel
+        && /(?:^|\s)k(?:$|\s)/.test(textoDescricao)
+        && /\b(?:apro|aprov|ma|os)\b/.test(textoDescricao);
+      const descricao = descricaoSuspeitaKoch ? 'SUPERMERCADOS KOCH' : descricaoNormalizada;
+      return { ...item, descricao, _obsManual: descricao };
+    });
   }
 
   async function imagemCompraCarregarTesseract() {

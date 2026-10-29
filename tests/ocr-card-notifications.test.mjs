@@ -27,6 +27,17 @@ WPROJERA 566,72`;
   assert.ok(!itens.some(item => item.valor === 566.72));
 });
 
+test('recupera valor com R$ quando a frase ficou corrompida e herda Koch do aviso confiável', () => {
+  const texto = `BRADESCO CARTÕES
+R$ 56,74 APRO E MA os K no Cartão final 1018
+Compra de R$ 124,42 APROVADA em SUPERMERCADOS K, no Cartão final 1018.
+WPROJERA 566,72`;
+  const itens = context.window.imagemCompraExtrairItens(texto);
+  assert.deepEqual(Array.from(itens, item => item.valor), [124.42, 56.74]);
+  assert.deepEqual(Array.from(itens, item => item.descricao), ['SUPERMERCADOS KOCH', 'SUPERMERCADOS KOCH']);
+  assert.ok(!itens.some(item => item.valor === 566.72));
+});
+
 test('nomes dos estabelecimentos são limpos a partir da frase da notificação', () => {
   const texto = `BRADESCO CARTÕES
 Compra de R$ 56,74 APROVADA em SUPERMERCADOS K, no Cartão final 1018.
