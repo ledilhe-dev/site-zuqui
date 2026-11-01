@@ -13,6 +13,18 @@ test('delivery usa data e hora da TeleEntrega com vinculo pela filial',()=>{
   assert.match(bridge,/COALESCE\(TE\.Hora,V\.Hora\)/);
 });
 
+test('sincronizacao canonica e consulta local preservam a hora operacional',()=>{
+  const canonical=bridge.match(/SQL_BASE_CANONICA_SYNC = """([\s\S]*?)"""/)?.[1]||'';
+  const analysis=bridge.match(/SQL_VENDAS_ANALISE = """([\s\S]*?)"""/)?.[1]||'';
+  assert.match(canonical,/CONVERT\(date,COALESCE\(TE\.Data,D\.Data\)\) data/);
+  assert.match(canonical,/CAST\(COALESCE\(TE\.Hora,D\.Hora\) AS time\)/);
+  assert.match(canonical,/T\.Id=VT\.IdTeleEntrega AND T\.IdFilial=VT\.IdFilial/);
+  assert.match(canonical,/CASE WHEN TE\.IdTeleEntrega IS NOT NULL THEN 'DELIVERY'/);
+  assert.match(canonical,/SUM\(CAST\(ISNULL\(F\.Valor,0\)-ISNULL\(F\.ValorTroco,0\) AS decimal\(19,4\)\)\) valor_pagamento/);
+  assert.match(analysis,/AS Data,CONVERT\(varchar\(8\),CAST\(COALESCE\(TE\.Hora,D\.Hora\) AS time\),108\) Hora/);
+  assert.match(analysis,/SELECT I\.data,I\.hora,I\.id_documento_fiscal/);
+});
+
 test('vinculo delivery e deterministico e nao multiplica documentos',()=>{
   assert.match(bridge,/OUTER APPLY\(SELECT TOP 1[\s\S]*?ORDER BY VT\.Id\) TE/);
   assert.match(bridge,/CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas\(Id\)/);
@@ -45,8 +57,15 @@ test('BI prioriza o conector e mantém relatórios disponíveis durante reconstr
 });
 
 test('versao nova invalida cache local anterior e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.26"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.27"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 4/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
+});
+
+test('reprocessamento remoto e limitado a loja vinculada e no maximo sete dias',()=>{
+  assert.match(bridge,/"\/api\/raffinato\/reprocessar-periodo"/);
+  assert.match(bridge,/validate_request_tenant\(body, store_id\)/);
+  assert.match(bridge,/\(end\.date\(\)-start\.date\(\)\)\.days>7/);
+  assert.match(bridge,/sync_period\(\{\*\*config,"_store_id":store_id\},start,end-timedelta\(seconds=1\)\)/);
 });

@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.26"
+CONNECTOR_VERSION = "2.0.27"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -664,29 +664,36 @@ GROUP BY CONVERT(date,D.Data),P.Id,P.Nome,A.Id,A.Nome;
 
 SQL_BASE_CANONICA_SYNC = """
 SET NOCOUNT ON;
-SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
- CONVERT(varchar(8),CAST(D.Hora AS time),108) hora,D.Tipo tipo,
+SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,COALESCE(TE.Data,D.Data)) data,
+ CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108) hora,D.Tipo tipo,
  CAST(CASE WHEN ISNULL(D.EhContingencia,0)=1 THEN 1 ELSE 0 END AS bit) eh_contingencia,
- CASE WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) JOIN dbo.VendaTeleEntrega VTE WITH(NOLOCK) ON VTE.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id) THEN 'DELIVERY'
+ CASE WHEN TE.IdTeleEntrega IS NOT NULL THEN 'DELIVERY'
       WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa VM WITH(NOLOCK) ON VM.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo VC WITH(NOLOCK) ON VC.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (VM.IdVenda IS NOT NULL OR VC.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA'
       ELSE 'VENDA_RAPIDA' END modulo_venda,
  FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
  SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
 FROM dbo.DocumentoFiscal D WITH(NOLOCK)
+OUTER APPLY(SELECT TOP 1 VT.IdTeleEntrega,T.Data,T.Hora FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
+ JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=VCF.IdVenda AND VT.IdFilial=D.IdFilial
+ JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega AND T.IdFilial=VT.IdFilial
+ WHERE VCF.IdDocumentoFiscal=D.Id AND T.Data IS NOT NULL AND T.Hora IS NOT NULL ORDER BY VT.Id) TE
 JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id
 JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=F.IdFormaPagamento
-WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
-GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,D.Tipo,D.EhContingencia,FP.Id,FP.Nome;
+WHERE CONVERT(date,COALESCE(TE.Data,D.Data))>=? AND CONVERT(date,COALESCE(TE.Data,D.Data))<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+GROUP BY D.Id,D.IdFilial,CONVERT(date,COALESCE(TE.Data,D.Data)),COALESCE(TE.Hora,D.Hora),D.Tipo,D.EhContingencia,FP.Id,FP.Nome;
 ;WITH DocumentoVenda AS (
- SELECT VCF.IdVenda,MIN(D.Id) id_documento_fiscal
+ SELECT VCF.IdVenda,MIN(D.Id) id_documento_fiscal,CONVERT(date,COALESCE(TE.Data,D.Data)) data,
+  CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108) hora
  FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
  JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal
- WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ OUTER APPLY(SELECT TOP 1 VT.IdTeleEntrega,T.Data,T.Hora FROM dbo.VendaTeleEntrega VT WITH(NOLOCK)
+  JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega AND T.IdFilial=VT.IdFilial
+  WHERE VT.IdVenda=VCF.IdVenda AND VT.IdFilial=D.IdFilial AND T.Data IS NOT NULL AND T.Hora IS NOT NULL ORDER BY VT.Id) TE
+ WHERE CONVERT(date,COALESCE(TE.Data,D.Data))>=? AND CONVERT(date,COALESCE(TE.Data,D.Data))<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
   AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id)
- GROUP BY VCF.IdVenda
+ GROUP BY VCF.IdVenda,CONVERT(date,COALESCE(TE.Data,D.Data)),CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108)
 )
-SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
- CONVERT(varchar(8),CAST(D.Hora AS time),108) hora,P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
+SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,DV.data,DV.hora,P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
  SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
  SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) total_faturado
 FROM DocumentoVenda DV
@@ -694,13 +701,13 @@ JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=DV.id_documento_fiscal
 JOIN dbo.VendaItem I WITH(NOLOCK) ON I.IdVenda=DV.IdVenda AND I.IdStatusItem=1
 JOIN dbo.Produto P WITH(NOLOCK) ON P.Id=I.IdProduto
 LEFT JOIN dbo.Agrupamento A WITH(NOLOCK) ON A.Id=P.IdAgrupamento
-GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,P.Id,P.Nome,A.Id,A.Nome;
+GROUP BY D.Id,D.IdFilial,DV.data,DV.hora,P.Id,P.Nome,A.Id,A.Nome;
 """
 
 SQL_VENDAS_ANALISE = """
 SET NOCOUNT ON;
 DROP TABLE IF EXISTS #IdsVendas;
-SELECT D.Id,CONVERT(date,COALESCE(TE.Data,D.Data)) AS Data,CAST(CASE WHEN TE.IdTeleEntrega IS NOT NULL THEN 'DELIVERY' ELSE 'VENDA_RAPIDA' END AS varchar(20)) modulo_venda INTO #IdsVendas
+SELECT D.Id,CONVERT(date,COALESCE(TE.Data,D.Data)) AS Data,CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108) Hora,CAST(CASE WHEN TE.IdTeleEntrega IS NOT NULL THEN 'DELIVERY' ELSE 'VENDA_RAPIDA' END AS varchar(20)) modulo_venda INTO #IdsVendas
 FROM dbo.DocumentoFiscal D WITH (NOLOCK)
 OUTER APPLY(SELECT TOP 1 VT.IdTeleEntrega,T.Data,T.Hora FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
  JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=VCF.IdVenda AND VT.IdFilial=D.IdFilial
@@ -723,13 +730,13 @@ WITH Modulos AS (
 UPDATE X SET modulo_venda=CASE M.tipo WHEN 2 THEN 'DELIVERY' WHEN 1 THEN 'CARTAO_MESA' ELSE 'VENDA_RAPIDA' END
 FROM #IdsVendas X JOIN Modulos M ON M.IdDocumentoFiscal=X.Id;
 WITH Itens AS (
- SELECT D.Id id_documento_fiscal,D.Data data,D.modulo_venda,P.Id codigo,P.Nome produto,
+ SELECT D.Id id_documento_fiscal,D.Data data,D.Hora hora,D.modulo_venda,P.Id codigo,P.Nome produto,
   A.Id id_agrupamento,A.Nome agrupamento,SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
   SUM(CAST(ISNULL(I.ValorTotal,0) AS decimal(19,4))) faturamento_produto
  FROM #IdsVendas D JOIN dbo.ItemDocumentoFiscal I WITH (NOLOCK) ON I.IdDocumentoFiscal=D.Id
  JOIN dbo.Produto P WITH (NOLOCK) ON P.Id=I.IdProduto LEFT JOIN dbo.Agrupamento A WITH (NOLOCK) ON A.Id=P.IdAgrupamento
  WHERE (? IS NULL OR P.Id=? OR P.Nome LIKE ?) AND (? IS NULL OR A.Id=?)
- GROUP BY D.Id,D.Data,D.modulo_venda,P.Id,P.Nome,A.Id,A.Nome
+ GROUP BY D.Id,D.Data,D.Hora,D.modulo_venda,P.Id,P.Nome,A.Id,A.Nome
 ), Pagamentos AS (
  SELECT F.IdDocumentoFiscal id_documento_fiscal,FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
   SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
@@ -739,7 +746,7 @@ WITH Itens AS (
 ), PagamentosComTotal AS (
  SELECT *,SUM(valor_pagamento) OVER(PARTITION BY id_documento_fiscal) total_pagamentos FROM Pagamentos
 )
-SELECT I.data,I.id_documento_fiscal,I.modulo_venda,I.codigo,I.produto,I.id_agrupamento,I.agrupamento,
+SELECT I.data,I.hora,I.id_documento_fiscal,I.modulo_venda,I.codigo,I.produto,I.id_agrupamento,I.agrupamento,
  CAST(I.quantidade*P.valor_pagamento/NULLIF(P.total_pagamentos,0) AS decimal(19,6)) quantidade_atribuida,
  CAST(CASE WHEN I.quantidade<>0 THEN I.faturamento_produto/I.quantidade ELSE 0 END AS decimal(19,4)) preco_medio,
  I.faturamento_produto,P.id_forma_pagamento,P.forma_pagamento,
@@ -2824,6 +2831,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/raffinato/comparativo-anual",
             "/api/raffinato/cache-status",
             "/api/raffinato/cache-refresh",
+            "/api/raffinato/reprocessar-periodo",
             "/api/integracoes/raffinato/testar",
             "/api/integracoes/raffinato/senha",
             "/api/integracoes/raffinato/salvar",
@@ -3024,6 +3032,16 @@ class Handler(BaseHTTPRequestHandler):
                 body["id_filial"] = resolve_raffinato_filial(config, {})
                 if route == "/api/raffinato/cache-status":
                     result = cache_status(store_id)
+                elif route == "/api/raffinato/reprocessar-periodo":
+                    start=parse_datetime(body.get("inicio"),"Inicio")
+                    end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
+                    if end<=start or (end.date()-start.date()).days>7:
+                        raise ValueError("O reprocessamento deve abranger de um a sete dias.")
+                    with CACHE_SYNC_LOCK:
+                        sync_period({**config,"_store_id":store_id},start,end-timedelta(seconds=1))
+                    result={"ok":True,"message":"Periodo reprocessado no cache remoto da loja vinculada.",
+                            "inicio":start.date().isoformat(),"fim_exclusivo":end.date().isoformat(),
+                            "id_filial":resolve_raffinato_filial(config,{})}
                 elif route == "/api/raffinato/cache-refresh":
                     if body.get("inicio") and body.get("fim_exclusivo"):
                         request_cache_range(store_id,parse_datetime(body["inicio"],"Inicio").date(),parse_datetime(body["fim_exclusivo"],"Fim").date())
