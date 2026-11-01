@@ -22,3 +22,10 @@ test('menu inclui icone elegante do gerador de escalas', () => {
   assert.match(js, /data-nav-item-id="gerador_inteligente_escalas"/);
   assert.match(css, /data-sidebar-icon='gerador_inteligente_escalas'/);
 });
+
+test('analise usa cache remoto quando o navegador bloqueia o conector local', () => {
+  const js = fs.readFileSync(new URL('../assets/js/98-smart-schedule.js', import.meta.url), 'utf8');
+  assert.match(js, /raffinatoBridgePost\('\/api\/raffinato\/vendas-gerencial'/);
+  assert.match(js, /action:'sales_canonical_dashboard'/);
+  assert.match(js, /cache_remoto_fallback/);
+});
