@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v291-gerador-layout-responsivo';
+const CACHE_NAME = 'check-diario-pwa-v292-relatorios-cache-remoto';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
