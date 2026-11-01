@@ -180,6 +180,7 @@
 
 .sidebar .nav-btn[data-sidebar-icon='escala_plantoes'],
 .sidebar .nav-btn[data-sidebar-icon='relatorios'] { --nav-icon-color: #60a5fa; --nav-icon-rgb: 96, 165, 250; }
+.sidebar .nav-btn[data-sidebar-icon='gerador_inteligente_escalas'] { --nav-icon-color: #2dd4bf; --nav-icon-rgb: 45, 212, 191; }
 .sidebar .nav-btn[data-sidebar-icon='checklist'],
 .sidebar .nav-btn[data-sidebar-icon='financeiro'],
 .sidebar .nav-btn[data-sidebar-icon='integracoes_financeiras'] { --nav-icon-color: #34d399; --nav-icon-rgb: 52, 211, 153; }
