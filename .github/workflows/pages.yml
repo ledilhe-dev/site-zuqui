@@ -63,6 +63,7 @@ jobs:
           mkdir -p _site/downloads
           cp "downloads/Conector-Raffinato-v${version}.exe" _site/downloads/
           cp "downloads/Conector-Raffinato-v${version}.sha256.txt" _site/downloads/
+          cp "downloads/Iniciar-Conector-Raffinato-v${version}.cmd" _site/downloads/
 
           touch _site/.nojekyll
 

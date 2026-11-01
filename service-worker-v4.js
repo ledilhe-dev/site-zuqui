@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v292-relatorios-cache-remoto';
+const CACHE_NAME = 'check-diario-pwa-v293-regressao-raffinato-2026-11-01';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
