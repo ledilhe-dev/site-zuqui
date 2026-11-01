@@ -95,5 +95,7 @@
   "./assets/css/119-compact-desktop.css",
   "./assets/css/121-mobile-density.css",
   "./assets/css/122-login-showcase.css"
-  ,"./assets/css/123-raffinato-daily-detail.css"
+  ,"./assets/css/123-raffinato-daily-detail.css",
+  "./assets/css/124-smart-schedule.css",
+  "./assets/js/98-smart-schedule.js"
 ]

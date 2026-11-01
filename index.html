@@ -82,6 +82,9 @@
           <span class="nav-hint">Calendário de turnos, domingos e feriados</span>
         </span>
       </button></div>
+      <div data-nav-item-id="gerador_inteligente_escalas" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="gerador_inteligente_escalas" onclick="abrirPagina('gerador_inteligente_escalas', this)">
+        <span class="nav-copy"><span class="nav-title">Gerador Inteligente de Escalas</span><span class="nav-hint">Demanda, cobertura e custos</span></span>
+      </button></div>
       <div data-nav-item-id="produtos_vencimento" draggable="true" ondragstart="navItemDragStart(event)" ondragover="navItemDragOver(event)" ondrop="navItemDrop(event)" ondragend="navItemDragEnd(event)" style="display:block;border-radius:var(--radius-sm);"><button class="nav-btn" data-page="produtos_vencimento" onclick="abrirPagina('produtos_vencimento', this)">
         <span class="icon">PV</span><span class="nav-copy"><span class="nav-title">Produtos próximos ao vencimento</span><span class="nav-hint">Controle e alertas por loja</span></span>
       </button></div>
@@ -2503,6 +2506,8 @@
         <div class="card rs-table-card" id="rpContingencyCard" hidden><div class="rs-table-head"><div><div class="card-title">Documentos em contingência</div><div class="page-sub" id="rpContingencySummary"></div></div></div><div class="rs-table-wrap"><table><thead><tr><th>Data</th><th>Hora</th><th>Documento</th><th>Tipo</th><th>Forma de pagamento</th><th>Valor</th><th>Status</th></tr></thead><tbody id="rpContingencyBody"></tbody></table></div><div class="rs-mobile-list" id="rpContingencyMobile"></div></div>
       </section>
 
+      <section id="gerador_inteligente_escalas" class="pagina"></section>
+
       <section id="relatorio_vendas_raffinato" class="pagina raffinato-sales-page">
         <div class="page-title">Análise de Vendas Raffinato</div>
         <div class="card rs-intro"><div><div class="card-title">Produtos × formas de pagamento</div><div class="page-sub">Cruze produtos, faturamento e formas de pagamento.</div></div><div class="rs-cache-tools"><div class="rs-status" id="rsStatus">Aguardando consulta</div><button class="btn btn-ghost btn-sm" type="button" onclick="atualizarCacheRaffinato()">Atualizar dados</button></div></div>
@@ -3070,6 +3075,7 @@
 <link rel="stylesheet" href="./assets/css/112-raffinato-sales-analysis.css?v=20261028-origem-multipla-v1">
 <link rel="stylesheet" href="./assets/css/115-raffinato-managerial.css?v=20260911-group-close-v2">
 <link rel="stylesheet" href="./assets/css/123-raffinato-daily-detail.css?v=20261028-hour-filter-v11">
+<link rel="stylesheet" href="./assets/css/124-smart-schedule.css?v=20261031-v1">
 <link rel="stylesheet" href="./assets/css/117-raffinato-item-obrigatorio-pizza.css?v=20260911-filtros-excel-v6">
 <link rel="stylesheet" href="./assets/css/118-raffinato-item-obrigatorio-filters.css?v=20260911-valores-modulo-v7">
 <link rel="stylesheet" href="./assets/css/114-annual-comparison.css?v=20260922-v10">
@@ -3685,3 +3691,4 @@
 <script id="nr-sheet-js" src="./assets/js/32-receivable-sheet.js?v=20260804-ajuda-sequencial"></script>
 <script src="./assets/js/94-checkia.js?v=20261008-v4"></script>
 <script src="./assets/js/95-produtos-vencimento.js?v=20261008-v3"></script>
+<script src="./assets/js/98-smart-schedule.js?v=20261031-v1"></script>
