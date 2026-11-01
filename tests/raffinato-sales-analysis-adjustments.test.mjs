@@ -47,7 +47,8 @@ test('agrupamentos possuem busca, checkboxes e payload multiseleção',()=>{
   assert.match(source,/type="checkbox"/);
   assert.match(source,/function rmFilterGroupOptions/);
   assert.match(source,/id_agrupamentos:groups/);
-  assert.match(source,/body\.id_agrupamentos\.length>1/);
+  assert.doesNotMatch(source,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
+  assert.match(source,/raffinatoBridgePost\(path,body\)/);
   assert.match(relay,/groupSet\.has\(String\(x\.id_agrupamento\)\)/);
   assert.match(relay,/Number\.isSafeInteger/);
 });

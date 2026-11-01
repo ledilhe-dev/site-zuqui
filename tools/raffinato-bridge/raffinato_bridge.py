@@ -43,13 +43,13 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.25"
+CONNECTOR_VERSION = "2.0.26"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
 ).rstrip("/")
-CACHE_SCHEMA_VERSION = 2
+CACHE_SCHEMA_VERSION = 4
 MAX_BODY_BYTES = 16_384
 MAX_INTERVAL_DAYS = 366
 STORE_CONFIG_PATH = BASE_DIR / "integracoes-raffinato.dat"
@@ -2125,9 +2125,23 @@ def query_vendas_analise_completa(config: dict[str, Any], body: dict[str, Any]) 
     analysis=query_vendas_analise(config,body)
     canonical=query_produtos(config,body)
     items=analysis.get("items",[])
+    origins={str(x).strip().upper() for x in (body.get("origens") or []) if str(x).strip()}
+    groups={str(x).strip() for x in (body.get("id_agrupamentos") or []) if str(x).strip()}
+    weekday=None if body.get("dia_semana") in (None,"") else int(body["dia_semana"])
+    hour=None if body.get("hora") in (None,"") else int(body["hora"])
+    if origins:
+        items=[x for x in items if str(x.get("modulo_venda") or "VENDA_RAPIDA").upper() in origins]
+    if groups:
+        items=[x for x in items if str(x.get("id_agrupamento") or "") in groups]
+    if weekday is not None:
+        items=[x for x in items if datetime.fromisoformat(str(x.get("data"))[:10]).weekday()==((weekday+6)%7)]
+    if hour is not None:
+        items=[x for x in items if int(str(x.get("hora") or "00:00:00")[:2])==hour]
+    analysis["items"]=items
     dimensions=[{"id_documento":str(x.get("id_documento_fiscal") or ""),"codigo":x.get("codigo"),
                  "id_agrupamento":x.get("id_agrupamento"),"id_forma_pagamento":x.get("id_forma_pagamento"),
-                 "modulo_venda":x.get("modulo_venda")} for x in items]
+                  "modulo_venda":x.get("modulo_venda"),"data":x.get("data"),"hora":x.get("hora"),
+                  "valor":x.get("valor_atribuido")} for x in items]
     modules:dict[str,dict[str,Any]]={}
     for item in items:
         module=str(item.get("modulo_venda") or "VENDA_RAPIDA")
@@ -2150,7 +2164,8 @@ def query_vendas_analise_completa(config: dict[str, Any], body: dict[str, Any]) 
     return {**analysis,"documentos_dimensao":dimensions,"contingencias":canonical.get("contingencias",[]),
             "totalizadores_canonicos":totals,"operacoes_abertas":list(open_rows.values()),"modulos_faturados":billed,
             "totais_operacionais":{"recebido":totals["faturamento"],"em_aberto":open_total,"previsto":round(totals["faturamento"]+open_total,2)},
-            "cache_version":3,"duplicidades":0,"cobertura":{"completa":True},"origem_consulta":"sql_canonico_horario"}
+            "cache_version":CACHE_SCHEMA_VERSION,"schema_version":4,"operational_time_source":"TELEENTREGA_DELIVERY_V1",
+            "duplicidades":0,"cobertura":{"completa":True},"origem_consulta":"sql_canonico_horario"}
 
 
 def query_vendas_status(config: dict[str, Any], start: date, end_exclusive: date, filial: int) -> list[dict[str, Any]]:

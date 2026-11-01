@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const bridge=fs.readFileSync(new URL('../tools/raffinato-bridge/raffinato_bridge.py',import.meta.url),'utf8');
+const manager=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',import.meta.url),'utf8');
+const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
 
 test('delivery usa data e hora da TeleEntrega com vinculo pela filial',()=>{
   assert.match(bridge,/T\.Id=VT\.IdTeleEntrega AND T\.IdFilial=VT\.IdFilial/);
@@ -29,4 +31,18 @@ test('painel gerencial agrega uma unica base temporal compartilhada',()=>{
   assert.match(active,/INTO #Gerencial/);
   assert.match(active,/DATEPART\(HOUR,CAST\(COALESCE\(TE\.Hora,D\.Hora\) AS time\)\)/);
   assert.match(active,/GROUP BY D\.Id/);
+});
+
+test('BI consulta primeiro o conector e rejeita cache remoto temporal antigo',()=>{
+  assert.doesNotMatch(manager,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
+  assert.match(manager,/Number\(remote\?\.schema_version\|\|0\)<4/);
+  assert.match(manager,/TELEENTREGA_DELIVERY_V1/);
+  assert.match(relay,/schema_version:4,operational_time_source:"TELEENTREGA_DELIVERY_V1"/);
+});
+
+test('versao nova invalida cache local anterior e filtra Delivery antes de agregar',()=>{
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.26"/);
+  assert.match(bridge,/CACHE_SCHEMA_VERSION = 4/);
+  assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
+  assert.match(bridge,/analysis\["items"\]=items/);
 });
