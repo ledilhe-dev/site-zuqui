@@ -458,6 +458,8 @@ async function validarDuplicidadeCadastro({
   funcionarioIdIgnorar = null,
   solicitacaoIdIgnorar = null,
   verificarSolicitacoesPendentes = true,
+  empresaId = null,
+  lojaId = null,
 } = {}) {
   const nomeNormalizado = normalizarTextoComparacao(nome);
   const emailNormalizado = String(email || '').trim().toLowerCase();
@@ -490,6 +492,8 @@ async function validarDuplicidadeCadastro({
       .from('funcionarios')
       .select('id, nome')
       .ilike('nome', escaparValorLike(nome));
+    if (empresaId) consultaFuncionariosMesmoNome = consultaFuncionariosMesmoNome.eq('empresa_id', empresaId);
+    if (lojaId) consultaFuncionariosMesmoNome = consultaFuncionariosMesmoNome.eq('loja_id', lojaId);
 
     const { data: funcionariosMesmoNome } = await consultaFuncionariosMesmoNome;
 

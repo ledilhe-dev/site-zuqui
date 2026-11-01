@@ -32,8 +32,16 @@
 #gerador_inteligente_escalas .ss-grid{grid-template-columns:minmax(0,1.18fr) minmax(340px,.82fr);align-items:start;gap:clamp(14px,1.6vw,22px)}
 #gerador_inteligente_escalas .ss-form{grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px}
 #gerador_inteligente_escalas .ss-form .ss-wide{grid-column:1/-1}
-#gerador_inteligente_escalas .ss-person{grid-template-columns:minmax(180px,1fr) minmax(110px,150px) minmax(110px,145px);align-items:center;gap:10px;padding:10px 0}
+#gerador_inteligente_escalas .ss-turns{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:12px;margin:16px 0;padding:14px;border:1px solid var(--border);border-radius:12px}
+#gerador_inteligente_escalas .ss-turns>label{display:grid;gap:6px;color:var(--muted);font-size:.82rem;font-weight:700}
+#gerador_inteligente_escalas .ss-turns>label:has(input[type="checkbox"]){grid-column:1/-1;display:flex;align-items:center;gap:8px}
+#gerador_inteligente_escalas .ss-person{grid-template-columns:minmax(150px,1fr) 105px minmax(170px,auto) 90px 100px;align-items:center;gap:10px;padding:10px 0}
 #gerador_inteligente_escalas .ss-person>label{display:flex;align-items:center;gap:9px;font-weight:650;line-height:1.35}
+#gerador_inteligente_escalas .ss-person .ss-weekend{font-size:.78rem;font-weight:600}
+#gerador_inteligente_escalas .ss-edit-list article.has-warning{border-color:#e0a800;background:rgba(224,168,0,.07)}
+#gerador_inteligente_escalas .ss-clt-warning{grid-column:1/-1;color:#f0b429;font-weight:700}
+#gerador_inteligente_escalas .msg.warn{border:1px solid #e0a800;background:rgba(224,168,0,.12);color:#f4c95d}
+#gerador_inteligente_escalas .ss-help{color:var(--muted);font-size:.85rem}
 #gerador_inteligente_escalas .ss-kpis{grid-template-columns:repeat(4,minmax(150px,1fr))}
 #gerador_inteligente_escalas .ss-kpis article{min-height:92px}
 #gerador_inteligente_escalas .ss-calendar-tools{display:grid;grid-template-columns:repeat(3,auto) minmax(180px,1fr) minmax(180px,1fr)}

@@ -1006,17 +1006,19 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     }
     // lojaId agora é gerenciado via vínculos — não bloqueia mais o cadastro
     if (!perfilId) { setMsg('msgFuncionarios', 'Selecione um perfil ativo desta loja.', 'err'); return; }
+    const tenantCadastro = await resolverTenantParaCadastroFuncionario();
     const mensagemDuplicidade = await validarDuplicidadeCadastro({
       nome,
       email: emailInformado ? email : null,
       pin,
       funcionarioIdIgnorar: funcionarioEmEdicaoId || null,
       verificarSolicitacoesPendentes: false,
+      empresaId: tenantCadastro.empresa_id,
+      lojaId: tenantCadastro.loja_id,
     });
     if (mensagemDuplicidade) { setMsg('msgFuncionarios', mensagemDuplicidade, 'err'); return; }
-    const tenantCadastro = await resolverTenantParaCadastroFuncionario();
     // Loja agora é selecionada manualmente no formulário
-    const lojaParaSalvar = await resolverTenantParaCadastroFuncionario();
+    const lojaParaSalvar = tenantCadastro;
     if (!lojaParaSalvar.empresa_id && !editandoAgora) {
       setMsg('msgFuncionarios', 'Não foi possível identificar empresa para o cadastro.', 'err');
       return;
@@ -1100,7 +1102,7 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       const erroTexto = String(error.message || '').toLowerCase();
       if (String(error.code || '') === '23505' || erroTexto.includes('duplicate key')) {
         if (erroTexto.includes('funcionarios_nome_unique') || erroTexto.includes('nome')) {
-          setMsg('msgFuncionarios', `Já existe um funcionário cadastrado com o nome "${nome}". Escolha um nome diferente (ex.: inclua sobrenome ou loja).`, 'err');
+          setMsg('msgFuncionarios', `Já existe um funcionário cadastrado com o nome "${nome}" nesta loja.`, 'err');
           return;
         }
         if (erroTexto.includes('email')) {
