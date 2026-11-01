@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.27"
+CONNECTOR_VERSION = "2.0.28"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -664,7 +664,7 @@ GROUP BY CONVERT(date,D.Data),P.Id,P.Nome,A.Id,A.Nome;
 
 SQL_BASE_CANONICA_SYNC = """
 SET NOCOUNT ON;
-SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,COALESCE(TE.Data,D.Data)) data,
+SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
  CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108) hora,D.Tipo tipo,
  CAST(CASE WHEN ISNULL(D.EhContingencia,0)=1 THEN 1 ELSE 0 END AS bit) eh_contingencia,
  CASE WHEN TE.IdTeleEntrega IS NOT NULL THEN 'DELIVERY'
@@ -679,19 +679,19 @@ OUTER APPLY(SELECT TOP 1 VT.IdTeleEntrega,T.Data,T.Hora FROM dbo.VendaCupomFisca
  WHERE VCF.IdDocumentoFiscal=D.Id AND T.Data IS NOT NULL AND T.Hora IS NOT NULL ORDER BY VT.Id) TE
 JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id
 JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=F.IdFormaPagamento
-WHERE CONVERT(date,COALESCE(TE.Data,D.Data))>=? AND CONVERT(date,COALESCE(TE.Data,D.Data))<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
-GROUP BY D.Id,D.IdFilial,CONVERT(date,COALESCE(TE.Data,D.Data)),COALESCE(TE.Hora,D.Hora),D.Tipo,D.EhContingencia,FP.Id,FP.Nome;
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),COALESCE(TE.Hora,D.Hora),D.Tipo,D.EhContingencia,FP.Id,FP.Nome;
 ;WITH DocumentoVenda AS (
- SELECT VCF.IdVenda,MIN(D.Id) id_documento_fiscal,CONVERT(date,COALESCE(TE.Data,D.Data)) data,
+ SELECT VCF.IdVenda,MIN(D.Id) id_documento_fiscal,CONVERT(date,D.Data) data,
   CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108) hora
  FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
  JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal
  OUTER APPLY(SELECT TOP 1 VT.IdTeleEntrega,T.Data,T.Hora FROM dbo.VendaTeleEntrega VT WITH(NOLOCK)
   JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega AND T.IdFilial=VT.IdFilial
   WHERE VT.IdVenda=VCF.IdVenda AND VT.IdFilial=D.IdFilial AND T.Data IS NOT NULL AND T.Hora IS NOT NULL ORDER BY VT.Id) TE
- WHERE CONVERT(date,COALESCE(TE.Data,D.Data))>=? AND CONVERT(date,COALESCE(TE.Data,D.Data))<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
   AND EXISTS(SELECT 1 FROM dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) WHERE F.IdDocumentoFiscal=D.Id)
- GROUP BY VCF.IdVenda,CONVERT(date,COALESCE(TE.Data,D.Data)),CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108)
+ GROUP BY VCF.IdVenda,CONVERT(date,D.Data),CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108)
 )
 SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,DV.data,DV.hora,P.Id codigo,P.Nome produto,A.Id id_agrupamento,A.Nome agrupamento,
  SUM(CAST(ISNULL(I.Quantidade,0) AS decimal(19,6))) quantidade,
@@ -707,15 +707,15 @@ GROUP BY D.Id,D.IdFilial,DV.data,DV.hora,P.Id,P.Nome,A.Id,A.Nome;
 SQL_VENDAS_ANALISE = """
 SET NOCOUNT ON;
 DROP TABLE IF EXISTS #IdsVendas;
-SELECT D.Id,CONVERT(date,COALESCE(TE.Data,D.Data)) AS Data,CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108) Hora,CAST(CASE WHEN TE.IdTeleEntrega IS NOT NULL THEN 'DELIVERY' ELSE 'VENDA_RAPIDA' END AS varchar(20)) modulo_venda INTO #IdsVendas
+SELECT D.Id,CONVERT(date,D.Data) AS Data,CONVERT(varchar(8),CAST(COALESCE(TE.Hora,D.Hora) AS time),108) Hora,CAST(CASE WHEN TE.IdTeleEntrega IS NOT NULL THEN 'DELIVERY' ELSE 'VENDA_RAPIDA' END AS varchar(20)) modulo_venda INTO #IdsVendas
 FROM dbo.DocumentoFiscal D WITH (NOLOCK)
 OUTER APPLY(SELECT TOP 1 VT.IdTeleEntrega,T.Data,T.Hora FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
  JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=VCF.IdVenda AND VT.IdFilial=D.IdFilial
  JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega AND T.IdFilial=VT.IdFilial
  WHERE VCF.IdDocumentoFiscal=D.Id AND T.Data IS NOT NULL AND T.Hora IS NOT NULL ORDER BY VT.Id) TE
-WHERE CONVERT(date,COALESCE(TE.Data,D.Data))>=? AND CONVERT(date,COALESCE(TE.Data,D.Data))<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
- AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,COALESCE(TE.Data,D.Data)) AS datetime2))>=?
- AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,COALESCE(TE.Data,D.Data)) AS datetime2))<?;
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?;
 CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas(Id);
 WITH Modulos AS (
  SELECT VCF.IdDocumentoFiscal,
@@ -824,8 +824,8 @@ SELECT hora,COUNT(*) quantidade,SUM(valor) faturamento FROM Totais WHERE (? IS N
 SQL_VENDAS_GERENCIAL = """
 SET NOCOUNT ON;
 DROP TABLE IF EXISTS #Gerencial;
-SELECT D.Id,CONVERT(date,COALESCE(TE.Data,D.Data)) data,
- DATEPART(WEEKDAY,COALESCE(TE.Data,D.Data)) dia_semana,
+SELECT D.Id,CONVERT(date,D.Data) data,
+ DATEPART(WEEKDAY,D.Data) dia_semana,
  DATEPART(HOUR,CAST(COALESCE(TE.Hora,D.Hora) AS time)) hora,
  CASE WHEN TE.IdTeleEntrega IS NOT NULL THEN 'DELIVERY'
       WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa M WITH(NOLOCK) ON M.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo C WITH(NOLOCK) ON C.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (M.IdVenda IS NOT NULL OR C.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA'
@@ -838,10 +838,10 @@ OUTER APPLY(SELECT TOP 1 VT.IdTeleEntrega,T.Data,T.Hora FROM dbo.VendaCupomFisca
  JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega AND T.IdFilial=VT.IdFilial
  WHERE VCF.IdDocumentoFiscal=D.Id AND T.Data IS NOT NULL AND T.Hora IS NOT NULL ORDER BY VT.Id) TE
 JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id
-WHERE CONVERT(date,COALESCE(TE.Data,D.Data))>=? AND CONVERT(date,COALESCE(TE.Data,D.Data))<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
- AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,COALESCE(TE.Data,D.Data)) AS datetime2))>=?
- AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,COALESCE(TE.Data,D.Data)) AS datetime2))<?
-GROUP BY D.Id,COALESCE(TE.Data,D.Data),COALESCE(TE.Hora,D.Hora),TE.IdTeleEntrega;
+WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,D.Data) AS datetime2))>=?
+ AND DATEADD(SECOND,DATEDIFF(SECOND,CAST('00:00:00' AS time),CAST(COALESCE(TE.Hora,D.Hora) AS time)),CAST(CONVERT(date,D.Data) AS datetime2))<?
+GROUP BY D.Id,D.Data,COALESCE(TE.Hora,D.Hora),TE.IdTeleEntrega;
 SELECT origem,COUNT(*) quantidade,SUM(valor) faturamento,CAST(SUM(valor)/NULLIF(COUNT(*),0) AS decimal(19,4)) ticket_medio FROM #Gerencial WHERE (? IS NULL OR CHARINDEX(','+origem+',',?)>0) GROUP BY origem ORDER BY faturamento DESC;
 SELECT dia_semana,COUNT(*) quantidade,SUM(valor) faturamento,CAST(SUM(valor)/NULLIF(COUNT(*),0) AS decimal(19,4)) ticket_medio FROM #Gerencial WHERE (? IS NULL OR CHARINDEX(','+origem+',',?)>0) GROUP BY dia_semana ORDER BY dia_semana;
 SELECT hora,COUNT(*) quantidade,SUM(valor) faturamento FROM #Gerencial WHERE (? IS NULL OR CHARINDEX(','+origem+',',?)>0) GROUP BY hora ORDER BY hora;

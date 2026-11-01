@@ -13,10 +13,11 @@ test('delivery usa data e hora da TeleEntrega com vinculo pela filial',()=>{
   assert.match(bridge,/COALESCE\(TE\.Hora,V\.Hora\)/);
 });
 
-test('sincronizacao canonica e consulta local preservam a hora operacional',()=>{
+test('sincronizacao preserva a data fiscal e altera somente a hora do delivery',()=>{
   const canonical=bridge.match(/SQL_BASE_CANONICA_SYNC = """([\s\S]*?)"""/)?.[1]||'';
   const analysis=bridge.match(/SQL_VENDAS_ANALISE = """([\s\S]*?)"""/)?.[1]||'';
-  assert.match(canonical,/CONVERT\(date,COALESCE\(TE\.Data,D\.Data\)\) data/);
+  assert.match(canonical,/CONVERT\(date,D\.Data\) data/);
+  assert.doesNotMatch(canonical,/CONVERT\(date,COALESCE\(TE\.Data,D\.Data\)\) data/);
   assert.match(canonical,/CAST\(COALESCE\(TE\.Hora,D\.Hora\) AS time\)/);
   assert.match(canonical,/T\.Id=VT\.IdTeleEntrega AND T\.IdFilial=VT\.IdFilial/);
   assert.match(canonical,/CASE WHEN TE\.IdTeleEntrega IS NOT NULL THEN 'DELIVERY'/);
@@ -57,7 +58,7 @@ test('BI prioriza o conector e mantém relatórios disponíveis durante reconstr
 });
 
 test('versao nova invalida cache local anterior e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.27"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.28"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 4/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
