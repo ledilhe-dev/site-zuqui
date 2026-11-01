@@ -33,12 +33,14 @@ test('painel gerencial agrega uma unica base temporal compartilhada',()=>{
   assert.match(active,/GROUP BY D\.Id/);
 });
 
-test('BI consulta primeiro o conector e rejeita cache remoto temporal antigo',()=>{
+test('BI prioriza o conector e mantém relatórios disponíveis durante reconstrução do cache remoto',()=>{
   assert.doesNotMatch(manager,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
   assert.match(manager,/Number\(remote\?\.schema_version\|\|0\)<4/);
   assert.match(manager,/Number\(local\?\.schema_version\|\|0\)<4/);
   assert.match(manager,/local\?\.operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
   assert.match(manager,/TELEENTREGA_DELIVERY_V1/);
+  assert.match(manager,/temporal_warning/);
+  assert.match(manager,/cache remoto em sincronização/);
   assert.match(relay,/schema_version:2,operational_time_source:"LEGACY_CACHE_UNVERIFIED"/);
 });
 
