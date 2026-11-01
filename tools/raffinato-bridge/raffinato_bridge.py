@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.29"
+CONNECTOR_VERSION = "2.0.32"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -350,9 +350,6 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
             try:
                 if REMOTE_OPERATIONS_PAUSED.is_set():
                     time.sleep(30)
-                    continue
-                if time.monotonic() >= CARDAPIO_ACTIVE_UNTIL:
-                    time.sleep(5)
                     continue
                 try:
                     dispatcher_config = module.load() if config_path else {}
@@ -2065,11 +2062,14 @@ def query_produtos(config: dict[str, Any], body: dict[str, Any]) -> dict[str, An
 def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     start=parse_datetime(body.get("inicio"),"Início"); end=parse_datetime(body.get("fim_exclusivo"),"Fim exclusivo")
     filial=resolve_raffinato_filial(config,body); product_text=str(body.get("produto") or body.get("id_produto") or "").strip(); product=int(product_text) if product_text.isdigit() else None; product_filter=product_text or None; product_like=f"%{product_text}%" if product_text else None; group=int(body["id_agrupamento"]) if body.get("id_agrupamento") else None; payment=int(body["id_forma_pagamento"]) if body.get("id_forma_pagamento") else None
+    apply_delivery_time=body.get("_preservar_periodo_financeiro") is not True
     sql_started=time.perf_counter()
-    coarse_end=end.date()+timedelta(days=1) if end.time()!=datetime.min.time() else end.date()
+    financial_start=start-timedelta(days=7) if apply_delivery_time else start
+    financial_end=end+timedelta(days=7) if apply_delivery_time else end
+    coarse_end=financial_end.date()+timedelta(days=1) if financial_end.time()!=datetime.min.time() else financial_end.date()
     try:
         with pyodbc.connect(connection_string(config), timeout=8) as connection:
-            connection.timeout=60; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,start.date(),coarse_end,filial,start,end,product_filter,product,product_like,group,group,payment,payment)
+            connection.timeout=60; cursor=connection.cursor(); cursor.execute(SQL_VENDAS_ANALISE,financial_start.date(),coarse_end,filial,financial_start,financial_end,product_filter,product,product_like,group,group,payment,payment)
             items=rows_as_dicts(cursor)
     except pyodbc.Error:
         logger.exception("Relação transacional de pagamentos indisponível; retornando produtos sem rateio")
@@ -2089,46 +2089,88 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
             "message": "Relação transacional de formas de pagamento ainda não identificada.",
             "items": items, "rateio": None, "filial": filial,
         }
-    use_delivery_entry_time = body.get("usar_horario_entrada_delivery") is True
-    if use_delivery_entry_time and items:
+    delivery_time_stats={"enriched":0,"fallback":0}
+    if apply_delivery_time and items:
         # Consulta independente: nunca participa da selecao financeira nem muda
         # documentos, itens, quantidades ou valores. Ela apenas fornece a
         # dimensao temporal alternativa para documentos ja classificados como
         # Delivery pela consulta original.
-        delivery_times=query_delivery_entry_times(config,start.date(),coarse_end,filial)
-        apply_delivery_entry_times(items,delivery_times)
-    logger.info("TEMPO SQL: VENDAS_ANALISE %.3fs | registros=%s | horario_delivery=%s",time.perf_counter()-sql_started,len(items),use_delivery_entry_time)
+        delivery_times=query_delivery_entry_times(config,financial_start.date(),coarse_end,filial)
+        delivery_time_stats=apply_delivery_entry_times(items,delivery_times,logger)
+        items=filter_items_by_effective_period(items,start,end)
+    logger.info("TEMPO SQL: VENDAS_ANALISE %.3fs | registros=%s | horario_delivery=automatico | enriquecidos=%s | fallback=%s",time.perf_counter()-sql_started,len(items),delivery_time_stats["enriched"],delivery_time_stats["fallback"])
     return {"schema_version":3,"items":items,"fontes_pagamento":[{"origem":"FormaPagamentoCupomFiscal"}],"rateio":"proporcional_decimal","filial":filial,
             "periodo":{"inicio":start.isoformat(),"fim_exclusivo":end.isoformat()},
-            "operational_time_source":"TELEENTREGA_DELIVERY_V1" if use_delivery_entry_time else "ORIGINAL_DOCUMENTO_FISCAL"}
+            "operational_time_source":"DELIVERY_RECEBIMENTO_AUTOMATICO_V1" if apply_delivery_time else "ORIGINAL_DOCUMENTO_FISCAL",
+            "delivery_time_stats":delivery_time_stats}
 
 
 def query_delivery_entry_times(config:dict[str,Any],start:date,end_exclusive:date,filial:int) -> dict[str,dict[str,Any]]:
-    sql="""SELECT D.Id id_documento_fiscal,CONVERT(date,TE.Data) data,
-      CONVERT(varchar(8),CAST(TE.Hora AS time),108) hora
+    sql="""SELECT D.Id id_documento_fiscal,CONVERT(date,DELIVERY.DataRecebimento) data,
+      CONVERT(varchar(8),CAST(DELIVERY.HoraRecebimento AS time),108) hora,
+      DELIVERY.FonteHorario fonte
       FROM dbo.DocumentoFiscal D WITH(NOLOCK)
-      OUTER APPLY(SELECT TOP 1 T.Data,T.Hora FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
-       JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=VCF.IdVenda AND VT.IdFilial=D.IdFilial
+      OUTER APPLY(SELECT TOP 1
+        CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN IDO.DataGravacao ELSE T.Data END DataRecebimento,
+        CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN IDO.HoraGravacao ELSE T.Hora END HoraRecebimento,
+        CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN 'INTEGRACAO_DELIVERY_ONLINE'
+             ELSE 'TELEENTREGA' END FonteHorario
+       FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
+       JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VCF.IdVenda AND V.IdFilial=D.IdFilial
+       JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=V.Id AND VT.IdFilial=V.IdFilial
        JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega AND T.IdFilial=VT.IdFilial
-       WHERE VCF.IdDocumentoFiscal=D.Id AND T.Data IS NOT NULL AND T.Hora IS NOT NULL
-       ORDER BY VT.Id) TE
+       LEFT JOIN dbo.IntegracaoDeliveryOnline IDO WITH(NOLOCK)
+        ON UPPER(CONVERT(nvarchar(255),IDO.IdIntegracaoDeliveryOnline))=
+           UPPER(CONVERT(nvarchar(255),T.IdIntegracaoDeliveryOnline))
+       WHERE VCF.IdDocumentoFiscal=D.Id
+        AND ((IDO.DataGravacao IS NOT NULL AND IDO.HoraGravacao IS NOT NULL)
+          OR ((T.IdIntegracaoDeliveryOnline IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(255),T.IdIntegracaoDeliveryOnline)))='')
+              AND T.Data IS NOT NULL AND T.Hora IS NOT NULL))
+       ORDER BY CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN 0 ELSE 1 END,
+        IDO.DataGravacao,IDO.HoraGravacao,VT.Id) DELIVERY
       WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
-       AND TE.Data IS NOT NULL AND TE.Hora IS NOT NULL;"""
+       AND DELIVERY.DataRecebimento IS NOT NULL AND DELIVERY.HoraRecebimento IS NOT NULL;"""
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
         connection.timeout=45;cursor=connection.cursor();cursor.execute(sql,start,end_exclusive,filial);rows=rows_as_dicts(cursor)
-    return {str(row["id_documento_fiscal"]):{"data":row["data"],"hora":row["hora"]} for row in rows}
+    return {str(row["id_documento_fiscal"]):{"data":row["data"],"hora":row["hora"],"fonte":row["fonte"]} for row in rows}
 
 
-def apply_delivery_entry_times(items:list[dict[str,Any]],delivery_times:dict[str,dict[str,Any]]) -> list[dict[str,Any]]:
+def apply_delivery_entry_times(items:list[dict[str,Any]],delivery_times:dict[str,dict[str,Any]],log:Any=None) -> dict[str,int]:
     """Aplica apenas a dimensao temporal aos documentos Delivery ja selecionados."""
+    enriched_documents:set[str]=set();fallback_documents:set[str]=set()
     for item in items:
         if str(item.get("modulo_venda") or "").upper() != "DELIVERY":
             continue
-        temporal=delivery_times.get(str(item.get("id_documento_fiscal") or ""))
+        document_id=str(item.get("id_documento_fiscal") or "")
+        temporal=delivery_times.get(document_id)
         if temporal:
             item["data"]=temporal["data"]
             item["hora"]=temporal["hora"]
-    return items
+            item["delivery_time_source"]=temporal.get("fonte") or "RECEBIMENTO_DELIVERY"
+            item["delivery_time_fallback"]=False
+            enriched_documents.add(document_id)
+        else:
+            item["delivery_time_source"]="FECHAMENTO_FINANCEIRO_FALLBACK"
+            item["delivery_time_fallback"]=True
+            fallback_documents.add(document_id)
+    if fallback_documents and log:
+        log.warning("Horario de recebimento Delivery indisponivel; horario financeiro preservado | documentos=%s",len(fallback_documents))
+    return {"enriched":len(enriched_documents),"fallback":len(fallback_documents)}
+
+
+def filter_items_by_effective_period(items:list[dict[str,Any]],start:datetime,end:datetime) -> list[dict[str,Any]]:
+    """Aplica o periodo ao horario selecionado sem recalcular ou criar vendas."""
+    filtered=[]
+    for item in items:
+        try:
+            item_date=str(item.get("data") or "")[:10]
+            item_time=str(item.get("hora") or "00:00:00")[:8]
+            effective=datetime.fromisoformat(f"{item_date}T{item_time}")
+        except (TypeError,ValueError):
+            continue
+        if start<=effective<end:
+            filtered.append(item)
+    return filtered
 
 
 def query_vendas_analise_completa(config: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
@@ -2170,7 +2212,20 @@ def query_vendas_analise_completa(config: dict[str, Any], body: dict[str, Any]) 
     if deliveries:
         open_rows["DELIVERY"]={"modulo_venda":"DELIVERY","quantidade":len(deliveries),
                                "valor":round(sum(float(x.get("valor") or 0) for x in deliveries),2)}
-    totals=canonical["totalizadores"];open_total=round(sum(float(x["valor"]) for x in open_rows.values()),2)
+    totals=canonical["totalizadores"]
+    if body.get("_preservar_periodo_financeiro") is not True:
+        # O conjunto financeiro continua vindo do SELECT original. Como o
+        # periodo agora pode atravessar a data de fechamento, os totalizadores
+        # exibidos devem refletir esse mesmo conjunto ja recortado pelo horario
+        # efetivo, sem recalcular o valor de nenhuma linha.
+        effective_revenue=round(sum(float(x.get("valor_atribuido") or 0) for x in items),2)
+        effective_quantity=sum(float(x.get("quantidade_atribuida") or 0) for x in items)
+        effective_documents=len({str(x.get("id_documento_fiscal") or "") for x in items if str(x.get("id_documento_fiscal") or "")})
+        totals={**totals,"faturamento":effective_revenue,"produtos_identificados":effective_revenue,
+                "faturamento_relatorio_produtos":effective_revenue,"total_reconciliado":effective_revenue,
+                "diferenca_conciliacao":0.0,"quantidade":effective_quantity,
+                "documentos_financeiro":effective_documents,"documentos_produtos":effective_documents}
+    open_total=round(sum(float(x["valor"]) for x in open_rows.values()),2)
     return {**analysis,"documentos_dimensao":dimensions,"contingencias":canonical.get("contingencias",[]),
             "totalizadores_canonicos":totals,"operacoes_abertas":list(open_rows.values()),"modulos_faturados":billed,
             "totais_operacionais":{"recebido":totals["faturamento"],"em_aberto":open_total,"previsto":round(totals["faturamento"]+open_total,2)},
@@ -2292,7 +2347,7 @@ def set_cache_meta(store_id: str, **values: Any) -> None:
 def sync_cache_day(store_id: str, config: dict[str, Any], day: date, filial: int) -> None:
     start = datetime.combine(day, datetime.min.time()); end = start + timedelta(days=1)
     set_cache_meta(store_id, status="sincronizando", mensagem=f"Sincronizando {day.isoformat()}")
-    body = {"inicio":start.isoformat(),"fim_exclusivo":end.isoformat(),"id_filial":filial}
+    body = {"inicio":start.isoformat(),"fim_exclusivo":end.isoformat(),"id_filial":filial,"_preservar_periodo_financeiro":True}
     products = query_produtos(config, body)
     cross = query_vendas_analise(config, body)
     sale_status = query_vendas_status(config, day, day + timedelta(days=1), filial)
@@ -2349,7 +2404,7 @@ def sync_cache_period(store_id:str,config:dict[str,Any],start_day:date,end_exclu
     if end_exclusive<=start_day or (end_exclusive-start_day).days>7:
         raise ValueError("O bloco de cache deve conter entre 1 e 7 dias.")
     set_cache_meta(store_id,status="sincronizando",mensagem=f"Sincronizando {start_day.isoformat()} a {(end_exclusive-timedelta(days=1)).isoformat()}")
-    body={"inicio":datetime.combine(start_day,datetime.min.time()).isoformat(),"fim_exclusivo":datetime.combine(end_exclusive,datetime.min.time()).isoformat(),"id_filial":filial}
+    body={"inicio":datetime.combine(start_day,datetime.min.time()).isoformat(),"fim_exclusivo":datetime.combine(end_exclusive,datetime.min.time()).isoformat(),"id_filial":filial,"_preservar_periodo_financeiro":True}
     cross=query_vendas_analise(config,body)
     sale_status=query_vendas_status(config,start_day,end_exclusive,filial)
     if not cross.get("success",True):
@@ -3107,19 +3162,22 @@ def show_windows_message(title: str, message: str, error: bool = False) -> None:
 
 def retire_legacy_connectors() -> None:
     """Encerra executáveis antigos que disputam a credencial e a fila do cardápio."""
-    for patch in range(0, 22):
-        image = f"Conector-Raffinato-v2.0.{patch}.exe"
-        try:
-            subprocess.run(
-                ["taskkill", "/F", "/T", "/IM", image],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=8,
-                check=False,
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-            )
-        except Exception:
-            logger.exception("Nao foi possivel encerrar o conector legado %s", image)
+    current_pid=os.getpid()
+    command=(
+        f"$current={current_pid};"
+        "Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|"
+        "Where-Object{$_.ProcessId -ne $current -and $_.Name -like 'Conector-Raffinato-v*.exe'}|"
+        "ForEach-Object{Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue}"
+    )
+    try:
+        subprocess.run(
+            ["powershell.exe","-NoProfile","-NonInteractive","-WindowStyle","Hidden","-Command",command],
+            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15,check=False,
+            creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0),
+        )
+        logger.info("Verificacao de versoes antigas concluida antes da inicializacao %s",CONNECTOR_VERSION)
+    except Exception:
+        logger.exception("Nao foi possivel concluir a retirada das versoes antigas")
 
 
 def acquire_single_instance() -> bool:

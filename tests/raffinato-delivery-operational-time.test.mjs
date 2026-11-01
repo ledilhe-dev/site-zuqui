@@ -4,14 +4,21 @@ import fs from 'node:fs';
 
 const bridge=fs.readFileSync(new URL('../tools/raffinato-bridge/raffinato_bridge.py',import.meta.url),'utf8');
 const manager=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',import.meta.url),'utf8');
+const sales=fs.readFileSync(new URL('../assets/js/36-raffinato-sales-analysis.js',import.meta.url),'utf8');
 const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
 
 test('consulta Delivery e independente e vinculada pela filial',()=>{
   const start=bridge.indexOf('def query_delivery_entry_times'),end=bridge.indexOf('def apply_delivery_entry_times',start),overlay=bridge.slice(start,end);
   assert.match(overlay,/T\.Id=VT\.IdTeleEntrega AND T\.IdFilial=VT\.IdFilial/);
-  assert.match(overlay,/VT\.IdVenda=VCF\.IdVenda AND VT\.IdFilial=D\.IdFilial/);
-  assert.match(overlay,/SELECT TOP 1 T\.Data,T\.Hora/);
-  assert.match(overlay,/ORDER BY VT\.Id/);
+  assert.match(overlay,/V\.Id=VCF\.IdVenda AND V\.IdFilial=D\.IdFilial/);
+  assert.match(overlay,/VT\.IdVenda=V\.Id AND VT\.IdFilial=V\.IdFilial/);
+  assert.match(overlay,/IntegracaoDeliveryOnline IDO/);
+  assert.match(overlay,/UPPER\(CONVERT\(nvarchar\(255\),IDO\.IdIntegracaoDeliveryOnline\)\)/);
+  assert.match(overlay,/UPPER\(CONVERT\(nvarchar\(255\),T\.IdIntegracaoDeliveryOnline\)\)/);
+  assert.match(overlay,/CASE WHEN IDO\.IdIntegracaoDeliveryOnline IS NOT NULL THEN IDO\.DataGravacao ELSE T\.Data END/);
+  assert.match(overlay,/LEFT JOIN dbo\.IntegracaoDeliveryOnline/);
+  assert.match(overlay,/T\.IdIntegracaoDeliveryOnline IS NULL/);
+  assert.doesNotMatch(overlay,/SELECT TOP 1 T\.Data,T\.Hora/);
 });
 
 test('sincronizacao e analise padrao preservam data e hora fiscais originais',()=>{
@@ -27,7 +34,7 @@ test('sincronizacao e analise padrao preservam data e hora fiscais originais',()
 });
 
 test('vinculo delivery e deterministico e nao multiplica documentos',()=>{
-  assert.match(bridge,/OUTER APPLY\(SELECT TOP 1[\s\S]*?ORDER BY VT\.Id\) TE/);
+  assert.match(bridge,/OUTER APPLY\(SELECT TOP 1[\s\S]*?FonteHorario[\s\S]*?ORDER BY CASE WHEN IDO\.IdIntegracaoDeliveryOnline IS NOT NULL THEN 0 ELSE 1 END/);
   assert.match(bridge,/CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas\(Id\)/);
 });
 
@@ -44,18 +51,28 @@ test('painel gerencial preserva a base temporal original',()=>{
   assert.doesNotMatch(active,/COALESCE\(TE\.Hora,D\.Hora\)/);
 });
 
-test('opcao Delivery altera somente data e hora dos itens Delivery',()=>{
-  assert.match(bridge,/body\.get\("usar_horario_entrada_delivery"\) is True/);
+test('horario Delivery e automatico e altera somente dimensao temporal',()=>{
+  assert.doesNotMatch(bridge,/body\.get\("usar_horario_entrada_delivery"\)/);
+  assert.match(bridge,/apply_delivery_time=body\.get\("_preservar_periodo_financeiro"\) is not True/);
   assert.match(bridge,/if str\(item\.get\("modulo_venda"\).*!= "DELIVERY"/s);
   assert.match(bridge,/item\["data"\]=temporal\["data"\]/);
   assert.match(bridge,/item\["hora"\]=temporal\["hora"\]/);
   assert.doesNotMatch(bridge,/item\["(?:valor_atribuido|quantidade_atribuida|faturamento_produto)"\]=temporal/);
+  assert.match(bridge,/FECHAMENTO_FINANCEIRO_FALLBACK/);
+  assert.doesNotMatch(sales,/type="checkbox"> Usar horário de entrada do pedido/);
+  assert.doesNotMatch(sales,/usar_horario_entrada_delivery/);
+  assert.match(sales,/raffinatoBridgePost\('\/api\/raffinato\/vendas-analise'/);
 });
 
-test('BI prioriza o conector e mantém relatórios disponíveis durante reconstrução do cache remoto',()=>{
+test('sincronizacao principal preserva periodo financeiro original',()=>{
+  assert.match(bridge,/body = \{"inicio":start\.isoformat\(\),"fim_exclusivo":end\.isoformat\(\),"id_filial":filial,"_preservar_periodo_financeiro":True\}/);
+  assert.match(bridge,/body=\{"inicio":datetime\.combine\(start_day[\s\S]*?"_preservar_periodo_financeiro":True\}/);
+});
+
+test('BI temporal exige conector local para garantir horario automatico',()=>{
   assert.doesNotMatch(manager,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
-  assert.match(manager,/Number\(remote\?\.schema_version\|\|0\)<4/);
   assert.match(manager,/Number\(local\?\.schema_version\|\|0\)<4/);
+  assert.match(manager,/if\(path==='\/api\/raffinato\/vendas-analise'\)throw localError/);
   assert.doesNotMatch(manager,/operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
   assert.match(bridge,/ORIGINAL_DOCUMENTO_FISCAL/);
   assert.match(manager,/temporal_warning/);
@@ -64,7 +81,7 @@ test('BI prioriza o conector e mantém relatórios disponíveis durante reconstr
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.29"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.32"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
@@ -75,4 +92,12 @@ test('reprocessamento remoto e limitado a loja vinculada e no maximo sete dias',
   assert.match(bridge,/validate_request_tenant\(body, store_id\)/);
   assert.match(bridge,/\(end\.date\(\)-start\.date\(\)\)\.days>7/);
   assert.match(bridge,/sync_period\(\{\*\*config,"_store_id":store_id\},start,end-timedelta\(seconds=1\)\)/);
+});
+
+test('exe encerra qualquer versao antiga sem console e cardapio consulta continuamente',()=>{
+  assert.match(bridge,/Name -like 'Conector-Raffinato-v\*\.exe'/);
+  assert.match(bridge,/"-WindowStyle","Hidden"/);
+  const dispatcher=bridge.slice(bridge.indexOf('def start_cardapio_dispatcher'),bridge.indexOf('def ensure_browser_loopback_policy'));
+  assert.doesNotMatch(dispatcher,/time\.monotonic\(\) >= CARDAPIO_ACTIVE_UNTIL/);
+  assert.match(dispatcher,/module\.dispatch_order\(dispatcher_config\)/);
 });
