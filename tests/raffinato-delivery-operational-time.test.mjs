@@ -36,6 +36,8 @@ test('painel gerencial agrega uma unica base temporal compartilhada',()=>{
 test('BI consulta primeiro o conector e rejeita cache remoto temporal antigo',()=>{
   assert.doesNotMatch(manager,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
   assert.match(manager,/Number\(remote\?\.schema_version\|\|0\)<4/);
+  assert.match(manager,/Number\(local\?\.schema_version\|\|0\)<4/);
+  assert.match(manager,/local\?\.operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
   assert.match(manager,/TELEENTREGA_DELIVERY_V1/);
   assert.match(relay,/schema_version:4,operational_time_source:"TELEENTREGA_DELIVERY_V1"/);
 });
