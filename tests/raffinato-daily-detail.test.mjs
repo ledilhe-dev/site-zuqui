@@ -92,14 +92,15 @@ test('faturamento por canal usa os mesmos documentos e integra interface e expor
   assert.match(js,/FATURAMENTO POR CANAL/);
 });
 
-test('ano completo consulta detalhe local e cruza modulo por dia da semana',()=>{
+test('relatorio diario preserva cache remoto da loja e usa detalhe local somente como contingencia',()=>{
   assert.match(js,/function rddLocalAnnualReport\(body\)/);
   assert.match(js,/comparativo-anual/);
   assert.match(js,/mode:'detail'/);
   assert.match(js,/moduleDetails=await Promise\.all/);
   assert.match(js,/canais_dias_semana:channelWeek/);
   assert.match(js,/origem_consulta:'raffinato_local_detalhado'/);
-  assert.match(js,/if\(!RDD\.data\)RDD\.data=await raffinatoRelay\(body\)/);
+  assert.match(js,/try\{RDD\.data=await raffinatoRelay\(body\)\}/);
+  assert.match(js,/if\(!RDD\.data\)RDD\.data=await rddLocalAnnualReport\(body\)/);
 });
 
 test('historico diario remoto sustenta graficos anuais sem loopback',()=>{
