@@ -398,7 +398,13 @@ async function salvarIntegracaoRaffinato() {
     const atorId = /^[0-9a-f-]{36}$/i.test(String(usuarioSistemaLogado?.id || '')) ? usuarioSistemaLogado.id : null;
     raffinatoConnectionProfileId=result.connection_profile_id;
     raffinatoConnectorInstanceId=String(result.connector_instance_id||raffinatoConnectorInstanceId||'');
-    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId, connection_profile_id:result.connection_profile_id, connector_instance_id:raffinatoConnectorInstanceId||null, raffinato_filial_id:form.raffinato_filial_id, nome_conexao:form.profile_name };
+    // O UUID devolvido pelo processo local identifica a instala??o, mas n?o
+    // prova que ela existe no backend atual. Isso ? especialmente importante
+    // depois de uma migra??o: grav?-lo antes da valida??o viola a FK quando
+    // a tabela de inst?ncias n?o trouxe o registro correspondente. O v?nculo ?
+    // feito exclusivamente por connector_link_store, que confere exist?ncia,
+    // empresa e status da inst?ncia antes de atualizar a integra??o.
+    const payload = { empresa_id:contexto.empresaId, loja_id:contexto.lojaId, instancia_sql:form.server, banco_dados:form.database, usuario_mascarado:form.uid, referencia_segredo:result.referencia_segredo, status:'ativa', ultimo_teste_em:new Date().toISOString(), ultimo_erro:null, criado_por:atorId, connection_profile_id:result.connection_profile_id, raffinato_filial_id:form.raffinato_filial_id, nome_conexao:form.profile_name };
     const { error } = await sb.from('raffinato_integracoes').upsert(payload, { onConflict:'loja_id' });
     if (error) throw error;
     await parearConectorExternoRaffinato();
