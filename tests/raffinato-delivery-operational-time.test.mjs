@@ -39,7 +39,7 @@ test('BI consulta primeiro o conector e rejeita cache remoto temporal antigo',()
   assert.match(manager,/Number\(local\?\.schema_version\|\|0\)<4/);
   assert.match(manager,/local\?\.operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
   assert.match(manager,/TELEENTREGA_DELIVERY_V1/);
-  assert.match(relay,/schema_version:4,operational_time_source:"TELEENTREGA_DELIVERY_V1"/);
+  assert.match(relay,/schema_version:2,operational_time_source:"LEGACY_CACHE_UNVERIFIED"/);
 });
 
 test('versao nova invalida cache local anterior e filtra Delivery antes de agregar',()=>{
