@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.37"
+CONNECTOR_VERSION = "2.0.38"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -58,6 +58,8 @@ BACKUP_DIR = BASE_DIR / "backup-configuracao"
 CACHE_PATH = BASE_DIR / "raffinato-relatorios-cache.sqlite3"
 CACHE_SYNC_LOCK = threading.Lock()
 CACHE_REFRESH_EVENT = threading.Event()
+REMOTE_SYNC_REQUESTS_IN_FLIGHT:set[str]=set()
+REMOTE_SYNC_REQUESTS_LOCK=threading.Lock()
 CACHE_REQUEST_LOCK = threading.Lock()
 CACHE_REQUESTS: dict[str, set[date]] = {}
 DEFAULT_ALLOWED_ORIGINS = [
@@ -1012,6 +1014,35 @@ GROUP BY CONVERT(date,T.Data),T.Hora,T.NumeroComanda,T.Id,T.IdFilial,T.IdStatus,
 ORDER BY data,hora,pedido;
 """
 
+# Pedidos recebidos pela integracao existem antes de TeleEntrega/Venda. Esta
+# fonte e deliberadamente diagnostica: sem venda vinculada, nenhum valor e
+# inferido do XML ou somado aos indicadores financeiros/gerenciais.
+SQL_DELIVERY_RECEBIDOS = """
+SET NOCOUNT ON;
+WITH Pedidos AS (
+ SELECT I.Id id_integracao,I.IdFilial id_filial,
+  CONVERT(varchar(200),I.IdIntegracaoDeliveryOnline) id_integracao_delivery,
+  CONVERT(date,I.DataGravacao) data_recebimento,
+  CONVERT(varchar(8),CAST(I.HoraGravacao AS time),108) hora_recebimento,
+  I.Importado,T.Id id_tele_entrega,VT.IdVenda id_venda,
+  CAST(V.ValorTotal AS decimal(19,4)) valor_venda,
+  ROW_NUMBER() OVER(PARTITION BY I.Id ORDER BY VT.IdVenda DESC,T.Id DESC) rn
+ FROM dbo.IntegracaoDeliveryOnline I WITH(NOLOCK)
+ LEFT JOIN dbo.TeleEntrega T WITH(NOLOCK)
+  ON UPPER(T.IdIntegracaoDeliveryOnline)=UPPER(I.IdIntegracaoDeliveryOnline)
+  AND T.IdFilial=I.IdFilial
+ LEFT JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdTeleEntrega=T.Id
+ LEFT JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VT.IdVenda
+ WHERE I.IdFilial=? AND I.DataGravacao>=? AND I.DataGravacao<?
+)
+SELECT id_integracao,id_filial,id_integracao_delivery,data_recebimento,hora_recebimento,
+ importado,id_tele_entrega,id_venda,valor_venda,
+ CASE WHEN id_venda IS NOT NULL THEN 'FATURADO' ELSE 'PENDENTE_CONCILIACAO' END situacao,
+ CASE WHEN UPPER(id_integracao_delivery) LIKE '%IFOOD%' THEN 'IFOOD' ELSE 'OUTRO_DELIVERY' END origem
+FROM Pedidos WHERE rn=1
+ORDER BY data_recebimento,hora_recebimento,id_integracao;
+"""
+
 
 class DataBlob(ctypes.Structure):
     _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
@@ -1403,7 +1434,7 @@ def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
         raise RuntimeError(f"Relay HTTP {exc.code}: {detail[:500]}") from exc
 
 
-def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
+def sync_period(config: dict[str, Any], start: datetime, end: datetime, report_only: bool=False) -> None:
     store_id = str(config.get("_store_id") or "")
     filial=resolve_raffinato_filial(config,{})
     inicio=start.strftime("%Y-%m-%d"); fim=end.strftime("%Y-%m-%d")
@@ -1454,9 +1485,10 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         logger.info("SYNC_DELIVERY_TIME loja=%s enriquecidos=%s fallback=%s",store_id,
                     delivery_sync_stats["enriched"],delivery_sync_stats["fallback"])
         deliveries=query_deliveries_abertos(config,start,end+timedelta(seconds=1),filial)
+        received_deliveries=query_delivery_recebidos(config,start.date(),end.date()+timedelta(days=1),filial)
         relay_post({"action":"canonical_sync","token":config["relay_token"],"loja_id":store_id,
                     "inicio":inicio,"fim":fim,"documents":documents,"items":items,
-                    "open_deliveries":deliveries},timeout=120)
+                    "open_deliveries":deliveries,"received_deliveries":received_deliveries},timeout=120)
 
     def abc_step() -> None:
         rows=query_curva_abc_sync(config,start,end+timedelta(seconds=1),filial)
@@ -1468,10 +1500,11 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
         relay_post({"action":"mandatory_v2_sync","token":config["relay_token"],"loja_id":store_id,
                     "id_filial":filial,"inicio":inicio,"fim":fim,"items":rows},timeout=180)
 
-    outcomes=[isolated("pizza_mandatory_v1",pizza),isolated("sangrias",sangrias),
-              isolated("billing",billing_step),isolated("products",products_step),
-              isolated("canonical",canonical_step),isolated("abc",abc_step),
-              isolated("mandatory_v2",mandatory_step)]
+    outcomes=([isolated("canonical",canonical_step)] if report_only else
+              [isolated("pizza_mandatory_v1",pizza),isolated("sangrias",sangrias),
+               isolated("billing",billing_step),isolated("products",products_step),
+               isolated("canonical",canonical_step),isolated("abc",abc_step),
+               isolated("mandatory_v2",mandatory_step)])
     if not any(outcomes):
         raise RuntimeError(f"Todos os datasets falharam para loja={store_id}, filial={filial}.")
 
@@ -1488,6 +1521,7 @@ def sync_annual_history(store_id:str,config:dict[str,Any]) -> None:
 
 def relay_sync_loop(stop_event: threading.Event) -> None:
     full_synced: set[str] = set()
+    backfill_cursors: dict[str, datetime] = {}
     while not stop_event.is_set():
         if REMOTE_OPERATIONS_PAUSED.is_set():
             stop_event.wait(60)
@@ -1519,15 +1553,7 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
                     # Prioriza o período usado pelos relatórios antes do backfill anual.
                     recent_start = (now - timedelta(days=45)).replace(hour=0, minute=0, second=0, microsecond=0)
                     sync_period(config, recent_start, now.replace(hour=23, minute=59, second=59, microsecond=0))
-                    try:
-                        sync_annual_history(store_id,config)
-                    except Exception:
-                        logger.exception("Falha isolada no historico anual da loja %s",store_id)
-                    cursor = (now - timedelta(days=366)).replace(hour=0, minute=0, second=0, microsecond=0)
-                    while cursor < recent_start and not stop_event.is_set():
-                        chunk_end = min(cursor + timedelta(days=30), recent_start - timedelta(seconds=1))
-                        sync_period(config, cursor, chunk_end)
-                        cursor = (chunk_end + timedelta(seconds=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    backfill_cursors[store_id] = (now - timedelta(days=366)).replace(hour=0, minute=0, second=0, microsecond=0)
                     full_synced.add(store_id)
                 else:
                     sync_period(config, (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0), now.replace(hour=23, minute=59, second=59, microsecond=0))
@@ -1536,6 +1562,17 @@ def relay_sync_loop(stop_event: threading.Event) -> None:
                 logger.exception("Falha na sincronizacao externa da loja %s", store_id)
             finally:
                 if acquired:
+                    CACHE_SYNC_LOCK.release()
+            cursor = backfill_cursors.get(store_id)
+            recent_start = (datetime.now() - timedelta(days=45)).replace(hour=0, minute=0, second=0, microsecond=0)
+            if cursor and cursor < recent_start and not stop_event.is_set() and CACHE_SYNC_LOCK.acquire(timeout=1):
+                try:
+                    chunk_end = min(cursor + timedelta(days=30), recent_start - timedelta(seconds=1))
+                    sync_period({**config, "_store_id":store_id}, cursor, chunk_end)
+                    backfill_cursors[store_id] = (chunk_end + timedelta(seconds=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                except Exception:
+                    logger.exception("Falha isolada no bloco historico da loja %s", store_id)
+                finally:
                     CACHE_SYNC_LOCK.release()
         # Os caches de relatório não precisam ser regravados a cada minuto.
         # Quinze minutos preserva atualização operacional e reduz drasticamente
@@ -1555,6 +1592,7 @@ def heartbeat_loop(stop_event: threading.Event) -> None:
                     "profiles":len(state.get("profiles", {})), "mappings":len(state.get("mappings", {})),
                 })
                 reconcile_authorized_mappings(state, (heartbeat or {}).get("store_mappings"))
+                dispatch_remote_sync_requests((heartbeat or {}).get("sync_requests"))
                 paused = bool((heartbeat or {}).get("operations_paused"))
                 if paused and not REMOTE_OPERATIONS_PAUSED.is_set():
                     logger.warning("Operacoes pausadas remotamente pelo painel do CheckDiario")
@@ -1563,7 +1601,7 @@ def heartbeat_loop(stop_event: threading.Event) -> None:
                 REMOTE_OPERATIONS_PAUSED.set() if paused else REMOTE_OPERATIONS_PAUSED.clear()
         except Exception:
             logger.exception("Heartbeat da instalacao falhou")
-        stop_event.wait(2 * 60)
+        stop_event.wait(15)
 
 
 def reconcile_authorized_mappings(state:dict[str,Any],remote_mappings:Any) -> bool:
@@ -1594,6 +1632,50 @@ def reconcile_authorized_mappings(state:dict[str,Any],remote_mappings:Any) -> bo
         CACHE_REFRESH_EVENT.set()
         logger.info("Vinculos locais reconciliados pelo backend | lojas=%s",sorted(authorized))
     return changed
+
+
+def dispatch_remote_sync_requests(requests:Any) -> None:
+    if not isinstance(requests,list):
+        return
+    for request in requests:
+        request_id=str(request.get("id") or "") if isinstance(request,dict) else ""
+        if not request_id:
+            continue
+        with REMOTE_SYNC_REQUESTS_LOCK:
+            if request_id in REMOTE_SYNC_REQUESTS_IN_FLIGHT:
+                continue
+            REMOTE_SYNC_REQUESTS_IN_FLIGHT.add(request_id)
+        threading.Thread(target=run_remote_sync_request,args=(dict(request),),name=f"raffinato-refresh-{request_id[:8]}",daemon=True).start()
+
+
+def run_remote_sync_request(request:dict[str,Any]) -> None:
+    request_id=str(request.get("id") or "")
+    try:
+        store_id=str(request.get("loja_id") or "")
+        config=load_mapped_store_configs().get(store_id)
+        if not config:
+            raise RuntimeError("Loja solicitada nao esta mapeada nesta instalacao.")
+        start=datetime.combine(date.fromisoformat(str(request["inicio"])),datetime.min.time())
+        end_exclusive=datetime.combine(date.fromisoformat(str(request["fim_exclusivo"])),datetime.min.time())
+        if end_exclusive<=start or (end_exclusive-start).days>45:
+            raise ValueError("Periodo incremental invalido.")
+        if not CACHE_SYNC_LOCK.acquire(timeout=30):
+            raise RuntimeError("Sincronizacao automatica em andamento; tente novamente.")
+        try:
+            sync_period({**config,"_store_id":store_id},start,end_exclusive-timedelta(seconds=1),report_only=True)
+        finally:
+            CACHE_SYNC_LOCK.release()
+        relay_post({"action":"connector_sync_complete","request_id":request_id,"ok":True},timeout=30)
+        logger.info("SYNC_ON_DEMAND_OK loja=%s solicitacao=%s periodo=%s..%s",store_id,request_id,start.date(),end_exclusive.date())
+    except Exception as exc:
+        logger.exception("SYNC_ON_DEMAND_ERROR solicitacao=%s",request_id)
+        try:
+            relay_post({"action":"connector_sync_complete","request_id":request_id,"ok":False,"error":str(exc)[:500]},timeout=30)
+        except Exception:
+            logger.exception("Falha ao registrar erro da sincronizacao solicitada %s",request_id)
+    finally:
+        with REMOTE_SYNC_REQUESTS_LOCK:
+            REMOTE_SYNC_REQUESTS_IN_FLIGHT.discard(request_id)
 
 
 def get_store_config(store_id: str) -> dict[str, Any]:
@@ -2315,6 +2397,13 @@ def query_deliveries_abertos(config: dict[str, Any], start: datetime, end_exclus
     with pyodbc.connect(connection_string(config), timeout=8) as connection:
         connection.timeout=45;cursor=connection.cursor()
         cursor.execute(SQL_DELIVERIES_ABERTOS,filial,start,end_exclusive)
+        return rows_as_dicts(cursor)
+
+
+def query_delivery_recebidos(config: dict[str, Any], start: date, end_exclusive: date, filial: int) -> list[dict[str, Any]]:
+    with pyodbc.connect(connection_string(config), timeout=8) as connection:
+        connection.timeout=45;cursor=connection.cursor()
+        cursor.execute(SQL_DELIVERY_RECEBIDOS,filial,start,end_exclusive)
         return rows_as_dicts(cursor)
 
 

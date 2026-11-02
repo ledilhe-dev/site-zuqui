@@ -24,6 +24,32 @@ test('consulta Delivery parte da integracao validada e cruza a filial da TeleEnt
   assert.match(overlay,/I\.IdIntegracaoDeliveryOnline LIKE '%iFood%'/);
 });
 
+test('pedidos recebidos sem venda ficam pendentes e sem valor financeiro inferido',()=>{
+  const received=bridge.match(/SQL_DELIVERY_RECEBIDOS = """([\s\S]*?)"""/)?.[1]||'';
+  assert.match(received,/FROM dbo\.IntegracaoDeliveryOnline I/);
+  assert.match(received,/LEFT JOIN dbo\.TeleEntrega T/);
+  assert.match(received,/LEFT JOIN dbo\.VendaTeleEntrega VT/);
+  assert.match(received,/LEFT JOIN dbo\.Venda V/);
+  assert.match(received,/ROW_NUMBER\(\) OVER\(PARTITION BY I\.Id/);
+  assert.match(received,/WHEN id_venda IS NOT NULL THEN 'FATURADO' ELSE 'PENDENTE_CONCILIACAO'/);
+  assert.doesNotMatch(received,/XMLIntegracao/);
+  assert.match(relay,/x\.id_venda==null\|\|x\.valor_venda==null\?null:Number\(x\.valor_venda\)/);
+  assert.match(relay,/valor_pendente:null,valor_validado:false/);
+});
+
+test('Consultar atualiza incrementalmente antes de ler o cache remoto',()=>{
+  assert.match(relay,/body\.action==="sales_refresh_request"/);
+  assert.match(relay,/raffinato_sync_solicitacoes/);
+  assert.match(relay,/sync_requests:syncRequests\|\|\[\]/);
+  assert.match(bridge,/dispatch_remote_sync_requests\(\(heartbeat or \{\}\)\.get\("sync_requests"\)\)/);
+  assert.match(bridge,/stop_event\.wait\(15\)/);
+  assert.match(bridge,/sync_period\(\{\*\*config,"_store_id":store_id\},start,end_exclusive-timedelta\(seconds=1\),report_only=True\)/);
+  assert.match(bridge,/if report_only else[\s\S]*isolated\("canonical",canonical_step\)/);
+  assert.doesNotMatch(bridge,/while cursor < recent_start and not stop_event\.is_set\(\)/);
+  assert.match(sales,/await rsRefreshRemoteBeforeQuery\(body,c\);return\{\.\.\.await raffinatoRelay/);
+  assert.match(sales,/O conector não concluiu a atualização em até 90 segundos/);
+});
+
 test('sincronizacao e analise padrao preservam data e hora fiscais originais',()=>{
   const canonical=bridge.match(/SQL_BASE_CANONICA_SYNC = """([\s\S]*?)"""/)?.[1]||'';
   const analysis=bridge.match(/SQL_VENDAS_ANALISE = """([\s\S]*?)"""/)?.[1]||'';
@@ -96,7 +122,7 @@ test('BI usa horario local quando disponivel e restaura cache remoto como contin
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.37"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.38"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);

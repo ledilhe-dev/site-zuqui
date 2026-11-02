@@ -102,6 +102,21 @@ class MultiempresaTests(unittest.TestCase):
         self.assertEqual(set(reloaded["mappings"]), {"patrick-store"})
         self.assertEqual(reloaded["profiles"]["profile-patrick"]["database"], "ZuquiNova")
 
+    def test_consultar_executes_incremental_sync_and_confirms_request(self):
+        config={"connection_profile_id":"profile-patrick","id_filial":1,"relay_token":"secret","empresa_id":"empresa"}
+        request={"id":"request-1","loja_id":"patrick","inicio":"2026-11-02","fim_exclusivo":"2026-11-03"}
+        with patch.object(bridge,"load_mapped_store_configs",return_value={"patrick":config}), \
+             patch.object(bridge,"sync_period") as sync_period, \
+             patch.object(bridge,"relay_post",return_value={"ok":True}) as relay_post:
+            bridge.run_remote_sync_request(request)
+        sync_period.assert_called_once()
+        synced_config,start,end=sync_period.call_args.args
+        self.assertEqual(synced_config["_store_id"],"patrick")
+        self.assertEqual(start.isoformat(),"2026-11-02T00:00:00")
+        self.assertEqual(end.isoformat(),"2026-11-02T23:59:59")
+        self.assertTrue(sync_period.call_args.kwargs["report_only"])
+        relay_post.assert_called_with({"action":"connector_sync_complete","request_id":"request-1","ok":True},timeout=30)
+
     def test_sync_failure_in_one_dataset_does_not_block_other_datasets(self):
         sent = []
         config = {"_store_id":"store-salao","id_filial":1,"connection_profile_id":"profile-salao","relay_token":"token",
@@ -121,6 +136,7 @@ class MultiempresaTests(unittest.TestCase):
         with patch.object(bridge,"query_sangrias",side_effect=RuntimeError("falha isolada")), \
              patch.object(bridge,"query_faturamento_diario",return_value=[]), \
              patch.object(bridge,"query_deliveries_abertos",return_value=[]), \
+             patch.object(bridge,"query_delivery_recebidos",return_value=[]), \
              patch.object(bridge,"query_curva_abc_sync",return_value=[]), \
              patch.object(bridge,"query_mandatory_v2_rows",return_value=[]), \
              patch.object(bridge,"sync_pizza_mandatory_v1",side_effect=lambda *args: sent.append("pizza_mandatory_sync_v1")), \

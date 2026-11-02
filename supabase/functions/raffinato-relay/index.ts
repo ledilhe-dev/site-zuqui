@@ -43,7 +43,31 @@ Deno.serve(async (request) => {
         .select("empresa_id,loja_id,connection_profile_id,raffinato_filial_id")
         .eq("connector_instance_id",instance.id).eq("empresa_id",instance.empresa_id).eq("status","ativa");
       if(mappingsError)throw mappingsError;
-      return json({ok:true,empresa_id:instance.empresa_id,operations_paused:instance.operacoes_pausadas===true,store_mappings:mappings||[]});
+      const {data:syncRequests,error:syncRequestsError}=await admin.from("raffinato_sync_solicitacoes")
+        .select("id,loja_id,inicio,fim_exclusivo,solicitado_em")
+        .eq("connector_instance_id",instance.id).eq("status","pendente").order("solicitado_em").limit(10);
+      if(syncRequestsError)throw syncRequestsError;
+      return json({ok:true,empresa_id:instance.empresa_id,operations_paused:instance.operacoes_pausadas===true,store_mappings:mappings||[],sync_requests:syncRequests||[]});
+    }
+
+    if(body.action==="connector_sync_complete"){
+      const instance=await connectorForCredential(admin,String(body.connector_instance_id||""),validateToken(body.credential||body.token));
+      const requestId=validateUuid(body.request_id,"solicitacao"),ok=body.ok===true;
+      const {error}=await admin.from("raffinato_sync_solicitacoes").update({status:ok?"concluida":"erro",concluido_em:new Date().toISOString(),erro:ok?null:String(body.error||"Falha na sincronizacao").slice(0,500)}).eq("id",requestId).eq("connector_instance_id",instance.id).eq("status","pendente");
+      if(error)throw error;return json({ok:true});
+    }
+
+    if(body.action==="sales_refresh_request"){
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
+      const inicio=validateDate(body.inicio,"inicio"),fimExclusivo=validateDate(body.fim_exclusivo,"fim_exclusivo");if(fimExclusivo<=inicio)throw new Error("Periodo invalido.");
+      const {data:integration,error:integrationError}=await admin.from("raffinato_integracoes").select("connector_instance_id,status").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).eq("status","ativa").maybeSingle();if(integrationError)throw integrationError;if(!integration?.connector_instance_id)throw new Error("Loja sem conector vinculado.");
+      const now=new Date().toISOString(),row={empresa_id:body.empresa_id,loja_id:body.loja_id,connector_instance_id:integration.connector_instance_id,inicio,fim_exclusivo:fimExclusivo,status:"pendente",solicitado_em:now,concluido_em:null,erro:null};
+      const {data,error}=await admin.from("raffinato_sync_solicitacoes").upsert(row,{onConflict:"empresa_id,loja_id"}).select("id,status,solicitado_em").single();if(error)throw error;return json({ok:true,solicitacao:data});
+    }
+
+    if(body.action==="sales_refresh_status"){
+      validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
+      const {data,error}=await admin.from("raffinato_sync_solicitacoes").select("id,status,solicitado_em,concluido_em,erro").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).maybeSingle();if(error)throw error;return json({solicitacao:data});
     }
 
     if (body.action === "connector_link_store") {
@@ -167,12 +191,17 @@ Deno.serve(async (request) => {
       const documents=Array.isArray(body.documents)?body.documents.slice(0,100000):[];
       const items=Array.isArray(body.items)?body.items.slice(0,100000):[];
       const openDeliveries=Array.isArray(body.open_deliveries)?body.open_deliveries.slice(0,10000):[];
+      const receivedDeliveries=Array.isArray(body.received_deliveries)?body.received_deliveries.slice(0,10000):[];
       // O snapshot operacional deve ser substituido inclusive quando vazio: isso
       // representa o ultimo delivery tendo migrado corretamente para faturado.
       const {error:openDeleteError}=await admin.from("raffinato_delivery_aberto_cache").delete()
         .eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id)
         .gte("data",inicio).lte("data",fim);
       if(openDeleteError)throw openDeleteError;
+      const {error:receivedDeleteError}=await admin.from("raffinato_delivery_recebidos_cache").delete()
+        .eq("empresa_id",integration.empresa_id).eq("loja_id",integration.loja_id)
+        .gte("data_recebimento",inicio).lte("data_recebimento",fim);
+      if(receivedDeleteError)throw receivedDeleteError;
       for(let offset=0;offset<openDeliveries.length;offset+=1000){
         const rows=openDeliveries.slice(offset,offset+1000).map((x:any)=>({
           empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:Number(x.id_filial||1),
@@ -184,11 +213,25 @@ Deno.serve(async (request) => {
         }));
         const {error}=await admin.from("raffinato_delivery_aberto_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_tele_entrega"});if(error)throw error;
       }
+      for(let offset=0;offset<receivedDeliveries.length;offset+=1000){
+        const rows=receivedDeliveries.slice(offset,offset+1000).map((x:any)=>({
+          empresa_id:integration.empresa_id,loja_id:integration.loja_id,id_filial:Number(x.id_filial||1),
+          id_integracao:Number(x.id_integracao),id_integracao_delivery:String(x.id_integracao_delivery||"").slice(0,300),
+          data_recebimento:validateDate(x.data_recebimento,"data_recebimento"),
+          hora_recebimento:String(x.hora_recebimento||"00:00:00").slice(0,8),
+          origem:String(x.origem||"OUTRO_DELIVERY").slice(0,60),importado:x.importado==null?null:Number(x.importado),
+          id_tele_entrega:x.id_tele_entrega==null?null:Number(x.id_tele_entrega),
+          id_venda:x.id_venda==null?null:Number(x.id_venda),
+          valor_venda:x.id_venda==null||x.valor_venda==null?null:Number(x.valor_venda),
+          situacao:x.id_venda==null?"PENDENTE_CONCILIACAO":"FATURADO",sincronizado_em:new Date().toISOString(),
+        })).filter((x:any)=>x.id_integracao>0&&x.id_integracao_delivery);
+        const {error}=await admin.from("raffinato_delivery_recebidos_cache").upsert(rows,{onConflict:"empresa_id,loja_id,id_integracao"});if(error)throw error;
+      }
       // Nunca destrua o snapshot historico quando uma leitura transitoria do SQL
       // chegar vazia (por exemplo, durante o fechamento do caixa). Um periodo
       // realmente sem movimento nao precisa substituir dados previamente validos.
       if(!documents.length){
-        return json({ok:true,documentos:0,itens:0,deliveries_abertos:openDeliveries.length,preservado:true,motivo:"fonte_faturada_vazia"});
+        return json({ok:true,documentos:0,itens:0,deliveries_abertos:openDeliveries.length,deliveries_recebidos:receivedDeliveries.length,preservado:true,motivo:"fonte_faturada_vazia"});
       }
       const documentDates=[...new Set(documents.map((x:any)=>validateDate(x.data,"data")))];
       const itemDates=[...new Set(items.map((x:any)=>validateDate(x.data,"data")))];
@@ -392,14 +435,16 @@ const groups=new Set((Array.isArray(body.agrupamentos)?body.agrupamentos:[]).map
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
       const start=String(body.inicio||"").slice(0,19),end=String(body.fim_exclusivo||"").slice(0,19);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(end)||end<=start)throw new Error("Periodo invalido.");
       const [dailyStart,dailyEnd]=reportDailyHours(body,start,end),load=async(table:string,fields:string)=>{const rows:any[]=[];for(let offset=0;offset<100000;offset+=1000){const {data,error}=await admin.from(table).select(fields).eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",start.slice(0,10)).lte("data",end.slice(0,10)).order("data").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>matchesDailyPeriod(x,start,end,dailyStart,dailyEnd));};
-      const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),items=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado"),openDeliveries=await load("raffinato_delivery_aberto_cache","id_tele_entrega,id_venda,pedido,data,hora,id_status,status,valor,cancelado,finalizado,id_documento_fiscal"),paymentsByDoc=new Map<string,any[]>(),totalByDoc=new Map<string,number>();
+      const loadReceived=async()=>{const rows:any[]=[];for(let offset=0;offset<10000;offset+=1000){const {data,error}=await admin.from("raffinato_delivery_recebidos_cache").select("id_integracao,id_integracao_delivery,data_recebimento,hora_recebimento,origem,importado,id_tele_entrega,id_venda,valor_venda,situacao,sincronizado_em").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data_recebimento",start.slice(0,10)).lte("data_recebimento",end.slice(0,10)).order("data_recebimento").order("hora_recebimento").range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}return rows.filter((x:any)=>matchesDailyPeriod({data:x.data_recebimento,hora:x.hora_recebimento},start,end,dailyStart,dailyEnd));};
+      const docs=await load("raffinato_documentos_faturados_cache","id_documento_fiscal,data,hora,tipo,eh_contingencia,modulo_venda,id_forma_pagamento,forma_pagamento,valor_pagamento"),items=await load("raffinato_itens_faturados_cache","id_documento_fiscal,data,hora,codigo,produto,id_agrupamento,agrupamento,quantidade,total_faturado"),openDeliveries=await load("raffinato_delivery_aberto_cache","id_tele_entrega,id_venda,pedido,data,hora,id_status,status,valor,cancelado,finalizado,id_documento_fiscal"),receivedDeliveries=await loadReceived(),paymentsByDoc=new Map<string,any[]>(),totalByDoc=new Map<string,number>();
       for(const d of docs){const id=String(d.id_documento_fiscal),list=paymentsByDoc.get(id)||[];list.push(d);paymentsByDoc.set(id,list);totalByDoc.set(id,(totalByDoc.get(id)||0)+Number(d.valor_pagamento||0));}
       const rows:any[]=[],dimensions:any[]=[];for(const item of items){const id=String(item.id_documento_fiscal),payments=paymentsByDoc.get(id)||[];for(const payment of payments){const factor=Number(payment.valor_pagamento||0)/(totalByDoc.get(id)||1),row={data:item.data,hora:item.hora,id_documento_fiscal:item.id_documento_fiscal,modulo_venda:payment.modulo_venda||"VENDA_RAPIDA",codigo:item.codigo,produto:item.produto,id_agrupamento:item.id_agrupamento,agrupamento:item.agrupamento,quantidade_atribuida:Number(item.quantidade||0)*factor,preco_medio:Number(item.quantidade||0)?Number(item.total_faturado||0)/Number(item.quantidade):0,faturamento_produto:Number(item.total_faturado||0),id_forma_pagamento:payment.id_forma_pagamento,forma_pagamento:payment.forma_pagamento,valor_atribuido:Number(item.total_faturado||0)*factor};rows.push(row);dimensions.push({id_documento:id,codigo:item.codigo,id_agrupamento:item.id_agrupamento,id_forma_pagamento:payment.id_forma_pagamento,modulo_venda:row.modulo_venda});}}
       const financial=[...totalByDoc.values()].reduce((s,x)=>s+x,0),contingencyDocs=new Set(docs.filter(x=>x.eh_contingencia).map(x=>String(x.id_documento_fiscal))),contingency=[...contingencyDocs].reduce((s,id)=>s+(totalByDoc.get(id)||0),0),identified=items.reduce((s,x)=>s+Number(x.total_faturado||0),0),adjustments=Math.round((financial-identified-contingency)*100)/100,moduleMap=new Map<string,any>();
       for(const [id,total] of totalByDoc){const module=String((paymentsByDoc.get(id)||[])[0]?.modulo_venda||"VENDA_RAPIDA"),x=moduleMap.get(module)||{modulo_venda:module,valor:0,ids:new Set<string>()};x.valor+=total;x.ids.add(id);moduleMap.set(module,x);}
       const canonicalTotals={faturamento:financial,faturamento_relatorio_produtos:identified,produtos_identificados:identified,contingencia:contingency,ajustes_pedido:adjustments,total_reconciliado:identified+contingency+adjustments,diferenca_conciliacao:Math.round((financial-identified-contingency-adjustments)*100)/100,documentos_financeiro:totalByDoc.size,documentos_produtos:new Set(items.map(x=>String(x.id_documento_fiscal))).size,documentos_contingencia:contingencyDocs.size};
       const validOpenDeliveries=openDeliveries.filter(x=>!x.cancelado&&!x.finalizado&&!x.id_documento_fiscal),openDeliveryTotal=validOpenDeliveries.reduce((s,x)=>s+Number(x.valor||0),0);
-      return json({schema_version:3,items:rows,documentos_dimensao:dimensions,contingencias:docs.filter(x=>x.eh_contingencia),operacoes_abertas:validOpenDeliveries.length?[{modulo_venda:"DELIVERY",quantidade:validOpenDeliveries.length,valor:openDeliveryTotal}]:[],modulos_faturados:[...moduleMap.values()].map(x=>({modulo_venda:x.modulo_venda,valor:x.valor,quantidade:x.ids.size})),totalizadores_canonicos:canonicalTotals,totais_operacionais:{recebido:financial,em_aberto:openDeliveryTotal,previsto:financial+openDeliveryTotal},cache_version:3,duplicidades:0,cobertura:{completa:true},origem_consulta:"base_canonica_remota"});
+      const pendingReconciliation=receivedDeliveries.filter(x=>!x.id_venda),reconciledDeliveries=receivedDeliveries.filter(x=>x.id_venda);
+      return json({schema_version:3,items:rows,documentos_dimensao:dimensions,contingencias:docs.filter(x=>x.eh_contingencia),operacoes_abertas:validOpenDeliveries.length?[{modulo_venda:"DELIVERY",quantidade:validOpenDeliveries.length,valor:openDeliveryTotal}]:[],delivery_conciliacao:{recebidos:receivedDeliveries.length,vinculados:reconciledDeliveries.length,pendentes:pendingReconciliation.length,valor_pendente:null,valor_validado:false,items:receivedDeliveries},modulos_faturados:[...moduleMap.values()].map(x=>({modulo_venda:x.modulo_venda,valor:x.valor,quantidade:x.ids.size})),totalizadores_canonicos:canonicalTotals,totais_operacionais:{recebido:financial,em_aberto:openDeliveryTotal,previsto:financial+openDeliveryTotal},cache_version:3,duplicidades:0,cobertura:{completa:true},origem_consulta:"base_canonica_remota"});
     }
 
     if (body.action === "products_canonical_dashboard") {
