@@ -69,6 +69,15 @@ test('sincronizacao principal preserva periodo financeiro original',()=>{
   assert.match(bridge,/body=\{"inicio":datetime\.combine\(start_day[\s\S]*?"_preservar_periodo_financeiro":True\}/);
 });
 
+test('cache remoto recebe horario Delivery sem alterar valores ou pagamentos',()=>{
+  assert.match(bridge,/delivery_times=query_delivery_entry_times\(config,start\.date\(\),end\.date\(\)\+timedelta\(days=1\),filial\)/);
+  assert.match(bridge,/apply_delivery_times_to_canonical_sync\(documents,items,delivery_times\)/);
+  const syncOverlay=bridge.slice(bridge.indexOf('def apply_delivery_times_to_canonical_sync'),bridge.indexOf('def filter_items_by_effective_period'));
+  assert.match(syncOverlay,/document\["data"\]=temporal\["data"\]/);
+  assert.match(syncOverlay,/item\["hora"\]=temporal\["hora"\]/);
+  assert.doesNotMatch(syncOverlay,/\["(?:valor_pagamento|total_faturado|id_forma_pagamento|forma_pagamento)"\]=/);
+});
+
 test('BI usa horario local quando disponivel e restaura cache remoto como contingencia',()=>{
   assert.doesNotMatch(manager,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
   assert.match(manager,/Number\(local\?\.schema_version\|\|0\)<4/);
@@ -82,7 +91,7 @@ test('BI usa horario local quando disponivel e restaura cache remoto como contin
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.32"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.33"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);

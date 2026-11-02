@@ -77,6 +77,20 @@ class DeliveryTimeOverlayTests(unittest.TestCase):
         self.assertEqual(stats, {"enriched": 0, "fallback": 1})
         self.assertEqual(len(changed), 1)
 
+    def test_canonical_sync_moves_delivery_time_and_preserves_financial_fields(self):
+        documents = [
+            {"id_documento_fiscal": 10, "modulo_venda": "DELIVERY", "data": "2026-11-01", "hora": "18:00:00", "id_forma_pagamento": 7, "forma_pagamento": "IFOOD", "valor_pagamento": 42.5},
+            {"id_documento_fiscal": 20, "modulo_venda": "VENDA_RAPIDA", "data": "2026-11-01", "hora": "19:00:00", "id_forma_pagamento": 1, "forma_pagamento": "DINHEIRO", "valor_pagamento": 30.0},
+        ]
+        items = [{"id_documento_fiscal": 10, "data": "2026-11-01", "hora": "18:00:00", "total_faturado": 42.5}]
+        original_financial = [(x["id_forma_pagamento"], x["forma_pagamento"], x["valor_pagamento"]) for x in documents]
+        stats = bridge.apply_delivery_times_to_canonical_sync(documents, items, {"10": {"data": "2026-10-31", "hora": "07:15:00"}})
+        self.assertEqual(stats, {"enriched": 1, "fallback": 0})
+        self.assertEqual((documents[0]["data"], documents[0]["hora"]), ("2026-10-31", "07:15:00"))
+        self.assertEqual((items[0]["data"], items[0]["hora"]), ("2026-10-31", "07:15:00"))
+        self.assertEqual((documents[1]["data"], documents[1]["hora"]), ("2026-11-01", "19:00:00"))
+        self.assertEqual([(x["id_forma_pagamento"], x["forma_pagamento"], x["valor_pagamento"]) for x in documents], original_financial)
+
 
 if __name__ == "__main__":
     unittest.main()

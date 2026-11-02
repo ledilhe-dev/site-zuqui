@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.32"
+CONNECTOR_VERSION = "2.0.33"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -1433,6 +1433,10 @@ def sync_period(config: dict[str, Any], start: datetime, end: datetime) -> None:
             while cursor.nextset():
                 if cursor.description:
                     items=rows_as_dicts(cursor); break
+        delivery_times=query_delivery_entry_times(config,start.date(),end.date()+timedelta(days=1),filial)
+        delivery_sync_stats=apply_delivery_times_to_canonical_sync(documents,items,delivery_times)
+        logger.info("SYNC_DELIVERY_TIME loja=%s enriquecidos=%s fallback=%s",store_id,
+                    delivery_sync_stats["enriched"],delivery_sync_stats["fallback"])
         deliveries=query_deliveries_abertos(config,start,end+timedelta(seconds=1),filial)
         relay_post({"action":"canonical_sync","token":config["relay_token"],"loja_id":store_id,
                     "inicio":inicio,"fim":fim,"documents":documents,"items":items,
@@ -2156,6 +2160,28 @@ def apply_delivery_entry_times(items:list[dict[str,Any]],delivery_times:dict[str
     if fallback_documents and log:
         log.warning("Horario de recebimento Delivery indisponivel; horario financeiro preservado | documentos=%s",len(fallback_documents))
     return {"enriched":len(enriched_documents),"fallback":len(fallback_documents)}
+
+
+def apply_delivery_times_to_canonical_sync(documents:list[dict[str,Any]],items:list[dict[str,Any]],delivery_times:dict[str,dict[str,Any]]) -> dict[str,int]:
+    """Transporta somente a dimensao temporal Delivery para o cache remoto."""
+    effective_by_document:dict[str,dict[str,Any]]={};fallback:set[str]=set()
+    for document in documents:
+        if str(document.get("modulo_venda") or "").upper()!="DELIVERY":
+            continue
+        document_id=str(document.get("id_documento_fiscal") or "")
+        temporal=delivery_times.get(document_id)
+        if temporal:
+            document["data"]=temporal["data"]
+            document["hora"]=temporal["hora"]
+            effective_by_document[document_id]=temporal
+        else:
+            fallback.add(document_id)
+    for item in items:
+        temporal=effective_by_document.get(str(item.get("id_documento_fiscal") or ""))
+        if temporal:
+            item["data"]=temporal["data"]
+            item["hora"]=temporal["hora"]
+    return {"enriched":len(effective_by_document),"fallback":len(fallback)}
 
 
 def filter_items_by_effective_period(items:list[dict[str,Any]],start:datetime,end:datetime) -> list[dict[str,Any]]:
