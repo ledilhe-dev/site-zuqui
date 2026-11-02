@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.36"
+CONNECTOR_VERSION = "2.0.37"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -668,10 +668,26 @@ SELECT D.Id id_documento_fiscal,D.IdFilial id_filial,CONVERT(date,D.Data) data,
       WHEN EXISTS(SELECT 1 FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK) LEFT JOIN dbo.VendaMesa VM WITH(NOLOCK) ON VM.IdVenda=VCF.IdVenda LEFT JOIN dbo.VendaCartaoConsumo VC WITH(NOLOCK) ON VC.IdVenda=VCF.IdVenda WHERE VCF.IdDocumentoFiscal=D.Id AND (VM.IdVenda IS NOT NULL OR VC.IdVenda IS NOT NULL)) THEN 'CARTAO_MESA'
       ELSE 'VENDA_RAPIDA' END modulo_venda,
  FP.Id id_forma_pagamento,FP.Nome forma_pagamento,
- SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4))) valor_pagamento
+ CAST(CASE
+   WHEN MAX(DV.valor_venda) IS NOT NULL AND NULLIF(MAX(PT.total_pagamentos),0) IS NOT NULL
+   THEN SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4)))
+        * MAX(DV.valor_venda) / MAX(PT.total_pagamentos)
+   ELSE SUM(CAST(ISNULL(F.Valor,0)-ISNULL(F.ValorTroco,0) AS decimal(19,4)))
+ END AS decimal(19,4)) valor_pagamento
 FROM dbo.DocumentoFiscal D WITH(NOLOCK)
 JOIN dbo.FormaPagamentoCupomFiscal F WITH(NOLOCK) ON F.IdDocumentoFiscal=D.Id
 JOIN dbo.FormaPagamento FP WITH(NOLOCK) ON FP.Id=F.IdFormaPagamento
+OUTER APPLY (
+ SELECT SUM(CAST(ISNULL(F2.Valor,0)-ISNULL(F2.ValorTroco,0) AS decimal(19,4))) total_pagamentos
+ FROM dbo.FormaPagamentoCupomFiscal F2 WITH(NOLOCK) WHERE F2.IdDocumentoFiscal=D.Id
+) PT
+OUTER APPLY (
+ SELECT TOP 1 CAST(ISNULL(V.ValorTotal,0) AS decimal(19,4)) valor_venda
+ FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
+ JOIN dbo.VendaTeleEntrega VTE WITH(NOLOCK) ON VTE.IdVenda=VCF.IdVenda
+ JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VCF.IdVenda
+ WHERE VCF.IdDocumentoFiscal=D.Id
+) DV
 WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
 GROUP BY D.Id,D.IdFilial,CONVERT(date,D.Data),D.Hora,D.Tipo,D.EhContingencia,FP.Id,FP.Nome;
 ;WITH DocumentoVenda AS (

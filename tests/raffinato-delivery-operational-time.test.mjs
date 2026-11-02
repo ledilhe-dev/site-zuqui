@@ -31,7 +31,8 @@ test('sincronizacao e analise padrao preservam data e hora fiscais originais',()
   assert.doesNotMatch(canonical,/CONVERT\(date,COALESCE\(TE\.Data,D\.Data\)\) data/);
   assert.match(canonical,/CAST\(D\.Hora AS time\)/);
   assert.doesNotMatch(canonical,/COALESCE\(TE\.(?:Data|Hora),D\.(?:Data|Hora)\)/);
-  assert.match(canonical,/SUM\(CAST\(ISNULL\(F\.Valor,0\)-ISNULL\(F\.ValorTroco,0\) AS decimal\(19,4\)\)\) valor_pagamento/);
+  assert.match(canonical,/MAX\(DV\.valor_venda\)[\s\S]*MAX\(PT\.total_pagamentos\)/);
+  assert.match(canonical,/JOIN dbo\.VendaTeleEntrega VTE[\s\S]*JOIN dbo\.Venda V/);
   assert.match(analysis,/AS Data,CONVERT\(varchar\(8\),CAST\(D\.Hora AS time\),108\) Hora/);
   assert.match(analysis,/SELECT I\.data,I\.hora,I\.id_documento_fiscal/);
 });
@@ -95,7 +96,7 @@ test('BI usa horario local quando disponivel e restaura cache remoto como contin
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.36"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.37"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
