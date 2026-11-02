@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.34"
+CONNECTOR_VERSION = "2.0.35"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -2110,32 +2110,31 @@ def query_vendas_analise(config: dict[str, Any], body: dict[str, Any]) -> dict[s
 
 
 def query_delivery_entry_times(config:dict[str,Any],start:date,end_exclusive:date,filial:int) -> dict[str,dict[str,Any]]:
-    sql="""SELECT D.Id id_documento_fiscal,CONVERT(date,DELIVERY.DataRecebimento) data,
-      CONVERT(varchar(8),CAST(DELIVERY.HoraRecebimento AS time),108) hora,
-      DELIVERY.FonteHorario fonte
-      FROM dbo.DocumentoFiscal D WITH(NOLOCK)
-      OUTER APPLY(SELECT TOP 1
-        CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN IDO.DataGravacao ELSE T.Data END DataRecebimento,
-        CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN IDO.HoraGravacao ELSE T.Hora END HoraRecebimento,
-        CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN 'INTEGRACAO_DELIVERY_ONLINE'
-             ELSE 'TELEENTREGA' END FonteHorario
-       FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
-       JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VCF.IdVenda
-       JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=V.Id
-       JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega
-       LEFT JOIN dbo.IntegracaoDeliveryOnline IDO WITH(NOLOCK)
-        ON UPPER(CONVERT(nvarchar(255),IDO.IdIntegracaoDeliveryOnline))=
-           UPPER(CONVERT(nvarchar(255),T.IdIntegracaoDeliveryOnline))
-       WHERE VCF.IdDocumentoFiscal=D.Id
-        AND ((IDO.DataGravacao IS NOT NULL AND IDO.HoraGravacao IS NOT NULL)
-          OR ((T.IdIntegracaoDeliveryOnline IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(255),T.IdIntegracaoDeliveryOnline)))='')
-              AND T.Data IS NOT NULL AND T.Hora IS NOT NULL))
-       ORDER BY CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN 0 ELSE 1 END,
-        IDO.DataGravacao,IDO.HoraGravacao,VT.Id) DELIVERY
-      WHERE D.Data>=? AND D.Data<? AND D.IdFilial=? AND ISNULL(D.Cancelado,0)=0
-       AND DELIVERY.DataRecebimento IS NOT NULL AND DELIVERY.HoraRecebimento IS NOT NULL;"""
+    # A cadeia ate Venda e exatamente a consulta validada no SQL Server.
+    # VendaCupomFiscal/DocumentoFiscal apenas identifica o documento financeiro
+    # ja existente que recebera a dimensao temporal; nao cria faturamento.
+    sql=""";WITH DeliveryVinculado AS (
+      SELECT D.Id id_documento_fiscal,I.DataGravacao data,
+       CONVERT(varchar(8),I.HoraGravacao,108) hora,
+       ROW_NUMBER() OVER(PARTITION BY D.Id ORDER BY I.DataGravacao,I.HoraGravacao,I.Id) ordem
+      FROM dbo.IntegracaoDeliveryOnline I WITH(NOLOCK)
+      LEFT JOIN dbo.TeleEntrega T WITH(NOLOCK)
+       ON UPPER(CONVERT(nvarchar(255),T.IdIntegracaoDeliveryOnline))=
+          UPPER(CONVERT(nvarchar(255),I.IdIntegracaoDeliveryOnline))
+       AND T.IdFilial=I.IdFilial
+      LEFT JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdTeleEntrega=T.Id
+      LEFT JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VT.IdVenda
+      JOIN dbo.VendaCupomFiscal VCF WITH(NOLOCK) ON VCF.IdVenda=V.Id
+      JOIN dbo.DocumentoFiscal D WITH(NOLOCK) ON D.Id=VCF.IdDocumentoFiscal
+      WHERE I.IdFilial=? AND I.DataGravacao>=? AND I.DataGravacao<?
+       AND I.IdIntegracaoDeliveryOnline LIKE '%iFood%'
+       AND I.HoraGravacao IS NOT NULL AND ISNULL(D.Cancelado,0)=0
+    )
+    SELECT id_documento_fiscal,CONVERT(date,data) data,hora,
+     CAST('INTEGRACAO_DELIVERY_ONLINE' AS varchar(40)) fonte
+    FROM DeliveryVinculado WHERE ordem=1;"""
     with pyodbc.connect(connection_string(config),timeout=8) as connection:
-        connection.timeout=45;cursor=connection.cursor();cursor.execute(sql,start,end_exclusive,filial);rows=rows_as_dicts(cursor)
+        connection.timeout=45;cursor=connection.cursor();cursor.execute(sql,filial,start,end_exclusive);rows=rows_as_dicts(cursor)
     return {str(row["id_documento_fiscal"]):{"data":row["data"],"hora":row["hora"],"fonte":row["fonte"]} for row in rows}
 
 

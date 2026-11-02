@@ -100,12 +100,21 @@ class DeliveryTimeOverlayTests(unittest.TestCase):
         self.assertEqual(rows[0]["forma_pagamento"], "PIX")
         self.assertEqual(rows[0]["valor_atribuido"], 80.0)
 
-    def test_delivery_query_uses_exact_validated_relationship_without_filial_constraints(self):
+    def test_delivery_query_uses_exact_validated_relationship_without_invalid_filial_constraints(self):
         sql = inspect.getsource(bridge.query_delivery_entry_times)
-        self.assertIn("VT.IdVenda=V.Id", sql)
-        self.assertIn("T.Id=VT.IdTeleEntrega", sql)
+        self.assertIn("V.Id=VT.IdVenda", sql)
+        self.assertIn("VT.IdTeleEntrega=T.Id", sql)
         self.assertNotIn("VT.IdFilial=V.IdFilial", sql)
         self.assertNotIn("T.IdFilial=VT.IdFilial", sql)
+
+    def test_ifood_query_starts_at_validated_integration_and_matches_its_filial(self):
+        sql = inspect.getsource(bridge.query_delivery_entry_times)
+        self.assertIn("FROM dbo.IntegracaoDeliveryOnline I", sql)
+        self.assertIn("T.IdFilial=I.IdFilial", sql)
+        self.assertIn("VT.IdTeleEntrega=T.Id", sql)
+        self.assertIn("V.Id=VT.IdVenda", sql)
+        self.assertIn("I.IdIntegracaoDeliveryOnline LIKE '%iFood%'", sql)
+        self.assertIn("VCF.IdVenda=V.Id", sql)
 
 
 if __name__ == "__main__":

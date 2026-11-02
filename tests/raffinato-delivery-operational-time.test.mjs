@@ -7,21 +7,21 @@ const manager=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',
 const sales=fs.readFileSync(new URL('../assets/js/36-raffinato-sales-analysis.js',import.meta.url),'utf8');
 const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
 
-test('consulta Delivery usa exatamente o relacionamento validado e limita a filial pelo documento financeiro',()=>{
+test('consulta Delivery parte da integracao validada e cruza a filial da TeleEntrega',()=>{
   const start=bridge.indexOf('def query_delivery_entry_times'),end=bridge.indexOf('def apply_delivery_entry_times',start),overlay=bridge.slice(start,end);
-  assert.match(overlay,/T\.Id=VT\.IdTeleEntrega/);
-  assert.match(overlay,/V\.Id=VCF\.IdVenda/);
-  assert.match(overlay,/VT\.IdVenda=V\.Id/);
+  assert.match(overlay,/FROM dbo\.IntegracaoDeliveryOnline I/);
+  assert.match(overlay,/T\.IdFilial=I\.IdFilial/);
+  assert.match(overlay,/VT\.IdTeleEntrega=T\.Id/);
+  assert.match(overlay,/V\.Id=VT\.IdVenda/);
+  assert.match(overlay,/VCF\.IdVenda=V\.Id/);
   assert.doesNotMatch(overlay,/VT\.IdFilial=V\.IdFilial/);
   assert.doesNotMatch(overlay,/T\.IdFilial=VT\.IdFilial/);
-  assert.match(overlay,/D\.IdFilial=\?/);
-  assert.match(overlay,/IntegracaoDeliveryOnline IDO/);
-  assert.match(overlay,/UPPER\(CONVERT\(nvarchar\(255\),IDO\.IdIntegracaoDeliveryOnline\)\)/);
+  assert.match(overlay,/I\.IdFilial=\?/);
+  assert.match(overlay,/UPPER\(CONVERT\(nvarchar\(255\),I\.IdIntegracaoDeliveryOnline\)\)/);
   assert.match(overlay,/UPPER\(CONVERT\(nvarchar\(255\),T\.IdIntegracaoDeliveryOnline\)\)/);
-  assert.match(overlay,/CASE WHEN IDO\.IdIntegracaoDeliveryOnline IS NOT NULL THEN IDO\.DataGravacao ELSE T\.Data END/);
-  assert.match(overlay,/LEFT JOIN dbo\.IntegracaoDeliveryOnline/);
-  assert.match(overlay,/T\.IdIntegracaoDeliveryOnline IS NULL/);
-  assert.doesNotMatch(overlay,/SELECT TOP 1 T\.Data,T\.Hora/);
+  assert.match(overlay,/I\.DataGravacao data/);
+  assert.match(overlay,/I\.HoraGravacao/);
+  assert.match(overlay,/I\.IdIntegracaoDeliveryOnline LIKE '%iFood%'/);
 });
 
 test('sincronizacao e analise padrao preservam data e hora fiscais originais',()=>{
@@ -37,7 +37,8 @@ test('sincronizacao e analise padrao preservam data e hora fiscais originais',()
 });
 
 test('vinculo delivery e deterministico e nao multiplica documentos',()=>{
-  assert.match(bridge,/OUTER APPLY\(SELECT TOP 1[\s\S]*?FonteHorario[\s\S]*?ORDER BY CASE WHEN IDO\.IdIntegracaoDeliveryOnline IS NOT NULL THEN 0 ELSE 1 END/);
+  assert.match(bridge,/ROW_NUMBER\(\) OVER\(PARTITION BY D\.Id ORDER BY I\.DataGravacao,I\.HoraGravacao,I\.Id\) ordem/);
+  assert.match(bridge,/FROM DeliveryVinculado WHERE ordem=1/);
   assert.match(bridge,/CREATE UNIQUE CLUSTERED INDEX IX_IdsVendas ON #IdsVendas\(Id\)/);
 });
 
@@ -94,7 +95,7 @@ test('BI usa horario local quando disponivel e restaura cache remoto como contin
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.34"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.35"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
