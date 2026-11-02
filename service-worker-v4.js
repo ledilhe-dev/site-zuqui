@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v294-raffinato-2.0.29-2026-11-01';
+const CACHE_NAME = 'check-diario-pwa-v295-raffinato-2.0.39-2026-11-02';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

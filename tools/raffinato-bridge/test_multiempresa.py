@@ -117,6 +117,15 @@ class MultiempresaTests(unittest.TestCase):
         self.assertTrue(sync_period.call_args.kwargs["report_only"])
         relay_post.assert_called_with({"action":"connector_sync_complete","request_id":"request-1","ok":True},timeout=30)
 
+    def test_new_version_retires_old_process_before_starting_components(self):
+        source=SOURCE.read_text(encoding="utf-8")
+        main=source[source.index("def main()") : source.index("if __name__",source.index("def main()"))]
+        self.assertLess(main.index("retire_legacy_connectors()"),main.index("start_cardapio_dispatcher()"))
+        self.assertLess(main.index("acquire_single_instance(silent=True)"),main.index("start_cardapio_dispatcher()"))
+        self.assertIn("Wait-Process",source)
+        self.assertIn("taskkill.exe",source)
+        self.assertNotIn("if not acquire_single_instance():",main)
+
     def test_sync_failure_in_one_dataset_does_not_block_other_datasets(self):
         sent = []
         config = {"_store_id":"store-salao","id_filial":1,"connection_profile_id":"profile-salao","relay_token":"token",

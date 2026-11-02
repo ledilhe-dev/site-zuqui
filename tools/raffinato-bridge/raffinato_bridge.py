@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.38"
+CONNECTOR_VERSION = "2.0.39"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -3324,9 +3324,11 @@ def retire_legacy_connectors() -> None:
     current_pid=os.getpid()
     command=(
         f"$current={current_pid};"
-        "Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|"
-        "Where-Object{$_.ProcessId -ne $current -and $_.Name -like 'Conector-Raffinato-v*.exe'}|"
-        "ForEach-Object{Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue}"
+        "$old=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|"
+        "Where-Object{$_.ProcessId -ne $current -and ($_.Name -like 'Conector-Raffinato-v*.exe' -or $_.ExecutablePath -match 'Conector-Raffinato-v[0-9].*\\.exe$')});"
+        "$old|ForEach-Object{Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue};"
+        "$old|ForEach-Object{try{Wait-Process -Id $_.ProcessId -Timeout 10 -ErrorAction Stop}catch{"
+        "Start-Process -FilePath taskkill.exe -ArgumentList @('/PID',([string]$_.ProcessId),'/T','/F') -WindowStyle Hidden -Wait -ErrorAction SilentlyContinue}}"
     )
     try:
         subprocess.run(
@@ -3339,7 +3341,7 @@ def retire_legacy_connectors() -> None:
         logger.exception("Nao foi possivel concluir a retirada das versoes antigas")
 
 
-def acquire_single_instance() -> bool:
+def acquire_single_instance(silent:bool=False) -> bool:
     """Impede mais de um conector por sessão do Windows."""
     global MUTEX_HANDLE
     MUTEX_HANDLE = ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\CheckDiarioRaffinatoConnector")
@@ -3347,7 +3349,8 @@ def acquire_single_instance() -> bool:
         show_windows_message("Conector Raffinato", "Não foi possível criar o controle de instância.", True)
         return False
     if ctypes.windll.kernel32.GetLastError() == 183:
-        show_windows_message("Conector Raffinato", "O conector já está em execução na bandeja do Windows.")
+        if not silent:
+            show_windows_message("Conector Raffinato", "O conector já está em execução na bandeja do Windows.")
         ctypes.windll.kernel32.CloseHandle(MUTEX_HANDLE)
         MUTEX_HANDLE = None
         return False
@@ -3404,19 +3407,20 @@ def main() -> int:
         UUID(instance_id)
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
     retire_legacy_connectors()
-    time.sleep(1)
+    acquired=False
+    for _attempt in range(20):
+        if acquire_single_instance(silent=True):
+            acquired=True
+            break
+        time.sleep(0.5)
+    if not acquired:
+        show_windows_message("Conector Raffinato", "Nao foi possivel encerrar silenciosamente a versao anterior. Feche-a pela bandeja e tente novamente.", True)
+        return 1
     try:
         cardapio_thread = start_cardapio_dispatcher()
     except Exception:
         logger.exception("Nao foi possivel iniciar o despachante interno %s", CONNECTOR_VERSION)
         cardapio_thread = None
-    if not acquire_single_instance():
-        if cardapio_thread:
-            show_windows_message("Conector Raffinato", f"Despachante de pedidos {CONNECTOR_VERSION} ativado. O catalogo sincroniza somente quando solicitado.")
-            cardapio_thread.join()
-        else:
-            show_windows_message("Conector Raffinato", f"A versao {CONNECTOR_VERSION} ja esta ativa.")
-        return 0
     ensure_browser_loopback_policy()
     try:
         migrate_legacy_configuration()

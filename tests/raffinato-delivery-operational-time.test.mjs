@@ -6,6 +6,9 @@ const bridge=fs.readFileSync(new URL('../tools/raffinato-bridge/raffinato_bridge
 const manager=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',import.meta.url),'utf8');
 const sales=fs.readFileSync(new URL('../assets/js/36-raffinato-sales-analysis.js',import.meta.url),'utf8');
 const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const worker=fs.readFileSync(new URL('../service-worker-v4.js',import.meta.url),'utf8');
+const executions=fs.readFileSync(new URL('../assets/js/71-executions.js',import.meta.url),'utf8');
 
 test('consulta Delivery parte da integracao validada e cruza a filial da TeleEntrega',()=>{
   const start=bridge.indexOf('def query_delivery_entry_times'),end=bridge.indexOf('def apply_delivery_entry_times',start),overlay=bridge.slice(start,end);
@@ -48,6 +51,19 @@ test('Consultar atualiza incrementalmente antes de ler o cache remoto',()=>{
   assert.doesNotMatch(bridge,/while cursor < recent_start and not stop_event\.is_set\(\)/);
   assert.match(sales,/await rsRefreshRemoteBeforeQuery\(body,c\);return\{\.\.\.await raffinatoRelay/);
   assert.match(sales,/O conector não concluiu a atualização em até 90 segundos/);
+});
+
+test('publicacao invalida explicitamente o cache do modulo de vendas',()=>{
+  assert.match(html,/36-raffinato-sales-analysis\.js\?v=20261102-sync-sob-demanda-v1/);
+  assert.match(html,/93-raffinato-managerial\.js\?v=20261102-remoto-sob-demanda-v1/);
+  assert.match(worker,/check-diario-pwa-v295-raffinato-2\.0\.39-2026-11-02/);
+  assert.match(executions,/service-worker-v4\.js\?v=3\.2\.73-raffinato-sync-sob-demanda/);
+});
+
+test('painel web residencial usa fila remota e nao loopback para vendas',()=>{
+  assert.match(manager,/if\(path==='\/api\/raffinato\/vendas-analise'\)\{await rmRefreshRemote\(body\);return rmRemote\(path,body\)\}/);
+  assert.match(manager,/sales_refresh_request/);
+  assert.doesNotMatch(manager,/temporal_warning:'Conector local indisponível/);
 });
 
 test('sincronizacao e analise padrao preservam data e hora fiscais originais',()=>{
@@ -109,20 +125,18 @@ test('cache remoto recebe horario Delivery sem alterar valores ou pagamentos',()
   assert.doesNotMatch(syncOverlay,/\["(?:valor_pagamento|total_faturado|id_forma_pagamento|forma_pagamento)"\]=/);
 });
 
-test('BI usa horario local quando disponivel e restaura cache remoto como contingencia',()=>{
-  assert.doesNotMatch(manager,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
-  assert.match(manager,/Number\(local\?\.schema_version\|\|0\)<4/);
-  assert.match(manager,/Conector local indisponível\. Exibindo os dados sincronizados/);
+test('BI residencial atualiza pelo conector remoto sem depender de loopback',()=>{
+  assert.match(manager,/sales_refresh_request/);
+  assert.match(manager,/await rmRefreshRemote\(body\);return rmRemote\(path,body\)/);
+  assert.doesNotMatch(manager,/Conector local indisponível\. Exibindo os dados sincronizados/);
   assert.match(sales,/sales_canonical_dashboard/);
   assert.doesNotMatch(manager,/operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
   assert.match(bridge,/ORIGINAL_DOCUMENTO_FISCAL/);
-  assert.match(manager,/temporal_warning/);
-  assert.match(manager,/cache remoto em sincronização/);
   assert.match(relay,/schema_version:2,operational_time_source:"LEGACY_CACHE_UNVERIFIED"/);
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.38"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.39"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
