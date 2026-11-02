@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.33"
+CONNECTOR_VERSION = "2.0.34"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -2120,9 +2120,9 @@ def query_delivery_entry_times(config:dict[str,Any],start:date,end_exclusive:dat
         CASE WHEN IDO.IdIntegracaoDeliveryOnline IS NOT NULL THEN 'INTEGRACAO_DELIVERY_ONLINE'
              ELSE 'TELEENTREGA' END FonteHorario
        FROM dbo.VendaCupomFiscal VCF WITH(NOLOCK)
-       JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VCF.IdVenda AND V.IdFilial=D.IdFilial
-       JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=V.Id AND VT.IdFilial=V.IdFilial
-       JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega AND T.IdFilial=VT.IdFilial
+       JOIN dbo.Venda V WITH(NOLOCK) ON V.Id=VCF.IdVenda
+       JOIN dbo.VendaTeleEntrega VT WITH(NOLOCK) ON VT.IdVenda=V.Id
+       JOIN dbo.TeleEntrega T WITH(NOLOCK) ON T.Id=VT.IdTeleEntrega
        LEFT JOIN dbo.IntegracaoDeliveryOnline IDO WITH(NOLOCK)
         ON UPPER(CONVERT(nvarchar(255),IDO.IdIntegracaoDeliveryOnline))=
            UPPER(CONVERT(nvarchar(255),T.IdIntegracaoDeliveryOnline))
@@ -2143,17 +2143,16 @@ def apply_delivery_entry_times(items:list[dict[str,Any]],delivery_times:dict[str
     """Aplica apenas a dimensao temporal aos documentos Delivery ja selecionados."""
     enriched_documents:set[str]=set();fallback_documents:set[str]=set()
     for item in items:
-        if str(item.get("modulo_venda") or "").upper() != "DELIVERY":
-            continue
         document_id=str(item.get("id_documento_fiscal") or "")
         temporal=delivery_times.get(document_id)
         if temporal:
+            item["modulo_venda"]="DELIVERY"
             item["data"]=temporal["data"]
             item["hora"]=temporal["hora"]
             item["delivery_time_source"]=temporal.get("fonte") or "RECEBIMENTO_DELIVERY"
             item["delivery_time_fallback"]=False
             enriched_documents.add(document_id)
-        else:
+        elif str(item.get("modulo_venda") or "").upper() == "DELIVERY":
             item["delivery_time_source"]="FECHAMENTO_FINANCEIRO_FALLBACK"
             item["delivery_time_fallback"]=True
             fallback_documents.add(document_id)
@@ -2166,15 +2165,14 @@ def apply_delivery_times_to_canonical_sync(documents:list[dict[str,Any]],items:l
     """Transporta somente a dimensao temporal Delivery para o cache remoto."""
     effective_by_document:dict[str,dict[str,Any]]={};fallback:set[str]=set()
     for document in documents:
-        if str(document.get("modulo_venda") or "").upper()!="DELIVERY":
-            continue
         document_id=str(document.get("id_documento_fiscal") or "")
         temporal=delivery_times.get(document_id)
         if temporal:
+            document["modulo_venda"]="DELIVERY"
             document["data"]=temporal["data"]
             document["hora"]=temporal["hora"]
             effective_by_document[document_id]=temporal
-        else:
+        elif str(document.get("modulo_venda") or "").upper()=="DELIVERY":
             fallback.add(document_id)
     for item in items:
         temporal=effective_by_document.get(str(item.get("id_documento_fiscal") or ""))

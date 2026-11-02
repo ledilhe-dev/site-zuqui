@@ -1,4 +1,5 @@
 import copy
+import inspect
 import unittest
 from datetime import datetime
 
@@ -12,7 +13,7 @@ class DeliveryTimeOverlayTests(unittest.TestCase):
             {"id_documento_fiscal": 20, "modulo_venda": "VENDA_RAPIDA", "data": "2026-11-01", "hora": "19:00:00", "valor_atribuido": 30.0, "quantidade_atribuida": 1},
         ]
         changed = copy.deepcopy(original)
-        stats = bridge.apply_delivery_entry_times(changed, {"10": {"data": "2026-11-01", "hora": "18:05:00", "fonte": "INTEGRACAO_DELIVERY_ONLINE"}, "20": {"data": "2026-10-31", "hora": "23:00:00"}})
+        stats = bridge.apply_delivery_entry_times(changed, {"10": {"data": "2026-11-01", "hora": "18:05:00", "fonte": "INTEGRACAO_DELIVERY_ONLINE"}})
 
         self.assertEqual(changed[0]["hora"], "18:05:00")
         self.assertEqual(changed[1], original[1])
@@ -90,6 +91,21 @@ class DeliveryTimeOverlayTests(unittest.TestCase):
         self.assertEqual((items[0]["data"], items[0]["hora"]), ("2026-10-31", "07:15:00"))
         self.assertEqual((documents[1]["data"], documents[1]["hora"]), ("2026-11-01", "19:00:00"))
         self.assertEqual([(x["id_forma_pagamento"], x["forma_pagamento"], x["valor_pagamento"]) for x in documents], original_financial)
+
+    def test_validated_relationship_recognizes_delivery_without_prior_label(self):
+        rows = [{"id_documento_fiscal": 10, "modulo_venda": "VENDA_RAPIDA", "data": "2026-10-31", "hora": "19:00:00", "forma_pagamento": "PIX", "valor_atribuido": 80.0}]
+        stats = bridge.apply_delivery_entry_times(rows, {"10": {"data": "2026-10-31", "hora": "07:10:00", "fonte": "INTEGRACAO_DELIVERY_ONLINE"}})
+        self.assertEqual(stats, {"enriched": 1, "fallback": 0})
+        self.assertEqual(rows[0]["modulo_venda"], "DELIVERY")
+        self.assertEqual(rows[0]["forma_pagamento"], "PIX")
+        self.assertEqual(rows[0]["valor_atribuido"], 80.0)
+
+    def test_delivery_query_uses_exact_validated_relationship_without_filial_constraints(self):
+        sql = inspect.getsource(bridge.query_delivery_entry_times)
+        self.assertIn("VT.IdVenda=V.Id", sql)
+        self.assertIn("T.Id=VT.IdTeleEntrega", sql)
+        self.assertNotIn("VT.IdFilial=V.IdFilial", sql)
+        self.assertNotIn("T.IdFilial=VT.IdFilial", sql)
 
 
 if __name__ == "__main__":

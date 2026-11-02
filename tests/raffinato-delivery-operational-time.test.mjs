@@ -7,11 +7,14 @@ const manager=fs.readFileSync(new URL('../assets/js/93-raffinato-managerial.js',
 const sales=fs.readFileSync(new URL('../assets/js/36-raffinato-sales-analysis.js',import.meta.url),'utf8');
 const relay=fs.readFileSync(new URL('../supabase/functions/raffinato-relay/index.ts',import.meta.url),'utf8');
 
-test('consulta Delivery e independente e vinculada pela filial',()=>{
+test('consulta Delivery usa exatamente o relacionamento validado e limita a filial pelo documento financeiro',()=>{
   const start=bridge.indexOf('def query_delivery_entry_times'),end=bridge.indexOf('def apply_delivery_entry_times',start),overlay=bridge.slice(start,end);
-  assert.match(overlay,/T\.Id=VT\.IdTeleEntrega AND T\.IdFilial=VT\.IdFilial/);
-  assert.match(overlay,/V\.Id=VCF\.IdVenda AND V\.IdFilial=D\.IdFilial/);
-  assert.match(overlay,/VT\.IdVenda=V\.Id AND VT\.IdFilial=V\.IdFilial/);
+  assert.match(overlay,/T\.Id=VT\.IdTeleEntrega/);
+  assert.match(overlay,/V\.Id=VCF\.IdVenda/);
+  assert.match(overlay,/VT\.IdVenda=V\.Id/);
+  assert.doesNotMatch(overlay,/VT\.IdFilial=V\.IdFilial/);
+  assert.doesNotMatch(overlay,/T\.IdFilial=VT\.IdFilial/);
+  assert.match(overlay,/D\.IdFilial=\?/);
   assert.match(overlay,/IntegracaoDeliveryOnline IDO/);
   assert.match(overlay,/UPPER\(CONVERT\(nvarchar\(255\),IDO\.IdIntegracaoDeliveryOnline\)\)/);
   assert.match(overlay,/UPPER\(CONVERT\(nvarchar\(255\),T\.IdIntegracaoDeliveryOnline\)\)/);
@@ -91,7 +94,7 @@ test('BI usa horario local quando disponivel e restaura cache remoto como contin
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.33"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.34"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
