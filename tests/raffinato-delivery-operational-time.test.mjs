@@ -69,10 +69,11 @@ test('sincronizacao principal preserva periodo financeiro original',()=>{
   assert.match(bridge,/body=\{"inicio":datetime\.combine\(start_day[\s\S]*?"_preservar_periodo_financeiro":True\}/);
 });
 
-test('BI temporal exige conector local para garantir horario automatico',()=>{
+test('BI usa horario local quando disponivel e restaura cache remoto como contingencia',()=>{
   assert.doesNotMatch(manager,/remoteOnly=path==='\/api\/raffinato\/vendas-analise'/);
   assert.match(manager,/Number\(local\?\.schema_version\|\|0\)<4/);
-  assert.match(manager,/if\(path==='\/api\/raffinato\/vendas-analise'\)throw localError/);
+  assert.match(manager,/Conector local indisponível\. Exibindo os dados sincronizados/);
+  assert.match(sales,/sales_canonical_dashboard/);
   assert.doesNotMatch(manager,/operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
   assert.match(bridge,/ORIGINAL_DOCUMENTO_FISCAL/);
   assert.match(manager,/temporal_warning/);
