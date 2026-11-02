@@ -39,7 +39,11 @@ Deno.serve(async (request) => {
         perfis_cadastrados:Math.max(0,Number(body.profiles || 0)), filiais_vinculadas:Math.max(0,Number(body.mappings || 0)),
       }).eq("id",instance.id);
       if (error) throw error;
-      return json({ok:true,empresa_id:instance.empresa_id,operations_paused:instance.operacoes_pausadas===true});
+      const {data:mappings,error:mappingsError}=await admin.from("raffinato_integracoes")
+        .select("empresa_id,loja_id,connection_profile_id,raffinato_filial_id")
+        .eq("connector_instance_id",instance.id).eq("empresa_id",instance.empresa_id).eq("status","ativa");
+      if(mappingsError)throw mappingsError;
+      return json({ok:true,empresa_id:instance.empresa_id,operations_paused:instance.operacoes_pausadas===true,store_mappings:mappings||[]});
     }
 
     if (body.action === "connector_link_store") {

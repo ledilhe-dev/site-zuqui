@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.35"
+CONNECTOR_VERSION = "2.0.36"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -1538,6 +1538,7 @@ def heartbeat_loop(stop_event: threading.Event) -> None:
                     "connector_instance_id":state["connector_instance_id"], "version":CONNECTOR_VERSION,
                     "profiles":len(state.get("profiles", {})), "mappings":len(state.get("mappings", {})),
                 })
+                reconcile_authorized_mappings(state, (heartbeat or {}).get("store_mappings"))
                 paused = bool((heartbeat or {}).get("operations_paused"))
                 if paused and not REMOTE_OPERATIONS_PAUSED.is_set():
                     logger.warning("Operacoes pausadas remotamente pelo painel do CheckDiario")
@@ -1547,6 +1548,36 @@ def heartbeat_loop(stop_event: threading.Event) -> None:
         except Exception:
             logger.exception("Heartbeat da instalacao falhou")
         stop_event.wait(2 * 60)
+
+
+def reconcile_authorized_mappings(state:dict[str,Any],remote_mappings:Any) -> bool:
+    """Espelha somente vínculos autorizados cujos perfis SQL já existem localmente."""
+    if not isinstance(remote_mappings,list):
+        return False
+    authorized:dict[str,dict[str,Any]]={}
+    for item in remote_mappings:
+        if not isinstance(item,dict):
+            continue
+        store_id=str(item.get("loja_id") or "").strip()
+        profile_id=str(item.get("connection_profile_id") or "").strip()
+        filial=item.get("raffinato_filial_id")
+        profile=state.get("profiles",{}).get(profile_id)
+        if not store_id or not profile or not profile.get("active",True) or filial is None or int(filial)<=0:
+            logger.warning("Vinculo remoto ignorado por perfil local ausente | loja=%s perfil=%s",store_id,profile_id)
+            continue
+        authorized[store_id]={
+            "checkdiario_empresa_id":str(item.get("empresa_id") or state.get("paired_empresa_id") or ""),
+            "checkdiario_filial_id":store_id,"connection_profile_id":profile_id,
+            "raffinato_filial_id":int(filial),"active":True,
+        }
+    current=state.setdefault("mappings",{})
+    changed=current!=authorized
+    if changed:
+        state["mappings"]=authorized
+        save_profile_state(state)
+        CACHE_REFRESH_EVENT.set()
+        logger.info("Vinculos locais reconciliados pelo backend | lojas=%s",sorted(authorized))
+    return changed
 
 
 def get_store_config(store_id: str) -> dict[str, Any]:

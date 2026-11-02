@@ -91,6 +91,17 @@ class MultiempresaTests(unittest.TestCase):
         self.assertEqual((configs["store-salao"]["connection_profile_id"], configs["store-salao"]["id_filial"]), ("profile-salao", 1))
         self.assertEqual((configs["store-delivery"]["connection_profile_id"], configs["store-delivery"]["id_filial"]), ("profile-delivery", 2))
 
+    def test_heartbeat_reconciles_patrick_store_id_without_changing_sql_profile(self):
+        state = bridge.load_profile_state()
+        state["paired_empresa_id"] = "patrick-company"
+        state["profiles"]["profile-patrick"] = {"id":"profile-patrick","active":True,"server":"sql","database":"ZuquiNova","uid":"u","pwd":"p"}
+        state["mappings"]["zuqui-store"] = {"connection_profile_id":"profile-patrick","raffinato_filial_id":1,"active":True}
+        changed = bridge.reconcile_authorized_mappings(state, [{"empresa_id":"patrick-company","loja_id":"patrick-store","connection_profile_id":"profile-patrick","raffinato_filial_id":1}])
+        reloaded = bridge.load_profile_state()
+        self.assertTrue(changed)
+        self.assertEqual(set(reloaded["mappings"]), {"patrick-store"})
+        self.assertEqual(reloaded["profiles"]["profile-patrick"]["database"], "ZuquiNova")
+
     def test_sync_failure_in_one_dataset_does_not_block_other_datasets(self):
         sent = []
         config = {"_store_id":"store-salao","id_filial":1,"connection_profile_id":"profile-salao","relay_token":"token",
