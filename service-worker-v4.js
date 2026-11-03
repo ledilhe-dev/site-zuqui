@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v299-gerador-escalas-2026-11-03';
+const CACHE_NAME = 'check-diario-pwa-v300-salvar-cenario-2026-11-03';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
