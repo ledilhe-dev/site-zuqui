@@ -67,7 +67,16 @@ Deno.serve(async (request) => {
 
     if(body.action==="sales_refresh_status"){
       validateUuid(body.empresa_id,"empresa");validateUuid(body.loja_id,"loja");await authorizeStore(admin,body.usuario_id,body.empresa_id,body.loja_id,body.global_admin_token);
-      const {data,error}=await admin.from("raffinato_sync_solicitacoes").select("id,status,solicitado_em,concluido_em,erro").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).maybeSingle();if(error)throw error;return json({solicitacao:data});
+      const {data,error}=await admin.from("raffinato_sync_solicitacoes").select("id,status,inicio,fim_exclusivo,solicitado_em,concluido_em,erro").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).maybeSingle();if(error)throw error;
+      let request=data;
+      // Compatibilidade com a 2.0.39: ela atualiza o cache corretamente, mas
+      // não autenticava a confirmação final. O backend reconhece a conclusão
+      // somente quando há documento sincronizado depois da solicitação.
+      if(request?.status==="pendente"){
+        const {data:latest,error:latestError}=await admin.from("raffinato_documentos_faturados_cache").select("sincronizado_em").eq("empresa_id",body.empresa_id).eq("loja_id",body.loja_id).gte("data",request.inicio).lt("data",request.fim_exclusivo).gt("sincronizado_em",request.solicitado_em).order("sincronizado_em",{ascending:false}).limit(1).maybeSingle();if(latestError)throw latestError;
+        if(latest?.sincronizado_em){const completedAt=new Date().toISOString();const {data:completed,error:completeError}=await admin.from("raffinato_sync_solicitacoes").update({status:"concluida",concluido_em:completedAt,erro:null}).eq("id",request.id).eq("status","pendente").select("id,status,inicio,fim_exclusivo,solicitado_em,concluido_em,erro").maybeSingle();if(completeError)throw completeError;if(completed)request=completed;}
+      }
+      return json({solicitacao:request});
     }
 
     if (body.action === "connector_link_store") {

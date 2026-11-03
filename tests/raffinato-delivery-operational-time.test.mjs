@@ -163,4 +163,6 @@ test('sincronizacao remota confirma com credencial e nunca apaga o cache visivel
   assert.match(manager,/attempt<240/);
   assert.match(manager,/return cached/);
   assert.match(manager,/Atualização em segundo plano não concluída/);
+  assert.match(relay,/Compatibilidade com a 2\.0\.39/);
+  assert.match(relay,/gt\("sincronizado_em",request\.solicitado_em\)/);
 });
