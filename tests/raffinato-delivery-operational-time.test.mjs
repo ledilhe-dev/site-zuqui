@@ -55,13 +55,13 @@ test('Consultar atualiza incrementalmente antes de ler o cache remoto',()=>{
 
 test('publicacao invalida explicitamente o cache do modulo de vendas',()=>{
   assert.match(html,/36-raffinato-sales-analysis\.js\?v=20261102-sync-sob-demanda-v1/);
-  assert.match(html,/93-raffinato-managerial\.js\?v=20261102-remoto-sob-demanda-v2/);
-  assert.match(worker,/check-diario-pwa-v296-raffinato-2\.0\.40-2026-11-02/);
-  assert.match(executions,/service-worker-v4\.js\?v=3\.2\.74-raffinato-sync-confirmada/);
+  assert.match(html,/93-raffinato-managerial\.js\?v=20261102-cache-imediato-v3/);
+  assert.match(worker,/check-diario-pwa-v297-raffinato-cache-imediato-2026-11-02/);
+  assert.match(executions,/service-worker-v4\.js\?v=3\.2\.75-raffinato-cache-imediato/);
 });
 
 test('painel web residencial usa fila remota e nao loopback para vendas',()=>{
-  assert.match(manager,/if\(path==='\/api\/raffinato\/vendas-analise'\)\{try\{await rmRefreshRemote\(body\);return await rmRemote\(path,body\)\}/);
+  assert.match(manager,/if\(path==='\/api\/raffinato\/vendas-analise'\)\{const cached=await rmRemote\(path,body\);rmRefreshRemote\(body\)\.then/);
   assert.match(manager,/sales_refresh_request/);
   assert.doesNotMatch(manager,/temporal_warning:'Conector local indisponível/);
 });
@@ -127,7 +127,7 @@ test('cache remoto recebe horario Delivery sem alterar valores ou pagamentos',()
 
 test('BI residencial atualiza pelo conector remoto sem depender de loopback',()=>{
   assert.match(manager,/sales_refresh_request/);
-  assert.match(manager,/await rmRefreshRemote\(body\);return await rmRemote\(path,body\)/);
+  assert.match(manager,/const cached=await rmRemote\(path,body\);rmRefreshRemote\(body\)\.then/);
   assert.doesNotMatch(manager,/Conector local indisponível\. Exibindo os dados sincronizados/);
   assert.match(sales,/sales_canonical_dashboard/);
   assert.doesNotMatch(manager,/operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
@@ -161,6 +161,6 @@ test('sincronizacao remota confirma com credencial e nunca apaga o cache visivel
   assert.match(bridge,/connector_action = str\(payload\.get\("action"\) or ""\)\.startswith\("connector_"\)/);
   assert.match(bridge,/credential and \(payload\.get\("token"\) or connector_action\)/);
   assert.match(manager,/attempt<240/);
-  assert.match(manager,/const cached=await rmRemote\(path,body\)/);
-  assert.match(manager,/Dados sincronizados exibidos\. A atualização imediata não foi concluída/);
+  assert.match(manager,/return cached/);
+  assert.match(manager,/Atualização em segundo plano não concluída/);
 });
