@@ -122,8 +122,8 @@ class MultiempresaTests(unittest.TestCase):
         main=source[source.index("def main()") : source.index("if __name__",source.index("def main()"))]
         self.assertLess(main.index("retire_legacy_connectors()"),main.index("start_cardapio_dispatcher()"))
         self.assertLess(main.index("acquire_single_instance(silent=True)"),main.index("start_cardapio_dispatcher()"))
-        self.assertIn("Wait-Process",source)
         self.assertIn("taskkill.exe",source)
+        self.assertIn("Get-Process -Id",source)
         self.assertNotIn("if not acquire_single_instance():",main)
 
     def test_sync_failure_in_one_dataset_does_not_block_other_datasets(self):

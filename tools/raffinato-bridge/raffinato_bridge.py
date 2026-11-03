@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.39"
+CONNECTOR_VERSION = "2.0.40"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
@@ -1414,7 +1414,11 @@ def send_raffinato_test_order(config: dict[str, Any], body: dict[str, Any]) -> d
 
 def relay_post(payload: dict[str, Any], timeout: int = 30) -> dict[str, Any]:
     instance_id, credential = connector_identity()
-    if credential and payload.get("token"):
+    # A confirmação de uma sincronização sob demanda também é uma operação
+    # autenticada do conector. Na 2.0.39 ela saía sem credencial, deixando a
+    # solicitação eternamente pendente mesmo depois de o cache ser atualizado.
+    connector_action = str(payload.get("action") or "").startswith("connector_")
+    if credential and (payload.get("token") or connector_action):
         payload = {**payload, "token":credential, "connector_instance_id":instance_id}
     request = urllib.request.Request(
         RELAY_URL,
@@ -3326,14 +3330,15 @@ def retire_legacy_connectors() -> None:
         f"$current={current_pid};"
         "$old=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|"
         "Where-Object{$_.ProcessId -ne $current -and ($_.Name -like 'Conector-Raffinato-v*.exe' -or $_.ExecutablePath -match 'Conector-Raffinato-v[0-9].*\\.exe$')});"
-        "$old|ForEach-Object{Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue};"
-        "$old|ForEach-Object{try{Wait-Process -Id $_.ProcessId -Timeout 10 -ErrorAction Stop}catch{"
-        "Start-Process -FilePath taskkill.exe -ArgumentList @('/PID',([string]$_.ProcessId),'/T','/F') -WindowStyle Hidden -Wait -ErrorAction SilentlyContinue}}"
+        "$old|ForEach-Object{& taskkill.exe /PID $_.ProcessId /T /F *> $null};"
+        "$limit=(Get-Date).AddSeconds(20);do{$alive=@($old|Where-Object{Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue});"
+        "if($alive.Count -gt 0){Start-Sleep -Milliseconds 250}}while($alive.Count -gt 0 -and (Get-Date) -lt $limit);"
+        "if($alive.Count -gt 0){exit 9}"
     )
     try:
         subprocess.run(
             ["powershell.exe","-NoProfile","-NonInteractive","-WindowStyle","Hidden","-Command",command],
-            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15,check=False,
+            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=25,check=False,
             creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0),
         )
         logger.info("Verificacao de versoes antigas concluida antes da inicializacao %s",CONNECTOR_VERSION)
@@ -3408,7 +3413,7 @@ def main() -> int:
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
     retire_legacy_connectors()
     acquired=False
-    for _attempt in range(20):
+    for _attempt in range(60):
         if acquire_single_instance(silent=True):
             acquired=True
             break

@@ -55,13 +55,13 @@ test('Consultar atualiza incrementalmente antes de ler o cache remoto',()=>{
 
 test('publicacao invalida explicitamente o cache do modulo de vendas',()=>{
   assert.match(html,/36-raffinato-sales-analysis\.js\?v=20261102-sync-sob-demanda-v1/);
-  assert.match(html,/93-raffinato-managerial\.js\?v=20261102-remoto-sob-demanda-v1/);
-  assert.match(worker,/check-diario-pwa-v295-raffinato-2\.0\.39-2026-11-02/);
-  assert.match(executions,/service-worker-v4\.js\?v=3\.2\.73-raffinato-sync-sob-demanda/);
+  assert.match(html,/93-raffinato-managerial\.js\?v=20261102-remoto-sob-demanda-v2/);
+  assert.match(worker,/check-diario-pwa-v296-raffinato-2\.0\.40-2026-11-02/);
+  assert.match(executions,/service-worker-v4\.js\?v=3\.2\.74-raffinato-sync-confirmada/);
 });
 
 test('painel web residencial usa fila remota e nao loopback para vendas',()=>{
-  assert.match(manager,/if\(path==='\/api\/raffinato\/vendas-analise'\)\{await rmRefreshRemote\(body\);return rmRemote\(path,body\)\}/);
+  assert.match(manager,/if\(path==='\/api\/raffinato\/vendas-analise'\)\{try\{await rmRefreshRemote\(body\);return await rmRemote\(path,body\)\}/);
   assert.match(manager,/sales_refresh_request/);
   assert.doesNotMatch(manager,/temporal_warning:'Conector local indisponível/);
 });
@@ -127,7 +127,7 @@ test('cache remoto recebe horario Delivery sem alterar valores ou pagamentos',()
 
 test('BI residencial atualiza pelo conector remoto sem depender de loopback',()=>{
   assert.match(manager,/sales_refresh_request/);
-  assert.match(manager,/await rmRefreshRemote\(body\);return rmRemote\(path,body\)/);
+  assert.match(manager,/await rmRefreshRemote\(body\);return await rmRemote\(path,body\)/);
   assert.doesNotMatch(manager,/Conector local indisponível\. Exibindo os dados sincronizados/);
   assert.match(sales,/sales_canonical_dashboard/);
   assert.doesNotMatch(manager,/operational_time_source!=='TELEENTREGA_DELIVERY_V1'/);
@@ -136,7 +136,7 @@ test('BI residencial atualiza pelo conector remoto sem depender de loopback',()=
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.39"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.40"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
@@ -155,4 +155,12 @@ test('exe encerra qualquer versao antiga sem console e cardapio consulta continu
   const dispatcher=bridge.slice(bridge.indexOf('def start_cardapio_dispatcher'),bridge.indexOf('def ensure_browser_loopback_policy'));
   assert.doesNotMatch(dispatcher,/time\.monotonic\(\) >= CARDAPIO_ACTIVE_UNTIL/);
   assert.match(dispatcher,/module\.dispatch_order\(dispatcher_config\)/);
+});
+
+test('sincronizacao remota confirma com credencial e nunca apaga o cache visivel',()=>{
+  assert.match(bridge,/connector_action = str\(payload\.get\("action"\) or ""\)\.startswith\("connector_"\)/);
+  assert.match(bridge,/credential and \(payload\.get\("token"\) or connector_action\)/);
+  assert.match(manager,/attempt<240/);
+  assert.match(manager,/const cached=await rmRemote\(path,body\)/);
+  assert.match(manager,/Dados sincronizados exibidos\. A atualização imediata não foi concluída/);
 });
