@@ -1,5 +1,7 @@
 artifacts/
 tools/__pycache__/
+tools/raffinato-bridge/build/
+tools/raffinato-bridge/dist/
 supabase/.temp/
 config.hostinger.js
 *.pre-hostinger

@@ -136,7 +136,7 @@ test('BI residencial atualiza pelo conector remoto sem depender de loopback',()=
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.40"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.41"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
