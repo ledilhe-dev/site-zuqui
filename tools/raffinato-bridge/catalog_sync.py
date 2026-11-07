@@ -7,7 +7,7 @@ import pyodbc,requests
 
 BASE=Path(sys.executable).resolve().parent if getattr(sys,'frozen',False) else Path(__file__).resolve().parent; CONFIG=BASE/'catalog-sync.dat'; LOG=BASE/'catalog-sync.log'
 logging.basicConfig(filename=LOG,level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s',encoding='utf-8')
-CONNECTOR_VERSION='2.0.41'
+CONNECTOR_VERSION='2.0.42'
 SQL=""";WITH Momento AS (
  SELECT GETDATE() Agora,
   ((DATEDIFF(DAY,CONVERT(date,'19000107',112),CONVERT(date,GETDATE())) % 7)+1) IdDiaDaSemana

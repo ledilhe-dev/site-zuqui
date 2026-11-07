@@ -43,8 +43,9 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.41"
+CONNECTOR_VERSION = "2.0.42"
 CARDAPIO_ORDER_POLL_SECONDS = 2
+CARDAPIO_CATALOG_INTERVAL_SECONDS = 60 * 60
 CARDAPIO_API_URL = os.environ.get(
     "CHECKDIARIO_CARDAPIO_API_URL",
     "https://api.checkdiario.com.br/functions/v1/cardapio-api",
@@ -87,6 +88,7 @@ MUTEX_HANDLE = None
 CARDAPIO_MUTEX_HANDLE = None
 REMOTE_OPERATIONS_PAUSED = threading.Event()
 CARDAPIO_ACTIVE_UNTIL = 0.0
+CARDAPIO_SYNC_LOCK = threading.Lock()
 ADMIN_SESSIONS: dict[str, float] = {}
 ADMIN_SESSION_SECONDS = 15 * 60
 DELETE_TOKENS: dict[str, tuple[str, float]] = {}
@@ -369,10 +371,13 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
                 module.dispatch_order(dispatcher_config)
             except Exception:
                 logger.exception("Falha no despacho %s", CONNECTOR_VERSION)
-            # A fila de pedidos usa intervalo curto somente durante a janela ativa.\r\n            # A sincronizacao do catalogo continua exclusivamente manual.\r\n            time.sleep(CARDAPIO_ORDER_POLL_SECONDS)
+            # A fila de pedidos usa intervalo curto para entregar pedidos sem
+            # bloquear a sincronizacao do catalogo.
+            time.sleep(CARDAPIO_ORDER_POLL_SECONDS)
     def catalog_loop() -> None:
         global CARDAPIO_ACTIVE_UNTIL
-        logger.info("Sincronizacao manual do cardapio %s ativa", CONNECTOR_VERSION)
+        logger.info("Sincronizacao automatica do cardapio %s ativa", CONNECTOR_VERSION)
+        next_automatic_sync = 0.0
         while True:
             dispatcher_config = None
             request_id = None
@@ -389,7 +394,8 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
                     logger.info("Sincronizacao manual do cardapio iniciada: %s", request_id)
                     try:
                         catalog_config = cardapio_catalog_sql_config(dispatcher_config)
-                        module.sync(catalog_config, mode="full", request_id=request_id)
+                        with CARDAPIO_SYNC_LOCK:
+                            module.sync(catalog_config, mode="full", request_id=request_id)
                     except Exception as sync_error:
                         try:
                             module.post(dispatcher_config, "catalog_sync_request_fail",
@@ -399,8 +405,18 @@ def start_cardapio_dispatcher() -> threading.Thread | None:
                         raise
                     logger.info("Sincronizacao manual do cardapio concluida: %s", request_id)
                     run_cardapio_acceptance_once(dispatcher_config, module)
+                    next_automatic_sync = time.monotonic() + CARDAPIO_CATALOG_INTERVAL_SECONDS
+                elif time.monotonic() >= next_automatic_sync:
+                    logger.info("Sincronizacao automatica do cardapio iniciada")
+                    catalog_config = cardapio_catalog_sql_config(dispatcher_config)
+                    with CARDAPIO_SYNC_LOCK:
+                        module.sync(catalog_config, mode="full")
+                    next_automatic_sync = time.monotonic() + CARDAPIO_CATALOG_INTERVAL_SECONDS
+                    logger.info("Sincronizacao automatica do cardapio concluida; proxima em 1 hora")
             except Exception:
-                logger.exception("Falha ao consultar sincronizacao manual do cardapio %s", CONNECTOR_VERSION)
+                logger.exception("Falha na sincronizacao do cardapio %s", CONNECTOR_VERSION)
+                if next_automatic_sync <= time.monotonic():
+                    next_automatic_sync = time.monotonic() + 5 * 60
             # Única consulta leve enquanto ocioso. A abertura do cardápio marca
             # demanda no servidor e ativa o despacho no próximo ciclo.
             time.sleep(30)
@@ -3323,7 +3339,7 @@ def show_windows_message(title: str, message: str, error: bool = False) -> None:
     ctypes.windll.user32.MessageBoxW(None, message, title, flags)
 
 
-def retire_legacy_connectors() -> None:
+def retire_legacy_connectors() -> bool:
     """Encerra executáveis antigos que disputam a credencial e a fila do cardápio."""
     current_pid=os.getpid()
     command=(
@@ -3336,14 +3352,29 @@ def retire_legacy_connectors() -> None:
         "if($alive.Count -gt 0){exit 9}"
     )
     try:
-        subprocess.run(
+        result = subprocess.run(
             ["powershell.exe","-NoProfile","-NonInteractive","-WindowStyle","Hidden","-Command",command],
             stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=25,check=False,
             creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0),
         )
-        logger.info("Verificacao de versoes antigas concluida antes da inicializacao %s",CONNECTOR_VERSION)
+        if result.returncode == 0:
+            logger.info("Verificacao de versoes antigas concluida antes da inicializacao %s",CONNECTOR_VERSION)
+            return True
+        logger.error("Uma versao anterior continuou ativa; codigo da retirada=%s",result.returncode)
+        return False
     except Exception:
         logger.exception("Nao foi possivel concluir a retirada das versoes antigas")
+        return False
+
+
+def relaunch_elevated_for_takeover() -> bool:
+    """Solicita elevação somente quando uma versão antiga não pôde ser encerrada."""
+    if not getattr(sys, "frozen", False) or "--elevated-takeover" in sys.argv:
+        return False
+    result = ctypes.windll.shell32.ShellExecuteW(
+        None, "runas", str(Path(sys.executable).resolve()), "--elevated-takeover", str(BASE_DIR), 1
+    )
+    return int(result) > 32
 
 
 def acquire_single_instance(silent:bool=False) -> bool:
@@ -3411,7 +3442,15 @@ def main() -> int:
         instance_id = str(state.get("connector_instance_id") or "")
         UUID(instance_id)
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
-    retire_legacy_connectors()
+    if not retire_legacy_connectors():
+        if relaunch_elevated_for_takeover():
+            return 0
+        show_windows_message(
+            "Conector Raffinato",
+            "A versao anterior continua em execucao. Feche o conector antigo pela bandeja do Windows e abra esta versao novamente como administrador.",
+            True,
+        )
+        return 1
     acquired=False
     for _attempt in range(60):
         if acquire_single_instance(silent=True):
@@ -3453,8 +3492,9 @@ def main() -> int:
     # A manutenção do componente legado não deve atrasar HTTP, heartbeat ou
     # o ícone da bandeja. O despachante interno já está ativo neste ponto.
     threading.Thread(target=update_zuqui_cardapio_component, name="zuqui-legacy-update", daemon=True).start()
-    if not connector_is_paired():
-        webbrowser.open(f"http://127.0.0.1:{PORT}/")
+    # Sempre mostra uma confirmação visível ao abrir. Antes, instalações já
+    # vinculadas iniciavam apenas na bandeja e pareciam não ter aberto.
+    webbrowser.open(f"http://127.0.0.1:{PORT}/")
     try:
         run_tray(server)
     except KeyboardInterrupt:
