@@ -36,3 +36,9 @@ test('payable categories keep checkboxes and gain accent-insensitive search', ()
   assert.doesNotMatch(js, /filtroContaAPagarCategoriasSelecionadas\.(?:clear|delete)/);
 });
 
+test('account transfer origin and destination selects keep the same height', () => {
+  assert.match(css, /#ajusteSaldoCofreOverlay select\.ajuste-saldo-field/);
+  assert.match(css, /flex:\s*0 0 38px !important/);
+  assert.match(css, /max-height:\s*38px !important/);
+});
+

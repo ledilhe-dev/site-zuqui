@@ -35,6 +35,16 @@
 .app-search { min-width: min(220px, 100%); flex: 1 1 260px; }
 .app-date, .app-time { flex: 0 1 150px; min-width: min(130px, 100%); }
 .app-select { flex: 0 1 180px; min-width: min(140px, 100%); }
+
+/* Selects diretos em modais com fluxo vertical nao podem usar a largura
+   preferencial como flex-basis vertical. Origem e destino ficam identicos. */
+#ajusteSaldoCofreOverlay select.ajuste-saldo-field {
+  flex: 0 0 38px !important;
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+}
 .app-button { flex: 0 0 auto; }
 
 /* One layout primitive for filter and action bars, based on available content width. */
