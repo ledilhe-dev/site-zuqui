@@ -1934,7 +1934,7 @@
                 <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
                 <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria, imagem ou PDF</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto, PDF ou comprovante</div>
-                <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Sem custo de API</div>
+                <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Leitura segura com Codex no VPS</div>
                 <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,application/pdf,.pdf" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
               </div>
             </div>
@@ -1944,7 +1944,7 @@
               App Nubank → Cartão de crédito → Fatura → ··· → Exportar fatura → OFX
             </div>
             <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;color:var(--text-muted);line-height:1.5;margin-top:8px;">
-              <strong style="color:var(--text);">Imagem ou PDF:</strong> o sistema tenta preencher valor, data e observação, mas confira antes de lançar. Prints e PDFs nítidos funcionam melhor que fotos escuras ou tremidas.
+              <strong style="color:var(--text);">Imagem ou PDF:</strong> o Codex no VPS interpreta o documento em ambiente seguro, mas a conferência de fornecedor, categoria, datas, parcelas e valores continua obrigatória antes do lançamento.
             </div>
             <div class="msg" id="msgImportarFatura" style="margin-top:10px;"></div>
           </div>
@@ -1952,7 +1952,7 @@
           <!-- Step 2: Processando -->
           <div id="faturaStep2" style="display:none;padding:40px;text-align:center;flex:1;">
             <div style="font-size:40px;margin-bottom:16px;">🗂️</div>
-            <div style="font-size:14px;font-weight:600;margin-bottom:8px;">Lendo o arquivo bancário...</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:8px;">Interpretando o documento com segurança...</div>
             <div style="font-size:12px;color:var(--text-muted);" id="faturaProgressMsg">Processando lançamentos...</div>
             <div style="margin-top:20px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
               <div id="faturaProgressBar" style="height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .5s;"></div>
@@ -2396,7 +2396,7 @@
             <button class="btn btn-green" id="raffinatoSaveBtn" type="button" onclick="salvarIntegracaoRaffinato()" disabled>Salvar integração</button>
             <button class="btn btn-ghost" type="button" onclick="cancelarEdicaoIntegracaoRaffinato()">Cancelar</button>
             <button class="btn btn-ghost" type="button" onclick="alterarSenhaMasterRaffinato()">Alterar senha master</button>
-            <a class="btn btn-ghost" id="raffinatoConnectorDownload" href="./downloads/Conector-Raffinato-v2.0.42.exe" download>Baixar conector</a>
+            <a class="btn btn-ghost" id="raffinatoConnectorDownload" href="./downloads/Conector-Raffinato-v2.0.46.exe" download>Baixar conector</a>
           </div>
           <div id="raffinatoTestResult" class="raffinato-test-result" hidden></div>
           <div class="raffinato-delete-token" id="raffinatoDeleteTokenBox" hidden><label for="raffinatoDeleteToken">Token temporário de exclusão</label><div><input id="raffinatoDeleteToken" type="text" readonly><button class="btn btn-ghost btn-sm" type="button" onclick="navigator.clipboard?.writeText(document.getElementById('raffinatoDeleteToken').value)">Copiar</button></div><small>Válido por 5 minutos e utilizado uma única vez.</small></div>
@@ -3093,6 +3093,7 @@
 <link id="responsive-system-style" rel="stylesheet" href="./assets/css/121-responsive-system.css?v=20261016-v1">
 <link id="mobile-density-style" rel="stylesheet" href="./assets/css/121-mobile-density.css?v=20261017-v7">
 <link id="login-showcase-style" rel="stylesheet" href="./assets/css/122-login-showcase.css?v=20261019-v4">
+<link id="app-design-system-style" rel="stylesheet" href="./assets/css/125-app-design-system.css?v=20261110-v1">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3467,7 +3468,7 @@
       <script src="./assets/js/97-raffinato-daily-detail.js?v=20261028-hour-filter-v13"></script>
       <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
-<script src="./assets/js/32-image-ocr-importer.js?v=3.2.86-ocr-segunda-leitura-completa"></script>
+<script src="./assets/js/32-image-document-importer.js?v=3.2.89-document-reader"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20261028-baixa-parcial-v2"></script>
 <script src="./assets/js/42-store-settings.js"></script>
@@ -3692,3 +3693,4 @@
 <script src="./assets/js/94-checkia.js?v=20261008-v4"></script>
 <script src="./assets/js/95-produtos-vencimento.js?v=20261008-v3"></script>
 <script src="./assets/js/98-smart-schedule.js?v=20261103-v3"></script>
+<script id="app-design-system-script" src="./assets/js/99-app-design-system.js?v=20261110-v1"></script>

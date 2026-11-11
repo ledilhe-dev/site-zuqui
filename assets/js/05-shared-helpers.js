@@ -6,7 +6,6 @@ function setMsg(id, txt, tipo) {
   el.className = 'msg' + (tipo ? ' ' + tipo : '');
 }
 
-
 function usuarioPodeAlterarTempoAvisoPonto() {
   if (!usuarioSistemaLogado) return false;
   if (usuarioEhAdministrador()) return true;
@@ -4306,3 +4305,48 @@ async function carregarNotificacoes() {
 }
 
 // 
+/**
+ * Reads a complete PostgREST result without relying on the server max-rows
+ * setting. The query factory must apply a deterministic order before range().
+ * A failed page never returns partial data as a successful result.
+ */
+async function consultarTodasPaginasSupabase(criarConsulta, opcoes = {}) {
+  const tamanhoPagina = Math.max(100, Math.min(Number(opcoes.tamanhoPagina) || 500, 1000));
+  const maximoPaginas = Math.max(1, Number(opcoes.maximoPaginas) || 200);
+  const dados = [];
+  const ids = new Set();
+
+  for (let pagina = 0; pagina < maximoPaginas; pagina += 1) {
+    const inicio = pagina * tamanhoPagina;
+    let resposta;
+    try {
+      resposta = await criarConsulta(inicio, inicio + tamanhoPagina - 1, pagina);
+    } catch (error) {
+      return { data: null, error, complete: false, paginas: pagina, quantidade: dados.length };
+    }
+    if (resposta?.error) {
+      return { data: null, error: resposta.error, complete: false, paginas: pagina, quantidade: dados.length };
+    }
+    const lote = Array.isArray(resposta?.data) ? resposta.data : [];
+    for (const item of lote) {
+      const id = item?.id == null ? '' : String(item.id);
+      if (id && ids.has(id)) continue;
+      if (id) ids.add(id);
+      dados.push(item);
+    }
+    if (typeof opcoes.aoCarregarPagina === 'function') {
+      opcoes.aoCarregarPagina({ pagina: pagina + 1, quantidade: dados.length, tamanho: lote.length });
+    }
+    if (lote.length < tamanhoPagina) {
+      return { data: dados, error: null, complete: true, paginas: pagina + 1, quantidade: dados.length };
+    }
+  }
+
+  return {
+    data: null,
+    complete: false,
+    paginas: maximoPaginas,
+    quantidade: dados.length,
+    error: new Error(`A consulta excedeu o limite de seguranca de ${maximoPaginas * tamanhoPagina} registros.`),
+  };
+}

@@ -1,0 +1,177 @@
+/* CheckDiario UI contract: canonical tokens and responsive primitives. */
+:root {
+  --app-control-height: 36px;
+  --app-touch-target: 44px;
+  --app-control-radius: 8px;
+  --app-control-gap: 8px;
+  --app-control-padding-x: 10px;
+  --app-font-control: 12px;
+  --app-popover-width: min(320px, calc(100vw - 24px));
+  --app-popover-max-height: min(360px, calc(100dvh - 24px));
+  --app-focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  --app-break-compact: 700px;
+}
+
+/* All pages consume the same control geometry. Specific widgets may opt out. */
+.pagina :is(.app-control, .filter-field-standard input, .filter-field-standard select,
+  .filter-field-standard button, .date-filter-standard input, .date-filter-standard select,
+  .relatorio-check-filter-head) {
+  box-sizing: border-box !important;
+  height: var(--app-control-height) !important;
+  min-height: var(--app-control-height) !important;
+  max-height: none !important;
+  padding-inline: var(--app-control-padding-x) !important;
+  border-radius: var(--app-control-radius) !important;
+  font-size: var(--app-font-control) !important;
+  line-height: 1.2 !important;
+}
+
+.pagina :is(.app-control, .filter-field-standard input, .filter-field-standard select,
+  .filter-field-standard button, .date-filter-standard input, .date-filter-standard select):focus-visible {
+  outline: none !important;
+  box-shadow: var(--app-focus-ring) !important;
+}
+
+.app-search { min-width: min(220px, 100%); flex: 1 1 260px; }
+.app-date, .app-time { flex: 0 1 150px; min-width: min(130px, 100%); }
+.app-select { flex: 0 1 180px; min-width: min(140px, 100%); }
+.app-button { flex: 0 0 auto; }
+
+/* One layout primitive for filter and action bars, based on available content width. */
+.app-filter-bar,
+.pagina :is(.financeiro-filtros-row, .relatorio-financeiro-filtros, .atendimento-filtros,
+  .tarefas-filtro-grid, .ponto-ajustes-filtros, .dash-gf-toolbar, [class*="-filtros-unificados"]) {
+  container-type: inline-size;
+  display: flex !important;
+  flex-flow: row wrap !important;
+  align-items: end !important;
+  gap: var(--app-control-gap) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.app-filter-bar > *,
+.pagina :is(.financeiro-filtros-row, .relatorio-financeiro-filtros, .atendimento-filtros,
+  .tarefas-filtro-grid, .ponto-ajustes-filtros, .dash-gf-toolbar, [class*="-filtros-unificados"]) > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.filter-field-standard { flex: 1 1 150px; }
+.filter-field-standard.app-field-search { flex-basis: 240px; }
+.filter-field-standard > :is(input, select, button, span) { width: 100% !important; }
+
+#cardDashboardGraficosFinanceiros .dash-gf-header {
+  align-items: flex-start !important;
+}
+#cardDashboardGraficosFinanceiros .dash-gf-toolbar {
+  flex: 1 1 760px !important;
+  justify-content: flex-end !important;
+}
+#cardDashboardGraficosFinanceiros :is(#dashGfFornWrap, #dashGfCatWrap) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+#cardDashboardGraficosFinanceiros :is(#dashGfDropdownForn, #dashGfDropdownCat) {
+  position: absolute !important;
+  inset: calc(100% + 4px) 0 auto auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Tables own their intentional horizontal scroll; the page never does. */
+.app-table-region,
+.pagina :is(.table-wrap, .table-responsive, [class*="-table-wrap"], [class*="-tabela-wrap"]) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Shared viewport-safe popover contract. Inline dimensions from legacy markup are overridden. */
+.app-popover,
+#dropdownCategoriasContaAPagar,
+.relatorio-check-filter-panel {
+  box-sizing: border-box !important;
+  width: var(--app-popover-width) !important;
+  min-width: min(240px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: var(--app-popover-max-height) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+
+#dropdownCategoriasContaAPagar .app-popover-search {
+  width: 100% !important;
+  height: var(--app-control-height) !important;
+  min-height: var(--app-control-height) !important;
+  margin-bottom: 6px;
+  padding: 6px 9px !important;
+  border-radius: var(--app-control-radius) !important;
+  font-size: var(--app-font-control) !important;
+}
+
+.app-modal,
+.overlay :is(.modal, [role="dialog"]),
+.modal-overlay :is(.modal, [role="dialog"]) {
+  box-sizing: border-box;
+  width: min(920px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
+  overflow: auto;
+}
+
+@container (max-width: 560px) {
+  .app-filter-bar > *,
+  .pagina :is(.financeiro-filtros-row, .relatorio-financeiro-filtros,
+    .atendimento-filtros, .tarefas-filtro-grid, .ponto-ajustes-filtros,
+    [class*="-filtros-unificados"]) > * {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .pagina :is(button, .btn, input, select, .relatorio-check-filter-head) {
+    min-height: var(--app-touch-target);
+  }
+  input[type="checkbox"], input[type="radio"] {
+    min-width: 18px !important;
+    min-height: 18px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  :root { --app-popover-width: calc(100vw - 16px); }
+  .app-popover,
+  #dropdownCategoriasContaAPagar,
+  .relatorio-check-filter-panel {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: min(70dvh, 520px) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  #cardDashboardGraficosFinanceiros .dash-gf-toolbar {
+    justify-content: flex-start !important;
+  }
+  #tarefas .checklist-cadastro-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  #tarefas :is(.checklist-cadastro-campo-nome, .checklist-cadastro-campo-observacao,
+    .checklist-cadastro-acoes) {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+  .pagina :is(label, label > span) {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+

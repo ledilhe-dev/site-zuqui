@@ -1339,7 +1339,10 @@ function toggleAgruparParcelasContaAPagar() {
   carregarContasAPagarFinanceiro();
 }
 
+let contasAPagarFinanceiroRequestSeq = 0;
+
 async function carregarContasAPagarFinanceiro() {
+  const requestSeq = ++contasAPagarFinanceiroRequestSeq;
   const lista = document.getElementById('listaContasAPagarFinanceiro');
   if (!lista) return;
   const filtroBuscaBruto = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
@@ -1363,6 +1366,13 @@ async function carregarContasAPagarFinanceiro() {
   const filtroFornecedor = textoFinanceiroNormalizado(filtroFornecedorBruto);
   const filtroBuscaDigitos = filtroBuscaBruto.replace(/\D/g, '');
   const filtroStatus = String(document.getElementById('filtroContaAPagarStatus')?.value || '').trim();
+  const campoDataFiltroSQL = ({
+    compra: 'data_compra',
+    vencimento: 'data_vencimento',
+    pagamento: 'data_pagamento',
+    cadastro: 'created_at',
+    atualizacao: 'updated_at',
+  })[filtroDataTipo] || 'created_at';
 
   // Recorte padrão ao abrir a tela (sem nenhum filtro do usuário): mostra
   // vencidas em aberto + vencimentos de hoje até +30 dias, em ordem de vencimento.
@@ -1378,15 +1388,41 @@ async function carregarContasAPagarFinanceiro() {
     return dataLocalISO(d);
   })();
 
-  const { data, error } = await executarSemFiltroLojaTemporario(() => {
+  const resultadoCompleto = await executarSemFiltroLojaTemporario(() => consultarTodasPaginasSupabase((inicioPagina, fimPagina) => {
     let query = sb
       .from('contasapagar')
       .select('id, fornecedor_id, categoria_id, forma_pagamento, forma_pagamento_id, conta_financeira_id, data_compra, data_vencimento, data_pagamento, valor_compra, observacao, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, created_at, updated_at, criado_por_nome, loja_id, fornecedores(nome), formas_pagamento(nome), contas_financeiras(nome)')
       .is('excluido_em', null)
-      .order('data_vencimento', { ascending: true });
+      .order('data_vencimento', { ascending: true })
+      .order('id', { ascending: true });
     if (lojasSelecionadas.length) query = query.in('loja_id', lojasSelecionadas);
-    return query;
-  });
+    if (aplicarPadrao30Dias) {
+      query = query
+        .lte('data_vencimento', limite30DiasISO)
+        .or(`data_pagamento.is.null,data_vencimento.gte.${hojeISOPadrao}`);
+    } else {
+      const filtroDataInicio = filtroCadastroInicio || filtroVencimentoInicio;
+      const filtroDataFim = filtroCadastroFim || filtroVencimentoFim;
+      if (filtroDataInicio) query = query.gte(campoDataFiltroSQL, filtroDataInicio);
+      if (filtroDataFim) query = query.lte(campoDataFiltroSQL, filtroDataFim);
+      if (filtroStatus === 'pago') query = query.not('data_pagamento', 'is', null);
+      if (filtroStatus === 'pendente') query = query.is('data_pagamento', null);
+      if (filtroContaAPagarCategoriasSelecionadas.size && !filtroContaAPagarCategoriasSelecionadas.has('__sem__')) {
+        query = query.in('categoria_id', Array.from(filtroContaAPagarCategoriasSelecionadas));
+      }
+    }
+    return query.range(inicioPagina, fimPagina);
+  }, {
+    tamanhoPagina: 500,
+    aoCarregarPagina: ({ quantidade }) => {
+      if (requestSeq === contasAPagarFinanceiroRequestSeq && quantidade >= 500) {
+        lista.innerHTML = `<div class="empty">Carregando todos os registros... ${quantidade}</div>`;
+      }
+    },
+  }));
+  if (requestSeq !== contasAPagarFinanceiroRequestSeq) return;
+  const data = resultadoCompleto?.data;
+  const error = resultadoCompleto?.error || (!resultadoCompleto?.complete ? new Error('Resposta incompleta do servidor.') : null);
 
   if (error) {
     contasAPagarFinanceiroCache = [];
@@ -1402,7 +1438,7 @@ async function carregarContasAPagarFinanceiro() {
       lista.innerHTML = '<div class="empty">Rode o SQL da tabela fornecedores para vincular contas.</div>';
       return;
     }
-    lista.innerHTML = '<div class="empty">Erro ao carregar contas a pagar.</div>';
+    lista.innerHTML = '<div class="empty">Nao foi possivel carregar todas as contas. Nenhum resultado parcial foi exibido.<br><button class="btn btn-ghost btn-sm" type="button" onclick="carregarContasAPagarFinanceiro()">Tentar novamente</button></div>';
     return;
   }
 

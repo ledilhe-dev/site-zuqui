@@ -130,7 +130,7 @@ async function ifConcReceberArquivo(file) {
     } else if (/^image\//i.test(file.type)) {
       const ia = await ifConcLerComIA(file);
       if (ia?.itens?.length) { itens = ia.itens; IFConciliacao.leitura = ia.meta; }
-      else { itens = await ifConcLerImagem(file); IFConciliacao.leitura = { leitor:'OCR local', confianca_documento:.62, alertas:['Leitura por OCR local: confira datas e valores.'] }; }
+      else { itens = await ifConcLerImagem(file); IFConciliacao.leitura = { leitor:'Leitura local', confianca_documento:.62, alertas:['Leitura local da imagem: confira datas e valores.'] }; }
     }
     else throw new Error('Formato não aceito. Use PDF, imagem, OFX ou QFX.');
     IFConciliacao.itensArquivo = ifConcDeduplicar(itens).map((item, indice) => ({ ...item, id: `ext_${indice}`, status: 'pendente' }));
@@ -166,7 +166,7 @@ async function ifConcRegistrarImportacao(file) {
       empresa_id:empresaId, loja_id:lojaId, fornecedor_id:IFConciliacao.fornecedorId,
       arquivo_nome:file.name, arquivo_tipo:tipo, arquivo_hash:await ifConcHashArquivo(file),
       arquivo_mime:file.type || null, arquivo_tamanho:file.size,
-      leitor:String(leitura.leitor || '').startsWith('IA') ? 'openai' : tipo === 'ofx' || tipo === 'qfx' ? 'ofx' : tipo === 'pdf' ? 'pdf_texto' : 'ocr_local',
+      leitor:String(leitura.leitor || '').startsWith('IA') ? 'openai' : tipo === 'ofx' || tipo === 'qfx' ? 'ofx' : tipo === 'pdf' ? 'pdf_texto' : 'imagem_local',
       status:'revisao', total_documento:leitura.total_documento ?? null,
       total_lancamentos:IFConciliacao.itensArquivo.reduce((s,i) => s + Number(i.valor || 0), 0),
       confianca:leitura.confianca_documento || null, alertas:leitura.alertas || [],

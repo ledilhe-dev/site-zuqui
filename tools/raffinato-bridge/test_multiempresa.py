@@ -122,9 +122,45 @@ class MultiempresaTests(unittest.TestCase):
         main=source[source.index("def main()") : source.index("if __name__",source.index("def main()"))]
         self.assertLess(main.index("retire_legacy_connectors()"),main.index("start_cardapio_dispatcher()"))
         self.assertLess(main.index("acquire_single_instance(silent=True)"),main.index("start_cardapio_dispatcher()"))
-        self.assertIn("taskkill.exe",source)
-        self.assertIn("Get-Process -Id",source)
+        retirement=source[source.index("def retire_legacy_connectors"):source.index("def release_single_instance")]
+        self.assertIn("find_legacy_connector_processes()",retirement)
+        self.assertNotIn("powershell.exe",retirement)
+        self.assertIn("restore_legacy_connector(legacy_paths)",main)
+        preflight=main[main.index("Validando dependencias"):main.index("retired,legacy_paths")]
+        self.assertIn("create_tray_image()",preflight)
+        self.assertNotIn("pystray.Icon(",preflight)
+        self.assertIn("Inicializacao solicitada",main)
         self.assertNotIn("if not acquire_single_instance():",main)
+
+    def test_retire_legacy_connectors_uses_native_process_handoff(self):
+        processes=[(1234,r"C:\Raffinato\Conector\Conector-Raffinato-v2.0.39.exe")]
+        with patch.object(bridge,"find_legacy_connector_processes",return_value=processes), \
+             patch.object(bridge,"stop_legacy_connector_process",return_value=True) as stop:
+            retired,paths=bridge.retire_legacy_connectors()
+        self.assertTrue(retired)
+        self.assertEqual(paths,[processes[0][1]])
+        stop.assert_called_once_with(1234)
+
+    def test_failed_legacy_termination_prevents_starting_new_version(self):
+        processes=[(1234,r"C:\Raffinato\Conector\Conector-Raffinato-v2.0.39.exe")]
+        with patch.object(bridge,"find_legacy_connector_processes",return_value=processes), \
+             patch.object(bridge,"stop_legacy_connector_process",return_value=False):
+            retired,paths=bridge.retire_legacy_connectors()
+        self.assertFalse(retired)
+        self.assertEqual(paths,[processes[0][1]])
+
+    def test_legacy_connector_is_restored_and_health_checked(self):
+        executable=Path(self.temp.name)/"Conector-Raffinato-v2.0.39.exe"
+        executable.write_bytes(b"legacy")
+        class HealthResponse:
+            def __enter__(self): return self
+            def __exit__(self,*_args): return False
+            def read(self): return b'{"service":"raffinato-bridge","version":"2.0.39"}'
+        process=type("Process",(),{"poll":lambda self:None})()
+        with patch.object(bridge.subprocess,"Popen",return_value=process) as start, \
+             patch.object(bridge.urllib.request,"urlopen",return_value=HealthResponse()):
+            self.assertTrue(bridge.restore_legacy_connector([str(executable)]))
+        self.assertEqual(start.call_args.args[0],[str(executable)])
 
     def test_sync_failure_in_one_dataset_does_not_block_other_datasets(self):
         sent = []

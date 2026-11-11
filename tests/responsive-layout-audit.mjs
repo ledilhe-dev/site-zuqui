@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
-import { createReadStream, existsSync } from 'node:fs';
+import { createReadStream, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 
@@ -35,9 +36,10 @@ await once(probe, 'listening');
 const debugPort = probe.address().port;
 probe.close();
 
+const chromeProfile = mkdtempSync(join(tmpdir(), 'checkdiario-responsive-'));
 const chrome = spawn(chromePath, [
   '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
-  `--remote-debugging-port=${debugPort}`, '--user-data-dir=' + join(root, '.responsive-audit-profile'),
+  `--remote-debugging-port=${debugPort}`, '--user-data-dir=' + chromeProfile,
   'about:blank',
 ], { stdio: ['ignore', 'ignore', 'pipe'] });
 
@@ -70,21 +72,22 @@ function call(method, params = {}, sessionId) {
   return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
 }
 
-const { targetId } = await call('Target.createTarget', { url: 'about:blank' });
-const attached = await call('Target.attachToTarget', { targetId, flatten: true });
-const sessionId = attached.sessionId;
-await call('Page.enable', {}, sessionId);
-await call('Runtime.enable', {}, sessionId);
-
 const viewports = [
-  ['phone-portrait-small', 360, 800], ['phone-portrait', 390, 844],
+  ['phone-minimum', 320, 720], ['phone-portrait-small', 360, 800],
+  ['phone-375', 375, 812], ['phone-portrait', 390, 844], ['phone-wide', 430, 932],
   ['phone-landscape', 667, 375], ['ipad-portrait', 768, 1024],
-  ['ipad-landscape', 1024, 768], ['tablet-landscape-wide', 1180, 820],
-  ['windows-notebook', 1366, 768], ['desktop-fullhd', 1920, 1080],
+  ['ipad-834', 834, 1194], ['ipad-landscape', 1024, 768],
+  ['tablet-landscape-wide', 1180, 820], ['windows-notebook', 1366, 768],
+  ['desktop-1440', 1440, 900], ['desktop-1600', 1600, 900], ['desktop-fullhd', 1920, 1080],
 ];
 
 const results = [];
 for (const [name, width, height] of viewports) {
+  const { targetId } = await call('Target.createTarget', { url: 'about:blank' });
+  const attached = await call('Target.attachToTarget', { targetId, flatten: true });
+  const sessionId = attached.sessionId;
+  await call('Page.enable', {}, sessionId);
+  await call('Runtime.enable', {}, sessionId);
   await call('Emulation.setDeviceMetricsOverride', {
     width, height, deviceScaleFactor: 1, mobile: width <= 1024,
     screenWidth: width, screenHeight: height,
@@ -136,12 +139,13 @@ for (const [name, width, height] of viewports) {
       const storeActionsOverlap = actionRects.some(rect => overlap(storeRect, rect));
       const topbarControlsInside = actionRects.every(rect => rect.left >= -1 && rect.right <= innerWidth + 1 && rect.top >= -1);
       const compactHeaderAligned = innerWidth > 700 || actionRects.length < 3 || (!!storeRect && actionRects.every(rect => Math.abs(rect.height - storeRect.height) <= 1 && Math.abs(rect.top - storeRect.top) <= 1));
-      const loginInside = [loginShowcaseRect, loginCardRect].every(rect => !!rect && rect.left >= -1 && rect.right <= innerWidth + 1);
+      const loginVisible = !!loginScreenRect && loginScreenRect.width > 0 && loginScreenRect.height > 0;
+      const loginInside = !loginVisible || [loginShowcaseRect, loginCardRect].every(rect => !!rect && rect.left >= -1 && rect.right <= innerWidth + 1);
       const loginOrderCorrect = !loginShowcaseRect || !loginCardRect || (innerWidth <= 900 ? loginShowcaseRect.bottom <= loginCardRect.top + 1 : loginShowcaseRect.right <= loginCardRect.left + 1);
       const loginElement = document.querySelector('#loginScreen');
       const originalLoginDisplay = loginElement?.style.display || '';
       if (loginElement) loginElement.style.display = 'none';
-      const loginCanHide = !!loginElement && getComputedStyle(loginElement).display === 'none';
+      const loginCanHide = !loginElement || getComputedStyle(loginElement).display === 'none';
       if (loginElement) loginElement.style.display = originalLoginDisplay;
       const accountMenuInside = innerWidth > 700
         ? (!!accountMenuRect && accountMenuDisplayed && accountMenuRect.width >= 160 && accountMenuRect.left >= -1 && accountMenuRect.right <= innerWidth + 1)
@@ -156,6 +160,41 @@ for (const [name, width, height] of viewports) {
         openSidebarRect = sidebar.getBoundingClientRect().toJSON();
         sidebar.classList.remove('open');
         sidebar.style.transition = originalTransition;
+      }
+      const dashboardPage = document.querySelector('#dashboard');
+      const dashboardPages = [...document.querySelectorAll('.pagina')];
+      const dashboardPagesOriginal = dashboardPages.map(page => [page, page.getAttribute('style'), page.className]);
+      const dashboardLogin = document.querySelector('#loginScreen');
+      const dashboardLoginOriginal = dashboardLogin?.getAttribute('style');
+      const dashboardOriginalStyle = dashboardPage?.getAttribute('style');
+      const dashboardOriginalClass = dashboardPage?.className;
+      if (dashboardLogin) dashboardLogin.style.setProperty('display', 'none', 'important');
+      for (const candidate of dashboardPages) {
+        candidate.style.setProperty('display', candidate === dashboardPage ? 'block' : 'none', 'important');
+        candidate.classList.toggle('ativa', candidate === dashboardPage);
+      }
+      if (dashboardPage) {
+        dashboardPage.style.setProperty('display', 'block', 'important');
+        dashboardPage.classList.add('ativa');
+      }
+      const dashboardCategoryTrigger = document.querySelector('#btnDashGfCategorias');
+      const dashboardCategoryPopover = document.querySelector('#dashGfDropdownCat');
+      if (dashboardCategoryPopover) dashboardCategoryPopover.style.display = 'block';
+      if (typeof posicionarDropdownFlutuanteNaViewport === 'function') posicionarDropdownFlutuanteNaViewport(dashboardCategoryPopover, dashboardCategoryTrigger);
+      const dashboardCategoryRect = dashboardCategoryPopover?.getBoundingClientRect();
+      const dashboardCardRect = document.querySelector('#cardDashboardGraficosFinanceiros')?.getBoundingClientRect();
+      const dashboardPopoverInside = !dashboardCategoryRect || !dashboardCardRect || (
+        dashboardCategoryRect.left >= Math.max(0, dashboardCardRect.left) - 1 &&
+        dashboardCategoryRect.right <= Math.min(innerWidth, dashboardCardRect.right) + 1 &&
+        dashboardCategoryRect.top >= -1
+      );
+      if (dashboardCategoryPopover) dashboardCategoryPopover.style.display = 'none';
+      for (const [page, style, className] of dashboardPagesOriginal) {
+        if (style === null) page.removeAttribute('style'); else page.setAttribute('style', style);
+        page.className = className;
+      }
+      if (dashboardLogin) {
+        if (dashboardLoginOriginal === null) dashboardLogin.removeAttribute('style'); else dashboardLogin.setAttribute('style', dashboardLoginOriginal);
       }
       const pageOverflows = [];
       const pages = [...document.querySelectorAll('.pagina')];
@@ -206,6 +245,9 @@ for (const [name, width, height] of viewports) {
         menuHiddenOnDesktop: !!menuStyle && menuStyle.display === 'none',
         sidebarClosedOffCanvas: !closedSidebar || innerWidth > 1180 || closedSidebar.visibility === 'hidden' || closedSidebar.transform !== 'none',
         sidebarOpenInside: !openSidebarRect || innerWidth > 1180 || (openSidebarRect.left >= -1 && openSidebarRect.right <= innerWidth + 1),
+        dashboardPopoverInside,
+        dashboardCategoryRect: dashboardCategoryRect?.toJSON(),
+        dashboardCardRect: dashboardCardRect?.toJSON(),
         pageOverflows: pageOverflows.slice(0, 20),
       };
     })()`,
@@ -227,8 +269,10 @@ for (const [name, width, height] of viewports) {
   if (compact && !data.menuVisible) failures.push('botão de menu invisível');
   if (!compact && !data.menuHiddenOnDesktop) failures.push('botão móvel visível no desktop');
   if (compact && !data.sidebarOpenInside) failures.push('gaveta lateral fora da viewport');
+  if (!data.dashboardPopoverInside) failures.push('dropdown de categorias do dashboard fora da area util');
   if (data.pageOverflows.length) failures.push(`${data.pageOverflows.length} páginas com overflow`);
   results.push({ name, width, height, failures, ...data });
+  await call('Target.closeTarget', { targetId });
 }
 
 console.log(JSON.stringify(results, null, 2));
@@ -237,6 +281,8 @@ const failed = results.filter(result => result.failures.length);
 socket.close();
 chrome.kill();
 server.close();
+await Promise.race([once(chrome, 'exit'), new Promise(resolve => setTimeout(resolve, 2000))]);
+rmSync(chromeProfile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
 if (failed.length) {
   console.error(`Falha responsiva em ${failed.length}/${results.length} viewports.`);

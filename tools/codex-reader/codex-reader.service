@@ -1,0 +1,20 @@
+[Unit]
+Description=CheckDiario Codex document reader
+After=network-online.target docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/checkdiario/codex-reader
+EnvironmentFile=/opt/checkdiario/codex-reader/reader.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/checkdiario/codex-reader/reader_bridge.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/checkdiario/codex-reader /tmp
+
+[Install]
+WantedBy=multi-user.target

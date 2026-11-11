@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import argparse,base64,ctypes,hashlib,json,logging,os,sys,time,uuid
 from ctypes import wintypes
 from datetime import datetime,timedelta,timezone
@@ -7,10 +7,10 @@ import pyodbc,requests
 
 BASE=Path(sys.executable).resolve().parent if getattr(sys,'frozen',False) else Path(__file__).resolve().parent; CONFIG=BASE/'catalog-sync.dat'; LOG=BASE/'catalog-sync.log'
 logging.basicConfig(filename=LOG,level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s',encoding='utf-8')
-CONNECTOR_VERSION='2.0.42'
+CONNECTOR_VERSION='2.0.46'
 SQL=""";WITH Momento AS (
  SELECT GETDATE() Agora,
-  ((DATEDIFF(DAY,CONVERT(date,'19000107',112),CONVERT(date,GETDATE())) % 7)+1) IdDiaDaSemana
+  ((DATEDIFF(DAY,CONVERT(date,'19000107',112),CONVERT(date,GETDATE())) % 7)+1) IdDiaSemana
 ), PrecosVigentes AS (
  SELECT X.IdProduto,X.Valor,
   ROW_NUMBER() OVER(PARTITION BY X.IdProduto ORDER BY ISNULL(X.DataInicial,'19000101') DESC,X.Id DESC) rn
@@ -19,11 +19,18 @@ SQL=""";WITH Momento AS (
   AND (X.DataFinal IS NULL OR X.DataFinal>=GETDATE())
 ), VariacoesVigentes AS (
  SELECT V.IdProduto,V.Valor,
-  ROW_NUMBER() OVER(PARTITION BY V.IdProduto ORDER BY V.Id DESC) rn
+  ROW_NUMBER() OVER(PARTITION BY V.IdProduto
+   ORDER BY CASE WHEN V.IdModuloSistema IS NULL THEN 1 ELSE 0 END,
+    ISNULL(V.DataInicial,'19000101') DESC,ISNULL(V.HoraInicial,'00:00') DESC,
+    V.IdModuloSistema DESC) rn
  FROM dbo.VariacaoPrecoProduto V WITH(NOLOCK)
  CROSS JOIN Momento M
- WHERE V.IdDiaDaSemana=M.IdDiaDaSemana
-  AND V.IdModuloSistema IS NULL AND V.IdSetor IS NULL
+ WHERE V.IdFilial=?
+  AND (V.DataInicial IS NULL OR CONVERT(date,V.DataInicial)<=CONVERT(date,M.Agora))
+  AND (V.DataFinal IS NULL OR CONVERT(date,M.Agora)<=CONVERT(date,V.DataFinal))
+  AND (V.IdModuloSistema IS NULL OR V.IdModuloSistema IN (3,4))
+  AND V.IdSetor IS NULL
+  AND V.IdDiaSemana=M.IdDiaSemana
   AND (
    (CONVERT(time,V.HoraInicial)<=CONVERT(time,V.HoraFinal)
     AND CONVERT(time,M.Agora)>=CONVERT(time,V.HoraInicial)
@@ -57,7 +64,7 @@ def connection(c):
 def rows(c):
  with pyodbc.connect(connection(c),timeout=8) as db:
   db.timeout=60
-  cur=db.cursor();cur.execute(SQL,int(c['id_filial']));names=[d[0] for d in cur.description]
+  cur=db.cursor();cur.execute(SQL,int(c['id_filial']),int(c['id_filial']));names=[d[0] for d in cur.description]
   return [dict(zip(names,r)) for r in cur.fetchall()]
 def post(c,action,**body):
  r=requests.post(c['backend_url'],headers={'content-type':'application/json','x-catalog-token':c['sync_token']},json={'action':action,'id_filial':int(c['id_filial']),'connector_version':CONNECTOR_VERSION,**body},timeout=45);r.raise_for_status();return r.json()
@@ -105,10 +112,10 @@ def sync(c,mode='full',dry=False,request_id=None):
  except Exception as e:post(c,'catalog_sync_fail',run_id=run,error=str(e)[:1000]);raise
 def setup():
  from getpass import getpass
- p=BASE/'config.example.json';c=json.loads(p.read_text(encoding='utf-8'));print('Edite os dados não secretos agora.');
+ p=BASE/'config.example.json';c=json.loads(p.read_text(encoding='utf-8'));print('Edite os dados nÃ£o secretos agora.');
  for k in ('server','database','uid','id_filial','store_key','backend_url','interval_minutes'):
   v=input(f"{k} [{c[k]}]: ").strip();c[k]=int(v) if v and k in ('id_filial','interval_minutes') else (v or c[k])
- c['pwd']=getpass('Senha SQL somente leitura: ');c['sync_token']=getpass('Token do sincronizador: ');save(c);print('Configuração protegida pelo usuário do Windows.')
+ c['pwd']=getpass('Senha SQL somente leitura: ');c['sync_token']=getpass('Token do sincronizador: ');save(c);print('ConfiguraÃ§Ã£o protegida pelo usuÃ¡rio do Windows.')
 def setup_orders():
  from getpass import getpass
  c=load();current=c.get('raffinato_api_url','http://26.61.114.43:10060/raffinato/api');value=input(f"URL da API Raffinato [{current}]: ").strip();c['raffinato_api_url']=value or current

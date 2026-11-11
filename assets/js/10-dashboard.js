@@ -461,15 +461,17 @@ async function carregarGraficosFinanceirosDashboard() {
     // + categorias de compra em paralelo.
     const campoData = _dashGfCampoData();
     const lojaAtualDash = (typeof obterLojaAtualParaIsolamento === 'function' ? obterLojaAtualParaIsolamento() : '') || '';
-    const consultarContasDash = async (incluirCor) => {
+    const consultarContasDash = async (incluirCor) => consultarTodasPaginasSupabase((inicioPagina, fimPagina) => {
       let query = sb.from('contasapagar')
         .select(`id, fornecedor_id, categoria_id, loja_id, empresa_id, valor_compra, valor_pago, data_compra, data_vencimento, data_pagamento, pago_confirmado_em, observacao, created_at, fornecedores(nome${incluirCor ? ', cor' : ''})`)
         .is('excluido_em', null)
         .gte(campoData, inicio)
-        .lte(campoData, fim);
+        .lte(campoData, fim)
+        .order(campoData, { ascending: true })
+        .order('id', { ascending: true });
       if (lojaAtualDash) query = query.eq('loja_id', lojaAtualDash);
-      return query;
-    };
+      return query.range(inicioPagina, fimPagina);
+    }, { tamanhoPagina: 500 });
     const resContasTentativa = await consultarContasDash(true);
     // Fallback: banco ainda sem a coluna fornecedores.cor (ALTER não rodado).
     let resContas = resContasTentativa;
@@ -478,7 +480,7 @@ async function carregarGraficosFinanceirosDashboard() {
       resContas = await consultarContasDash(false);
     }
     if (!contextoAindaValido()) return;
-    if (resContas.error) throw resContas.error;
+    if (resContas.error || !resContas.complete) throw resContas.error || new Error('Resposta incompleta do dashboard financeiro.');
     _dashGfDados = resContas.data || [];
     _dashGfCarregadoAno = ano;
 
@@ -612,13 +614,20 @@ function dashGfAlterarStatus(status = 'todos') {
 // ── Dropdowns de filtro com checkbox (fornecedores e categorias) ──
 function posicionarDropdownFlutuanteNaViewport(dropdown, ancora, largura = 240, alturaMaxima = 300) {
   if (!dropdown || !ancora) return;
+  if (window.AppUI?.positionPopover) {
+    window.AppUI.positionPopover(dropdown, ancora);
+    return;
+  }
   const margem = 12;
   const espaco = 4;
   const viewportLargura = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
   const viewportAltura = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
   const rect = ancora.getBoundingClientRect();
   const larguraFinal = Math.max(180, Math.min(largura, viewportLargura - (margem * 2)));
-  let esquerda = Math.min(Math.max(margem, rect.left), viewportLargura - larguraFinal - margem);
+  const limite = ancora.closest('.pagina, .card, .content, .main')?.getBoundingClientRect();
+  const limiteEsquerdo = Math.max(margem, limite?.left ?? margem);
+  const limiteDireito = Math.min(viewportLargura - margem, limite?.right ?? (viewportLargura - margem));
+  let esquerda = Math.min(Math.max(limiteEsquerdo, rect.left), limiteDireito - larguraFinal);
   const espacoAbaixo = viewportAltura - rect.bottom - margem - espaco;
   const espacoAcima = rect.top - margem - espaco;
   const abrirAcima = espacoAbaixo < 160 && espacoAcima > espacoAbaixo;

@@ -12,12 +12,19 @@ function priceAt(base,iso){
   return base+(active?1:0);
 }
 
-test('consulta do catalogo aplica a variacao global vigente ao PrecoProduto',()=>{
+test('consulta do catalogo aplica a variacao vigente por filial, modulo, dia e horario',()=>{
   assert.match(source,/dbo\.PrecoProduto/);
   assert.match(source,/dbo\.VariacaoPrecoProduto/);
-  assert.match(source,/V\.IdModuloSistema IS NULL AND V\.IdSetor IS NULL/);
+  assert.match(source,/V\.IdFilial=\?/);
+  assert.match(source,/V\.DataInicial IS NULL OR CONVERT\(date,V\.DataInicial\)<=CONVERT\(date,M\.Agora\)/);
+  assert.match(source,/V\.DataFinal IS NULL OR CONVERT\(date,M\.Agora\)<=CONVERT\(date,V\.DataFinal\)/);
+  assert.match(source,/V\.IdModuloSistema IS NULL OR V\.IdModuloSistema IN \(3,4\)/);
+  assert.match(source,/AND V\.IdSetor IS NULL/);
   assert.match(source,/PP\.Valor\+ISNULL\(VP\.Valor,0\)/);
+  assert.match(source,/V\.IdDiaSemana=M\.IdDiaSemana/);
+  assert.doesNotMatch(source,/V\.IdDiaDaSemana/);
   assert.match(source,/19000107/); // domingo fixo, independente de DATEFIRST
+  assert.match(source,/cur\.execute\(SQL,int\(c\['id_filial'\]\),int\(c\['id_filial'\]\)\)/);
 });
 
 test('IDs 1541 e 1528 variam dentro e preservam a base fora da janela de Sao Paulo',()=>{

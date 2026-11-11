@@ -56,8 +56,8 @@ test('Consultar atualiza incrementalmente antes de ler o cache remoto',()=>{
 test('publicacao invalida explicitamente o cache do modulo de vendas',()=>{
   assert.match(html,/36-raffinato-sales-analysis\.js\?v=20261102-sync-sob-demanda-v1/);
   assert.match(html,/93-raffinato-managerial\.js\?v=20261102-cache-imediato-v3/);
-  assert.match(worker,/check-diario-pwa-v297-raffinato-cache-imediato-2026-11-02/);
-  assert.match(executions,/service-worker-v4\.js\?v=3\.2\.75-raffinato-cache-imediato/);
+  assert.match(worker,/check-diario-pwa-v301-document-reader-design-2026-11-11/);
+  assert.match(executions,/service-worker-v4\.js\?v=3\.2\.89-document-reader-design/);
 });
 
 test('painel web residencial usa fila remota e nao loopback para vendas',()=>{
@@ -136,7 +136,7 @@ test('BI residencial atualiza pelo conector remoto sem depender de loopback',()=
 });
 
 test('versao nova invalida cache contaminado e filtra Delivery antes de agregar',()=>{
-  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.41"/);
+  assert.match(bridge,/CONNECTOR_VERSION = "2\.0\.46"/);
   assert.match(bridge,/CACHE_SCHEMA_VERSION = 5/);
   assert.match(bridge,/if origins:[\s\S]*?modulo_venda/);
   assert.match(bridge,/analysis\["items"\]=items/);
@@ -150,8 +150,8 @@ test('reprocessamento remoto e limitado a loja vinculada e no maximo sete dias',
 });
 
 test('exe encerra qualquer versao antiga sem console e cardapio consulta continuamente',()=>{
-  assert.match(bridge,/Name -like 'Conector-Raffinato-v\*\.exe'/);
-  assert.match(bridge,/"-WindowStyle","Hidden"/);
+  assert.match(bridge,/Path\(image_path\)\.name\.casefold\(\)\.startswith\("conector-raffinato-v"\)/);
+  assert.match(bridge,/kernel32\.TerminateProcess\(process,0\)/);
   const dispatcher=bridge.slice(bridge.indexOf('def start_cardapio_dispatcher'),bridge.indexOf('def ensure_browser_loopback_policy'));
   assert.doesNotMatch(dispatcher,/time\.monotonic\(\) >= CARDAPIO_ACTIVE_UNTIL/);
   assert.match(dispatcher,/module\.dispatch_order\(dispatcher_config\)/);

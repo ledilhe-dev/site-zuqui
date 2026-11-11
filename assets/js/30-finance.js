@@ -3566,15 +3566,15 @@ async function faturaExibirRevisao(resultado) {
   let qtdObsAuto = 0;
   const fornAutoObj = fornAuto ? (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornAuto)) : null;
   _faturaItensExtraidos.forEach(item => {
-    const sugestaoHistorico = item._ocrRevisaoObrigatoria ? null : faturaSugerirPorHistorico(item.descricao);
+    const sugestaoHistorico = item._revisaoDocumentoObrigatoria ? null : faturaSugerirPorHistorico(item.descricao);
     item._sugestaoConfianca = sugestaoHistorico?.confianca || 0;
     let fornDoItem = item.fornecedor_id;
     // O banco reconhecido no bloco individual vence qualquer leitura do texto
-    // completo. Assim uma alucinacao do OCR fora da compra nao troca Nubank por outro cartao.
+    // completo. Assim uma interpretação incorreta do documento fora da compra nao troca Nubank por outro cartao.
     const fornCartaoDoItem = item._bancoImagem
       ? faturaEncontrarFornecedorPorBanco(item._bancoImagem)
       : null;
-    const fornSugerido = item._ocrRevisaoObrigatoria
+    const fornSugerido = item._revisaoDocumentoObrigatoria
       ? (fornCartaoDoItem || fornAutoCartao || fornAuto)
       : (fornCartaoDoItem
         || fornAutoCartao
@@ -3583,7 +3583,7 @@ async function faturaExibirRevisao(resultado) {
         || faturaEncontrarFornecedorPorBanco(`${resultado.banco || ''} ${item.descricao || ''}`)
         || fornAuto);
     if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
-    if (!item.categoria_id && !item._ocrRevisaoObrigatoria) {
+    if (!item.categoria_id && !item._revisaoDocumentoObrigatoria) {
       const chave = faturaChaveEstabelecimento(item.descricao);
       const categoriaSimilar = Object.entries(_faturaMemoriaCategorias || {})
         .map(([chaveMemoria, categoriaId]) => ({
@@ -3592,7 +3592,7 @@ async function faturaExibirRevisao(resultado) {
         }))
         .filter(candidato => candidato.confianca >= .72)
         .sort((a, b) => b.confianca - a.confianca)[0]?.categoriaId;
-      // Em OCR, somente uma chave exata pode preencher categoria. A
+      // Na leitura do documento, somente uma chave exata pode preencher categoria. A
       // similaridade aproximada associou SUPERMERCADOS K a uma categoria de
       // carnes sem qualquer evidencia no texto reconhecido.
       const catMem = item._origemImagem
@@ -3626,7 +3626,7 @@ async function faturaExibirRevisao(resultado) {
     // Obs edit?vel: pr?-preenchida com o nome da compra (memo limpo do OFX).
     if (item._obsManual == null) item._obsManual = String(item.descricao || '').trim();
     // Em imagem, preserve exatamente o estabelecimento reconhecido. O
-    // historico nao deve trocar a observacao e aparentar uma invencao do OCR.
+    // historico nao deve trocar a observacao e aparentar uma invenção da leitura.
     if (!item._origemImagem && sugestaoHistorico?.observacao && sugestaoHistorico.confianca >= .68) {
       const observacaoSugerida = String(sugestaoHistorico.observacao).trim().slice(0, 200);
       if (observacaoSugerida && observacaoSugerida !== item._obsManual) {
@@ -3667,9 +3667,9 @@ async function faturaExibirRevisao(resultado) {
       ? `<span data-badge-parcelas style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:1px 6px;margin-left:6px;">${qtdLancar} parcelas</span>`
       : '';
     const jaLancado = !!item._jaLancado;
-    const revisaoOCR = !!item._ocrRevisaoObrigatoria;
-    const avisoRevisaoOCR = revisaoOCR
-      ? `<div style="margin:0 0 8px;padding:7px 9px;border:1px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.12);color:#fbbf24;font-size:11px;font-weight:800;">⚠ OCR incompleto nesta região. Confira e corrija os campos antes de lançar.</div>`
+    const revisaoDocumento = !!item._revisaoDocumentoObrigatoria;
+    const avisoRevisaoDocumento = revisaoDocumento
+      ? `<div style="margin:0 0 8px;padding:7px 9px;border:1px solid #f59e0b;border-radius:8px;background:rgba(245,158,11,.12);color:#fbbf24;font-size:11px;font-weight:800;">⚠ Leitura incompleta nesta região. Confira e corrija os campos antes de lançar.</div>`
       : '';
     const rotuloConcil = item._motivoConciliacao === 'fitid' ? 'OFX'
       : item._motivoConciliacao === 'parcela' ? 'parcela já provisionada'
@@ -3707,8 +3707,8 @@ async function faturaExibirRevisao(resultado) {
         <span data-valor-total style="font-size:9px;color:var(--red);">Valor total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra)}</span>
       </span>` : '';
     void campoObs; // usado no template abaixo
-    return `<div style="border:${revisaoOCR ? '2px solid #f59e0b' : '1px solid var(--border)'};border-radius:var(--radius-sm);padding:8px 10px;background:${revisaoOCR ? 'rgba(245,158,11,.06)' : 'var(--surface2)'};${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
-      ${avisoRevisaoOCR}
+    return `<div style="border:${revisaoDocumento ? '2px solid #f59e0b' : '1px solid var(--border)'};border-radius:var(--radius-sm);padding:8px 10px;background:${revisaoDocumento ? 'rgba(245,158,11,.06)' : 'var(--surface2)'};${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
+      ${avisoRevisaoDocumento}
       <div style="display:flex;align-items:flex-start;gap:8px;">
         <input type="checkbox" ${item.selecionado ? 'checked' : ''} style="margin-top:3px;flex-shrink:0;"
           onchange="faturaAlternarSelecaoItem('${item.id}', this.checked)">
@@ -3778,7 +3778,7 @@ async function faturaExibirRevisao(resultado) {
   footer.style.display = 'flex';
   faturaAplicarInterfaceMobileRevisao();
   faturaAtualizarFooter();
-  await faturaVerificarDuplicidadeInicialOCR();
+  await faturaVerificarDuplicidadeInicialDocumento();
 }
 
 async function faturaAoSelecionarFornecedor(itemId, fornecedorId) {
@@ -4382,7 +4382,7 @@ function faturaEncontrarFornecedorPorBanco(banco) {
   return achado ? achado.id : null;
 }
 
-// No OCR, o emissor do cartao costuma aparecer no cabecalho da notificacao e
+// Na leitura do documento, o emissor do cartao costuma aparecer no cabecalho da notificacao e
 // nao na descricao individual de cada compra. Compara essa referencia somente
 // com fornecedores marcados como cartao, evitando sugerir um fornecedor comum
 // de mesmo nome. "Bradesco Cartoes" casa com "Bradesco Cartao", assim como
@@ -4577,7 +4577,7 @@ const FATURA_BANCO_APELIDOS = {
 
 function faturaSelecionarTodas(checked) {
   _faturaItensExtraidos.forEach(i => {
-    i.selecionado = checked && !i._duplicidadeDetectadaNoOCR;
+    i.selecionado = checked && !i._duplicidadeDetectadaNoDocumento;
   });
   document.querySelectorAll('#faturaListaItens input[type=checkbox]').forEach(cb => {
     const item = _faturaItensExtraidos.find(i => document.getElementById('faturaItem_' + i.id)?.contains(cb));
@@ -4592,7 +4592,7 @@ function faturaAlternarSelecaoItem(itemId, marcado) {
   item.selecionado = marcado === true;
   // Uma conta suspeita só pode seguir quando o usuário marcar especificamente
   // o checkbox dela depois de conferir os dados na revisão em lote.
-  if (item._duplicidadeDetectadaNoOCR) item._duplicidadeAutorizada = marcado === true;
+  if (item._duplicidadeDetectadaNoDocumento) item._duplicidadeAutorizada = marcado === true;
   faturaAtualizarFooter();
 }
 
@@ -4654,12 +4654,12 @@ async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ig
         .filter(row => {
           if (String(row.fornecedor_id || '') === String(linha.fornecedor_id || '')) return true;
           if (!compararDescricao) return false;
-          const textoOCR = `${linha.descricao_ocr || ''} ${linha.observacao_ocr || ''}`.trim();
+          const textoDocumento = `${linha.descricao_documento || ''} ${linha.observacao_documento || ''}`.trim();
           const textoExistente = `${row.observacao || ''} ${row.fornecedores?.nome || ''}`.trim();
-          const tokensOCR = new Set(faturaNormalizarDescricaoInteligente(textoOCR).split(' ').filter(token => token.length >= 5));
+          const tokensDocumento = new Set(faturaNormalizarDescricaoInteligente(textoDocumento).split(' ').filter(token => token.length >= 5));
           const tokensExistente = new Set(faturaNormalizarDescricaoInteligente(textoExistente).split(' ').filter(token => token.length >= 5));
-          const estabelecimentoEmComum = [...tokensOCR].some(token => tokensExistente.has(token));
-          return estabelecimentoEmComum || faturaSimilaridadeDescricao(textoOCR, textoExistente) >= .55;
+          const estabelecimentoEmComum = [...tokensDocumento].some(token => tokensExistente.has(token));
+          return estabelecimentoEmComum || faturaSimilaridadeDescricao(textoDocumento, textoExistente) >= .55;
         })
         .forEach(row => duplicados.push({ linha, existente: row }));
     } catch (e) {
@@ -4670,9 +4670,9 @@ async function financeiroBuscarDuplicidadesContas(linhas = [], { lojaId = '', ig
   return duplicados;
 }
 
-async function faturaVerificarDuplicidadeInicialOCR() {
-  const itensOCR = (_faturaItensExtraidos || []).filter(item => item?._origemImagem && item?.fornecedor_id);
-  if (!itensOCR.length) return true;
+async function faturaVerificarDuplicidadeInicialDocumento() {
+  const itensDocumento = (_faturaItensExtraidos || []).filter(item => item?._origemImagem && item?.fornecedor_id);
+  if (!itensDocumento.length) return true;
 
   let tenant;
   try {
@@ -4685,7 +4685,7 @@ async function faturaVerificarDuplicidadeInicialOCR() {
 
   const hojeISO = new Date().toISOString().slice(0, 10);
   const dataValida = valor => /^\d{4}-\d{2}-\d{2}$/.test(String(valor || ''));
-  const linhas = itensOCR.flatMap(item => {
+  const linhas = itensDocumento.flatMap(item => {
     const dataCompra = dataValida(item.data) ? item.data : hojeISO;
     const vencimentoBase = dataValida(item.vencimento_fatura) ? item.vencimento_fatura : dataCompra;
     const quantidade = Math.max(1, Number.parseInt(item._parcelasManuais, 10) || 1);
@@ -4699,9 +4699,9 @@ async function faturaVerificarDuplicidadeInicialOCR() {
       data_compra: dataCompra,
       data_vencimento: parcela.vencimento,
       valor_compra: Number(Number(parcela.valor || 0).toFixed(2)),
-      descricao_ocr: item.descricao || '',
-      observacao_ocr: item._obsManual || '',
-      _itemOCR: item,
+      descricao_documento: item.descricao || '',
+      observacao_documento: item._obsManual || '',
+      _itemDocumento: item,
     }));
   });
 
@@ -4714,9 +4714,9 @@ async function faturaVerificarDuplicidadeInicialOCR() {
   }
   if (!duplicados.length) return true;
 
-  const itensAfetados = new Set(duplicados.map(({ linha }) => linha?._itemOCR).filter(Boolean));
+  const itensAfetados = new Set(duplicados.map(({ linha }) => linha?._itemDocumento).filter(Boolean));
   itensAfetados.forEach(item => {
-    item._duplicidadeDetectadaNoOCR = true;
+    item._duplicidadeDetectadaNoDocumento = true;
     item._duplicidadeAutorizada = false;
     item.selecionado = false;
     const card = document.getElementById('faturaItem_' + item.id);

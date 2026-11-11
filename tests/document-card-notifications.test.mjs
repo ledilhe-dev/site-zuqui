@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+import vm from 'node:vm';
+const source=fs.readFileSync(new URL('../assets/js/32-image-document-importer.js',import.meta.url),'utf8');
+const context={window:{},Date,Number,String,Set,Map,Promise,console,crypto};vm.runInNewContext(source,context);const adapt=context.window.imagemCompraAdaptarRespostaCodex;
+const base={schema_version:'1.0',document_type:'card_statement',issuer_name:'Bradesco',issuer_tax_id:null,document_readable:true,warnings:[],missing_fields:[],ambiguous_fields:[]};
+const item=(description,total,extra={})=>({description,issuer_name:'Bradesco',purchase_date:'2026-11-01',issue_date:null,due_date:'2026-11-15',total_amount:total,installment_count:1,installment_amount:total,current_installment:null,total_installments:null,discount_amount:0,interest_amount:0,penalty_amount:0,is_statement_payment:false,requires_review:false,warnings:[],missing_fields:[],ambiguous_fields:[],...extra});
+test('fatura com varias compras preserva itens independentes',()=>{const result=adapt({...base,items:[item('Mercado',38.31),item('Atacado',917.46),item('Atacado',586.83)]});assert.deepEqual(Array.from(result,v=>v.valor),[38.31,917.46,586.83]);assert.ok(result.every(v=>v._bancoImagem==='Bradesco'));});
+test('compra parcelada mantem total quantidade e parcela',()=>{const[result]=adapt({...base,items:[item('Compra parcelada',300,{installment_count:3,installment_amount:100})]});assert.equal(result.valorTotalCompra,300);assert.equal(result.quantidadeParcelas,3);assert.equal(result.valorParcela,100);assert.equal(result._modoValorParcelas,'total');});
+test('documento ambiguo exige revisao reforcada',()=>{const[result]=adapt({...base,document_readable:false,items:[item('Compra ilegivel',50,{requires_review:true,ambiguous_fields:['due_date']})]});assert.equal(result._revisaoDocumentoObrigatoria,true);assert.deepEqual(Array.from(result._avisosLeitura),['due_date']);});
+test('resultado sem valor comprovado e bloqueado',()=>{assert.throws(()=>adapt({...base,items:[item('Sem valor',null,{installment_amount:null})]}),/nenhum valor/i);});

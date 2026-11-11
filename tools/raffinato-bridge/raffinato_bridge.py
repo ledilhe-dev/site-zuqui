@@ -43,7 +43,7 @@ import pyodbc
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("CHECKDIARIO_RAFFINATO_PORT", "8766"))
-CONNECTOR_VERSION = "2.0.42"
+CONNECTOR_VERSION = "2.0.46"
 CARDAPIO_ORDER_POLL_SECONDS = 2
 CARDAPIO_CATALOG_INTERVAL_SECONDS = 60 * 60
 CARDAPIO_API_URL = os.environ.get(
@@ -3339,42 +3339,149 @@ def show_windows_message(title: str, message: str, error: bool = False) -> None:
     ctypes.windll.user32.MessageBoxW(None, message, title, flags)
 
 
-def retire_legacy_connectors() -> bool:
-    """Encerra executáveis antigos que disputam a credencial e a fila do cardápio."""
+def find_legacy_connector_processes() -> list[tuple[int, str]]:
+    """Localiza processos do conector sem depender da inicializacao do PowerShell."""
+    kernel32=ctypes.WinDLL("kernel32",use_last_error=True)
+    psapi=ctypes.WinDLL("psapi",use_last_error=True)
+    dword=ctypes.wintypes.DWORD
+    kernel32.OpenProcess.argtypes=[dword,ctypes.wintypes.BOOL,dword]
+    kernel32.OpenProcess.restype=ctypes.wintypes.HANDLE
+    kernel32.QueryFullProcessImageNameW.argtypes=[
+        ctypes.wintypes.HANDLE,dword,ctypes.wintypes.LPWSTR,ctypes.POINTER(dword)
+    ]
+    kernel32.QueryFullProcessImageNameW.restype=ctypes.wintypes.BOOL
+    kernel32.CloseHandle.argtypes=[ctypes.wintypes.HANDLE]
+    kernel32.CloseHandle.restype=ctypes.wintypes.BOOL
+    psapi.EnumProcesses.argtypes=[ctypes.POINTER(dword),dword,ctypes.POINTER(dword)]
+    psapi.EnumProcesses.restype=ctypes.wintypes.BOOL
+    process_ids=(dword*4096)()
+    bytes_returned=dword()
+    if not psapi.EnumProcesses(
+        process_ids,ctypes.sizeof(process_ids),ctypes.byref(bytes_returned)
+    ):
+        raise ctypes.WinError(ctypes.get_last_error())
+    process_count=bytes_returned.value//ctypes.sizeof(dword)
+    if process_count>=len(process_ids):
+        raise RuntimeError("A lista de processos do Windows excedeu o limite de seguranca.")
+
     current_pid=os.getpid()
-    command=(
-        f"$current={current_pid};"
-        "$old=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|"
-        "Where-Object{$_.ProcessId -ne $current -and ($_.Name -like 'Conector-Raffinato-v*.exe' -or $_.ExecutablePath -match 'Conector-Raffinato-v[0-9].*\\.exe$')});"
-        "$old|ForEach-Object{& taskkill.exe /PID $_.ProcessId /T /F *> $null};"
-        "$limit=(Get-Date).AddSeconds(20);do{$alive=@($old|Where-Object{Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue});"
-        "if($alive.Count -gt 0){Start-Sleep -Milliseconds 250}}while($alive.Count -gt 0 -and (Get-Date) -lt $limit);"
-        "if($alive.Count -gt 0){exit 9}"
-    )
-    try:
-        result = subprocess.run(
-            ["powershell.exe","-NoProfile","-NonInteractive","-WindowStyle","Hidden","-Command",command],
-            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=25,check=False,
-            creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0),
-        )
-        if result.returncode == 0:
-            logger.info("Verificacao de versoes antigas concluida antes da inicializacao %s",CONNECTOR_VERSION)
+    found=[]
+    for process_id in process_ids[:process_count]:
+        if not process_id or process_id==current_pid:
+            continue
+        process=kernel32.OpenProcess(0x1000,False,process_id)
+        if not process:
+            continue
+        try:
+            image=ctypes.create_unicode_buffer(32768)
+            image_length=dword(len(image))
+            if not kernel32.QueryFullProcessImageNameW(process,0,image,ctypes.byref(image_length)):
+                continue
+            image_path=image.value
+            if Path(image_path).name.casefold().startswith("conector-raffinato-v") and image_path.casefold().endswith(".exe"):
+                found.append((int(process_id),image_path))
+        finally:
+            kernel32.CloseHandle(process)
+    return found
+
+
+def stop_legacy_connector_process(process_id: int) -> bool:
+    """Encerra somente o processo do conector e aguarda a liberacao do mutex."""
+    kernel32=ctypes.WinDLL("kernel32",use_last_error=True)
+    dword=ctypes.wintypes.DWORD
+    kernel32.OpenProcess.argtypes=[dword,ctypes.wintypes.BOOL,dword]
+    kernel32.OpenProcess.restype=ctypes.wintypes.HANDLE
+    kernel32.TerminateProcess.argtypes=[ctypes.wintypes.HANDLE,dword]
+    kernel32.TerminateProcess.restype=ctypes.wintypes.BOOL
+    kernel32.WaitForSingleObject.argtypes=[ctypes.wintypes.HANDLE,dword]
+    kernel32.WaitForSingleObject.restype=dword
+    kernel32.CloseHandle.argtypes=[ctypes.wintypes.HANDLE]
+    kernel32.CloseHandle.restype=ctypes.wintypes.BOOL
+    process=kernel32.OpenProcess(0x00100001,False,process_id)
+    if not process:
+        error=ctypes.get_last_error()
+        if error==87:
             return True
-        logger.error("Uma versao anterior continuou ativa; codigo da retirada=%s",result.returncode)
+        logger.error("Nao foi possivel abrir o processo antigo PID=%s erro_win32=%s",process_id,error)
         return False
+    try:
+        if not kernel32.TerminateProcess(process,0):
+            error=ctypes.get_last_error()
+            if error!=5:
+                logger.error("Nao foi possivel encerrar o processo antigo PID=%s erro_win32=%s",process_id,error)
+                return False
+        result=kernel32.WaitForSingleObject(process,20000)
+        if result!=0:
+            logger.error("Processo antigo PID=%s nao terminou; wait_result=%s",process_id,result)
+            return False
+        return True
+    finally:
+        kernel32.CloseHandle(process)
+
+
+def retire_legacy_connectors() -> tuple[bool, list[str]]:
+    """Encerra versões antigas com APIs Win32 e registra cada etapa do handoff."""
+    logger.info("Enumerando processos antigos do conector por API Win32")
+    try:
+        processes=find_legacy_connector_processes()
+        paths=list(dict.fromkeys(path for _,path in processes))
+        logger.info("Enumeracao concluida | processos=%s | executaveis=%s",len(processes),paths)
+        for process_id,path in processes:
+            logger.info("Encerrando versao anterior | pid=%s | executavel=%s",process_id,path)
+            if not stop_legacy_connector_process(process_id):
+                logger.error("Falha na troca; a nova versao nao continuara sem encerrar PID=%s",process_id)
+                return False,paths
+            logger.info("Versao anterior encerrada | pid=%s",process_id)
+        logger.info("Retirada de versoes anteriores concluida | versao=%s",CONNECTOR_VERSION)
+        return True,paths
     except Exception:
-        logger.exception("Nao foi possivel concluir a retirada das versoes antigas")
-        return False
+        logger.exception("Falha ao enumerar ou encerrar versoes anteriores")
+        return False,[]
 
 
-def relaunch_elevated_for_takeover() -> bool:
-    """Solicita elevação somente quando uma versão antiga não pôde ser encerrada."""
-    if not getattr(sys, "frozen", False) or "--elevated-takeover" in sys.argv:
+def release_single_instance() -> None:
+    global MUTEX_HANDLE
+    if MUTEX_HANDLE:
+        ctypes.windll.kernel32.CloseHandle(MUTEX_HANDLE)
+        MUTEX_HANDLE = None
+
+
+def restore_legacy_connector(paths: list[str]) -> bool:
+    """Reabre a versao anterior se a nova nao conseguiu assumir o servico."""
+    if not paths:
+        logger.error("Nao ha caminho de executavel anterior disponivel para restauracao")
         return False
-    result = ctypes.windll.shell32.ShellExecuteW(
-        None, "runas", str(Path(sys.executable).resolve()), "--elevated-takeover", str(BASE_DIR), 1
-    )
-    return int(result) > 32
+    for executable in paths:
+        legacy_path=Path(executable)
+        if not legacy_path.is_file():
+            continue
+        try:
+            process=subprocess.Popen(
+                [str(legacy_path)],
+                cwd=str(legacy_path.parent),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=getattr(subprocess,"DETACHED_PROCESS",0)
+                    | getattr(subprocess,"CREATE_NEW_PROCESS_GROUP",0),
+            )
+        except OSError:
+            logger.exception("Nao foi possivel restaurar o conector anterior em %s",legacy_path)
+            continue
+        for _attempt in range(40):
+            try:
+                with urllib.request.urlopen(f"http://{HOST}:{PORT}/health",timeout=1) as response:
+                    health=json.loads(response.read().decode("utf-8"))
+                if health.get("service")=="raffinato-bridge":
+                    logger.warning("Conector anterior restaurado | versao=%s",health.get("version","desconhecida"))
+                    return True
+            except (OSError,ValueError,json.JSONDecodeError):
+                pass
+            if process.poll() is not None:
+                break
+            time.sleep(0.5)
+        logger.error("A versao anterior nao confirmou o servico HTTP em %s",legacy_path)
+    return False
 
 
 def acquire_single_instance(silent:bool=False) -> bool:
@@ -3433,6 +3540,7 @@ def run_tray(server: ThreadingHTTPServer) -> None:
 
 
 def main() -> int:
+    logger.info("Inicializacao solicitada | versao=%s | executavel=%s",CONNECTOR_VERSION,sys.executable)
     if "--version" in sys.argv:
         print(CONNECTOR_VERSION)
         return 0
@@ -3442,14 +3550,25 @@ def main() -> int:
         instance_id = str(state.get("connector_instance_id") or "")
         UUID(instance_id)
         return 0 if not state.get("profiles") and not state.get("store_links") else 2
-    if not retire_legacy_connectors():
-        if relaunch_elevated_for_takeover():
-            return 0
+    try:
+        logger.info("Validando dependencias da bandeja antes da troca de versao")
+        import pystray
+        logger.info("Dependencia pystray carregada")
+        create_tray_image()
+        logger.info("Imagem da bandeja validada sem registrar classe Win32")
+    except Exception as exc:
+        logger.exception("Pre-validacao da bandeja falhou antes da troca de versao")
+        show_windows_message("Conector Raffinato", f"Esta versao nao conseguiu preparar a bandeja; a versao atual foi mantida.\n\n{exc}", True)
+        return 1
+    retired,legacy_paths=retire_legacy_connectors()
+    logger.info("Resultado da troca de versao | concluida=%s | executaveis=%s",retired,legacy_paths)
+    if not retired:
         show_windows_message(
             "Conector Raffinato",
-            "A versao anterior continua em execucao. Feche o conector antigo pela bandeja do Windows e abra esta versao novamente como administrador.",
+            "Nao foi possivel encerrar a versao anterior com seguranca. Ela foi mantida em execucao; consulte raffinato-bridge.log para o erro e tente novamente.",
             True,
         )
+        restore_legacy_connector(legacy_paths)
         return 1
     acquired=False
     for _attempt in range(60):
@@ -3459,7 +3578,9 @@ def main() -> int:
         time.sleep(0.5)
     if not acquired:
         show_windows_message("Conector Raffinato", "Nao foi possivel encerrar silenciosamente a versao anterior. Feche-a pela bandeja e tente novamente.", True)
+        restore_legacy_connector(legacy_paths)
         return 1
+    logger.info("Instancia exclusiva adquirida para %s",CONNECTOR_VERSION)
     try:
         cardapio_thread = start_cardapio_dispatcher()
     except Exception:
@@ -3471,6 +3592,8 @@ def main() -> int:
     except Exception as exc:
         logger.exception("Migracao segura da configuracao falhou")
         show_windows_message("Conector Raffinato", f"Nao foi possivel migrar a configuracao. O backup anterior foi preservado.\n\n{exc}", True)
+        release_single_instance()
+        restore_legacy_connector(legacy_paths)
         return 1
     config = {"allowed_origins": DEFAULT_ALLOWED_ORIGINS}
     try:
@@ -3478,10 +3601,13 @@ def main() -> int:
     except OSError as exc:
         logger.exception("Não foi possível iniciar o conector")
         show_windows_message("Conector Raffinato", f"Não foi possível usar a porta {PORT}.\n\n{exc}", True)
+        release_single_instance()
+        restore_legacy_connector(legacy_paths)
         return 1
     server.config = config  # type: ignore[attr-defined]
     server_thread = threading.Thread(target=server.serve_forever, name="raffinato-http", daemon=True)
     server_thread.start()
+    logger.info("Servidor local iniciado em http://%s:%s",HOST,PORT)
     sync_stop_event = threading.Event()
     cache_thread = threading.Thread(target=cache_sync_loop, args=(sync_stop_event,), name="raffinato-cache", daemon=True)
     cache_thread.start()
@@ -3496,6 +3622,7 @@ def main() -> int:
     # vinculadas iniciavam apenas na bandeja e pareciam não ter aberto.
     webbrowser.open(f"http://127.0.0.1:{PORT}/")
     try:
+        logger.info("Iniciando icone da bandeja %s",CONNECTOR_VERSION)
         run_tray(server)
     except KeyboardInterrupt:
         server.shutdown()
@@ -3503,12 +3630,14 @@ def main() -> int:
         logger.exception("Falha na bandeja do Windows")
         show_windows_message("Conector Raffinato", f"Falha ao iniciar o ícone da bandeja.\n\n{exc}", True)
         server.shutdown()
+        server.server_close()
+        release_single_instance()
+        restore_legacy_connector(legacy_paths)
         return 1
     finally:
         sync_stop_event.set()
         server.server_close()
-        if MUTEX_HANDLE:
-            ctypes.windll.kernel32.CloseHandle(MUTEX_HANDLE)
+        release_single_instance()
     return 0
 
 

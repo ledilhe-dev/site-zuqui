@@ -43,7 +43,7 @@
   "./assets/js/22-access-requests.js",
   "./assets/js/23-email.js",
   "./assets/js/30-finance.js",
-  "./assets/js/32-image-ocr-importer.js",
+  "./assets/js/32-image-document-importer.js",
   "./assets/js/31-payable-sheet.js",
   "./assets/js/32-receivable-sheet.js",
   "./assets/js/33-financial-integrations.js",
@@ -97,5 +97,7 @@
   "./assets/css/122-login-showcase.css"
   ,"./assets/css/123-raffinato-daily-detail.css",
   "./assets/css/124-smart-schedule.css",
-  "./assets/js/98-smart-schedule.js"
+  "./assets/css/125-app-design-system.css",
+  "./assets/js/98-smart-schedule.js",
+  "./assets/js/99-app-design-system.js"
 ]

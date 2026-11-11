@@ -1,9 +1,9 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 
 a = Analysis(
     ['raffinato_bridge.py'],
     pathex=[], binaries=[],
-    # O despachante do cardápio precisa estar dentro do executável. Sem este
+    # O despachante do cardÃ¡pio precisa estar dentro do executÃ¡vel. Sem este
     # arquivo o conector principal fica online, mas nunca consulta a fila.
     datas=[('catalog_sync.py', '.')],
     hiddenimports=['pystray', 'pystray._win32', 'PIL.Image', 'PIL.ImageDraw'], hookspath=[],
@@ -12,7 +12,7 @@ a = Analysis(
 pyz = PYZ(a.pure)
 exe = EXE(
     pyz, a.scripts, a.binaries, a.datas, [],
-    name='Conector-Raffinato-v2.0.42', debug=False, bootloader_ignore_signals=False,
+    name='Conector-Raffinato-v2.0.46', debug=False, bootloader_ignore_signals=False,
     strip=False, upx=True, upx_exclude=[], runtime_tmpdir=None, console=False,
     disable_windowed_traceback=False, argv_emulation=False, target_arch=None,
     icon='connector.ico', codesign_identity=None, entitlements_file=None,
