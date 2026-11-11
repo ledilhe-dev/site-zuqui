@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v301-document-reader-design-2026-11-11';
+const CACHE_NAME = 'check-diario-pwa-v302-baixa-lote-2026-11-11';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

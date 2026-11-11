@@ -1976,7 +1976,10 @@ function limparFiltrosBaixarContasFinanceiro() {
   carregarBaixarContasFinanceiro();
 }
 
+let baixarContasFinanceiroRequestSeq = 0;
+
 async function carregarBaixarContasFinanceiro() {
+  const requestSeq = ++baixarContasFinanceiroRequestSeq;
   const lista = document.getElementById('listaBaixarContasFinanceiro');
   if (!lista) return;
   lista.innerHTML = '<div class="empty">Carregando...</div>';
@@ -1990,13 +1993,48 @@ async function carregarBaixarContasFinanceiro() {
   const filtroVencimentoInicio = String(document.getElementById('filtroBaixarContaVencimentoInicio')?.value || '').trim();
   const filtroVencimentoFim = String(document.getElementById('filtroBaixarContaVencimentoFim')?.value || '').trim();
   const filtroDataTipo = String(document.getElementById('filtroBaixarContaDataTipo')?.value || 'vencimento');
+  const lojasSelecionadas = obterIdsLojasFinanceiroDaSessao();
   atualizarAtalhosBaixarContasFinanceiro();
 
-  const { data, error } = await executarSemFiltrosTenantTemporario(() => sb
-    .from('contasapagar')
-    .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, valor_original, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome, cnpj), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
-    .is('excluido_em', null)
-    .order('data_vencimento', { ascending: true }));
+  const campoDataSQL = ({ vencimento: 'data_vencimento', cadastro: 'created_at', atualizacao: 'updated_at', pagamento: 'data_pagamento' })[filtroDataTipo] || 'data_vencimento';
+  const campoDataTimestamp = campoDataSQL === 'created_at' || campoDataSQL === 'updated_at';
+  const diaSeguinteISO = (dataISO) => {
+    const data = new Date(`${dataISO}T12:00:00`);
+    data.setDate(data.getDate() + 1);
+    return dataLocalISO(data);
+  };
+  const resultadoCompleto = await executarSemFiltroLojaTemporario(() => consultarTodasPaginasSupabase((inicioPagina, fimPagina) => {
+    let query = sb
+      .from('contasapagar')
+      .select('id, fornecedor_id, categoria_id, conta_financeira_id, loja_id, empresa_id, data_compra, data_vencimento, data_pagamento, created_at, updated_at, valor_original, valor_compra, valor_pago, forma_pagamento, forma_pagamento_id, observacao, pago_confirmado_em, qtd_parcelas, intervalo_parcelas_dias, numero_parcela, grupo_parcelas_id, fornecedores(nome, cnpj), formas_pagamento(id, nome, ativo), contas_financeiras(id, nome)')
+      .is('excluido_em', null)
+      .order('data_vencimento', { ascending: true })
+      .order('id', { ascending: true });
+    query = aplicarFiltroLojasFinanceirasPermitidas(query, lojasSelecionadas);
+    if (filtroStatus === 'pendente') query = query.is('pago_confirmado_em', null);
+    if (filtroStatus === 'pago') query = query.not('pago_confirmado_em', 'is', null);
+    const atalho = String(baixarContasFiltroRapidoAtivo || '').trim();
+    if (atalho) {
+      const referencia = new Date(`${hoje()}T12:00:00`);
+      if (atalho === 'vencido2') {
+        referencia.setDate(referencia.getDate() - 2);
+        query = query.lte('data_vencimento', dataLocalISO(referencia));
+      } else if (atalho === 'hoje') query = query.eq('data_vencimento', hoje());
+      else if (atalho === 'amanha') {
+        referencia.setDate(referencia.getDate() + 1);
+        query = query.eq('data_vencimento', dataLocalISO(referencia));
+      }
+    } else {
+      if (filtroVencimentoInicio) query = query.gte(campoDataSQL, campoDataTimestamp ? `${filtroVencimentoInicio}T00:00:00` : filtroVencimentoInicio);
+      if (filtroVencimentoFim) query = campoDataTimestamp
+        ? query.lt(campoDataSQL, `${diaSeguinteISO(filtroVencimentoFim)}T00:00:00`)
+        : query.lte(campoDataSQL, filtroVencimentoFim);
+    }
+    return query.range(inicioPagina, fimPagina);
+  }, { tamanhoPagina: 500 }));
+  if (requestSeq !== baixarContasFinanceiroRequestSeq) return;
+  const data = resultadoCompleto?.data;
+  const error = resultadoCompleto?.error || (!resultadoCompleto?.complete ? new Error('Resposta incompleta do servidor.') : null);
 
   if (error) {
     contasBaixarFinanceiroCache = [];
@@ -2830,6 +2868,51 @@ async function abrirBaixaMultiplaFinanceiro() {
     return partes;
   };
 
+  const itensBaixaLote = itens.map(item => {
+    const valorPagoFinal = Number(Number(valores[item.id] || 0).toFixed(2));
+    const partes = consumirContasBaixa(valorPagoFinal);
+    const partePrincipal = partes.reduce((maior, parte) => (parte.valor > (maior?.valor || 0) ? parte : maior), null);
+    return {
+      id: item.id,
+      valor_pago: valorPagoFinal,
+      conta_principal_id: partePrincipal?.contaId || contasEscolhidas[0].id,
+      observacao: ajustarObservacaoBaixaSemMovimentacao(item.observacao, !movimentarSaldo),
+      partes: partes.map(parte => ({
+        conta_id: parte.contaId,
+        valor: parte.valor,
+        descricao: `Pagamento de titulo para ${item.fornecedores?.nome || 'fornecedor'}`
+          + (partes.length > 1 ? ` (parcial via ${parte.contaNome})` : ''),
+      })),
+    };
+  });
+  const botaoBaixar = document.getElementById('btnBaixarMultiplas');
+  if (botaoBaixar) {
+    botaoBaixar.disabled = true;
+    botaoBaixar.textContent = `Baixando ${itens.length} titulo(s)...`;
+  }
+  const { data: resultadoLote, error: erroLote } = await sb.rpc('baixar_contas_lote', {
+    p_itens: itensBaixaLote,
+    p_forma_pagamento_id: formaSelecionada.id,
+    p_forma_pagamento: formaSelecionada.nome,
+    p_movimentar_saldo: movimentarSaldo,
+    p_data_pagamento: hoje(),
+  });
+  if (erroLote) {
+    if (botaoBaixar) {
+      botaoBaixar.disabled = false;
+      botaoBaixar.textContent = 'Baixar selecionadas';
+    }
+    setMsg('msgBaixarContasFinanceiro', `Nao foi possivel concluir a baixa em lote: ${mensagemErroSupabase(erroLote, 'erro desconhecido')}. Nenhum titulo foi alterado.`, 'err');
+    return;
+  }
+  _baixaSelecionadasIds = [];
+  const processados = Number(resultadoLote?.processados || itens.length);
+  setMsg('msgBaixarContasFinanceiro', `${processados} titulo(s) baixado(s) com sucesso.`, 'ok');
+  await carregarContasFinanceiras({ render: false, silencioso: true });
+  carregarBaixarContasFinanceiro();
+  carregarContasAPagarFinanceiro();
+  return;
+
   let ok = 0, falhas = 0;
   for (const item of itens) {
     const valorPagoFinal = Number(Number(valores[item.id] || 0).toFixed(2));
@@ -2947,6 +3030,8 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
             <span style="display:block;font-size:10px;color:${corSaldo};">Saldo: ${escaparHtmlBasico(formatarMoedaBRFinanceiro(saldo))}</span>
           </span>
         </label>
+        <button type="button" class="btn btn-ghost" data-bcm-total="${c.id}"
+          style="font-size:10px;line-height:1;padding:6px 8px;min-height:28px;white-space:nowrap;">Pagar total</button>
         <input type="text" inputmode="decimal" data-bcm-val="${c.id}" placeholder="R$ 0,00" disabled
           style="width:110px;text-align:right;font-size:12px;height:30px;padding:0 8px;border-radius:8px;opacity:.45;">
       </div>`;
@@ -3033,6 +3118,7 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
     contas.forEach(c => {
       const chk = overlay.querySelector(`[data-bcm-chk="${c.id}"]`);
       const val = overlay.querySelector(`[data-bcm-val="${c.id}"]`);
+      const btnTotal = overlay.querySelector(`[data-bcm-total="${c.id}"]`);
       if (!chk || !val) return;
       chk.addEventListener('change', () => {
         if (chk.checked) {
@@ -3049,6 +3135,20 @@ function abrirModalContasBaixaMultipla(totalLote = 0, tituloDescr = '') {
         atualizarResumo();
       });
       val.addEventListener('input', () => { setMsgModal(''); atualizarResumo(); });
+      btnTotal?.addEventListener('click', () => {
+        chk.checked = true;
+        val.disabled = false;
+        val.style.opacity = '1';
+        const alocadoNasOutras = contas.reduce((soma, outra) => {
+          if (String(outra.id) === String(c.id)) return soma;
+          const outroChk = overlay.querySelector(`[data-bcm-chk="${outra.id}"]`);
+          if (!outroChk?.checked) return soma;
+          return soma + lerNumeroBR(overlay.querySelector(`[data-bcm-val="${outra.id}"]`)?.value);
+        }, 0);
+        val.value = valorMoedaInputFinanceiro(Math.max(Number((total - alocadoNasOutras).toFixed(2)), 0));
+        setMsgModal('');
+        atualizarResumo();
+      });
     });
 
     // Ao trocar o modo, refaz as sugestões das contas já marcadas
