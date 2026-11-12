@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v305-lotes-financeiros-atomicos-2026-11-11';
+const CACHE_NAME = 'check-diario-pwa-v306-loja-f5-segura-2026-11-11';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

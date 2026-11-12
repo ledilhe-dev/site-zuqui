@@ -22,6 +22,13 @@ test('F5 preserva sessao persistente e restaura a pagina ativa em falha transito
   assert.doesNotMatch(restore, /mensagemFalha\.includes\('perdeu o vínculo'\)/);
 });
 
+test('F5 prioriza a loja mais recente da aba e ignora revalidação atrasada da loja anterior', () => {
+  assert.match(runtime, /const salvo = salvoSessao \|\| salvoLocal \|\| salvoLocalBackup/);
+  assert.match(runtime, /const sessaoAlvo = usuarioSistemaLogado/);
+  assert.match(runtime, /const contextoAindaAtual = \(\) => assinaturaContextoSessao\(usuarioSistemaLogado\) === assinaturaAlvo/);
+  assert.match(runtime, /const sessaoRevalidada = await revalidarSessaoFuncionarioNoBanco\(sessaoAlvo\);\s*if \(!contextoAindaAtual\(\)\) return;/);
+});
+
 test('limpa todos os cabeçalhos opacos no logout', () => {
   const logout = runtime.slice(runtime.indexOf('async function logout()'), runtime.indexOf('function toggleSolicitacaoAcesso'));
   for (const key of ['__authPrincipalId', '__authOperationalToken', '__authGlobalToken', '__authLojaId']) {
