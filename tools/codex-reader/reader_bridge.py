@@ -24,6 +24,7 @@ Responda somente no schema fornecido. A data atual e {today}.
 sales_query serve para perguntas sobre quanto vendeu, faturamento ou total de vendas.
 Converta hoje para a data atual; inicio do ano ou desde o inicio do ano para 01/01 do ano atual ate hoje.
 Converta ontem, este mes, mes atual e intervalos explicitos em datas inclusivas YYYY-MM-DD.
+Quando a pergunta de faturamento nao informar periodo, use hoje como data inicial e final.
 Se pedir apenas delivery, use origins [DELIVERY]. Venda rapida usa VENDA_RAPIDA e cartao/mesa usa CARTAO_MESA.
 Sem restricao de canal, origins deve ser vazio. Nunca calcule nem invente valor financeiro.
 Se nao for consulta de faturamento, use unsupported com datas nulas, origins vazio e period_label vazio.

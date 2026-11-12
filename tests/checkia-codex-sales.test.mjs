@@ -31,5 +31,6 @@ test('faturamento vem do relay Raffinato com intervalo inclusivo e filtro de ori
 
 test('inicio do ano e delivery possuem regras explicitas de interpretacao',()=>{
   assert.match(bridge,/01\/01 do ano atual ate hoje/);
+  assert.match(bridge,/nao informar periodo, use hoje/);
   assert.match(bridge,/apenas delivery, use origins \[DELIVERY\]/);
 });
