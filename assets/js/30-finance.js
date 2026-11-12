@@ -2763,20 +2763,30 @@ async function confirmarBaixaMultiplaRecebiveis() {
   baixaMultiplaRecebiveisProcessando = true;
   const btn = document.getElementById('btnExecutarBaixaMultiplaRecebiveis');
   if (btn) { btn.disabled = true; btn.textContent = 'Processando recebimentos...'; }
-  let confirmados = 0, totalConfirmado = 0; const falhas = [];
-  for (const item of itens) {
-    try { totalConfirmado += await confirmarRecFuturoEmLote(item, conta, baixaMultiplaRecebiveisMovimentarSaldo, pin.nomeFuncionario || usuarioSistemaLogado?.nome || 'Usuário'); confirmados++; recFuturosSelecionadosIds.delete(String(item.id)); }
-    catch (erro) { falhas.push(`${item.fornecedores?.nome || 'Recebível'}: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`); }
+  try {
+    const { data: resultado, error } = await sb.rpc('baixar_recebiveis_lote', {
+      p_ids: itens.map(item => item.id),
+      p_conta_financeira_id: conta.id,
+      p_movimentar_saldo: baixaMultiplaRecebiveisMovimentarSaldo,
+      p_confirmado_por_id: pin.funcionarioId || obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null,
+      p_confirmado_por_nome: pin.nomeFuncionario || usuarioSistemaLogado?.nome || 'Usuário',
+    });
+    if (error) throw error;
+    itens.forEach(item => recFuturosSelecionadosIds.delete(String(item.id)));
+    document.getElementById('baixaMultiplaRecebiveisOverlay')?.classList.remove('show');
+    await carregarContasFinanceiras({ render:false, silencioso:true });
+    await carregarRecFuturos();
+    recebiveisFinanceiroListaVisivel = true;
+    await carregarRecebiveisFinanceiro();
+    if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
+    setMsg('msgRecFuturosLista', `${Number(resultado?.quantidade || itens.length)} recebimento(s) confirmado(s) com sucesso — ${formatarMoedaBRFinanceiro(resultado?.total || total)}`, 'ok');
+  } catch (erro) {
+    setMsg('msgBaixaMultiplaRecebiveis', `Nenhum recebimento foi alterado: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`, 'err');
+  } finally {
+    baixaMultiplaRecebiveisProcessando = false;
+    atualizarEstadoModalBaixaMultiplaRecebiveis();
+    atualizarResumoSelecaoRecFuturos();
   }
-  baixaMultiplaRecebiveisProcessando = false;
-  document.getElementById('baixaMultiplaRecebiveisOverlay')?.classList.remove('show');
-  await carregarContasFinanceiras({ render:false, silencioso:true });
-  await carregarRecFuturos();
-  recebiveisFinanceiroListaVisivel = true; await carregarRecebiveisFinanceiro();
-  if (document.getElementById('financeiro_cofre')?.classList.contains('ativa')) await carregarCofreFinanceiro();
-  const mensagem = falhas.length ? `${confirmados} recebimento(s) confirmado(s). ${falhas.length} não pôde/puderam ser confirmado(s): ${falhas.join(' | ')}` : `${confirmados} recebimento(s) confirmado(s) com sucesso — ${formatarMoedaBRFinanceiro(totalConfirmado)}`;
-  setMsg('msgRecFuturosLista', mensagem, falhas.length ? 'err' : 'ok');
-  atualizarResumoSelecaoRecFuturos();
 }
 
 async function excluirRecFuturosSelecionados() {
@@ -2808,29 +2818,19 @@ async function excluirRecFuturosSelecionados() {
   }
   if (btnSelecionar) btnSelecionar.disabled = true;
 
-  let excluidos = 0;
-  for (const id of idsSelecionados) {
-    try {
-      const { error } = await executarSemFiltroLojaTemporario(() => sb.from('recebiveis_futuros').delete().eq('id', id));
-      if (!error) {
-        excluidos++;
-        recFuturosSelecionadosIds.delete(String(id));
-      }
-    } catch (e) { }
+  try {
+    const { data, error } = await sb.rpc('excluir_recebiveis_futuros_lote', { p_ids: idsSelecionados });
+    if (error) throw error;
+    idsSelecionados.forEach(id => recFuturosSelecionadosIds.delete(String(id)));
+    await carregarRecFuturos();
+    setMsg('msgRecFuturosLista', `${Number(data || idsSelecionados.length)} recebimento(s) excluído(s) com sucesso.`, 'ok');
+  } catch (erro) {
+    setMsg('msgRecFuturosLista', `Nenhum recebimento foi excluído: ${mensagemErroSupabase(erro, erro?.message || 'erro desconhecido')}`, 'err');
+  } finally {
+    if (btnExcluir) { btnExcluir.disabled = false; btnExcluir.textContent = textoOriginal; }
+    if (btnSelecionar) btnSelecionar.disabled = false;
+    atualizarResumoSelecaoRecFuturos();
   }
-
-  await carregarRecFuturos();
-  const falhas = idsSelecionados.length - excluidos;
-  setMsg(
-    'msgRecFuturosLista',
-    falhas
-      ? `${excluidos} recebimento(s) exclu?do(s); ${falhas} n?o puderam ser exclu?dos.`
-      : `${excluidos} recebimento(s) exclu?do(s) com sucesso.`,
-    falhas ? 'err' : 'ok'
-  );
-
-  if (btnExcluir) btnExcluir.textContent = textoOriginal;
-  atualizarResumoSelecaoRecFuturos();
 }
 
 // ·································

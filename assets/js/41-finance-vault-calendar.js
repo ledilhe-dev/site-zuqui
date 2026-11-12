@@ -1297,33 +1297,42 @@ async function excluirContasAPagarSelecionadasFinanceiro() {
 
   if (!confirmacao) return;
 
-  const { data, error } = await sb
-    .from('contasapagar')
-    .update({
-      excluido_em: confirmacao.confirmadoEm,
-      excluido_por_id: confirmacao.funcionarioId,
-      excluido_por_nome: confirmacao.nomeFuncionario,
-    })
-    .in('id', idsSelecionados)
-    .is('excluido_em', null)
-    .select('id');
+  const btnExcluir = document.getElementById('btnExcluirContasAPagarSelecionadasFinanceiro');
+  const btnSelecionar = document.getElementById('btnSelecionarTodasContasAPagarFinanceiro');
+  const textoOriginal = btnExcluir?.textContent || 'Excluir selecionadas';
+  if (btnExcluir) { btnExcluir.disabled = true; btnExcluir.textContent = `Excluindo ${idsSelecionados.length}...`; }
+  if (btnSelecionar) btnSelecionar.disabled = true;
+  setMsg('msgContaAPagarFinanceiro', `Excluindo ${idsSelecionados.length} conta(s) em uma única operação segura...`, '');
+
+  const { data, error } = await sb.rpc('excluir_contas_pagar_lote', {
+    p_ids: idsSelecionados,
+    p_excluido_em: confirmacao.confirmadoEm,
+    p_excluido_por_id: confirmacao.funcionarioId,
+    p_excluido_por_nome: confirmacao.nomeFuncionario,
+  });
 
   if (error) {
     if (isMissingContasAPagarAuditoriaColumnsError(error)) {
       setMsg('msgContaAPagarFinanceiro', 'Rode a migration de auditoria do contas a pagar antes de excluir.', 'err');
+      if (btnExcluir) { btnExcluir.disabled = false; btnExcluir.textContent = textoOriginal; }
+      if (btnSelecionar) btnSelecionar.disabled = false;
       return;
     }
     setMsg('msgContaAPagarFinanceiro', `Não foi possível excluir as selecionadas: ${mensagemErroSupabase(error, 'erro desconhecido')}`, 'err');
+    if (btnExcluir) { btnExcluir.disabled = false; btnExcluir.textContent = textoOriginal; }
+    if (btnSelecionar) btnSelecionar.disabled = false;
     return;
   }
 
-  const excluidas = Array.isArray(data) ? data.length : 0;
+  const excluidas = Number(data || 0);
   if (contaAPagarFinanceiroEmEdicaoId && idsSelecionados.includes(String(contaAPagarFinanceiroEmEdicaoId))) {
     limparFormularioContaAPagarFinanceiro();
   }
   idsSelecionados.forEach(id => contasAPagarFinanceiroSelecionadasIds.delete(String(id)));
   setMsg('msgContaAPagarFinanceiro', `${excluidas} conta(s) excluída(s) com sucesso.`, 'ok');
-  carregarContasAPagarFinanceiro();
+  await carregarContasAPagarFinanceiro();
+  if (btnExcluir) btnExcluir.textContent = textoOriginal;
+  if (btnSelecionar) btnSelecionar.disabled = false;
 }
 
 let contasAPagarAgruparParcelas = false;
