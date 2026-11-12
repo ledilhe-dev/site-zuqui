@@ -1195,20 +1195,34 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const lojaId = String(lojaEscolhida?.id || lojaEscolhida?.loja_id || '').trim();
     if (!funcionarioId || !lojaId) return null;
     try {
-      const vinculoRes = await executarSemFiltrosTenantTemporario(() => sb.from('funcionario_lojas')
-        .select('perfil_id, ativo')
-        .eq('funcionario_id', funcionarioId)
-        .eq('loja_id', lojaId)
-        .eq('ativo', true)
-        .maybeSingle());
-      const perfilId = vinculoRes.data?.perfil_id || null;
+      const headersLogin = {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+        'x-funcionario-id': String(window.__authPrincipalId || funcionarioId),
+        'x-operational-token': String(window.__authOperationalToken || funcionario?.operational_access_token || ''),
+        'x-global-admin-token': String(window.__authGlobalToken || funcionario?.global_admin_token || ''),
+        Accept: 'application/json',
+      };
+      const urlVinculo = new URL(SUPABASE_URL + '/rest/v1/funcionario_lojas');
+      urlVinculo.searchParams.set('select', 'perfil_id,ativo');
+      urlVinculo.searchParams.set('funcionario_id', 'eq.' + funcionarioId);
+      urlVinculo.searchParams.set('loja_id', 'eq.' + lojaId);
+      urlVinculo.searchParams.set('ativo', 'eq.true');
+      const respostaVinculo = await fetch(urlVinculo.toString(), { headers: headersLogin, cache: 'no-store' });
+      if (!respostaVinculo.ok) throw new Error('Não foi possível validar o vínculo desta loja.');
+      const vinculos = await respostaVinculo.json();
+      const perfilId = vinculos?.[0]?.perfil_id || null;
       if (!perfilId) return null;
-      const perfilRes = await executarSemFiltrosTenantTemporario(() => sb.from('perfis')
-        .select('id, nome, codigo, permissoes, loja_id, empresa_id')
-        .eq('id', perfilId)
-        .maybeSingle());
-      if (!perfilRes.data || String(perfilRes.data.loja_id || '') !== lojaId) return null;
-      return normalizarPerfilUsuario(perfilRes.data);
+      const urlPerfil = new URL(SUPABASE_URL + '/rest/v1/perfis');
+      urlPerfil.searchParams.set('select', 'id,nome,codigo,permissoes,loja_id,empresa_id,ativo');
+      urlPerfil.searchParams.set('id', 'eq.' + perfilId);
+      urlPerfil.searchParams.set('loja_id', 'eq.' + lojaId);
+      urlPerfil.searchParams.set('ativo', 'eq.true');
+      const respostaPerfil = await fetch(urlPerfil.toString(), { headers: headersLogin, cache: 'no-store' });
+      if (!respostaPerfil.ok) throw new Error('Não foi possível carregar o perfil desta loja.');
+      const perfis = await respostaPerfil.json();
+      if (!perfis?.[0] || String(perfis[0].loja_id || '') !== lojaId) return null;
+      return normalizarPerfilUsuario(perfis[0]);
     } catch (erro) {
       console.warn('Não foi possível carregar o perfil específico da loja:', erro);
       return null;
@@ -1230,7 +1244,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         p_loja_id: lojaEscolhida?.id,
       });
       if (erroContexto || !contextoOperacional?.operational_access_token) {
-        setMsg('msgLogin', 'Não foi possível abrir um contexto operacional seguro para esta loja.', 'err');
+        setMsg('msgLoginStore', 'Não foi possível abrir um contexto operacional seguro para esta loja.', 'err');
         return;
       }
       funcionarioContextualizado = { ...funcionario, ...contextoOperacional };
@@ -1240,7 +1254,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
       ? normalizarPerfilUsuario({ codigo:'ADM', nome:'Administrador do Sistema', permissoes:obterPermissoesBase('ADM') })
       : await obterPerfilFuncionarioParaLoja(funcionarioContextualizado, lojaEscolhida, perfilFuncionario);
     if (!ehAdminSistema && !perfilDaLoja?.id) {
-      setMsg('msgLogin', 'Acesso bloqueado: esta loja ainda não possui um perfil explícito vinculado ao usuário.', 'err');
+      setMsg('msgLoginStore', 'Não foi possível abrir esta loja. Peça ao administrador para revisar o perfil vinculado.', 'err');
       return;
     }
     salvarSessaoSistema(montarSessaoFuncionarioPorLoja(funcionarioContextualizado, perfilDaLoja, lojaEscolhida), { manterConectado });
@@ -1263,6 +1277,7 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
     const busca = document.getElementById('loginStoreSearch');
     const subtitle = document.getElementById('loginStoreSubtitle');
     if (!picker) return;
+    setMsg('msgLoginStore', '', '');
 
     // Animar saída da fase 1
     if (fase1) {
@@ -1353,10 +1368,19 @@ function salvarSessaoSistema(usuario, { manterConectado = false } = {}) {
         const id = String(btn.getAttribute('data-loja-id') || '');
         const loja = (window.__loginLojasPermitidasAtual || []).find(item => String(item.id) === id);
         if (!loja || !window.__loginContextoPendente) {
-          setMsg('msgLogin', 'Loja inválida. Tente novamente.', 'err');
+          setMsg('msgLoginStore', 'Loja inválida. Tente novamente.', 'err');
           return;
         }
-        await finalizarLoginFuncionarioComLoja(window.__loginContextoPendente, loja);
+        setMsg('msgLoginStore', 'Abrindo ' + (loja.nome || 'a loja') + '...', 'ok');
+        btn.disabled = true;
+        try {
+          await finalizarLoginFuncionarioComLoja(window.__loginContextoPendente, loja);
+        } catch (erro) {
+          console.error('Falha ao abrir loja no login:', erro);
+          setMsg('msgLoginStore', 'Não foi possível abrir esta loja: ' + (erro?.message || 'tente novamente.'), 'err');
+        } finally {
+          if (btn.isConnected) btn.disabled = false;
+        }
       });
     });
     // evento para abrir o painel administrativo direto do login

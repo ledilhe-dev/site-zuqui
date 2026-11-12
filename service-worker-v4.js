@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v303-ajuste-saldo-layout-2026-11-11';
+const CACHE_NAME = 'check-diario-pwa-v304-ignorar-diferenca-recebimento-2026-11-11';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

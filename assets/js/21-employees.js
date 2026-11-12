@@ -599,6 +599,7 @@ let _vinculosFuncionarioAtual = [];
 let _empresasCacheVinculos = [];
 let _lojasCacheVinculos = [];
 let _perfisCache = [];
+let _perfisPorLojaVinculos = new Map();
 
 function obterIdsLojasPermitidasGestaoFuncionarios() {
   const ids = new Set();
@@ -633,10 +634,12 @@ function usuarioPodeGerenciarLojaFuncionario(lojaId) {
   return obterIdsLojasPermitidasGestaoFuncionarios().has(String(lojaId || '').trim());
 }
 
-function obterPerfisAtribuiveisFuncionario() {
-  if (usuarioEhAdministrador()) return _perfisCache;
+function obterPerfisAtribuiveisFuncionario(lojaId = '') {
+  const idLoja = String(lojaId || '').trim();
+  const perfisFonte = idLoja ? (_perfisPorLojaVinculos.get(idLoja) || []) : _perfisCache;
+  if (usuarioEhAdministrador()) return perfisFonte;
   const permissoesAtor = obterPermissoesUsuario();
-  return _perfisCache.filter(perfil => {
+  return perfisFonte.filter(perfil => {
     const codigo = normalizarCodigoPerfil(perfil?.codigo || '');
     if (codigo === 'ADM' || codigo === 'MASTER') return false;
     const perfilNormalizado = normalizarPerfilUsuario(perfil);
@@ -645,10 +648,10 @@ function obterPerfisAtribuiveisFuncionario() {
   });
 }
 
-function usuarioPodeAtribuirPerfilFuncionario(perfilId) {
+function usuarioPodeAtribuirPerfilFuncionario(perfilId, lojaId = '') {
   const id = String(perfilId || '').trim();
-  if (!id) return true;
-  return obterPerfisAtribuiveisFuncionario().some(perfil => String(perfil.id) === id);
+  if (!id) return false;
+  return obterPerfisAtribuiveisFuncionario(lojaId).some(perfil => String(perfil.id) === id);
 }
 
 async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas = false, acao = 'editar' } = {}) {
@@ -705,6 +708,21 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
         resLojas = { data: [], error: null };
       }
       _lojasCacheVinculos = resLojas.data || [];
+      const idsLojasCarregadas = _lojasCacheVinculos.map(loja => String(loja.id || '')).filter(Boolean);
+      const resPerfisVinculos = idsLojasCarregadas.length
+        ? await executarSemFiltrosTenantTemporario(() => sb.from('perfis')
+          .select('id, nome, codigo, permissoes, loja_id, ativo')
+          .eq('ativo', true)
+          .in('loja_id', idsLojasCarregadas)
+          .order('nome'))
+        : { data: [], error: null };
+      if (resPerfisVinculos.error) throw resPerfisVinculos.error;
+      _perfisPorLojaVinculos = new Map();
+      (resPerfisVinculos.data || []).forEach(perfil => {
+        const chaveLoja = String(perfil.loja_id || '');
+        if (!_perfisPorLojaVinculos.has(chaveLoja)) _perfisPorLojaVinculos.set(chaveLoja, []);
+        _perfisPorLojaVinculos.get(chaveLoja).push(perfil);
+      });
       const empresasPermitidas = [...new Set(_lojasCacheVinculos.map(loja => String(loja.empresa_id || '')).filter(Boolean))];
       const resEmpresas = empresasPermitidas.length
         ? await executarSemFiltrosTenantTemporario(() => sb.from('empresas').select('id, nome').eq('ativo', true).in('id', empresasPermitidas).order('nome'))
@@ -835,6 +853,7 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     const filtro = document.getElementById('filtroSeletorLojas');
     if (nomeEl) nomeEl.textContent = 'Funcionário: ' + (document.getElementById('nomeFuncionario')?.value || '');
     if (filtro) filtro.value = '';
+    setMsg('msgSeletorLojas', '', '');
     if (modal) modal.style.display = 'flex';
     filtrarSeletorLojas();
   }
@@ -854,7 +873,6 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
       const alvo = [l.nome, l.codigo, l.cidade, l.uf, l.municipio].join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
       return alvo.includes(termo);
     });
-    const perfisOpts = '<option value="">Perfil padrão</option>' + obterPerfisAtribuiveisFuncionario().map(p => `<option value="${p.id}">${escaparHtmlBasico(p.nome)}</option>`).join('');
     if (!lojasFiltradas.length) {
       lista.innerHTML = '<div class="empty" style="font-size:12px;">Nenhuma loja encontrada.</div>';
       return;
@@ -872,6 +890,10 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
         <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;padding:4px 0;border-bottom:1px solid var(--border);">🏢 ${escaparHtmlBasico(emp.nome)}</div>
         ${emp.lojas.map(loja => {
           const vinculada = lojasVinculadas.has(loja.id);
+          const perfisLoja = obterPerfisAtribuiveisFuncionario(loja.id);
+          const perfisOpts = perfisLoja.length
+            ? perfisLoja.map(p => `<option value="${p.id}">${escaparHtmlBasico(p.nome)}</option>`).join('')
+            : '<option value="">Nenhum perfil disponível</option>';
           return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);">
             <div style="min-width:0;flex:1;">
               <div style="font-size:12px;color:var(--text);">🏪 ${escaparHtmlBasico(loja.nome || loja.codigo || '-')}</div>
@@ -882,7 +904,7 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
                 ? `<span style="font-size:10px;color:var(--green);font-weight:600;">✓ Vinculada</span>
                    <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;height:22px;" onclick="removerVinculoPorLojaId('${loja.id}')">Remover</button>`
                 : `<select id="perfilSeletor_${loja.id}" style="font-size:10px;padding:1px 4px;height:22px;max-width:110px;">${perfisOpts}</select>
-                   <button class="btn btn-green btn-sm" style="font-size:10px;padding:2px 8px;height:22px;" onclick="adicionarVinculoLoja('${loja.id}')">+ Vincular</button>`
+                   <button class="btn btn-green btn-sm" style="font-size:10px;padding:2px 8px;height:22px;" ${perfisLoja.length ? '' : 'disabled'} onclick="adicionarVinculoLoja('${loja.id}', this)">+ Vincular</button>`
               }
             </div>
           </div>`;
@@ -891,20 +913,28 @@ async function validarEscopoGestaoFuncionario(funcionarioId, { exigirTodasLojas 
     `).join('');
   }
 
-  async function adicionarVinculoLoja(lojaId) {
+  async function adicionarVinculoLoja(lojaId, botao = null) {
     const perfilId = document.getElementById('perfilSeletor_' + lojaId)?.value || null;
+    setMsg('msgSeletorLojas', '', '');
     try {
+      if (botao) botao.disabled = true;
       const escopo = await validarEscopoGestaoFuncionario(funcionarioEmEdicaoId);
       if (!escopo.ok) throw new Error(escopo.motivo);
       if (!usuarioPodeGerenciarLojaFuncionario(lojaId)) throw new Error('Você não pode conceder acesso a esta loja.');
-      if (!usuarioPodeAtribuirPerfilFuncionario(perfilId)) throw new Error('Você não pode atribuir um perfil com permissões superiores às suas.');
+      if (!perfilId) throw new Error('Esta loja ainda não possui um perfil ativo disponível.');
+      if (!usuarioPodeAtribuirPerfilFuncionario(perfilId, lojaId)) throw new Error('Selecione um perfil ativo pertencente a esta loja.');
       const { error } = await executarSemFiltroLojaTemporario(() =>
         sb.from('funcionario_lojas').insert([{ funcionario_id: funcionarioEmEdicaoId, loja_id: lojaId, perfil_id: perfilId, ativo: true }])
       );
       if (error) throw error;
       await carregarVinculosFuncionario(funcionarioEmEdicaoId);
       filtrarSeletorLojas();
-    } catch(e) { alert('Erro ao vincular: ' + (e.message || e)); }
+      setMsg('msgSeletorLojas', 'Acesso vinculado com sucesso.', 'ok');
+    } catch(e) {
+      setMsg('msgSeletorLojas', 'Não foi possível vincular o acesso: ' + mensagemErroSupabase(e, e?.message || 'erro desconhecido'), 'err');
+    } finally {
+      if (botao?.isConnected) botao.disabled = false;
+    }
   }
 
   async function removerVinculoPorLojaId(lojaId) {

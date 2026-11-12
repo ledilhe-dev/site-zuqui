@@ -740,6 +740,7 @@
                 </div>
                 <div style="padding:10px 16px;border-bottom:1px solid var(--border);">
                   <input id="filtroSeletorLojas" type="text" placeholder="Buscar por nome, código ou cidade..." style="width:100%;font-size:12px;padding:6px 10px;" oninput="filtrarSeletorLojas()">
+                  <div class="msg" id="msgSeletorLojas" role="status" aria-live="polite" style="margin-top:8px;"></div>
                 </div>
                 <div id="listaSeletorLojas" style="flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:4px;"></div>
                 <div style="padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
@@ -3177,8 +3178,9 @@
       <div class="baixa-parcial-observacao" id="recebimentoParcialObservacao"></div>
     </div>
     <div class="modal-footer baixa-parcial-acoes">
-      <button class="btn btn-ghost" id="btnRecebimentoParcialNao" type="button" onclick="responderRecebimentoParcialFinanceiro(false)">Não, editar valor</button>
-      <button class="btn btn-green" id="btnRecebimentoParcialSim" type="button" onclick="responderRecebimentoParcialFinanceiro(true)">Sim, receber parcialmente</button>
+      <button class="btn btn-ghost" id="btnRecebimentoParcialNao" type="button" onclick="responderRecebimentoParcialFinanceiro('editar')">Não, editar valor</button>
+      <button class="btn btn-ghost" id="btnRecebimentoIgnorarDiferenca" type="button" onclick="responderRecebimentoParcialFinanceiro('ignorar')">Ignorar diferença</button>
+      <button class="btn btn-green" id="btnRecebimentoParcialSim" type="button" onclick="responderRecebimentoParcialFinanceiro('parcial')">Sim, receber parcialmente</button>
     </div>
   </div>
 </div>
@@ -3454,10 +3456,10 @@
 <script src="./assets/js/06-theme-interface.js?v=20261017-ios-sheet-v2"></script>
 <script src="./assets/js/10-dashboard.js?v=3.2.64-category-alias-fix"></script>
 <script src="./assets/js/20-checklists.js?v=20261028-date-native-v3"></script>
-<script src="./assets/js/21-employees.js?v=3.2.45"></script>
+<script src="./assets/js/21-employees.js?v=3.2.46-perfil-por-loja"></script>
 <script src="./assets/js/22-access-requests.js?v=3.2.46"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=3.2.86-fluxo-recebimento-parcial"></script>
+<script src="./assets/js/30-finance.js?v=3.2.92-ignorar-diferenca-recebimento"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260928-cofre-horario-v2"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=3.2.48"></script>
@@ -3577,6 +3579,7 @@
         <div class="login-store-badge">🏪</div>
       </div>
       <input type="text" id="loginStoreSearch" class="login-store-search" placeholder="Buscar loja..." autocomplete="off">
+      <div id="msgLoginStore" class="msg" role="status" aria-live="polite" style="margin:8px 0 0;text-align:center;"></div>
       <div id="loginStoreList" class="login-store-list"></div>
     </div>
 
@@ -3589,7 +3592,7 @@
   </div>
 </div>
 
-<script src="./assets/js/79-runtime-extensions.js?v=3.2.69-session-preferences"></script>
+<script src="./assets/js/79-runtime-extensions.js?v=3.2.70-login-multiloja"></script>
   <div class="escala-modal-overlay" id="modalEscalaPlantao" aria-hidden="true">
     <div class="escala-modal-card">
       <div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>
