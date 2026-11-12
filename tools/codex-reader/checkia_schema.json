@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "intent", "start_date", "end_date", "origins", "period_label"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "intent": { "enum": ["sales_query", "unsupported"] },
+    "start_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "end_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "origins": {
+      "type": "array",
+      "items": { "enum": ["VENDA_RAPIDA", "DELIVERY", "CARTAO_MESA"] }
+    },
+    "period_label": { "type": "string", "maxLength": 100 }
+  }
+}

@@ -51,7 +51,7 @@
     if ($("checkiaOverlay")) return;
     document.body.insertAdjacentHTML(
       "beforeend",
-      `<button class="checkia-fab" id="checkiaFab" type="button" aria-label="Abrir CHECKIA"><span class="checkia-fab-dot"></span><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm-1 3.93V21H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.07A7 7 0 0 0 19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93Z"/></svg><span class="checkia-fab-label">CHECKIA</span></button><div class="checkia-overlay" id="checkiaOverlay"><section class="checkia-card" role="dialog" aria-modal="true" aria-labelledby="checkiaTitle"><header class="checkia-head"><div class="checkia-brand"><span class="checkia-logo">✦</span><div><div class="checkia-title" id="checkiaTitle">CHECKIA</div><div class="checkia-sub">Sua assistente do CheckDiário</div></div></div><button class="checkia-close" id="checkiaClose" type="button">×</button></header><div class="checkia-body"><div class="checkia-examples">Fale ou digite: “conta a pagar de 100 reais do cartão Bradesco em 2x”, “agenda reunião amanhã às 14h” ou “qual o total da fatura Nubank?”.</div><div class="checkia-compose"><textarea class="checkia-input" id="checkiaInput" placeholder="O que você quer fazer?"></textarea><button class="checkia-mic" id="checkiaMic" type="button" title="Falar">🎙</button></div><div class="checkia-actions"><button class="btn btn-ghost" id="checkiaClear" type="button">Limpar</button><button class="btn btn-green" id="checkiaInterpret" type="button">Interpretar</button></div><div class="checkia-status" id="checkiaStatus"></div><div class="checkia-result" id="checkiaResult" hidden></div></div></section></div>`,
+      `<button class="checkia-fab" id="checkiaFab" type="button" aria-label="Abrir CHECKIA"><span class="checkia-fab-dot"></span><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm-1 3.93V21H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.07A7 7 0 0 0 19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93Z"/></svg><span class="checkia-fab-label">CHECKIA</span></button><div class="checkia-overlay" id="checkiaOverlay"><section class="checkia-card" role="dialog" aria-modal="true" aria-labelledby="checkiaTitle"><header class="checkia-head"><div class="checkia-brand"><span class="checkia-logo">✦</span><div><div class="checkia-title" id="checkiaTitle">CHECKIA</div><div class="checkia-sub">Sua assistente com Codex</div></div></div><button class="checkia-close" id="checkiaClose" type="button">×</button></header><div class="checkia-body"><div class="checkia-examples">Pergunte: “quanto vendeu hoje?”, “quanto foi apenas no delivery?” ou “qual o faturamento do início do ano até hoje?”.</div><div class="checkia-compose"><textarea class="checkia-input" id="checkiaInput" placeholder="Pergunte sobre o faturamento da loja"></textarea><button class="checkia-mic" id="checkiaMic" type="button" title="Falar">🎙</button></div><div class="checkia-actions"><button class="btn btn-ghost" id="checkiaClear" type="button">Limpar</button><button class="btn btn-green" id="checkiaInterpret" type="button">Perguntar</button></div><div class="checkia-status" id="checkiaStatus"></div><div class="checkia-result" id="checkiaResult" hidden></div></div></section></div>`,
     );
     const topbarActions = document.querySelector(".topbar-actions");
     if (topbarActions) topbarActions.prepend($("checkiaFab"));
@@ -249,18 +249,81 @@
       description: text,
     };
   }
+  function currentContext() {
+    const session = window.usuarioSistemaLogado || {};
+    const empresa_id = String(session.empresa_id || "").trim();
+    const loja_id = String(session.loja_id || "").trim();
+    const usuario_id = String(session.id || window.__authPrincipalId || "").trim();
+    if (!empresa_id || !loja_id || !usuario_id) throw new Error("Sua sessão ou loja não está pronta. Entre novamente.");
+    return { empresa_id, loja_id, usuario_id };
+  }
+  async function codexIntent(question) {
+    const context = currentContext();
+    const { data, error } = await sb.functions.invoke("checkia-codex", {
+      body: { ...context, question, today: isoToday() },
+    });
+    if (error) {
+      let message = "A integração com o Codex não respondeu. Tente novamente.";
+      try {
+        const payload = await error.context?.clone?.().json();
+        if (payload?.message) message = payload.message;
+      } catch (_) {}
+      throw new Error(message);
+    }
+    if (!data?.ok || !data?.intent) throw new Error(data?.message || "O Codex não concluiu a interpretação.");
+    return data.intent;
+  }
+  function nextDayIso(value) {
+    const date = new Date(`${value}T12:00:00`);
+    date.setDate(date.getDate() + 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+  function dateBr(value) {
+    const [year, month, day] = String(value || "").split("-");
+    return year && month && day ? `${day}/${month}/${year}` : value;
+  }
+  async function renderSalesQuery(intent) {
+    if (typeof window.raffinatoRelay !== "function" || typeof window.rmRelayBody !== "function") throw new Error("O relatório de vendas ainda não está disponível nesta sessão.");
+    const body = {
+      inicio: `${intent.start_date}T00:00:00`,
+      fim_exclusivo: `${nextDayIso(intent.end_date)}T00:00:00`,
+      hora_inicio: "00:00:00",
+      hora_fim: "23:59:59",
+      origens: intent.origins || [],
+      origem: null,
+      id_agrupamento: null,
+      produto: null,
+    };
+    const data = await window.raffinatoRelay(window.rmRelayBody("sales_bi_dashboard", body));
+    const totals = data?.totalizadores || {};
+    const total = Number(totals.faturamento || 0);
+    const sales = Number(totals.vendas || 0);
+    const channel = intent.origins?.length === 1 ? ({ DELIVERY: "Delivery", VENDA_RAPIDA: "Venda rápida", CARTAO_MESA: "Cartão consumo" }[intent.origins[0]] || intent.origins[0]) : "Todos os canais";
+    const label = intent.period_label || (intent.start_date === intent.end_date ? dateBr(intent.start_date) : `${dateBr(intent.start_date)} a ${dateBr(intent.end_date)}`);
+    const box = $("checkiaResult");
+    box.hidden = false;
+    box.innerHTML = `<h3>Faturamento · ${escapeHtml(channel)}</h3><div class="checkia-answer">${money(total)}</div><div>${sales.toLocaleString("pt-BR")} venda(s) em <b>${escapeHtml(label)}</b>.</div><div class="checkia-warn">Valor calculado com os dados Raffinato sincronizados da loja logada. O Codex interpretou somente o período e o módulo.</div>`;
+  }
   async function interpret() {
     const text = $("checkiaInput").value.trim();
     if (!text) {
       $("checkiaStatus").textContent = "Diga ou escreva um pedido primeiro.";
       return;
     }
-    $("checkiaStatus").textContent =
-      "Interpretando e conferindo seus cadastros…";
-    const data = parse(text);
-    state.intent = data.intent;
-    state.data = data;
+    $("checkiaStatus").textContent = "O Codex está entendendo sua pergunta…";
     try {
+      const codex = await codexIntent(text);
+      if (codex.intent === "sales_query") {
+        state.intent = codex.intent;
+        state.data = codex;
+        $("checkiaStatus").textContent = "Consultando o faturamento real da loja…";
+        await renderSalesQuery(codex);
+        $("checkiaStatus").textContent = "Consulta concluída.";
+        return;
+      }
+      const data = parse(text);
+      state.intent = data.intent;
+      state.data = data;
       if (data.intent === "consulta") await renderQuery(data);
       else if (data.intent === "ui") renderUiReview(data);
       else renderReview(data);

@@ -8,6 +8,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -qq poppler-utils >/dev/null
 install -d -m 0700 /opt/checkdiario/codex-reader/codex-home
 install -m 0755 /tmp/checkdiario-codex-reader/reader_bridge.py /opt/checkdiario/codex-reader/reader_bridge.py
 install -m 0644 /tmp/checkdiario-codex-reader/schema.json /opt/checkdiario/codex-reader/schema.json
+install -m 0644 /tmp/checkdiario-codex-reader/checkia_schema.json /opt/checkdiario/codex-reader/checkia_schema.json
 install -m 0600 /root/.codex/auth.json /opt/checkdiario/codex-reader/codex-home/auth.json
 install -m 0644 /tmp/checkdiario-codex-reader/codex-reader.service /etc/systemd/system/codex-reader.service
 

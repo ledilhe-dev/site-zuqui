@@ -8,6 +8,7 @@ SECRET = os.environ["CODEX_READER_SECRET"]
 MODEL = os.environ.get("CODEX_READER_MODEL", "gpt-5.6-sol")
 ROOT = pathlib.Path(__file__).resolve().parent
 SCHEMA = ROOT / "schema.json"
+CHECKIA_SCHEMA = ROOT / "checkia_schema.json"
 LIMIT = 10 * 1024 * 1024
 LOCK = threading.BoundedSemaphore(1)
 PROMPT = """Extraia dados deste documento financeiro brasileiro para revisao de contas a pagar.
@@ -18,6 +19,15 @@ Separe obrigacoes ou compras reais sem duplicar totais, subtotais ou resumos.
 Em fatura de cartao, extraia compras e marque pagamentos da fatura como is_statement_payment=true.
 Distinga compra, emissao, vencimento, valor total e parcela. Datas devem ser YYYY-MM-DD.
 Marque requires_review e detalhe campos ausentes ou ambiguos. Responda somente no schema fornecido."""
+CHECKIA_PROMPT = """Interprete a pergunta em portugues brasileiro para uma consulta de faturamento do CheckDiario.
+Responda somente no schema fornecido. A data atual e {today}.
+sales_query serve para perguntas sobre quanto vendeu, faturamento ou total de vendas.
+Converta hoje para a data atual; inicio do ano ou desde o inicio do ano para 01/01 do ano atual ate hoje.
+Converta ontem, este mes, mes atual e intervalos explicitos em datas inclusivas YYYY-MM-DD.
+Se pedir apenas delivery, use origins [DELIVERY]. Venda rapida usa VENDA_RAPIDA e cartao/mesa usa CARTAO_MESA.
+Sem restricao de canal, origins deve ser vazio. Nunca calcule nem invente valor financeiro.
+Se nao for consulta de faturamento, use unsupported com datas nulas, origins vazio e period_label vazio.
+Pergunta: {question}"""
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
@@ -37,7 +47,13 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length=int(self.headers.get("Content-Length","0"))
             if length<=0 or length>15*1024*1024: raise ValueError("invalid request size")
-            body=json.loads(self.rfile.read(length)); raw=base64.b64decode(body["file_base64"],validate=True)
+            body=json.loads(self.rfile.read(length))
+            if body.get("task") == "checkia_intent":
+                question=str(body.get("question") or "").strip()
+                today=str(body.get("today") or "").strip()
+                if not question or len(question)>1000 or not __import__('re').fullmatch(r"\d{4}-\d{2}-\d{2}",today): raise ValueError("invalid question")
+                return self.handle_checkia(question,today)
+            raw=base64.b64decode(body["file_base64"],validate=True)
             if not raw or len(raw)>LIMIT: raise ValueError("invalid file size")
             mime=str(body.get("mime_type","")).lower()
             if mime not in {"application/pdf","image/png","image/jpeg","image/webp"}: raise ValueError("unsupported file")
@@ -56,6 +72,33 @@ class Handler(BaseHTTPRequestHandler):
             print(json.dumps({"event":"CODEX_READER_ERROR","type":type(exc).__name__}))
             self.send_json(502,{"ok":False,"code":"CODEX_READER_ERROR","message":"O Codex nao concluiu a leitura."})
         finally: LOCK.release()
+
+    def handle_checkia(self,question,today):
+        if not LOCK.acquire(blocking=False):
+            return self.send_json(429,{"ok":False,"code":"CODEX_BUSY","message":"Assistente ocupada. Tente novamente em instantes."})
+        started=time.monotonic()
+        try:
+            intent=self.run_checkia(question,today)
+            print(json.dumps({"event":"CODEX_CHECKIA_COMPLETE","duration_ms":round((time.monotonic()-started)*1000),"intent":intent.get("intent")}))
+            return self.send_json(200,{"ok":True,"intent":intent})
+        except subprocess.TimeoutExpired:
+            return self.send_json(504,{"ok":False,"code":"CODEX_TIMEOUT","message":"A interpretacao excedeu o tempo limite."})
+        except Exception as exc:
+            print(json.dumps({"event":"CODEX_CHECKIA_ERROR","type":type(exc).__name__}))
+            return self.send_json(502,{"ok":False,"code":"CODEX_READER_ERROR","message":"O Codex nao concluiu a interpretacao."})
+        finally: LOCK.release()
+
+    def run_checkia(self,question,today):
+        with tempfile.TemporaryDirectory(prefix="codex-checkia-") as tmp:
+            work=pathlib.Path(tmp); output=work/"result.json"
+            prompt=CHECKIA_PROMPT.format(today=today,question=question.replace("\n"," "))
+            command=["/usr/local/bin/codex","exec",prompt,"--ephemeral","--ignore-user-config","--ignore-rules","--skip-git-repo-check","--sandbox","read-only","-C",str(work),"-m",MODEL,"-c",'model_reasoning_effort="low"',"--output-schema",str(CHECKIA_SCHEMA),"-o",str(output)]
+            env={**os.environ,"CODEX_HOME":str(ROOT/"codex-home")}
+            completed=subprocess.run(command,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True,env=env,timeout=90)
+            if completed.returncode!=0 or not output.exists():
+                print(json.dumps({"event":"CODEX_CHECKIA_EXIT","code":completed.returncode,"stderr":completed.stderr[-600:]}))
+                raise RuntimeError("codex failed")
+            return json.loads(output.read_text(encoding="utf-8"))
 
     def run_codex(self,raw,mime):
         with tempfile.TemporaryDirectory(prefix="codex-reader-") as tmp:
