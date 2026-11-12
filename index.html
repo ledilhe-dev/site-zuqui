@@ -3094,7 +3094,7 @@
 <link id="responsive-system-style" rel="stylesheet" href="./assets/css/121-responsive-system.css?v=20261016-v1">
 <link id="mobile-density-style" rel="stylesheet" href="./assets/css/121-mobile-density.css?v=20261017-v7">
 <link id="login-showcase-style" rel="stylesheet" href="./assets/css/122-login-showcase.css?v=20261019-v4">
-<link id="app-design-system-style" rel="stylesheet" href="./assets/css/125-app-design-system.css?v=20261111-v2">
+<link id="app-design-system-style" rel="stylesheet" href="./assets/css/125-app-design-system.css?v=20261112-v3-agenda-mobile">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3598,6 +3598,7 @@
       <div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>
       <input id="escalaPlantaoEventoId" type="hidden">
       <div class="escala-modal-sub" id="escalaModalDataTexto">Selecione o dia no calendário.</div>
+      <div class="escala-modal-scroll">
       <div class="escala-modal-grid">
         <label class="escala-modal-full">Responsável
           <select id="escalaPlantaoFuncionario"></select>
@@ -3628,6 +3629,7 @@
       </div>
       <div class="escala-modal-lista" id="escalaPlantaoListaDia"></div>
       <div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>
+      </div>
       <div class="escala-modal-actions">
         <button class="btn btn-ghost" type="button" onclick="fecharModalCadastroPlantaoEscala()">Cancelar</button>
         <button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" onclick="excluirPlantaoEscala()" style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button>
@@ -3642,7 +3644,7 @@
 
 
 <!-- PATCH SEGURO: calendário escala abre modal e salva por loja sem mexer no login/ponto -->
-<script id="patch-escala-modal-final-seguro-script" src="./assets/js/81-schedule-modal-patch.js?v=agenda-cadastro-em-branco-20260709"></script>
+<script id="patch-escala-modal-final-seguro-script" src="./assets/js/81-schedule-modal-patch.js?v=agenda-mobile-20261112"></script>
 
 
 <script id="patch-escala-total-pago-plantao" src="./assets/js/82-schedule-total-patch.js"></script>

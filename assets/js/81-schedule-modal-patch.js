@@ -43,7 +43,7 @@
       '<div class="escala-modal-title" id="escalaModalTitulo">Cadastro de Agenda</div>'+
       '<input id="escalaPlantaoEventoId" type="hidden">'+
       '<div class="escala-modal-sub" id="escalaModalDataTexto">Selecione o dia no calendário.</div>'+
-      '<div class="escala-modal-grid">'+
+      '<div class="escala-modal-scroll"><div class="escala-modal-grid">'+
       '<label class="escala-modal-full">Responsável<select id="escalaPlantaoFuncionario"></select></label>'+
       '<label>Início<input id="escalaPlantaoInicio" type="time"></label>'+
       '<label>Fim<input id="escalaPlantaoFim" type="time"></label>'+
@@ -51,7 +51,7 @@
       '<label>Título<input id="escalaPlantaoTitulo" type="text" placeholder="Ex: Plantão manhã"></label>'+
       '<label id="escalaPlantaoValorWrap" data-permissao-valor-escala>Valor combinado do dia<input id="escalaPlantaoValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex: 120,00"></label>'+
       '<label class="escala-modal-full">Observação<textarea id="escalaPlantaoObservacao" placeholder="Opcional"></textarea></label>'+
-      '</div><div class="escala-modal-lista" id="escalaPlantaoListaDia"></div><div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div>'+
+      '</div><div class="escala-modal-lista" id="escalaPlantaoListaDia"></div><div class="msg" id="msgModalEscalaPlantao" style="margin-top:10px"></div></div>'+
       '<div class="escala-modal-actions"><button class="btn btn-ghost" type="button" data-escala-cancelar>Cancelar</button><button class="btn btn-ghost" id="btnExcluirPlantaoEscala" type="button" data-escala-excluir style="display:none;color:#fca5a5;border-color:rgba(239,68,68,.45)">Excluir</button><button class="btn btn-green" id="btnSalvarPlantaoEscala" type="button" data-escala-salvar>Salvar agenda</button></div>'+
       '</div></div>';
     document.body.appendChild(wrap.firstChild);
