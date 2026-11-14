@@ -3331,23 +3331,23 @@ function renderizarRelatorioRecebimentos(itens = []) {
 
   lista.innerHTML = itens.map(item => `
     <tr>
-      <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.created_at ? (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : fmtDate(item.created_at)) : '-')}</td>
-      <td style="padding:10px;border-bottom:1px solid var(--border);white-space:nowrap">${escaparHtmlBasico(item.data_prevista ? formatarDataBRFinanceiro(String(item.data_prevista).slice(0, 10)) : (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : '—'))}</td>
-      <td style="padding:10px;border-bottom:1px solid var(--border)">
+      <td data-label="Data/hora" class="rr-data-hora" style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.created_at ? (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : fmtDate(item.created_at)) : '-')}</td>
+      <td data-label="Data prevista" class="rr-data-prevista" style="padding:10px;border-bottom:1px solid var(--border);white-space:nowrap">${escaparHtmlBasico((item.data_prevista_original || item.data_prevista) ? formatarDataBRFinanceiro(String(item.data_prevista_original || item.data_prevista).slice(0, 10)) : (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : '—'))}</td>
+      <td data-label="Pagador" class="rr-pagador" style="padding:10px;border-bottom:1px solid var(--border)">
         ${escaparHtmlBasico(obterNomePagadorRelatorioRecebimentos(item))}
         ${item.observacao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${escaparHtmlBasico(item.observacao)}</div>` : ''}
         ${item.intervalo_dias && (item._provisionadoPendente || Number(item.qtd_parcelas || 1) > 1) ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">Recorrência ${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1} · a cada ${item.intervalo_dias} dia(s) · ${item.sequencial_dias_corridos ? 'dias corridos' : 'próximo dia útil'}</div>` : ''}
       </td>
-      <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeFormaRelatorioRecebimentos(item))}</td>
-      <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeContaRelatorioRecebimentos(item))}</td>
-      <td style="padding:10px;border-bottom:1px solid var(--border);text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor || 0))}</td>
-      <td style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeUsuarioRelatorioRecebimentos(item))}</td>
+      <td data-label="Forma" style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeFormaRelatorioRecebimentos(item))}</td>
+      <td data-label="Conta financeira" style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeContaRelatorioRecebimentos(item))}</td>
+      <td data-label="Valor" class="rr-valor" style="padding:10px;border-bottom:1px solid var(--border);text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor || 0))}</td>
+      <td data-label="Lançado por" style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeUsuarioRelatorioRecebimentos(item))}</td>
     </tr>
   `).join('');
 }
 
 async function buscarDadosRelatorioRecebimentos() {
-  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, updated_at, criado_por_id, criado_por_nome, qtd_parcelas, intervalo_dias, observacao, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
+  const camposComAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, updated_at, criado_por_id, criado_por_nome, qtd_parcelas, intervalo_dias, observacao, recebivel_futuro_id, data_prevista_original, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
   const camposSemAuditoria = 'id, pagador_id, forma_pagamento_id, conta_financeira_id, valor, created_at, qtd_parcelas, intervalo_dias, observacao, fornecedores(nome, grupo_id), formas_pagamento(id, nome), contas_financeiras(id, nome)';
 
   const executar = (campos) => sb
@@ -3454,7 +3454,7 @@ async function carregarRelatorioRecebimentos() {
       const datasFiltro = {
         cadastro:item.created_at,
         atualizacao:item.updated_at,
-        prevista:item._provisionadoPendente ? item.created_at : null,
+        prevista:item.data_prevista_original || item.data_prevista || (item._provisionadoPendente ? item.created_at : null),
         recebimento:item.created_at
       };
       const dataRef = String(datasFiltro[filtroDataTipo] || '').slice(0, 10);
@@ -3524,7 +3524,7 @@ async function carregarRelatorioRecebimentos() {
 function montarLinhasExportacaoRelatorioRecebimentos() {
   return (Array.isArray(relatorioRecebimentosCache) ? relatorioRecebimentosCache : []).map(item => ({
     dataHora: item.created_at ? (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : fmtDate(item.created_at)) : '-',
-    dataPrevista: item.data_prevista ? formatarDataBRFinanceiro(String(item.data_prevista).slice(0, 10)) : (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : '—'),
+    dataPrevista: (item.data_prevista_original || item.data_prevista) ? formatarDataBRFinanceiro(String(item.data_prevista_original || item.data_prevista).slice(0, 10)) : (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : '—'),
     pagador: obterNomePagadorRelatorioRecebimentos(item),
     forma: obterNomeFormaRelatorioRecebimentos(item),
     conta: obterNomeContaRelatorioRecebimentos(item),

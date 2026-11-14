@@ -56,7 +56,7 @@ test('Consultar atualiza incrementalmente antes de ler o cache remoto',()=>{
 test('publicacao invalida explicitamente o cache do modulo de vendas',()=>{
   assert.match(html,/36-raffinato-sales-analysis\.js\?v=20261102-sync-sob-demanda-v1/);
   assert.match(html,/93-raffinato-managerial\.js\?v=20261102-cache-imediato-v3/);
-  assert.match(worker,/check-diario-pwa-v308-checkia-codex-2026-11-12/);
+  assert.match(worker,/check-diario-pwa-v309-relatorio-recebimentos-2026-11-14/);
   assert.match(executions,/service-worker-v4\.js\?v=3\.2\.96-checkia-codex/);
 });
 

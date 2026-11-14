@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v308-checkia-codex-2026-11-12';
+const CACHE_NAME = 'check-diario-pwa-v309-relatorio-recebimentos-2026-11-14';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

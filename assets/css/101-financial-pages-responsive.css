@@ -18,6 +18,7 @@
 #relatorio_recebimentos #cardRelatorioRecebimentosDetalhes .card-title{font-size:clamp(12px,.78vw,16px)!important}
 #relatorio_recebimentos #tabelaRelatorioRecebimentos{min-width:860px!important;font-size:var(--ft)}
 #relatorio_recebimentos #tabelaRelatorioRecebimentos th,#relatorio_recebimentos #tabelaRelatorioRecebimentos td{height:clamp(42px,2.8vw,54px);padding:clamp(8px,.65vw,13px)!important}
+#relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-data-hora,#relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-data-prevista,#relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-valor{white-space:nowrap;word-break:normal}
 
 #financeiro_cofre .cofre-overview{display:grid;grid-template-columns:minmax(340px,.9fr) minmax(440px,1.1fr);gap:var(--fg);margin-bottom:var(--fg);align-items:stretch}
 #financeiro_cofre .cofre-overview .stats-grid{grid-template-columns:1fr!important;margin:0!important}
@@ -58,7 +59,17 @@
  #relatorio_recebimentos #cardsRelatorioRecebimentos .stat-card{min-height:88px;padding:9px!important}
  #relatorio_recebimentos .stat-card .s-value{font-size:clamp(18px,5.2vw,23px)!important}
  #relatorio_recebimentos #rrUltimoLancamento{font-size:clamp(15px,4.2vw,20px)!important}
- #relatorio_recebimentos #tabelaRelatorioRecebimentos{font-size:9px;min-width:720px!important}
+ #relatorio_recebimentos #cardRelatorioRecebimentosDetalhes{padding:12px!important;overflow:hidden}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentosWrap{overflow:visible!important}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos{display:block;min-width:0!important;width:100%!important;font-size:12px}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos thead{display:none}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos tbody{display:grid;gap:10px}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;padding:13px;border:1px solid var(--border);border-radius:10px;background:var(--surface-soft,var(--surface2));min-width:0}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos td{display:block;height:auto!important;min-width:0;padding:0!important;border:0!important;text-align:left!important;overflow-wrap:anywhere;line-height:1.35}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos td::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--text-muted);font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-pagador{grid-column:1/-1}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-valor{color:var(--accent);font-size:16px;font-weight:800}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos td[colspan]{grid-column:1/-1;padding:4px!important}
  #financeiro_cofre .cofre-overview{grid-template-columns:1fr}
  #financeiro_cofre .cofre-saldo-principal{min-height:130px}
  #financeiro_cofre .cofre-saldo-principal .stat-value{font-size:clamp(34px,10vw,46px)}
