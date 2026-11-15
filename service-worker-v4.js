@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v311-supabase-local-2026-11-14';
+const CACHE_NAME = 'check-diario-pwa-v312-recebimentos-desktop-2026-11-14';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

@@ -2461,11 +2461,18 @@ async function confirmarRecebimentoFuturo() {
       ...payloadRecebivelBase,
       criado_por_id: obterIdAdminAtual?.() || usuarioSistemaLogado?.id || null,
       criado_por_nome: confirmadoPorNome,
+      observacao: item.observacao || null,
+      data_prevista_original: item.data_prevista || null,
     };
     const inserirRecebivel = (dados) => executarSemFiltroLojaTemporario(() =>
       sb.from('recebiveis').insert([dados]).select('id').maybeSingle()
     );
     let { data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivel);
+    if (erroRecebivel && isMissingColumnError(erroRecebivel)) {
+      const payloadSemDataOriginal = { ...payloadRecebivel };
+      delete payloadSemDataOriginal.data_prevista_original;
+      ({ data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadSemDataOriginal));
+    }
     if (erroRecebivel && isMissingColumnError(erroRecebivel)) {
       ({ data: recebivelSalvo, error: erroRecebivel } = await inserirRecebivel(payloadRecebivelBase));
     }

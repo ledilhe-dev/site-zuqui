@@ -3325,7 +3325,7 @@ function renderizarRelatorioRecebimentos(itens = []) {
   if (!lista) return;
 
   if (!itens.length) {
-    lista.innerHTML = '<tr><td colspan="7" style="padding:16px;color:var(--text-muted)">Nenhum recebimento encontrado para os filtros informados.</td></tr>';
+    lista.innerHTML = '<tr><td colspan="8" style="padding:16px;color:var(--text-muted)">Nenhum recebimento encontrado para os filtros informados.</td></tr>';
     return;
   }
 
@@ -3335,9 +3335,9 @@ function renderizarRelatorioRecebimentos(itens = []) {
       <td data-label="Data prevista" class="rr-data-prevista" style="padding:10px;border-bottom:1px solid var(--border);white-space:nowrap">${escaparHtmlBasico((item.data_prevista_original || item.data_prevista) ? formatarDataBRFinanceiro(String(item.data_prevista_original || item.data_prevista).slice(0, 10)) : (item._provisionadoPendente ? formatarDataBRFinanceiro(String(item.created_at).slice(0, 10)) : '—'))}</td>
       <td data-label="Pagador" class="rr-pagador" style="padding:10px;border-bottom:1px solid var(--border)">
         ${escaparHtmlBasico(obterNomePagadorRelatorioRecebimentos(item))}
-        ${item.observacao ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px">${escaparHtmlBasico(item.observacao)}</div>` : ''}
         ${item.intervalo_dias && (item._provisionadoPendente || Number(item.qtd_parcelas || 1) > 1) ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">Recorrência ${item.numero_recorrencia || 1}/${item.qtd_recorrencias || item.qtd_parcelas || 1} · a cada ${item.intervalo_dias} dia(s) · ${item.sequencial_dias_corridos ? 'dias corridos' : 'próximo dia útil'}</div>` : ''}
       </td>
+      <td data-label="ObservaÃ§Ã£o" class="rr-observacao" style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(item.observacao || 'â€”')}</td>
       <td data-label="Forma" style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeFormaRelatorioRecebimentos(item))}</td>
       <td data-label="Conta financeira" style="padding:10px;border-bottom:1px solid var(--border)">${escaparHtmlBasico(obterNomeContaRelatorioRecebimentos(item))}</td>
       <td data-label="Valor" class="rr-valor" style="padding:10px;border-bottom:1px solid var(--border);text-align:right">${escaparHtmlBasico(formatarMoedaBRFinanceiro(item.valor || 0))}</td>
@@ -3359,6 +3359,29 @@ async function buscarDadosRelatorioRecebimentos() {
   if (res.error && isMissingColumnError(res.error)) {
     res = await executar(camposSemAuditoria);
     return { ...res, auditoriaDisponivel: false };
+  }
+
+  // Recebimentos confirmados antigos podem ter mantido a observacao apenas no
+  // provisionamento de origem. Recupera esse texto sem alterar o lancamento.
+  if (!res.error && Array.isArray(res.data)) {
+    const idsFuturos = [...new Set(res.data.map(item => String(item.recebivel_futuro_id || '').trim()).filter(Boolean))];
+    if (idsFuturos.length) {
+      try {
+        const { data: origens } = await executarSemFiltroLojaTemporario(() => sb
+          .from('recebiveis_futuros')
+          .select('id, observacao, data_prevista')
+          .in('id', idsFuturos));
+        const porId = new Map((origens || []).map(item => [String(item.id), item]));
+        res.data = res.data.map(item => {
+          const origem = porId.get(String(item.recebivel_futuro_id || ''));
+          return origem ? {
+            ...item,
+            observacao: item.observacao || origem.observacao || null,
+            data_prevista_original: item.data_prevista_original || origem.data_prevista || null,
+          } : item;
+        });
+      } catch (_) { /* mantem o relatorio disponivel se a origem nao existir */ }
+    }
   }
 
   // Se checkbox "incluir provisionados pendentes" marcado, buscar também de recebiveis_futuros não confirmados

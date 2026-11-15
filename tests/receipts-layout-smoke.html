@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../assets/css/00-base.css">
+<link rel="stylesheet" href="../assets/css/101-financial-pages-responsive.css">
+<link rel="stylesheet" href="../assets/css/125-app-design-system.css">
+</head><body><section id="relatorio_recebimentos" class="pagina ativa">
+<div class="card"><div class="relatorio-financeiro-filtros">
+<div class="date-filter-standard"><label><span>Data inicial</span><input type="date"></label><label><span>Data final</span><input type="date"></label><label><span>Consultar por</span><select><option>Cadastro</option></select></label></div>
+<div class="campo-com-label date-filter-original-hidden"><label class="campo-label">Original</label><input type="date"></div>
+<div class="campo-com-label"><label class="campo-label">Pagador</label><select><option>Todos</option></select></div>
+<div class="campo-com-label"><label class="campo-label">Grupo</label><select><option>Todos</option></select></div>
+<div class="campo-com-label"><label class="campo-label">Forma</label><select><option>Todas</option></select></div>
+<div class="campo-com-label"><label class="campo-label">LanÃ§ado por</label><select><option>Todos</option></select></div>
+<div class="campo-com-label"><label class="campo-label">Tipo</label><select><option>Confirmados</option></select></div>
+</div><div class="relatorio-financeiro-acoes"><button>Hoje</button><button>Limpar</button><button>7 dias</button><button>Excel</button><button>PDF</button><button>Filtrar</button></div></div>
+<div class="card" id="cardRelatorioRecebimentosDetalhes"><table id="tabelaRelatorioRecebimentos"><thead><tr><th>Data</th><th>Prevista</th><th>Pagador</th><th>ObservaÃ§Ã£o</th><th>Forma</th><th>Conta</th><th>Valor</th><th>UsuÃ¡rio</th></tr></thead><tbody><tr><td>14/11/26</td><td>14/11/26</td><td>Cliente</td><td class="rr-observacao">Texto completo da observaÃ§Ã£o preenchida</td><td>PIX</td><td>Conta</td><td>R$ 10,00</td><td>Patrick</td></tr></tbody></table></div>
+<pre id="result"></pre></section><script>
+addEventListener('load',()=>{const q=s=>document.querySelector(s),cs=e=>getComputedStyle(e);q('#result').textContent=JSON.stringify({grid:cs(q('.relatorio-financeiro-filtros')).display,columns:cs(q('.relatorio-financeiro-filtros')).gridTemplateColumns.split(' ').length,selectHeight:cs(q('.campo-com-label select')).height,hidden:cs(q('.date-filter-original-hidden')).display,buttonHeight:cs(q('.relatorio-financeiro-acoes button')).height,tableFont:cs(q('#tabelaRelatorioRecebimentos')).fontSize,tableLayout:cs(q('#tabelaRelatorioRecebimentos')).tableLayout,observation:q('.rr-observacao').textContent});});
+</script></body></html>

@@ -68,6 +68,7 @@
  #relatorio_recebimentos #tabelaRelatorioRecebimentos td{display:block;height:auto!important;min-width:0;padding:0!important;border:0!important;text-align:left!important;overflow-wrap:anywhere;line-height:1.35}
  #relatorio_recebimentos #tabelaRelatorioRecebimentos td::before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--text-muted);font-size:7px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
  #relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-pagador{grid-column:1/-1}
+ #relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-observacao{grid-column:1/-1}
  #relatorio_recebimentos #tabelaRelatorioRecebimentos .rr-valor{color:var(--accent);font-size:13px;font-weight:800}
  #relatorio_recebimentos #tabelaRelatorioRecebimentos td[colspan]{grid-column:1/-1;padding:4px!important}
  #financeiro_cofre .cofre-overview{grid-template-columns:1fr}
