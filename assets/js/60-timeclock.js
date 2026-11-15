@@ -653,9 +653,7 @@ function formatarMinutosIntervaloPonto(totalMinutos = 0) {
 
 function batidaPontoProximaDoFimDoTurno(funcionario = {}, referenciaIso = null, janelaAntesMinutos = 90) {
   const fim = horarioParaMinutos(horaCurta(funcionario?.horario_trabalho_fim || ''));
-  // Sem fim de turno cadastrado não existe base segura para inferir um
-  // intervalo automático. Nesse cadastro, a 2ª batida encerra a jornada.
-  if (fim === null) return true;
+  if (fim === null) return false;
 
   const referencia = referenciaIso ? new Date(referenciaIso) : new Date();
   if (Number.isNaN(referencia.getTime())) return false;
