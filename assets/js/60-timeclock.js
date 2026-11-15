@@ -651,7 +651,7 @@ function formatarMinutosIntervaloPonto(totalMinutos = 0) {
 }
 
 
-function batidaPontoProximaDoFimDoTurno(funcionario = {}, referenciaIso = null, janelaAntesMinutos = 90, janelaDepoisMinutos = 180) {
+function batidaPontoProximaDoFimDoTurno(funcionario = {}, referenciaIso = null, janelaAntesMinutos = 90) {
   const fim = horarioParaMinutos(horaCurta(funcionario?.horario_trabalho_fim || ''));
   if (fim === null) return false;
 
@@ -665,7 +665,11 @@ function batidaPontoProximaDoFimDoTurno(funcionario = {}, referenciaIso = null, 
   if (diff < -720) diff += 1440;
   if (diff > 720) diff -= 1440;
 
-  return diff >= -Number(janelaAntesMinutos || 0) && diff <= Number(janelaDepoisMinutos || 0);
+  // Depois que o fim do turno chegou, a batida deve continuar sendo tratada
+  // como saída, mesmo quando houve hora extra longa. O limite superior antigo
+  // (3 horas) transformava a saída tardia em início de intervalo e deixava a
+  // jornada aberta; a tentativa seguinte era então barrada pelos 10 minutos.
+  return diff >= -Number(janelaAntesMinutos || 0);
 }
 
 function deveIniciarIntervaloPonto({ funcionario = {}, intervalos = [], registro = null, referenciaIso = null } = {}) {
