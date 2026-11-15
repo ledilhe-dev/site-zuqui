@@ -391,3 +391,19 @@
   #modalEscalaPlantao #btnSalvarPlantaoEscala { grid-column: -2 / -1; }
 }
 
+/* Feedback do ponto: estados operacionais precisam manter contraste forte,
+   independentemente do tema e das camadas antigas do design system. */
+.ponto-feedback-card.iniciado,
+.ponto-feedback-card:not(.parado) {
+  border: 3px solid #22c55e !important;
+  background: linear-gradient(160deg, #166534 0%, #052e16 100%) !important;
+  color: #f0fdf4 !important;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, .55), 0 0 0 5px rgba(34, 197, 94, .24) !important;
+}
+
+.ponto-feedback-card.parado {
+  border: 3px solid #ef4444 !important;
+  background: linear-gradient(160deg, #991b1b 0%, #450a0a 100%) !important;
+  color: #fff1f2 !important;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, .58), 0 0 0 5px rgba(239, 68, 68, .26) !important;
+}

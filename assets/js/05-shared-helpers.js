@@ -227,15 +227,20 @@ function exibirAvisoPontoRegistrado(nomeFuncionario = '', tipoPonto = 'iniciado'
   const nome = String(nomeFuncionario || 'FUNCIONÁRIO').trim().toUpperCase();
   const tipoNormalizado = String(tipoPonto || '').toLowerCase();
   const pontoParado = tipoNormalizado === 'parado';
+  texto.classList.toggle('iniciado', !pontoParado);
   texto.classList.toggle('parado', pontoParado);
   texto.textContent = `${pontoParado ? 'PONTO PARADO' : 'PONTO INICIADO'} ${nome}`;
   overlay.hidden = false;
   overlay.classList.add('show');
 
+  try { tocarSomNovaTarefaChecklist(); } catch (e) {}
+  // A confirmação falada não pode depender do efeito sonoro. Em alguns
+  // terminais Windows o áudio curto é bloqueado, mas a voz segue disponível.
   try {
-    tocarSomNovaTarefaChecklist();
-    window.setTimeout(() => falarAvisoPontoRegistrado(nomeFuncionario, tipoPonto), 260);
-  } catch (e) {}
+    window.setTimeout(() => falarAvisoPontoRegistrado(nomeFuncionario, tipoPonto), 180);
+  } catch (e) {
+    falarAvisoPontoRegistrado(nomeFuncionario, tipoPonto);
+  }
 
   if (timeoutAvisoPontoRegistrado) {
     clearTimeout(timeoutAvisoPontoRegistrado);

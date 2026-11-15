@@ -42,3 +42,13 @@ test('account transfer origin and destination selects keep the same height', () 
   assert.match(css, /max-height:\s*38px !important/);
 });
 
+test('timeclock feedback preserves explicit green and red states', () => {
+  const helpers = fs.readFileSync(new URL('../assets/js/05-shared-helpers.js', import.meta.url), 'utf8');
+  assert.match(css, /\.ponto-feedback-card\.iniciado/);
+  assert.match(css, /background:\s*linear-gradient\(160deg,\s*#166534/);
+  assert.match(css, /\.ponto-feedback-card\.parado/);
+  assert.match(css, /background:\s*linear-gradient\(160deg,\s*#991b1b/);
+  assert.match(helpers, /classList\.toggle\('iniciado',\s*!pontoParado\)/);
+  assert.ok(helpers.indexOf('tocarSomNovaTarefaChecklist(); } catch') < helpers.indexOf('window.setTimeout(() => falarAvisoPontoRegistrado'));
+});
+
