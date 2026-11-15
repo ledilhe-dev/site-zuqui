@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v310-safari-tdz-2026-11-14';
+const CACHE_NAME = 'check-diario-pwa-v311-supabase-local-2026-11-14';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
@@ -13,6 +13,7 @@ const CORE_ASSETS = [
   './assets/images/login-business-operations-v1.png',
   './assets/vendor/cropperjs/cropper.min.css',
   './assets/vendor/cropperjs/cropper.min.js',
+  './assets/vendor/supabase.min.js',
   './icon-192.png',
   './icon-512.png',
   './favicon-check-diario.svg',
