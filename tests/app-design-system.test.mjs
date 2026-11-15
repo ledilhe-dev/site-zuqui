@@ -49,6 +49,8 @@ test('timeclock feedback preserves explicit green and red states', () => {
   assert.match(css, /\.ponto-feedback-card\.parado/);
   assert.match(css, /background:\s*linear-gradient\(160deg,\s*#991b1b/);
   assert.match(helpers, /classList\.toggle\('iniciado',\s*!pontoParado\)/);
+  assert.match(helpers, /style\.setProperty\('background',\s*visual\.background,\s*'important'\)/);
+  assert.match(helpers, /#991b1b/);
   assert.ok(helpers.indexOf('tocarSomNovaTarefaChecklist(); } catch') < helpers.indexOf('window.setTimeout(() => falarAvisoPontoRegistrado'));
 });
 

@@ -229,6 +229,24 @@ function exibirAvisoPontoRegistrado(nomeFuncionario = '', tipoPonto = 'iniciado'
   const pontoParado = tipoNormalizado === 'parado';
   texto.classList.toggle('iniciado', !pontoParado);
   texto.classList.toggle('parado', pontoParado);
+  texto.dataset.estadoPonto = pontoParado ? 'parado' : 'iniciado';
+  const visual = pontoParado
+    ? {
+        border: '3px solid #ef4444',
+        background: 'linear-gradient(160deg, #991b1b 0%, #450a0a 100%)',
+        color: '#fff1f2',
+        shadow: '0 26px 70px rgba(0,0,0,.58), 0 0 0 5px rgba(239,68,68,.26)',
+      }
+    : {
+        border: '3px solid #22c55e',
+        background: 'linear-gradient(160deg, #166534 0%, #052e16 100%)',
+        color: '#f0fdf4',
+        shadow: '0 26px 70px rgba(0,0,0,.55), 0 0 0 5px rgba(34,197,94,.24)',
+      };
+  texto.style.setProperty('border', visual.border, 'important');
+  texto.style.setProperty('background', visual.background, 'important');
+  texto.style.setProperty('color', visual.color, 'important');
+  texto.style.setProperty('box-shadow', visual.shadow, 'important');
   texto.textContent = `${pontoParado ? 'PONTO PARADO' : 'PONTO INICIADO'} ${nome}`;
   overlay.hidden = false;
   overlay.classList.add('show');
