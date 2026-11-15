@@ -35,3 +35,8 @@ test('punch well before shift end can still start an interval', () => {
   assert.equal(context.isNearShiftEnd(employee, localReference(13, 0)), false);
   assert.equal(context.isNearShiftEnd(employee, localReference(16, 30)), true);
 });
+
+test('second punch closes the shift when no end time is configured', () => {
+  assert.equal(context.isNearShiftEnd({}, localReference(19, 15)), true);
+  assert.equal(context.isNearShiftEnd({ horario_trabalho_fim: null }, localReference(19, 15)), true);
+});
