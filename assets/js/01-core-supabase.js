@@ -67,7 +67,10 @@ const fetchComContextoSeguro = async (input, init = {}) => {
   if (tokenGlobal) headers.set('x-global-admin-token', tokenGlobal);
   return fetch(input, { ...init, headers });
 };
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { fetch: fetchComContextoSeguro } });
+// `var` evita a zona morta temporal global durante a restauração de páginas
+// pelo Safari/PWA, quando callbacks da interface podem disparar antes deste
+// módulo terminar de inicializar.
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { fetch: fetchComContextoSeguro } });
 window.sb = sb; // compatibilidade para módulos seguros de agenda
 const AGENDA_TABLE = 'agenda';
 window.AGENDA_TABLE = AGENDA_TABLE;
@@ -124,8 +127,8 @@ const TABELAS_COM_LOJA_ID = new Set([
   'tarefas','checklists','checklist_execucoes','checklist_lancamentos','ponto_registros','funcionarios','usuarios','email_notificacoes','financeiro_titulos','financeiro_baixas','fornecedores','formas_pagamento','contasapagar','contas_financeiras','contas_financeiras_movimentacoes','contas_financeiras_ajustes_saldo','recebiveis','recebiveis_futuros','agenda','escala_plantoes','fatura_categoria_memoria','fatura_importacoes_log','raffinato_integracoes','escala_simulacoes','categorias_compra','grupos_fornecedor','perfis','google_business_conexoes','google_business_locais','google_avaliacoes','google_avaliacoes_metricas_diarias','google_sincronizacoes_logs'
 ]);
 
-let filtroLojaSuspensoTemporariamente = false;
-let filtroEmpresaSuspensoTemporariamente = false;
+var filtroLojaSuspensoTemporariamente = false;
+var filtroEmpresaSuspensoTemporariamente = false;
 
 function obterModoContexto() {
   const modo = String(usuarioSistemaLogado?.context_mode || '').trim();
