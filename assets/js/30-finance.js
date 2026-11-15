@@ -3021,10 +3021,12 @@ let _faturaMemoriaCategorias = {};
 // j? cadastradas e (2) a tabela dedicada de mem?ria (que tem prioridade).
 async function faturaConstruirMemoriaCategorias() {
   const mapa = {};
+  window.faturaMemoriaCategoriasIndisponivel = false;
 
   // (1) Hist?rico do banco: agrupa por chave de estabelecimento e escolhe a categoria mais frequente.
   try {
     const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+    const empresaId = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
     let query = sb.from('contasapagar')
       .select('observacao, categoria_id, fornecedores(nome)')
       .not('categoria_id', 'is', null)
@@ -3032,7 +3034,9 @@ async function faturaConstruirMemoriaCategorias() {
       .order('created_at', { ascending: false })
       .limit(1000);
     if (lojaId) query = query.eq('loja_id', lojaId);
-    const { data } = await query;
+    if (empresaId) query = query.eq('empresa_id', empresaId);
+    const { data, error } = await query;
+    if (error) throw error;
     const contagem = {}; // chave -> { categoria_id: qtd }
     (data || []).forEach(row => {
       if (/Importado do arquivo banc[aá]rio/i.test(String(row?.observacao || ''))) return;
@@ -3058,15 +3062,22 @@ async function faturaConstruirMemoriaCategorias() {
 
   // (2) Tabela dedicada de mem?ria (prioridade sobre o hist?rico).
   try {
-    const { data } = await sb.from('fatura_categoria_memoria')
+    const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+    const empresaId = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
+    let query = sb.from('fatura_categoria_memoria')
       .select('chave_estabelecimento, categoria_id')
       .gte('atualizado_em', '2026-07-20T21:20:00.000Z');
+    if (lojaId) query = query.eq('loja_id', lojaId);
+    if (empresaId) query = query.eq('empresa_id', empresaId);
+    const { data, error } = await query;
+    if (error) throw error;
     (data || []).forEach(row => {
       if (row.chave_estabelecimento && row.categoria_id) {
         mapa[row.chave_estabelecimento] = row.categoria_id;
       }
     });
   } catch (e) {
+    window.faturaMemoriaCategoriasIndisponivel = true;
     console.warn('Memória de categorias indisponível (rode o SQL de importação):', e?.message || e);
     console.warn('Mem?ria de categorias indispon?vel (rode o SQL de importa·o):', e?.message || e);
   }
@@ -3083,28 +3094,39 @@ async function faturaConstruirMemoriaCategorias() {
 // usando upsert por (empresa_id, loja_id, chave_estabelecimento).
 async function faturaSalvarMemoriaCategorias(itens) {
   try {
+    const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+    const empresaId = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
+    if (!empresaId || !lojaId) throw new Error('Contexto de empresa ou loja indisponivel.');
     const ator = (typeof obterAtorAuditoriaAtual === 'function') ? obterAtorAuditoriaAtual() : {};
     const vistos = new Map(); // chave -> linha (deduplica dentro do mesmo lote)
     (itens || []).forEach(item => {
       if (!item.categoria_id || !item._catEditadaManual) return;
-      const chave = faturaChaveEstabelecimento(item.descricao);
-      if (!chave) return;
-      vistos.set(chave, {
+      const fornecedor = (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(item.fornecedor_id || ''));
+      const chaves = new Set([
+        faturaChaveEstabelecimento(item.descricao),
+        faturaChaveEstabelecimento(fornecedor?.nome),
+      ].filter(Boolean));
+      chaves.forEach(chave => vistos.set(chave, {
+        empresa_id: empresaId,
+        loja_id: lojaId,
         chave_estabelecimento: chave,
         categoria_id: item.categoria_id,
-        descricao_exemplo: String(item.descricao || '').slice(0, 120),
+        descricao_exemplo: String(fornecedor?.nome || item.descricao || '').slice(0, 120),
         criado_por_id: ator?.funcionarioId || null,
         criado_por_nome: ator?.nome || usuarioSistemaLogado?.nome || 'Sistema',
         atualizado_em: new Date().toISOString(),
-      });
-      _faturaMemoriaCategorias[chave] = item.categoria_id;
+      }));
     });
     const linhas = Array.from(vistos.values());
-    if (!linhas.length) return;
-    await sb.from('fatura_categoria_memoria')
+    if (!linhas.length) return true;
+    const { error } = await sb.from('fatura_categoria_memoria')
       .upsert(linhas, { onConflict: 'empresa_id,loja_id,chave_estabelecimento' });
+    if (error) throw error;
+    linhas.forEach(linha => { _faturaMemoriaCategorias[linha.chave_estabelecimento] = linha.categoria_id; });
+    return true;
   } catch (e) {
     console.warn('Não foi possível salvar a memória de categorias:', e?.message || e);
+    return false;
   }
 }
 
@@ -3618,6 +3640,9 @@ async function faturaExibirRevisao(resultado) {
     if (fornSugerido && !item.fornecedor_id) { item.fornecedor_id = fornSugerido; item._fornAuto = true; qtdFornAuto++; fornDoItem = fornSugerido; }
     if (!item.categoria_id && !item._revisaoDocumentoObrigatoria) {
       const chave = faturaChaveEstabelecimento(item.descricao);
+      const fornecedorChave = faturaChaveEstabelecimento(
+        (fornecedoresFinanceiroCache || []).find(f => String(f.id) === String(fornDoItem || ''))?.nome
+      );
       const categoriaSimilar = Object.entries(_faturaMemoriaCategorias || {})
         .map(([chaveMemoria, categoriaId]) => ({
           categoriaId,
@@ -3629,9 +3654,10 @@ async function faturaExibirRevisao(resultado) {
       // similaridade aproximada associou SUPERMERCADOS K a uma categoria de
       // carnes sem qualquer evidencia no texto reconhecido.
       const catMem = item._origemImagem
-        ? _faturaMemoriaCategorias[chave]
+        ? (_faturaMemoriaCategorias[chave] || _faturaMemoriaCategorias[fornecedorChave])
         : ((sugestaoHistorico?.confianca >= .62 ? sugestaoHistorico.categoria_id : null)
           || _faturaMemoriaCategorias[chave]
+          || _faturaMemoriaCategorias[fornecedorChave]
           || categoriaSimilar);
       if (catMem) { item.categoria_id = catMem; item._catAuto = true; qtdCatAuto++; }
     }
@@ -3740,6 +3766,9 @@ async function faturaExibirRevisao(resultado) {
         <span data-valor-total style="font-size:9px;color:var(--red);">Valor total da compra: ${formatarMoedaBRFinanceiro(item.valorTotalCompra)}</span>
       </span>` : '';
     void campoObs; // usado no template abaixo
+    const origemDocumento = item._arquivoOrigem
+      ? `<span style="font-size:10px;color:var(--text-muted);display:block;margin-top:3px;">Arquivo: ${escaparHtmlBasico(item._arquivoOrigem)}</span>`
+      : '';
     return `<div style="border:${revisaoDocumento ? '2px solid #f59e0b' : '1px solid var(--border)'};border-radius:var(--radius-sm);padding:8px 10px;background:${revisaoDocumento ? 'rgba(245,158,11,.06)' : 'var(--surface2)'};${jaLancado ? 'opacity:.62;' : ''}" id="faturaItem_${item.id}">
       ${avisoRevisaoDocumento}
       <div style="display:flex;align-items:flex-start;gap:8px;">
@@ -3753,6 +3782,7 @@ async function faturaExibirRevisao(resultado) {
             ${seloConciliado}
             ${restantes > 0 ? `<span style="font-size:10px;color:var(--text-muted);">→ +${restantes} parcelas futuras serão geradas</span>` : ''}
           </div>
+          ${origemDocumento}
           <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center;">
             <span style="font-size:11px;color:var(--text-muted);">Compra: ${formatarDataBRFinanceiro(item.data)}</span>
             <label style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;">Venc.:
@@ -3803,6 +3833,9 @@ async function faturaExibirRevisao(resultado) {
   const partesMsg = [];
   if (partes.length) partesMsg.push(`? Preenchi automaticamente ${partes.join(', ')} item(ns) (destacados).`);
   if (msgsConcil.length) partesMsg.push(msgsConcil.join(' '));
+  if (window.faturaMemoriaCategoriasIndisponivel) {
+    partesMsg.push('A memória persistida de categorias não pôde ser consultada; as sugestões por fornecedor podem não aparecer.');
+  }
   if (partesMsg.length) {
     setMsg('msgImportarFatura', partesMsg.join('<br>'), concil && concil.conciliados ? 'ok' : 'ok');
   }
@@ -4088,12 +4121,14 @@ const FATURA_MEMORIA_CONFIRMADA_DESDE = '2026-07-20T21:20:00.000Z';
 
 async function faturaConstruirMemoriaInteligente() {
   const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
+  const empresaId = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
   const perfis = [];
   try {
     let query = sb.from('fatura_importacao_memoria').select('*')
       .gte('atualizado_em', FATURA_MEMORIA_CONFIRMADA_DESDE)
       .order('ultima_utilizacao_em', { ascending: false }).limit(1500);
     if (lojaId) query = query.eq('loja_id', lojaId);
+    if (empresaId) query = query.eq('empresa_id', empresaId);
     const { data, error } = await query;
     if (error) throw error;
     (data || []).forEach(row => perfis.push({
@@ -4113,6 +4148,7 @@ async function faturaConstruirMemoriaInteligente() {
       .select('observacao,categoria_id,fornecedor_id,fornecedores(nome),created_at')
       .is('excluido_em', null).order('created_at', { ascending: false }).limit(1500);
     if (lojaId) query = query.eq('loja_id', lojaId);
+    if (empresaId) query = query.eq('empresa_id', empresaId);
     const { data } = await query;
     (data || []).forEach(row => {
       if (/Importado do arquivo banc[aá]rio/i.test(String(row.observacao || ''))) return;
@@ -4155,7 +4191,7 @@ function faturaEncontrarFornecedorInteligente(descricao) {
 async function faturaSalvarMemoriaInteligente(itens) {
   const lojaId = (typeof obterLojaIdSessao === 'function' ? obterLojaIdSessao() : null) || usuarioSistemaLogado?.loja_id || null;
   const empresaId = (typeof obterEmpresaIdSessao === 'function' ? obterEmpresaIdSessao() : null) || usuarioSistemaLogado?.empresa_id || null;
-  if (!lojaId || !empresaId) return;
+  if (!lojaId || !empresaId) return false;
   const porChave = new Map();
   (itens || []).forEach(item => {
     const chave = faturaNormalizarDescricaoInteligente(item.descricao);
@@ -4170,15 +4206,17 @@ async function faturaSalvarMemoriaInteligente(itens) {
     });
   });
   const linhas = [...porChave.values()];
-  if (!linhas.length) return;
+  if (!linhas.length) return true;
   try {
     const { data: existentes } = await sb.from('fatura_importacao_memoria').select('chave_origem,ocorrencias').eq('loja_id', lojaId).in('chave_origem', linhas.map(l => l.chave_origem));
     const contagens = new Map((existentes || []).map(row => [row.chave_origem, Number(row.ocorrencias || 0)]));
     linhas.forEach(linha => { linha.ocorrencias = (contagens.get(linha.chave_origem) || 0) + 1; });
     const { error } = await sb.from('fatura_importacao_memoria').upsert(linhas, { onConflict: 'empresa_id,loja_id,chave_origem' });
     if (error) throw error;
+    return true;
   } catch (e) {
     console.warn('Nao foi possivel salvar a memoria inteligente:', e?.message || e);
+    return false;
   }
 }
 
@@ -5235,8 +5273,9 @@ async function faturaLancarSelecionados() {
   await carregarFornecedoresFinanceiro();
 
   // Aprendizado: salvar as categorias escolhidas nesta importa·o (mem?ria).
-  await faturaSalvarMemoriaCategorias(selecionados);
-  await faturaSalvarMemoriaInteligente(selecionados);
+  const memoriaCategoriasSalva = await faturaSalvarMemoriaCategorias(selecionados);
+  const memoriaInteligenteSalva = await faturaSalvarMemoriaInteligente(selecionados);
+  const memoriaManualEsperada = selecionados.some(i => i._catEditadaManual || i._fornEditadoManual || i._obsEditadaManual);
 
   // Auditoria: registrar esta importa·o (quem/quando/quantos).
   try {
@@ -5291,6 +5330,9 @@ async function faturaLancarSelecionados() {
       `${idx + 1}) ? ${it.descricao.toUpperCase()} ? ${fmtValor(it.valor)} ? compra ${fmtData(it.data)}\n   Motivo: ${it.motivo}`
     ).join('\n\n');
     msg = `${lancados ? `✅ ${lancados} lançados com sucesso${resumoParcelas}\n` : ''}⚠️ ${erros} item(ns) NÃO foi(ram) lançado(s):\n\n${listaErros}\n\nOs itens com erro ficaram destacados em vermelho na lista para você revisar.`;
+  }
+  if (memoriaManualEsperada && (!memoriaCategoriasSalva || !memoriaInteligenteSalva)) {
+    msg += '\n\n⚠️ Os lançamentos foram gravados, mas não foi possível salvar todo o aprendizado de categoria/fornecedor. Confira a conexão e as permissões do banco antes de depender dessas sugestões.';
   }
 
   // S? fecha o modal se tudo deu certo; se houve erro, mant?m aberto para o usu?rio corrigir.

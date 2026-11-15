@@ -11,7 +11,7 @@ test('OpenAI entrega valor e observacao sem decidir fornecedor ou categoria', ()
   assert.match(importer, /_exigeFornecedorManual:true/);
   assert.match(finance, /const fornCartaoDoItem = item\._bancoImagem/);
   assert.match(finance, /faturaEncontrarFornecedorPorBanco\(item\._bancoImagem\)/);
-  assert.match(finance, /item\._origemImagem\s*\? _faturaMemoriaCategorias\[chave\]/);
+  assert.match(finance, /item\._origemImagem[\s\S]{0,100}_faturaMemoriaCategorias\[chave\]/);
 });
 
 test('camada de conferencia mantem campos editaveis e sincronizados', () => {

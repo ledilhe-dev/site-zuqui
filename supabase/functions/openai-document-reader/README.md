@@ -1,23 +1,21 @@
-# OpenAI document reader
+# Leitor de documentos financeiros
 
-Endpoint server-side usado somente pela importacao de imagens e PDFs do Contas a Pagar.
+Esta Edge Function valida a sessao e o tenant, verifica o arquivo e encaminha a leitura para o servico Codex Reader ja existente na VPS. O frontend nao chama diretamente a API de leitura nem armazena chaves.
 
-## Secrets no runtime da VPS
+## Secrets da Edge Function
 
-Configure no ambiente da Edge Runtime, nunca no frontend ou em arquivo versionado:
+- `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`: configuracao existente do Supabase.
+- `CODEX_READER_URL` e `CODEX_READER_SECRET`: endereco interno e segredo compartilhado com o servico Codex Reader.
+- `CODEX_READER_TIMEOUT_MS`: opcional; limite entre 30 e 180 segundos (padrao 165 segundos).
 
-- `OPENAI_API_KEY`: nova chave de projeto da OpenAI.
-- `OPENAI_DOCUMENT_MODEL`: opcional; padrao `gpt-6-luna`.
-- `OPENAI_DOCUMENT_DETAIL`: opcional; `low`, `high` (padrao) ou `auto`.
-- `OPENAI_DOCUMENT_TIMEOUT_MS`: opcional; padrao `45000`.
-- `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`: ja exigidos pelas demais funcoes server-side.
+O processo Codex Reader na VPS usa `CODEX_READER_MODEL` (padrao `gpt-5.6-sol`) e `CODEX_READER_SECRET` no arquivo de ambiente local. Nao cadastre chaves no frontend, no Git ou em argumentos/historicos de shell.
 
-Depois de rotacionar a chave exposta, cadastre o novo valor diretamente no gerenciador de secrets da Edge Runtime self-hosted. Nao use `config.js`, GitHub Pages, argumentos de linha de comando ou historico do shell.
+## Endpoint e validacao
 
-## Publicacao
+O endpoint existente e `POST /functions/v1/openai-document-reader`. A importacao exige os cabecalhos de sessao operacional e valida permissao financeira antes de encaminhar o documento.
 
-Publique a pasta `openai-document-reader` na mesma Edge Runtime que atende `https://api.checkdiario.com.br/functions/v1/`. O endpoint esperado e:
+Depois de uma publicacao, confirme em ambiente controlado que uma chamada sem sessao recebe `401` e que a resposta nao inclui o conteudo original nem segredos. A leitura real aciona o Codex Reader e nao deve ser usada em testes automatizados sem necessidade.
 
-`POST /functions/v1/openai-document-reader`
+## Persistencia do aprendizado de categoria
 
-O deploy deve preservar os secrets existentes. Confirme depois do deploy que uma requisicao sem os cabecalhos operacionais retorna `401` e que a resposta nunca inclui secrets ou o conteudo bruto do documento.
+A migracao `202611140001_fatura_categoria_memoria.sql` cria a memoria PostgreSQL com chave composta por empresa, loja e estabelecimento e politicas RLS vinculadas ao contexto operacional. Aplique as migrations antes de depender de novas sugestoes entre sessoes/dispositivos.

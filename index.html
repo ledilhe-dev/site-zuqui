@@ -1898,7 +1898,7 @@
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
             <div>
               <div style="font-size:14px;font-weight:700;">📥 Importar contas</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Escolha câmera, galeria ou arquivo bancário</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Escolha câmera, até 10 imagens/PDFs ou arquivo bancário</div>
             </div>
             <button class="btn btn-ghost btn-sm" onclick="fecharImportadorFatura()" style="font-size:20px;padding:0 10px;">×</button>
           </div>
@@ -1935,9 +1935,9 @@
                 ondrop="imagemCompraHandleDrop(event)">
                 <div style="font-size:32px;margin-bottom:8px;">🖼️</div>
                 <div style="font-size:13px;font-weight:700;color:var(--text);">Galeria, imagem ou PDF</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Escolher print, foto, PDF ou comprovante</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Selecionar até 10 imagens, PDFs ou comprovantes</div>
                 <div style="margin-top:10px;font-size:10px;background:rgba(59,130,246,.12);border-radius:6px;padding:4px 8px;display:inline-block;color:var(--accent);">Leitura segura com Codex no VPS</div>
-                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,application/pdf,.pdf" style="display:none" onchange="imagemCompraHandleFile(this.files[0])">
+                <input id="imagemCompraFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,application/pdf,.pdf" multiple style="display:none" onchange="imagemCompraHandleFiles(this.files)">
               </div>
             </div>
             <!-- Dica OFX -->
@@ -3460,7 +3460,7 @@
 <script src="./assets/js/21-employees.js?v=3.2.46-perfil-por-loja"></script>
 <script src="./assets/js/22-access-requests.js?v=3.2.46"></script>
 <script src="./assets/js/23-email.js"></script>
-<script src="./assets/js/30-finance.js?v=20261114-v2-observacao-recebimento"></script>
+<script src="./assets/js/30-finance.js?v=20261114-v3-aprendizado-categorias"></script>
       <script src="./assets/js/33-financial-integrations.js?v=20260730-conciliacao-banco-v3"></script>
       <script src="./assets/js/34-raffinato-sangrias.js?v=20260928-cofre-horario-v2"></script>
       <script src="./assets/js/35-raffinato-billing.js?v=3.2.48"></script>
@@ -3471,7 +3471,7 @@
       <script src="./assets/js/97-raffinato-daily-detail.js?v=20261028-hour-filter-v13"></script>
       <script src="./assets/js/96-raffinato-item-obrigatorio-pizza.js?v=20260911-filtros-excel-v6"></script>
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
-<script src="./assets/js/32-image-document-importer.js?v=3.2.89-document-reader"></script>
+<script src="./assets/js/32-image-document-importer.js?v=3.2.90-multi-image-fast"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
 <script src="./assets/js/41-finance-vault-calendar.js?v=20261111-lotes-atomicos-v4"></script>
 <script src="./assets/js/42-store-settings.js"></script>
