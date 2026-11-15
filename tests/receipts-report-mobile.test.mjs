@@ -16,5 +16,5 @@ test('detalhes dos recebimentos viram cartoes legiveis no celular', () => {
   assert.match(reportSource, /data-label="Valor" class="rr-valor"/);
   assert.match(responsiveCss, /#tabelaRelatorioRecebimentos thead\{display:none\}/);
   assert.match(responsiveCss, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.match(responsiveCss, /\.rr-valor\{color:var\(--accent\);font-size:16px;font-weight:800\}/);
+  assert.match(responsiveCss, /\.rr-valor\{color:var\(--accent\);font-size:13px;font-weight:800\}/);
 });

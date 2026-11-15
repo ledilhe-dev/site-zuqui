@@ -185,6 +185,59 @@
   }
 }
 
+/* Relatorio de recebimentos: o Safari mobile nao pode transformar os campos
+   do filtro em paineis altos nem manter a tabela desktop espremida. */
+@media (max-width: 700px) {
+  #relatorio_recebimentos .relatorio-financeiro-filtros {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: end !important;
+    gap: 7px !important;
+  }
+  #relatorio_recebimentos .relatorio-financeiro-filtros > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: none !important;
+    align-self: end !important;
+  }
+  #relatorio_recebimentos .relatorio-financeiro-filtros > .campo-com-label {
+    display: flex !important;
+    padding-top: 14px !important;
+  }
+  #relatorio_recebimentos .relatorio-financeiro-filtros :is(input, select, .btn) {
+    display: block !important;
+    width: 100% !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 5px 8px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+  #relatorio_recebimentos .relatorio-financeiro-filtros .campo-label {
+    font-size: 8px !important;
+    line-height: 1 !important;
+  }
+  #relatorio_recebimentos .date-filter-standard {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  #relatorio_recebimentos .date-filter-standard .date-filter-criterion-field {
+    grid-column: 1 / -1 !important;
+  }
+  #relatorio_recebimentos .relatorio-recebimentos-tipo {
+    grid-column: 1 / -1 !important;
+  }
+}
+
 /* Agenda mobile: impede que o flex-basis de app-select/app-time se transforme
    em altura dentro dos labels verticais e mantem o rodape sempre visivel. */
 #modalEscalaPlantao .escala-modal-card {
