@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v318-contas-pagar-definitivo-2026-11-16';
+const CACHE_NAME = 'check-diario-pwa-v319-agrupamento-fornecedor-2026-11-16';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',

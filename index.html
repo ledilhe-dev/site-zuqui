@@ -1877,8 +1877,10 @@
               <button class="btn btn-ghost" type="button" id="btnFiltroContaAPagarCategorias" onclick="toggleDropdownCategoriasContaAPagar()" title="Filtrar por uma ou mais categorias">Categorias ▾</button>
               <div id="dropdownCategoriasContaAPagar" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:60;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card,#0f1a2b);border:1px solid var(--border,#2a3a52);border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);"></div>
             </span></label>
-            <button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button>
+            <label class="filter-field-standard contas-pagar-acao contas-pagar-limpar"><span>Ação</span><button class="btn btn-ghost" type="button" onclick="limparFiltroContasAPagarFinanceiro()">Limpar</button></label>
+            <label class="filter-field-standard contas-pagar-acao contas-pagar-agrupar"><span>Agrupamento</span>
             <button class="btn btn-ghost btn-sm" type="button" id="btnAgruparParcelas" onclick="toggleAgruparParcelasContaAPagar()" title="Agrupar parcelas do mesmo lançamento em um único card" style="display:flex;align-items:center;justify-content:center;gap:4px;">📦 Agrupar</button>
+            </label>
             <label class="filter-field-standard contas-pagar-fornecedor"><span>Fornecedor</span><input id="filtroContaAPagarFornecedor" data-filter-labeled="true" type="text" placeholder="Nome do fornecedor" oninput="debounceConsumo('filtro_contas_pagar_fornecedor', () => carregarContasAPagarFinanceiro(), 700)"></label>
           </div>
           <div class="form-row financeiro-filtros-row financeiro-selecao-contas-row" id="acoesSelecaoContasAPagarFinanceiro" style="margin-top:8px">
@@ -3098,7 +3100,7 @@
 <link id="responsive-system-style" rel="stylesheet" href="./assets/css/121-responsive-system.css?v=20261016-v1">
 <link id="mobile-density-style" rel="stylesheet" href="./assets/css/121-mobile-density.css?v=20261017-v7">
 <link id="login-showcase-style" rel="stylesheet" href="./assets/css/122-login-showcase.css?v=20261019-v4">
-<link id="app-design-system-style" rel="stylesheet" href="./assets/css/125-app-design-system.css?v=20261116-v8-contas-pagar-definitivo">
+<link id="app-design-system-style" rel="stylesheet" href="./assets/css/125-app-design-system.css?v=20261116-v9-filtros-contas-pagar">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3476,7 +3478,7 @@
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
 <script src="./assets/js/32-image-document-importer.js?v=3.2.90-multi-image-fast"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20261116-selecao-total-v6-definitivo"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20261116-v7-agrupar-fornecedor"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js?v=3.2.55-permissoes-edicao-checklist"></script>
@@ -3485,7 +3487,7 @@
 <script src="./assets/js/52-checklist-models.js?v=3.2.55-permissoes-edicao-checklist"></script>
 <script src="./assets/js/60-timeclock.js?v=20261115-saida-hora-extra"></script>
 <script src="./assets/js/70-reports.js?v=3.2.66-editor-programacao"></script>
-<script src="./assets/js/71-executions.js?v=20261116-v318-atualizacao-pwa"></script>
+<script src="./assets/js/71-executions.js?v=20261116-v319-atualizacao-pwa"></script>
 <script src="./assets/js/72-atendimento-estatisticas.js?v=20260903-3"></script>
 <script src="./assets/js/78-init.js"></script>
 <script id="sidebar-icons-script" src="./assets/js/93-sidebar-icons.js?v=20261031-gerador-escalas"></script>

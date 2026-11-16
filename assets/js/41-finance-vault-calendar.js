@@ -1081,6 +1081,7 @@ function cancelarEdicaoContaAPagarFinanceiro() {
 function atualizarEstadoListaContasAPagarFinanceiro() {
   const lista = document.getElementById('listaContasAPagarFinanceiro');
   const btn = document.getElementById('btnToggleContasAPagarLista');
+  const btnAgrupar = document.getElementById('btnAgruparParcelas');
   const filtroBusca = String(document.getElementById('filtroContaAPagarBusca')?.value || '').trim();
   const filtroCadastroInicio = String(document.getElementById('filtroContaAPagarCadastroInicio')?.value || '').trim();
   const filtroCadastroFim = String(document.getElementById('filtroContaAPagarCadastroFim')?.value || '').trim();
@@ -1092,6 +1093,10 @@ function atualizarEstadoListaContasAPagarFinanceiro() {
   if (btn) {
     btn.textContent = visivel ? 'Ocultar contas' : 'Mostrar contas';
     btn.setAttribute('aria-expanded', String(visivel));
+  }
+  if (btnAgrupar) {
+    btnAgrupar.textContent = contasAPagarAgruparParcelas ? 'Desagrupar fornecedores' : 'Agrupar fornecedor';
+    btnAgrupar.title = 'Agrupar as contas filtradas por fornecedor e vencimento';
   }
 }
 
@@ -1367,6 +1372,24 @@ async function excluirContasAPagarSelecionadasFinanceiro() {
 
 let contasAPagarAgruparParcelas = false;
 
+function agruparContasAPagarPorFornecedorEVencimento(itens) {
+  const grupos = new Map();
+  (itens || []).forEach(item => {
+    const fornecedor = textoFinanceiroNormalizado(item.fornecedores?.nome || 'fornecedor nao encontrado');
+    const vencimento = String(item.data_vencimento || 'sem-vencimento');
+    const loja = String(item.loja_id || 'sem-loja');
+    const chave = `${fornecedor}|${vencimento}|${loja}`;
+    if (!grupos.has(chave)) grupos.set(chave, []);
+    grupos.get(chave).push(item);
+  });
+  return Array.from(grupos.values()).sort((grupoA, grupoB) => {
+    const fornecedorA = String(grupoA[0]?.fornecedores?.nome || '');
+    const fornecedorB = String(grupoB[0]?.fornecedores?.nome || '');
+    return fornecedorA.localeCompare(fornecedorB, 'pt-BR', { sensitivity: 'base' })
+      || String(grupoA[0]?.data_vencimento || '').localeCompare(String(grupoB[0]?.data_vencimento || ''));
+  });
+}
+
 function toggleAgruparParcelasContaAPagar() {
   contasAPagarAgruparParcelas = !contasAPagarAgruparParcelas;
   const btn = document.getElementById('btnAgruparParcelas');
@@ -1374,6 +1397,7 @@ function toggleAgruparParcelasContaAPagar() {
     btn.textContent = contasAPagarAgruparParcelas ? '📂 Desagrupar' : '📦 Agrupar';
     btn.style.color = contasAPagarAgruparParcelas ? 'var(--accent)' : '';
     btn.style.borderColor = contasAPagarAgruparParcelas ? 'var(--accent)' : '';
+    btn.textContent = contasAPagarAgruparParcelas ? 'Desagrupar fornecedores' : 'Agrupar fornecedor';
   }
   carregarContasAPagarFinanceiro();
 }
@@ -1624,7 +1648,7 @@ async function carregarContasAPagarFinanceiro() {
     const primeiro = parcelas[0];
     const nomeFornecedor = primeiro.fornecedores?.nome || 'Fornecedor não encontrado';
     const totalValor = parcelas.reduce((s, p) => s + Number(p.valor_compra || 0), 0);
-    const qtdTotal = Number(primeiro.qtd_parcelas || parcelas.length);
+    const qtdTotal = parcelas.length;
     const qtdNaLista = parcelas.length;
     const pagas = parcelas.filter(p => !!p.data_pagamento).length;
     const pendentes = qtdNaLista - pagas;
@@ -1635,7 +1659,7 @@ async function carregarContasAPagarFinanceiro() {
     const proxVenc = proxPendente ? formatarDataBRFinanceiro(proxPendente.data_vencimento) : '-';
     const proxVencISO = proxPendente ? proxPendente.data_vencimento : '';
     const corVenc = pagas === qtdNaLista ? '#34d399' : '#ff5b5b';
-    const grupoId = String(primeiro.grupo_parcelas_id || '');
+    const grupoId = parcelas.map(p => String(p.id)).join('-');
     const aberto = (window._ncGruposAbertos || new Set()).has(grupoId);
     const idsSelecionaveis = podeEditar ? parcelas.map(p => String(p.id)) : [];
     const idsSelecionaveisTexto = idsSelecionaveis.join(',');
@@ -1645,7 +1669,7 @@ async function carregarContasAPagarFinanceiro() {
     const linhasParcelas = parcelas.map(p => {
       const pPago = !!p.data_pagamento;
       return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:${pPago ? 'rgba(52,211,153,.07)' : 'rgba(255,91,91,.05)'};border:1px solid ${pPago ? 'rgba(52,211,153,.18)' : 'rgba(255,91,91,.15)'};">
-        <span style="font-size:11px;font-weight:700;color:var(--text-muted);min-width:32px;">${p.numero_parcela || 1}/${qtdTotal}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--text-muted);min-width:52px;">Conta ${parcelas.indexOf(p) + 1}</span>
         <span style="font-size:12px;font-weight:700;color:${pPago ? '#34d399' : '#ffd400'};">${formatarMoedaBRFinanceiro(p.valor_compra)}</span>
         <span style="font-size:11px;color:var(--text-muted);">venc ${formatarDataBRFinanceiro(p.data_vencimento)}</span>
         <span style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:${pPago ? 'rgba(52,211,153,.15)' : 'rgba(255,165,0,.15)'};color:${pPago ? '#34d399' : '#f0a500'};">${pPago ? 'Pago' : 'Pendente'}</span>
@@ -1660,7 +1684,7 @@ async function carregarContasAPagarFinanceiro() {
             ${podeEditar ? `<input class="checkbox-grupo-contas-apagar-financeiro" data-conta-ids="${idsSelecionaveisTexto}" type="checkbox" ${grupoTodoSelecionado ? 'checked' : ''} onchange="atualizarSelecaoGrupoContasAPagarFinanceiro('${idsSelecionaveisTexto}', this.checked)" aria-label="Selecionar todas as parcelas deste grupo">` : ''}
             <span style="font-size:18px;">📦</span>
             <span>${nomeFornecedor}</span>
-            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(240,165,0,.15);color:var(--accent);">${qtdNaLista}/${qtdTotal} parcelas</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(240,165,0,.15);color:var(--accent);">${qtdNaLista} conta(s)</span>
           </label>
           <div class="item-detalhe">Loja: ${nomeLoja || '-'} · Compra: ${formatarDataBRFinanceiro(primeiro.data_compra)} · Intervalo: ${primeiro.intervalo_parcelas_dias ? primeiro.intervalo_parcelas_dias + 'd' : '-'}</div>
           <div class="item-detalhe">Total: <strong style="color:var(--text)">${formatarMoedaBRFinanceiro(totalValor)}</strong> · ${pagas} pagas · ${pendentes} pendentes</div>
@@ -1690,27 +1714,12 @@ async function carregarContasAPagarFinanceiro() {
   let htmlItens;
   if (contasAPagarAgruparParcelas) {
     // Agrupa por grupo_parcelas_id; itens sem grupo ficam sozinhos
-    const grupos = new Map();
-    const semGrupo = [];
-    itensFiltrados.forEach(item => {
-      const gid = String(item.grupo_parcelas_id || '').trim();
-      if (gid) {
-        if (!grupos.has(gid)) grupos.set(gid, []);
-        grupos.get(gid).push(item);
-      } else {
-        semGrupo.push(item);
-      }
-    });
     const partes = [];
-    grupos.forEach(parcelas => {
-      parcelas.sort((a, b) => Number(a.numero_parcela || 0) - Number(b.numero_parcela || 0));
-      if (parcelas.length === 1) {
-        partes.push(renderCardContaAPagar(parcelas[0]));
-      } else {
-        partes.push(renderCardAgrupado(parcelas));
-      }
-    });
-    semGrupo.forEach(item => partes.push(renderCardContaAPagar(item)));
+    agruparContasAPagarPorFornecedorEVencimento(itensFiltrados).forEach(contasFornecedor => {
+        contasFornecedor.sort((a, b) => String(a.data_compra || '').localeCompare(String(b.data_compra || '')));
+        if (contasFornecedor.length === 1) partes.push(renderCardContaAPagar(contasFornecedor[0]));
+        else partes.push(renderCardAgrupado(contasFornecedor));
+      });
     htmlItens = partes.join('');
   } else {
     htmlItens = itensFiltrados.map(renderCardContaAPagar).join('');

@@ -246,17 +246,17 @@
   #financeiro_contasapagar .contas-pagar-filtros-unificados {
     display: grid !important;
     grid-template-columns:
-      minmax(220px, 1.65fr)
-      minmax(112px, .72fr)
-      minmax(112px, .72fr)
-      minmax(150px, 1fr)
-      minmax(112px, .72fr)
-      minmax(100px, .62fr)
-      minmax(82px, .5fr)
-      minmax(112px, .7fr)
+      minmax(210px, 1.5fr)
+      118px
+      118px
+      minmax(150px, .9fr)
+      110px
+      110px
+      88px
+      150px
       minmax(150px, 1fr) !important;
     align-items: end !important;
-    gap: 8px !important;
+    gap: 7px !important;
   }
 
   #financeiro_contasapagar .contas-pagar-filtros-unificados > * {
@@ -266,16 +266,47 @@
     margin: 0 !important;
   }
 
-  #financeiro_contasapagar .contas-pagar-filtros-unificados :is(input, select, button),
-  #financeiro_contasapagar .contas-pagar-filtros-unificados #filtroContaAPagarCategoriasWrap {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > label {
+    display: grid !important;
+    grid-template-rows: 14px 36px !important;
+    align-content: end !important;
+    gap: 4px !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > label > span:first-child {
+    display: block !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    line-height: 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados :is(input, select, button) {
     box-sizing: border-box !important;
     width: 100% !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    max-height: 38px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
     margin: 0 !important;
-    padding-block: 6px !important;
-    font-size: 11px !important;
+    padding: 5px 8px !important;
+    font-size: 10px !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > .btn {
+    align-self: end !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados #filtroContaAPagarCategoriasWrap {
+    box-sizing: border-box !important;
+    display: block !important;
+    width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
 }
 
