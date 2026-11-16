@@ -1259,10 +1259,7 @@ function atualizarResumoSelecaoContasAPagarFinanceiro() {
       : (totalVisiveis ? `${totalVisiveis} conta(s) no filtro. Nenhuma selecionada.` : 'Nenhuma conta selecionada.');
   }
   if (totalResumo) {
-    totalResumo.hidden = !qtdSelecionados;
-    totalResumo.textContent = qtdSelecionados
-      ? `Total selecionado: ${formatarMoedaBRFinanceiro(totalSelecionadoCentavos / 100)}`
-      : '';
+    totalResumo.textContent = `Total selecionado: ${formatarMoedaBRFinanceiro(totalSelecionadoCentavos / 100)}`;
   }
 }
 
@@ -1274,6 +1271,29 @@ function atualizarSelecaoContaAPagarFinanceiro(id, marcado) {
   atualizarResumoSelecaoContasAPagarFinanceiro();
 }
 
+function atualizarSelecaoGrupoContasAPagarFinanceiro(ids, marcado) {
+  String(ids || '').split(',').filter(Boolean).forEach(id => {
+    const chave = String(id);
+    if (marcado) contasAPagarFinanceiroSelecionadasIds.add(chave);
+    else contasAPagarFinanceiroSelecionadasIds.delete(chave);
+  });
+  sincronizarCheckboxesContasAPagarFinanceiro();
+  atualizarResumoSelecaoContasAPagarFinanceiro();
+}
+
+function sincronizarCheckboxesContasAPagarFinanceiro() {
+  document.querySelectorAll('.checkbox-conta-apagar-financeiro').forEach(input => {
+    const id = input.getAttribute('data-conta-id');
+    input.checked = contasAPagarFinanceiroSelecionadasIds.has(String(id));
+  });
+  document.querySelectorAll('.checkbox-grupo-contas-apagar-financeiro').forEach(input => {
+    const ids = String(input.getAttribute('data-conta-ids') || '').split(',').filter(Boolean);
+    const selecionadas = ids.filter(id => contasAPagarFinanceiroSelecionadasIds.has(String(id))).length;
+    input.checked = !!ids.length && selecionadas === ids.length;
+    input.indeterminate = selecionadas > 0 && selecionadas < ids.length;
+  });
+}
+
 function toggleSelecionarTodasContasAPagarFinanceiro() {
   if (!contasAPagarFinanceiroVisiveisIds.length) return;
   const todosSelecionados = contasAPagarFinanceiroVisiveisIds.every(id => contasAPagarFinanceiroSelecionadasIds.has(String(id)));
@@ -1282,10 +1302,7 @@ function toggleSelecionarTodasContasAPagarFinanceiro() {
     if (todosSelecionados) contasAPagarFinanceiroSelecionadasIds.delete(chave);
     else contasAPagarFinanceiroSelecionadasIds.add(chave);
   });
-  document.querySelectorAll('.checkbox-conta-apagar-financeiro').forEach(input => {
-    const id = input.getAttribute('data-conta-id');
-    input.checked = contasAPagarFinanceiroSelecionadasIds.has(String(id));
-  });
+  sincronizarCheckboxesContasAPagarFinanceiro();
   atualizarResumoSelecaoContasAPagarFinanceiro();
 }
 
@@ -1620,6 +1637,10 @@ async function carregarContasAPagarFinanceiro() {
     const corVenc = pagas === qtdNaLista ? '#34d399' : '#ff5b5b';
     const grupoId = String(primeiro.grupo_parcelas_id || '');
     const aberto = (window._ncGruposAbertos || new Set()).has(grupoId);
+    const idsSelecionaveis = podeEditar ? parcelas.map(p => String(p.id)) : [];
+    const idsSelecionaveisTexto = idsSelecionaveis.join(',');
+    const qtdSelecionadasGrupo = idsSelecionaveis.filter(id => contasAPagarFinanceiroSelecionadasIds.has(id)).length;
+    const grupoTodoSelecionado = !!idsSelecionaveis.length && qtdSelecionadasGrupo === idsSelecionaveis.length;
 
     const linhasParcelas = parcelas.map(p => {
       const pPago = !!p.data_pagamento;
@@ -1636,6 +1657,7 @@ async function carregarContasAPagarFinanceiro() {
       <div style="display:flex;align-items:stretch;width:100%;">
         <div class="item-info" style="flex:1;">
           <label class="item-nome" style="display:flex;align-items:center;gap:8px;">
+            ${podeEditar ? `<input class="checkbox-grupo-contas-apagar-financeiro" data-conta-ids="${idsSelecionaveisTexto}" type="checkbox" ${grupoTodoSelecionado ? 'checked' : ''} onchange="atualizarSelecaoGrupoContasAPagarFinanceiro('${idsSelecionaveisTexto}', this.checked)" aria-label="Selecionar todas as parcelas deste grupo">` : ''}
             <span style="font-size:18px;">📦</span>
             <span>${nomeFornecedor}</span>
             <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(240,165,0,.15);color:var(--accent);">${qtdNaLista}/${qtdTotal} parcelas</span>
@@ -1695,6 +1717,7 @@ async function carregarContasAPagarFinanceiro() {
   }
 
   lista.innerHTML = '<div class="lista">' + htmlItens + '</div>';
+  sincronizarCheckboxesContasAPagarFinanceiro();
   atualizarEstadoListaContasAPagarFinanceiro();
   atualizarResumoSelecaoContasAPagarFinanceiro();
 }

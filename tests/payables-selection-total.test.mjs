@@ -10,9 +10,16 @@ const executions = readFileSync(new URL('../assets/js/71-executions.js', import.
 
 test('resumo das contas selecionadas exibe o valor total', () => {
   assert.match(html, /id="totalSelecaoContasAPagarFinanceiro"/);
+  assert.match(html, /Total selecionado: R\$ 0,00/);
   assert.match(script, /totalSelecionadoCentavos/);
   assert.match(script, /Math\.round\(valor \* 100\)/);
   assert.match(script, /Total selecionado: \$\{formatarMoedaBRFinanceiro\(totalSelecionadoCentavos \/ 100\)\}/);
+});
+
+test('agrupamentos permitem selecionar e somar todas as parcelas', () => {
+  assert.match(script, /function atualizarSelecaoGrupoContasAPagarFinanceiro/);
+  assert.match(script, /checkbox-grupo-contas-apagar-financeiro/);
+  assert.match(script, /input\.indeterminate = selecionadas > 0 && selecionadas < ids\.length/);
 });
 
 test('filtros de contas a pagar ficam em uma linha e com a mesma altura no desktop', () => {
@@ -22,7 +29,7 @@ test('filtros de contas a pagar ficam em uma linha e com a mesma altura no deskt
 });
 
 test('publicacao invalida o cache PWA para entregar a correcao', () => {
-  assert.match(serviceWorker, /check-diario-pwa-v317-contas-pagar-2026-11-16/);
-  assert.match(executions, /service-worker-v4\.js\?v=20261116-v317-contas-pagar/);
-  assert.match(html, /71-executions\.js\?v=20261116-v317-atualizacao-pwa/);
+  assert.match(serviceWorker, /check-diario-pwa-v318-contas-pagar-definitivo-2026-11-16/);
+  assert.match(executions, /service-worker-v4\.js\?v=20261116-v318-contas-pagar-definitivo/);
+  assert.match(html, /71-executions\.js\?v=20261116-v318-atualizacao-pwa/);
 });

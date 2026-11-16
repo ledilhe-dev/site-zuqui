@@ -242,10 +242,6 @@
   font-weight: 800;
 }
 
-#financeiro_contasapagar .contas-pagar-total-selecionado[hidden] {
-  display: none !important;
-}
-
 @media (min-width: 1280px) {
   #financeiro_contasapagar .contas-pagar-filtros-unificados {
     display: grid !important;

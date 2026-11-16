@@ -6,4 +6,4 @@
 - Nunca considerar um push ou um job do GitHub Pages como publicacao concluida.
 - Toda publicacao deve criar um novo diretorio de release, preservar o anterior para rollback, trocar o container e validar no dominio publico os marcadores da alteracao.
 - Quando arquivos listados em `assets/manifest.json`, `index.html` ou o registro do PWA mudarem, atualizar tambem o identificador de `CACHE_NAME` em `service-worker-v4.js` e a versao da URL usada em `registrarServiceWorkerPwa()`.
-- O workflow do GitHub Pages deve permanecer somente manual enquanto producao estiver na VPS.
+- O GitHub Pages foi desativado e seu workflow/CNAME removidos; nao reativar enquanto producao estiver na VPS.
