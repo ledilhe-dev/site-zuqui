@@ -1884,7 +1884,10 @@
           <div class="form-row financeiro-filtros-row financeiro-selecao-contas-row" id="acoesSelecaoContasAPagarFinanceiro" style="margin-top:8px">
             <button class="btn btn-ghost" id="btnSelecionarTodasContasAPagarFinanceiro" type="button" onclick="toggleSelecionarTodasContasAPagarFinanceiro()">Marcar todos</button>
             <button class="btn btn-red" id="btnExcluirContasAPagarSelecionadasFinanceiro" type="button" onclick="excluirContasAPagarSelecionadasFinanceiro()" disabled>Excluir selecionadas</button>
-            <div class="item-detalhe" id="resumoSelecaoContasAPagarFinanceiro" style="align-self:center">Nenhuma conta selecionada.</div>
+            <div class="item-detalhe contas-pagar-resumo-selecao" style="align-self:center">
+              <span id="resumoSelecaoContasAPagarFinanceiro">Nenhuma conta selecionada.</span>
+              <strong id="totalSelecaoContasAPagarFinanceiro" class="contas-pagar-total-selecionado" hidden></strong>
+            </div>
           </div>
           <div id="listaContasAPagarFinanceiro"><div class="empty">Carregando...</div></div>
         </div>
@@ -3095,7 +3098,7 @@
 <link id="responsive-system-style" rel="stylesheet" href="./assets/css/121-responsive-system.css?v=20261016-v1">
 <link id="mobile-density-style" rel="stylesheet" href="./assets/css/121-mobile-density.css?v=20261017-v7">
 <link id="login-showcase-style" rel="stylesheet" href="./assets/css/122-login-showcase.css?v=20261019-v4">
-<link id="app-design-system-style" rel="stylesheet" href="./assets/css/125-app-design-system.css?v=20261115-v6-feedback-ponto">
+<link id="app-design-system-style" rel="stylesheet" href="./assets/css/125-app-design-system.css?v=20261116-v7-contas-pagar">
 <link rel="stylesheet" href="./assets/vendor/cropperjs/cropper.min.css?v=1.6.2">
 
 <div class="overlay" id="formaPagamentoOverlay">
@@ -3473,7 +3476,7 @@
       <script src="./assets/js/38-annual-comparison.js?v=3.2.51"></script>
 <script src="./assets/js/32-image-document-importer.js?v=3.2.90-multi-image-fast"></script>
 <script src="./assets/js/40-login-preferences.js?v=20260804-senha-excluir-recebivel"></script>
-<script src="./assets/js/41-finance-vault-calendar.js?v=20261111-lotes-atomicos-v4"></script>
+<script src="./assets/js/41-finance-vault-calendar.js?v=20261116-selecao-total-v5"></script>
 <script src="./assets/js/42-store-settings.js"></script>
 <script src="./assets/js/43-saas-admin.js?v=3.2.43"></script>
 <script src="./assets/js/44-profiles.js?v=3.2.55-permissoes-edicao-checklist"></script>

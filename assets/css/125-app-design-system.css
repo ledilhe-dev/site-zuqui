@@ -219,6 +219,78 @@
   }
 }
 
+/* Contas a pagar: total da selecao e filtros compactos, nivelados em desktop. */
+#financeiro_contasapagar .contas-pagar-resumo-selecao {
+  display: flex;
+  flex: 1 1 300px;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--app-control-height);
+  white-space: nowrap;
+}
+
+#financeiro_contasapagar .contas-pagar-total-selecionado {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid color-mix(in srgb, var(--cd-primary, #6366f1) 45%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cd-primary, #6366f1) 12%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#financeiro_contasapagar .contas-pagar-total-selecionado[hidden] {
+  display: none !important;
+}
+
+@media (min-width: 1280px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    display: grid !important;
+    grid-template-columns:
+      minmax(220px, 1.65fr)
+      minmax(112px, .72fr)
+      minmax(112px, .72fr)
+      minmax(150px, 1fr)
+      minmax(112px, .72fr)
+      minmax(100px, .62fr)
+      minmax(82px, .5fr)
+      minmax(112px, .7fr)
+      minmax(150px, 1fr) !important;
+    align-items: end !important;
+    gap: 8px !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  #financeiro_contasapagar .contas-pagar-filtros-unificados :is(input, select, button),
+  #financeiro_contasapagar .contas-pagar-filtros-unificados #filtroContaAPagarCategoriasWrap {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    margin: 0 !important;
+    padding-block: 6px !important;
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  #financeiro_contasapagar .contas-pagar-resumo-selecao {
+    flex-wrap: wrap;
+    gap: 6px;
+    white-space: normal;
+  }
+}
+
 @media (max-width: 700px) {
   :root { --app-popover-width: calc(100vw - 16px); }
   .app-popover,

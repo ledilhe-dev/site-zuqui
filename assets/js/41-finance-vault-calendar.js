@@ -1238,9 +1238,16 @@ function atualizarResumoSelecaoContasAPagarFinanceiro() {
   const totalVisiveis = contasAPagarFinanceiroVisiveisIds.length;
   const selecionadosVisiveis = contasAPagarFinanceiroVisiveisIds.filter(id => contasAPagarFinanceiroSelecionadasIds.has(String(id)));
   const qtdSelecionados = selecionadosVisiveis.length;
+  const idsSelecionados = new Set(selecionadosVisiveis.map(String));
+  const totalSelecionadoCentavos = (contasAPagarFinanceiroCache || []).reduce((total, conta) => {
+    if (!idsSelecionados.has(String(conta.id))) return total;
+    const valor = Number(conta.valor_compra || 0);
+    return total + (Number.isFinite(valor) ? Math.round(valor * 100) : 0);
+  }, 0);
   const btnSelecionar = document.getElementById('btnSelecionarTodasContasAPagarFinanceiro');
   const btnExcluir = document.getElementById('btnExcluirContasAPagarSelecionadasFinanceiro');
   const resumo = document.getElementById('resumoSelecaoContasAPagarFinanceiro');
+  const totalResumo = document.getElementById('totalSelecaoContasAPagarFinanceiro');
   if (btnSelecionar) {
     btnSelecionar.textContent = totalVisiveis && qtdSelecionados === totalVisiveis ? 'Desmarcar todos' : 'Marcar todos';
     btnSelecionar.disabled = !totalVisiveis;
@@ -1250,6 +1257,12 @@ function atualizarResumoSelecaoContasAPagarFinanceiro() {
     resumo.textContent = qtdSelecionados
       ? `${qtdSelecionados} conta(s) selecionada(s) de ${totalVisiveis}.`
       : (totalVisiveis ? `${totalVisiveis} conta(s) no filtro. Nenhuma selecionada.` : 'Nenhuma conta selecionada.');
+  }
+  if (totalResumo) {
+    totalResumo.hidden = !qtdSelecionados;
+    totalResumo.textContent = qtdSelecionados
+      ? `Total selecionado: ${formatarMoedaBRFinanceiro(totalSelecionadoCentavos / 100)}`
+      : '';
   }
 }
 
