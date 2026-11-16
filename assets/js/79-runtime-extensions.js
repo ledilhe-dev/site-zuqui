@@ -2392,42 +2392,22 @@ async function registrarPontoFuncionario() {
   }
 
   async function buscarRegistroPontoAbertoOuDoDia() {
-    // Regra definitiva do ponto: 1 registro por funcionário/dia em ponto_registros.
-    // Não filtra por loja_id aqui, porque registros antigos/ajustados podem estar sem loja
-    // ou com loja divergente. Filtrar por loja fazia o sistema não encontrar o ponto aberto
-    // e criar uma nova entrada indevida no mesmo dia.
-    const selecionarCampos = 'id, funcionario_id, data_ponto, entrada_em, inicio_intervalo_em, retorno_intervalo_em, saida_em, created_at, loja_id, empresa_id';
-
-    // Suspende tambem o filtro automatico de empresa. O indice unico legado e
-    // global por funcionario/data; alguns registros antigos da ZUQUI ficaram
-    // com empresa_id/loja_id divergentes e, quando ocultos pelo filtro do
-    // frontend, provocavam uma nova tentativa de INSERT e o erro 23505.
-    let resp = await executarSemFiltrosTenantTemporario(() => sb
-      .from('ponto_registros')
-      .select(selecionarCampos)
-      .eq('funcionario_id', funcionarioId)
-      .eq('data_ponto', dataHoje)
-      .order('created_at', { ascending: true })
-      .limit(20));
+    const resp = await executarSemFiltrosTenantTemporario(() => sb.rpc('carregar_ponto_funcionario_seguro', {
+      p_funcionario_id: funcionarioId,
+      p_pin: pin,
+      p_data: dataHoje,
+    }));
     if (resp.error) throw resp.error;
-
-    const registrosDoDia = resp.data || [];
-    if (!registrosDoDia.length) return null;
-
-    const abertos = registrosDoDia.filter(r => !r.saida_em);
-    if (abertos.length) {
-      // Usa sempre o primeiro aberto do dia para continuar a sequência.
-      // Isso evita transformar a próxima batida em nova entrada.
-      return abertos[0];
-    }
-
-    // Se todos estão fechados, devolve o primeiro registro do dia para bloquear nova entrada
-    // ou permitir mensagem de ponto já fechado, sem criar duplicidade.
-    return registrosDoDia[0] || null;
+    const registroSeguro = resp.data?.registro || null;
+    if (registroSeguro) registroSeguro.__intervalosSeguros = resp.data?.intervalos || [];
+    return registroSeguro;
   }
 
   async function carregarIntervalosDoRegistro(registroId) {
     if (!registroId) return [];
+    if (registro?.id === registroId && Array.isArray(registro.__intervalosSeguros)) {
+      return registro.__intervalosSeguros;
+    }
     try {
       const { data, error } = await sb
         .from('ponto_intervalos')
@@ -2446,16 +2426,13 @@ async function registrarPontoFuncionario() {
   }
 
   async function atualizarRegistroPonto(registroId, camposBasicos, tipoAuditoria) {
-    const campos = {
-      ...camposBasicos,
-      updated_at: agora,
-      ...montarCamposAuditoriaPonto(auditoriaPonto, tipoAuditoria),
-    };
-    return executarSemFiltrosTenantTemporario(() => executarComFallbackColunasPonto(
-      (payload) => sb.from('ponto_registros').update(payload).eq('id', registroId).select('id').maybeSingle(),
-      campos,
-      { ...camposBasicos, updated_at: agora },
-    ));
+    void tipoAuditoria;
+    return executarSemFiltrosTenantTemporario(() => sb.rpc('atualizar_ponto_funcionario_seguro', {
+      p_registro_id: registroId,
+      p_funcionario_id: funcionarioId,
+      p_pin: pin,
+      p_campos: { ...camposBasicos, updated_at: agora },
+    }));
   }
 
   async function registrarAuditoriaSegura(pontoRegistroId, tipoBatida) {
@@ -2577,18 +2554,26 @@ async function registrarPontoFuncionario() {
           tipoAvisoPonto = 'parado';
           descricaoBatida = 'PONTO FECHADO';
         } else {
-          const payloadIntervalo2 = { ponto_registro_id: registro.id, ordem: 2, inicio_em: agora, retorno_em: null };
-          const { error } = await sb.from('ponto_intervalos').insert([payloadIntervalo2]);
+          const { error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('inserir_intervalo_ponto_funcionario_seguro', {
+            p_registro_id: registro.id,
+            p_funcionario_id: funcionarioId,
+            p_pin: pin,
+            p_ordem: 2,
+            p_inicio_em: agora,
+          }));
           if (error) throw error;
           tipoBatidaRegistrada = 'saida_intervalo_2';
           tipoAvisoPonto = 'parado';
           descricaoBatida = 'INTERVALO 2 INICIADO';
         }
       } else if (ultimoExtra && ultimoExtra.inicio_em && !ultimoExtra.retorno_em) {
-        const { error } = await sb
-          .from('ponto_intervalos')
-          .update({ retorno_em: agora })
-          .eq('id', ultimoExtra.id);
+        const { error } = await executarSemFiltrosTenantTemporario(() => sb.rpc('retornar_intervalo_ponto_funcionario_seguro', {
+          p_intervalo_id: ultimoExtra.id,
+          p_registro_id: registro.id,
+          p_funcionario_id: funcionarioId,
+          p_pin: pin,
+          p_retorno_em: agora,
+        }));
         if (error) throw error;
         await atualizarRegistroPonto(registro.id, { loja_id: lojaId, empresa_id: empresaId }, 'retorno_intervalo_2');
         tipoBatidaRegistrada = 'retorno_intervalo_2';
