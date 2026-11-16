@@ -1,10 +1,8 @@
 name: Publicar no GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
-      - master
+  # Producao roda na VPS Hostinger. Pages fica apenas para acionamento manual,
+  # evitando consumir Actions em cada push sem atualizar o site oficial.
   workflow_dispatch:
 
 permissions:

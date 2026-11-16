@@ -1,0 +1,8 @@
+{
+  "domain": "checkdiario.com.br",
+  "host": "api.checkdiario.com.br",
+  "username": "root",
+  "type": "static-vps",
+  "release_root": "/opt/checkdiario/frontend",
+  "container": "checkdiario-frontend"
+}

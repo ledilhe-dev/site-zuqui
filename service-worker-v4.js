@@ -1,4 +1,4 @@
-const CACHE_NAME = 'check-diario-pwa-v314-saida-hora-extra-2026-11-15';
+const CACHE_NAME = 'check-diario-pwa-v317-contas-pagar-2026-11-16';
 const ASSET_MANIFEST = './assets/manifest.json';
 const CORE_ASSETS = [
   './',
