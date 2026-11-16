@@ -1153,7 +1153,7 @@ function atualizarQuintoDiaUtilTopbar() {
 function registrarServiceWorkerPwa() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker-v4.js?v=20261116-v319-agrupamento-fornecedor', { scope: './', updateViaCache: 'none' })
+      navigator.serviceWorker.register('./service-worker-v4.js?v=20261116-v320-filtros-categorias', { scope: './', updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(error => {
         console.warn('Falha ao registrar Service Worker do PWA:', error);

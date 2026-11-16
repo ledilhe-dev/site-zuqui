@@ -246,15 +246,15 @@
   #financeiro_contasapagar .contas-pagar-filtros-unificados {
     display: grid !important;
     grid-template-columns:
-      minmax(210px, 1.5fr)
-      118px
-      118px
-      minmax(150px, .9fr)
-      110px
-      110px
-      88px
-      150px
-      minmax(150px, 1fr) !important;
+      minmax(0, 1.65fr)
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(0, 1.45fr)
+      minmax(0, .95fr)
+      minmax(0, .85fr)
+      minmax(0, .65fr)
+      minmax(0, 1fr)
+      minmax(0, 1.25fr) !important;
     align-items: end !important;
     gap: 7px !important;
   }
@@ -265,48 +265,138 @@
     max-width: none !important;
     margin: 0 !important;
   }
+}
 
-  #financeiro_contasapagar .contas-pagar-filtros-unificados > label {
+#financeiro_contasapagar .contas-pagar-filtros-unificados > label {
+  display: grid !important;
+  grid-template-rows: 14px 36px !important;
+  align-content: end !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+#financeiro_contasapagar .contas-pagar-filtros-unificados > label > span:first-child {
+  display: block !important;
+  height: 14px !important;
+  min-height: 14px !important;
+  line-height: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#financeiro_contasapagar .contas-pagar-filtros-unificados :is(input, select, button) {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  margin: 0 !important;
+  padding: 5px 8px !important;
+  font-size: 10px !important;
+}
+
+#financeiro_contasapagar .contas-pagar-filtros-unificados #filtroContaAPagarCategoriasWrap {
+  box-sizing: border-box !important;
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+@media (min-width: 1025px) and (max-width: 1279px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
     display: grid !important;
-    grid-template-rows: 14px 36px !important;
-    align-content: end !important;
-    gap: 4px !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: end !important;
+    gap: 8px !important;
   }
 
-  #financeiro_contasapagar .contas-pagar-filtros-unificados > label > span:first-child {
-    display: block !important;
-    height: 14px !important;
-    min-height: 14px !important;
-    line-height: 14px !important;
-    margin: 0 !important;
-    padding: 0 !important;
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: span 2 !important;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1024px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: end !important;
+    gap: 8px !important;
   }
 
-  #financeiro_contasapagar .contas-pagar-filtros-unificados :is(input, select, button) {
-    box-sizing: border-box !important;
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+#financeiro_contasapagar #dropdownCategoriasContaAPagar {
+  min-width: 0 !important;
+  padding: 6px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  z-index: 99999 !important;
+}
+
+#financeiro_contasapagar #dropdownCategoriasContaAPagar label {
+  box-sizing: border-box !important;
+  min-height: 24px !important;
+  gap: 5px !important;
+  padding: 3px 4px !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+
+#financeiro_contasapagar #dropdownCategoriasContaAPagar label > span {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+
+#financeiro_contasapagar #dropdownCategoriasContaAPagar input[type="checkbox"] {
+  width: 14px !important;
+  min-width: 14px !important;
+  max-width: 14px !important;
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+}
+
+#financeiro_contasapagar #dropdownCategoriasContaAPagar .app-popover-search {
+  font-size: 11px !important;
+}
+
+@media (max-width: 700px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
     width: 100% !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
-    margin: 0 !important;
-    padding: 5px 8px !important;
-    font-size: 10px !important;
   }
 
-  #financeiro_contasapagar .contas-pagar-filtros-unificados > .btn {
-    align-self: end !important;
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #financeiro_contasapagar .contas-pagar-filtros-unificados {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  #financeiro_contasapagar .contas-pagar-filtros-unificados #filtroContaAPagarCategoriasWrap {
-    box-sizing: border-box !important;
-    display: block !important;
-    width: 100% !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
+  #financeiro_contasapagar .contas-pagar-busca,
+  #financeiro_contasapagar .contas-pagar-criterio,
+  #financeiro_contasapagar .contas-pagar-fornecedor {
+    grid-column: auto !important;
   }
 }
 
@@ -321,7 +411,6 @@
 @media (max-width: 700px) {
   :root { --app-popover-width: calc(100vw - 16px); }
   .app-popover,
-  #dropdownCategoriasContaAPagar,
   .relatorio-check-filter-panel {
     position: fixed !important;
     left: 8px !important;

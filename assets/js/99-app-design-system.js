@@ -17,6 +17,32 @@
       popover.style.setProperty('width', 'min(320px, calc(100vw - 24px))', 'important');
       return;
     }
+    if (popover.matches('#dropdownCategoriasContaAPagar')) {
+      const margin = innerWidth <= 700 ? 8 : 12;
+      const anchor = trigger.getBoundingClientRect();
+      const content = trigger.closest('.pagina, .card, .content, .main');
+      const contentRect = content?.getBoundingClientRect();
+      const left = Math.max(margin, contentRect?.left ?? margin, anchor.left);
+      const right = Math.min(innerWidth - margin, contentRect?.right ?? (innerWidth - margin));
+      const width = Math.max(0, Math.min(320, right - left));
+      const spaceBelow = innerHeight - anchor.bottom - margin - 4;
+      const spaceAbove = anchor.top - margin - 4;
+      const openAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(80, Math.min(360, (openAbove ? spaceAbove : spaceBelow)));
+
+      popover.classList.add('app-popover');
+      popover.style.setProperty('position', 'fixed', 'important');
+      popover.style.setProperty('left', left + 'px', 'important');
+      popover.style.setProperty('right', 'auto', 'important');
+      popover.style.setProperty('top', openAbove ? 'auto' : Math.max(margin, anchor.bottom + 4) + 'px', 'important');
+      popover.style.setProperty('bottom', openAbove ? Math.max(margin, innerHeight - anchor.top + 4) + 'px' : 'auto', 'important');
+      popover.style.setProperty('width', width + 'px', 'important');
+      popover.style.setProperty('min-width', '0', 'important');
+      popover.style.setProperty('max-width', `calc(100vw - ${margin * 2}px)`, 'important');
+      popover.style.setProperty('max-height', maxHeight + 'px', 'important');
+      popover.style.setProperty('z-index', '99999', 'important');
+      return;
+    }
     const margin = innerWidth <= 700 ? 8 : 12;
     const anchor = trigger.getBoundingClientRect();
     const content = trigger.closest('.pagina, .card, .content, .main');
